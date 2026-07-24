@@ -50,12 +50,44 @@ pub fn inject_compose_yaml_labels(yaml_str: &str, spec: &ComposeSpec) -> Result<
         .map_err(|e| format!("failed to serialize yaml: {e}"))
 }
 
+fn strip_traefik_labels_from_services(services: &mut Mapping) {
+    for (_name, service) in services.iter_mut() {
+        if let Ok(service_map) = mapping_mut(service, "") {
+            if let Some(labels) = service_map.get_mut(Value::String("labels".into())) {
+                match labels {
+                    Value::Sequence(items) => {
+                        items.retain(|item| {
+                            if let Value::String(s) = item {
+                                !s.starts_with("traefik.")
+                            } else {
+                                true
+                            }
+                        });
+                    }
+                    Value::Mapping(map) => {
+                        map.retain(|k, _| {
+                            if let Value::String(s) = k {
+                                !s.starts_with("traefik.")
+                            } else {
+                                true
+                            }
+                        });
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
 fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<()> {
     let root = mapping_mut(document, "compose root must be a yaml object")?;
     let services = root
         .get_mut(Value::String("services".into()))
         .ok_or_else(|| command_error("compose file has no services"))?;
     let services = mapping_mut(services, "compose services must be a yaml object")?;
+
+    strip_traefik_labels_from_services(services);
 
     for domain in &spec.domains {
         let service_name = domain.service_name.as_deref().ok_or_else(|| {
