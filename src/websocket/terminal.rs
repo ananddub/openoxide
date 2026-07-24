@@ -104,9 +104,26 @@ impl TerminalSocket {
         }
 
         let shell = input.shell.unwrap_or_else(|| "sh".into());
+        let mut target_container = input.container.clone();
+
+        if let Ok(cmd) = Command::new("docker")
+            .args(["ps", "--filter", &format!("name={}", input.container), "--format", "{{.Names}}"])
+            .output()
+            .await
+        {
+            if cmd.status.success() {
+                let stdout = String::from_utf8_lossy(&cmd.stdout);
+                if let Some(first_line) = stdout.lines().next() {
+                    if !first_line.trim().is_empty() {
+                        target_container = first_line.trim().to_string();
+                    }
+                }
+            }
+        }
+
         let mut command = Command::new("docker");
         command
-            .args(["exec", "-it", &input.container, &shell])
+            .args(["exec", "-it", &target_container, &shell])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
