@@ -12,6 +12,7 @@ import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compos
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
+import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {AdvancedTab} from '#/components/projects/app/detail/advanced-tab';
 
 export const Route = createFileRoute('/_app/projects/$id/compose/$composeId')({
@@ -47,6 +48,7 @@ function ComposeDetailPage() {
 		'Domains',
 		'Deployments',
 		'Schedules',
+		'Backups',
 		'Logs',
 		'Monitoring',
 		'Advanced',
@@ -142,6 +144,9 @@ function ComposeDetailPage() {
 				)}
 				{activeTab === 'Schedules' && (
 					<ComposeSchedulesTab compose={compose} />
+				)}
+				{activeTab === 'Backups' && (
+					<ComposeBackupsTab compose={compose} />
 				)}
 				{activeTab === 'Logs' && (
 					<ComposeLogsTab compose={compose} />
