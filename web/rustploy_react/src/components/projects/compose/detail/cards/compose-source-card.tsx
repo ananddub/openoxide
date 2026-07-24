@@ -76,19 +76,25 @@ export function ComposeSourceCard({
 				</Button>
 			</div>
 
-			<div className="flex items-center gap-2 overflow-x-auto pb-1">
-				{PROVIDERS.map(p => (
-					<button
-						key={p.id}
-						type="button"
-						onClick={() => setProvider(p.id)}
-						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
-							provider === p.id ? 'bg-secondary text-foreground border-primary' : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
-						}`}
-					>
-						{p.icon} <span>{p.label}</span>
-					</button>
-				))}
+			<div className="flex flex-wrap border-b border-border/60 gap-1 pb-1 relative w-full -mb-[1px]">
+				{PROVIDERS.map(p => {
+					const isActive = provider === p.id;
+					return (
+						<button
+							key={p.id}
+							type="button"
+							onClick={() => setProvider(p.id)}
+							className={`text-xs font-bold px-3.5 pb-2 pt-2 transition-all flex items-center gap-1.5 cursor-pointer border-b-2 -mb-[1px] ${
+								isActive 
+									? 'border-foreground text-foreground font-bold' 
+									: 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/40'
+							}`}
+						>
+							{p.icon}
+							{p.label}
+						</button>
+					);
+				})}
 			</div>
 
 			{provider === 'RAW' ? (
