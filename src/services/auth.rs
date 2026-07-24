@@ -10,12 +10,12 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use crate::{
     api::dto::auth::{AuthResponseDto, LoginDto, SignupDto},
     db::models::users::User,
+    repository::{GroupRepository, JwtTokenRepository, UserRepository},
     utils::jwt::{
         claim::{Claims, JwtSubject},
         error::TokenError,
         service::{JwtService, TokenPair},
     },
-    repository::{UserRepository, JwtTokenRepository, GroupRepository},
 };
 
 #[derive(Debug)]
@@ -81,18 +81,24 @@ impl AuthService {
         let password = hash_password(input.password).await?;
         let mut tx = self.db.begin().await?;
 
-        let group_id = self.repo_group.create_owner_group_if_not_exists(&mut tx).await?;
+        let group_id = self
+            .repo_group
+            .create_owner_group_if_not_exists(&mut tx)
+            .await?;
 
         let avatar = input.avatar.unwrap_or_default();
-        let user = self.repo_user.create_owner_and_return(
-            &mut tx,
-            input.email,
-            input.first_name,
-            input.last_name,
-            avatar,
-            password,
-            group_id
-        ).await?;
+        let user = self
+            .repo_user
+            .create_owner_and_return(
+                &mut tx,
+                input.email,
+                input.first_name,
+                input.last_name,
+                avatar,
+                password,
+                group_id,
+            )
+            .await?;
 
         let subject = subject_from_user(&user)?;
         let tokens = self.jwt.generate_token_pair(&subject)?;
@@ -129,8 +135,10 @@ impl AuthService {
         let subject = subject_from_user(&user)?;
         let tokens = self.jwt.generate_token_pair(&subject)?;
         let mut tx = self.db.begin().await?;
-        
-        self.repo_token.blacklist_by_jti(&mut tx, &old_claims.jti).await?;
+
+        self.repo_token
+            .blacklist_by_jti(&mut tx, &old_claims.jti)
+            .await?;
         self.store_token_pair(&mut tx, &tokens).await?;
         tx.commit().await?;
 
@@ -151,6 +159,13 @@ impl AuthService {
         Ok(())
     }
 
+    pub async fn is_owner_present(&self) -> Result<bool, AuthError> {
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
+            .fetch_one(self.db.as_ref())
+            .await?;
+        Ok(count > 0)
+    }
+
     async fn issue_token_pair(&self, subject: &JwtSubject) -> Result<TokenPair, AuthError> {
         let tokens = self.jwt.generate_token_pair(subject)?;
         let mut tx = self.db.begin().await?;
@@ -169,13 +184,15 @@ impl AuthService {
         for claims in [access, refresh] {
             let role = claims.user.role.as_deref().unwrap_or("MEMBER");
             let expired_at = claims.exp as i64;
-            self.repo_token.insert_token(
-                tx,
-                claims.jti,
-                role.to_string(),
-                claims.user.user_id,
-                expired_at
-            ).await?;
+            self.repo_token
+                .insert_token(
+                    tx,
+                    claims.jti,
+                    role.to_string(),
+                    claims.user.user_id,
+                    expired_at,
+                )
+                .await?;
         }
         Ok(())
     }
@@ -251,7 +268,7 @@ mod tests {
         sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
         sqlx::query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, last_name TEXT, first_name TEXT, avatar TEXT NOT NULL, role TEXT DEFAULT 'OWNER', about_me TEXT, password TEXT NOT NULL, is_email_verify INTEGER DEFAULT 0, email_verify_at INTEGER, two_factor_enable INTEGER DEFAULT 0, is_registered INTEGER NOT NULL DEFAULT 0, added_by INTEGER REFERENCES users(id), group_id INTEGER NOT NULL REFERENCES groups(id), created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
         sqlx::query("CREATE TABLE jwt_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, jti TEXT NOT NULL, role TEXT NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, is_blacklist INTEGER DEFAULT 0, blacklist_at INTEGER, expired_at INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-        
+
         let db = Arc::new(pool);
         AuthService {
             db: db.clone(),

@@ -72,6 +72,15 @@ impl AuthController {
             .map(|()| StatusCode::NO_CONTENT)
             .map_err(map_auth_error)
     }
+
+    #[get("/setup")]
+    async fn setup(&self) -> Result<Json<Value>, ApiError> {
+        self.service
+            .is_owner_present()
+            .await
+            .map(|present| Json(json!({ "isOwnerPresent": present })))
+            .map_err(map_auth_error)
+    }
 }
 
 fn map_auth_error(error: AuthError) -> ApiError {
