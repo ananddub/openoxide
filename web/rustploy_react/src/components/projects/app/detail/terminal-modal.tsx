@@ -41,6 +41,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		term.loadAddon(fitAddon);
 		term.open(termRef.current);
 		fitAddon.fit();
+		term.focus();
 
 		setStatus('connecting');
 		term.writeln(`\x1b[33mConnecting to container '${containerName}'...\x1b[0m\r\n`);
@@ -62,7 +63,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 
 		socket.on('started', (data: any) => {
 			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
-			socket.emit('input', {data: 'pwd\n'});
+			term.focus();
 		});
 
 		socket.on('output', (evt: {stream: string; data: string}) => {
