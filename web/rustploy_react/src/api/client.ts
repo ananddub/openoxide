@@ -46,7 +46,7 @@ const authMiddleware: Middleware = {
 				return response;
 			}
 
-			const refreshRes = await fetch('/api/auth/refresh', {
+			const refreshRes = await fetch('http://das.tail25b5a0.ts.net:4000/auth/refresh', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ const authMiddleware: Middleware = {
 };
 
 export const client = createFetchClient<paths>({
-	baseUrl: '/api',
+	baseUrl: 'http://das.tail25b5a0.ts.net:4000',
 	headers: {
 		'Content-Type': 'application/json',
 		Accept: 'application/json',
