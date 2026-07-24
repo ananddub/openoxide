@@ -18,11 +18,11 @@ impl<'a> ExecBuilder<'a> {
         }
     }
     pub fn user(mut self, v: impl Into<String>) -> Self {
-        self.args.pair("--user", v.into());
+        self.args.pair("-u", v.into());
         self
     }
     pub fn workdir(mut self, v: impl Into<String>) -> Self {
-        self.args.pair("--workdir", v.into());
+        self.args.pair("-w", v.into());
         self
     }
     pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
@@ -30,15 +30,15 @@ impl<'a> ExecBuilder<'a> {
         self
     }
     pub fn tty(mut self, enabled: bool) -> Self {
-        self.args.flag_if("--tty", enabled);
+        self.args.flag_if("-t", enabled);
         self
     }
     pub fn interactive(mut self) -> Self {
-        self.args.flag("--interactive");
+        self.args.flag("-i");
         self
     }
     pub fn detach(mut self) -> Self {
-        self.args.flag("--detach");
+        self.args.flag("-d");
         self
     }
 
