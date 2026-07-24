@@ -1,5 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
-import {Terminal as TerminalIcon, X} from 'lucide-react';
+import {useEffect, useRef, useState, useMemo} from 'react';
+import {Terminal as TerminalIcon, X, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
@@ -12,13 +12,60 @@ interface TerminalModalProps {
 	onClose: () => void;
 }
 
+// Extract service names defined under 'services:' in docker-compose.yml content
+const extractServicesFromYaml = (yamlStr?: string): string[] => {
+	if (!yamlStr) return [];
+	const lines = yamlStr.split('\n');
+	const services: string[] = [];
+	let inServicesBlock = false;
+	let servicesIndent = 0;
+
+	for (const line of lines) {
+		const trimmed = line.trimEnd();
+		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
+
+		const indent = line.search(/\S/);
+		const text = trimmed.trim();
+
+		if (text === 'services:' || text.startsWith('services:')) {
+			inServicesBlock = true;
+			servicesIndent = indent;
+			continue;
+		}
+
+		if (inServicesBlock) {
+			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
+				inServicesBlock = false;
+			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
+				const serviceName = text.slice(0, -1).trim();
+				if (serviceName && !services.includes(serviceName)) {
+					services.push(serviceName);
+				}
+			}
+		}
+	}
+	return services;
+};
+
 export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('sh');
+	const [selectedService, setSelectedService] = useState('');
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 
-	const containerName = app.app_name || app.appName || app.name || 'app';
+	// Extract available compose services if compose_file is present
+	const availableServices = useMemo(() => {
+		return extractServicesFromYaml(app?.compose_file);
+	}, [app?.compose_file]);
+
+	// Default container name: Top/first extracted service for Compose, or app_name for Application
+	const defaultContainer = useMemo(() => {
+		if (availableServices.length > 0) return availableServices[0];
+		return app?.app_name || app?.appName || app?.name || 'app';
+	}, [availableServices, app]);
+
+	const targetContainer = selectedService || defaultContainer;
 
 	useEffect(() => {
 		if (!open || !termRef.current) return;
@@ -44,7 +91,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		term.focus();
 
 		setStatus('connecting');
-		term.writeln(`\x1b[33mConnecting to container '${containerName}'...\x1b[0m\r\n`);
+		term.writeln(`\x1b[33mConnecting to container '${targetContainer}'...\x1b[0m\r\n`);
 
 		const socket = io('/terminal', {
 			path: '/socket.io',
@@ -54,9 +101,9 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 
 		socket.on('connect', () => {
 			setStatus('connected');
-			term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}]...\x1b[0m\r\n`);
+			term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
 			socket.emit('docker:start', {
-				container: containerName,
+				container: targetContainer,
 				shell,
 			});
 		});
@@ -113,7 +160,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			}
 			term.dispose();
 		};
-	}, [open, shell, containerName]);
+	}, [open, shell, targetContainer]);
 
 	if (!open) return null;
 
@@ -137,11 +184,29 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 									{status}
 								</span>
 							</h3>
-							<p className="text-[11px] text-muted-foreground font-mono">{containerName}</p>
+							<p className="text-[11px] text-muted-foreground font-mono">{targetContainer}</p>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-3">
+						{/* Automatic Service Selector for Compose Stacks */}
+						{availableServices.length > 0 && (
+							<div className="flex items-center gap-1.5 bg-muted/40 border border-border rounded-lg px-2.5 py-1">
+								<Box className="w-3.5 h-3.5 text-primary shrink-0" />
+								<select
+									value={targetContainer}
+									onChange={e => setSelectedService(e.target.value)}
+									className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+								>
+									{availableServices.map(service => (
+										<option key={service} value={service}>
+											Service: {service}
+										</option>
+									))}
+								</select>
+							</div>
+						)}
+
 						{/* Shell Switcher */}
 						<div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
 							<button
