@@ -36,7 +36,7 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 				}
 
 				const response = await fetch(
-					`http://das.tail25b5a0.ts.net:4000/deployments/${selectedDeployment.id}/logs`,
+					`/api/deployments/${selectedDeployment.id}/logs`,
 					{
 						headers: {
 							Authorization: accessToken ? `Bearer ${accessToken}` : '',
@@ -61,31 +61,53 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 					if (done) break;
 
 					buffer += decoder.decode(value, {stream: true});
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
+					const rawLines = buffer.split('\n');
+					buffer = rawLines.pop() || '';
 
-					for (const line of lines) {
-						if (line.startsWith('data:')) {
+					for (const rawLine of rawLines) {
+						const trimmed = rawLine.trim();
+						if (
+							!trimmed ||
+							trimmed.startsWith('event:') ||
+							trimmed.includes('event: log') ||
+							trimmed.includes('event: deployment') ||
+							trimmed.startsWith('id:') ||
+							trimmed.startsWith(':') ||
+							trimmed.includes('keep-alive')
+						) {
+							continue;
+						}
+
+						if (trimmed.startsWith('data:')) {
 							try {
-								const jsonStr = line.slice(5).trim();
-								if (jsonStr) {
-									const data = JSON.parse(jsonStr);
-									if (data.line) {
-										setLogs(prev => prev + data.line + '\n');
-									} else if (data.message) {
-										setLogs(prev => prev + data.message + '\n');
-									}
+								const jsonStr = trimmed.slice(5).trim();
+								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
+								const data = JSON.parse(jsonStr);
+								if (data.type === 'keep-alive') continue;
+								const lineContent = data.line !== undefined ? data.line : (data.data || data.message || jsonStr);
+								if (lineContent && isMounted) {
+									setLogs(prev => prev ? `${prev}\n${lineContent}` : lineContent);
 								}
 							} catch {
-								setLogs(prev => prev + line.slice(5) + '\n');
+								const rawContent = trimmed.slice(5).trim();
+								if (rawContent && !rawContent.includes('keep-alive') && isMounted) {
+									setLogs(prev => prev ? `${prev}\n${rawContent}` : rawContent);
+								}
 							}
-						} else if (line.trim()) {
-							setLogs(prev => prev + line + '\n');
+						} else if (trimmed && isMounted) {
+							if (
+								!trimmed.startsWith('event:') &&
+								!trimmed.includes('event: log') &&
+								!trimmed.includes('event: deployment') &&
+								!trimmed.includes('keep-alive')
+							) {
+								setLogs(prev => prev ? `${prev}\n${trimmed}` : trimmed);
+							}
 						}
 					}
 				}
 			} catch (err: any) {
-				if (err.name !== 'AbortError') {
+				if (err.name !== 'AbortError' && isMounted) {
 					toast.error('Failed to load logs');
 					setIsLogsLoading(false);
 				}
