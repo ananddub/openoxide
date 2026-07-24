@@ -19,6 +19,15 @@ function ProjectNameBreadcrumb({ id }: { id: number }) {
 	return <>{project?.name || 'Loading...'}</>;
 }
 
+function AppNameBreadcrumb({ id }: { id: number }) {
+	const { data: app } = $api.useQuery(
+		'get',
+		'/applications/{id}',
+		{ params: { path: { id } } }
+	);
+	return <>{app?.name || app?.app_name || 'Loading...'}</>;
+}
+
 export const Route = createFileRoute('/_app')({
 	component: AppLayout,
 });
@@ -57,8 +66,12 @@ function AppLayout() {
 									const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
 									const isLast = index === pathSegments.length - 1;
 									const isProjectParam = index > 0 && pathSegments[index - 1] === 'projects' && !isNaN(Number(segment));
+									const isAppParam = index > 0 && pathSegments[index - 1] === 'app' && !isNaN(Number(segment));
+
 									const label = isProjectParam ? (
 										<ProjectNameBreadcrumb id={Number(segment)} />
+									) : isAppParam ? (
+										<AppNameBreadcrumb id={Number(segment)} />
 									) : (
 										segment.charAt(0).toUpperCase() + segment.slice(1)
 									);
