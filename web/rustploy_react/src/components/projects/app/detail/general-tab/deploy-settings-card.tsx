@@ -53,7 +53,9 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
 		const s = (e.status || '').toUpperCase();
 		const st = (e.state || '').toUpperCase();
-		return !FINAL_STATES.includes(s) && !FINAL_STATES.includes(st);
+		if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
+		const activeKeywords = ['BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING'];
+		return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 	});
 
 	const executeAction = async (action: ActionType) => {
