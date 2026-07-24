@@ -2,6 +2,49 @@ import * as React from 'react';
 import {toast} from 'sonner';
 import type {Deployment} from './use-deployments';
 
+export function extractLogLines(rawData: any): string[] {
+	if (!rawData) return [];
+	if (typeof rawData === 'string') {
+		const trimmed = rawData.trim();
+		if (
+			!trimmed ||
+			trimmed.startsWith('event:') ||
+			trimmed.includes('event: log') ||
+			trimmed.includes('event: deployment') ||
+			trimmed.startsWith('id:') ||
+			trimmed.startsWith(':') ||
+			trimmed.includes('keep-alive')
+		) {
+			return [];
+		}
+		if (trimmed.startsWith('data:')) {
+			const content = trimmed.slice(5).trim();
+			if (!content || content.includes('keep-alive')) return [];
+			try {
+				const parsed = JSON.parse(content);
+				return extractLogLines(parsed);
+			} catch {
+				return content.split('\n').filter(l => l.trim() && !l.includes('keep-alive'));
+			}
+		}
+		return rawData.split('\n');
+	}
+
+	if (typeof rawData === 'object') {
+		if (rawData.type === 'keep-alive' || rawData.event === 'keep-alive') return [];
+		const candidate = rawData.line ?? rawData.message ?? rawData.data ?? rawData.log ?? rawData.text ?? rawData.content ?? rawData.output;
+		if (candidate !== undefined && candidate !== null) {
+			if (typeof candidate === 'object') {
+				return [JSON.stringify(candidate)];
+			}
+			return String(candidate).split('\n').filter(l => l.trim() && !l.includes('keep-alive'));
+		}
+		return [JSON.stringify(rawData)];
+	}
+
+	return [String(rawData)];
+}
+
 export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 	const [logs, setLogs] = React.useState<string>('');
 	const [isLogsLoading, setIsLogsLoading] = React.useState(false);
@@ -23,6 +66,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 		let controller = new AbortController();
 		setLogs('');
 		setIsLogsLoading(true);
+
+		// If deployment has stored log_content, initialize with it immediately
+		if (selectedDeployment.log_content) {
+			setLogs(selectedDeployment.log_content);
+		}
 
 		const readLogs = async () => {
 			try {
@@ -46,7 +94,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 				);
 
 				if (!response.ok) {
-					throw new Error('Failed to fetch logs');
+					if (isMounted && selectedDeployment.log_content) {
+						setLogs(selectedDeployment.log_content);
+					}
+					setIsLogsLoading(false);
+					return;
 				}
 
 				setIsLogsLoading(false);
@@ -58,57 +110,32 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 				let buffer = '';
 				while (isMounted) {
 					const {done, value} = await reader.read();
-					if (done) break;
+					if (done) {
+						if (buffer.trim()) {
+							const finalLines = extractLogLines(buffer);
+							if (finalLines.length > 0 && isMounted) {
+								setLogs(prev => prev ? `${prev}\n${finalLines.join('\n')}` : finalLines.join('\n'));
+							}
+						}
+						break;
+					}
 
 					buffer += decoder.decode(value, {stream: true});
 					const rawLines = buffer.split('\n');
 					buffer = rawLines.pop() || '';
 
 					for (const rawLine of rawLines) {
-						const trimmed = rawLine.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.includes('event: log') ||
-							trimmed.includes('event: deployment') ||
-							trimmed.startsWith('id:') ||
-							trimmed.startsWith(':') ||
-							trimmed.includes('keep-alive')
-						) {
-							continue;
-						}
-
-						if (trimmed.startsWith('data:')) {
-							try {
-								const jsonStr = trimmed.slice(5).trim();
-								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
-								const data = JSON.parse(jsonStr);
-								if (data.type === 'keep-alive') continue;
-								const lineContent = data.line !== undefined ? data.line : (data.data || data.message || jsonStr);
-								if (lineContent && isMounted) {
-									setLogs(prev => prev ? `${prev}\n${lineContent}` : lineContent);
-								}
-							} catch {
-								const rawContent = trimmed.slice(5).trim();
-								if (rawContent && !rawContent.includes('keep-alive') && isMounted) {
-									setLogs(prev => prev ? `${prev}\n${rawContent}` : rawContent);
-								}
-							}
-						} else if (trimmed && isMounted) {
-							if (
-								!trimmed.startsWith('event:') &&
-								!trimmed.includes('event: log') &&
-								!trimmed.includes('event: deployment') &&
-								!trimmed.includes('keep-alive')
-							) {
-								setLogs(prev => prev ? `${prev}\n${trimmed}` : trimmed);
-							}
+						const extracted = extractLogLines(rawLine);
+						if (extracted.length > 0 && isMounted) {
+							setLogs(prev => prev ? `${prev}\n${extracted.join('\n')}` : extracted.join('\n'));
 						}
 					}
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {
-					toast.error('Failed to load logs');
+					if (selectedDeployment.log_content) {
+						setLogs(selectedDeployment.log_content);
+					}
 					setIsLogsLoading(false);
 				}
 			}
