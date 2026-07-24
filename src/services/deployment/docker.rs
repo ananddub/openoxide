@@ -37,17 +37,28 @@ impl DeploymentService {
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
-        let mut command = vec![
-            "container".into(),
-            "stats".into(),
-            "--format".into(),
-            "{{json .}}".into(),
-        ];
-        if !stream {
-            command.push("--no-stream".into());
+        let mut resolved_target = target.clone();
+
+        if let Ok(containers) = docker
+            .containers()
+            .ps()
+            .filter(crate::utils::docker::query::ContainerFilter::Name(target.clone()))
+            .list()
+            .await
+        {
+            if let Some(first) = containers.first() {
+                resolved_target = first.names.trim_start_matches('/').to_string();
+            }
         }
-        command.push(target);
-        Ok(spawn_docker_stream(docker, command))
+
+        let handle = docker.containers();
+        let mut builder = handle.stats(resolved_target);
+        if !stream {
+            builder = builder.no_stream();
+        }
+
+        let cmd_args = builder.build_command_args();
+        Ok(spawn_docker_stream(docker, cmd_args))
     }
 
     pub async fn stream_application_stats(

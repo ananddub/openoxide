@@ -22,11 +22,19 @@ impl<'a> StatsBuilder<'a> {
         self
     }
 
+    pub fn build_command_args(&self) -> Vec<String> {
+        let mut a = ArgBuilder::cmd(&["container", "stats", "--format", "{{json .}}"]);
+        a.inherit_meta(&self.args);
+        a.push_all(self.args.clone().build());
+        a.push(&self.id);
+        a.build()
+    }
+
     pub async fn stream(
         self,
         sender: mpsc::Sender<DockerStreamEvent>,
     ) -> DockerResult<DockerExitStatus> {
-        let mut a = ArgBuilder::cmd(&["container", "stats"]);
+        let mut a = ArgBuilder::cmd(&["container", "stats", "--format", "{{json .}}"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());
         a.push(&self.id);
