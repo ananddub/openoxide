@@ -59,9 +59,11 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		return extractServicesFromYaml(app?.compose_file);
 	}, [app?.compose_file]);
 
-	// Default container name: Top/first extracted service for Compose, or app_name for Application
+	// Default container name: Top/first extracted service for Compose, 'app' fallback for Compose, or app_name for Application
 	const defaultContainer = useMemo(() => {
 		if (availableServices.length > 0) return availableServices[0];
+		const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
+		if (isCompose) return 'app';
 		return app?.app_name || app?.appName || app?.name || 'app';
 	}, [availableServices, app]);
 
