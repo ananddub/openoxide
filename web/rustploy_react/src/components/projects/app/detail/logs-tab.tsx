@@ -77,21 +77,30 @@ export function LogsTab({app}: LogsTabProps) {
 
 					for (const rawLine of rawLines) {
 						const trimmed = rawLine.trim();
-						if (!trimmed || trimmed.startsWith('event:') || trimmed.startsWith(':')) continue;
+						if (trimmed.startsWith('event:') || trimmed.startsWith('id:') || trimmed.startsWith(':')) continue;
 
+						let textToPush = '';
 						if (rawLine.startsWith('data:')) {
 							const jsonStr = rawLine.slice(5).trim();
+							if (jsonStr.includes('keep-alive')) continue;
 							if (jsonStr) {
 								try {
 									const data = JSON.parse(jsonStr);
-									const text = data.line || data.data || data.message;
-									if (text && isMounted) {
-										setStreamedLogs(prev => [...prev, text]);
-									}
+									if (data.type === 'keep-alive') continue;
+									textToPush = data.line !== undefined ? data.line : (data.data || data.message || jsonStr);
 								} catch {
-									if (isMounted) setStreamedLogs(prev => [...prev, jsonStr]);
+									textToPush = jsonStr;
 								}
 							}
+						} else {
+							textToPush = rawLine;
+						}
+
+						if (textToPush !== undefined && !textToPush.includes('keep-alive')) {
+							let cleaned = textToPush.replace(/\r?\n$/, '');
+							if (cleaned.startsWith('logs/')) cleaned = cleaned.slice(5);
+							else if (cleaned.startsWith('log/')) cleaned = cleaned.slice(4);
+							if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 						}
 					}
 				}
