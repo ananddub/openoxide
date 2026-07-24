@@ -18,6 +18,7 @@ import {Field, FieldLabel, FieldError} from '#/components/ui/field';
 import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {useOrganizationStore} from '#/stores/organization-store';
+import {formatApiError} from '#/api/utils';
 
 const organizationSchema = v.object({
 	name: v.pipe(
@@ -79,7 +80,7 @@ export function AddOrganization({
 		setIsPending(true);
 		try {
 			if (isEdit && organizationId) {
-				const {error} = await patchMutation.mutateAsync({
+				await patchMutation.mutateAsync({
 					params: {
 						path: {
 							id: Number(organizationId),
@@ -91,33 +92,23 @@ export function AddOrganization({
 					},
 				});
 
-				if (error) {
-					const errBody = error as any;
-					toast.error(errBody?.message || 'Failed to update organization');
-				} else {
-					toast.success('Organization updated successfully');
-					queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
-					onOpenChange(false);
-				}
+				toast.success('Organization updated successfully');
+				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+				onOpenChange(false);
 			} else {
-				const {error} = await createMutation.mutateAsync({
+				await createMutation.mutateAsync({
 					body: {
 						name: data.name,
 						logo: data.logo || undefined,
 					},
 				});
 
-				if (error) {
-					const errBody = error as any;
-					toast.error(errBody?.message || 'Failed to create organization');
-				} else {
-					toast.success('Organization created successfully');
-					queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
-					onOpenChange(false);
-				}
+				toast.success('Organization created successfully');
+				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+				onOpenChange(false);
 			}
-		} catch {
-			toast.error('An unexpected error occurred');
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		} finally {
 			setIsPending(false);
 		}

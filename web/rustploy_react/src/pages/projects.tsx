@@ -59,7 +59,7 @@ function ProjectsPage() {
 
 		setIsSubmitting(true);
 		try {
-			const {error} = await createProjectMutation.mutateAsync({
+			await createProjectMutation.mutateAsync({
 				body: {
 					name,
 					description: description || undefined,
@@ -68,22 +68,18 @@ function ProjectsPage() {
 				},
 			});
 
-			if (error) {
-				toast.error(formatApiError(error));
-			} else {
-				toast.success('Project created successfully!');
-				setIsCreateOpen(false);
-				// Refresh projects list
-				queryClient.invalidateQueries({
-					queryKey: [
-						'get',
-						'/projects/organization/{organization_id}',
-						{params: {path: {organization_id: activeOrg.id}}},
-					],
-				});
-			}
-		} catch {
-			toast.error('An unexpected error occurred');
+			toast.success('Project created successfully!');
+			setIsCreateOpen(false);
+			// Refresh projects list
+			queryClient.invalidateQueries({
+				queryKey: [
+					'get',
+					'/projects/organization/{organization_id}',
+					{params: {path: {organization_id: activeOrg.id}}},
+				],
+			});
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -94,7 +90,7 @@ function ProjectsPage() {
 		if (!activeOrg) return;
 
 		try {
-			const {error} = await deleteProjectMutation.mutateAsync({
+			await deleteProjectMutation.mutateAsync({
 				params: {
 					path: {
 						id: projectId,
@@ -102,20 +98,16 @@ function ProjectsPage() {
 				},
 			});
 
-			if (error) {
-				toast.error(formatApiError(error));
-			} else {
-				toast.success('Project deleted successfully');
-				queryClient.invalidateQueries({
-					queryKey: [
-						'get',
-						'/projects/organization/{organization_id}',
-						{params: {path: {organization_id: activeOrg.id}}},
-					],
-				});
-			}
-		} catch {
-			toast.error('An unexpected error occurred');
+			toast.success('Project deleted successfully');
+			queryClient.invalidateQueries({
+				queryKey: [
+					'get',
+					'/projects/organization/{organization_id}',
+					{params: {path: {organization_id: activeOrg.id}}},
+				],
+			});
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		}
 	};
 
