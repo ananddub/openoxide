@@ -119,7 +119,7 @@ function AppDetailPage() {
 					{activeTab === 'Logs' && <LogsTab app={app} />}
 					{activeTab === 'Monitoring' && <MonitoringTab appId={parsedAppId} />}
 					{activeTab === 'Schedules' && <SchedulesTab app={app} />}
-					{activeTab === 'Volume Backups' && <VolumeBackupsTab />}
+					{activeTab === 'Volume Backups' && <VolumeBackupsTab app={app} />}
 					{activeTab === 'Advanced' && <AdvancedTab app={app} onUpdated={refetch} />}
 				</main>
 			) : (
