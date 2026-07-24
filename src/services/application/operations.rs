@@ -119,6 +119,7 @@ impl ApplicationService {
                         .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
                 }
             }
+            self.repo_app.update_status(id, "IDLE").await?;
             return Ok(flag);
         }
 
@@ -126,10 +127,12 @@ impl ApplicationService {
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
         if !state.cancel_by_id(IdType::AppId(id)) {
+            self.repo_app.update_status(id, "IDLE").await?;
             return Ok(false);
         }
 
         self.repo_deploy.request_cancel_deployment(id).await?;
+        self.repo_app.update_status(id, "IDLE").await?;
         Ok(true)
     }
 }
