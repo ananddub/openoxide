@@ -18,12 +18,12 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<any>(null);
 
-	// Sync environment variables when app updates
-	useEffect(() => {
-		setEnvVars(app.env_var || '');
-	}, [app.env_var]);
+	// Ref trackers to eliminate React closure stale state bugs inside Monaco callbacks
+	const showSecretsRef = useRef(showSecrets);
+	showSecretsRef.current = showSecrets;
 
-	const isModified = envVars !== originalEnv;
+	const envVarsRef = useRef(envVars);
+	envVarsRef.current = envVars;
 
 	// Mask environment variable values when secrets are hidden
 	const maskEnvText = (raw: string): string => {
@@ -42,6 +42,20 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			.join('\n');
 	};
 
+	// Sync environment variables when app updates
+	useEffect(() => {
+		const raw = app.env_var || '';
+		setEnvVars(raw);
+		if (editorRef.current) {
+			const targetVal = showSecretsRef.current ? raw : maskEnvText(raw);
+			if (editorRef.current.getValue() !== targetVal) {
+				editorRef.current.setValue(targetVal);
+			}
+		}
+	}, [app.env_var]);
+
+	const isModified = envVars !== originalEnv;
+
 	const handleSave = async () => {
 		setSaving(true);
 		try {
@@ -56,15 +70,15 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 		}
 	};
 
-	// Update Monaco Editor content & readOnly state dynamically when showSecrets or envVars change
+	// Update Monaco Editor content & readOnly state dynamically when showSecrets toggles
 	useEffect(() => {
 		if (!editorRef.current) return;
-		const targetVal = showSecrets ? envVars : maskEnvText(envVars);
+		const targetVal = showSecrets ? envVarsRef.current : maskEnvText(envVarsRef.current);
 		if (editorRef.current.getValue() !== targetVal) {
 			editorRef.current.setValue(targetVal);
 		}
 		editorRef.current.updateOptions({readOnly: !showSecrets});
-	}, [showSecrets, envVars]);
+	}, [showSecrets]);
 
 	// Initialize Monaco Editor dynamically on mount
 	useEffect(() => {
@@ -91,9 +105,11 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 				} as any);
 			}
 
+			const initialContent = showSecretsRef.current ? envVarsRef.current : maskEnvText(envVarsRef.current);
+
 			editorInstance = monaco.editor.create(containerRef.current, {
-				value: showSecrets ? envVars : maskEnvText(envVars),
-				readOnly: !showSecrets,
+				value: initialContent,
+				readOnly: !showSecretsRef.current,
 				language: 'ini',
 				theme: 'vs-dark',
 				fontSize: 13,
@@ -117,8 +133,9 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			editorRef.current = editorInstance;
 
 			editorInstance.onDidChangeModelContent(() => {
-				if (isMounted && showSecrets) {
-					setEnvVars(editorInstance.getValue());
+				if (isMounted && showSecretsRef.current) {
+					const val = editorInstance.getValue();
+					setEnvVars(val);
 				}
 			});
 		}).catch(err => {
