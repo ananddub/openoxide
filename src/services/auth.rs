@@ -10,7 +10,10 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use crate::{
     api::dto::auth::{AuthResponseDto, LoginDto, SignupDto},
     db::models::users::User,
-    repository::{GroupRepository, JwtTokenRepository, UserRepository},
+    repository::{
+        GroupRepository, JwtTokenRepository, OrganizationMemberRepository,
+        OrganizationRepository, UserRepository,
+    },
     utils::jwt::{
         claim::{Claims, JwtSubject},
         error::TokenError,
@@ -57,6 +60,8 @@ pub struct AuthService {
     repo_user: Arc<UserRepository>,
     repo_token: Arc<JwtTokenRepository>,
     repo_group: Arc<GroupRepository>,
+    repo_org: Arc<OrganizationRepository>,
+    repo_member: Arc<OrganizationMemberRepository>,
 }
 
 #[singleton]
@@ -67,6 +72,8 @@ impl AuthService {
         repo_user: Arc<UserRepository>,
         repo_token: Arc<JwtTokenRepository>,
         repo_group: Arc<GroupRepository>,
+        repo_org: Arc<OrganizationRepository>,
+        repo_member: Arc<OrganizationMemberRepository>,
     ) -> Self {
         Self {
             db,
@@ -74,6 +81,8 @@ impl AuthService {
             repo_user,
             repo_token,
             repo_group,
+            repo_org,
+            repo_member,
         }
     }
 
@@ -98,6 +107,22 @@ impl AuthService {
                 password,
                 group_id,
             )
+            .await?;
+
+        let user_id = user.id.ok_or_else(|| AuthError::Internal)?;
+        let first_name = user.first_name.clone().unwrap_or_else(|| "Default".to_string());
+        let org_name = format!("{}'s Organization", first_name);
+        let org_slug = format!("{}-organization", first_name.to_lowercase());
+
+        let org = self
+            .repo_org
+            .create_in_transaction(&mut tx, org_name, None, org_slug, user_id)
+            .await?;
+
+        let org_id = org.id.ok_or_else(|| AuthError::Internal)?;
+
+        self.repo_member
+            .add_member_in_transaction(&mut tx, "ADMIN", user_id, org_id)
             .await?;
 
         let subject = subject_from_user(&user)?;
