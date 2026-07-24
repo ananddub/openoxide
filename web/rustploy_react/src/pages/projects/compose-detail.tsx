@@ -30,6 +30,16 @@ function ComposeDetailPage() {
 		handleAction,
 	} = useComposeDetail(parsedComposeId);
 
+	const patchCompose = $api.useMutation('patch', '/compose/{id}');
+
+	const handleUpdateEnv = async (body: any) => {
+		await patchCompose.mutateAsync({
+			params: {path: {id: parsedComposeId}},
+			body,
+		});
+		refetch();
+	};
+
 	const TABS = [
 		'General',
 		'Environment',
@@ -106,7 +116,7 @@ function ComposeDetailPage() {
 					<ComposeGeneralTab compose={compose} onAction={handleAction} onUpdated={refetch} />
 				)}
 				{activeTab === 'Environment' && (
-					<EnvironmentTab targetId={parsedComposeId} targetType="compose" />
+					<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
 				)}
 				{activeTab === 'Domains' && (
 					<DomainsTab targetId={parsedComposeId} targetType="compose" />
