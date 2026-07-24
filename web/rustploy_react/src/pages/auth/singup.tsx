@@ -1,5 +1,5 @@
 import {Header, Wrapper} from '#/components/auth/shared';
-import {SignUpForm} from '#/components/forms/signup.form';
+import {SignUpForm} from '#/components/auth/signup.form';
 import {createFileRoute} from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/singup')({

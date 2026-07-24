@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import {client} from '#/api/client';
 import {useAuthStore} from '#/stores/auth-store';
-import {AuthLeftPanel} from '#/components/layouts/auth-left-panel';
+import {AuthLeftPanel} from '#/components/auth/auth-left-panel';
 
 export const Route = createFileRoute('/_auth')({
 	beforeLoad: async ({location}) => {
