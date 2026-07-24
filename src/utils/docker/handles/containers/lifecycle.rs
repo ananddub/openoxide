@@ -291,8 +291,16 @@ impl<'a> ContainerUpdateBuilder<'a> {
         self.args.pair("--memory", m.to_string());
         self
     }
+    pub fn memory_str(mut self, m: impl Into<String>) -> Self {
+        self.args.pair("--memory", m.into());
+        self
+    }
     pub fn cpus(mut self, c: Cpu) -> Self {
         self.args.pair("--cpus", c.to_string());
+        self
+    }
+    pub fn cpus_str(mut self, c: impl Into<String>) -> Self {
+        self.args.pair("--cpus", c.into());
         self
     }
     pub fn restart(mut self, p: RestartPolicy) -> Self {
