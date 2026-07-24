@@ -63,10 +63,12 @@ function AppLayout() {
 									Dashboard
 								</Link>
 								{pathSegments.map((segment, index) => {
+									if (segment === 'app') return null;
+
 									const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
 									const isLast = index === pathSegments.length - 1;
 									const isProjectParam = index > 0 && pathSegments[index - 1] === 'projects' && !isNaN(Number(segment));
-									const isAppParam = index > 0 && pathSegments[index - 1] === 'app' && !isNaN(Number(segment));
+									const isAppParam = index > 0 && (pathSegments[index - 1] === 'app' || (index > 1 && pathSegments[index - 2] === 'app')) && !isNaN(Number(segment));
 
 									const label = isProjectParam ? (
 										<ProjectNameBreadcrumb id={Number(segment)} />
