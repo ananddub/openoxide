@@ -7,11 +7,18 @@ export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 
 	// Queries
-	const {data: app, isLoading, refetch} = $api.useQuery('get', '/applications/{id}', {
-		params: {
-			path: {id: appId},
+	const {data: app, isLoading, refetch} = $api.useQuery(
+		'get',
+		'/applications/{id}',
+		{
+			params: {
+				path: {id: appId},
+			},
 		},
-	});
+		{
+			refetchInterval: 5000,
+		}
+	);
 
 	// Action Mutations
 	const deployMutation = $api.useMutation('post', '/applications/{id}/deploy');

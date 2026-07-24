@@ -42,7 +42,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 			refetchInterval: (query) => {
 				const data = query.state.data as any[] | undefined;
 				const hasActive = data?.some(isBuildActive);
-				return hasActive ? 3000 : false;
+				return hasActive ? 1000 : 3000;
 			},
 		}
 	);
