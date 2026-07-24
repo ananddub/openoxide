@@ -48,7 +48,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({project, onDelete}) => 
 							</Button>
 						}
 					/>
-					<DropdownMenuContent align="end" className="w-40 border border-border bg-popover">
+					<DropdownMenuContent align="end" className="w-32 border border-border bg-popover">
 						<DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs">
 							<Eye className="size-3.5 text-muted-foreground" />
 							View details

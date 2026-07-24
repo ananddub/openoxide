@@ -141,8 +141,8 @@ function ProjectsPage() {
 
 			{/* Main Grid View */}
 			{isLoadingProjects ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{[1, 2, 3].map(i => (
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+					{[1, 2, 3, 4].map(i => (
 						<Card
 							key={i}
 							className="h-[160px] border-border bg-card/45 animate-pulse"
@@ -150,7 +150,7 @@ function ProjectsPage() {
 					))}
 				</div>
 			) : projects && projects.length > 0 ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in duration-200">
 					{projects.map(project => (
 						<ProjectCard
 							key={project.id}
