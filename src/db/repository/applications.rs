@@ -389,8 +389,8 @@ impl ApplicationRepository {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"UPDATE applications SET
-               memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit),
-               cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit),
+               memory_reservation = ?, memory_limit = ?,
+               cpu_reservation = ?, cpu_limit = ?,
                replicas = COALESCE(?, replicas)
                WHERE id = ?"#,
             memory_reservation,

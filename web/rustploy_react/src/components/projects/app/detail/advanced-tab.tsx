@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useNavigate} from '@tanstack/react-router';
 import {Trash2, AlertTriangle, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
@@ -22,6 +22,15 @@ export function AdvancedTab({app, onUpdated}: AdvancedTabProps) {
 	const [saving, setSaving] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+
+	// Sync local state when app updates from parent refetch
+	useEffect(() => {
+		setMemRes(app.memory_reservation || '');
+		setMemLimit(app.memory_limit || '');
+		setCpuRes(app.cpu_reservation || '');
+		setCpuLimit(app.cpu_limit || '');
+		setReplicas(String(app.replicas || '1'));
+	}, [app.memory_reservation, app.memory_limit, app.cpu_reservation, app.cpu_limit, app.replicas]);
 
 	const patchResources = $api.useMutation('patch', '/applications/{id}/resources');
 	const deleteApplication = $api.useMutation('delete', '/applications/{id}');
