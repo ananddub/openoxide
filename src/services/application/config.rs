@@ -97,6 +97,8 @@ impl ApplicationService {
             // 2. Live Swarm service scaling if replicas is provided
             if let Some(reps) = target_replicas {
                 if reps > 0 {
+                    let swarm_service_name = format!("{}_{}", app_name, app_name);
+                    let _ = docker.services().scale().service(&swarm_service_name, reps as u32).run().await;
                     let _ = docker.services().scale().service(&app_name, reps as u32).run().await;
                 }
             }
