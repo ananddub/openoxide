@@ -12,7 +12,7 @@ import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compos
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
-import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
+import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
 import {AdvancedTab} from '#/components/projects/app/detail/advanced-tab';
 
 export const Route = createFileRoute('/_app/projects/$id/compose/$composeId')({
@@ -45,6 +45,7 @@ function ComposeDetailPage() {
 	const TABS = [
 		'General',
 		'Environment',
+		'Containers',
 		'Domains',
 		'Deployments',
 		'Schedules',
@@ -135,6 +136,9 @@ function ComposeDetailPage() {
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
+				)}
+				{activeTab === 'Containers' && (
+					<ComposeContainersTab compose={compose} onUpdated={refetch} />
 				)}
 				{activeTab === 'Domains' && (
 					<ComposeDomainsTab composeId={parsedComposeId} />
