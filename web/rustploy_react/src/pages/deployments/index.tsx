@@ -1,7 +1,7 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {RefreshCw, FileText} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {useDeployments} from '#/hooks/use-deployments';
+import {useDeployments} from '#/hooks/deployments/use-deployments';
 import {DeploymentsHeader} from '#/components/deployments/deployments-header';
 import {DeploymentsFilters} from '#/components/deployments/deployments-filters';
 import {DeploymentItem} from '#/components/deployments/deployment-item';

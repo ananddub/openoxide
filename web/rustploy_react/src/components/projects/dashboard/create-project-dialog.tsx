@@ -23,7 +23,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 	onOpenChange,
 	onSubmit,
 	isSubmitting,
-}) => {
+ }) => {
 	const [name, setName] = React.useState('');
 	const [description, setDescription] = React.useState('');
 	const [envVar, setEnvVar] = React.useState('');

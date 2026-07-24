@@ -8,6 +8,16 @@ import {
 } from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
+import {$api} from '#/api/query';
+
+function ProjectNameBreadcrumb({ id }: { id: number }) {
+	const { data: project } = $api.useQuery(
+		'get',
+		'/projects/{id}',
+		{ params: { path: { id } } }
+	);
+	return <>{project?.name || 'Loading...'}</>;
+}
 
 export const Route = createFileRoute('/_app')({
 	component: AppLayout,
@@ -46,8 +56,12 @@ function AppLayout() {
 								{pathSegments.map((segment, index) => {
 									const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
 									const isLast = index === pathSegments.length - 1;
-									const label =
-										segment.charAt(0).toUpperCase() + segment.slice(1);
+									const isProjectParam = index > 0 && pathSegments[index - 1] === 'projects' && !isNaN(Number(segment));
+									const label = isProjectParam ? (
+										<ProjectNameBreadcrumb id={Number(segment)} />
+									) : (
+										segment.charAt(0).toUpperCase() + segment.slice(1)
+									);
 
 									return (
 										<React.Fragment key={path}>

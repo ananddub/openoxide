@@ -103,6 +103,7 @@ impl ApplicationService {
                 .await
                 .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
             if services.is_empty() {
+                self.repo_app.update_status(id, "IDLE").await?;
                 return Ok(false);
             }
             let mut flag = false;

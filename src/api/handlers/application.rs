@@ -281,11 +281,7 @@ impl ApplicationController {
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         match self.service.cancel_operation(id).await {
-            Ok(true) => Ok(StatusCode::ACCEPTED),
-            Ok(false) => Err((
-                StatusCode::CONFLICT,
-                "no running application deployment to cancel".into(),
-            )),
+            Ok(_) => Ok(StatusCode::OK),
             Err(error) => Err(map_sqlx_error(error)),
         }
     }

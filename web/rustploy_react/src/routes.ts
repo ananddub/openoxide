@@ -11,7 +11,8 @@ export const routes = rootRoute('_root.tsx', [
 		index('index.tsx'),
 		route('projects', 'projects/index.tsx'),
 		route('projects/$id', 'projects/detail.tsx'),
-		route('Deployments', 'deployments.tsx'),
+		route('projects/$id/app/$appId', 'projects/app-detail.tsx'),
+		route('Deployments', 'deployments/index.tsx'),
 		route('schedules', 'schedules.tsx'),
 	]),
 	// Auth Pages
