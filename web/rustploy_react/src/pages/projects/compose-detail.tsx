@@ -12,6 +12,7 @@ import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compos
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
+import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
 import {ComposeAdvancedTab} from '#/components/projects/compose/detail/compose-advanced-tab';
 
