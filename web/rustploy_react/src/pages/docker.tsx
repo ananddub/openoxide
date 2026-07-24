@@ -50,20 +50,26 @@ export function DockerPage() {
 		const runningList = Array.isArray(rawRunning) ? rawRunning : [];
 
 		if (dockerList.length > 0) {
-			return dockerList.map((item: any, idx: number) => ({
-				id: String(item.id || item.ID || `cnt-${idx + 1}`).slice(0, 12),
-				name: (item.names || item.Names || item.name || `container-${idx + 1}`).replace(/^\//, ''),
-				image: item.image || item.Image || 'docker-image:latest',
-				status: (item.state || item.State || item.status || 'running').toLowerCase().includes('running') || (item.status || '').toLowerCase().includes('up') ? 'running' : 'stopped',
-				statusText: item.status || item.Status || item.running_for || 'Up (healthy)',
-				created: item.created_at || item.CreatedAt || item.running_for || 'Recently',
-				ports: item.ports || item.Ports || '80/tcp -> 0.0.0.0:80',
-				networks: item.networks ? String(item.networks).split(',') : ['bridge', 'traefik_proxy'],
-				mounts: item.mounts
-					? [{source: item.mounts, destination: '/data', mode: 'rw'}]
-					: [{source: '/var/lib/docker', destination: '/usr/src/app', mode: 'rw'}],
-				env: {CONTAINER_ID: item.id || `cnt-${idx + 1}`},
-			}));
+			return dockerList.map((item: any, idx: number) => {
+				const stateStr = (item.state || item.State || item.status || '').toLowerCase();
+				const statusStr = (item.status || item.Status || '').toLowerCase();
+				const isRunning = stateStr.includes('running') || statusStr.startsWith('up');
+
+				return {
+					id: String(item.id || item.ID || `cnt-${idx + 1}`).slice(0, 12),
+					name: (item.names || item.Names || item.name || `container-${idx + 1}`).replace(/^\//, ''),
+					image: item.image || item.Image || 'docker-image:latest',
+					status: isRunning ? 'running' : 'stopped',
+					statusText: item.status || item.Status || item.running_for || (isRunning ? 'Up (active)' : 'Exited'),
+					created: item.created_at || item.CreatedAt || item.running_for || 'Recently',
+					ports: item.ports || item.Ports || '—',
+					networks: item.networks ? String(item.networks).split(',') : ['bridge'],
+					mounts: item.mounts
+						? [{source: item.mounts, destination: '/data', mode: 'rw'}]
+						: [],
+					env: {CONTAINER_ID: item.id || `cnt-${idx + 1}`},
+				};
+			});
 		}
 
 		return runningList.map((item: any, idx: number) => ({

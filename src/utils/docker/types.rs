@@ -2,10 +2,18 @@ use poem_openapi::Object;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+fn deserialize_null_default<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let opt = Option::<String>::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
+
 macro_rules! docker_row {
     ($name:ident { $($field:ident : $rename:literal),* $(,)? }) => {
         #[derive(Clone, Debug, Default, Deserialize, Serialize, Object, PartialEq, Eq)]
-        pub struct $name { $(#[serde(rename = $rename, default)] pub $field: String,)* }
+        pub struct $name { $(#[serde(rename = $rename, default, deserialize_with = "deserialize_null_default")] pub $field: String,)* }
     };
 }
 
