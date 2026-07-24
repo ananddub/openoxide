@@ -32,6 +32,7 @@ pub struct DomainRecord {
     pub updated_at: i64,
 }
 
+#[derive(Clone)]
 pub struct DomainService {
     db: Arc<SqlitePool>,
     repo_domain: Arc<DomainRepository>,
@@ -104,12 +105,16 @@ impl DomainService {
             )
             .await?;
 
-        if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
-            self.apply_application_traefik(app_id).await;
-        }
-        if let Some(compose_id) = domain.compose_id.filter(|&id| id > 0) {
-            self.apply_compose_traefik(compose_id).await;
-        }
+        let this = self.clone();
+        let domain_clone = domain.clone();
+        tokio::spawn(async move {
+            if let Some(app_id) = domain_clone.application_id.filter(|&id| id > 0) {
+                this.apply_application_traefik(app_id).await;
+            }
+            if let Some(compose_id) = domain_clone.compose_id.filter(|&id| id > 0) {
+                this.apply_compose_traefik(compose_id).await;
+            }
+        });
 
         Ok(domain)
     }
@@ -152,13 +157,17 @@ impl DomainService {
             )
             .await?;
 
-        // Auto-apply traefik labels after domain update.
-        if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
-            self.apply_application_traefik(app_id).await;
-        }
-        if let Some(compose_id) = domain.compose_id.filter(|&id| id > 0) {
-            self.apply_compose_traefik(compose_id).await;
-        }
+        // Auto-apply traefik labels asynchronously after domain update.
+        let this = self.clone();
+        let domain_clone = domain.clone();
+        tokio::spawn(async move {
+            if let Some(app_id) = domain_clone.application_id.filter(|&id| id > 0) {
+                this.apply_application_traefik(app_id).await;
+            }
+            if let Some(compose_id) = domain_clone.compose_id.filter(|&id| id > 0) {
+                this.apply_compose_traefik(compose_id).await;
+            }
+        });
 
         Ok(domain)
     }
@@ -167,12 +176,15 @@ impl DomainService {
         let domain = self.get_by_id(id).await?;
         self.repo_domain.delete(id).await?;
 
-        if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
-            self.apply_application_traefik(app_id).await;
-        }
-        if let Some(compose_id) = domain.compose_id.filter(|&id| id > 0) {
-            self.apply_compose_traefik(compose_id).await;
-        }
+        let this = self.clone();
+        tokio::spawn(async move {
+            if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
+                this.apply_application_traefik(app_id).await;
+            }
+            if let Some(compose_id) = domain.compose_id.filter(|&id| id > 0) {
+                this.apply_compose_traefik(compose_id).await;
+            }
+        });
 
         Ok(())
     }
