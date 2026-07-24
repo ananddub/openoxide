@@ -1,3 +1,4 @@
+import {useNavigate} from '@tanstack/react-router';
 import {CreateEnvDialog} from '#/components/projects/env/create-env-dialog';
 import {EnvVariablesModal} from '#/components/projects/env/env-variables-modal';
 import {CreateAppDialog} from '#/components/projects/app/create-app-dialog';
@@ -47,6 +48,7 @@ export function ProjectModals({
 	handleRefresh,
 	envsRefetch,
 }: ProjectModalsProps) {
+	const navigate = useNavigate();
 	return (
 		<>
 			{showCreateEnv && (
@@ -96,7 +98,12 @@ export function ProjectModals({
 					isOpen={showCreateCompose}
 					onClose={() => setShowCreateCompose(false)}
 					environmentId={selectedEnvId}
-					onCreated={handleRefresh}
+					onCreated={(compose) => {
+						handleRefresh();
+						if (compose?.id) {
+							navigate({ to: `/projects/${projectId}/compose/${compose.id}` as any });
+						}
+					}}
 				/>
 			)}
 
