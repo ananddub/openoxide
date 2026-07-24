@@ -39,6 +39,17 @@ pub(super) async fn write_labeled_compose(
         .await
 }
 
+pub fn inject_compose_yaml_labels(yaml_str: &str, spec: &ComposeSpec) -> Result<String, String> {
+    let mut document = serde_yaml::from_str::<Value>(yaml_str)
+        .map_err(|e| format!("invalid compose yaml: {e}"))?;
+
+    inject_domain_labels(&mut document, spec)
+        .map_err(|e| format!("failed to inject domain labels: {e}"))?;
+
+    serde_yaml::to_string(&document)
+        .map_err(|e| format!("failed to serialize yaml: {e}"))
+}
+
 fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<()> {
     let root = mapping_mut(document, "compose root must be a yaml object")?;
     let services = root

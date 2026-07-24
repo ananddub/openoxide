@@ -379,17 +379,30 @@ impl DomainService {
                     "{}/{app_name}/.env",
                     paths.compose_dir("").trim_end_matches('/')
                 );
-                let compose_file = format!(
+                let compose_file_path = format!(
                     "{}/{app_name}/source/docker-compose.yml",
                     paths.compose_dir("").trim_end_matches('/')
                 );
+
+                if let Ok(raw_yaml) = tokio::fs::read_to_string(&compose_file_path).await {
+                    let adapter = crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
+                        self.repo_compose.clone(),
+                        self.repo_domain.clone(),
+                        Arc::new(crate::repository::MountRepository::new(self.db.clone())),
+                    );
+                    if let Ok(spec) = adapter.load(compose_id).await {
+                        if let Ok(updated_yaml) = crate::utils::builder::compose::labels::inject_compose_yaml_labels(&raw_yaml, &spec) {
+                            let _ = tokio::fs::write(&compose_file_path, updated_yaml).await;
+                        }
+                    }
+                }
 
                 docker
                     .compose()
                     .up()
                     .project(&app_name)
                     .env_file(&env_file)
-                    .file(&compose_file)
+                    .file(&compose_file_path)
                     .detach()
                     .custom_arg("--no-build")
                     .run()
