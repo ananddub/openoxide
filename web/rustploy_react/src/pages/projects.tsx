@@ -11,6 +11,7 @@ import {ProjectCard} from '#/components/projects/project-card';
 import {EmptyState} from '#/components/projects/empty-state';
 import {CreateProjectDialog} from '#/components/projects/create-project-dialog';
 import {useOrganizationStore} from '#/stores/organization-store';
+import {formatApiError} from '#/api/utils';
 
 export const Route = createFileRoute('/_app/projects')({
 	component: ProjectsPage,
@@ -68,8 +69,7 @@ function ProjectsPage() {
 			});
 
 			if (error) {
-				const errBody = error as any;
-				toast.error(errBody?.message || 'Failed to create project');
+				toast.error(formatApiError(error));
 			} else {
 				toast.success('Project created successfully!');
 				setIsCreateOpen(false);
@@ -103,8 +103,7 @@ function ProjectsPage() {
 			});
 
 			if (error) {
-				const errBody = error as any;
-				toast.error(errBody?.message || 'Failed to delete project');
+				toast.error(formatApiError(error));
 			} else {
 				toast.success('Project deleted successfully');
 				queryClient.invalidateQueries({
