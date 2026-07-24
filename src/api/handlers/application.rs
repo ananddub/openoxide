@@ -65,6 +65,7 @@ impl ApplicationController {
             .map_err(map_sqlx_error)
     }
 
+
     #[post]
     async fn create(
         &self,

@@ -106,7 +106,7 @@ impl TerminalSocket {
         let shell = input.shell.unwrap_or_else(|| "sh".into());
         let mut command = Command::new("docker");
         command
-            .args(["exec", "-i", &input.container, &shell])
+            .args(["exec", "-it", &input.container, &shell])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
