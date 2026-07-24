@@ -1,6 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {LogLine} from '#/components/shared/log-line';
 
 interface LogsTabProps {
 	app: any;
@@ -245,8 +246,10 @@ export function LogsTab({app}: LogsTabProps) {
 					<p>No container log entries found. The application container may be stopped or initializing.</p>
 				</div>
 			) : (
-				<div ref={scrollRef} className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-[11px] h-96 overflow-y-auto flex flex-col gap-1">
-					{streamedLogs.map((line, idx) => renderLogLine(line, idx))}
+				<div ref={scrollRef} className="rounded-xl bg-[#090d16] border border-border/80 p-3 font-mono text-xs h-96 overflow-y-auto flex flex-col gap-0.5 shadow-inner">
+					{streamedLogs.map((line, idx) => (
+						<LogLine key={idx} line={line} index={idx} />
+					))}
 				</div>
 			)}
 		</div>

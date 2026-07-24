@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {LogViewer} from '#/components/shared/log-viewer';
+import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
@@ -312,7 +312,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 							</Button>
 						</div>
 						<div className="p-4 overflow-y-auto">
-							<LogViewer
+							<DeploymentViewer
 								logs={liveLogs}
 								isLoading={liveLogs.length === 0}
 								isLive={true}
