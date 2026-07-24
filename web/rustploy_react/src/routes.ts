@@ -12,6 +12,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('projects', 'projects/index.tsx'),
 		route('projects/$id', 'projects/detail.tsx'),
 		route('projects/$id/app/$appId', 'projects/app-detail.tsx'),
+		route('projects/$id/compose/$composeId', 'projects/compose-detail.tsx'),
 		route('Deployments', 'deployments/index.tsx'),
 		route('schedules', 'schedules.tsx'),
 	]),

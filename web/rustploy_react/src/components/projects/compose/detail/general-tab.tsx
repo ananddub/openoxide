@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import Editor from '@monaco-editor/react';
-import {Play, RotateCw, Square, RefreshCw, Save, Github, Code2, Upload, GitBranch} from 'lucide-react';
+import {Play, RotateCw, Square, RefreshCw, Save, Code2, Upload, GitBranch} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
@@ -124,7 +124,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 							className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
 								sourceType === 'GITHUB' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
 							}`}>
-							<Github className="w-3.5 h-3.5" /> GitHub
+							<GitBranch className="w-3.5 h-3.5" /> GitHub
 						</button>
 					</div>
 				</div>
