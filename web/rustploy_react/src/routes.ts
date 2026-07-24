@@ -10,6 +10,7 @@ export const routes = rootRoute('_root.tsx', [
 	layout('_app.tsx', [
 		index('index.tsx'),
 		route('projects', 'projects.tsx'),
+		route('Deployments', 'deployments.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [
