@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {LogLine} from '#/components/shared/log-line';
+import {LogViewer} from '#/components/shared/log-viewer';
 
 interface LogsTabProps {
 	app: any;
@@ -183,42 +183,19 @@ export function LogsTab({app}: LogsTabProps) {
 						<option value="1000">1000 lines</option>
 					</select>
 
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => setRefetchTrigger(prev => prev + 1)}
-						className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5"
-					>
-						<RefreshCw className="w-3.5 h-3.5" /> Refresh
-					</Button>
-
-					{streamedLogs.length > 0 && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleDownload}
-							className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5"
-						>
-							<Download className="w-3.5 h-3.5" /> Download
-						</Button>
-					)}
 				</div>
 			</div>
 
-			{isLoading && streamedLogs.length === 0 ? (
-				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex items-center justify-center text-zinc-500">
-					<RefreshCw className="w-4 h-4 animate-spin mr-2" /> Connecting to real-time container log stream...
-				</div>
-			) : streamedLogs.length === 0 ? (
-				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex flex-col items-center justify-center text-zinc-600">
-					<FileText className="w-8 h-8 mb-2 opacity-50" />
-					<p>No container log entries found. The application container may be stopped or initializing.</p>
-				</div>
-			) : (
-				<div ref={scrollRef} className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-[11px] h-96 overflow-y-auto flex flex-col gap-1">
-					{streamedLogs.map((line, idx) => renderLogLine(line, idx))}
-				</div>
-			)}
+			{/* Rich Dokploy-Grade LogViewer Component */}
+			<LogViewer
+				logs={streamedLogs}
+				isLoading={isLoading}
+				isLive={isLive}
+				loadingText="Connecting to real-time container log stream..."
+				emptyText="No container log entries found. The application container may be stopped or initializing."
+				onDownload={handleDownload}
+				onReload={() => setRefetchTrigger(prev => prev + 1)}
+			/>
 		</div>
 	);
 }
