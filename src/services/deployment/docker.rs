@@ -121,9 +121,25 @@ impl DeploymentService {
         options: Vec<String>,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
+        let mut logs_subcommand = "service";
+        let mut resolved_target = target.clone();
+
+        if let Ok(containers) = docker
+            .containers()
+            .ps()
+            .filter(crate::utils::docker::query::ContainerFilter::Name(target.clone()))
+            .list()
+            .await
+        {
+            if let Some(first) = containers.first() {
+                resolved_target = first.names.trim_start_matches('/').to_string();
+                logs_subcommand = "container";
+            }
+        }
+
         Ok(spawn_docker_stream(
             docker,
-            docker_logs_command("service", target, options),
+            docker_logs_command(logs_subcommand, resolved_target, options),
         ))
     }
 
