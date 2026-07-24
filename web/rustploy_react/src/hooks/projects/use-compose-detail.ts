@@ -22,13 +22,13 @@ export function useComposeDetail(composeId: number) {
 	const cancelMutation = $api.useMutation('post', '/compose/{id}/cancel');
 
 	const handleAction = async (
-		action: 'deploy' | 'redeploy' | 'start' | 'stop' | 'reload' | 'cancel',
+		action: 'deploy' | 'redeploy' | 'rebuild' | 'start' | 'stop' | 'reload' | 'cancel',
 	) => {
 		try {
 			if (action === 'deploy') {
 				await deployMutation.mutateAsync({params: {path: {id: composeId}}});
 				toast.success('Compose deployment started');
-			} else if (action === 'redeploy') {
+			} else if (action === 'redeploy' || action === 'rebuild') {
 				await redeployMutation.mutateAsync({params: {path: {id: composeId}}});
 				toast.success('Compose redeploy triggered');
 			} else if (action === 'start') {
