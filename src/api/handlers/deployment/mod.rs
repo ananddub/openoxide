@@ -193,6 +193,19 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
+    #[get("/docker/containers")]
+    async fn docker_global_containers(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Query(query): Query<DockerLogQuery>,
+    ) -> Result<Json<Vec<crate::utils::docker::ContainerSummary>>, ApiError> {
+        self.service
+            .list_docker_containers(query.server_id, true)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     #[get("/docker/container/{target}/stats", sse = DeploymentSseEventDto)]
     async fn docker_container_stats(
         &self,

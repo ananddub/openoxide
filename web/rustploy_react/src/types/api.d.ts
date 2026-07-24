@@ -1044,6 +1044,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/deployments/docker/containers': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations['DeploymentController::docker_global_containers'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	'/deployments/docker/compose/logs': {
 		parameters: {
 			query?: never;
@@ -6060,6 +6076,28 @@ export interface operations {
 				};
 				content: {
 					'text/event-stream': components['schemas']['DeploymentSseEventDto'];
+				};
+			};
+		};
+	};
+	'DeploymentController::docker_global_containers': {
+		parameters: {
+			query?: {
+				server_id?: number;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Successful response */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': any[];
 				};
 			};
 		};

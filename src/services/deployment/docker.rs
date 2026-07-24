@@ -139,6 +139,20 @@ impl DeploymentService {
         Ok(spawn_stats_stream(docker, Vec::new(), stream))
     }
 
+    pub async fn list_docker_containers(
+        &self,
+        server_id: Option<i64>,
+        all: bool,
+    ) -> sqlx::Result<Vec<crate::utils::docker::ContainerSummary>> {
+        let docker = self.docker_for_server(server_id).await?;
+        let handle = docker.containers();
+        let mut query = handle.ps();
+        if all {
+            query = query.all();
+        }
+        query.list().await.map_err(|error| sqlx::Error::Protocol(error.to_string()))
+    }
+
     pub async fn stream_docker_service_logs(
         &self,
         server_id: Option<i64>,

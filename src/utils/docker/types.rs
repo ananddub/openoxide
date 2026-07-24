@@ -1,9 +1,10 @@
-use serde::Deserialize;
+use poem_openapi::Object;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 macro_rules! docker_row {
     ($name:ident { $($field:ident : $rename:literal),* $(,)? }) => {
-        #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+        #[derive(Clone, Debug, Default, Deserialize, Serialize, Object, PartialEq, Eq)]
         pub struct $name { $(#[serde(rename = $rename, default)] pub $field: String,)* }
     };
 }
