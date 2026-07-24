@@ -108,27 +108,8 @@ export function ComposeDeployCard({compose, handleAction, onUpdated}: ComposeDep
 						<Hammer className="w-3.5 h-3.5" /> Rebuild
 					</Button>
 
-					<Button
-						disabled={isProcessing || isBuilding}
-						onClick={() => setConfirmAction('start')}
-						variant="outline"
-						size="sm"
-						className="h-8 text-xs font-semibold flex items-center gap-1.5"
-					>
-						<Play className="w-3.5 h-3.5 text-emerald-400" /> Start
-					</Button>
-
-					<Button
-						disabled={isProcessing || isBuilding}
-						onClick={() => setConfirmAction('stop')}
-						variant="outline"
-						size="sm"
-						className="h-8 text-xs font-semibold flex items-center gap-1.5 border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
-					>
-						<Square className="w-3.5 h-3.5" /> Stop
-					</Button>
-
-					{isBuilding && (
+					{/* Dynamic 3-State Action Button: Cancel (Building), Stop (Running), Start (Stopped) */}
+					{isBuilding ? (
 						<Button
 							disabled={isProcessing}
 							onClick={() => setConfirmAction('cancel')}
@@ -137,6 +118,26 @@ export function ComposeDeployCard({compose, handleAction, onUpdated}: ComposeDep
 							className="h-8 text-xs font-semibold flex items-center gap-1.5"
 						>
 							<StopCircle className="w-3.5 h-3.5" /> Cancel Build
+						</Button>
+					) : (compose?.compose_status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'deployed') ? (
+						<Button
+							disabled={isProcessing}
+							onClick={() => setConfirmAction('stop')}
+							variant="outline"
+							size="sm"
+							className="h-8 text-xs font-semibold flex items-center gap-1.5 border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+						>
+							<Square className="w-3.5 h-3.5" /> Stop
+						</Button>
+					) : (
+						<Button
+							disabled={isProcessing}
+							onClick={() => setConfirmAction('start')}
+							variant="outline"
+							size="sm"
+							className="h-8 text-xs font-semibold flex items-center gap-1.5 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+						>
+							<Play className="w-3.5 h-3.5 fill-current" /> Start
 						</Button>
 					)}
 				</div>
