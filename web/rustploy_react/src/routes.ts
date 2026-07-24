@@ -7,7 +7,10 @@ import {
 
 export const routes = rootRoute('_root.tsx', [
 	// App Pages
-	layout('_app.tsx', [index('index.tsx')]),
+	layout('_app.tsx', [
+		index('index.tsx'),
+		route('projects', 'projects.tsx'),
+	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [
 		route('singup', 'auth/singup.tsx'),
