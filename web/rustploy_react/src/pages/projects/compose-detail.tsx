@@ -13,7 +13,7 @@ import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
 import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
-import {AdvancedTab} from '#/components/projects/app/detail/advanced-tab';
+import {ComposeAdvancedTab} from '#/components/projects/compose/detail/compose-advanced-tab';
 
 export const Route = createFileRoute('/_app/projects/$id/compose/$composeId')({
 	component: ComposeDetailPage,
@@ -159,7 +159,7 @@ function ComposeDetailPage() {
 					<MonitoringTab app={compose} />
 				)}
 				{activeTab === 'Advanced' && (
-					<AdvancedTab app={compose} onUpdated={refetch} />
+					<ComposeAdvancedTab compose={compose} />
 				)}
 			</div>
 		</div>
