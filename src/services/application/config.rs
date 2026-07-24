@@ -69,6 +69,7 @@ impl ApplicationService {
             };
 
             // 1. Live cgroup update for container resources (memory/cpu)
+            let mut has_cgroup_update = false;
             if let Ok(containers) = docker
                 .containers()
                 .ps()
@@ -83,14 +84,18 @@ impl ApplicationService {
                     if let Some(mem) = mem_lim {
                         if !mem.trim().is_empty() {
                             update_builder = update_builder.memory_str(mem);
+                            has_cgroup_update = true;
                         }
                     }
                     if let Some(cpu) = cpu_lim {
                         if !cpu.trim().is_empty() {
                             update_builder = update_builder.cpus_str(cpu);
+                            has_cgroup_update = true;
                         }
                     }
-                    let _ = update_builder.run().await;
+                    if has_cgroup_update {
+                        let _ = update_builder.run().await;
+                    }
                 }
             }
 
