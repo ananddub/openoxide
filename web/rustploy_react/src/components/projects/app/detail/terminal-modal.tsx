@@ -192,31 +192,21 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					</div>
 
 					<div className="flex items-center gap-3">
-						{/* Automatic Service Selector for Compose Stacks */}
+						{/* Automatic Service Dropdown Selector for Compose Stacks */}
 						{isCompose && (
 							<div className="flex items-center gap-1.5 bg-muted/40 border border-border rounded-lg px-2.5 py-1">
 								<Box className="w-3.5 h-3.5 text-primary shrink-0" />
-								{availableServices.length > 0 ? (
-									<select
-										value={targetContainer}
-										onChange={e => setSelectedService(e.target.value)}
-										className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
-									>
-										{availableServices.map(service => (
-											<option key={service} value={service}>
-												Service: {service}
-											</option>
-										))}
-									</select>
-								) : (
-									<input
-										type="text"
-										placeholder="Container service (e.g. app)"
-										value={selectedService || 'app'}
-										onChange={e => setSelectedService(e.target.value)}
-										className="bg-transparent text-xs font-mono font-bold text-foreground focus:outline-none w-32"
-									/>
-								)}
+								<select
+									value={targetContainer}
+									onChange={e => setSelectedService(e.target.value)}
+									className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+								>
+									{(availableServices.length > 0 ? availableServices : ['app']).map(service => (
+										<option key={service} value={service}>
+											Service: {service}
+										</option>
+									))}
+								</select>
 							</div>
 						)}
 
