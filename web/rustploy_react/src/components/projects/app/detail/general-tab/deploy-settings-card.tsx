@@ -90,8 +90,8 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 	};
 
 	const isProcessing = activeLoading !== null;
-	const appStatus = (app?.app_status || app?.applicationStatus || app?.application_status || app?.status || '').toLowerCase();
-	const isIdle = !appStatus || appStatus === 'idle' || appStatus === 'stopped' || appStatus === 'cancelled' || appStatus === 'error' || appStatus === 'failed' || appStatus === 'crashed';
+	const rawStatus = (app?.app_status || app?.applicationStatus || app?.application_status || app?.status || '').toLowerCase();
+	const isIdle = !rawStatus || rawStatus === 'idle' || rawStatus === 'stopped';
 
 	return (
 		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
