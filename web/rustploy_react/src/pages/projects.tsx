@@ -176,7 +176,7 @@ function ProjectsPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
+		<div className="flex flex-col gap-6 w-full">
 			{/* Page Header */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
 				<div>
