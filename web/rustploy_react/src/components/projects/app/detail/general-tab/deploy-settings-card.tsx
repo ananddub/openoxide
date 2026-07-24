@@ -88,7 +88,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 	};
 
 	const isProcessing = activeLoading !== null;
-	const appStatus = (app?.applicationStatus || app?.application_status || app?.status || '').toLowerCase();
+	const appStatus = (app?.app_status || app?.applicationStatus || app?.application_status || app?.status || '').toLowerCase();
 	const isIdle = !appStatus || appStatus === 'idle' || appStatus === 'stopped' || appStatus === 'cancelled' || appStatus === 'error' || appStatus === 'failed' || appStatus === 'crashed';
 
 	return (
