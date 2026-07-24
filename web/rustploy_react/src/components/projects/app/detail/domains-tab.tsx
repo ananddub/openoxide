@@ -124,7 +124,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 					) : (
 						<div className="grid grid-cols-1 gap-4 xl:grid-cols-2 w-full">
 							{domains.map((d: any) => {
-								const url = `${d.https ? 'https' : 'http'}://${d.host}${d.port && d.port !== 80 && d.port !== 443 ? `:${d.port}` : ''}${d.path || ''}`;
+								const url = `${d.https ? 'https' : 'http'}://${d.host}${d.path && d.path !== '/' ? d.path : ''}`;
 								return (
 									<Card key={d.id} className="relative overflow-hidden w-full border border-border transition-all hover:shadow-sm bg-card">
 										<CardContent className="p-5 flex flex-col gap-3">
