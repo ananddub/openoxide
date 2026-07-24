@@ -37,7 +37,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 				const key = line.slice(0, eqIdx + 1);
 				const val = line.slice(eqIdx + 1);
 				if (!val) return line;
-				return `${key}••••••••`;
+				return `${key}${'•'.repeat(val.length)}`;
 			})
 			.join('\n');
 	};
