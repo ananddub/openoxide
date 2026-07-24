@@ -1,6 +1,13 @@
 import {useEffect, useRef, useState, useMemo} from 'react';
 import {Terminal as TerminalIcon, X, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -69,6 +76,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	}, [availableServices, isCompose, app]);
 
 	const targetContainer = selectedService || defaultContainer;
+	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
 	useEffect(() => {
 		if (!open || !termRef.current) return;
@@ -192,22 +200,21 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					</div>
 
 					<div className="flex items-center gap-3">
-						{/* Automatic Service Dropdown Selector for Compose Stacks */}
+						{/* Shadcn Premium Automatic Service Dropdown Selector */}
 						{isCompose && (
-							<div className="flex items-center gap-1.5 bg-muted/40 border border-border rounded-lg px-2.5 py-1">
-								<Box className="w-3.5 h-3.5 text-primary shrink-0" />
-								<select
-									value={targetContainer}
-									onChange={e => setSelectedService(e.target.value)}
-									className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
-								>
-									{(availableServices.length > 0 ? availableServices : ['app']).map(service => (
-										<option key={service} value={service}>
-											Service: {service}
-										</option>
+							<Select value={targetContainer} onValueChange={v => setSelectedService(v)}>
+								<SelectTrigger size="sm" className="h-8 text-xs font-bold bg-muted/50 border-border hover:bg-muted/80">
+									<Box className="w-3.5 h-3.5 text-primary shrink-0 mr-1" />
+									<SelectValue placeholder="Select Service" />
+								</SelectTrigger>
+								<SelectContent>
+									{servicesList.map(service => (
+										<SelectItem key={service} value={service}>
+											<span className="font-semibold">Service: {service}</span>
+										</SelectItem>
 									))}
-								</select>
-							</div>
+								</SelectContent>
+							</Select>
 						)}
 
 						{/* Shell Switcher */}
