@@ -119,19 +119,19 @@ export function ComposeSourceCard({
 					</div>
 				</div>
 			) : provider === 'GIT' ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
 					<div className="flex flex-col gap-1.5 md:col-span-2">
 						<label className="text-xs font-semibold text-foreground">Repository URL *</label>
 						<Input value={gitUrl} onChange={e => setGitUrl(e.target.value)} placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git" className="h-9 text-xs font-mono" />
 					</div>
 
-					<div className="flex flex-col gap-1.5">
+					<div className="flex flex-col gap-1.5 md:col-span-1">
 						<label className="text-xs font-semibold text-foreground">SSH Key (Optional for private repos)</label>
 						<Select
 							value={gitSshKeyId ? String(gitSshKeyId) : 'none'}
 							onValueChange={v => setGitSshKeyId(v === 'none' ? undefined : Number(v))}
 						>
-							<SelectTrigger className="h-9 text-xs font-mono">
+							<SelectTrigger className="w-full h-9 text-xs font-mono bg-card border-border">
 								<SelectValue placeholder="No SSH Key Selected" />
 							</SelectTrigger>
 							<SelectContent>
@@ -145,7 +145,7 @@ export function ComposeSourceCard({
 						</Select>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
+					<div className="flex flex-col gap-1.5 md:col-span-1">
 						<label className="text-xs font-semibold text-foreground">Git Branch *</label>
 						<Input value={gitBranch} onChange={e => setGitBranch(e.target.value)} placeholder="main" className="h-9 text-xs font-mono" />
 					</div>
