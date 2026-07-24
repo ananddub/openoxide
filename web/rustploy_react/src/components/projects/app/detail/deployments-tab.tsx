@@ -1,6 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {LogViewer} from '#/components/shared/log-viewer';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
@@ -297,10 +298,10 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 				)}
 			</section>
 
-			{/* Realtime Stream Logs Modal */}
+			{/* Realtime Stream Logs Modal — Rich Dokploy-Grade LogViewer! */}
 			{activeLogId && (
 				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-					<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden max-h-[80vh]">
+					<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[85vh]">
 						<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
 							<div className="flex items-center gap-2">
 								<Terminal className="w-4 h-4 text-foreground" />
@@ -310,14 +311,14 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 								<X className="w-4 h-4" />
 							</Button>
 						</div>
-						<div ref={logContainerRef} className="p-4 bg-zinc-950 font-mono text-[11px] h-96 overflow-y-auto flex flex-col gap-1">
-							{liveLogs.length === 0 ? (
-								<div className="flex items-center justify-center h-full text-zinc-500">
-									<RefreshCw className="w-4 h-4 animate-spin mr-2" /> Connecting to realtime SSE log stream...
-								</div>
-							) : (
-								liveLogs.map((l, i) => renderLogLine(l, i))
-							)}
+						<div className="p-4 overflow-y-auto">
+							<LogViewer
+								logs={liveLogs}
+								isLoading={liveLogs.length === 0}
+								isLive={true}
+								loadingText="Connecting to realtime SSE deployment stream..."
+								emptyText="No deployment build log entries available."
+							/>
 						</div>
 					</div>
 				</div>
