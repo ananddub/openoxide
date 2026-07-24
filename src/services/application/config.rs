@@ -53,6 +53,7 @@ impl ApplicationService {
         let server_id = updated.server_id;
         let mem_lim = input.memory_limit;
         let cpu_lim = input.cpu_limit;
+        let target_replicas = input.replicas;
         let db_pool = self.db.clone();
 
         tokio::spawn(async move {
@@ -67,6 +68,7 @@ impl ApplicationService {
                 None => crate::utils::docker::DockerCli::new_local(),
             };
 
+            // 1. Live cgroup update for container resources (memory/cpu)
             if let Ok(containers) = docker
                 .containers()
                 .ps()
@@ -89,6 +91,13 @@ impl ApplicationService {
                         }
                     }
                     let _ = update_builder.run().await;
+                }
+            }
+
+            // 2. Live Swarm service scaling if replicas is provided
+            if let Some(reps) = target_replicas {
+                if reps > 0 {
+                    let _ = docker.services().scale().service(&app_name, reps as u32).run().await;
                 }
             }
         });
