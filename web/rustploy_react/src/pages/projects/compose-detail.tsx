@@ -8,7 +8,7 @@ import {$api} from '#/api/query';
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
 import {EnvironmentTab} from '#/components/projects/app/detail/environment-tab';
 import {ComposeDomainsTab} from '#/components/projects/compose/detail/compose-domains-tab';
-import {DeploymentsTab} from '#/components/projects/app/detail/deployments-tab';
+import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compose-deployments-tab';
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {SchedulesTab} from '#/components/projects/app/detail/schedules-tab';
@@ -138,7 +138,7 @@ function ComposeDetailPage() {
 					<ComposeDomainsTab composeId={parsedComposeId} />
 				)}
 				{activeTab === 'Deployments' && (
-					<DeploymentsTab targetId={parsedComposeId} targetType="compose" />
+					<ComposeDeploymentsTab composeId={parsedComposeId} />
 				)}
 				{activeTab === 'Schedules' && (
 					<SchedulesTab targetId={parsedComposeId} targetType="compose" />
