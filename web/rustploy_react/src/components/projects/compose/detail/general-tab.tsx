@@ -1,12 +1,27 @@
 import {useState, useEffect} from 'react';
 import Editor from '@monaco-editor/react';
-import {Play, RotateCw, Square, RefreshCw, Save, Code2, Upload, GitBranch} from 'lucide-react';
-import {GithubIcon} from '#/components/icons/data-tools-icons';
+import {
+	Rocket,
+	RotateCw,
+	Play,
+	Square,
+	RefreshCw,
+	Save,
+	Code2,
+	UploadCloud,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {
+	GithubIcon,
+	GitlabIcon,
+	BitbucketIcon,
+	GiteaIcon,
+	GitIcon,
+} from '#/components/icons/data-tools-icons';
 
 interface GeneralTabProps {
 	compose: any;
@@ -15,6 +30,15 @@ interface GeneralTabProps {
 }
 
 export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProps) {
+	const PROVIDERS = [
+		{id: 'RAW', label: 'Raw YML', icon: <Code2 className="w-4 h-4 text-primary" />},
+		{id: 'GITHUB', label: 'GitHub', icon: <GithubIcon className="w-4 h-4" />},
+		{id: 'GITLAB', label: 'GitLab', icon: <GitlabIcon className="w-4.5 h-4.5" />},
+		{id: 'GITEA', label: 'Gitea', icon: <GiteaIcon className="w-4.5 h-4.5" />},
+		{id: 'BITBUCKET', label: 'Bitbucket', icon: <BitbucketIcon className="w-4 h-4" />},
+		{id: 'GIT', label: 'Git', icon: <GitIcon className="w-4.5 h-4.5" />},
+	] as const;
+
 	const [sourceType, setSourceType] = useState<string>(compose?.source_type || 'RAW');
 	const [composeFile, setComposeFile] = useState<string>(compose?.compose_file || '');
 	const [command, setCommand] = useState<string>(compose?.command || '');
@@ -59,7 +83,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					},
 				});
 			}
-			toast.success('Compose configuration saved');
+			toast.success('Compose configuration saved successfully');
 			onUpdated();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -70,68 +94,87 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
-			{/* Action bar */}
-			<div className="bg-card border border-border/80 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-				<div className="flex items-center gap-2">
+			{/* Deploy Controls Settings Card */}
+			<section className="bg-card border border-border/80 rounded-xl p-5 flex flex-col gap-4 shadow-sm">
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
+					<div className="flex items-center gap-3">
+						<div className="size-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+							<Rocket className="w-4.5 h-4.5 text-primary" />
+						</div>
+						<div>
+							<h3 className="text-sm font-bold text-foreground">Deploy Stack</h3>
+							<p className="text-xs text-muted-foreground">Manage deployments, restarts, and runtime controls for this compose stack.</p>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-500">
+							<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+							{compose?.compose_status || 'Active'}
+						</span>
+					</div>
+				</div>
+
+				<div className="flex flex-wrap items-center gap-2.5 pt-1">
 					<Button
 						onClick={() => onAction('deploy')}
 						className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 shadow-md shadow-primary/10">
-						<Play className="w-3.5 h-3.5 fill-current" /> Deploy Stack
+						<Rocket className="w-3.5 h-3.5" /> Deploy Stack
 					</Button>
 					<Button
 						onClick={() => onAction('redeploy')}
 						variant="outline"
 						className="border-border text-foreground hover:bg-muted text-xs h-9 px-3.5 rounded-lg flex items-center gap-1.5 font-semibold">
-						<RotateCw className="w-3.5 h-3.5" /> Redeploy
+						<RotateCw className="w-3.5 h-3.5 text-muted-foreground" /> Redeploy
 					</Button>
 					<Button
 						onClick={() => onAction('start')}
 						variant="outline"
-						className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 text-xs h-9 px-3 rounded-lg font-semibold flex items-center gap-1">
-						Start
+						className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 text-xs h-9 px-3.5 rounded-lg font-semibold flex items-center gap-1.5">
+						<Play className="w-3.5 h-3.5 fill-current" /> Start
 					</Button>
 					<Button
 						onClick={() => onAction('stop')}
 						variant="outline"
-						className="border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs h-9 px-3 rounded-lg font-semibold flex items-center gap-1">
-						<Square className="w-3 h-3 fill-current" /> Stop
+						className="border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs h-9 px-3.5 rounded-lg font-semibold flex items-center gap-1.5">
+						<Square className="w-3.5 h-3.5 fill-current" /> Stop
 					</Button>
 					<Button
 						onClick={() => onAction('reload')}
 						variant="outline"
-						className="border-border text-muted-foreground hover:text-foreground text-xs h-9 px-3 rounded-lg font-semibold flex items-center gap-1">
+						className="border-border text-muted-foreground hover:text-foreground text-xs h-9 px-3.5 rounded-lg font-semibold flex items-center gap-1.5">
 						<RefreshCw className="w-3.5 h-3.5" /> Reload
 					</Button>
 				</div>
-			</div>
+			</section>
 
-			{/* Source selection */}
-			<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<h3 className="text-sm font-bold text-foreground">Compose Source Provider</h3>
-						<p className="text-xs text-muted-foreground mt-0.5">Select how your Docker Compose file is specified.</p>
-					</div>
-					<div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/50">
-						<button
-							onClick={() => setSourceType('RAW')}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
-								sourceType === 'RAW' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-							}`}>
-							<Code2 className="w-3.5 h-3.5" /> Raw YAML
-						</button>
-						<button
-							onClick={() => setSourceType('GITHUB')}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
-								sourceType === 'GITHUB' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-							}`}>
-							<GithubIcon className="w-3.5 h-3.5" /> GitHub
-						</button>
-					</div>
+			{/* Source Settings Provider Card */}
+			<section className="bg-card border border-border/80 rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+				<div>
+					<h3 className="text-sm font-bold text-foreground">Compose Source Provider</h3>
+					<p className="text-xs text-muted-foreground mt-0.5">Choose your compose source: write inline Raw YML or connect to a Git repository.</p>
 				</div>
 
+				{/* Provider Tabs Bar */}
+				<div className="flex flex-wrap gap-2">
+					{PROVIDERS.map(p => (
+						<button
+							key={p.id}
+							type="button"
+							onClick={() => setSourceType(p.id)}
+							className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
+								sourceType === p.id
+									? 'bg-primary/10 border-primary/40 text-primary shadow-sm'
+									: 'bg-muted/20 border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+							}`}>
+							{p.icon}
+							{p.label}
+						</button>
+					))}
+				</div>
+
+				{/* Source Form Content */}
 				{sourceType === 'RAW' ? (
-					<div className="flex flex-col gap-3">
+					<div className="flex flex-col gap-3 pt-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">docker-compose.yml</span>
 							<span className="text-[11px] text-muted-foreground font-mono">YAML Syntax</span>
@@ -186,11 +229,11 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					</div>
 				)}
 
-				<div className="flex justify-end pt-2 border-t border-border/40">
+				<div className="flex justify-end pt-3 border-t border-border/40">
 					<Button
 						onClick={handleSaveConfig}
 						disabled={saving}
-						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5">
+						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 shadow-md shadow-primary/10">
 						<Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Configuration'}
 					</Button>
 				</div>
