@@ -166,13 +166,28 @@ impl DockerCli {
         &self,
         args: &[&str],
     ) -> DockerResult<Vec<T>> {
-        self.run(args)
-            .await?
-            .stdout
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .map(|line| serde_json::from_str(line).map_err(Into::into))
-            .collect()
+        let stdout = self.run(args).await?.stdout;
+        let trimmed = stdout.trim();
+        if trimmed.is_empty() {
+            return Ok(Vec::new());
+        }
+        if trimmed.starts_with('[') {
+            if let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed) {
+                return Ok(vec);
+            }
+        }
+        if trimmed.starts_with('{') {
+            if let Ok(item) = serde_json::from_str::<T>(trimmed) {
+                return Ok(vec![item]);
+            }
+        }
+        let mut items = Vec::new();
+        for line in trimmed.lines().filter(|l| !l.trim().is_empty()) {
+            if let Ok(item) = serde_json::from_str::<T>(line) {
+                items.push(item);
+            }
+        }
+        Ok(items)
     }
     pub(crate) async fn prefixed(
         &self,
@@ -284,13 +299,28 @@ impl DockerCli {
         &self,
         builder: &crate::utils::exec::ArgBuilder,
     ) -> DockerResult<Vec<T>> {
-        self.execute(builder)
-            .await?
-            .stdout
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .map(|line| serde_json::from_str(line).map_err(Into::into))
-            .collect()
+        let stdout = self.execute(builder).await?.stdout;
+        let trimmed = stdout.trim();
+        if trimmed.is_empty() {
+            return Ok(Vec::new());
+        }
+        if trimmed.starts_with('[') {
+            if let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed) {
+                return Ok(vec);
+            }
+        }
+        if trimmed.starts_with('{') {
+            if let Ok(item) = serde_json::from_str::<T>(trimmed) {
+                return Ok(vec![item]);
+            }
+        }
+        let mut items = Vec::new();
+        for line in trimmed.lines().filter(|l| !l.trim().is_empty()) {
+            if let Ok(item) = serde_json::from_str::<T>(line) {
+                items.push(item);
+            }
+        }
+        Ok(items)
     }
 
     pub(crate) async fn list<T: DeserializeOwned>(
