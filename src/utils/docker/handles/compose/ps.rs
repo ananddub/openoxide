@@ -48,7 +48,7 @@ impl<'a> ComposePsBuilder<'a> {
 
     pub async fn list(mut self) -> DockerResult<Vec<ComposeContainer>> {
         self.args.pair("--format", "json");
-        self.cli.execute_json(&self.args).await
+        self.cli.execute_json_lines(&self.args).await
     }
     /// Specify an alternate compose file
     pub fn file(mut self, f: impl Into<String>) -> Self {
