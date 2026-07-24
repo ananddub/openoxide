@@ -26,6 +26,12 @@ const config = defineConfig({
 				secure: false,
 				rewrite: path => path.replace(/^\/api/, ''),
 			},
+			'/socket.io': {
+				target: 'http://das.tail25b5a0.ts.net:4000',
+				ws: true,
+				changeOrigin: true,
+				secure: false,
+			},
 		},
 	},
 });

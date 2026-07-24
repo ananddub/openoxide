@@ -1,7 +1,8 @@
 import {useState} from 'react';
-import {Rocket, RefreshCw, Hammer, Play, Square, X, StopCircle} from 'lucide-react';
+import {Rocket, RefreshCw, Hammer, Play, Square, X, StopCircle, Terminal} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {$api} from '#/api/query';
+import {TerminalModal} from '../terminal-modal';
 
 interface DeploySettingsCardProps {
 	app: any;
@@ -16,6 +17,7 @@ const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELL
 export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySettingsCardProps) {
 	const [autoDeploy, setAutoDeploy] = useState(app.auto_deploy !== false);
 	const [cleanCache, setCleanCache] = useState(false);
+	const [showTerminal, setShowTerminal] = useState(false);
 	
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(null);
 	const [activeLoading, setActiveLoading] = useState<ActionType | null>(null);
@@ -164,6 +166,15 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 							{activeLoading === 'stop' ? 'Stopping...' : 'Stop'}
 						</Button>
 					)}
+					{/* Terminal Access Button */}
+					<Button
+						onClick={() => setShowTerminal(true)}
+						variant="outline"
+						size="sm"
+						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+					>
+						<Terminal className="w-4 h-4 text-primary" /> Open Terminal
+					</Button>
 				</div>
 
 				{/* Switches */}
@@ -219,6 +230,9 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 					</div>
 				</div>
 			)}
+
+			{/* Container Terminal Modal */}
+			<TerminalModal app={app} open={showTerminal} onClose={() => setShowTerminal(false)} />
 		</section>
 	);
 }
