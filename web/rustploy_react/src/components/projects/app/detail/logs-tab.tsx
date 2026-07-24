@@ -78,29 +78,47 @@ export function LogsTab({app}: LogsTabProps) {
 
 					for (const rawLine of rawLines) {
 						const trimmed = rawLine.trim();
-						if (trimmed.startsWith('event:') || trimmed.startsWith('id:') || trimmed.startsWith(':')) continue;
-
-						let textToPush = '';
-						if (rawLine.startsWith('data:')) {
-							const jsonStr = rawLine.slice(5).trim();
-							if (jsonStr.includes('keep-alive')) continue;
-							if (jsonStr) {
-								try {
-									const data = JSON.parse(jsonStr);
-									if (data.type === 'keep-alive') continue;
-									textToPush = data.line !== undefined ? data.line : (data.data || data.message || jsonStr);
-								} catch {
-									textToPush = jsonStr;
-								}
-							}
-						} else {
-							textToPush = rawLine;
+						if (
+							!trimmed ||
+							trimmed.startsWith('event:') ||
+							trimmed.includes('event: log') ||
+							trimmed.includes('event: deployment') ||
+							trimmed.startsWith('id:') ||
+							trimmed.startsWith(':') ||
+							trimmed.includes('keep-alive')
+						) {
+							continue;
 						}
 
-						if (textToPush !== undefined && !textToPush.includes('keep-alive')) {
-							let cleaned = textToPush.replace(/\r?\n$/, '');
+						let textToPush = '';
+						if (trimmed.startsWith('data:')) {
+							const jsonStr = trimmed.slice(5).trim();
+							if (!jsonStr || jsonStr.includes('keep-alive')) continue;
+							try {
+								const data = JSON.parse(jsonStr);
+								if (data.type === 'keep-alive') continue;
+								textToPush = data.line !== undefined ? data.line : (data.data || data.message || jsonStr);
+							} catch {
+								textToPush = jsonStr;
+							}
+						} else {
+							textToPush = trimmed;
+						}
+
+						if (textToPush !== undefined) {
+							let cleaned = textToPush.replace(/\r?\n$/, '').trim();
+							if (
+								!cleaned ||
+								cleaned.startsWith('event:') ||
+								cleaned.includes('event: log') ||
+								cleaned.includes('event: deployment') ||
+								cleaned.includes('keep-alive')
+							) {
+								continue;
+							}
 							if (cleaned.startsWith('logs/')) cleaned = cleaned.slice(5);
 							else if (cleaned.startsWith('log/')) cleaned = cleaned.slice(4);
+
 							if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 						}
 					}
