@@ -22,16 +22,17 @@ interface GeneralTabProps {
 }
 
 export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProps) {
+	// Providers order matching Application SourceSettingsCard — with Raw YML at the LAST!
 	const PROVIDERS = [
-		{id: 'RAW', label: 'Raw YML', icon: <Code2 className="w-4 h-4 text-primary" />},
 		{id: 'GITHUB', label: 'GitHub', icon: <GithubIcon className="w-4 h-4" />},
 		{id: 'GITLAB', label: 'GitLab', icon: <GitlabIcon className="w-4.5 h-4.5" />},
 		{id: 'GITEA', label: 'Gitea', icon: <GiteaIcon className="w-4.5 h-4.5" />},
 		{id: 'BITBUCKET', label: 'Bitbucket', icon: <BitbucketIcon className="w-4 h-4" />},
 		{id: 'GIT', label: 'Git', icon: <GitIcon className="w-4.5 h-4.5" />},
+		{id: 'RAW', label: 'Raw YML', icon: <Code2 className="w-4 h-4 text-primary" />},
 	] as const;
 
-	const [sourceType, setSourceType] = useState<string>(compose?.source_type || 'RAW');
+	const [sourceType, setSourceType] = useState<string>(compose?.source_type || 'GITHUB');
 	const [composeFile, setComposeFile] = useState<string>(compose?.compose_file || '');
 	const [command, setCommand] = useState<string>(compose?.command || '');
 	const [repoUrl, setRepoUrl] = useState<string>(compose?.repository || '');
@@ -44,7 +45,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 
 	useEffect(() => {
 		if (compose) {
-			setSourceType(compose.source_type || 'RAW');
+			setSourceType(compose.source_type || 'GITHUB');
 			setComposeFile(compose.compose_file || '');
 			setCommand(compose.command || '');
 			setRepoUrl(compose.repository || '');
@@ -64,7 +65,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 						command: command || undefined,
 					},
 				});
-			} else if (sourceType === 'GITHUB') {
+			} else {
 				await patchGithubMutation.mutateAsync({
 					params: {path: {id: compose.id}},
 					body: {
@@ -89,29 +90,32 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 			{/* Shared Deploy Settings Card — Exact same card component as Application! */}
 			<DeploySettingsCard app={compose} handleAction={onAction} onUpdated={onUpdated} />
 
-			{/* Source Settings Provider Card */}
-			<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+			{/* Source Settings Provider Card — Exact same styling as Application SourceSettingsCard! */}
+			<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
 				<div>
-					<h3 className="text-sm font-bold text-foreground">Compose Source Provider</h3>
-					<p className="text-xs text-muted-foreground mt-0.5">Choose your compose source: write inline Raw YML or connect to a Git repository.</p>
+					<h3 className="text-sm font-bold text-foreground">Provider Source</h3>
+					<p className="text-xs text-muted-foreground mt-1">Select and configure the repository source code of your compose stack</p>
 				</div>
 
-				{/* Provider Tabs Bar */}
-				<div className="flex flex-wrap gap-2">
-					{PROVIDERS.map(p => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => setSourceType(p.id)}
-							className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-								sourceType === p.id
-									? 'bg-primary/10 border-primary/40 text-primary shadow-sm'
-									: 'bg-muted/20 border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
-							}`}>
-							{p.icon}
-							{p.label}
-						</button>
-					))}
+				{/* Provider Tabs Bar — Identical bottom border tab bar to Application! */}
+				<div className="flex flex-wrap border-b border-border/60 gap-1 pb-1 relative w-full -mb-[1px]">
+					{PROVIDERS.map(p => {
+						const isActive = sourceType === p.id;
+						return (
+							<button
+								key={p.id}
+								type="button"
+								onClick={() => setSourceType(p.id)}
+								className={`text-xs font-bold px-3.5 pb-2 pt-2 transition-all flex items-center gap-1.5 cursor-pointer border-b-2 -mb-[1px] ${
+									isActive 
+										? 'border-foreground text-foreground font-bold' 
+										: 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/40'
+								}`}>
+								{p.icon}
+								{p.label}
+							</button>
+						);
+					})}
 				</div>
 
 				{/* Source Form Content */}
@@ -142,30 +146,30 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
 						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-bold text-muted-foreground">Repository URL</span>
+							<span className="text-xs font-bold text-foreground">Repository URL</span>
 							<Input
 								placeholder="e.g. owner/repo"
 								value={repoUrl}
 								onChange={e => setRepoUrl(e.target.value)}
-								className="bg-card border-border text-xs"
+								className="bg-card border-border text-xs h-9"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-bold text-muted-foreground">Branch</span>
+							<span className="text-xs font-bold text-foreground">Branch</span>
 							<Input
 								placeholder="e.g. main"
 								value={branch}
 								onChange={e => setBranch(e.target.value)}
-								className="bg-card border-border text-xs"
+								className="bg-card border-border text-xs h-9"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5 md:col-span-2">
-							<span className="text-xs font-bold text-muted-foreground">Compose File Path</span>
+							<span className="text-xs font-bold text-foreground">Compose File Path</span>
 							<Input
 								placeholder="docker-compose.yml"
 								value={buildPath}
 								onChange={e => setBuildPath(e.target.value)}
-								className="bg-card border-border text-xs"
+								className="bg-card border-border text-xs h-9"
 							/>
 						</div>
 					</div>
@@ -176,7 +180,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 						onClick={handleSaveConfig}
 						disabled={saving}
 						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 shadow-md shadow-primary/10">
-						<Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Configuration'}
+						<Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save'}
 					</Button>
 				</div>
 			</section>
