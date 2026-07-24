@@ -1,9 +1,11 @@
+use std::io::{Read, Write};
 use std::sync::Arc;
 
 use auto_di::singleton;
 #[allow(unused_imports)]
 use auto_socket::{auto_socket, on};
 use dashmap::DashMap;
+use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
 use serde::{Deserialize, Serialize};
 use socketioxide::{
     extract::{Data, SocketRef},
@@ -64,8 +66,12 @@ struct TerminalExit {
     code: Option<i32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 enum TerminalSession {
+    Pty {
+        writer: Arc<Mutex<Box<dyn Write + Send>>>,
+        master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
+    },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,
         child: Arc<Mutex<Child>>,
@@ -75,6 +81,16 @@ enum TerminalSession {
         resize: mpsc::Sender<(u16, u16)>,
         cancel: CancellationToken,
     },
+}
+
+impl std::fmt::Debug for TerminalSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pty { .. } => write!(f, "TerminalSession::Pty"),
+            Self::Local { .. } => write!(f, "TerminalSession::Local"),
+            Self::Remote { .. } => write!(f, "TerminalSession::Remote"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -121,14 +137,82 @@ impl TerminalSocket {
             }
         }
 
-        let mut command = Command::new("docker");
-        command
-            .args(["exec", "-i", &target_container, &shell])
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
+        // Spawn PTY process for real interactive shell
+        let pty_system = native_pty_system();
+        let pair = match pty_system.openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        }) {
+            Ok(pair) => pair,
+            Err(error) => {
+                emit_error(&socket, format!("could not open PTY: {error}"));
+                return;
+            }
+        };
 
-        self.spawn_local_terminal(socket, "docker", command).await;
+        let mut cmd = CommandBuilder::new("docker");
+        cmd.args(["exec", "-it", "-w", "/", &target_container, &shell]);
+
+        let child = match pair.slave.spawn_command(cmd) {
+            Ok(child) => child,
+            Err(error) => {
+                emit_error(&socket, format!("could not start docker terminal: {error}"));
+                return;
+            }
+        };
+
+        let reader = match pair.master.try_clone_reader() {
+            Ok(r) => r,
+            Err(error) => {
+                emit_error(&socket, format!("could not clone PTY reader: {error}"));
+                return;
+            }
+        };
+
+        let writer = match pair.master.take_writer() {
+            Ok(w) => w,
+            Err(error) => {
+                emit_error(&socket, format!("could not take PTY writer: {error}"));
+                return;
+            }
+        };
+
+        let key = socket_key(&socket);
+        self.stop_socket(&socket).await;
+        self.bind_disconnect_cleanup(&socket, key.clone());
+
+        self.sessions.insert(
+            key.clone(),
+            TerminalSession::Pty {
+                writer: Arc::new(Mutex::new(writer)),
+                master: Arc::new(Mutex::new(pair.master)),
+            },
+        );
+
+        let _ = socket.emit("started", &TerminalStarted { kind: "docker" });
+
+        let output_socket = socket.clone();
+        std::thread::spawn(move || {
+            let mut reader = reader;
+            let mut buffer = [0u8; 8192];
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => emit_terminal_bytes(&output_socket, "stdout", buffer[..n].to_vec()),
+                    Err(_) => break,
+                }
+            }
+            let _ = output_socket.emit("exit", &TerminalExit { code: Some(0) });
+        });
+
+        let mut child = child;
+        let sessions = self.sessions.clone();
+        tokio::spawn(async move {
+            let _ = tokio::task::spawn_blocking(move || child.wait()).await;
+            sessions.remove(&key);
+        });
     }
 
     #[on("server:start")]
@@ -159,6 +243,14 @@ impl TerminalSocket {
         };
 
         match session {
+            TerminalSession::Pty { writer, .. } => {
+                let mut w = writer.lock().await;
+                if let Err(error) = w.write_all(input.data.as_bytes()) {
+                    emit_error(&socket, format!("could not write PTY input: {error}"));
+                } else {
+                    let _ = w.flush();
+                }
+            }
             TerminalSession::Local { stdin, .. } => {
                 if let Err(error) = stdin.lock().await.write_all(input.data.as_bytes()).await {
                     emit_error(&socket, format!("could not write terminal input: {error}"));
@@ -181,6 +273,16 @@ impl TerminalSocket {
         };
 
         match session {
+            TerminalSession::Pty { master, .. } => {
+                let cols = input.cols.unwrap_or(80);
+                let rows = input.rows.unwrap_or(24);
+                let _ = master.lock().await.resize(PtySize {
+                    rows,
+                    cols,
+                    pixel_width: 0,
+                    pixel_height: 0,
+                });
+            }
             TerminalSession::Remote { resize, .. } => {
                 let cols = input.cols.unwrap_or(80);
                 let rows = input.rows.unwrap_or(24);
@@ -188,12 +290,7 @@ impl TerminalSocket {
                     emit_error(&socket, "remote terminal resize channel is closed");
                 }
             }
-            TerminalSession::Local { .. } => {
-                emit_error(
-                    &socket,
-                    "terminal resize is acknowledged but PTY resize is not wired for local pipe-backed sessions",
-                );
-            }
+            TerminalSession::Local { .. } => {}
         }
     }
 
@@ -374,6 +471,7 @@ impl TerminalSocket {
 
 async fn stop_session(session: TerminalSession) {
     match session {
+        TerminalSession::Pty { .. } => {}
         TerminalSession::Local { child, .. } => {
             if let Err(error) = child.lock().await.kill().await {
                 tracing::warn!(error = %error, "could not kill terminal child process");
@@ -383,6 +481,24 @@ async fn stop_session(session: TerminalSession) {
             cancel.cancel();
         }
     }
+}
+
+fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: Vec<u8>) {
+    let data = String::from_utf8_lossy(&bytes).into_owned();
+    let _ = socket.emit("output", &TerminalOutput { stream, data });
+}
+
+fn emit_error(socket: &SocketRef, message: impl Into<String>) {
+    let _ = socket.emit(
+        "error",
+        &TerminalError {
+            message: message.into(),
+        },
+    );
+}
+
+fn socket_key(socket: &SocketRef) -> String {
+    socket.id.to_string()
 }
 
 fn spawn_output_task(
@@ -403,22 +519,4 @@ fn spawn_output_task(
             }
         }
     });
-}
-
-fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: Vec<u8>) {
-    let data = String::from_utf8_lossy(&bytes).into_owned();
-    let _ = socket.emit("output", &TerminalOutput { stream, data });
-}
-
-fn emit_error(socket: &SocketRef, message: impl Into<String>) {
-    let _ = socket.emit(
-        "error",
-        &TerminalError {
-            message: message.into(),
-        },
-    );
-}
-
-fn socket_key(socket: &SocketRef) -> String {
-    socket.id.to_string()
 }

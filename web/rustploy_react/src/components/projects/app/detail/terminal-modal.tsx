@@ -61,7 +61,8 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		});
 
 		socket.on('started', (data: any) => {
-			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}).\x1b[0m\r\n`);
+			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+			socket.emit('input', {data: 'pwd\n'});
 		});
 
 		socket.on('output', (evt: {stream: string; data: string}) => {
