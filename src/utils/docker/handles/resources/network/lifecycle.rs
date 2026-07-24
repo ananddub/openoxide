@@ -1,5 +1,5 @@
 use crate::utils::docker::{
-    core::ArgBuilder, query::filter::NetworkFilter, DockerCli, DockerOutput, DockerResult,
+    DockerCli, DockerOutput, DockerResult, core::ArgBuilder, query::filter::NetworkFilter,
 };
 
 pub struct NetworkPrune<'a> {
@@ -9,10 +9,18 @@ pub struct NetworkPrune<'a> {
 
 impl<'a> NetworkPrune<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["network", "prune", "--force"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["network", "prune", "--force"]),
+        }
     }
-    pub fn filter(mut self, f: NetworkFilter) -> Self { self.args.filter(f); self }
-    pub fn print(&self) -> String { self.args.preview() }
+    pub fn filter(mut self, f: NetworkFilter) -> Self {
+        self.args.filter(f);
+        self
+    }
+    pub fn print(&self) -> String {
+        self.args.preview()
+    }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         self.cli.execute(&self.args).await
     }
@@ -27,7 +35,11 @@ pub struct NetworkRmBuilder<'a> {
 
 impl<'a> NetworkRmBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
-        Self { cli, name: name.into(), args: ArgBuilder::cmd(&["network", "rm"]) }
+        Self {
+            cli,
+            name: name.into(),
+            args: ArgBuilder::cmd(&["network", "rm"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
@@ -45,8 +57,17 @@ pub struct NetworkConnectBuilder<'a> {
 }
 
 impl<'a> NetworkConnectBuilder<'a> {
-    pub(crate) fn new(cli: &'a DockerCli, network: impl Into<String>, container: impl Into<String>) -> Self {
-        Self { cli, network: network.into(), container: container.into(), args: ArgBuilder::cmd(&["network", "connect"]) }
+    pub(crate) fn new(
+        cli: &'a DockerCli,
+        network: impl Into<String>,
+        container: impl Into<String>,
+    ) -> Self {
+        Self {
+            cli,
+            network: network.into(),
+            container: container.into(),
+            args: ArgBuilder::cmd(&["network", "connect"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
@@ -65,8 +86,17 @@ pub struct NetworkDisconnectBuilder<'a> {
 }
 
 impl<'a> NetworkDisconnectBuilder<'a> {
-    pub(crate) fn new(cli: &'a DockerCli, network: impl Into<String>, container: impl Into<String>) -> Self {
-        Self { cli, network: network.into(), container: container.into(), args: ArgBuilder::cmd(&["network", "disconnect"]) }
+    pub(crate) fn new(
+        cli: &'a DockerCli,
+        network: impl Into<String>,
+        container: impl Into<String>,
+    ) -> Self {
+        Self {
+            cli,
+            network: network.into(),
+            container: container.into(),
+            args: ArgBuilder::cmd(&["network", "disconnect"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;

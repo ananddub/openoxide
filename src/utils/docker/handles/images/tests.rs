@@ -1,5 +1,5 @@
 use super::*;
-use crate::utils::docker::{core::Platform, DockerCli};
+use crate::utils::docker::{DockerCli, core::Platform};
 
 fn cli() -> DockerCli {
     DockerCli::new_local()

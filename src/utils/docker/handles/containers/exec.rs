@@ -1,5 +1,5 @@
 use crate::utils::docker::{
-    core::ArgBuilder, DockerCli, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent,
+    DockerCli, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent, core::ArgBuilder,
 };
 use tokio::sync::mpsc;
 
@@ -11,14 +11,36 @@ pub struct ExecBuilder<'a> {
 
 impl<'a> ExecBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, id: impl Into<String>) -> Self {
-        Self { cli, id: id.into(), args: ArgBuilder::default() }
+        Self {
+            cli,
+            id: id.into(),
+            args: ArgBuilder::default(),
+        }
     }
-    pub fn user(mut self, v: impl Into<String>)    -> Self { self.args.pair("--user", v.into()); self }
-    pub fn workdir(mut self, v: impl Into<String>) -> Self { self.args.pair("--workdir", v.into()); self }
-    pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self { self.args.env_var(k, v); self }
-    pub fn tty(mut self, enabled: bool)            -> Self { self.args.flag_if("--tty", enabled); self }
-    pub fn interactive(mut self)                   -> Self { self.args.flag("--interactive"); self }
-    pub fn detach(mut self)                        -> Self { self.args.flag("--detach"); self }
+    pub fn user(mut self, v: impl Into<String>) -> Self {
+        self.args.pair("--user", v.into());
+        self
+    }
+    pub fn workdir(mut self, v: impl Into<String>) -> Self {
+        self.args.pair("--workdir", v.into());
+        self
+    }
+    pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
+        self.args.env_var(k, v);
+        self
+    }
+    pub fn tty(mut self, enabled: bool) -> Self {
+        self.args.flag_if("--tty", enabled);
+        self
+    }
+    pub fn interactive(mut self) -> Self {
+        self.args.flag("--interactive");
+        self
+    }
+    pub fn detach(mut self) -> Self {
+        self.args.flag("--detach");
+        self
+    }
 
     pub fn print(&self, cmd: &[impl AsRef<str>]) -> String {
         let mut a = ArgBuilder::cmd(&["container", "exec"]);
@@ -28,7 +50,10 @@ impl<'a> ExecBuilder<'a> {
         a.preview()
     }
 
-    pub async fn run(self, cmd: impl IntoIterator<Item = impl Into<String>>) -> DockerResult<DockerOutput> {
+    pub async fn run(
+        self,
+        cmd: impl IntoIterator<Item = impl Into<String>>,
+    ) -> DockerResult<DockerOutput> {
         let mut a = ArgBuilder::cmd(&["container", "exec"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());
@@ -37,7 +62,11 @@ impl<'a> ExecBuilder<'a> {
         self.cli.execute(&a).await
     }
 
-    pub async fn run_stream(self, cmd: impl IntoIterator<Item = impl Into<String>>, sender: mpsc::Sender<DockerStreamEvent>) -> DockerResult<DockerExitStatus> {
+    pub async fn run_stream(
+        self,
+        cmd: impl IntoIterator<Item = impl Into<String>>,
+        sender: mpsc::Sender<DockerStreamEvent>,
+    ) -> DockerResult<DockerExitStatus> {
         let mut a = ArgBuilder::cmd(&["container", "exec"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());

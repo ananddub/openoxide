@@ -3,6 +3,7 @@ use std::sync::Arc;
 use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 
+use super::ApiError;
 use crate::{
     api::dto::database::{
         CreateDatabaseDto, DatabaseOperationResponseDto, DatabaseResponseDto, PatchDatabaseDto,
@@ -16,7 +17,6 @@ use crate::{
     },
     services::database::{DatabaseKind, DatabaseOperation, DatabaseService},
 };
-use super::ApiError;
 
 pub struct PostgresController {
     service: Arc<DatabaseService>,
@@ -97,7 +97,13 @@ impl PostgresController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<DatabaseOperationResponseDto>), ApiError> {
-        super::run_operation(&self.service, DatabaseKind::Postgres, id, DatabaseOperation::Deploy).await
+        super::run_operation(
+            &self.service,
+            DatabaseKind::Postgres,
+            id,
+            DatabaseOperation::Deploy,
+        )
+        .await
     }
 
     #[post("/{id}/redeploy")]
@@ -106,7 +112,13 @@ impl PostgresController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<DatabaseOperationResponseDto>), ApiError> {
-        super::run_operation(&self.service, DatabaseKind::Postgres, id, DatabaseOperation::Redeploy).await
+        super::run_operation(
+            &self.service,
+            DatabaseKind::Postgres,
+            id,
+            DatabaseOperation::Redeploy,
+        )
+        .await
     }
 
     #[post("/{id}/reload")]
@@ -115,7 +127,13 @@ impl PostgresController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<DatabaseOperationResponseDto>), ApiError> {
-        super::run_operation(&self.service, DatabaseKind::Postgres, id, DatabaseOperation::Reload).await
+        super::run_operation(
+            &self.service,
+            DatabaseKind::Postgres,
+            id,
+            DatabaseOperation::Reload,
+        )
+        .await
     }
 
     #[post("/{id}/start")]
@@ -124,7 +142,13 @@ impl PostgresController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<DatabaseOperationResponseDto>), ApiError> {
-        super::run_operation(&self.service, DatabaseKind::Postgres, id, DatabaseOperation::Start).await
+        super::run_operation(
+            &self.service,
+            DatabaseKind::Postgres,
+            id,
+            DatabaseOperation::Start,
+        )
+        .await
     }
 
     #[post("/{id}/stop")]
@@ -133,7 +157,13 @@ impl PostgresController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<DatabaseOperationResponseDto>), ApiError> {
-        super::run_operation(&self.service, DatabaseKind::Postgres, id, DatabaseOperation::Stop).await
+        super::run_operation(
+            &self.service,
+            DatabaseKind::Postgres,
+            id,
+            DatabaseOperation::Stop,
+        )
+        .await
     }
 
     #[delete("/{id}")]

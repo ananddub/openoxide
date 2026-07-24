@@ -2,8 +2,8 @@ use crate::utils::builder::hash_state::ApplicationState;
 use auto_di::singleton;
 use dashmap::DashMap;
 use sqlx::SqlitePool;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::sync::{Notify, Semaphore};
 
@@ -106,7 +106,9 @@ impl BuilderQueue {
         if cancelled {
             for id in ids {
                 if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
-                    let _ = log.write_line("[CANCELLED] deployment cancelled before worker started").await;
+                    let _ = log
+                        .write_line("[CANCELLED] deployment cancelled before worker started")
+                        .await;
                 }
             }
         }
@@ -123,7 +125,9 @@ impl BuilderQueue {
         if cancelled {
             for id in ids {
                 if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
-                    let _ = log.write_line("[CANCELLED] deployment cancelled before worker started").await;
+                    let _ = log
+                        .write_line("[CANCELLED] deployment cancelled before worker started")
+                        .await;
                 }
             }
         }
@@ -138,7 +142,6 @@ impl BuilderQueue {
         self.slots.insert(server_id, Arc::clone(&sem));
         sem
     }
-
 
     async fn recover_stale_deployments(&self) {
         self.cleanup_stale_remote_jobs().await;
@@ -185,7 +188,8 @@ impl BuilderQueue {
         };
 
         for (deployment_id, server_id, pid_file) in rows {
-            self.kill_remote_pid(deployment_id, server_id, &pid_file, "startup").await;
+            self.kill_remote_pid(deployment_id, server_id, &pid_file, "startup")
+                .await;
         }
     }
 
@@ -213,7 +217,12 @@ impl BuilderQueue {
             let mut pending = 0usize;
             for (deployment_id, server_id, pid_file) in rows {
                 let killed = self
-                    .kill_remote_pid(deployment_id, server_id, &pid_file, &format!("retry-{attempt}"))
+                    .kill_remote_pid(
+                        deployment_id,
+                        server_id,
+                        &pid_file,
+                        &format!("retry-{attempt}"),
+                    )
                     .await;
                 if !killed {
                     pending += 1;
@@ -238,11 +247,18 @@ impl BuilderQueue {
         match remote_executor(self.db.as_ref(), server_id).await {
             Ok(executor) => match executor.kill_pid_file(pid_file).await {
                 Ok(()) => {
-                    if let Ok(repo) = auto_di::resolve::<crate::repository::DeploymentRepository>().await {
+                    if let Ok(repo) =
+                        auto_di::resolve::<crate::repository::DeploymentRepository>().await
+                    {
                         repo.set_pid_null(deployment_id).await.ok();
                     }
-                    tracing::warn!(deployment_id, server_id, pid_file, stage,
-                        "builder queue: killed stale remote deployment");
+                    tracing::warn!(
+                        deployment_id,
+                        server_id,
+                        pid_file,
+                        stage,
+                        "builder queue: killed stale remote deployment"
+                    );
                     true
                 }
                 Err(e) => {

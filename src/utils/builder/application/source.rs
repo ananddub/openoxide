@@ -1,10 +1,10 @@
 use super::application::ApplicationBuilder;
+use crate::utils::builder::shared::source::fetch_git_repository;
 use crate::utils::{
     builder::spec::{ApplicationSpec, SourceSpec},
     exec::{ExecError, ExecResult},
     git::GitCli,
 };
-use crate::utils::builder::shared::source::fetch_git_repository;
 use tokio_util::sync::CancellationToken;
 
 impl ApplicationBuilder {
@@ -24,7 +24,16 @@ impl ApplicationBuilder {
                 protocol,
                 auth,
             } => {
-                self.fetch_git_repository(spec, url, branch, *submodules, protocol.clone(), auth.clone(), cancel).await
+                self.fetch_git_repository(
+                    spec,
+                    url,
+                    branch,
+                    *submodules,
+                    protocol.clone(),
+                    auth.clone(),
+                    cancel,
+                )
+                .await
             }
         }
     }
@@ -84,7 +93,7 @@ impl ApplicationBuilder {
             cancel,
         )
         .await?;
-        
+
         fetch_git_repository(
             &self.ctx,
             &spec.work_directory,
@@ -93,8 +102,9 @@ impl ApplicationBuilder {
             submodules,
             protocol,
             auth,
-            cancel
-        ).await
+            cancel,
+        )
+        .await
     }
 }
 

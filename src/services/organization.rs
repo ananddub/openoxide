@@ -6,7 +6,7 @@ use sqlx::SqlitePool;
 use crate::{
     api::dto::organization::{CreateOrganizationDto, PatchOrganizationDto},
     db::models::organization::Organization,
-    repository::{OrganizationRepository, OrganizationMemberRepository},
+    repository::{OrganizationMemberRepository, OrganizationRepository},
 };
 
 pub struct OrganizationService {
@@ -53,16 +53,17 @@ impl OrganizationService {
         }
 
         let mut tx = self.db.begin().await?;
-        let organization = self.repo_org.create_in_transaction(
-            &mut tx,
-            input.name,
-            input.logo,
-            slug,
-            owner_id
-        ).await?;
+        let organization = self
+            .repo_org
+            .create_in_transaction(&mut tx, input.name, input.logo, slug, owner_id)
+            .await?;
 
-        let org_id = organization.id.ok_or_else(|| sqlx::Error::Protocol("missing organization id".into()))?;
-        self.repo_member.add_member_in_transaction(&mut tx, "ADMIN", owner_id, org_id).await?;
+        let org_id = organization
+            .id
+            .ok_or_else(|| sqlx::Error::Protocol("missing organization id".into()))?;
+        self.repo_member
+            .add_member_in_transaction(&mut tx, "ADMIN", owner_id, org_id)
+            .await?;
 
         tx.commit().await?;
         Ok(organization)
@@ -139,7 +140,7 @@ mod tests {
             .execute(&pool)
             .await
             .unwrap();
-        
+
         let db = Arc::new(pool);
         let service = OrganizationService {
             db: db.clone(),

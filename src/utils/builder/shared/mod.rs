@@ -5,14 +5,13 @@ use crate::utils::{
         queue::common::builder_event_state_opt,
         spec::BuilderEvent,
     },
+    cgroup::Cgroup,
     docker::DockerCli,
     exec::{CommandExecutor, ExecError, ExecResult},
-    cgroup::Cgroup,
 };
 use std::sync::Arc;
 use tokio::{sync::mpsc, time::Duration};
 use tokio_util::sync::CancellationToken;
-
 
 /// Shared infrastructure for both `ApplicationBuilder` and `ComposeBuilder`.
 ///
@@ -120,12 +119,20 @@ impl BuilderContext {
 }
 
 pub trait CgroupApplier {
-    fn apply_cgroup(self, cg: &Cgroup) -> ExecResult<Self> where Self: Sized;
+    fn apply_cgroup(self, cg: &Cgroup) -> ExecResult<Self>
+    where
+        Self: Sized;
 }
 
 impl CgroupApplier for crate::utils::exec::ScriptPipeline {
     fn apply_cgroup(mut self, cg: &Cgroup) -> ExecResult<Self> {
-        for cmd in cg.to_apply_commands().map_err(|e| ExecError::CommandFailed { code: None, stderr: e.to_string() })? {
+        for cmd in cg
+            .to_apply_commands()
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: e.to_string(),
+            })?
+        {
             self = self.cmd(cmd);
         }
         self = self.cmd(cg.to_add_current_process_command());
@@ -136,10 +143,18 @@ impl CgroupApplier for crate::utils::exec::ScriptPipeline {
 impl CgroupApplier for Vec<crate::utils::exec::script::dsl::ShellIR> {
     fn apply_cgroup(self, cg: &Cgroup) -> ExecResult<Self> {
         let mut prefix = Vec::new();
-        for cmd in cg.to_apply_commands().map_err(|e| ExecError::CommandFailed { code: None, stderr: e.to_string() })? {
+        for cmd in cg
+            .to_apply_commands()
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: e.to_string(),
+            })?
+        {
             prefix.push(crate::utils::exec::script::dsl::ShellIR::Raw(cmd));
         }
-        prefix.push(crate::utils::exec::script::dsl::ShellIR::Raw(cg.to_add_current_process_command()));
+        prefix.push(crate::utils::exec::script::dsl::ShellIR::Raw(
+            cg.to_add_current_process_command(),
+        ));
         prefix.extend(self);
         Ok(prefix)
     }
@@ -185,8 +200,8 @@ pub mod traefik;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::exec::LocalExecutor;
     use crate::utils::cgroup::builder::CgroupBuilder;
+    use crate::utils::exec::LocalExecutor;
     use crate::utils::exec::script::sh;
 
     #[test]
@@ -203,7 +218,11 @@ mod tests {
         );
 
         let cgrouped_script = ctx.apply_cgroup(script).unwrap();
-        let bash = cgrouped_script.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+        let bash = cgrouped_script
+            .iter()
+            .map(|s| s.to_bash())
+            .collect::<Vec<_>>()
+            .join("\n");
 
         assert!(bash.contains("mkdir -p '/tmp/cgroup/test/cgroup'"));
         assert!(bash.contains("cgroup.procs"));

@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct ServiceLogsBuilder<'a> {
@@ -17,12 +17,18 @@ impl<'a> ServiceLogsBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("journalctl", &["-u", &self.name, "-n", &self.limit]).await
+        self.executor
+            .run("journalctl", &["-u", &self.name, "-n", &self.limit])
+            .await
     }
 }
 
 impl<'a> IntoCommand for ServiceLogsBuilder<'a> {
     fn build_str(&self) -> String {
-        format!("journalctl -u {} -n {}", escape_arg(&self.name), escape_arg(&self.limit))
+        format!(
+            "journalctl -u {} -n {}",
+            escape_arg(&self.name),
+            escape_arg(&self.limit)
+        )
     }
 }

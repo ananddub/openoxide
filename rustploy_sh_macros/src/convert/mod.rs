@@ -1,9 +1,9 @@
-mod stmt;
+pub mod dsl;
 mod expr;
 mod macros;
-pub mod dsl;
 pub mod scope;
+mod stmt;
 
-pub use stmt::{convert_stmt, convert_sh_stmt};
 pub use expr::convert_expr;
 pub use macros::convert_macro;
+pub use stmt::{convert_sh_stmt, convert_stmt};

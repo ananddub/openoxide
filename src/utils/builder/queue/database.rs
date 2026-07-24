@@ -5,25 +5,21 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     core::config::Config,
     services::{
-        database::DatabaseOperation,
         compose::remote::{deployment_pid_file, remote_executor},
+        database::DatabaseOperation,
     },
     utils::{
+        builder::errors::BuilderError,
         builder::{
-            database::builder::DatabaseBuilder,
-            custom_type::IdType,
-            hash_state::ApplicationState,
+            custom_type::IdType, database::builder::DatabaseBuilder, hash_state::ApplicationState,
             queue::queue::BuilderQueue,
         },
+        cgroup::{CgroupBuilder, CpuLimit, MemoryLimit},
         exec::{CommandExecutor, LocalExecutor},
-        builder::errors::BuilderError,
-        cgroup::{CgroupBuilder, MemoryLimit, CpuLimit},
     },
 };
 
-use super::resource::{parse_memory_limit, parse_cpu_limit, get_total_memory_kb, get_cpu_cores};
-
-
+use super::resource::{get_cpu_cores, get_total_memory_kb, parse_cpu_limit, parse_memory_limit};
 
 impl BuilderQueue {
     pub(crate) async fn execute_operation_db(
@@ -33,12 +29,15 @@ impl BuilderQueue {
         deployment_id: i64,
         operation: DatabaseOperation,
     ) -> Result<(), BuilderError> {
-        let kind = std::str::FromStr::from_str(&database_kind)
-            .map_err(|_| BuilderError::Execution(format!("Invalid database kind: {}", database_kind)))?;
+        let kind = std::str::FromStr::from_str(&database_kind).map_err(|_| {
+            BuilderError::Execution(format!("Invalid database kind: {}", database_kind))
+        })?;
 
         let dep_repo = resolve::<crate::repository::DeploymentRepository>()
             .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}")))?;
+            .map_err(|e| {
+                BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}"))
+            })?;
 
         let (server_id, environment_id, project_id, memory_limit_db, cpu_limit_db) = dep_repo
             .get_database_deployment_context(database_id, &database_kind)
@@ -46,24 +45,29 @@ impl BuilderQueue {
             .map_err(|e| BuilderError::Execution(format!("Database context not found: {}", e)))?;
 
         let db_key = IdType::DatabaseId(database_id);
-        let state = resolve::<ApplicationState>()
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve application state: {e}")))?;
+        let state = resolve::<ApplicationState>().await.map_err(|e| {
+            BuilderError::Execution(format!("could not resolve application state: {e}"))
+        })?;
         state.reset_default(db_key.clone(), environment_id, project_id);
         let cancel = state
             .cancellation_token(db_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let config = resolve::<Config>()
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve application config: {e}")))?;
+        let config = resolve::<Config>().await.map_err(|e| {
+            BuilderError::Execution(format!("could not resolve application config: {e}"))
+        })?;
 
         let executor = match server_id {
             Some(sid) => {
                 let pid_file = deployment_pid_file(deployment_id);
-                dep_repo.set_pid(deployment_id, &pid_file)
+                dep_repo
+                    .set_pid(deployment_id, &pid_file)
                     .await
-                    .map_err(|e| BuilderError::Execution(format!("could not persist remote deployment pid file: {e}")))?;
+                    .map_err(|e| {
+                        BuilderError::Execution(format!(
+                            "could not persist remote deployment pid file: {e}"
+                        ))
+                    })?;
                 CommandExecutor::Remote(
                     remote_executor(self.db.as_ref(), sid)
                         .await
@@ -81,7 +85,9 @@ impl BuilderQueue {
             if let Some(sid) = server_id {
                 let server_repo = resolve::<crate::repository::ServerRepository>()
                     .await
-                    .map_err(|e| BuilderError::Execution(format!("could not resolve ServerRepository: {e}")))?;
+                    .map_err(|e| {
+                        BuilderError::Execution(format!("could not resolve ServerRepository: {e}"))
+                    })?;
                 if let Ok(Some(server)) = server_repo.get_by_id(sid).await {
                     if mem_limit_str.is_none() {
                         mem_limit_str = server.build_memory_limit;
@@ -133,33 +139,43 @@ impl BuilderQueue {
         }
 
         let (events_tx, events_rx) = mpsc::channel(6);
-        tokio::spawn(super::deployment_log::record_builder_events(deployment_id, events_rx, "db"));
+        tokio::spawn(super::deployment_log::record_builder_events(
+            deployment_id,
+            events_rx,
+            "db",
+        ));
 
         let events_tx_clone = events_tx.clone();
         let cgroup_clone = cgroup.clone();
-        
+
         let build_future = async move {
             let mut builder = DatabaseBuilder::new(executor)
                 .with_state(state, db_key)
                 .with_events(events_tx);
-                
+
             if let Some(cg) = cgroup_clone {
                 builder = builder.with_cgroup(cg);
             }
 
             match operation {
-                DatabaseOperation::Deploy | DatabaseOperation::Redeploy | DatabaseOperation::Reload | DatabaseOperation::Start => {
-                    builder
-                        .deploy(kind, database_id, &cancel)
-                        .await
-                        .map(|_| ())
-                        .map_err(|e| BuilderError::Execution(e.to_string()))
-                }
+                DatabaseOperation::Deploy
+                | DatabaseOperation::Redeploy
+                | DatabaseOperation::Reload
+                | DatabaseOperation::Start => builder
+                    .deploy(kind, database_id, &cancel)
+                    .await
+                    .map(|_| ())
+                    .map_err(|e| BuilderError::Execution(e.to_string())),
                 DatabaseOperation::Stop => {
                     let app_name = dep_repo
                         .get_database_app_name(database_id, &database_kind)
                         .await
-                        .map_err(|e| BuilderError::Execution(format!("Failed to query database app_name: {}", e)))?;
+                        .map_err(|e| {
+                            BuilderError::Execution(format!(
+                                "Failed to query database app_name: {}",
+                                e
+                            ))
+                        })?;
 
                     builder
                         .stop(&app_name, &cancel)

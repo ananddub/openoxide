@@ -68,20 +68,23 @@ impl<'a> ProviderSyncBuilder<'a> {
         let git_dir = format!("{}/.git", self.destination);
 
         // 1. Then branch (if .git exists)
-        let mut then_branch = ScriptPipeline::new()
-            .cmd(git.remote().set_url("origin", &self.url));
+        let mut then_branch = ScriptPipeline::new().cmd(git.remote().set_url("origin", &self.url));
 
         let mut fetch = git.fetch().prune().remote("origin").arg(branch);
         if let Some(auth) = &self.auth {
             fetch = fetch.auth(auth.clone());
         }
-        then_branch = then_branch.cmd(fetch)
+        then_branch = then_branch
+            .cmd(fetch)
             .cmd(git.reset().hard().commit("FETCH_HEAD"));
 
         // 2. Else branch (if .git does not exist)
         let mut else_branch = ScriptPipeline::new();
         if let Some(parent) = Path::new(self.destination).parent() {
-            else_branch = else_branch.cmd(format!("mkdir -p {}", shell_single_quote(&parent.to_string_lossy())));
+            else_branch = else_branch.cmd(format!(
+                "mkdir -p {}",
+                shell_single_quote(&parent.to_string_lossy())
+            ));
         }
 
         let clone_git = GitCli::new_local();
@@ -96,12 +99,8 @@ impl<'a> ProviderSyncBuilder<'a> {
         else_branch = else_branch.cmd(clone);
 
         // 3. Main pipeline
-        let mut pipeline = ScriptPipeline::new()
-            .if_dir_exists(
-                &git_dir,
-                then_branch,
-                Some(else_branch),
-            );
+        let mut pipeline =
+            ScriptPipeline::new().if_dir_exists(&git_dir, then_branch, Some(else_branch));
 
         if self.submodules {
             let mut sub = git.submodule().update().init().recursive();
@@ -119,7 +118,7 @@ impl<'a> ProviderSyncBuilder<'a> {
             .executor
             .clone()
             .unwrap_or_else(|| CommandExecutor::Local(LocalExecutor::new()));
-        
+
         let git_dir = format!("{}/.git", self.destination);
 
         let resolved_branch: String = match self.branch {
@@ -156,7 +155,9 @@ impl<'a> ProviderSyncBuilder<'a> {
         }
 
         let script = self.to_script(branch);
-        executor.run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel).await?;
+        executor
+            .run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel)
+            .await?;
 
         Ok(())
     }
@@ -175,13 +176,21 @@ mod tests {
         let builder = ProviderSyncBuilder::new("https://github.com/org/repo.git", "/var/www/app")
             .submodules(true);
         let script = builder.to_script("main");
-        
+
         assert!(script.contains("if [ -d '/var/www/app/.git' ]; then"));
         assert!(script.contains("git -c safe.directory=/var/www/app -C /var/www/app remote set-url origin https://github.com/org/repo.git"));
-        assert!(script.contains("git -c safe.directory=/var/www/app -C /var/www/app fetch --prune origin main"));
-        assert!(script.contains("git -c safe.directory=/var/www/app -C /var/www/app reset --hard FETCH_HEAD"));
+        assert!(script.contains(
+            "git -c safe.directory=/var/www/app -C /var/www/app fetch --prune origin main"
+        ));
+        assert!(script.contains(
+            "git -c safe.directory=/var/www/app -C /var/www/app reset --hard FETCH_HEAD"
+        ));
         assert!(script.contains("mkdir -p '/var/www'"));
-        assert!(script.contains("git clone --branch main --single-branch https://github.com/org/repo.git /var/www/app"));
-        assert!(script.contains("git -c safe.directory=/var/www/app -C /var/www/app submodule update --init --recursive"));
+        assert!(script.contains(
+            "git clone --branch main --single-branch https://github.com/org/repo.git /var/www/app"
+        ));
+        assert!(script.contains(
+            "git -c safe.directory=/var/www/app -C /var/www/app submodule update --init --recursive"
+        ));
     }
 }

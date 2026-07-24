@@ -1,5 +1,5 @@
-use tokio::sync::mpsc;
 use crate::services::deployment::DeploymentService;
+use tokio::sync::mpsc;
 
 impl DeploymentService {
     pub async fn read_deployment_log(&self, deployment_id: i64) -> sqlx::Result<String> {
@@ -30,7 +30,9 @@ impl DeploymentService {
             }
 
             if !log_path.exists() {
-                let _ = sender.send(format!("Log file not found: {}", log_path_str)).await;
+                let _ = sender
+                    .send(format!("Log file not found: {}", log_path_str))
+                    .await;
                 return;
             }
 
@@ -60,14 +62,17 @@ impl DeploymentService {
 
             let (event_tx, mut event_rx) = mpsc::channel(10);
             let watcher = {
-                use notify::{Watcher, RecommendedWatcher, RecursiveMode};
-                let watcher_res = RecommendedWatcher::new(move |res: Result<notify::Event, notify::Error>| {
-                    if let Ok(event) = res {
-                        if event.kind.is_modify() {
-                            let _ = event_tx.blocking_send(());
+                use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+                let watcher_res = RecommendedWatcher::new(
+                    move |res: Result<notify::Event, notify::Error>| {
+                        if let Ok(event) = res {
+                            if event.kind.is_modify() {
+                                let _ = event_tx.blocking_send(());
+                            }
                         }
-                    }
-                }, notify::Config::default());
+                    },
+                    notify::Config::default(),
+                );
 
                 match watcher_res {
                     Ok(mut w) => {
@@ -82,7 +87,8 @@ impl DeploymentService {
             };
 
             loop {
-                let status = repo_deploy.get_status(deployment_id)
+                let status = repo_deploy
+                    .get_status(deployment_id)
                     .await
                     .unwrap_or_default()
                     .unwrap_or_default();
@@ -108,7 +114,9 @@ impl DeploymentService {
                 }
 
                 if watcher.is_some() {
-                    let _ = tokio::time::timeout(tokio::time::Duration::from_secs(2), event_rx.recv()).await;
+                    let _ =
+                        tokio::time::timeout(tokio::time::Duration::from_secs(2), event_rx.recv())
+                            .await;
                 } else {
                     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                 }
@@ -143,7 +151,9 @@ impl DeploymentService {
         &self,
         application_id: i64,
     ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
-        let deployment_id = self.repo_deploy.get_latest_application_deployment_id(application_id)
+        let deployment_id = self
+            .repo_deploy
+            .get_latest_application_deployment_id(application_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
 
@@ -154,7 +164,9 @@ impl DeploymentService {
         &self,
         compose_id: i64,
     ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
-        let deployment_id = self.repo_deploy.get_latest_compose_deployment_id(compose_id)
+        let deployment_id = self
+            .repo_deploy
+            .get_latest_compose_deployment_id(compose_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
 

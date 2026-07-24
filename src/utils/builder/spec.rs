@@ -1,6 +1,6 @@
+use crate::string_enum;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use crate::string_enum;
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -195,4 +195,3 @@ pub enum BuilderEvent {
     Message(String),
     Failed(String),
 }
-

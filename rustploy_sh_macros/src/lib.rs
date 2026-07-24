@@ -4,11 +4,11 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse_macro_input;
 
-mod parser;
 mod convert;
+mod parser;
 
-use parser::ShInput;
 use convert::convert_sh_stmt;
+use parser::ShInput;
 
 std::thread_local! {
     pub(crate) static SH_VARS: std::cell::RefCell<std::collections::HashSet<String>> =

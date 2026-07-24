@@ -1,7 +1,7 @@
 use crate::{
     api::dto::monitoring::{
-        IngestContainerMetricDto, IngestSystemMetricDto, MetricIngestResponseDto,
-        MonitoringStatusResponseDto,
+        ContainerLogSseEventDto, ContainerMetricSseEventDto, IngestContainerMetricDto,
+        IngestSystemMetricDto, MetricIngestResponseDto, MonitoringStatusResponseDto,
     },
     db::models::server_metrics::ServerMetric,
     services::monitoring::{
@@ -131,19 +131,20 @@ impl MonitoringController {
         &self,
         Json(body): Json<IngestContainerMetricDto>,
     ) -> Result<Json<MetricIngestResponseDto>, ApiError> {
-        self.sse_bus.publish_container_metric(ContainerMetricSseEvent {
-            server_id: body.server_id,
-            application_id: body.application_id,
-            compose_id: body.compose_id,
-            container_id: body.container_id.clone(),
-            container_name: body.container_name,
-            cpu_percent: body.cpu_percent,
-            memory_used_mb: body.memory_used_mb,
-            memory_limit_mb: body.memory_limit_mb,
-            net_rx_kbps: body.net_rx_kbps,
-            net_tx_kbps: body.net_tx_kbps,
-            timestamp: body.timestamp,
-        });
+        self.sse_bus
+            .publish_container_metric(ContainerMetricSseEvent {
+                server_id: body.server_id,
+                application_id: body.application_id,
+                compose_id: body.compose_id,
+                container_id: body.container_id.clone(),
+                container_name: body.container_name,
+                cpu_percent: body.cpu_percent,
+                memory_used_mb: body.memory_used_mb,
+                memory_limit_mb: body.memory_limit_mb,
+                net_rx_kbps: body.net_rx_kbps,
+                net_tx_kbps: body.net_tx_kbps,
+                timestamp: body.timestamp,
+            });
 
         Ok(Json(MetricIngestResponseDto {
             success: true,
@@ -151,7 +152,7 @@ impl MonitoringController {
         }))
     }
 
-    #[get("/stream/containers")]
+    #[get("/stream/containers", sse = ContainerMetricSseEventDto)]
     async fn stream_container_metrics(
         &self,
         _claims: Claims,
@@ -168,7 +169,7 @@ impl MonitoringController {
         Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
     }
 
-    #[get("/stream/logs")]
+    #[get("/stream/logs", sse = ContainerLogSseEventDto)]
     async fn stream_logs(
         &self,
         _claims: Claims,

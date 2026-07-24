@@ -1,8 +1,8 @@
+use crate::utils::builder::spec::BuilderEvent;
+use crate::utils::paths::rustploy_paths;
 use std::io;
 use tokio::fs::{File, OpenOptions, create_dir_all};
 use tokio::io::AsyncWriteExt;
-use crate::utils::builder::spec::BuilderEvent;
-use crate::utils::paths::rustploy_paths;
 
 tokio::task_local! {
     pub static DEPLOYMENT_SENDER: tokio::sync::mpsc::Sender<crate::utils::builder::spec::BuilderEvent>;
@@ -115,9 +115,12 @@ pub async fn record_builder_events(
             BuilderEvent::Failed(e) => Some(e.as_str()),
             _ => None,
         };
-        
+
         if let Some(ref r) = repo {
-            if let Err(e) = r.update_state_if_running(deployment_id, state, message).await {
+            if let Err(e) = r
+                .update_state_if_running(deployment_id, state, message)
+                .await
+            {
                 tracing::error!(deployment_id, error = %e, "could not persist {} builder event", log_context);
             }
         }
@@ -142,12 +145,19 @@ mod tests {
         let deployment_id = 9999;
         let mut log = DeploymentLog::open(deployment_id).await.unwrap();
 
-        let expected_path = format!("{}/logs/deployments/9999.log", workspace_tmp.to_str().unwrap());
+        let expected_path = format!(
+            "{}/logs/deployments/9999.log",
+            workspace_tmp.to_str().unwrap()
+        );
         assert_eq!(log.path(), expected_path);
 
         log.write_event(&BuilderEvent::Preparing).await.unwrap();
-        log.write_event(&BuilderEvent::Message("Hello World\nLine 2".into())).await.unwrap();
-        log.write_event(&BuilderEvent::Failed("Some build error".into())).await.unwrap();
+        log.write_event(&BuilderEvent::Message("Hello World\nLine 2".into()))
+            .await
+            .unwrap();
+        log.write_event(&BuilderEvent::Failed("Some build error".into()))
+            .await
+            .unwrap();
 
         let content = tokio::fs::read_to_string(expected_path).await.unwrap();
         assert!(content.contains("[PREPARING]"));
@@ -168,7 +178,7 @@ mod tests {
             log_message("Capturing this line".to_string());
         };
         DEPLOYMENT_SENDER.scope(tx, future).await;
-        
+
         let received = rx.recv().await.unwrap();
         match received {
             BuilderEvent::Message(msg) => assert_eq!(msg, "Capturing this line"),
@@ -176,4 +186,3 @@ mod tests {
         }
     }
 }
-

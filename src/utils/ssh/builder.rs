@@ -1,11 +1,11 @@
-use std::os::unix::fs::PermissionsExt;
-use std::io::Write;
-use std::path::PathBuf;
+use crate::utils::exec::{SshAuth, SshHostKey};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
+use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 use tempfile::TempPath;
 use tokio::process::Command;
-use crate::utils::exec::{SshAuth, SshHostKey};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TtyMode {
@@ -109,7 +109,11 @@ impl SshBuilder {
         self
     }
 
-    pub fn control_multiplexing(mut self, path: PathBuf, persist_duration: impl Into<String>) -> Self {
+    pub fn control_multiplexing(
+        mut self,
+        path: PathBuf,
+        persist_duration: impl Into<String>,
+    ) -> Self {
         self.multiplexing_enabled = true;
         self.control_path = Some(path);
         self.control_persist = persist_duration.into();
@@ -208,7 +212,17 @@ impl SshBuilder {
         args.push(format!("{}={}", key, value));
     }
 
-    pub fn build_args(&self) -> Result<(Vec<String>, Option<TempPath>, Option<TempPath>, Option<PathBuf>), std::io::Error> {
+    pub fn build_args(
+        &self,
+    ) -> Result<
+        (
+            Vec<String>,
+            Option<TempPath>,
+            Option<TempPath>,
+            Option<PathBuf>,
+        ),
+        std::io::Error,
+    > {
         if self.quiet == Some(true) && self.verbosity.is_some() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -233,7 +247,7 @@ impl SshBuilder {
         }
 
         let is_insecure = matches!(self.host_key, SshHostKey::InsecureAcceptAny);
-        
+
         if let Some(cmd) = &self.known_hosts_command {
             Self::push_option(&mut args, "KnownHostsCommand", cmd);
         } else if let Some(checking) = &self.strict_host_key {
@@ -252,7 +266,7 @@ impl SshBuilder {
                 }
                 SshHostKey::PinnedSha256(fingerprint) => {
                     Self::push_option(&mut args, "StrictHostKeyChecking", "yes");
-                    
+
                     let escaped_fingerprint = fingerprint.replace('\'', "'\\''");
                     let cmd = format!(
                         "sh -c 'if [ \"$2\" = \"$5\" ] || [ \"$2\" = \"SHA256:$5\" ]; then echo \"$1 $3 $4\"; fi' -- %H %F %t %K '{}'",
@@ -268,7 +282,9 @@ impl SshBuilder {
                 Self::push_option(&mut args, "UserKnownHostsFile", &path.to_string_lossy());
             }
         } else if self.known_hosts_file.is_some() {
-            tracing::warn!("UserKnownHostsFile is ignored because InsecureAcceptAny host key policy is active.");
+            tracing::warn!(
+                "UserKnownHostsFile is ignored because InsecureAcceptAny host key policy is active."
+            );
         }
 
         if let Some(timeout) = self.connect_timeout {
@@ -283,7 +299,7 @@ impl SshBuilder {
 
         if self.multiplexing_enabled {
             Self::push_option(&mut args, "ControlMaster", "auto");
-            
+
             let resolved_path = match &self.control_path {
                 Some(path) => path.clone(),
                 None => {
@@ -357,7 +373,7 @@ impl SshBuilder {
                     .prefix("rustploy-ssh-key-")
                     .tempfile()?;
                 temp_file.write_all(private_key.as_bytes())?;
-                
+
                 let mut permissions = std::fs::metadata(temp_file.path())?.permissions();
                 permissions.set_mode(0o600);
                 std::fs::set_permissions(temp_file.path(), permissions)?;
@@ -396,7 +412,7 @@ impl SshBuilder {
                     .prefix("rustploy-ssh-askpass-")
                     .tempfile()?;
                 temp_file.write_all(format!("#!/bin/sh\necho {}\n", quote(password)).as_bytes())?;
-                
+
                 let mut permissions = std::fs::metadata(temp_file.path())?.permissions();
                 permissions.set_mode(0o700);
                 std::fs::set_permissions(temp_file.path(), permissions)?;
@@ -414,9 +430,13 @@ impl SshBuilder {
         Ok((args, temp_key_file, temp_askpass_file, agent_socket_path))
     }
 
-    pub fn build_command(&self, program: &str, program_args: &[String]) -> Result<SshCommand, std::io::Error> {
+    pub fn build_command(
+        &self,
+        program: &str,
+        program_args: &[String],
+    ) -> Result<SshCommand, std::io::Error> {
         let (mut args, temp_file, temp_askpass, agent_socket) = self.build_args()?;
-        
+
         let quoted_cmd = std::iter::once(program.to_string())
             .chain(program_args.iter().cloned())
             .map(|a| quote(&a))
@@ -448,9 +468,9 @@ impl SshBuilder {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor};
     use crate::utils::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
-    use super::*;
 
     fn create_dummy_key_file() -> tempfile::NamedTempFile {
         if let Ok(td) = std::env::var("TMPDIR") {
@@ -476,14 +496,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_ssh(){
-         let ssh = RemoteExecutor::new(
-                "lima".to_string(),
-                22,
-                "das".to_string(),
-                SshAuth::Password("1".to_string()),
-                SshHostKey::InsecureAcceptAny
-         );
+    async fn test_ssh() {
+        let ssh = RemoteExecutor::new(
+            "lima".to_string(),
+            22,
+            "das".to_string(),
+            SshAuth::Password("1".to_string()),
+            SshHostKey::InsecureAcceptAny,
+        );
 
         // 1. Create a dummy local file to transfer
         let test_file_path = "/tmp/rustploy-test-rclone.txt";
@@ -512,11 +532,22 @@ mod tests {
         let local_executor = CommandExecutor::Local(LocalExecutor::new());
         match rclone.execute(&local_executor).await {
             Ok(out) => {
-                assert!(out.status.success(), "Rclone command failed: {:?}", out.stderr);
-                println!("Rclone upload success: stdout={:?}, stderr={:?}", out.stdout, out.stderr);
+                assert!(
+                    out.status.success(),
+                    "Rclone command failed: {:?}",
+                    out.stderr
+                );
+                println!(
+                    "Rclone upload success: stdout={:?}, stderr={:?}",
+                    out.stdout, out.stderr
+                );
             }
             Err(e) => {
-                assert!(false, "Rclone upload execution attempt finished with: {:?}", e);
+                assert!(
+                    false,
+                    "Rclone upload execution attempt finished with: {:?}",
+                    e
+                );
             }
         }
 
@@ -524,8 +555,11 @@ mod tests {
         match ssh.run("cat", &["/tmp/rclone-uploaded.txt"]).await {
             Ok(v) => {
                 assert_eq!(v.stdout.trim(), "Hello from rustploy via rclone!");
-                println!("Remote file verification: stdout={:?}, err={:?}, status={:?}", v.stdout, v.stderr, v.status);
-            },
+                println!(
+                    "Remote file verification: stdout={:?}, err={:?}, status={:?}",
+                    v.stdout, v.stderr, v.status
+                );
+            }
             Err(e) => {
                 assert!(false, "Remote verification failed: {:?}", e);
             }
@@ -578,13 +612,16 @@ mod tests {
         );
 
         let (args, _, _, _) = builder.build_args().unwrap();
-        
+
         // StrictHostKeyChecking=yes must be set to prevent fallback
         assert!(args.contains(&"StrictHostKeyChecking=yes".to_string()));
 
         // KnownHostsCommand must be configured
         assert!(args.iter().any(|arg| arg.starts_with("KnownHostsCommand=")));
-        let kh_cmd = args.iter().find(|arg| arg.starts_with("KnownHostsCommand=")).unwrap();
+        let kh_cmd = args
+            .iter()
+            .find(|arg| arg.starts_with("KnownHostsCommand="))
+            .unwrap();
         assert!(kh_cmd.contains("SHA256:uNiVv6W1nE1G5fHqJqF5fK4zL7/zN5lK3y/8K6="));
     }
 
@@ -600,7 +637,7 @@ mod tests {
 
         let (args, _, _, agent_socket) = builder.build_args().unwrap();
         assert_eq!(agent_socket, Some(socket_path));
-        
+
         // IdentitiesOnly=no must be set so that agent is queried
         assert!(args.contains(&"IdentitiesOnly=no".to_string()));
     }

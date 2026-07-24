@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct NetworkCommandBuilder<'a> {
@@ -10,7 +10,11 @@ pub struct NetworkCommandBuilder<'a> {
 
 impl<'a> NetworkCommandBuilder<'a> {
     pub(crate) fn new(executor: &'a CommandExecutor, cmd: &'static str, args: Vec<String>) -> Self {
-        Self { executor, cmd, args }
+        Self {
+            executor,
+            cmd,
+            args,
+        }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
         self.executor.run(self.cmd, &self.args).await

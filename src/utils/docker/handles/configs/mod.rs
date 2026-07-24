@@ -1,9 +1,8 @@
-use crate::utils::docker::{client::DockerCli, DockerResult};
-
+use crate::utils::docker::{DockerResult, client::DockerCli};
 
 pub use create::ConfigCreateBuilder;
-pub use remove::ConfigRemoveBuilder;
 pub use list::ConfigListBuilder;
+pub use remove::ConfigRemoveBuilder;
 
 // ── ConfigsHandle ───────────────────────────────────────────────────────────
 

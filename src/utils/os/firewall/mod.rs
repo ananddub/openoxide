@@ -24,7 +24,10 @@ impl<'a> FirewallCli<'a> {
         FirewallAdminBuilder::new(self.executor, vec!["reload".to_string()])
     }
     pub fn enable(&self) -> FirewallAdminBuilder<'a> {
-        FirewallAdminBuilder::new(self.executor, vec!["--force".to_string(), "enable".to_string()])
+        FirewallAdminBuilder::new(
+            self.executor,
+            vec!["--force".to_string(), "enable".to_string()],
+        )
     }
     pub fn disable(&self) -> FirewallAdminBuilder<'a> {
         FirewallAdminBuilder::new(self.executor, vec!["disable".to_string()])

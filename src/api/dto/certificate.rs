@@ -1,6 +1,6 @@
+use crate::db::models::certificates::Certificate;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::db::models::certificates::Certificate;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateCertificateDto {

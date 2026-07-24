@@ -339,11 +339,19 @@ impl<'a> From<&'a str> for BuildProgress {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NetworkScope { Local, Swarm, Global }
+pub enum NetworkScope {
+    Local,
+    Swarm,
+    Global,
+}
 
 impl fmt::Display for NetworkScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self { Self::Local => "local", Self::Swarm => "swarm", Self::Global => "global" })
+        f.write_str(match self {
+            Self::Local => "local",
+            Self::Swarm => "swarm",
+            Self::Global => "global",
+        })
     }
 }
 
@@ -370,11 +378,17 @@ impl<'a> From<&'a str> for NetworkScope {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NetworkType { Custom, Builtin }
+pub enum NetworkType {
+    Custom,
+    Builtin,
+}
 
 impl fmt::Display for NetworkType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self { Self::Custom => "custom", Self::Builtin => "builtin" })
+        f.write_str(match self {
+            Self::Custom => "custom",
+            Self::Builtin => "builtin",
+        })
     }
 }
 

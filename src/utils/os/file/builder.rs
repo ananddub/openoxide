@@ -1,9 +1,9 @@
+use super::{
+    FileChmodBuilder, FileChownBuilder, FileDeleteBuilder, FileExistsBuilder, FileReadBuilder,
+    FileReplaceBuilder, FileWriteBuilder,
+};
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
-use super::{
-    FileReadBuilder, FileWriteBuilder, FileExistsBuilder, FileDeleteBuilder,
-    FileChmodBuilder, FileChownBuilder, FileReplaceBuilder,
-};
 
 pub struct FileBuilder<'a> {
     pub(crate) executor: &'a CommandExecutor,

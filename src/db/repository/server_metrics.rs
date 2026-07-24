@@ -1,7 +1,7 @@
 use crate::db::models::server_metrics::ServerMetric;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ServerMetricRepository {
     pool: Arc<SqlitePool>,

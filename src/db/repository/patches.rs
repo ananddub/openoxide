@@ -1,7 +1,7 @@
 use crate::db::models::patches::Patch;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct PatchRepository {
     pool: Arc<SqlitePool>,
@@ -68,12 +68,9 @@ impl PatchRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM patches WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM patches WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 }

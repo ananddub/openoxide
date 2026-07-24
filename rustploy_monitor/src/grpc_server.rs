@@ -13,9 +13,9 @@ pub mod proto {
 use proto::monitoring_service_server::MonitoringService;
 pub use proto::monitoring_service_server::MonitoringServiceServer;
 use proto::{
-    ContainerMetricsRequest, HealthAck, HealthReportRequest, LogChunk, LogStreamRequest,
-    MetricsAck, SystemMetricsRequest, GetMetricsRequest, ServerMetricsResponse,
-    GetContainerMetricsRequest, ContainerMetricsResponse, ServerMetricPoint, ContainerMetricPoint,
+    ContainerMetricPoint, ContainerMetricsRequest, ContainerMetricsResponse,
+    GetContainerMetricsRequest, GetMetricsRequest, HealthAck, HealthReportRequest, LogChunk,
+    LogStreamRequest, MetricsAck, ServerMetricPoint, ServerMetricsResponse, SystemMetricsRequest,
 };
 
 pub struct MonitoringGrpcServer {
@@ -99,7 +99,11 @@ impl MonitoringService for MonitoringGrpcServer {
         request: Request<LogStreamRequest>,
     ) -> Result<Response<Self::StreamLogsStream>, Status> {
         let msg = request.into_inner();
-        let tail_count = if msg.tail_lines > 0 { msg.tail_lines as usize } else { 100 };
+        let tail_count = if msg.tail_lines > 0 {
+            msg.tail_lines as usize
+        } else {
+            100
+        };
 
         info!(
             "gRPC Log Stream Requested for Container ID: {}, App ID: {}, Tail: {}",

@@ -1,13 +1,14 @@
 use crate::api::dto::compose::{CreateComposeDto, PatchComposeDto};
 
-use super::{
-    ComposeRecord, ComposeService,
-    queries::generate_app_name,
-};
+use super::{ComposeRecord, ComposeService, queries::generate_app_name};
 
 impl ComposeService {
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ComposeRecord> {
-        let project = self.repo_compose.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let project = self
+            .repo_compose
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         Ok(ComposeRecord::from(project))
     }
 
@@ -15,28 +16,37 @@ impl ComposeService {
         &self,
         environment_id: i64,
     ) -> sqlx::Result<Vec<ComposeRecord>> {
-        let list = self.repo_compose.list_by_environment(environment_id).await?;
+        let list = self
+            .repo_compose
+            .list_by_environment(environment_id)
+            .await?;
         Ok(list.into_iter().map(ComposeRecord::from).collect())
     }
 
     pub async fn create(&self, input: CreateComposeDto) -> sqlx::Result<ComposeRecord> {
         let app_name = generate_app_name(&input.name);
-        let project = self.repo_compose.create_simple(
-            input.name,
-            app_name,
-            input.description,
-            input.environment_id,
-            input.server_id,
-            input.source_type,
-            input.compose_type,
-            input.compose_file,
-        )
-        .await?;
+        let project = self
+            .repo_compose
+            .create_simple(
+                input.name,
+                app_name,
+                input.description,
+                input.environment_id,
+                input.server_id,
+                input.source_type,
+                input.compose_type,
+                input.compose_file,
+            )
+            .await?;
         Ok(ComposeRecord::from(project))
     }
 
     pub async fn patch(&self, id: i64, input: PatchComposeDto) -> sqlx::Result<ComposeRecord> {
-        let current = self.repo_compose.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let current = self
+            .repo_compose
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let name = input.name.unwrap_or(current.name);
         let description = input.description.or(current.description);
         let env_var = input.env_var.or(current.env_var);
@@ -47,25 +57,26 @@ impl ComposeService {
         let compose_path = input.compose_path.unwrap_or(current.compose_path);
         let server_id = input.server_id.or(current.server_id);
 
-        self.repo_compose.patch(
-            id,
-            name,
-            description,
-            env_var,
-            compose_file,
-            compose_type,
-            trigger_type,
-            command,
-            input.enable_submodules,
-            compose_path,
-            input.suffix,
-            input.randomize,
-            input.isolated_deployment,
-            input.isolated_deployments_volume,
-            input.watch_paths,
-            server_id,
-        )
-        .await?;
+        self.repo_compose
+            .patch(
+                id,
+                name,
+                description,
+                env_var,
+                compose_file,
+                compose_type,
+                trigger_type,
+                command,
+                input.enable_submodules,
+                compose_path,
+                input.suffix,
+                input.randomize,
+                input.isolated_deployment,
+                input.isolated_deployments_volume,
+                input.watch_paths,
+                server_id,
+            )
+            .await?;
         self.get_by_id(id).await
     }
 

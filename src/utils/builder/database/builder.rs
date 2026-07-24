@@ -1,14 +1,14 @@
-use crate::utils::builder::shared::BuilderContext;
-use crate::utils::exec::{CommandExecutor, ExecResult, ExecError};
-use crate::utils::builder::spec::BuilderEvent;
+use crate::pipeline;
 use crate::repository::MountRepository;
 use crate::services::database::DatabaseKind;
-use crate::pipeline;
+use crate::utils::builder::shared::BuilderContext;
+use crate::utils::builder::spec::BuilderEvent;
+use crate::utils::docker::query::filter::{TaskDesiredState, TaskFilter};
+use crate::utils::exec::{CommandExecutor, ExecError, ExecResult};
 use serde::Serialize;
 use std::collections::BTreeMap;
-use tokio_util::sync::CancellationToken;
 use tokio::time::{Duration, Instant};
-use crate::utils::docker::query::filter::{TaskDesiredState, TaskFilter};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Serialize)]
 pub struct StackFile {
@@ -172,45 +172,40 @@ impl DatabaseBuilder {
         self.ctx.cancelled(cancel)?;
 
         // Fetch mounts for this database
-        let mount_repo = auto_di::resolve::<MountRepository>().await.map_err(|e| ExecError::CommandFailed {
-            code: None,
-            stderr: format!("Failed to resolve MountRepository: {}", e),
-        })?;
-        let mounts = mount_repo
-            .fetch_for_database(db_id)
-            .await
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: format!("Failed to fetch mounts: {}", e),
-            })?;
+        let mount_repo =
+            auto_di::resolve::<MountRepository>()
+                .await
+                .map_err(|e| ExecError::CommandFailed {
+                    code: None,
+                    stderr: format!("Failed to resolve MountRepository: {}", e),
+                })?;
+        let mounts =
+            mount_repo
+                .fetch_for_database(db_id)
+                .await
+                .map_err(|e| ExecError::CommandFailed {
+                    code: None,
+                    stderr: format!("Failed to fetch mounts: {}", e),
+                })?;
 
         // 1. Build stack file based on database kind
         let (app_name, docker_image, stack_file_content) = match db_kind {
-            DatabaseKind::Postgres => {
-                super::postgres::build_postgres_stack(db_id, &mounts).await?
-            }
-            DatabaseKind::Mysql => {
-                super::mysql::build_mysql_stack(db_id, &mounts).await?
-            }
-            DatabaseKind::Mariadb => {
-                super::mariadb::build_mariadb_stack(db_id, &mounts).await?
-            }
-            DatabaseKind::Mongo => {
-                super::mongo::build_mongo_stack(db_id, &mounts).await?
-            }
-            DatabaseKind::Redis => {
-                super::redis::build_redis_stack(db_id, &mounts).await?
-            }
-            DatabaseKind::Libsql => {
-                super::libsql::build_libsql_stack(db_id, &mounts).await?
-            }
+            DatabaseKind::Postgres => super::postgres::build_postgres_stack(db_id, &mounts).await?,
+            DatabaseKind::Mysql => super::mysql::build_mysql_stack(db_id, &mounts).await?,
+            DatabaseKind::Mariadb => super::mariadb::build_mariadb_stack(db_id, &mounts).await?,
+            DatabaseKind::Mongo => super::mongo::build_mongo_stack(db_id, &mounts).await?,
+            DatabaseKind::Redis => super::redis::build_redis_stack(db_id, &mounts).await?,
+            DatabaseKind::Libsql => super::libsql::build_libsql_stack(db_id, &mounts).await?,
         };
 
         self.ctx.emit(BuilderEvent::Building).await;
         self.ctx.cancelled(cancel)?;
 
         // Pull database docker image on host
-        self.ctx.docker.images().pull(&docker_image)
+        self.ctx
+            .docker
+            .images()
+            .pull(&docker_image)
             .cancel_with(cancel.clone())
             .pull()
             .await?;
@@ -223,13 +218,20 @@ impl DatabaseBuilder {
         let stack_file_path = format!("{}/stack.yml", db_dir);
 
         // 3. Ensure Swarm and Network
-        super::super::swarm::ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel).await?;
-        super::super::swarm::ensure_overlay_network(&self.ctx.docker, super::super::swarm::RUSTPLOY_NETWORK, cancel).await?;
+        super::super::swarm::ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel)
+            .await?;
+        super::super::swarm::ensure_overlay_network(
+            &self.ctx.docker,
+            super::super::swarm::RUSTPLOY_NETWORK,
+            cancel,
+        )
+        .await?;
 
         self.ctx.emit(BuilderEvent::Deploying).await;
         self.ctx.cancelled(cancel)?;
 
-        self.ctx.executor
+        self.ctx
+            .executor
             .run_cancelled("mkdir", ["-p", db_dir.as_str()], cancel)
             .await?;
         self.ctx
@@ -237,7 +239,8 @@ impl DatabaseBuilder {
             .await?;
 
         let stacks = self.ctx.docker.stacks();
-        let deploy_cmd = stacks.deploy(app_name.clone())
+        let deploy_cmd = stacks
+            .deploy(app_name.clone())
             .compose_file(&stack_file_path)
             .cancel_with(cancel.clone());
 
@@ -245,7 +248,9 @@ impl DatabaseBuilder {
             deploy_cmd;
         };
 
-        let result = self.ctx.apply_cgroup(pipeline)?
+        let result = self
+            .ctx
+            .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
 
@@ -263,27 +268,25 @@ impl DatabaseBuilder {
         Ok(())
     }
 
-    pub async fn stop(
-        &self,
-        app_name: &str,
-        cancel: &CancellationToken,
-    ) -> ExecResult<()> {
-        let _ = self.ctx.docker.stacks().remove(app_name)
+    pub async fn stop(&self, app_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
+        let _ = self
+            .ctx
+            .docker
+            .stacks()
+            .remove(app_name)
             .cancel_with(cancel.clone())
             .run()
             .await;
         Ok(())
     }
 
-    async fn wait_healthy(
-        &self,
-        service_name: &str,
-        cancel: &CancellationToken,
-    ) -> ExecResult<()> {
+    async fn wait_healthy(&self, service_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
         let deadline = Instant::now() + self.ctx.health_timeout;
         loop {
             self.ctx.cancelled(cancel)?;
-            let health_result = self.ctx.docker
+            let health_result = self
+                .ctx
+                .docker
                 .services()
                 .ps(service_name)
                 .filter(TaskFilter::DesiredState(TaskDesiredState::Running))
@@ -302,9 +305,10 @@ impl DatabaseBuilder {
                 }
                 Err(error) => return Err(error),
             };
-            if rows.iter().any(|row| {
-                row.current_state.starts_with("Running")
-            }) {
+            if rows
+                .iter()
+                .any(|row| row.current_state.starts_with("Running"))
+            {
                 return Ok(());
             }
             if let Some(error) = rows

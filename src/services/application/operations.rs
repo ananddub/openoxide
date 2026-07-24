@@ -29,25 +29,39 @@ impl ApplicationService {
             .ensure_capacity()
             .await?;
 
-        let app_model = self.repo_app.update_status(id, operation.target_status()).await?;
+        let app_model = self
+            .repo_app
+            .update_status(id, operation.target_status())
+            .await?;
         let app = ApplicationRecord::from(app_model);
 
         let log_path = format!("pending-app-{}", id);
-        let deployment_id = self.repo_deploy.create_queued_deployment(
-            operation.title().to_string(),
-            Some(format!("{} requested for {}", operation.as_str(), app.name)),
-            log_path,
-            operation.as_str().to_string(),
-            id,
-            app.server_id,
-        )
-        .await?;
+        let deployment_id = self
+            .repo_deploy
+            .create_queued_deployment(
+                operation.title().to_string(),
+                Some(format!("{} requested for {}", operation.as_str(), app.name)),
+                log_path,
+                operation.as_str().to_string(),
+                id,
+                app.server_id,
+            )
+            .await?;
 
         let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
-        self.repo_deploy.update_log_path(deployment_id, &log_path).await?;
+        self.repo_deploy
+            .update_log_path(deployment_id, &log_path)
+            .await?;
 
-        if let Ok(mut log) = crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await {
-            let _ = log.write_line(&format!("[QUEUED] deployment queued for {}", operation.as_str())).await;
+        if let Ok(mut log) =
+            crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await
+        {
+            let _ = log
+                .write_line(&format!(
+                    "[QUEUED] deployment queued for {}",
+                    operation.as_str()
+                ))
+                .await;
         }
 
         resolve::<BuilderQueue>()

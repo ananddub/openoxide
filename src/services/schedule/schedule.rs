@@ -4,10 +4,18 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
+use crate::services::compose::ComposeType;
+use crate::services::schedule::types::{ScheduleAction, ScheduleType, ShellType};
+use crate::utils::docker::query::ContainerFilter;
 use crate::{
     api::dto::schedule::{CreateScheduleDto, PatchScheduleDto},
     db::models::schedules::Schedule,
     db::models::types::{BackupsDatabaseTypeEnum, VolumeBackupsServiceTypeEnum},
+    repository::{
+        ApplicationRepository, BackupRepository, ComposeProjectRepository, DestinationRepository,
+        LibsqlRepository, MariadbRepository, MongoRepository, MysqlRepository, PostgresRepository,
+        RedisRepository, ScheduleRepository, VolumeBackupRepository,
+    },
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService, remote::remote_executor},
@@ -16,16 +24,7 @@ use crate::{
         docker::DockerCli,
         exec::{CommandExecutor, LocalExecutor},
     },
-    repository::{
-        ScheduleRepository, ApplicationRepository, ComposeProjectRepository,
-        BackupRepository, VolumeBackupRepository, DestinationRepository,
-        PostgresRepository, MysqlRepository, MariadbRepository, MongoRepository,
-        RedisRepository, LibsqlRepository,
-    },
 };
-use crate::services::compose::ComposeType;
-use crate::services::schedule::types::{ScheduleAction, ScheduleType, ShellType};
-use crate::utils::docker::query::ContainerFilter;
 
 #[derive(Debug, Clone)]
 pub struct ScheduleRunResult {
@@ -113,7 +112,9 @@ impl ScheduleService {
     }
 
     pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule.list_by_organization(organization_id).await
+        self.repo_schedule
+            .list_by_organization(organization_id)
+            .await
     }
 
     pub async fn list_enabled(&self) -> sqlx::Result<Vec<Schedule>> {
@@ -227,7 +228,11 @@ impl ScheduleService {
     }
 
     pub async fn restore_database_backup(&self, id: i64, backup_file: &str) -> sqlx::Result<()> {
-        let backup = self.repo_backup.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self
+            .repo_backup
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
 
         let server_id = self.resolve_database_backup_server_id(&backup).await?;
         let executor = if let Some(sid) = server_id {
@@ -241,9 +246,11 @@ impl ScheduleService {
         };
 
         let dumper = self.resolve_database_dumper(&backup).await?;
-        let dest_model = self.repo_destination.get_by_id(backup.destination_id).await?.ok_or_else(|| {
-            sqlx::Error::Protocol("destination not found".into())
-        })?;
+        let dest_model = self
+            .repo_destination
+            .get_by_id(backup.destination_id)
+            .await?
+            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -255,18 +262,24 @@ impl ScheduleService {
             additional_flags: dest_model.additional_flags,
         };
 
-        let runner = crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
+        let runner =
+            crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner.run_restore(backup_file, &cancel).await.map_err(|e| {
-            sqlx::Error::Protocol(e.to_string())
-        })?;
+        runner
+            .run_restore(backup_file, &cancel)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         Ok(())
     }
 
     pub async fn restore_volume_backup(&self, id: i64, backup_file: &str) -> sqlx::Result<()> {
-        let backup = self.repo_volume_backup.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self
+            .repo_volume_backup
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
 
         let server_id = self.resolve_volume_backup_server_id(&backup).await?;
         let executor = if let Some(sid) = server_id {
@@ -280,9 +293,11 @@ impl ScheduleService {
         };
 
         let target = self.resolve_volume_service_target(&backup).await?;
-        let dest_model = self.repo_destination.get_by_id(backup.destination_id).await?.ok_or_else(|| {
-            sqlx::Error::Protocol("destination not found".into())
-        })?;
+        let dest_model = self
+            .repo_destination
+            .get_by_id(backup.destination_id)
+            .await?
+            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -300,12 +315,17 @@ impl ScheduleService {
             turn_off: backup.turn_off == 1,
         };
 
-        let runner = crate::utils::backup::volume::VolumeBackupRunner::new(&executor, &volume_backup, &destination);
+        let runner = crate::utils::backup::volume::VolumeBackupRunner::new(
+            &executor,
+            &volume_backup,
+            &destination,
+        );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner.run_restore(backup_file, &cancel).await.map_err(|e| {
-            sqlx::Error::Protocol(e.to_string())
-        })?;
+        runner
+            .run_restore(backup_file, &cancel)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         Ok(())
     }
@@ -321,15 +341,14 @@ impl ScheduleService {
             return Err(sqlx::Error::Protocol("schedule is disabled".into()));
         }
         let v = ScheduleType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!(
-                "invalid schedule type: {}",
-                schedule.shell_type
-            ))
+            sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.shell_type))
         })?;
         match v {
             ScheduleType::Application => self.run_application_schedule(schedule).await,
             ScheduleType::Compose => self.run_compose_schedule(schedule).await,
-            ScheduleType::Server | ScheduleType::DokpanelServer => self.run_shell_schedule(schedule).await,
+            ScheduleType::Server | ScheduleType::DokpanelServer => {
+                self.run_shell_schedule(schedule).await
+            }
         }
     }
 
@@ -404,10 +423,7 @@ impl ScheduleService {
             CommandExecutor::Local(LocalExecutor::new())
         };
         let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!(
-                "invalid shell type: {}",
-                schedule.shell_type
-            ))
+            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
         })?;
         let shell = v.executable();
         let output = executor
@@ -429,7 +445,11 @@ impl ScheduleService {
         schedule: Schedule,
         application_id: i64,
     ) -> sqlx::Result<ScheduleRunResult> {
-        let app = self.repo_app.get_by_id(application_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let app = self
+            .repo_app
+            .get_by_id(application_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let app_name = app.app_name;
         let server_id = app.server_id;
         // Applications are always deployed as Swarm services.
@@ -443,7 +463,11 @@ impl ScheduleService {
         schedule: Schedule,
         compose_id: i64,
     ) -> sqlx::Result<ScheduleRunResult> {
-        let compose = self.repo_compose.get_by_id(compose_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let compose = self
+            .repo_compose
+            .get_by_id(compose_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let app_name = compose.app_name;
         let server_id = compose.server_id;
         let compose_type = compose.compose_type;
@@ -452,10 +476,7 @@ impl ScheduleService {
             sqlx::Error::Protocol("compose EXEC schedule requires service_name".into())
         })?;
         let v = ComposeType::try_from(compose_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!(
-                "invalid compose type: {}",
-                compose_type
-            ))
+            sqlx::Error::Protocol(format!("invalid compose type: {}", compose_type))
         })?;
         match v {
             ComposeType::Stack => {
@@ -469,7 +490,10 @@ impl ScheduleService {
             }
             ComposeType::DockerCompose => {
                 self.run_compose_project_container_command(
-                    schedule, server_id, &app_name, &compose_service,
+                    schedule,
+                    server_id,
+                    &app_name,
+                    &compose_service,
                 )
                 .await
             }
@@ -488,7 +512,10 @@ impl ScheduleService {
         let container = docker
             .containers()
             .ps()
-            .filter(ContainerFilter::label("com.docker.swarm.service.name", service_name))
+            .filter(ContainerFilter::label(
+                "com.docker.swarm.service.name",
+                service_name,
+            ))
             .list()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?
@@ -500,10 +527,7 @@ impl ScheduleService {
                 ))
             })?;
         let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!(
-                "invalid shell type: {}",
-                schedule.shell_type
-            ))
+            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
         })?;
         let shell = v.executable();
         let output = docker
@@ -548,10 +572,7 @@ impl ScheduleService {
                 ))
             })?;
         let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!(
-                "invalid shell type: {}",
-                schedule.shell_type
-            ))
+            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
         })?;
         let shell = v.executable();
         let output = docker
@@ -626,96 +647,139 @@ impl ScheduleService {
 
         match service_type {
             VolumeBackupsServiceTypeEnum::Postgres => {
-                let id = backup.postgres_id.ok_or_else(|| sqlx::Error::Protocol("missing postgres_id".into()))?;
+                let id = backup
+                    .postgres_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing postgres_id".into()))?;
                 let details = self.repo_postgres.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Mysql => {
-                let id = backup.mysql_id.ok_or_else(|| sqlx::Error::Protocol("missing mysql_id".into()))?;
+                let id = backup
+                    .mysql_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing mysql_id".into()))?;
                 let details = self.repo_mysql.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Mariadb => {
-                let id = backup.mariadb_id.ok_or_else(|| sqlx::Error::Protocol("missing mariadb_id".into()))?;
+                let id = backup
+                    .mariadb_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing mariadb_id".into()))?;
                 let details = self.repo_mariadb.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Mongo => {
-                let id = backup.mongo_id.ok_or_else(|| sqlx::Error::Protocol("missing mongo_id".into()))?;
+                let id = backup
+                    .mongo_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing mongo_id".into()))?;
                 let details = self.repo_mongo.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Redis => {
-                let id = backup.redis_id.ok_or_else(|| sqlx::Error::Protocol("missing redis_id".into()))?;
+                let id = backup
+                    .redis_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing redis_id".into()))?;
                 let details = self.repo_redis.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Libsql => {
-                let id = backup.libsql_id.ok_or_else(|| sqlx::Error::Protocol("missing libsql_id".into()))?;
+                let id = backup
+                    .libsql_id
+                    .ok_or_else(|| sqlx::Error::Protocol("missing libsql_id".into()))?;
                 let details = self.repo_libsql.get_details(id).await?;
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                    service_name: details.app_name,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name: details.app_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Application => {
                 if let Some(id) = backup.postgres_id {
                     let details = self.repo_postgres.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
                 if let Some(id) = backup.mysql_id {
                     let details = self.repo_mysql.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
                 if let Some(id) = backup.mariadb_id {
                     let details = self.repo_mariadb.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
                 if let Some(id) = backup.mongo_id {
                     let details = self.repo_mongo.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
                 if let Some(id) = backup.redis_id {
                     let details = self.repo_redis.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
                 if let Some(id) = backup.libsql_id {
                     let details = self.repo_libsql.get_details(id).await?;
-                    return Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    });
+                    return Ok(
+                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                            service_name: details.app_name,
+                        },
+                    );
                 }
 
-                let service_name = backup.service_name.clone().unwrap_or_else(|| {
-                    format!("{}_{}", backup.app_name, backup.app_name)
-                });
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::SwarmService { service_name })
+                let service_name = backup
+                    .service_name
+                    .clone()
+                    .unwrap_or_else(|| format!("{}_{}", backup.app_name, backup.app_name));
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name,
+                    },
+                )
             }
             VolumeBackupsServiceTypeEnum::Compose => {
                 let service = backup.service_name.clone().unwrap_or_default();
-                Ok(crate::utils::backup::volume::VolumeServiceTarget::ComposeService {
-                    project: backup.app_name.clone(),
-                    service,
-                })
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::ComposeService {
+                        project: backup.app_name.clone(),
+                        service,
+                    },
+                )
             }
         }
     }
@@ -826,8 +890,16 @@ impl ScheduleService {
 
         let (user, password) = if let Some(meta_str) = &backup.metadata {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(meta_str) {
-                let u = json.get("databaseUser").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let p = json.get("databasePassword").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let u = json
+                    .get("databaseUser")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let p = json
+                    .get("databasePassword")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
                 (u, p)
             } else {
                 ("".to_string(), "".to_string())
@@ -836,57 +908,79 @@ impl ScheduleService {
             ("".to_string(), "".to_string())
         };
 
-        let service_name = backup.service_name.clone().unwrap_or_else(|| backup.app_name.clone());
+        let service_name = backup
+            .service_name
+            .clone()
+            .unwrap_or_else(|| backup.app_name.clone());
 
         let db_type = parse_database_type(&backup.database_type).ok_or_else(|| {
-            sqlx::Error::Protocol(format!("unsupported database type: {}", backup.database_type))
+            sqlx::Error::Protocol(format!(
+                "unsupported database type: {}",
+                backup.database_type
+            ))
         })?;
 
         match db_type {
-            BackupsDatabaseTypeEnum::Postgres => Ok(crate::utils::backup::database::DatabaseDumper::Postgres {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user,
-                    password,
+            BackupsDatabaseTypeEnum::Postgres => {
+                Ok(crate::utils::backup::database::DatabaseDumper::Postgres {
+                    creds: crate::utils::backup::database::DbCredentials {
+                        user,
+                        password,
+                        database: backup.database_name.clone(),
+                    },
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
+            BackupsDatabaseTypeEnum::Mysql => {
+                Ok(crate::utils::backup::database::DatabaseDumper::Mysql {
+                    creds: crate::utils::backup::database::DbCredentials {
+                        user,
+                        password,
+                        database: backup.database_name.clone(),
+                    },
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
+            BackupsDatabaseTypeEnum::Mariadb => {
+                Ok(crate::utils::backup::database::DatabaseDumper::MariaDb {
+                    creds: crate::utils::backup::database::DbCredentials {
+                        user,
+                        password,
+                        database: backup.database_name.clone(),
+                    },
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
+            BackupsDatabaseTypeEnum::Mongo => {
+                Ok(crate::utils::backup::database::DatabaseDumper::Mongo {
+                    creds: crate::utils::backup::database::DbCredentials {
+                        user,
+                        password,
+                        database: backup.database_name.clone(),
+                    },
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
+            BackupsDatabaseTypeEnum::Redis => {
+                Ok(crate::utils::backup::database::DatabaseDumper::Redis {
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
+            BackupsDatabaseTypeEnum::Libsql => {
+                Ok(crate::utils::backup::database::DatabaseDumper::LibSql {
                     database: backup.database_name.clone(),
-                },
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
-            BackupsDatabaseTypeEnum::Mysql => Ok(crate::utils::backup::database::DatabaseDumper::Mysql {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user,
-                    password,
-                    database: backup.database_name.clone(),
-                },
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
-            BackupsDatabaseTypeEnum::Mariadb => Ok(crate::utils::backup::database::DatabaseDumper::MariaDb {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user,
-                    password,
-                    database: backup.database_name.clone(),
-                },
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
-            BackupsDatabaseTypeEnum::Mongo => Ok(crate::utils::backup::database::DatabaseDumper::Mongo {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user,
-                    password,
-                    database: backup.database_name.clone(),
-                },
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
-            BackupsDatabaseTypeEnum::Redis => Ok(crate::utils::backup::database::DatabaseDumper::Redis {
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
-            BackupsDatabaseTypeEnum::Libsql => Ok(crate::utils::backup::database::DatabaseDumper::LibSql {
-                database: backup.database_name.clone(),
-                target: crate::utils::backup::database::ContainerTarget { service_name },
-            }),
+                    target: crate::utils::backup::database::ContainerTarget { service_name },
+                })
+            }
         }
     }
 
     pub async fn run_database_backup(&self, id: i64) -> sqlx::Result<()> {
-        let backup = self.repo_backup.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self
+            .repo_backup
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         if backup.enabled == 0 {
             return Err(sqlx::Error::Protocol("backup is disabled".into()));
         }
@@ -903,9 +997,11 @@ impl ScheduleService {
         };
 
         let dumper = self.resolve_database_dumper(&backup).await?;
-        let dest_model = self.repo_destination.get_by_id(backup.destination_id).await?.ok_or_else(|| {
-            sqlx::Error::Protocol("destination not found".into())
-        })?;
+        let dest_model = self
+            .repo_destination
+            .get_by_id(backup.destination_id)
+            .await?
+            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -917,7 +1013,8 @@ impl ScheduleService {
             additional_flags: dest_model.additional_flags,
         };
 
-        let runner = crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
+        let runner =
+            crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
 
         let ext = dumper.file_extension();
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
@@ -930,15 +1027,20 @@ impl ScheduleService {
         );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner.run(&object_key, &cancel).await.map_err(|e| {
-            sqlx::Error::Protocol(e.to_string())
-        })?;
+        runner
+            .run(&object_key, &cancel)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         Ok(())
     }
 
     pub async fn run_volume_backup(&self, id: i64) -> sqlx::Result<()> {
-        let backup = self.repo_volume_backup.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self
+            .repo_volume_backup
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         if backup.enabled == 0 {
             return Err(sqlx::Error::Protocol("volume backup is disabled".into()));
         }
@@ -955,9 +1057,11 @@ impl ScheduleService {
         };
 
         let target = self.resolve_volume_service_target(&backup).await?;
-        let dest_model = self.repo_destination.get_by_id(backup.destination_id).await?.ok_or_else(|| {
-            sqlx::Error::Protocol("destination not found".into())
-        })?;
+        let dest_model = self
+            .repo_destination
+            .get_by_id(backup.destination_id)
+            .await?
+            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -975,7 +1079,11 @@ impl ScheduleService {
             turn_off: backup.turn_off == 1,
         };
 
-        let runner = crate::utils::backup::volume::VolumeBackupRunner::new(&executor, &volume_backup, &destination);
+        let runner = crate::utils::backup::volume::VolumeBackupRunner::new(
+            &executor,
+            &volume_backup,
+            &destination,
+        );
 
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
         let object_key = format!(
@@ -986,9 +1094,10 @@ impl ScheduleService {
         );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner.run(&object_key, &cancel).await.map_err(|e| {
-            sqlx::Error::Protocol(e.to_string())
-        })?;
+        runner
+            .run(&object_key, &cancel)
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         Ok(())
     }
@@ -996,9 +1105,8 @@ impl ScheduleService {
 
 fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {
     let value = value.unwrap_or("BASH").trim().to_ascii_uppercase();
-    let v = ShellType::try_from(value.as_str()).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid shell type: {}", value))
-    })?;
+    let v = ShellType::try_from(value.as_str())
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid shell type: {}", value)))?;
     match v {
         ShellType::Bash => Ok(value),
         ShellType::Sh => Ok(value),
@@ -1007,9 +1115,8 @@ fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {
 
 fn normalize_schedule_type(value: Option<&str>) -> sqlx::Result<String> {
     let value = value.unwrap_or("APPLICATION").trim().to_ascii_uppercase();
-    let v = ScheduleType::try_from(value.as_str()).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule type: {}", value))
-    })?;
+    let v = ScheduleType::try_from(value.as_str())
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", value)))?;
     match v {
         ScheduleType::Application => Ok(value),
         ScheduleType::Compose => Ok(value),
@@ -1027,9 +1134,8 @@ fn normalize_schedule_action(
         .map(|value| value.trim().to_ascii_uppercase())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| infer_schedule_action(schedule_type, command));
-    let v = ScheduleAction::try_from(value.as_str()).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule action: {}", value))
-    })?;
+    let v = ScheduleAction::try_from(value.as_str())
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))?;
     match v {
         ScheduleAction::Exec => Ok(value),
         ScheduleAction::Deploy => Ok(value),
@@ -1043,9 +1149,9 @@ fn normalize_schedule_action(
 
 fn infer_schedule_action(schedule_type: &str, command: &str) -> String {
     let command = command.trim().to_ascii_lowercase();
-    let schedule = ScheduleType::try_from(schedule_type).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type))
-    }).unwrap();
+    let schedule = ScheduleType::try_from(schedule_type)
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type)))
+        .unwrap();
     let is_operation = match schedule {
         ScheduleType::Application => matches!(
             command.as_str(),
@@ -1079,9 +1185,9 @@ fn validate_target(
     server_id: Option<i64>,
     service_name: Option<&str>,
 ) -> sqlx::Result<()> {
-    let v = ScheduleType::try_from(schedule_type).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type))
-    }).unwrap();
+    let v = ScheduleType::try_from(schedule_type)
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type)))
+        .unwrap();
     match v {
         ScheduleType::Application if application_id.is_none() => Err(sqlx::Error::Protocol(
             "APPLICATION schedule requires application_id".into(),
@@ -1110,10 +1216,10 @@ fn validate_target(
 }
 
 fn parse_application_operation(value: &str) -> sqlx::Result<ApplicationOperation> {
-    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str()).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule action: {}", value))
-    }).unwrap();
-    match  v{
+    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str())
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))
+        .unwrap();
+    match v {
         ScheduleAction::Deploy => Ok(ApplicationOperation::Deploy),
         ScheduleAction::Redeploy => Ok(ApplicationOperation::Redeploy),
         ScheduleAction::Rebuild => Ok(ApplicationOperation::Rebuild),
@@ -1127,9 +1233,9 @@ fn parse_application_operation(value: &str) -> sqlx::Result<ApplicationOperation
 }
 
 fn parse_compose_operation(value: &str) -> sqlx::Result<ComposeOperation> {
-    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str()).map_err(|_| {
-        sqlx::Error::Protocol(format!("invalid schedule action: {}", value))
-    }).unwrap();
+    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str())
+        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))
+        .unwrap();
     match v {
         ScheduleAction::Deploy => Ok(ComposeOperation::Deploy),
         ScheduleAction::Redeploy => Ok(ComposeOperation::Redeploy),

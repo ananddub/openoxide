@@ -1,6 +1,6 @@
+use super::{PackageCheckInstalledBuilder, PackageInstallBuilder, PackageRemoveBuilder};
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
-use super::{PackageInstallBuilder, PackageRemoveBuilder, PackageCheckInstalledBuilder};
 
 pub struct PackageBuilder<'a> {
     pub(crate) executor: &'a CommandExecutor,

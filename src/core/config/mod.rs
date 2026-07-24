@@ -24,7 +24,8 @@ impl Config {
         let socket_path =
             std::env::var("SOCKET_PATH").unwrap_or_else(|_| "/var/run/docker.sock".to_string());
         let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-        let build_memory_limit = std::env::var("BUILD_MEMORY_LIMIT").unwrap_or_else(|_| "4G".to_string());
+        let build_memory_limit =
+            std::env::var("BUILD_MEMORY_LIMIT").unwrap_or_else(|_| "4G".to_string());
         let build_cpu_limit = std::env::var("BUILD_CPU_LIMIT").unwrap_or_else(|_| "4".to_string());
         Ok(Config {
             database_url,

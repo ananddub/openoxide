@@ -1,5 +1,7 @@
-
-pub use local::{AddBuilder, CheckoutBuilder, CommitBuilder, WorktreeBuilder, WorktreeAddBuilder, RemoteBuilder, ResetBuilder, SubmoduleBuilder};
+pub use local::{
+    AddBuilder, CheckoutBuilder, CommitBuilder, RemoteBuilder, ResetBuilder, SubmoduleBuilder,
+    WorktreeAddBuilder, WorktreeBuilder,
+};
 pub use queries::{GitQueries, LsRemoteBuilder};
 pub use remote::{CloneBuilder, FetchBuilder, PullBuilder, PushBuilder};
 

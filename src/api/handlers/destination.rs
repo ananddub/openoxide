@@ -37,7 +37,12 @@ impl DestinationController {
         self.service
             .list()
             .await
-            .map(|items| items.into_iter().map(DestinationResponseDto::from).collect())
+            .map(|items| {
+                items
+                    .into_iter()
+                    .map(DestinationResponseDto::from)
+                    .collect()
+            })
             .map(Json)
             .map_err(map_sqlx_error)
     }

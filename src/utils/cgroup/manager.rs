@@ -1,13 +1,8 @@
-use crate::utils::exec::CommandExecutor;
 use super::{
-    cpu::CpuLimit,
-    cpuset::CpusetLimit,
-    error::CgroupError,
-    freezer::FreezeState,
-    io::IoLimit,
-    memory::MemoryLimit,
-    pids::PidsLimit,
+    cpu::CpuLimit, cpuset::CpusetLimit, error::CgroupError, freezer::FreezeState, io::IoLimit,
+    memory::MemoryLimit, pids::PidsLimit,
 };
+use crate::utils::exec::CommandExecutor;
 
 #[derive(Clone, Debug)]
 pub struct Cgroup {
@@ -119,7 +114,8 @@ impl Cgroup {
 
     pub async fn available_controllers(&self) -> Result<Vec<String>, CgroupError> {
         let path = format!("{}/cgroup.controllers", self.base_path);
-        let output = self.executor
+        let output = self
+            .executor
             .read_file(&path)
             .await
             .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -138,7 +134,8 @@ impl Cgroup {
 
     pub async fn create(&self) -> Result<(), CgroupError> {
         let cgroup_dir = self.cgroup_path();
-        let output = self.executor
+        let output = self
+            .executor
             .run("mkdir", &["-p", &cgroup_dir])
             .await
             .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -176,7 +173,8 @@ impl Cgroup {
             let parent_dir = format!("{}/{}", self.base_path, current_path);
             let parent_subtree = format!("{}/cgroup.subtree_control", parent_dir);
 
-            let mkdir_out = self.executor
+            let mkdir_out = self
+                .executor
                 .run("mkdir", &["-p", &parent_dir])
                 .await
                 .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -184,7 +182,8 @@ impl Cgroup {
                 return Err(CgroupError::CreateFailed(mkdir_out.combined_output()));
             }
 
-            let write_out = self.executor
+            let write_out = self
+                .executor
                 .write_file(&parent_subtree, &enabled_str)
                 .await
                 .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -206,27 +205,39 @@ impl Cgroup {
 
         let available = self.available_controllers().await?;
 
-        if self.memory_limit.is_some() || self.memory_high.is_some() || self.memory_low.is_some() || self.memory_swap.is_some() {
+        if self.memory_limit.is_some()
+            || self.memory_high.is_some()
+            || self.memory_low.is_some()
+            || self.memory_swap.is_some()
+        {
             if !available.contains(&"memory".to_string()) {
-                return Err(CgroupError::ControllerUnavailable { controller: "memory".into() });
+                return Err(CgroupError::ControllerUnavailable {
+                    controller: "memory".into(),
+                });
             }
             if let Some(ref max) = self.memory_limit {
-                self.write_file("memory.max", &max.to_cgroup_value()).await?;
+                self.write_file("memory.max", &max.to_cgroup_value())
+                    .await?;
             }
             if let Some(ref high) = self.memory_high {
-                self.write_file("memory.high", &high.to_cgroup_value()).await?;
+                self.write_file("memory.high", &high.to_cgroup_value())
+                    .await?;
             }
             if let Some(ref low) = self.memory_low {
-                self.write_file("memory.low", &low.to_cgroup_value()).await?;
+                self.write_file("memory.low", &low.to_cgroup_value())
+                    .await?;
             }
             if let Some(ref swap) = self.memory_swap {
-                self.write_file("memory.swap.max", &swap.to_cgroup_value()).await?;
+                self.write_file("memory.swap.max", &swap.to_cgroup_value())
+                    .await?;
             }
         }
 
         if self.cpu_limit.is_some() || self.cpu_weight.is_some() {
             if !available.contains(&"cpu".to_string()) {
-                return Err(CgroupError::ControllerUnavailable { controller: "cpu".into() });
+                return Err(CgroupError::ControllerUnavailable {
+                    controller: "cpu".into(),
+                });
             }
             if let Some(ref limit) = self.cpu_limit {
                 self.write_file("cpu.max", &limit.to_cgroup_value()).await?;
@@ -238,21 +249,29 @@ impl Cgroup {
 
         if let Some(ref cpuset) = self.cpuset {
             if !available.contains(&"cpuset".to_string()) {
-                return Err(CgroupError::ControllerUnavailable { controller: "cpuset".into() });
+                return Err(CgroupError::ControllerUnavailable {
+                    controller: "cpuset".into(),
+                });
             }
-            self.write_file("cpuset.cpus", cpuset.to_cgroup_value()).await?;
+            self.write_file("cpuset.cpus", cpuset.to_cgroup_value())
+                .await?;
         }
 
         if let Some(ref limit) = self.pids_limit {
             if !available.contains(&"pids".to_string()) {
-                return Err(CgroupError::ControllerUnavailable { controller: "pids".into() });
+                return Err(CgroupError::ControllerUnavailable {
+                    controller: "pids".into(),
+                });
             }
-            self.write_file("pids.max", &limit.to_cgroup_value()).await?;
+            self.write_file("pids.max", &limit.to_cgroup_value())
+                .await?;
         }
 
         if let Some(ref limit) = self.io_limit {
             if !available.contains(&"io".to_string()) {
-                return Err(CgroupError::ControllerUnavailable { controller: "io".into() });
+                return Err(CgroupError::ControllerUnavailable {
+                    controller: "io".into(),
+                });
             }
             self.write_file("io.max", limit.to_cgroup_value()).await?;
         }
@@ -394,7 +413,8 @@ impl Cgroup {
         self.create().await?;
         let filepath = format!("{}/cgroup.procs", self.cgroup_path());
         for &pid in pids {
-            let out = self.executor
+            let out = self
+                .executor
                 .write_file(&filepath, &pid.to_string())
                 .await
                 .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -409,7 +429,8 @@ impl Cgroup {
     }
 
     pub async fn freeze(&self, state: FreezeState) -> Result<(), CgroupError> {
-        self.write_file("cgroup.freeze", state.to_cgroup_value()).await
+        self.write_file("cgroup.freeze", state.to_cgroup_value())
+            .await
     }
 
     pub async fn delete(&self) -> Result<(), CgroupError> {
@@ -418,7 +439,9 @@ impl Cgroup {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_str = e.to_string();
-                if err_str.contains("No such file or directory") || err_str.contains("does not exist") {
+                if err_str.contains("No such file or directory")
+                    || err_str.contains("does not exist")
+                {
                     Ok(()) // Idempotent success
                 } else {
                     Err(CgroupError::ExecutorError(err_str))
@@ -429,7 +452,7 @@ impl Cgroup {
 
     pub async fn force_delete(&self) -> Result<(), CgroupError> {
         let path = self.cgroup_path();
-        
+
         // 1. Idempotency Check: if directory doesn't exist, we are done
         let check_dir = self.executor.run("test", &["-d", &path]).await;
         if let Err(e) = check_dir {
@@ -441,7 +464,7 @@ impl Cgroup {
         }
 
         let kill_path = format!("{}/cgroup.kill", path);
-        
+
         // 2. Try atomic termination if supported (kernel 5.14+)
         let check_kill_file = self.executor.run("test", &["-f", &kill_path]).await;
         let has_kill_file = match check_kill_file {
@@ -451,11 +474,11 @@ impl Cgroup {
                 !err_str.contains("exit code Some(1)") && !err_str.contains("No such file")
             }
         };
-        
+
         if has_kill_file {
             let write_res = self.executor.write_file(&kill_path, "1").await;
             match write_res {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     tracing::warn!(
                         path = %kill_path,
@@ -469,7 +492,7 @@ impl Cgroup {
             // 3. Fallback: Manual TERM-then-KILL loop
             self.fallback_kill().await;
         }
-        
+
         // 4. Delete directory with retry backoff
         self.delete_with_retry(5).await
     }
@@ -478,14 +501,18 @@ impl Cgroup {
         if let Ok(pids) = self.processes().await {
             // Send SIGTERM first for graceful application cleanup
             for pid in &pids {
-                if let Err(e) = self.executor.run("kill", &["-TERM", &pid.to_string()]).await {
+                if let Err(e) = self
+                    .executor
+                    .run("kill", &["-TERM", &pid.to_string()])
+                    .await
+                {
                     tracing::warn!(pid = %pid, error = %e, "failed to send SIGTERM to process");
                 }
             }
-            
+
             // Allow a short grace period (1.5 seconds) for reaped children
             tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-            
+
             // Send SIGKILL (-9) to any remaining/zombie processes
             if let Ok(remaining) = self.processes().await {
                 for pid in remaining {
@@ -547,7 +574,8 @@ impl Cgroup {
 
     async fn write_file(&self, filename: &str, content: &str) -> Result<(), CgroupError> {
         let filepath = format!("{}/{}", self.cgroup_path(), filename);
-        let output = self.executor
+        let output = self
+            .executor
             .write_file(&filepath, content)
             .await
             .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -562,7 +590,8 @@ impl Cgroup {
 
     async fn read_file(&self, filename: &str) -> Result<String, CgroupError> {
         let filepath = format!("{}/{}", self.cgroup_path(), filename);
-        let output = self.executor
+        let output = self
+            .executor
             .read_file(&filepath)
             .await
             .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
@@ -579,8 +608,8 @@ impl Cgroup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::exec::LocalExecutor;
     use crate::utils::cgroup::builder::CgroupBuilder;
+    use crate::utils::exec::LocalExecutor;
 
     #[test]
     fn test_memory_limit_formatting() {
@@ -610,7 +639,7 @@ mod tests {
     #[test]
     fn test_validation_logic() {
         let executor = CommandExecutor::Local(LocalExecutor::new());
-        
+
         // memory_low > memory_high should fail validation
         let cg = CgroupBuilder::new("test", executor.clone())
             .memory_low(MemoryLimit::MB(1024))
@@ -675,14 +704,12 @@ mod tests {
         let cg = CgroupBuilder::new("concurrent_cgroup_test", executor)
             .with_base_path("target/tmp/concurrent_base")
             .build();
-        
+
         let cg_arc = std::sync::Arc::new(cg);
         let mut handles = vec![];
         for _ in 0..5 {
             let cg_clone = cg_arc.clone();
-            handles.push(tokio::spawn(async move {
-                cg_clone.force_delete().await
-            }));
+            handles.push(tokio::spawn(async move { cg_clone.force_delete().await }));
         }
         for handle in handles {
             let res = handle.await;

@@ -1,5 +1,7 @@
+use super::{
+    SymlinkCreateBuilder, SymlinkDeleteBuilder, SymlinkExistsBuilder, SymlinkPointsToBuilder,
+};
 use crate::utils::exec::CommandExecutor;
-use super::{SymlinkCreateBuilder, SymlinkExistsBuilder, SymlinkPointsToBuilder, SymlinkDeleteBuilder};
 
 pub struct SymlinkBuilder<'a> {
     pub(crate) executor: &'a CommandExecutor,

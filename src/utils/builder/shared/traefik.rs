@@ -22,7 +22,10 @@ pub struct SharedDomain {
 
 /// Build traefik labels grouped by Swarm service name.
 /// Returns HashMap<service_name, Vec<label>>
-pub fn build_traefik_labels(app_name: &str, domains: &[SharedDomain]) -> HashMap<String, Vec<String>> {
+pub fn build_traefik_labels(
+    app_name: &str,
+    domains: &[SharedDomain],
+) -> HashMap<String, Vec<String>> {
     let mut builders: HashMap<String, TraefikBuilder> = HashMap::new();
 
     for domain in domains {
@@ -37,9 +40,7 @@ pub fn build_traefik_labels(app_name: &str, domains: &[SharedDomain]) -> HashMap
             _ => app_name.to_string(), // fallback to app_name for non-compose (Application)
         };
 
-        let mut traefik = TraefikBuilder::new()
-            .enable()
-            .network(TRAEFIK_NETWORK);
+        let mut traefik = TraefikBuilder::new().enable().network(TRAEFIK_NETWORK);
 
         let entrypoint = domain.entrypoint.clone().unwrap_or_else(|| {
             if domain.https {
@@ -133,8 +134,5 @@ pub fn build_traefik_labels(app_name: &str, domains: &[SharedDomain]) -> HashMap
             .extend(traefik.labels);
     }
 
-    builders
-        .into_iter()
-        .map(|(k, v)| (k, v.build()))
-        .collect()
+    builders.into_iter().map(|(k, v)| (k, v.build())).collect()
 }

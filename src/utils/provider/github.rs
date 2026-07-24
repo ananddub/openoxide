@@ -1,4 +1,8 @@
-use super::{client::ProviderClient, sync::ProviderSyncBuilder, types::{CloneProtocol, WebhookEvent}};
+use super::{
+    client::ProviderClient,
+    sync::ProviderSyncBuilder,
+    types::{CloneProtocol, WebhookEvent},
+};
 use reqwest::Method;
 
 pub struct GithubClient {
@@ -35,14 +39,20 @@ impl<'a> GithubRepoBuilder<'a> {
         }
     }
 
-    pub fn sync_into(&self, destination: &'a str, protocol: CloneProtocol) -> ProviderSyncBuilder<'a> {
+    pub fn sync_into(
+        &self,
+        destination: &'a str,
+        protocol: CloneProtocol,
+    ) -> ProviderSyncBuilder<'a> {
         ProviderSyncBuilder::new(self.clone_url(protocol), destination)
     }
 
     pub async fn get(&self) -> Result<String, String> {
         let url = format!("https://api.github.com/repos/{}/{}", self.owner, self.repo);
-        let req = self.client.authenticate(self.client.client.request(Method::GET, url));
-        
+        let req = self
+            .client
+            .authenticate(self.client.client.request(Method::GET, url));
+
         req.send()
             .await
             .map_err(|e| e.to_string())?
@@ -89,12 +99,17 @@ impl<'a> GithubWebhookBuilder<'a> {
     }
 
     pub async fn run(self) -> Result<String, String> {
-        let target_url = self.webhook_url.ok_or_else(|| "Webhook URL is required to create a webhook".to_string())?;
-        
-        let url = format!("https://api.github.com/repos/{}/{}/hooks", self.owner, self.repo);
-        
+        let target_url = self
+            .webhook_url
+            .ok_or_else(|| "Webhook URL is required to create a webhook".to_string())?;
+
+        let url = format!(
+            "https://api.github.com/repos/{}/{}/hooks",
+            self.owner, self.repo
+        );
+
         let event_strings: Vec<&str> = self.events.iter().map(|e| e.as_github_event()).collect();
-        
+
         let payload = serde_json::json!({
             "name": "web",
             "active": self.active,
@@ -106,9 +121,9 @@ impl<'a> GithubWebhookBuilder<'a> {
             }
         });
 
-        let req = self.client.authenticate(
-            self.client.client.post(url).json(&payload)
-        );
+        let req = self
+            .client
+            .authenticate(self.client.client.post(url).json(&payload));
 
         req.send()
             .await

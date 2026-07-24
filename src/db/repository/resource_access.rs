@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use auto_di::singleton;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
 use crate::db::models::resource_access::ResourceAccess;
 
@@ -25,7 +25,7 @@ impl ResourceAccessRepository {
             r#"
             SELECT COUNT(*) FROM resource_access 
             WHERE user_id = ? AND org_id = ? AND resource_type = ? AND resource_id = ?
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(org_id)
@@ -49,7 +49,7 @@ impl ResourceAccessRepository {
             INSERT INTO resource_access (user_id, org_id, resource_type, resource_id)
             VALUES (?, ?, ?, ?)
             RETURNING *
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(org_id)

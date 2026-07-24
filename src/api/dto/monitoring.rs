@@ -112,3 +112,26 @@ pub struct MonitoringStatusResponseDto {
     pub service: String,
     pub endpoints: Vec<String>,
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct ContainerMetricSseEventDto {
+    pub server_id: i64,
+    pub application_id: i64,
+    pub compose_id: i64,
+    pub container_id: String,
+    pub container_name: String,
+    pub cpu_percent: f64,
+    pub memory_used_mb: f64,
+    pub memory_limit_mb: f64,
+    pub net_rx_kbps: f64,
+    pub net_tx_kbps: f64,
+    pub timestamp: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct ContainerLogSseEventDto {
+    pub container_id: String,
+    pub log_line: String,
+    pub timestamp: i64,
+    pub is_stderr: bool,
+}

@@ -4,7 +4,9 @@ use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
-    api::dto::registry::{CreateRegistryDto, PatchRegistryDto, RegistryResponseDto, TestRegistryDto},
+    api::dto::registry::{
+        CreateRegistryDto, PatchRegistryDto, RegistryResponseDto, TestRegistryDto,
+    },
     core::middleware::{
         permission::{
             AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,

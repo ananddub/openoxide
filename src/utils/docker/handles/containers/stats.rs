@@ -1,5 +1,5 @@
 use crate::utils::docker::{
-    core::ArgBuilder, DockerCli, DockerExitStatus, DockerResult, DockerStreamEvent,
+    DockerCli, DockerExitStatus, DockerResult, DockerStreamEvent, core::ArgBuilder,
 };
 use tokio::sync::mpsc;
 
@@ -11,11 +11,21 @@ pub struct StatsBuilder<'a> {
 
 impl<'a> StatsBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, id: impl Into<String>) -> Self {
-        Self { cli, id: id.into(), args: ArgBuilder::default() }
+        Self {
+            cli,
+            id: id.into(),
+            args: ArgBuilder::default(),
+        }
     }
-    pub fn no_stream(mut self) -> Self { self.args.flag("--no-stream"); self }
+    pub fn no_stream(mut self) -> Self {
+        self.args.flag("--no-stream");
+        self
+    }
 
-    pub async fn stream(self, sender: mpsc::Sender<DockerStreamEvent>) -> DockerResult<DockerExitStatus> {
+    pub async fn stream(
+        self,
+        sender: mpsc::Sender<DockerStreamEvent>,
+    ) -> DockerResult<DockerExitStatus> {
         let mut a = ArgBuilder::cmd(&["container", "stats"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());

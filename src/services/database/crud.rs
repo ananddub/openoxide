@@ -1,15 +1,17 @@
-use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
 use super::{
-    DatabaseService, DatabaseRecord, DatabaseKind,
-    queries::{generate_app_name, slug_value, random_secret},
+    DatabaseKind, DatabaseRecord, DatabaseService,
+    queries::{generate_app_name, random_secret, slug_value},
 };
+use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
 
 impl DatabaseService {
     pub async fn list_by_environment(
         &self,
         environment_id: i64,
     ) -> sqlx::Result<Vec<DatabaseRecord>> {
-        self.repo_postgres.list_all_by_environment(environment_id).await
+        self.repo_postgres
+            .list_all_by_environment(environment_id)
+            .await
     }
 
     pub async fn get_by_id(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<DatabaseRecord> {
@@ -52,22 +54,50 @@ impl DatabaseService {
 
         match kind {
             DatabaseKind::Postgres => {
-                self.repo_postgres.create(&input, &app_name, &image, &db_name, &db_user, &db_password).await?;
+                self.repo_postgres
+                    .create(&input, &app_name, &image, &db_name, &db_user, &db_password)
+                    .await?;
             }
             DatabaseKind::Mysql => {
-                self.repo_mysql.create(&input, &app_name, &image, &db_name, &db_user, &db_password, &root_password).await?;
+                self.repo_mysql
+                    .create(
+                        &input,
+                        &app_name,
+                        &image,
+                        &db_name,
+                        &db_user,
+                        &db_password,
+                        &root_password,
+                    )
+                    .await?;
             }
             DatabaseKind::Mariadb => {
-                self.repo_mariadb.create(&input, &app_name, &image, &db_name, &db_user, &db_password, &root_password).await?;
+                self.repo_mariadb
+                    .create(
+                        &input,
+                        &app_name,
+                        &image,
+                        &db_name,
+                        &db_user,
+                        &db_password,
+                        &root_password,
+                    )
+                    .await?;
             }
             DatabaseKind::Mongo => {
-                self.repo_mongo.create(&input, &app_name, &image, &db_user, &db_password).await?;
+                self.repo_mongo
+                    .create(&input, &app_name, &image, &db_user, &db_password)
+                    .await?;
             }
             DatabaseKind::Redis => {
-                self.repo_redis.create(&input, &app_name, &image, &db_password).await?;
+                self.repo_redis
+                    .create(&input, &app_name, &image, &db_password)
+                    .await?;
             }
             DatabaseKind::Libsql => {
-                self.repo_libsql.create(&input, &app_name, &image, &db_user, &db_password).await?;
+                self.repo_libsql
+                    .create(&input, &app_name, &image, &db_user, &db_password)
+                    .await?;
             }
         }
 

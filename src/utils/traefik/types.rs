@@ -9,4 +9,3 @@ string_enum! {
         None => "NONE",
     }
 }
-

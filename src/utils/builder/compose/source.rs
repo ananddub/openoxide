@@ -1,9 +1,6 @@
 use super::{compose::ComposeBuilder, spec::ComposeSource};
-use crate::utils::{
-    builder::compose::spec::ComposeSpec,
-    exec::ExecResult,
-};
 use crate::utils::builder::shared::source::fetch_git_repository;
+use crate::utils::{builder::compose::spec::ComposeSpec, exec::ExecResult};
 use tokio_util::sync::CancellationToken;
 
 impl ComposeBuilder {
@@ -13,9 +10,7 @@ impl ComposeBuilder {
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
         match &spec.source {
-            ComposeSource::Raw { content } => {
-                self.write_raw_source(spec, content, cancel).await
-            }
+            ComposeSource::Raw { content } => self.write_raw_source(spec, content, cancel).await,
             ComposeSource::Git {
                 url,
                 branch,
@@ -23,7 +18,16 @@ impl ComposeBuilder {
                 protocol,
                 auth,
             } => {
-                self.fetch_git_repository(spec, url, branch, *submodules, protocol.clone(), auth.clone(), cancel).await
+                self.fetch_git_repository(
+                    spec,
+                    url,
+                    branch,
+                    *submodules,
+                    protocol.clone(),
+                    auth.clone(),
+                    cancel,
+                )
+                .await
             }
             ComposeSource::Drop => Ok(()),
         }
@@ -65,7 +69,8 @@ impl ComposeBuilder {
             submodules,
             protocol,
             auth,
-            cancel
-        ).await
+            cancel,
+        )
+        .await
     }
 }

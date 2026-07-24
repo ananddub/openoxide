@@ -25,10 +25,18 @@ pub enum ServiceFilter {
 }
 
 impl ServiceFilter {
-    pub fn id(v: impl Into<String>) -> Self { Self::Id(v.into()) }
-    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::Label(k.into(), v.into()) }
-    pub fn label_key(k: impl Into<String>) -> Self { Self::LabelKey(k.into()) }
-    pub fn name(v: impl Into<String>) -> Self { Self::Name(v.into()) }
+    pub fn id(v: impl Into<String>) -> Self {
+        Self::Id(v.into())
+    }
+    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::Label(k.into(), v.into())
+    }
+    pub fn label_key(k: impl Into<String>) -> Self {
+        Self::LabelKey(k.into())
+    }
+    pub fn name(v: impl Into<String>) -> Self {
+        Self::Name(v.into())
+    }
 }
 
 impl fmt::Display for ServiceFilter {

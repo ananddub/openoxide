@@ -6,7 +6,7 @@ use sqlx::SqlitePool;
 use crate::{
     api::dto::project::{CreateProjectDto, PatchProjectDto},
     db::models::projects::Project,
-    repository::{ProjectRepository, EnvironmentRepository},
+    repository::{EnvironmentRepository, ProjectRepository},
 };
 
 pub struct ProjectService {
@@ -37,28 +37,37 @@ impl ProjectService {
     }
 
     pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Project>> {
-        self.repo_project.list_by_organization(organization_id).await
+        self.repo_project
+            .list_by_organization(organization_id)
+            .await
     }
 
     pub async fn create(&self, input: CreateProjectDto) -> sqlx::Result<Project> {
         let mut tx = self.db.begin().await?;
-        let project = self.repo_project.create_in_transaction(
-            &mut tx,
-            input.name,
-            input.description,
-            input.env_var,
-            input.organization_id
-        ).await?;
+        let project = self
+            .repo_project
+            .create_in_transaction(
+                &mut tx,
+                input.name,
+                input.description,
+                input.env_var,
+                input.organization_id,
+            )
+            .await?;
 
-        let project_id = project.id.ok_or_else(|| sqlx::Error::Protocol("missing project id".into()))?;
-        self.repo_env.create_in_transaction(
-            &mut tx,
-            "production".to_string(),
-            Some("Production environment".to_string()),
-            "".to_string(),
-            1, // is_default
-            project_id
-        ).await?;
+        let project_id = project
+            .id
+            .ok_or_else(|| sqlx::Error::Protocol("missing project id".into()))?;
+        self.repo_env
+            .create_in_transaction(
+                &mut tx,
+                "production".to_string(),
+                Some("Production environment".to_string()),
+                "".to_string(),
+                1, // is_default
+                project_id,
+            )
+            .await?;
 
         tx.commit().await?;
         Ok(project)
@@ -70,7 +79,9 @@ impl ProjectService {
         let description = input.description.or(current.description);
         let env_var = input.env_var.unwrap_or(current.env_var);
 
-        self.repo_project.update_and_return(id, name, description, env_var).await
+        self.repo_project
+            .update_and_return(id, name, description, env_var)
+            .await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
@@ -106,7 +117,7 @@ mod tests {
             .execute(&pool)
             .await
             .unwrap();
-        
+
         let db = Arc::new(pool);
         let service = ProjectService {
             db: db.clone(),

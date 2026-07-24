@@ -1,5 +1,5 @@
-use syn::parse::Parse;
 use syn::Stmt;
+use syn::parse::Parse;
 
 /// A statement inside `sh! { ... }`.
 /// Either a regular Rust statement, or a shell function definition

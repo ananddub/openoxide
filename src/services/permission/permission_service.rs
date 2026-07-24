@@ -1,7 +1,9 @@
-use std::sync::Arc;
 use auto_di::singleton;
+use std::sync::Arc;
 
-use crate::db::repository::{GroupRepository, UserRepository, ResourceAccessRepository, UserPolicyRepository};
+use crate::db::repository::{
+    GroupRepository, ResourceAccessRepository, UserPolicyRepository, UserRepository,
+};
 use crate::services::permission::types::{PolicyAction, ResourceType, UserRole};
 
 pub struct PermissionService {
@@ -44,7 +46,10 @@ impl PermissionService {
         }
 
         // 2. Fetch final permissions via GroupRepository (evaluates user_policy & group_policy)
-        let perms = self.group_repo.get_user_final_permissions(user_id, org_id).await?;
+        let perms = self
+            .group_repo
+            .get_user_final_permissions(user_id, org_id)
+            .await?;
         let action_str = action.as_str();
 
         Ok(perms.iter().any(|p| p == action_str))

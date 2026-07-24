@@ -29,13 +29,27 @@ pub enum TaskFilter {
 }
 
 impl TaskFilter {
-    pub fn id(v: impl Into<String>) -> Self { Self::Id(v.into()) }
-    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::Label(k.into(), v.into()) }
-    pub fn name(v: impl Into<String>) -> Self { Self::Name(v.into()) }
-    pub fn node(v: impl Into<String>) -> Self { Self::Node(v.into()) }
-    pub fn desired_state(v: TaskDesiredState) -> Self { Self::DesiredState(v) }
-    pub fn up_to_date(v: bool) -> Self { Self::UpToDate(v) }
-    pub fn is_task(v: bool) -> Self { Self::IsTask(v) }
+    pub fn id(v: impl Into<String>) -> Self {
+        Self::Id(v.into())
+    }
+    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::Label(k.into(), v.into())
+    }
+    pub fn name(v: impl Into<String>) -> Self {
+        Self::Name(v.into())
+    }
+    pub fn node(v: impl Into<String>) -> Self {
+        Self::Node(v.into())
+    }
+    pub fn desired_state(v: TaskDesiredState) -> Self {
+        Self::DesiredState(v)
+    }
+    pub fn up_to_date(v: bool) -> Self {
+        Self::UpToDate(v)
+    }
+    pub fn is_task(v: bool) -> Self {
+        Self::IsTask(v)
+    }
 }
 
 impl fmt::Display for TaskFilter {

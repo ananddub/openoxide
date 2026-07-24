@@ -62,4 +62,3 @@ pub enum CloneProtocol {
     Https,
     Ssh,
 }
-

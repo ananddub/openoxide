@@ -1,8 +1,8 @@
+use crate::pipeline;
 use crate::utils::builder::application::{stack::stack_spec, validation::validate_spec};
 use crate::utils::builder::shared::BuilderContext;
 use crate::utils::builder::spec::{ApplicationSpec, BuilderEvent, DeploymentResult};
 use crate::utils::builder::swarm::{ensure_overlay_network, ensure_swarm_manager};
-use crate::pipeline;
 use crate::utils::{
     exec::{CommandExecutor, ExecResult},
     paths::rustploy_paths,
@@ -71,12 +71,16 @@ impl ApplicationBuilder {
         ensure_overlay_network(&self.ctx.docker, spec.network.as_str(), cancel).await?;
 
         let stack_file = format!("{app_dir}/stack.yml");
-        let stack_yaml = serde_yaml::to_string(&stack_spec(spec))
-            .map_err(|e| crate::utils::exec::ExecError::Json(serde_json::Error::io(std::io::Error::other(e))))?;
+        let stack_yaml = serde_yaml::to_string(&stack_spec(spec)).map_err(|e| {
+            crate::utils::exec::ExecError::Json(serde_json::Error::io(std::io::Error::other(e)))
+        })?;
 
         self.ctx.emit(BuilderEvent::Deploying).await;
 
-        let mkdir_cmd = format!("mkdir -p {}", crate::utils::exec::script::shell_single_quote(&app_dir));
+        let mkdir_cmd = format!(
+            "mkdir -p {}",
+            crate::utils::exec::script::shell_single_quote(&app_dir)
+        );
         let write_yaml_cmd = format!(
             "cat << 'EOF' > {}\n{}\nEOF",
             crate::utils::exec::script::shell_single_quote(&stack_file),
@@ -84,7 +88,8 @@ impl ApplicationBuilder {
         );
 
         let stacks = self.ctx.docker.stacks();
-        let deploy_cmd = stacks.deploy(spec.stack_name.clone())
+        let deploy_cmd = stacks
+            .deploy(spec.stack_name.clone())
             .with_registry_auth()
             .compose_file(&stack_file)
             .cancel_with(cancel.clone());
@@ -96,7 +101,12 @@ impl ApplicationBuilder {
         };
 
         if let Err(error) = pipeline.execute_cancelled(&self.ctx.executor, cancel).await {
-            self.ctx.docker.services().rollback(spec.service_name().as_str()).run().await?;
+            self.ctx
+                .docker
+                .services()
+                .rollback(spec.service_name().as_str())
+                .run()
+                .await?;
             self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
             return Err(error);
         }
@@ -106,7 +116,12 @@ impl ApplicationBuilder {
 
         self.ctx.emit(BuilderEvent::HealthCheck).await;
         if let Err(error) = self.wait_healthy(spec, cancel).await {
-            self.ctx.docker.services().rollback(spec.service_name().as_str()).run().await?;
+            self.ctx
+                .docker
+                .services()
+                .rollback(spec.service_name().as_str())
+                .run()
+                .await?;
             self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
             return Err(error);
         }

@@ -1,8 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder,
-    client::DockerCli,
-    DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct StackRemoveBuilder<'a> {
     cli: &'a DockerCli,
@@ -12,7 +8,11 @@ pub struct StackRemoveBuilder<'a> {
 
 impl<'a> StackRemoveBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, stack_name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["stack", "rm"]), stack_name: stack_name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["stack", "rm"]),
+            stack_name: stack_name.into(),
+        }
     }
 
     pub async fn run(mut self) -> DockerResult<DockerOutput> {

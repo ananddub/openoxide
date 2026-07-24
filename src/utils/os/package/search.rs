@@ -1,7 +1,7 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
+use super::{PackageManager, detect_manager};
 use crate::utils::exec::script::{IntoCommand, sh};
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
-use super::{detect_manager, PackageManager};
 
 #[allow(unused_macros)]
 macro_rules! rust {
@@ -32,14 +32,22 @@ impl<'a> PackageSearchBuilder<'a> {
             None => detect_manager(self.executor).await,
         };
         match mgr {
-            PackageManager::Apt => self.executor.run("apt-cache", &["search", &self.query]).await,
+            PackageManager::Apt => {
+                self.executor
+                    .run("apt-cache", &["search", &self.query])
+                    .await
+            }
             PackageManager::Dnf => self.executor.run("dnf", &["search", &self.query]).await,
             PackageManager::Yum => self.executor.run("yum", &["search", &self.query]).await,
             PackageManager::Apk => self.executor.run("apk", &["search", &self.query]).await,
             PackageManager::Pacman => self.executor.run("pacman", &["-Ss", &self.query]).await,
             PackageManager::Zypper => self.executor.run("zypper", &["search", &self.query]).await,
             PackageManager::Xbps => self.executor.run("xbps-query", &["-Rs", &self.query]).await,
-            PackageManager::Emerge => self.executor.run("emerge", &["--search", &self.query]).await,
+            PackageManager::Emerge => {
+                self.executor
+                    .run("emerge", &["--search", &self.query])
+                    .await
+            }
             PackageManager::Nix => self.executor.run("nix-env", &["-qa", &self.query]).await,
             PackageManager::Brew => self.executor.run("brew", &["search", &self.query]).await,
         }
@@ -63,32 +71,30 @@ impl<'a> IntoCommand for PackageSearchBuilder<'a> {
             }
         } else {
             let q = &self.query;
-            let script = sh!(
-                if cmd("command", "-v", "apt-cache").stdout("/dev/null") {
-                    cmd("apt-cache", "search", rust!(q));
-                } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                    cmd("dnf", "search", rust!(q));
-                } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                    cmd("yum", "search", rust!(q));
-                } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                    cmd("apk", "search", rust!(q));
-                } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                    cmd("pacman", "-Ss", rust!(q));
-                } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                    cmd("zypper", "search", rust!(q));
-                } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
-                    cmd("xbps-query", "-Rs", rust!(q));
-                } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
-                    cmd("emerge", "--search", rust!(q));
-                } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                    cmd("nix-env", "-qa", rust!(q));
-                } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                    cmd("brew", "search", rust!(q));
-                } else {
-                    echo("No supported package manager found").stderr("/dev/stderr");
-                    cmd("exit", "1");
-                }
-            );
+            let script = sh!(if cmd("command", "-v", "apt-cache").stdout("/dev/null") {
+                cmd("apt-cache", "search", rust!(q));
+            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+                cmd("dnf", "search", rust!(q));
+            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+                cmd("yum", "search", rust!(q));
+            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+                cmd("apk", "search", rust!(q));
+            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+                cmd("pacman", "-Ss", rust!(q));
+            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+                cmd("zypper", "search", rust!(q));
+            } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
+                cmd("xbps-query", "-Rs", rust!(q));
+            } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
+                cmd("emerge", "--search", rust!(q));
+            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+                cmd("nix-env", "-qa", rust!(q));
+            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+                cmd("brew", "search", rust!(q));
+            } else {
+                echo("No supported package manager found").stderr("/dev/stderr");
+                cmd("exit", "1");
+            });
             script.build_str()
         }
     }

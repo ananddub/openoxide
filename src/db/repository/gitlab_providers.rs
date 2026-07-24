@@ -1,7 +1,7 @@
 use crate::db::models::gitlab_providers::GitlabProvider;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct GitlabProviderRepository {
     pool: Arc<SqlitePool>,
@@ -76,12 +76,9 @@ impl GitlabProviderRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM gitlab_providers WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM gitlab_providers WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 }

@@ -41,7 +41,11 @@ impl BackupController {
         repo_backup: Arc<BackupRepository>,
         repo_volume: Arc<VolumeBackupRepository>,
     ) -> Self {
-        Self { service, repo_backup, repo_volume }
+        Self {
+            service,
+            repo_backup,
+            repo_volume,
+        }
     }
 
     #[get("/database")]
@@ -103,7 +107,11 @@ impl BackupController {
             created_at: 0,
             updated_at: 0,
         };
-        let id = self.repo_backup.create(&item).await.map_err(map_sqlx_error)?;
+        let id = self
+            .repo_backup
+            .create(&item)
+            .await
+            .map_err(map_sqlx_error)?;
         self.repo_backup
             .get_by_id(id)
             .await
@@ -121,21 +129,52 @@ impl BackupController {
         Path(id): Path<i64>,
         ValidatedJson(dto): ValidatedJson<PatchBackupDto>,
     ) -> Result<Json<BackupResponseDto>, ApiError> {
-        let mut item = self.repo_backup.get_by_id(id).await.map_err(map_sqlx_error)?.ok_or(sqlx::Error::RowNotFound).map_err(map_sqlx_error)?;
-        if let Some(v) = dto.app_name { item.app_name = v; }
-        if let Some(v) = dto.schedule { item.schedule = v; }
-        if let Some(v) = dto.database_name { item.database_name = v; }
-        if let Some(v) = dto.prefix { item.prefix = v; }
-        if let Some(v) = dto.service_name { item.service_name = Some(v); }
-        if let Some(v) = dto.keep_latest_count { item.keep_latest_count = Some(v); }
-        if let Some(v) = dto.backup_type { item.backup_type = v; }
-        if let Some(v) = dto.database_type { item.database_type = v; }
-        if let Some(v) = dto.metadata { item.metadata = Some(v); }
-        if let Some(v) = dto.destination_id { item.destination_id = v; }
-        if let Some(v) = dto.enabled { item.enabled = v; }
-        
-        self.repo_backup.update(id, &item).await.map_err(map_sqlx_error)?;
-        
+        let mut item = self
+            .repo_backup
+            .get_by_id(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .ok_or(sqlx::Error::RowNotFound)
+            .map_err(map_sqlx_error)?;
+        if let Some(v) = dto.app_name {
+            item.app_name = v;
+        }
+        if let Some(v) = dto.schedule {
+            item.schedule = v;
+        }
+        if let Some(v) = dto.database_name {
+            item.database_name = v;
+        }
+        if let Some(v) = dto.prefix {
+            item.prefix = v;
+        }
+        if let Some(v) = dto.service_name {
+            item.service_name = Some(v);
+        }
+        if let Some(v) = dto.keep_latest_count {
+            item.keep_latest_count = Some(v);
+        }
+        if let Some(v) = dto.backup_type {
+            item.backup_type = v;
+        }
+        if let Some(v) = dto.database_type {
+            item.database_type = v;
+        }
+        if let Some(v) = dto.metadata {
+            item.metadata = Some(v);
+        }
+        if let Some(v) = dto.destination_id {
+            item.destination_id = v;
+        }
+        if let Some(v) = dto.enabled {
+            item.enabled = v;
+        }
+
+        self.repo_backup
+            .update(id, &item)
+            .await
+            .map_err(map_sqlx_error)?;
+
         self.repo_backup
             .get_by_id(id)
             .await
@@ -177,7 +216,12 @@ impl BackupController {
         self.repo_volume
             .get_all()
             .await
-            .map(|items| items.into_iter().map(VolumeBackupResponseDto::from).collect())
+            .map(|items| {
+                items
+                    .into_iter()
+                    .map(VolumeBackupResponseDto::from)
+                    .collect()
+            })
             .map(Json)
             .map_err(map_sqlx_error)
     }
@@ -229,7 +273,11 @@ impl BackupController {
             created_at: 0,
             updated_at: 0,
         };
-        let id = self.repo_volume.create(&item).await.map_err(map_sqlx_error)?;
+        let id = self
+            .repo_volume
+            .create(&item)
+            .await
+            .map_err(map_sqlx_error)?;
         self.repo_volume
             .get_by_id(id)
             .await
@@ -247,21 +295,52 @@ impl BackupController {
         Path(id): Path<i64>,
         ValidatedJson(dto): ValidatedJson<PatchVolumeBackupDto>,
     ) -> Result<Json<VolumeBackupResponseDto>, ApiError> {
-        let mut item = self.repo_volume.get_by_id(id).await.map_err(map_sqlx_error)?.ok_or(sqlx::Error::RowNotFound).map_err(map_sqlx_error)?;
-        if let Some(v) = dto.name { item.name = v; }
-        if let Some(v) = dto.volume_name { item.volume_name = v; }
-        if let Some(v) = dto.prefix { item.prefix = v; }
-        if let Some(v) = dto.service_type { item.service_type = v; }
-        if let Some(v) = dto.app_name { item.app_name = v; }
-        if let Some(v) = dto.service_name { item.service_name = Some(v); }
-        if let Some(v) = dto.turn_off { item.turn_off = v; }
-        if let Some(v) = dto.cron_expression { item.cron_expression = v; }
-        if let Some(v) = dto.keep_latest_count { item.keep_latest_count = Some(v); }
-        if let Some(v) = dto.destination_id { item.destination_id = v; }
-        if let Some(v) = dto.enabled { item.enabled = v; }
-        
-        self.repo_volume.update(id, &item).await.map_err(map_sqlx_error)?;
-        
+        let mut item = self
+            .repo_volume
+            .get_by_id(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .ok_or(sqlx::Error::RowNotFound)
+            .map_err(map_sqlx_error)?;
+        if let Some(v) = dto.name {
+            item.name = v;
+        }
+        if let Some(v) = dto.volume_name {
+            item.volume_name = v;
+        }
+        if let Some(v) = dto.prefix {
+            item.prefix = v;
+        }
+        if let Some(v) = dto.service_type {
+            item.service_type = v;
+        }
+        if let Some(v) = dto.app_name {
+            item.app_name = v;
+        }
+        if let Some(v) = dto.service_name {
+            item.service_name = Some(v);
+        }
+        if let Some(v) = dto.turn_off {
+            item.turn_off = v;
+        }
+        if let Some(v) = dto.cron_expression {
+            item.cron_expression = v;
+        }
+        if let Some(v) = dto.keep_latest_count {
+            item.keep_latest_count = Some(v);
+        }
+        if let Some(v) = dto.destination_id {
+            item.destination_id = v;
+        }
+        if let Some(v) = dto.enabled {
+            item.enabled = v;
+        }
+
+        self.repo_volume
+            .update(id, &item)
+            .await
+            .map_err(map_sqlx_error)?;
+
         self.repo_volume
             .get_by_id(id)
             .await

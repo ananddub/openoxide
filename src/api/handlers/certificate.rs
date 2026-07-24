@@ -1,12 +1,12 @@
-use std::sync::Arc;
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
 use crate::{
-    api::dto::certificate::{CreateCertificateDto, PatchCertificateDto, CertificateResponseDto},
+    api::dto::certificate::{CertificateResponseDto, CreateCertificateDto, PatchCertificateDto},
     core::middleware::validator::ValidatedJson,
     services::certificate::CertificateService,
     utils::jwt::claim::Claims,
 };
+use auto_route::controller;
+use axum::{Json, extract::Path, http::StatusCode};
+use std::sync::Arc;
 
 type ApiError = (StatusCode, String);
 
@@ -25,7 +25,12 @@ impl CertificateController {
         self.service
             .list()
             .await
-            .map(|items| items.into_iter().map(CertificateResponseDto::from).collect())
+            .map(|items| {
+                items
+                    .into_iter()
+                    .map(CertificateResponseDto::from)
+                    .collect()
+            })
             .map(Json)
             .map_err(map_sqlx_error)
     }

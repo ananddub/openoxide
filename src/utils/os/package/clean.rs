@@ -1,6 +1,6 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
+use super::{PackageManager, detect_manager};
 use crate::utils::exec::script::{IntoCommand, sh};
-use super::{detect_manager, PackageManager};
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 #[allow(unused_macros)]
 macro_rules! rust {
@@ -59,32 +59,30 @@ impl<'a> IntoCommand for PackageCleanBuilder<'a> {
                 PackageManager::Brew => "brew cleanup".to_string(),
             }
         } else {
-            let script = sh!(
-                if cmd("command", "-v", "apt-get").stdout("/dev/null") {
-                    cmd("apt-get", "clean");
-                } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                    cmd("dnf", "clean", "all");
-                } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                    cmd("yum", "clean", "all");
-                } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                    cmd("apk", "cache", "clean");
-                } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                    cmd("pacman", "-Sc", "--noconfirm");
-                } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                    cmd("zypper", "clean", "--all");
-                } else if cmd("command", "-v", "xbps-remove").stdout("/dev/null") {
-                    cmd("xbps-remove", "-O");
-                } else if cmd("command", "-v", "eclean").stdout("/dev/null") {
-                    cmd("eclean", "distfiles");
-                } else if cmd("command", "-v", "nix-store").stdout("/dev/null") {
-                    cmd("nix-store", "--gc");
-                } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                    cmd("brew", "cleanup");
-                } else {
-                    echo("No supported package manager found").stderr("/dev/stderr");
-                    cmd("exit", "1");
-                }
-            );
+            let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
+                cmd("apt-get", "clean");
+            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+                cmd("dnf", "clean", "all");
+            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+                cmd("yum", "clean", "all");
+            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+                cmd("apk", "cache", "clean");
+            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+                cmd("pacman", "-Sc", "--noconfirm");
+            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+                cmd("zypper", "clean", "--all");
+            } else if cmd("command", "-v", "xbps-remove").stdout("/dev/null") {
+                cmd("xbps-remove", "-O");
+            } else if cmd("command", "-v", "eclean").stdout("/dev/null") {
+                cmd("eclean", "distfiles");
+            } else if cmd("command", "-v", "nix-store").stdout("/dev/null") {
+                cmd("nix-store", "--gc");
+            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+                cmd("brew", "cleanup");
+            } else {
+                echo("No supported package manager found").stderr("/dev/stderr");
+                cmd("exit", "1");
+            });
             script.build_str()
         }
     }

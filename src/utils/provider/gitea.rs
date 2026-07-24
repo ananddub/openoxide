@@ -1,4 +1,8 @@
-use super::{client::ProviderClient, sync::ProviderSyncBuilder, types::{CloneProtocol, WebhookEvent}};
+use super::{
+    client::ProviderClient,
+    sync::ProviderSyncBuilder,
+    types::{CloneProtocol, WebhookEvent},
+};
 use reqwest::Method;
 
 pub struct GiteaClient {
@@ -33,21 +37,33 @@ pub struct GiteaRepoBuilder<'a> {
 
 impl<'a> GiteaRepoBuilder<'a> {
     pub fn clone_url(&self, protocol: CloneProtocol) -> String {
-        let clean_base = self.base_url.trim_start_matches("https://").trim_start_matches("http://");
+        let clean_base = self
+            .base_url
+            .trim_start_matches("https://")
+            .trim_start_matches("http://");
         match protocol {
             CloneProtocol::Https => format!("{}/{}/{}.git", self.base_url, self.owner, self.repo),
             CloneProtocol::Ssh => format!("git@{}:{}/{}.git", clean_base, self.owner, self.repo),
         }
     }
 
-    pub fn sync_into(&self, destination: &'a str, protocol: CloneProtocol) -> ProviderSyncBuilder<'a> {
+    pub fn sync_into(
+        &self,
+        destination: &'a str,
+        protocol: CloneProtocol,
+    ) -> ProviderSyncBuilder<'a> {
         ProviderSyncBuilder::new(self.clone_url(protocol), destination)
     }
 
     pub async fn get(&self) -> Result<String, String> {
-        let url = format!("{}/api/v1/repos/{}/{}", self.base_url, self.owner, self.repo);
-        let req = self.client.authenticate(self.client.client.request(Method::GET, url));
-        
+        let url = format!(
+            "{}/api/v1/repos/{}/{}",
+            self.base_url, self.owner, self.repo
+        );
+        let req = self
+            .client
+            .authenticate(self.client.client.request(Method::GET, url));
+
         req.send()
             .await
             .map_err(|e| e.to_string())?
@@ -95,12 +111,17 @@ impl<'a> GiteaWebhookBuilder<'a> {
     }
 
     pub async fn run(self) -> Result<String, String> {
-        let target_url = self.webhook_url.ok_or_else(|| "Webhook URL is required to create a webhook".to_string())?;
-        
-        let url = format!("{}/api/v1/repos/{}/{}/hooks", self.base_url, self.owner, self.repo);
-        
+        let target_url = self
+            .webhook_url
+            .ok_or_else(|| "Webhook URL is required to create a webhook".to_string())?;
+
+        let url = format!(
+            "{}/api/v1/repos/{}/{}/hooks",
+            self.base_url, self.owner, self.repo
+        );
+
         let event_strings: Vec<&str> = self.events.iter().map(|e| e.as_gitea_event()).collect();
-        
+
         let payload = serde_json::json!({
             "type": "gitea",
             "active": self.active,
@@ -111,9 +132,9 @@ impl<'a> GiteaWebhookBuilder<'a> {
             }
         });
 
-        let req = self.client.authenticate(
-            self.client.client.post(url).json(&payload)
-        );
+        let req = self
+            .client
+            .authenticate(self.client.client.post(url).json(&payload));
 
         req.send()
             .await

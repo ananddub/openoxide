@@ -2,9 +2,7 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        application::ApplicationOperation,
-        compose::ComposeOperation,
-        database::DatabaseOperation,
+        application::ApplicationOperation, compose::ComposeOperation, database::DatabaseOperation,
     },
     utils::builder::{
         custom_type::{DeployState, IdType},
@@ -33,22 +31,31 @@ impl BuilderQueue {
             "builder queue: starting job"
         );
 
-        let result = match (application_id, compose_id, database_id, database_kind.as_deref()) {
+        let result = match (
+            application_id,
+            compose_id,
+            database_id,
+            database_kind.as_deref(),
+        ) {
             (Some(app_id), None, None, None) => {
                 let op = parse_application_operation(&operation);
                 self.execute_operation_app(app_id, deployment_id, op).await
             }
             (None, Some(cmp_id), None, None) => {
                 let op = parse_compose_operation(&operation);
-                self.execute_operation_compose(cmp_id, deployment_id, op).await
+                self.execute_operation_compose(cmp_id, deployment_id, op)
+                    .await
             }
             (None, None, Some(db_id), Some(db_kind)) => {
                 let op = parse_database_operation(&operation);
-                self.execute_operation_db(db_id, db_kind.to_string(), deployment_id, op).await
+                self.execute_operation_db(db_id, db_kind.to_string(), deployment_id, op)
+                    .await
             }
-            _ => Err(crate::utils::builder::errors::BuilderError::Execution(format!(
-                "deployment {deployment_id} must have exactly one of application_id, compose_id, or database_id/kind"
-            ))),
+            _ => Err(crate::utils::builder::errors::BuilderError::Execution(
+                format!(
+                    "deployment {deployment_id} must have exactly one of application_id, compose_id, or database_id/kind"
+                ),
+            )),
         };
 
         let final_status = match &result {
@@ -57,7 +64,7 @@ impl BuilderQueue {
             Err(_) => "ERROR",
         };
         let error_message = result.err().map(|e| e.to_string());
-        
+
         let repo = match resolve::<crate::repository::DeploymentRepository>().await {
             Ok(r) => r,
             Err(e) => {
@@ -66,12 +73,19 @@ impl BuilderQueue {
             }
         };
 
-        if let Err(e) = repo.update_final_status(deployment_id, final_status, error_message.as_deref()).await {
+        if let Err(e) = repo
+            .update_final_status(deployment_id, final_status, error_message.as_deref())
+            .await
+        {
             tracing::error!(deployment_id, error = %e, "builder queue: could not persist final deployment status");
         }
 
-        let target_status = if final_status == "DONE" { "DONE" } else { "ERROR" };
-        
+        let target_status = if final_status == "DONE" {
+            "DONE"
+        } else {
+            "ERROR"
+        };
+
         if let Some(app_id) = application_id {
             if let Err(e) = repo.set_application_status(app_id, target_status).await {
                 tracing::error!(deployment_id, app_id, error = %e, "builder queue: could not persist application status");
@@ -83,14 +97,19 @@ impl BuilderQueue {
             if let Err(e) = repo.set_compose_status(cmp_id, target_status).await {
                 tracing::error!(deployment_id, cmp_id, error = %e, "builder queue: could not persist compose status");
             }
-            self.application_state.remove_state(IdType::ComposeId(cmp_id));
+            self.application_state
+                .remove_state(IdType::ComposeId(cmp_id));
         }
 
         if let (Some(db_id), Some(db_kind)) = (database_id, database_kind.as_deref()) {
-            if let Err(e) = repo.set_database_status(db_id, db_kind, target_status).await {
+            if let Err(e) = repo
+                .set_database_status(db_id, db_kind, target_status)
+                .await
+            {
                 tracing::error!(deployment_id, db_id, db_kind, error = %e, "builder queue: could not persist database status");
             }
-            self.application_state.remove_state(IdType::DatabaseId(db_id));
+            self.application_state
+                .remove_state(IdType::DatabaseId(db_id));
         }
 
         tracing::info!(
@@ -141,29 +160,29 @@ pub fn is_cancelled_error(error: &str) -> bool {
 fn parse_application_operation(value: &str) -> ApplicationOperation {
     match value {
         "redeploy" => ApplicationOperation::Redeploy,
-        "rebuild"  => ApplicationOperation::Rebuild,
-        "reload"   => ApplicationOperation::Reload,
-        "start"    => ApplicationOperation::Start,
-        _          => ApplicationOperation::Deploy,
+        "rebuild" => ApplicationOperation::Rebuild,
+        "reload" => ApplicationOperation::Reload,
+        "start" => ApplicationOperation::Start,
+        _ => ApplicationOperation::Deploy,
     }
 }
 
 fn parse_compose_operation(value: &str) -> ComposeOperation {
     match value {
         "redeploy" => ComposeOperation::Redeploy,
-        "reload"   => ComposeOperation::Reload,
-        "start"    => ComposeOperation::Start,
-        "stop"     => ComposeOperation::Stop,
-        _          => ComposeOperation::Deploy,
+        "reload" => ComposeOperation::Reload,
+        "start" => ComposeOperation::Start,
+        "stop" => ComposeOperation::Stop,
+        _ => ComposeOperation::Deploy,
     }
 }
 
 fn parse_database_operation(value: &str) -> DatabaseOperation {
     match value {
         "redeploy" => DatabaseOperation::Redeploy,
-        "reload"   => DatabaseOperation::Reload,
-        "start"    => DatabaseOperation::Start,
-        "stop"     => DatabaseOperation::Stop,
-        _          => DatabaseOperation::Deploy,
+        "reload" => DatabaseOperation::Reload,
+        "start" => DatabaseOperation::Start,
+        "stop" => DatabaseOperation::Stop,
+        _ => DatabaseOperation::Deploy,
     }
 }

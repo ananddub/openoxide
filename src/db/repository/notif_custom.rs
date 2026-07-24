@@ -1,7 +1,7 @@
 use crate::db::models::notif_custom::NotifCustom;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct NotifCustomRepository {
     pool: Arc<SqlitePool>,
@@ -56,12 +56,9 @@ impl NotifCustomRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM notif_custom WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM notif_custom WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 }

@@ -76,19 +76,45 @@ pub enum ContainerFilter {
 }
 
 impl ContainerFilter {
-    pub fn id(v: impl Into<String>) -> Self { Self::Id(v.into()) }
-    pub fn name(v: impl Into<String>) -> Self { Self::Name(v.into()) }
-    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::Label(k.into(), v.into()) }
-    pub fn label_key(k: impl Into<String>) -> Self { Self::LabelKey(k.into()) }
-    pub fn network(v: impl Into<String>) -> Self { Self::Network(v.into()) }
-    pub fn ancestor(v: impl Into<String>) -> Self { Self::Ancestor(v.into()) }
-    pub fn volume(v: impl Into<String>) -> Self { Self::Volume(v.into()) }
-    pub fn since(v: impl Into<String>) -> Self { Self::Since(v.into()) }
-    pub fn before(v: impl Into<String>) -> Self { Self::Before(v.into()) }
-    pub fn publish(v: impl Into<String>) -> Self { Self::Publish(v.into()) }
-    pub fn expose(v: impl Into<String>) -> Self { Self::Expose(v.into()) }
-    pub fn isolation(v: impl Into<String>) -> Self { Self::Isolation(v.into()) }
-    pub fn is_task(v: bool) -> Self { Self::IsTask(v) }
+    pub fn id(v: impl Into<String>) -> Self {
+        Self::Id(v.into())
+    }
+    pub fn name(v: impl Into<String>) -> Self {
+        Self::Name(v.into())
+    }
+    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::Label(k.into(), v.into())
+    }
+    pub fn label_key(k: impl Into<String>) -> Self {
+        Self::LabelKey(k.into())
+    }
+    pub fn network(v: impl Into<String>) -> Self {
+        Self::Network(v.into())
+    }
+    pub fn ancestor(v: impl Into<String>) -> Self {
+        Self::Ancestor(v.into())
+    }
+    pub fn volume(v: impl Into<String>) -> Self {
+        Self::Volume(v.into())
+    }
+    pub fn since(v: impl Into<String>) -> Self {
+        Self::Since(v.into())
+    }
+    pub fn before(v: impl Into<String>) -> Self {
+        Self::Before(v.into())
+    }
+    pub fn publish(v: impl Into<String>) -> Self {
+        Self::Publish(v.into())
+    }
+    pub fn expose(v: impl Into<String>) -> Self {
+        Self::Expose(v.into())
+    }
+    pub fn isolation(v: impl Into<String>) -> Self {
+        Self::Isolation(v.into())
+    }
+    pub fn is_task(v: bool) -> Self {
+        Self::IsTask(v)
+    }
 }
 
 impl fmt::Display for ContainerFilter {

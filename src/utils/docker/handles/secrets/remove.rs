@@ -1,10 +1,4 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult,
-    },
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct SecretRemoveBuilder<'a> {
     cli: &'a DockerCli,
@@ -14,7 +8,11 @@ pub struct SecretRemoveBuilder<'a> {
 
 impl<'a> SecretRemoveBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["secret", "rm"]), name: name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["secret", "rm"]),
+            name: name.into(),
+        }
     }
 
     pub async fn run(mut self) -> DockerResult<DockerOutput> {

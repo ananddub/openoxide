@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use auto_di::singleton;
 use crate::{
     api::dto::registry::{CreateRegistryDto, PatchRegistryDto},
     db::models::registries::Registry,
     db::repository::registries::RegistryRepository,
 };
+use auto_di::singleton;
+use std::sync::Arc;
 
 pub struct RegistryService {
     repo_reg: Arc<RegistryRepository>,
@@ -113,6 +113,7 @@ impl RegistryService {
 
     pub async fn test_connection(&self, id: i64) -> Result<(), String> {
         let reg = self.get_by_id(id).await.map_err(|e| e.to_string())?;
-        self.test_connection_raw(&reg.registry_url, &reg.username, &reg.password).await
+        self.test_connection_raw(&reg.registry_url, &reg.username, &reg.password)
+            .await
     }
 }

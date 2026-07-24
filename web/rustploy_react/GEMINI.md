@@ -30,3 +30,10 @@ This file contains rules and guidelines that the coding assistant must follow wh
 - **Auto-generated Types**: Always use the generated types from `src/types/api.d.ts` (`#/types/api.d.ts`). Do not manually define interfaces or types for API responses or requests if they are already present in the OpenAPI schema.
 - **Type-Safe API Calls**: Prefer using the type-safe `$api` client (from `#/api/query` using `openapi-react-query`) or `client` (from `#/api/client` using `openapi-fetch`) for calling API endpoints. They automatically enforce path, parameters, request body, and response types from the schema.
 - **Regenerating Schema**: If the API endpoints are updated on the backend, run `bun run gen:api` to update the generated types file.
+
+## 4. File and Component Size Limits (Max 200 Lines)
+
+- **Strict 200-Line Limit**: If any component, hook, or file exceeds 200 lines, it **must** be refactored and split into smaller sub-components, custom hooks, or helper modules.
+- **Recursive Splitting**: Even if a file has already been split, if any of the sub-components or files grow beyond 200 lines, they must be split further.
+- **Keep Code Clean**: Never allow massive, monolithic files with mixed state, query logic, and complex rendering.
+

@@ -65,7 +65,14 @@ pub(crate) async fn ensure_overlay_network(
     }
     match docker
         .run_cancelled(
-            ["network", "create", "--driver", "overlay", "--attachable", name],
+            [
+                "network",
+                "create",
+                "--driver",
+                "overlay",
+                "--attachable",
+                name,
+            ],
             cancel,
         )
         .await
@@ -77,7 +84,10 @@ pub(crate) async fn ensure_overlay_network(
 }
 
 async fn detect_advertise_addr(executor: &CommandExecutor, cancel: &CancellationToken) -> String {
-    let output = executor.run_cancelled("hostname", ["-I"], cancel).await.ok();
+    let output = executor
+        .run_cancelled("hostname", ["-I"], cancel)
+        .await
+        .ok();
     output
         .as_ref()
         .and_then(|output| {

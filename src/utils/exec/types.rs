@@ -229,10 +229,15 @@ impl CommandExecutor {
             "echo $$ > {procs} || {{ echo \"CGROUP_ASSIGN_FAILED\" >&2; exit 1; }}; exec \"$@\"",
             procs = procs_path
         );
-        
-        let mut sh_args = vec!["-c".to_string(), wrapper, "--".to_string(), program.to_string()];
+
+        let mut sh_args = vec![
+            "-c".to_string(),
+            wrapper,
+            "--".to_string(),
+            program.to_string(),
+        ];
         sh_args.extend(args);
-        
+
         match self.run_cancelled("sh", &sh_args, cancel).await {
             Ok(output) => Ok(output),
             Err(e) => {

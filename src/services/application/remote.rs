@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 
-use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
 use crate::repository::ServerRepository;
+use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
 use auto_di::resolve;
 
 pub(crate) async fn remote_executor(

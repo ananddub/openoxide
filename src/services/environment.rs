@@ -33,22 +33,30 @@ impl EnvironmentService {
 
     pub async fn create(&self, input: CreateEnvironmentDto) -> sqlx::Result<Environment> {
         let mut tx = self.db.begin().await?;
-        let count = self.repo_env.count_by_project(&mut tx, input.project_id).await?;
+        let count = self
+            .repo_env
+            .count_by_project(&mut tx, input.project_id)
+            .await?;
         let make_default = input.is_default || count == 0;
 
         if make_default {
-            self.repo_env.clear_default(&mut tx, input.project_id).await?;
+            self.repo_env
+                .clear_default(&mut tx, input.project_id)
+                .await?;
         }
 
         let is_default = i64::from(make_default);
-        let environment = self.repo_env.create_in_transaction(
-            &mut tx,
-            input.name,
-            input.description,
-            input.env_var,
-            is_default,
-            input.project_id
-        ).await?;
+        let environment = self
+            .repo_env
+            .create_in_transaction(
+                &mut tx,
+                input.name,
+                input.description,
+                input.env_var,
+                is_default,
+                input.project_id,
+            )
+            .await?;
 
         tx.commit().await?;
         Ok(environment)
@@ -59,7 +67,9 @@ impl EnvironmentService {
         let current = self.repo_env.get_in_transaction(&mut tx, id).await?;
 
         if input.is_default == Some(true) {
-            self.repo_env.clear_default(&mut tx, current.project_id).await?;
+            self.repo_env
+                .clear_default(&mut tx, current.project_id)
+                .await?;
         }
 
         let name = input.name.unwrap_or(current.name);
@@ -75,14 +85,10 @@ impl EnvironmentService {
             None => current.is_default,
         };
 
-        let environment = self.repo_env.update_in_transaction(
-            &mut tx,
-            id,
-            name,
-            description,
-            env_var,
-            is_default
-        ).await?;
+        let environment = self
+            .repo_env
+            .update_in_transaction(&mut tx, id, name, description, env_var, is_default)
+            .await?;
 
         tx.commit().await?;
         Ok(environment)
@@ -91,15 +97,20 @@ impl EnvironmentService {
     pub async fn set_default(&self, id: i64) -> sqlx::Result<Environment> {
         let mut tx = self.db.begin().await?;
         let current = self.repo_env.get_in_transaction(&mut tx, id).await?;
-        self.repo_env.clear_default(&mut tx, current.project_id).await?;
-        let environment = self.repo_env.update_in_transaction(
-            &mut tx,
-            id,
-            current.name,
-            current.description,
-            current.env_var,
-            1
-        ).await?;
+        self.repo_env
+            .clear_default(&mut tx, current.project_id)
+            .await?;
+        let environment = self
+            .repo_env
+            .update_in_transaction(
+                &mut tx,
+                id,
+                current.name,
+                current.description,
+                current.env_var,
+                1,
+            )
+            .await?;
         tx.commit().await?;
         Ok(environment)
     }
@@ -110,7 +121,9 @@ impl EnvironmentService {
         self.repo_env.delete_in_transaction(&mut tx, id).await?;
 
         if current.is_default != 0 {
-            self.repo_env.promote_oldest_to_default(&mut tx, current.project_id).await?;
+            self.repo_env
+                .promote_oldest_to_default(&mut tx, current.project_id)
+                .await?;
         }
 
         tx.commit().await?;
@@ -148,7 +161,7 @@ mod tests {
             .execute(&pool)
             .await
             .unwrap();
-        
+
         let db = Arc::new(pool);
         EnvironmentService {
             db: db.clone(),

@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct FileReplaceBuilder<'a> {
@@ -10,7 +10,12 @@ pub struct FileReplaceBuilder<'a> {
 }
 
 impl<'a> FileReplaceBuilder<'a> {
-    pub fn new(executor: &'a CommandExecutor, path: String, old: impl IntoCommand, new: impl IntoCommand) -> Self {
+    pub fn new(
+        executor: &'a CommandExecutor,
+        path: String,
+        old: impl IntoCommand,
+        new: impl IntoCommand,
+    ) -> Self {
         Self {
             executor,
             path,
@@ -21,7 +26,9 @@ impl<'a> FileReplaceBuilder<'a> {
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
         let pattern = format!("s|{}|{}|g", self.old, self.new);
-        self.executor.run("sed", &["-i".to_string(), pattern, self.path]).await
+        self.executor
+            .run("sed", &["-i".to_string(), pattern, self.path])
+            .await
     }
 }
 

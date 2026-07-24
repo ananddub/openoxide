@@ -1,7 +1,7 @@
 use crate::db::models::redirects::Redirect;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct RedirectRepository {
     pool: Arc<SqlitePool>,
@@ -66,12 +66,9 @@ impl RedirectRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM redirects WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM redirects WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 }

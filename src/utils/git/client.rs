@@ -155,7 +155,7 @@ impl GitCli {
             )
             .await
     }
-    
+
     pub async fn run_raw_cancelled<I, S>(
         &self,
         args: I,
@@ -196,7 +196,6 @@ impl GitCli {
             .await
     }
 
-
     pub fn compile_command(&self, args: &[String]) -> String {
         let mut full_args = Vec::new();
         if let Some(ref repository) = self.repository {
@@ -214,7 +213,7 @@ impl GitCli {
     pub fn queries(&self) -> super::handles::GitQueries<'_> {
         super::handles::GitQueries(self)
     }
-    
+
     pub fn clone(&self, url: impl Into<String>) -> super::handles::CloneBuilder<'_> {
         super::handles::CloneBuilder::new(self, url)
     }
@@ -260,7 +259,6 @@ impl GitCli {
     }
 
     // ── Legacy Methods ───────────────────────────────────────────────────────────
-
 
     pub async fn init(&self, args: &[&str]) -> ExecResult<ExecOutput> {
         self.prefixed(&["init"], args).await
@@ -456,11 +454,21 @@ impl GitCli {
             })
             .collect())
     }
-    pub async fn remote_branches(&self, repository_url: &str, auth: Option<GitAuth>) -> ExecResult<Vec<GitBranch>> {
+    pub async fn remote_branches(
+        &self,
+        repository_url: &str,
+        auth: Option<GitAuth>,
+    ) -> ExecResult<Vec<GitBranch>> {
         self.queries().remote_branches(repository_url, auth).await
     }
-    pub async fn remote_default_branch(&self, repository_url: &str, auth: Option<GitAuth>) -> ExecResult<Option<String>> {
-        self.queries().remote_default_branch(repository_url, auth).await
+    pub async fn remote_default_branch(
+        &self,
+        repository_url: &str,
+        auth: Option<GitAuth>,
+    ) -> ExecResult<Option<String>> {
+        self.queries()
+            .remote_default_branch(repository_url, auth)
+            .await
     }
     pub async fn remote_default_branch_cancelled(
         &self,
@@ -468,7 +476,9 @@ impl GitCli {
         auth: Option<GitAuth>,
         cancel: &CancellationToken,
     ) -> ExecResult<Option<String>> {
-        self.queries().remote_default_branch_cancelled(repository_url, auth, cancel).await
+        self.queries()
+            .remote_default_branch_cancelled(repository_url, auth, cancel)
+            .await
     }
     async fn prefixed(&self, prefix: &[&str], args: &[&str]) -> ExecResult<ExecOutput> {
         let mut command = prefix.to_vec();
@@ -477,65 +487,64 @@ impl GitCli {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-//     use super::*;
-//
-//     #[tokio::test]
-//     async fn local_repository_status_commit_and_revision_are_typed() {
-//         let dir = tempfile::tempdir().unwrap();
-//         let path = dir.path().to_string_lossy().into_owned();
-//         let git = GitCli::new_local().with_repository(path);
-//         git.init(&[]).await.unwrap();
-//         git.config(&["user.name", "Rustploy Test"]).await.unwrap();
-//         git.config(&["user.email", "test@rustploy.local"])
-//             .await
-//             .unwrap();
-//         std::fs::write(dir.path().join("hello.txt"), "hello").unwrap();
-//         let status = git.status().await.unwrap();
-//         assert_eq!(status.len(), 1);
-//         assert_eq!(status[0].path, "hello.txt");
-//         assert_eq!(status[0].index_status, '?');
-//         git.add(&["hello.txt"]).await.unwrap();
-//         git.commit(&["-m", "initial"]).await.unwrap();
-//         let revision = git.rev_parse("HEAD").await.unwrap();
-//         assert_eq!(revision.len(), 40);
-//         assert!(git.status().await.unwrap().is_empty());
-//     }
-//
-//     #[test]
-//     fn parses_remote_branch_names_from_ls_remote_heads() {
-//         let output = "\
-// 1111111111111111111111111111111111111111\trefs/heads/main
-// 2222222222222222222222222222222222222222\trefs/heads/feature/login
-// 3333333333333333333333333333333333333333\trefs/tags/v1.0.0
-// ";
-//         let branches = parse_remote_branches(output).unwrap();
-//         assert_eq!(
-//             branches,
-//             vec![
-//                 GitBranch {
-//                     name: "feature/login".into(),
-//                     current: false,
-//                 },
-//                 GitBranch {
-//                     name: "main".into(),
-//                     current: false,
-//                 },
-//             ]
-//         );
-//     }
-//
-//     #[test]
-//     fn parses_remote_default_branch_from_symref_head() {
-//         let output = "\
-// ref: refs/heads/master\tHEAD
-// 1111111111111111111111111111111111111111\tHEAD
-// ";
-//         assert_eq!(
-//             parse_remote_default_branch(output),
-//             Some("master".into())
-//         );
-//     }
+    //     use super::*;
+    //
+    //     #[tokio::test]
+    //     async fn local_repository_status_commit_and_revision_are_typed() {
+    //         let dir = tempfile::tempdir().unwrap();
+    //         let path = dir.path().to_string_lossy().into_owned();
+    //         let git = GitCli::new_local().with_repository(path);
+    //         git.init(&[]).await.unwrap();
+    //         git.config(&["user.name", "Rustploy Test"]).await.unwrap();
+    //         git.config(&["user.email", "test@rustploy.local"])
+    //             .await
+    //             .unwrap();
+    //         std::fs::write(dir.path().join("hello.txt"), "hello").unwrap();
+    //         let status = git.status().await.unwrap();
+    //         assert_eq!(status.len(), 1);
+    //         assert_eq!(status[0].path, "hello.txt");
+    //         assert_eq!(status[0].index_status, '?');
+    //         git.add(&["hello.txt"]).await.unwrap();
+    //         git.commit(&["-m", "initial"]).await.unwrap();
+    //         let revision = git.rev_parse("HEAD").await.unwrap();
+    //         assert_eq!(revision.len(), 40);
+    //         assert!(git.status().await.unwrap().is_empty());
+    //     }
+    //
+    //     #[test]
+    //     fn parses_remote_branch_names_from_ls_remote_heads() {
+    //         let output = "\
+    // 1111111111111111111111111111111111111111\trefs/heads/main
+    // 2222222222222222222222222222222222222222\trefs/heads/feature/login
+    // 3333333333333333333333333333333333333333\trefs/tags/v1.0.0
+    // ";
+    //         let branches = parse_remote_branches(output).unwrap();
+    //         assert_eq!(
+    //             branches,
+    //             vec![
+    //                 GitBranch {
+    //                     name: "feature/login".into(),
+    //                     current: false,
+    //                 },
+    //                 GitBranch {
+    //                     name: "main".into(),
+    //                     current: false,
+    //                 },
+    //             ]
+    //         );
+    //     }
+    //
+    //     #[test]
+    //     fn parses_remote_default_branch_from_symref_head() {
+    //         let output = "\
+    // ref: refs/heads/master\tHEAD
+    // 1111111111111111111111111111111111111111\tHEAD
+    // ";
+    //         assert_eq!(
+    //             parse_remote_default_branch(output),
+    //             Some("master".into())
+    //         );
+    //     }
 }

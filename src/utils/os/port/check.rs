@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct PortCheckBuilder<'a> {
@@ -15,7 +15,12 @@ impl<'a> PortCheckBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("sh", &["-c", "ss -tuln | grep -q \":$1 \"", "dummy", &self.port]).await
+        self.executor
+            .run(
+                "sh",
+                &["-c", "ss -tuln | grep -q \":$1 \"", "dummy", &self.port],
+            )
+            .await
     }
 }
 

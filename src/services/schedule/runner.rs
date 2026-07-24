@@ -168,8 +168,7 @@ impl ScheduleRunner {
                 continue;
             }
             if let Some(registered) = current.get(&key) {
-                self.remove_job(&scheduler, &key, registered.job_id)
-                    .await;
+                self.remove_job(&scheduler, &key, registered.job_id).await;
             }
 
             let service = Arc::clone(&self.service);
@@ -236,8 +235,7 @@ impl ScheduleRunner {
                 continue;
             }
             if let Some(registered) = current.get(&key) {
-                self.remove_job(&scheduler, &key, registered.job_id)
-                    .await;
+                self.remove_job(&scheduler, &key, registered.job_id).await;
             }
 
             let service = Arc::clone(&self.service);
@@ -273,10 +271,9 @@ impl ScheduleRunner {
                 )
             })?;
             let job_id = job.guid();
-            scheduler
-                .add(job)
-                .await
-                .map_err(|error| format!("could not register database backup {backup_id}: {error}"))?;
+            scheduler.add(job).await.map_err(|error| {
+                format!("could not register database backup {backup_id}: {error}")
+            })?;
             self.jobs.insert(
                 key,
                 RegisteredScheduleJob {
@@ -302,8 +299,7 @@ impl ScheduleRunner {
                 continue;
             }
             if let Some(registered) = current.get(&key) {
-                self.remove_job(&scheduler, &key, registered.job_id)
-                    .await;
+                self.remove_job(&scheduler, &key, registered.job_id).await;
             }
 
             let service = Arc::clone(&self.service);
@@ -339,10 +335,9 @@ impl ScheduleRunner {
                 )
             })?;
             let job_id = job.guid();
-            scheduler
-                .add(job)
-                .await
-                .map_err(|error| format!("could not register volume backup {backup_id}: {error}"))?;
+            scheduler.add(job).await.map_err(|error| {
+                format!("could not register volume backup {backup_id}: {error}")
+            })?;
             self.jobs.insert(
                 key,
                 RegisteredScheduleJob {

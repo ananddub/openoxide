@@ -1,12 +1,15 @@
 use auto_di::resolve;
-use std::sync::Arc;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
+use super::{
+    ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, ComposeType,
+    auto_excuter::compose_new_db,
+};
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
 use crate::utils::docker::DockerCli;
 use crate::utils::docker::query::ServiceFilter;
-use super::{ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, auto_excuter::compose_new_db, ComposeType};
 
 impl ComposeService {
     pub async fn run_operation(
@@ -27,25 +30,43 @@ impl ComposeService {
             .ensure_capacity()
             .await?;
 
-        let compose_model = self.repo_compose.update_status(id, operation.target_status()).await?;
+        let compose_model = self
+            .repo_compose
+            .update_status(id, operation.target_status())
+            .await?;
         let compose = ComposeRecord::from(compose_model);
 
         let log_path = format!("pending-compose-{}", id);
-        let deployment_id = self.repo_deploy.create_queued_compose_deployment(
-            operation.title().to_string(),
-            Some(format!("{} requested for {}", operation.as_str(), compose.name)),
-            log_path,
-            operation.as_str().to_string(),
-            id,
-            compose.server_id,
-        )
-        .await?;
+        let deployment_id = self
+            .repo_deploy
+            .create_queued_compose_deployment(
+                operation.title().to_string(),
+                Some(format!(
+                    "{} requested for {}",
+                    operation.as_str(),
+                    compose.name
+                )),
+                log_path,
+                operation.as_str().to_string(),
+                id,
+                compose.server_id,
+            )
+            .await?;
 
         let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
-        self.repo_deploy.update_log_path(deployment_id, &log_path).await?;
+        self.repo_deploy
+            .update_log_path(deployment_id, &log_path)
+            .await?;
 
-        if let Ok(mut log) = crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await {
-            let _ = log.write_line(&format!("[QUEUED] deployment queued for {}", operation.as_str())).await;
+        if let Ok(mut log) =
+            crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await
+        {
+            let _ = log
+                .write_line(&format!(
+                    "[QUEUED] deployment queued for {}",
+                    operation.as_str()
+                ))
+                .await;
         }
 
         resolve::<BuilderQueue>()
@@ -72,7 +93,10 @@ impl ComposeService {
             return Ok(true);
         }
 
-        let has_running_deployment = self.repo_deploy.has_running_status_compose_deployment(id).await?;
+        let has_running_deployment = self
+            .repo_deploy
+            .has_running_status_compose_deployment(id)
+            .await?;
 
         if !has_running_deployment {
             let db = self.db.clone();
@@ -96,7 +120,9 @@ impl ComposeService {
 
         self.repo_compose.update_status(id, "IDLE").await?;
 
-        self.repo_deploy.request_cancel_compose_deployment(id).await?;
+        self.repo_deploy
+            .request_cancel_compose_deployment(id)
+            .await?;
 
         let db = self.db.clone();
         let app_name = compose.app_name.clone();
@@ -123,13 +149,20 @@ async fn scale_down_compose(
     let docker = DockerCli::from_executor(cmd);
 
     match compose_type {
-        ComposeType::DockerCompose => {
-            docker.compose().down().project(app_name).run().await
-                .map(|_| ())
-                .map_err(|e| format!("compose down failed: {e}"))
-        }
+        ComposeType::DockerCompose => docker
+            .compose()
+            .down()
+            .project(app_name)
+            .run()
+            .await
+            .map(|_| ())
+            .map_err(|e| format!("compose down failed: {e}")),
         ComposeType::Stack => {
-            let services = docker.services().list().filter(ServiceFilter::Name(app_name.to_string())).run_json()
+            let services = docker
+                .services()
+                .list()
+                .filter(ServiceFilter::Name(app_name.to_string()))
+                .run_json()
                 .await
                 .map_err(|e| format!("could not get stack service: {e}"))?;
 
@@ -138,7 +171,13 @@ async fn scale_down_compose(
             }
             for service in services {
                 if service.replicas != "0/0" {
-                    docker.services().scale().service(&service.name, 0).run().await.map_err(|e| format!("service scale 0 failed: {e}"))?;
+                    docker
+                        .services()
+                        .scale()
+                        .service(&service.name, 0)
+                        .run()
+                        .await
+                        .map_err(|e| format!("service scale 0 failed: {e}"))?;
                 }
             }
             Ok(())

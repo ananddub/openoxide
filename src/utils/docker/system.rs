@@ -68,8 +68,10 @@ mod tests {
     async fn container_rows_are_typed() {
         let dir = fake_docker("printf '{\"ID\":\"one\",\"State\":\"running\"}\\n'");
         let docker = DockerCli::with_executable(dir.path().join("docker"));
-        let rows: Vec<ContainerSummary> =
-            docker.containers_raw(false, &["status=running"]).await.unwrap();
+        let rows: Vec<ContainerSummary> = docker
+            .containers_raw(false, &["status=running"])
+            .await
+            .unwrap();
         assert_eq!(rows[0].id, "one");
         assert_eq!(rows[0].state, "running");
     }

@@ -1,9 +1,8 @@
-use crate::utils::docker::{client::DockerCli, DockerResult};
-
+use crate::utils::docker::{DockerResult, client::DockerCli};
 
 pub use create::SecretCreateBuilder;
-pub use remove::SecretRemoveBuilder;
 pub use list::SecretListBuilder;
+pub use remove::SecretRemoveBuilder;
 
 // ── SecretsHandle ───────────────────────────────────────────────────────────
 

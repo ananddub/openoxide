@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
+use crate::utils::ssh;
 use crate::{
     api::dto::ssh_key::{CreateSshKeyDto, PatchSshKeyDto},
     db::models::ssh_keys::SshKey,
     repository::SshKeyRepository,
 };
-use crate::utils::ssh;
 
 pub struct SshKeyService {
     repo_ssh: Arc<SshKeyRepository>,
@@ -31,29 +31,34 @@ impl SshKeyService {
     }
 
     pub async fn create(&self, input: CreateSshKeyDto) -> sqlx::Result<SshKey> {
-        self.repo_ssh.create_and_return(
-            input.name,
-            input.description,
-            input.private_key,
-            input.public_key
-        ).await
+        self.repo_ssh
+            .create_and_return(
+                input.name,
+                input.description,
+                input.private_key,
+                input.public_key,
+            )
+            .await
     }
 
-    pub async fn generate(&self, name: String, description: Option<String>, key_type: &str) -> sqlx::Result<SshKey> {
+    pub async fn generate(
+        &self,
+        name: String,
+        description: Option<String>,
+        key_type: &str,
+    ) -> sqlx::Result<SshKey> {
         let kt = key_type.to_lowercase();
         if kt != "ed25519" && kt != "rsa" {
             return Err(sqlx::Error::Configuration(
-                "Invalid key type. Supported types are 'ed25519' and 'rsa'".into()
+                "Invalid key type. Supported types are 'ed25519' and 'rsa'".into(),
             ));
         }
-        let (private_key, public_key) = ssh::generate_keypair(&kt).map_err(|e| sqlx::Error::Configuration(e.into()))?;
+        let (private_key, public_key) =
+            ssh::generate_keypair(&kt).map_err(|e| sqlx::Error::Configuration(e.into()))?;
 
-        self.repo_ssh.create_and_return(
-            name,
-            description,
-            private_key,
-            public_key
-        ).await
+        self.repo_ssh
+            .create_and_return(name, description, private_key, public_key)
+            .await
     }
 
     pub async fn patch(&self, id: i64, input: PatchSshKeyDto) -> sqlx::Result<SshKey> {
@@ -63,7 +68,9 @@ impl SshKeyService {
         let private_key = input.private_key.unwrap_or(current.private_key);
         let public_key = input.public_key.unwrap_or(current.public_key);
 
-        self.repo_ssh.update_and_return(id, name, description, private_key, public_key).await
+        self.repo_ssh
+            .update_and_return(id, name, description, private_key, public_key)
+            .await
     }
 
     pub async fn mark_used(&self, id: i64) -> sqlx::Result<SshKey> {

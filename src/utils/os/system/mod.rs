@@ -38,19 +38,35 @@ impl<'a> SystemCli<'a> {
         SystemCommandBuilder::new(self.executor, "which", vec![bin.build_str()])
     }
     pub fn has_command(&self, bin: impl IntoCommand) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new(self.executor, "command", vec!["-v".to_string(), bin.build_str()])
+        SystemCommandBuilder::new(
+            self.executor,
+            "command",
+            vec!["-v".to_string(), bin.build_str()],
+        )
     }
     pub fn timezone(&self) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new(self.executor, "timedatectl", vec!["show".to_string(), "--property=Timezone".to_string()])
+        SystemCommandBuilder::new(
+            self.executor,
+            "timedatectl",
+            vec!["show".to_string(), "--property=Timezone".to_string()],
+        )
     }
     pub fn set_timezone(&self, tz: impl IntoCommand) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new(self.executor, "timedatectl", vec!["set-timezone".to_string(), tz.build_str()])
+        SystemCommandBuilder::new(
+            self.executor,
+            "timedatectl",
+            vec!["set-timezone".to_string(), tz.build_str()],
+        )
     }
     pub fn reboot(&self) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "reboot", vec![])
     }
     pub fn shutdown(&self) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new(self.executor, "shutdown", vec!["-h".to_string(), "now".to_string()])
+        SystemCommandBuilder::new(
+            self.executor,
+            "shutdown",
+            vec!["-h".to_string(), "now".to_string()],
+        )
     }
     pub fn cpu_count(&self) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "nproc", vec![])

@@ -1,7 +1,7 @@
 use crate::db::models::domains::Domain;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct DomainRepository {
     pool: Arc<SqlitePool>,
@@ -84,16 +84,16 @@ impl DomainRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM domains WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM domains WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn list_by_application(&self, application_id: i64) -> Result<Vec<crate::services::domain::DomainRecord>, sqlx::Error> {
+    pub async fn list_by_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<crate::services::domain::DomainRecord>, sqlx::Error> {
         sqlx::query_as!(
             crate::services::domain::DomainRecord,
             r#"SELECT id AS "id!: i64", host, https, port, path, internal_path,
@@ -109,7 +109,10 @@ impl DomainRepository {
         .await
     }
 
-    pub async fn list_by_compose(&self, compose_id: i64) -> Result<Vec<crate::services::domain::DomainRecord>, sqlx::Error> {
+    pub async fn list_by_compose(
+        &self,
+        compose_id: i64,
+    ) -> Result<Vec<crate::services::domain::DomainRecord>, sqlx::Error> {
         sqlx::query_as!(
             crate::services::domain::DomainRecord,
             r#"SELECT id AS "id!: i64", host, https, port, path, internal_path,
@@ -125,7 +128,10 @@ impl DomainRepository {
         .await
     }
 
-    pub async fn list_by_application_raw(&self, application_id: i64) -> Result<Vec<Domain>, sqlx::Error> {
+    pub async fn list_by_application_raw(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<Domain>, sqlx::Error> {
         sqlx::query_as!(
             Domain,
             r#"SELECT id AS "id?: i64", host AS "host: String", https AS "https: i64", port AS "port?: i64", path AS "path?: String", internal_path AS "internal_path?: String", custom_entrypoint AS "custom_entrypoint?: String", service_name AS "service_name?: String", custom_cert_resolver AS "custom_cert_resolver?: String", strip_path AS "strip_path: i64", middlewares AS "middlewares: String", domain_type AS "domain_type: String", certificate_type AS "certificate_type: String", application_id AS "application_id?: i64", compose_id AS "compose_id?: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64"
@@ -241,7 +247,10 @@ impl DomainRepository {
         .await
     }
 
-    pub async fn get_record_by_id(&self, id: i64) -> Result<Option<crate::services::domain::DomainRecord>, sqlx::Error> {
+    pub async fn get_record_by_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<crate::services::domain::DomainRecord>, sqlx::Error> {
         sqlx::query_as!(
             crate::services::domain::DomainRecord,
             r#"SELECT id AS "id!: i64", host, https, port, path, internal_path,

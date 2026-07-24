@@ -1,9 +1,7 @@
 use auto_di::resolve;
 use axum::Router;
 use rustploy::{
-    core::config::Config,
-    core::logs::init_logs,
-    services::schedule::ScheduleRunner,
+    core::config::Config, core::logs::init_logs, services::schedule::ScheduleRunner,
     utils::builder::queue::BuilderQueue,
 };
 use std::sync::Arc;

@@ -1,6 +1,6 @@
+use super::{DirCreateBuilder, DirDeleteBuilder, DirExistsBuilder, DirWalkBuilder};
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
-use super::{DirCreateBuilder, DirExistsBuilder, DirDeleteBuilder, DirWalkBuilder};
 
 pub struct DirBuilder<'a> {
     pub(crate) executor: &'a CommandExecutor,

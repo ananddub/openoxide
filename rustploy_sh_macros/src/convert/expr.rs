@@ -1,26 +1,33 @@
+use crate::convert::dsl::convert_method_call;
+use crate::convert::{convert_macro, convert_stmt};
 use quote::quote;
 use syn::{Expr, Pat};
-use crate::convert::{convert_stmt, convert_macro};
-use crate::convert::dsl::convert_method_call;
 
 pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::Error> {
     match expr {
         Expr::Call(expr_call) => {
             let func_name = match &*expr_call.func {
-                Expr::Path(expr_path) => {
-                    expr_path.path.segments.iter()
-                        .map(|s| s.ident.to_string())
-                        .collect::<Vec<_>>()
-                        .join("::")
+                Expr::Path(expr_path) => expr_path
+                    .path
+                    .segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::"),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        expr_call,
+                        "Expected function name path",
+                    ));
                 }
-                _ => return Err(syn::Error::new_spanned(expr_call, "Expected function name path")),
             };
-
-
 
             if func_name == "cmd" {
                 let first_arg = expr_call.args.first().ok_or_else(|| {
-                    syn::Error::new_spanned(expr_call, "cmd requires at least one argument (the command name)")
+                    syn::Error::new_spanned(
+                        expr_call,
+                        "cmd requires at least one argument (the command name)",
+                    )
                 })?;
 
                 let cmd_name_tokens = convert_expr(first_arg)?;
@@ -158,7 +165,10 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
         }
         Expr::Path(expr_path) => {
             let ident = expr_path.path.get_ident().ok_or_else(|| {
-                syn::Error::new_spanned(expr_path, "Expected single identifier for variable reference")
+                syn::Error::new_spanned(
+                    expr_path,
+                    "Expected single identifier for variable reference",
+                )
             })?;
             let name_str = ident.to_string();
             let is_sh_var = crate::SH_VARS.with(|cell| cell.borrow().contains(&name_str));
@@ -176,11 +186,14 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 })
             }
         }
-        Expr::MethodCall(method_call) => {
-            convert_method_call(method_call)
-        }
+        Expr::MethodCall(method_call) => convert_method_call(method_call),
         Expr::Macro(expr_macro) => {
-            let macro_name = expr_macro.mac.path.get_ident().map(|i| i.to_string()).unwrap_or_default();
+            let macro_name = expr_macro
+                .mac
+                .path
+                .get_ident()
+                .map(|i| i.to_string())
+                .unwrap_or_default();
             if macro_name == "rust" {
                 let parser = <syn::Expr as syn::parse::Parse>::parse;
                 let inner_expr = expr_macro.mac.parse_body_with(parser)?;
@@ -240,7 +253,12 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
         Expr::ForLoop(expr_for) => {
             let var_name = match &*expr_for.pat {
                 Pat::Ident(pat_ident) => pat_ident.ident.to_string(),
-                _ => return Err(syn::Error::new_spanned(&expr_for.pat, "Expected identifier for loop variable")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        &expr_for.pat,
+                        "Expected identifier for loop variable",
+                    ));
+                }
             };
             let iter_tokens = convert_expr(&expr_for.expr)?;
             let mut body_stmts = Vec::new();
@@ -255,33 +273,34 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 })
             })
         }
-        Expr::Break(_) => {
-            Ok(quote! {
-                crate::utils::exec::script::dsl::ShellIR::Command(
-                    crate::utils::exec::script::dsl::Command {
-                        name: "break".to_string(),
-                        args: vec![],
-                    }
-                )
-            })
-        }
-        Expr::Continue(_) => {
-            Ok(quote! {
-                crate::utils::exec::script::dsl::ShellIR::Command(
-                    crate::utils::exec::script::dsl::Command {
-                        name: "continue".to_string(),
-                        args: vec![],
-                    }
-                )
-            })
-        }
+        Expr::Break(_) => Ok(quote! {
+            crate::utils::exec::script::dsl::ShellIR::Command(
+                crate::utils::exec::script::dsl::Command {
+                    name: "break".to_string(),
+                    args: vec![],
+                }
+            )
+        }),
+        Expr::Continue(_) => Ok(quote! {
+            crate::utils::exec::script::dsl::ShellIR::Command(
+                crate::utils::exec::script::dsl::Command {
+                    name: "continue".to_string(),
+                    args: vec![],
+                }
+            )
+        }),
         Expr::Lit(expr_lit) => {
             let val = match &expr_lit.lit {
                 syn::Lit::Str(lit_str) => lit_str.value(),
                 syn::Lit::Int(lit_int) => lit_int.to_string(),
                 syn::Lit::Float(lit_float) => lit_float.to_string(),
                 syn::Lit::Bool(lit_bool) => lit_bool.value.to_string(),
-                _ => return Err(syn::Error::new_spanned(expr_lit, "Unsupported literal type")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        expr_lit,
+                        "Unsupported literal type",
+                    ));
+                }
             };
             Ok(quote! {
                 (crate::utils::exec::script::dsl::ShellIR::Expr(
@@ -295,7 +314,12 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
             let op_str = match expr_binary.op {
                 syn::BinOp::And(_) => "&&",
                 syn::BinOp::Or(_) => "||",
-                _ => return Err(syn::Error::new_spanned(expr_binary, "Unsupported binary operator in sh! block")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        expr_binary,
+                        "Unsupported binary operator in sh! block",
+                    ));
+                }
             };
             Ok(quote! {
                 (crate::utils::exec::script::dsl::ShellIR::Raw(format!(
@@ -309,15 +333,16 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
         Expr::Unary(expr_unary) => {
             let inner_tokens = convert_expr(&expr_unary.expr)?;
             match expr_unary.op {
-                syn::UnOp::Not(_) => {
-                    Ok(quote! {
-                        (crate::utils::exec::script::dsl::ShellIR::Raw(format!(
-                            "! {}",
-                            (#inner_tokens).to_bash()
-                        )))
-                    })
-                }
-                _ => Err(syn::Error::new_spanned(expr_unary, "Unsupported unary operator in sh! block")),
+                syn::UnOp::Not(_) => Ok(quote! {
+                    (crate::utils::exec::script::dsl::ShellIR::Raw(format!(
+                        "! {}",
+                        (#inner_tokens).to_bash()
+                    )))
+                }),
+                _ => Err(syn::Error::new_spanned(
+                    expr_unary,
+                    "Unsupported unary operator in sh! block",
+                )),
             }
         }
         Expr::Group(expr_group) => {
@@ -329,6 +354,9 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 )))
             })
         }
-        _ => Err(syn::Error::new_spanned(expr, "Unsupported expression in sh! block")),
+        _ => Err(syn::Error::new_spanned(
+            expr,
+            "Unsupported expression in sh! block",
+        )),
     }
 }

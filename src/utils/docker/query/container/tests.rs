@@ -1,6 +1,6 @@
+use super::create::ContainerCreate;
 use super::types::RestartPolicy;
 use crate::utils::docker::DockerCli;
-use super::create::ContainerCreate;
 
 #[test]
 fn restart_policy_display() {

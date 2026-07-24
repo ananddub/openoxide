@@ -44,19 +44,25 @@ impl ArgBuilder {
 
     /// Push `--key value` only when `cond` is true.
     pub fn pair_if(&mut self, k: &str, v: impl AsRef<str>, cond: bool) -> &mut Self {
-        if cond { self.pair(k, v); }
+        if cond {
+            self.pair(k, v);
+        }
         self
     }
 
     /// Push `--key value` only when `v` is `Some`.
     pub fn pair_opt(&mut self, k: &str, v: Option<impl AsRef<str>>) -> &mut Self {
-        if let Some(v) = v { self.pair(k, v); }
+        if let Some(v) = v {
+            self.pair(k, v);
+        }
         self
     }
 
     /// Push `--flag` only when `cond` is true.
     pub fn flag_if(&mut self, f: &str, cond: bool) -> &mut Self {
-        if cond { self.flag(f); }
+        if cond {
+            self.flag(f);
+        }
         self
     }
 

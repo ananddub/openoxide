@@ -72,7 +72,10 @@ impl ScopeTracker {
         if let Some(suggestion) = best_match {
             Err(syn::Error::new(
                 span,
-                format!("Undefined variable '{}'. Did you mean '{}'?", name, suggestion),
+                format!(
+                    "Undefined variable '{}'. Did you mean '{}'?",
+                    name, suggestion
+                ),
             ))
         } else {
             // Not a local sh! variable or typo of one — auto-detected as an outer Rust variable!
@@ -80,7 +83,12 @@ impl ScopeTracker {
         }
     }
 
-    pub fn check_fn(&self, name: &str, given_args: usize, span: proc_macro2::Span) -> Result<(), syn::Error> {
+    pub fn check_fn(
+        &self,
+        name: &str,
+        given_args: usize,
+        span: proc_macro2::Span,
+    ) -> Result<(), syn::Error> {
         if let Some(&expected_arity) = self.declared_functions.get(name) {
             if given_args != expected_arity {
                 return Err(syn::Error::new(
@@ -108,10 +116,16 @@ impl ScopeTracker {
         if let Some(suggestion) = best_match {
             Err(syn::Error::new(
                 span,
-                format!("Undefined function '{}'. Did you mean '{}'?", name, suggestion),
+                format!(
+                    "Undefined function '{}'. Did you mean '{}'?",
+                    name, suggestion
+                ),
             ))
         } else {
-            Err(syn::Error::new(span, format!("Undefined function '{}'", name)))
+            Err(syn::Error::new(
+                span,
+                format!("Undefined function '{}'", name),
+            ))
         }
     }
 }
@@ -173,7 +187,11 @@ pub fn check_sh_stmts(
     // Pass 2: Check scopes and statements
     for stmt in stmts {
         match stmt {
-            crate::parser::ShStmt::ShFn { name: _, params, body } => {
+            crate::parser::ShStmt::ShFn {
+                name: _,
+                params,
+                body,
+            } => {
                 tracker.push_scope();
                 for p in params {
                     tracker.declare(p.clone());
@@ -208,11 +226,8 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
             if a_chars[i - 1] == b_chars[j - 1] {
                 dp[i][j] = dp[i - 1][j - 1];
             } else {
-                dp[i][j] = 1
-                    + std::cmp::min(
-                        dp[i - 1][j - 1],
-                        std::cmp::min(dp[i - 1][j], dp[i][j - 1]),
-                    );
+                dp[i][j] =
+                    1 + std::cmp::min(dp[i - 1][j - 1], std::cmp::min(dp[i - 1][j], dp[i][j - 1]));
             }
         }
     }
@@ -228,7 +243,12 @@ pub fn check_stmts(stmts: &[Stmt], tracker: &mut ScopeTracker) -> Result<(), syn
                 }
                 let name = match &local.pat {
                     Pat::Ident(pat_ident) => pat_ident.ident.to_string(),
-                    _ => return Err(syn::Error::new_spanned(&local.pat, "Expected variable name")),
+                    _ => {
+                        return Err(syn::Error::new_spanned(
+                            &local.pat,
+                            "Expected variable name",
+                        ));
+                    }
                 };
                 tracker.declare(name);
             }
@@ -240,7 +260,12 @@ pub fn check_stmts(stmts: &[Stmt], tracker: &mut ScopeTracker) -> Result<(), syn
                 }
             }
             Stmt::Macro(stmt_macro) => {
-                let macro_name = stmt_macro.mac.path.get_ident().map(|i| i.to_string()).unwrap_or_default();
+                let macro_name = stmt_macro
+                    .mac
+                    .path
+                    .get_ident()
+                    .map(|i| i.to_string())
+                    .unwrap_or_default();
                 if macro_name != "rust" {
                     check_macro(&stmt_macro.mac, tracker)?;
                 }
@@ -278,12 +303,13 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
         }
         Expr::Call(expr_call) => {
             let func_name = match &*expr_call.func {
-                Expr::Path(expr_path) => {
-                    expr_path.path.segments.iter()
-                        .map(|s| s.ident.to_string())
-                        .collect::<Vec<_>>()
-                        .join("::")
-                }
+                Expr::Path(expr_path) => expr_path
+                    .path
+                    .segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::"),
                 _ => String::new(),
             };
 
@@ -297,7 +323,11 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
         }
         Expr::MethodCall(method_call) => {
             let method_name = method_call.method.to_string();
-            if method_name == "stdout" || method_name == "stderr" || method_name == "sudo" || method_name == "ok" {
+            if method_name == "stdout"
+                || method_name == "stderr"
+                || method_name == "sudo"
+                || method_name == "ok"
+            {
                 check_expr(&method_call.receiver, tracker)?;
                 for arg in &method_call.args {
                     check_expr(arg, tracker)?;
@@ -316,7 +346,12 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
             }
         }
         Expr::Macro(expr_macro) => {
-            let macro_name = expr_macro.mac.path.get_ident().map(|i| i.to_string()).unwrap_or_default();
+            let macro_name = expr_macro
+                .mac
+                .path
+                .get_ident()
+                .map(|i| i.to_string())
+                .unwrap_or_default();
             if macro_name == "rust" {
                 return Ok(());
             }
@@ -348,7 +383,12 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
             tracker.push_scope();
             let var_name = match &*expr_for.pat {
                 Pat::Ident(pat_ident) => pat_ident.ident.to_string(),
-                _ => return Err(syn::Error::new_spanned(&expr_for.pat, "Expected identifier for loop variable")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        &expr_for.pat,
+                        "Expected identifier for loop variable",
+                    ));
+                }
             };
             tracker.declare(var_name);
             check_stmts(&expr_for.body.stmts, tracker)?;
@@ -383,7 +423,7 @@ fn check_macro(mac: &syn::Macro, tracker: &mut ScopeTracker) -> Result<(), syn::
 #[cfg(test)]
 mod tests {
     use super::*;
-    use syn::{parse_quote, Stmt};
+    use syn::{Stmt, parse_quote};
 
     #[test]
     fn test_scope_validation_success() {
@@ -404,7 +444,10 @@ mod tests {
         let mut tracker = ScopeTracker::new();
         let res = check_stmts(&stmts, &mut tracker);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(), "Undefined variable 'confg'. Did you mean 'config'?");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Undefined variable 'confg'. Did you mean 'config'?"
+        );
     }
 
     #[test]

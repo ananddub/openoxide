@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct HttpWaitHealthyBuilder<'a> {
@@ -13,7 +13,11 @@ pub struct HttpWaitHealthyBuilder<'a> {
 }
 
 impl<'a> HttpWaitHealthyBuilder<'a> {
-    pub(crate) fn new(executor: &'a CommandExecutor, url: impl IntoCommand, timeout: impl IntoCommand) -> Self {
+    pub(crate) fn new(
+        executor: &'a CommandExecutor,
+        url: impl IntoCommand,
+        timeout: impl IntoCommand,
+    ) -> Self {
         Self {
             executor,
             url: url.build_str(),
@@ -61,9 +65,13 @@ impl<'a> HttpWaitHealthyBuilder<'a> {
             parts.push(format!("{}: {}", k, v));
         }
         parts.push(self.url.clone());
-        
+
         // Escape all parts for safe execution/stringifying
-        parts.iter().map(|p| escape_arg(p)).collect::<Vec<_>>().join(" ")
+        parts
+            .iter()
+            .map(|p| escape_arg(p))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
@@ -72,7 +80,12 @@ impl<'a> HttpWaitHealthyBuilder<'a> {
             "timeout=$1; start_time=$(date +%s); while true; do if curl {} | grep -qE \"$2\"; then exit 0; fi; current_time=$(date +%s); elapsed=$((current_time - start_time)); if [ $elapsed -ge $timeout ]; then echo \"Timeout waiting for healthy response\" >&2; exit 1; fi; sleep 1; done",
             curl_cmd
         );
-        self.executor.run("sh", &["-c", &cmd, "dummy", &self.timeout, &self.status_pattern]).await
+        self.executor
+            .run(
+                "sh",
+                &["-c", &cmd, "dummy", &self.timeout, &self.status_pattern],
+            )
+            .await
     }
 }
 

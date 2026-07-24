@@ -108,8 +108,10 @@ struct StackMount {
 }
 
 pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
-    let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = app.domains.iter().map(|d| {
-        crate::utils::builder::shared::traefik::SharedDomain {
+    let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = app
+        .domains
+        .iter()
+        .map(|d| crate::utils::builder::shared::traefik::SharedDomain {
             key: d.key.clone(),
             host: d.host.clone(),
             https: d.https,
@@ -122,10 +124,13 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
             certificate_type: d.certificate_type.clone(),
             custom_cert_resolver: d.custom_cert_resolver.clone(),
             middlewares: d.middlewares.clone(),
-        }
-    }).collect();
+        })
+        .collect();
 
-    let traefik_map = crate::utils::builder::shared::traefik::build_traefik_labels(&app.app_name, &shared_domains);
+    let traefik_map = crate::utils::builder::shared::traefik::build_traefik_labels(
+        &app.app_name,
+        &shared_domains,
+    );
     let traefik_labels = traefik_map.into_values().flatten().collect::<Vec<_>>();
     let mut services = BTreeMap::new();
     services.insert(

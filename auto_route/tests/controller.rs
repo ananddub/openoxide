@@ -33,6 +33,12 @@ struct LoginForm {
     password: String,
 }
 
+#[derive(poem_openapi::Object)]
+struct TypedSseEvent {
+    kind: String,
+    line: String,
+}
+
 #[test]
 fn generates_openapi_from_registered_routes() {
     let spec = openapi_json();
@@ -43,7 +49,9 @@ fn generates_openapi_from_registered_routes() {
 
     let get_user = &spec["paths"]["/users/{id}"]["get"];
     assert_eq!(get_user["operationId"], "UserController::get_user");
-    assert_eq!(get_user["tags"], json!(["users"]));
+    assert_eq!(get_user["tags"], json!(["Users"]));
+    assert_eq!(get_user["summary"], "Fetch one user");
+    assert_eq!(get_user["description"], "Returns a user by id.");
     assert_eq!(get_user["parameters"][0]["name"], "id");
     assert_eq!(get_user["parameters"][0]["in"], "path");
     assert_eq!(get_user["parameters"][0]["required"], true);
@@ -55,6 +63,15 @@ fn generates_openapi_from_registered_routes() {
     assert_eq!(module["parameters"][0]["schema"]["type"], "integer");
 
     let create_user = &spec["paths"]["/users"]["post"];
+    assert_eq!(create_user["summary"], "Create user");
+    assert_eq!(
+        create_user["requestBody"]["description"],
+        "JSON user payload"
+    );
+    assert_eq!(
+        create_user["responses"]["200"]["description"],
+        "Created user payload"
+    );
     assert!(create_user["requestBody"]["required"].as_bool().unwrap());
     assert!(
         create_user["requestBody"]["content"]["application/json"]["schema"].is_object(),
@@ -70,6 +87,8 @@ fn generates_openapi_from_registered_routes() {
     );
 
     let search = &spec["paths"]["/search"]["get"];
+    assert_eq!(search["summary"], "Search users");
+    assert_eq!(search["description"], "Searches users by query params.");
     assert_eq!(search["parameters"][0]["name"], "query");
     assert_eq!(search["parameters"][0]["in"], "query");
     assert_eq!(search["parameters"][0]["style"], "form");
@@ -108,6 +127,15 @@ fn generates_openapi_from_registered_routes() {
         aliased_events["responses"]["200"]["content"]["text/event-stream"]["schema"]["format"],
         "event-stream"
     );
+
+    let typed_events = &spec["paths"]["/typed-events"]["get"];
+    let typed_schema = &typed_events["responses"]["200"]["content"]["text/event-stream"]["schema"];
+    assert!(
+        typed_schema["$ref"]
+            .as_str()
+            .is_some_and(|reference| reference.ends_with("/TypedSseEvent")),
+        "typed SSE handlers should expose the declared event payload schema"
+    );
 }
 
 #[get("/health")]
@@ -115,7 +143,11 @@ async fn health() -> &'static str {
     "ok"
 }
 
-#[get("/search")]
+#[get(
+    "/search",
+    summary = "Search users",
+    description = "Searches users by query params."
+)]
 async fn search(Query(_query): Query<SearchQuery>) -> Json<Value> {
     Json(json!({ "ok": true }))
 }
@@ -136,6 +168,12 @@ async fn aliased_events() -> Result<TestSse, (StatusCode, String)> {
     Ok(Sse::new(stream))
 }
 
+#[get("/typed-events", sse = TypedSseEvent)]
+async fn typed_events() -> Result<TestSse, (StatusCode, String)> {
+    let stream: TestEventStream = Box::pin(stream::empty());
+    Ok(Sse::new(stream))
+}
+
 #[controller("/module")]
 mod module_routes {
     use axum::extract::Path;
@@ -146,7 +184,7 @@ mod module_routes {
     }
 }
 
-#[controller("/users")]
+#[controller("/users", tag = "Users", description = "User management endpoints.")]
 impl UserController {
     pub fn new() -> Self {
         Self {
@@ -154,12 +192,17 @@ impl UserController {
         }
     }
 
-    #[get("/:id")]
+    #[get("/:id", description = "Returns a user by id.")]
+    /// Fetch one user
     async fn get_user(&self, Path(id): Path<u64>) -> Json<Value> {
         Json(json!({ "name": format!("{}-{id}", self.prefix) }))
     }
 
-    #[post]
+    #[post(
+        summary = "Create user",
+        request_description = "JSON user payload",
+        response_description = "Created user payload"
+    )]
     async fn create_user(&self, Json(body): Json<Value>) -> (StatusCode, Json<Value>) {
         (StatusCode::CREATED, Json(body))
     }

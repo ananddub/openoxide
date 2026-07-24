@@ -1,6 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder, DockerCli, DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
 pub struct ComposeStartBuilder<'a> {
     pub(crate) cli: &'a DockerCli,
@@ -9,10 +7,16 @@ pub struct ComposeStartBuilder<'a> {
 
 impl<'a> ComposeStartBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["compose", "start"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["compose", "start"]),
+        }
     }
-    pub fn service(mut self, s: impl Into<String>) -> Self { self.args.push(s.into()); self }
-    
+    pub fn service(mut self, s: impl Into<String>) -> Self {
+        self.args.push(s.into());
+        self
+    }
+
     pub async fn run(self) -> DockerResult<DockerOutput> {
         self.cli.execute(&self.args).await
     }

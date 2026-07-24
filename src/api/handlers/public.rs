@@ -73,13 +73,12 @@ impl Public {
             return Err((StatusCode::BAD_REQUEST, "name cannot be empty".into()));
         }
 
-        let server_ip = sqlx::query_scalar::<_, Option<String>>(
-            "SELECT server_ip FROM settings LIMIT 1",
-        )
-        .fetch_optional(self.db.as_ref())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .flatten();
+        let server_ip =
+            sqlx::query_scalar::<_, Option<String>>("SELECT server_ip FROM settings LIMIT 1")
+                .fetch_optional(self.db.as_ref())
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+                .flatten();
 
         let domain = match server_ip.as_deref() {
             Some(ip) if !ip.is_empty() => {

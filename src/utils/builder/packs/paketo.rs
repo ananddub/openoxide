@@ -1,6 +1,6 @@
+use crate::string_enum;
 use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
 use tokio_util::sync::CancellationToken;
-use crate::string_enum;
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -107,7 +107,8 @@ impl<'a> PackBuildBuilder<'a> {
     }
 
     pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
-        self.args.pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
+        self.args
+            .pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
         self
     }
 
@@ -147,7 +148,9 @@ impl<'a> PackBuildBuilder<'a> {
     }
 
     pub async fn run(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
-        self.executor.run_cancelled("pack", self.args.build(), cancel).await
+        self.executor
+            .run_cancelled("pack", self.args.build(), cancel)
+            .await
     }
 
     pub async fn run_in_cgroup(

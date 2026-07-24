@@ -1,7 +1,7 @@
 use crate::db::models::rollbacks::Rollback;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct RollbackRepository {
     pool: Arc<SqlitePool>,
@@ -62,16 +62,16 @@ impl RollbackRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM rollbacks WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM rollbacks WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn get_by_deployment_id(&self, deployment_id: i64) -> Result<Option<Rollback>, sqlx::Error> {
+    pub async fn get_by_deployment_id(
+        &self,
+        deployment_id: i64,
+    ) -> Result<Option<Rollback>, sqlx::Error> {
         sqlx::query_as!(
             Rollback,
             r#"SELECT id AS "id?: i64", deployment_id AS "deployment_id: i64", version AS "version: i64", image AS "image?: String", full_context AS "full_context?: String", created_at AS "created_at: i64" FROM rollbacks WHERE deployment_id = ?"#,
@@ -82,7 +82,10 @@ impl RollbackRepository {
     }
 
     /// List all rollbacks for an application (via its deployments), newest first
-    pub async fn list_by_application(&self, application_id: i64) -> Result<Vec<Rollback>, sqlx::Error> {
+    pub async fn list_by_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<Rollback>, sqlx::Error> {
         sqlx::query_as!(
             Rollback,
             r#"SELECT r.id AS "id?: i64", r.deployment_id AS "deployment_id: i64", r.version AS "version: i64", r.image AS "image?: String", r.full_context AS "full_context?: String", r.created_at AS "created_at: i64"
@@ -97,7 +100,10 @@ impl RollbackRepository {
     }
 
     /// Get the next version number for a given application's rollbacks
-    pub async fn get_next_version_for_application(&self, application_id: i64) -> Result<i64, sqlx::Error> {
+    pub async fn get_next_version_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<i64, sqlx::Error> {
         let row = sqlx::query_scalar!(
             r#"SELECT COALESCE(MAX(r.version), 0) AS "max_version: i64"
                FROM rollbacks r

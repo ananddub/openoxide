@@ -1,5 +1,8 @@
 use crate::utils::{
-    builder::{compose::spec::ComposeSpec, shared::{validate_domain_host, validate_name}},
+    builder::{
+        compose::spec::ComposeSpec,
+        shared::{validate_domain_host, validate_name},
+    },
     exec::{ExecError, ExecResult},
 };
 

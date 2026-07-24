@@ -4,12 +4,12 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use crate::api::dto::domain::{CreateDomainDto, PatchDomainDto};
+use crate::repository::{ApplicationRepository, ComposeProjectRepository, DomainRepository};
 use crate::services::compose::ComposeType;
 use crate::utils::builder::compose::labels::build_compose_service_labels;
 use crate::utils::builder::shared::traefik::build_traefik_labels;
 use crate::utils::docker::DockerCli;
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
-use crate::repository::{DomainRepository, ApplicationRepository, ComposeProjectRepository};
 
 #[derive(Debug, Clone)]
 pub struct DomainRecord {
@@ -84,22 +84,25 @@ impl DomainService {
             _ => "APPLICATION",
         };
 
-        let domain = self.repo_domain.create_and_return(
-            input.host,
-            https,
-            port,
-            Some(input.path),
-            Some(input.internal_path),
-            input.custom_entrypoint,
-            input.service_name,
-            input.custom_cert_resolver,
-            strip_path,
-            input.middlewares,
-            domain_type.to_string(),
-            certificate_type,
-            input.application_id,
-            input.compose_id,
-        ).await?;
+        let domain = self
+            .repo_domain
+            .create_and_return(
+                input.host,
+                https,
+                port,
+                Some(input.path),
+                Some(input.internal_path),
+                input.custom_entrypoint,
+                input.service_name,
+                input.custom_cert_resolver,
+                strip_path,
+                input.middlewares,
+                domain_type.to_string(),
+                certificate_type,
+                input.application_id,
+                input.compose_id,
+            )
+            .await?;
 
         if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
             self.apply_application_traefik(app_id).await;
@@ -121,27 +124,33 @@ impl DomainService {
         let custom_entrypoint = input.custom_entrypoint.or(current.custom_entrypoint);
         let service_name = input.service_name.or(current.service_name);
         let custom_cert_resolver = input.custom_cert_resolver.or(current.custom_cert_resolver);
-        let strip_path = input.strip_path.map(bool_to_i64).unwrap_or(current.strip_path);
+        let strip_path = input
+            .strip_path
+            .map(bool_to_i64)
+            .unwrap_or(current.strip_path);
         let middlewares = input.middlewares.unwrap_or(current.middlewares);
         let certificate_type = input
             .certificate_type
             .map(|v| v.to_uppercase())
             .unwrap_or(current.certificate_type);
 
-        let domain = self.repo_domain.update_and_return(
-            id,
-            host,
-            https,
-            port,
-            path,
-            internal_path,
-            custom_entrypoint,
-            service_name,
-            custom_cert_resolver,
-            strip_path,
-            middlewares,
-            certificate_type,
-        ).await?;
+        let domain = self
+            .repo_domain
+            .update_and_return(
+                id,
+                host,
+                https,
+                port,
+                path,
+                internal_path,
+                custom_entrypoint,
+                service_name,
+                custom_cert_resolver,
+                strip_path,
+                middlewares,
+                certificate_type,
+            )
+            .await?;
 
         // Auto-apply traefik labels after domain update.
         if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
@@ -179,7 +188,9 @@ impl DomainService {
     }
 
     async fn try_apply_application_traefik(&self, application_id: i64) -> Result<(), String> {
-        let app = self.repo_app.get_by_id(application_id)
+        let app = self
+            .repo_app
+            .get_by_id(application_id)
             .await
             .map_err(|e| format!("app check error: {e}"))?
             .ok_or_else(|| format!("app not found: {application_id}"))?;
@@ -194,8 +205,9 @@ impl DomainService {
             .await
             .map_err(|e| format!("could not load domains: {e}"))?;
 
-        let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = domains.iter().map(|d| {
-            crate::utils::builder::shared::traefik::SharedDomain {
+        let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = domains
+            .iter()
+            .map(|d| crate::utils::builder::shared::traefik::SharedDomain {
                 key: d.id.to_string(),
                 host: d.host.clone(),
                 https: d.https != 0,
@@ -208,8 +220,8 @@ impl DomainService {
                 certificate_type: d.certificate_type.clone(),
                 custom_cert_resolver: d.custom_cert_resolver.clone(),
                 middlewares: serde_json::from_str(&d.middlewares).unwrap_or_default(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let traefik_map = build_traefik_labels(&app_name, &shared_domains);
         let new_labels: Vec<String> = traefik_map.into_values().flatten().collect();
@@ -263,7 +275,10 @@ impl DomainService {
             return Ok(());
         }
 
-        update.run().await.map_err(|e| format!("service update failed: {e}"))?;
+        update
+            .run()
+            .await
+            .map_err(|e| format!("service update failed: {e}"))?;
 
         tracing::info!(
             application_id,
@@ -286,7 +301,9 @@ impl DomainService {
     }
 
     async fn try_apply_compose_traefik(&self, compose_id: i64) -> Result<(), String> {
-        let compose = self.repo_compose.get_by_id(compose_id)
+        let compose = self
+            .repo_compose
+            .get_by_id(compose_id)
             .await
             .map_err(|e| format!("compose check error: {e}"))?
             .ok_or_else(|| format!("compose not found: {compose_id}"))?;
@@ -310,7 +327,8 @@ impl DomainService {
             .list_by_compose(compose_id)
             .await
             .map_err(|e| format!("could not load domains: {e}"))?;
-        let v = ComposeType::try_from(compose_type.as_str()).map_err(|e| format!("invalid compose type: {e}"))?;
+        let v = ComposeType::try_from(compose_type.as_str())
+            .map_err(|e| format!("invalid compose type: {e}"))?;
         match v {
             ComposeType::Stack => {
                 let labels = build_compose_service_labels(&app_name, &domains);
@@ -325,7 +343,8 @@ impl DomainService {
                         .as_object()
                         .cloned()
                         .unwrap_or_default();
-                    let stale: Vec<String> = current.keys()
+                    let stale: Vec<String> = current
+                        .keys()
                         .filter(|k| k.starts_with("traefik."))
                         .cloned()
                         .collect();
@@ -342,8 +361,12 @@ impl DomainService {
                             has_changes = true;
                         }
                     }
-                    if !has_changes { continue; }
-                    update.run().await
+                    if !has_changes {
+                        continue;
+                    }
+                    update
+                        .run()
+                        .await
                         .map_err(|e| format!("service update labels failed: {e}"))?;
 
                     tracing::info!(compose_id, service = %service_name, "traefik labels updated for compose stack service");
@@ -352,10 +375,18 @@ impl DomainService {
             ComposeType::DockerCompose => {
                 use crate::utils::paths::rustploy_paths;
                 let paths = rustploy_paths();
-                let env_file = format!("{}/{app_name}/.env", paths.compose_dir("").trim_end_matches('/'));
-                let compose_file = format!("{}/{app_name}/source/docker-compose.yml", paths.compose_dir("").trim_end_matches('/'));
-                
-                docker.compose().up()
+                let env_file = format!(
+                    "{}/{app_name}/.env",
+                    paths.compose_dir("").trim_end_matches('/')
+                );
+                let compose_file = format!(
+                    "{}/{app_name}/source/docker-compose.yml",
+                    paths.compose_dir("").trim_end_matches('/')
+                );
+
+                docker
+                    .compose()
+                    .up()
                     .project(&app_name)
                     .env_file(&env_file)
                     .file(&compose_file)

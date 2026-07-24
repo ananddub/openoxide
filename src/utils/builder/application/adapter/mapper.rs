@@ -1,13 +1,13 @@
+use crate::db::models::{domains::Domain, mounts::Mount};
 use crate::utils::builder::env::generate_env_app;
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
-use crate::utils::git::GitProviderBuilder;
 use crate::utils::builder::spec::{
-    BuildStrategy, BuildType, ApplicationSpec, SourceSpec, SourceType
+    ApplicationSpec, BuildStrategy, BuildType, SourceSpec, SourceType,
 };
-use crate::db::models::{domains::Domain, mounts::Mount};
-use crate::utils::paths::rustploy_paths;
 use crate::utils::builder::spec::{RegistryAuth, ResourceSpec};
+use crate::utils::git::GitProviderBuilder;
+use crate::utils::paths::rustploy_paths;
 use std::collections::BTreeMap;
 
 pub struct AppRowWithRelations {
@@ -32,7 +32,9 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
         );
         let registry = registry_auth(&app);
         let image = if app.source_type == "DOCKER" {
-            app.docker_image.clone().ok_or(AdapterError::MissingField("docker_image"))?
+            app.docker_image
+                .clone()
+                .ok_or(AdapterError::MissingField("docker_image"))?
         } else if let Some(prefix) = &app.registry_image_prefix {
             format!("{}/{}:latest", prefix.trim_end_matches('/'), app.app_name)
         } else {
@@ -171,18 +173,24 @@ fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
     let source_type = SourceType::from(a.source_type.as_str());
     match source_type {
         SourceType::Docker => Ok(SourceSpec::Docker {
-            image: a.docker_image.clone().ok_or(AdapterError::MissingField("docker_image"))?,
+            image: a
+                .docker_image
+                .clone()
+                .ok_or(AdapterError::MissingField("docker_image"))?,
             registry: None,
         }),
         _ => {
             let provider = GitProviderBuilder::new(source_type)
                 .github(a.owner.as_deref(), a.repository.as_deref())
                 .gitlab(a.gitlab_owner.as_deref(), a.gitlab_repository.as_deref())
-                .bitbucket(a.bitbucket_owner.as_deref(), a.bitbucket_repository.as_deref())
+                .bitbucket(
+                    a.bitbucket_owner.as_deref(),
+                    a.bitbucket_repository.as_deref(),
+                )
                 .gitea(a.gitea_repository.as_deref())
                 .custom(a.custom_git_url.as_deref())
                 .build()?;
-            
+
             let branch = match source_type {
                 SourceType::Github => &a.branch,
                 SourceType::Gitlab => &a.gitlab_branch,
@@ -193,11 +201,26 @@ fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
             };
 
             let auth = match source_type {
-                SourceType::Github => a.github_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitlab => a.gitlab_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Bitbucket => a.bitbucket_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitea => a.gitea_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Git => a.ssh_private_key.as_ref().map(|k| crate::utils::git::types::GitAuth::SshKey(k.clone())),
+                SourceType::Github => a
+                    .github_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Gitlab => a
+                    .gitlab_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Bitbucket => a
+                    .bitbucket_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Gitea => a
+                    .gitea_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Git => a
+                    .ssh_private_key
+                    .as_ref()
+                    .map(|k| crate::utils::git::types::GitAuth::SshKey(k.clone())),
                 _ => None,
             };
 
@@ -249,7 +272,6 @@ fn build(a: &AppRow) -> Result<Option<BuildStrategy>, AdapterError> {
                 .ok_or(AdapterError::MissingField("publish_directory"))?,
             spa: a.is_static_spa.unwrap_or(0) != 0,
         },
-
     }))
 }
 fn registry_auth(a: &AppRow) -> Option<RegistryAuth> {

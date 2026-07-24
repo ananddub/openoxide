@@ -10,7 +10,11 @@ pub struct HttpCli<'a> {
 }
 
 impl<'a> HttpCli<'a> {
-    pub fn wait_healthy(&self, url: impl IntoCommand, timeout: impl IntoCommand) -> HttpWaitHealthyBuilder<'a> {
+    pub fn wait_healthy(
+        &self,
+        url: impl IntoCommand,
+        timeout: impl IntoCommand,
+    ) -> HttpWaitHealthyBuilder<'a> {
         HttpWaitHealthyBuilder::new(self.executor, url, timeout)
     }
 }

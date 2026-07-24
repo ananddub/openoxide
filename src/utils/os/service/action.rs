@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct ServiceActionBuilder<'a> {
@@ -10,10 +10,16 @@ pub struct ServiceActionBuilder<'a> {
 
 impl<'a> ServiceActionBuilder<'a> {
     pub fn new(executor: &'a CommandExecutor, action: &'static str, name: String) -> Self {
-        Self { executor, action, name }
+        Self {
+            executor,
+            action,
+            name,
+        }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("systemctl", &[self.action, &self.name]).await
+        self.executor
+            .run("systemctl", &[self.action, &self.name])
+            .await
     }
 }
 

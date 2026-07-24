@@ -1,13 +1,14 @@
 use crate::api::dto::application::{CreateApplicationDto, PatchApplicationDto};
 
-use super::{
-    ApplicationRecord, ApplicationService,
-    queries::generate_app_name,
-};
+use super::{ApplicationRecord, ApplicationService, queries::generate_app_name};
 
 impl ApplicationService {
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ApplicationRecord> {
-        let app = self.repo_app.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let app = self
+            .repo_app
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         Ok(ApplicationRecord::from(app))
     }
 
@@ -21,16 +22,18 @@ impl ApplicationService {
 
     pub async fn create(&self, input: CreateApplicationDto) -> sqlx::Result<ApplicationRecord> {
         let app_name = generate_app_name(&input.name);
-        let app = self.repo_app.create_simple(
-            input.name,
-            app_name,
-            input.description,
-            input.source_type,
-            input.build_type,
-            input.environment_id,
-            input.server_id,
-        )
-        .await?;
+        let app = self
+            .repo_app
+            .create_simple(
+                input.name,
+                app_name,
+                input.description,
+                input.source_type,
+                input.build_type,
+                input.environment_id,
+                input.server_id,
+            )
+            .await?;
         Ok(ApplicationRecord::from(app))
     }
 
@@ -50,19 +53,21 @@ impl ApplicationService {
         let build_server_id = input.build_server_id.or(current.build_server_id);
         let registry_id = input.registry_id.or(current.registry_id);
 
-        let app = self.repo_app.patch(
-            id,
-            name,
-            description,
-            build_type,
-            trigger_type,
-            env_var,
-            icon,
-            server_id,
-            build_server_id,
-            registry_id,
-        )
-        .await?;
+        let app = self
+            .repo_app
+            .patch(
+                id,
+                name,
+                description,
+                build_type,
+                trigger_type,
+                env_var,
+                icon,
+                server_id,
+                build_server_id,
+                registry_id,
+            )
+            .await?;
         Ok(ApplicationRecord::from(app))
     }
 

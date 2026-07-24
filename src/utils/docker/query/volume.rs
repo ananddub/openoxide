@@ -11,16 +11,28 @@ pub struct VolumeQuery<'a> {
 
 impl<'a> VolumeQuery<'a> {
     pub(super) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, filters: vec![] }
+        Self {
+            cli,
+            filters: vec![],
+        }
     }
 
-    pub fn filter(mut self, f: VolumeFilter) -> Self { self.filters.push(f); self }
+    pub fn filter(mut self, f: VolumeFilter) -> Self {
+        self.filters.push(f);
+        self
+    }
     pub fn filters(mut self, fs: impl IntoIterator<Item = VolumeFilter>) -> Self {
-        self.filters.extend(fs); self
+        self.filters.extend(fs);
+        self
     }
 
     fn args(&self) -> Vec<String> {
-        let mut a = vec!["volume".into(), "ls".into(), "--format".into(), "{{json .}}".into()];
+        let mut a = vec![
+            "volume".into(),
+            "ls".into(),
+            "--format".into(),
+            "{{json .}}".into(),
+        ];
         for f in &self.filters {
             a.extend(["--filter".into(), f.to_string()]);
         }
@@ -55,8 +67,12 @@ pub struct VolumeCreate<'a> {
 impl<'a> VolumeCreate<'a> {
     pub(super) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
         Self {
-            cli, name: name.into(),
-            driver: None, labels: vec![], opts: vec![], extra: vec![],
+            cli,
+            name: name.into(),
+            driver: None,
+            labels: vec![],
+            opts: vec![],
+            extra: vec![],
         }
     }
 
@@ -65,7 +81,8 @@ impl<'a> VolumeCreate<'a> {
         self
     }
     pub fn label(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
-        self.labels.push((k.into(), v.into())); self
+        self.labels.push((k.into(), v.into()));
+        self
     }
     /// Pass a driver-specific option (`--opt key=value`).
     ///
@@ -76,15 +93,25 @@ impl<'a> VolumeCreate<'a> {
     /// .opt("device", ":/export/data")
     /// ```
     pub fn opt(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
-        self.opts.push((k.into(), v.into())); self
+        self.opts.push((k.into(), v.into()));
+        self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self { self.extra.push(v.into()); self }
+    pub fn arg(mut self, v: impl Into<String>) -> Self {
+        self.extra.push(v.into());
+        self
+    }
 
     fn build_args(&self) -> Vec<String> {
         let mut a = vec!["volume".to_string(), "create".to_string()];
-        if let Some(d) = &self.driver { a.extend(["--driver".into(), d.clone()]); }
-        for (k, v) in &self.labels   { a.extend(["--label".into(), format!("{k}={v}")]); }
-        for (k, v) in &self.opts     { a.extend(["--opt".into(), format!("{k}={v}")]); }
+        if let Some(d) = &self.driver {
+            a.extend(["--driver".into(), d.clone()]);
+        }
+        for (k, v) in &self.labels {
+            a.extend(["--label".into(), format!("{k}={v}")]);
+        }
+        for (k, v) in &self.opts {
+            a.extend(["--opt".into(), format!("{k}={v}")]);
+        }
         a.extend(self.extra.clone());
         a.push(self.name.clone());
         a
@@ -106,7 +133,9 @@ mod tests {
     use super::*;
     use crate::utils::docker::DockerCli;
 
-    fn fake() -> DockerCli { DockerCli::new_local() }
+    fn fake() -> DockerCli {
+        DockerCli::new_local()
+    }
 
     #[test]
     fn volume_create_nfs_args() {

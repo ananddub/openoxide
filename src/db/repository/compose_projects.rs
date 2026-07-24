@@ -1,8 +1,8 @@
 use crate::db::models::compose_projects::ComposeProject;
 use crate::utils::builder::compose::adapter::mapper::ComposeRow;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ComposeProjectRepository {
     pool: Arc<SqlitePool>,
@@ -143,16 +143,16 @@ impl ComposeProjectRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM compose_projects WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM compose_projects WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn list_by_environment(&self, environment_id: i64) -> Result<Vec<ComposeProject>, sqlx::Error> {
+    pub async fn list_by_environment(
+        &self,
+        environment_id: i64,
+    ) -> Result<Vec<ComposeProject>, sqlx::Error> {
         sqlx::query_as!(
             ComposeProject,
             r#"SELECT id AS "id?: String", name AS "name: String", app_name AS "app_name: String", description AS "description?: String", env_var AS "env_var?: String", compose_file AS "compose_file: String", refresh_token AS "refresh_token?: String", source_type AS "source_type: String", compose_type AS "compose_type: String", compose_status AS "compose_status: String", trigger_type AS "trigger_type: String", repository AS "repository?: String", owner AS "owner?: String", branch AS "branch?: String", auto_deploy AS "auto_deploy: i64", gitlab_project_id AS "gitlab_project_id?: i64", gitlab_repository AS "gitlab_repository?: String", gitlab_owner AS "gitlab_owner?: String", gitlab_branch AS "gitlab_branch?: String", gitlab_path_namespace AS "gitlab_path_namespace?: String", bitbucket_repository AS "bitbucket_repository?: String", bitbucket_repository_slug AS "bitbucket_repository_slug?: String", bitbucket_owner AS "bitbucket_owner?: String", bitbucket_branch AS "bitbucket_branch?: String", gitea_repository AS "gitea_repository?: String", gitea_owner AS "gitea_owner?: String", gitea_branch AS "gitea_branch?: String", custom_git_url AS "custom_git_url?: String", custom_git_branch AS "custom_git_branch?: String", custom_git_ssh_key_id AS "custom_git_ssh_key_id?: i64", command AS "command: String", enable_submodules AS "enable_submodules: i64", compose_path AS "compose_path: String", suffix AS "suffix: String", randomize AS "randomize: i64", isolated_deployment AS "isolated_deployment: i64", isolated_deployments_volume AS "isolated_deployments_volume: i64", watch_paths AS "watch_paths?: String", environment_id AS "environment_id: i64", server_id AS "server_id?: i64", github_provider_id AS "github_provider_id?: i64", gitlab_provider_id AS "gitlab_provider_id?: i64", gitea_provider_id AS "gitea_provider_id?: i64", bitbucket_provider_id AS "bitbucket_provider_id?: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM compose_projects WHERE environment_id = ? ORDER BY created_at DESC, id DESC"#,
@@ -241,7 +241,11 @@ impl ComposeProjectRepository {
         Ok(())
     }
 
-    pub async fn update_status(&self, id: i64, status: &str) -> Result<ComposeProject, sqlx::Error> {
+    pub async fn update_status(
+        &self,
+        id: i64,
+        status: &str,
+    ) -> Result<ComposeProject, sqlx::Error> {
         sqlx::query!(
             r#"UPDATE compose_projects SET compose_status = ? WHERE id = ?"#,
             status,
@@ -252,7 +256,10 @@ impl ComposeProjectRepository {
         self.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)
     }
 
-    pub async fn get_deployment_context(&self, id: i64) -> Result<(i64, i64, Option<i64>), sqlx::Error> {
+    pub async fn get_deployment_context(
+        &self,
+        id: i64,
+    ) -> Result<(i64, i64, Option<i64>), sqlx::Error> {
         sqlx::query_as::<_, (i64, i64, Option<i64>)>(
             r#"SELECT c.environment_id, e.project_id, c.server_id
                FROM compose_projects c

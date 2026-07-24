@@ -1,6 +1,6 @@
-use std::path::Path;
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
 use crate::utils::zip::ZipBuilder;
+use std::path::Path;
 
 /// Extract a ZIP archive to `dest_path` on the local machine.
 pub async fn deploy_zip_locally(zip_path: &Path, dest_path: &str) -> Result<(), String> {

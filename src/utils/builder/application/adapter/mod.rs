@@ -1,4 +1,3 @@
-
 pub use db::ApplicationSpecAdapter;
 
 pub mod db;

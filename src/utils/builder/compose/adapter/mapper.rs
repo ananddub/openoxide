@@ -1,7 +1,7 @@
-use crate::utils::builder::spec::{RuntimeType, SourceType};
-use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::compose::spec::{ComposeRuntime, ComposeSource, ComposeSpec};
+use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
+use crate::utils::builder::spec::{RuntimeType, SourceType};
 use crate::utils::git::GitProviderBuilder;
 use crate::{
     db::models::{domains::Domain, mounts::Mount},
@@ -98,12 +98,18 @@ fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
         _ => {
             let provider = GitProviderBuilder::new(source_type)
                 .github(compose.owner.as_deref(), compose.repository.as_deref())
-                .gitlab(compose.gitlab_owner.as_deref(), compose.gitlab_repository.as_deref())
-                .bitbucket(compose.bitbucket_owner.as_deref(), compose.bitbucket_repository.as_deref())
+                .gitlab(
+                    compose.gitlab_owner.as_deref(),
+                    compose.gitlab_repository.as_deref(),
+                )
+                .bitbucket(
+                    compose.bitbucket_owner.as_deref(),
+                    compose.bitbucket_repository.as_deref(),
+                )
                 .gitea(compose.gitea_repository.as_deref())
                 .custom(compose.custom_git_url.as_deref())
                 .build()?;
-            
+
             let branch_val = match source_type {
                 SourceType::Github => &compose.branch,
                 SourceType::Gitlab => &compose.gitlab_branch,
@@ -114,11 +120,26 @@ fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
             };
 
             let auth = match source_type {
-                SourceType::Github => compose.github_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitlab => compose.gitlab_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Bitbucket => compose.bitbucket_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitea => compose.gitea_token.as_ref().map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Git => compose.ssh_private_key.as_ref().map(|k| crate::utils::git::types::GitAuth::SshKey(k.clone())),
+                SourceType::Github => compose
+                    .github_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Gitlab => compose
+                    .gitlab_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Bitbucket => compose
+                    .bitbucket_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Gitea => compose
+                    .gitea_token
+                    .as_ref()
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Git => compose
+                    .ssh_private_key
+                    .as_ref()
+                    .map(|k| crate::utils::git::types::GitAuth::SshKey(k.clone())),
                 _ => None,
             };
 

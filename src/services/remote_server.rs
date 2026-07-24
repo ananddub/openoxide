@@ -16,10 +16,7 @@ pub struct ServerService {
 
 #[singleton]
 impl ServerService {
-    fn new(
-        repo_server: Arc<ServerRepository>,
-        repo_ssh: Arc<SshKeyRepository>,
-    ) -> Self {
+    fn new(repo_server: Arc<ServerRepository>, repo_ssh: Arc<SshKeyRepository>) -> Self {
         Self {
             repo_server,
             repo_ssh,
@@ -43,25 +40,31 @@ impl ServerService {
     ) -> sqlx::Result<(Server, crate::db::models::ssh_keys::SshKey)> {
         let server = self.get_by_id(id).await?;
         let key_id = server.ssh_key_id.ok_or(sqlx::Error::RowNotFound)?;
-        let key = self.repo_ssh.get_by_id(key_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let key = self
+            .repo_ssh
+            .get_by_id(key_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         Ok((server, key))
     }
 
     pub async fn create(&self, input: CreateRemoteServerDto) -> sqlx::Result<Server> {
         let app_name = generate_app_name(&input.name);
 
-        self.repo_server.create_and_return(
-            input.name,
-            input.description,
-            input.ip_address,
-            input.port,
-            input.username,
-            app_name,
-            input.server_type,
-            input.ssh_key_id,
-            input.build_memory_limit,
-            input.build_cpu_limit
-        ).await
+        self.repo_server
+            .create_and_return(
+                input.name,
+                input.description,
+                input.ip_address,
+                input.port,
+                input.username,
+                app_name,
+                input.server_type,
+                input.ssh_key_id,
+                input.build_memory_limit,
+                input.build_cpu_limit,
+            )
+            .await
     }
 
     pub async fn patch(&self, id: i64, input: PatchRemoteServerDto) -> sqlx::Result<Server> {
@@ -83,23 +86,25 @@ impl ServerService {
         let build_memory_limit = input.build_memory_limit.or(current.build_memory_limit);
         let build_cpu_limit = input.build_cpu_limit.or(current.build_cpu_limit);
 
-        self.repo_server.update_and_return(
-            id,
-            name,
-            description,
-            ip_address,
-            port,
-            username,
-            server_status,
-            server_type,
-            enable_docker_cleanup,
-            log_cleanup_cron,
-            command,
-            metrics_config,
-            ssh_key_id,
-            build_memory_limit,
-            build_cpu_limit
-        ).await
+        self.repo_server
+            .update_and_return(
+                id,
+                name,
+                description,
+                ip_address,
+                port,
+                username,
+                server_status,
+                server_type,
+                enable_docker_cleanup,
+                log_cleanup_cron,
+                command,
+                metrics_config,
+                ssh_key_id,
+                build_memory_limit,
+                build_cpu_limit,
+            )
+            .await
     }
 
     pub async fn set_status(&self, id: i64, status: &str) -> sqlx::Result<Server> {

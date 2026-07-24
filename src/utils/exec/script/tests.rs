@@ -274,7 +274,7 @@ async fn test_pipeline_array_and_vector_commands() {
 
 #[test]
 fn test_shell_ir_compilation() {
-    use super::dsl::{ShellIR, Command, ArgToken, Statement, CaptureSource};
+    use super::dsl::{ArgToken, CaptureSource, Command, ShellIR, Statement};
 
     let systemctl_cmd = ShellIR::Command(Command {
         name: "systemctl".to_string(),
@@ -287,7 +287,10 @@ fn test_shell_ir_compilation() {
     assert_eq!(systemctl_cmd.to_bash(), "systemctl 'is-active' 'sshd'");
 
     let redirect = systemctl_cmd.clone().stdout("/var/log/active.log");
-    assert_eq!(redirect.to_bash(), "systemctl 'is-active' 'sshd' > /var/log/active.log");
+    assert_eq!(
+        redirect.to_bash(),
+        "systemctl 'is-active' 'sshd' > /var/log/active.log"
+    );
 
     let assign = ShellIR::Statement(Statement::VarAssign {
         name: "active".to_string(),
@@ -323,7 +326,9 @@ fn test_sh_macro_compilation() {
 
     assert_eq!(script_ir.len(), 2);
     assert!(script_ir[0].to_bash().contains("active="));
-    assert!(script_ir[0].to_bash().contains("systemctl 'is-active' '--quiet' 'sshd' || systemctl 'is-active' '--quiet' 'ssh'"));
+    assert!(script_ir[0].to_bash().contains(
+        "systemctl 'is-active' '--quiet' 'sshd' || systemctl 'is-active' '--quiet' 'ssh'"
+    ));
     assert!(script_ir[1].to_bash().contains("if \"$active\"; then"));
     assert!(script_ir[1].to_bash().contains("config=$("));
 }
@@ -331,8 +336,8 @@ fn test_sh_macro_compilation() {
 #[test]
 fn test_sh_macro_advanced_features() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
     let temp = "test";
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -359,7 +364,11 @@ fn test_sh_macro_advanced_features() {
         cmd("echo", "deploy-finished").stdout("/var/log/deploy.log");
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 1. Closure function test
     assert!(bash.contains("restart_service() {"));
@@ -388,8 +397,8 @@ fn test_sh_macro_advanced_features() {
 #[test]
 fn test_sh_macro_convenience_dsls() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -431,7 +440,11 @@ fn test_sh_macro_convenience_dsls() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 1. Logging and temp file
     assert!(bash.contains("echo '[INFO] Deploy starting'"));
@@ -488,7 +501,9 @@ fn test_sh_macro_with_rust_builders() {
 
     assert_eq!(script_ir.len(), 1);
     let bash = script_ir[0].to_bash();
-    assert!(bash.contains("docker container run --name test-sh-macro-container --tty alpine:latest"));
+    assert!(
+        bash.contains("docker container run --name test-sh-macro-container --tty alpine:latest")
+    );
 }
 
 #[test]
@@ -504,7 +519,11 @@ fn test_sh_macro_break_continue() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("for s in \"${services[@]}\"; do"));
     assert!(bash.contains("if \"$s\"; then"));
     assert!(bash.contains("continue"));
@@ -525,7 +544,11 @@ fn test_sh_macro_linux_commands_validation() {
     );
 
     assert_eq!(script_ir.len(), 7);
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("grep '-i' '^hello' 'file.txt'"));
     assert!(bash.contains("sed 's/foo/bar/g' 'file.txt'"));
     assert!(bash.contains("awk '-F' ':' '{ print $1 }' 'file.txt'"));
@@ -538,8 +561,8 @@ fn test_sh_macro_linux_commands_validation() {
 #[test]
 fn test_sh_macro_generic_unix_dsl() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -556,7 +579,11 @@ fn test_sh_macro_generic_unix_dsl() {
     );
 
     assert_eq!(script_ir.len(), 8);
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("uname '-a'"));
     assert!(bash.contains("hostname"));
     assert!(bash.contains("ps '-ef'"));
@@ -570,8 +597,8 @@ fn test_sh_macro_generic_unix_dsl() {
 #[test]
 fn test_sh_macro_mvp_deploy_dsl() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -588,8 +615,14 @@ fn test_sh_macro_mvp_deploy_dsl() {
     );
 
     assert_eq!(script_ir.len(), 8);
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-    assert!(bash.contains("port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"));
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains(
+        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
+    ));
     assert!(bash.contains("ss -tuln | grep -q \":$1 \""));
     assert!(bash.contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done"));
     assert!(bash.contains("rmdir '/tmp/rustploy_lock_deploy'"));
@@ -602,8 +635,8 @@ fn test_sh_macro_mvp_deploy_dsl() {
 #[test]
 fn test_pipeline_and_sh_unification() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -615,7 +648,11 @@ fn test_pipeline_and_sh_unification() {
     );
 
     // 2. Convert the list of ShellIRs into a single combined Bash string
-    let setup_bash = setup.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let setup_bash = setup
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 3. Feed the generated script into the pipeline builder block
     let p = pipeline!(
@@ -625,13 +662,15 @@ fn test_pipeline_and_sh_unification() {
 
     let compiled = p.compile();
     assert!(compiled.contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done"));
-    assert!(compiled.contains("port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"));
+    assert!(compiled.contains(
+        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
+    ));
     assert!(compiled.contains("echo 'deploying now'"));
 }
 
 #[tokio::test]
 async fn test_sh_macro_direct_execution() {
-    use super::{sh, IntoCommand};
+    use super::{IntoCommand, sh};
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
@@ -650,9 +689,9 @@ async fn test_sh_macro_direct_execution() {
 
 #[test]
 fn test_rust_dsl_api_usage() {
-    use crate::utils::os::OsCli;
-    use crate::utils::exec::{CommandExecutor, LocalExecutor};
     use crate::utils::exec::script::IntoCommand;
+    use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -666,19 +705,33 @@ fn test_rust_dsl_api_usage() {
     let config = os.file("config.json").write("production");
 
     // 2. Verify their generated bash command output
-    assert!(p_free.build_str().contains("port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"));
+    assert!(p_free.build_str().contains(
+        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
+    ));
     assert!(p_check.build_str().contains("ss -tuln | grep -q \":$1 \""));
-    assert!(lock_acq.build_str().contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done"));
-    assert!(health.build_str().contains("timeout=$1; start_time=$(date +%s);"));
+    assert!(
+        lock_acq
+            .build_str()
+            .contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done")
+    );
+    assert!(
+        health
+            .build_str()
+            .contains("timeout=$1; start_time=$(date +%s);")
+    );
     assert!(sym.build_str().contains("ln -sf 'v2' 'current'"));
-    assert!(config.build_str().contains("sh -c 'echo \"$1\" > \"$2\"' dummy 'production' 'config.json'"));
+    assert!(
+        config
+            .build_str()
+            .contains("sh -c 'echo \"$1\" > \"$2\"' dummy 'production' 'config.json'")
+    );
 }
 
 #[test]
 fn test_package_builders_and_macro_dsl() {
-    use crate::utils::os::OsCli;
-    use crate::utils::exec::{CommandExecutor, LocalExecutor};
     use crate::utils::exec::script::{IntoCommand, sh};
+    use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -697,7 +750,11 @@ fn test_package_builders_and_macro_dsl() {
         os.package("docker").install();
     );
 
-    let macro_bash = macro_script.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let macro_bash = macro_script
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(macro_bash.contains("emerge 'nginx'"));
     assert!(macro_bash.contains("nix-env -i 'git'"));
     assert!(macro_bash.contains("command '-v' 'apt-get'"));
@@ -719,15 +776,19 @@ fn test_sh_macro_json() {
         });
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("echo \"{\\\"enabled\\\": $isEnabled, \\\"permitRootLogin\\\": \\\"$permitRootLogin\\\", \\\"port\\\": 22, \\\"debug\\\": false}\""));
 }
 
 #[test]
 fn test_sh_macro_binary_and_unary_conditions() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -744,8 +805,14 @@ fn test_sh_macro_binary_and_unary_conditions() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-    assert!(bash.contains("if systemctl 'is-active' '--quiet' 'sshd' || systemctl 'is-active' '--quiet' 'ssh'; then"));
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains(
+        "if systemctl 'is-active' '--quiet' 'sshd' || systemctl 'is-active' '--quiet' 'ssh'; then"
+    ));
     assert!(bash.contains("if ! test '-f' '/etc/sshd_config'; then"));
     assert!(bash.contains("if test -f '/etc/passwd' || grep '-q' 'root' '/etc/passwd'; then"));
 }
@@ -753,8 +820,8 @@ fn test_sh_macro_binary_and_unary_conditions() {
 #[test]
 fn test_sh_macro_sudo() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -765,7 +832,11 @@ fn test_sh_macro_sudo() {
         sudo!(cmd("apt-get", "update"));
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("sudo 'systemctl' 'restart' 'nginx'"));
     assert!(bash.contains("sudo cat '/etc/shadow'"));
     assert!(bash.contains("sudo 'apt-get' 'update'"));
@@ -786,8 +857,14 @@ fn test_sh_macro_capture_success_failure() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-    assert!(bash.contains("active=$(if systemctl 'is-active' 'sshd'; then echo true; else echo false; fi)"));
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains(
+        "active=$(if systemctl 'is-active' 'sshd'; then echo true; else echo false; fi)"
+    ));
     assert!(bash.contains("active") && bash.contains("true"));
     assert!(bash.contains("active") && bash.contains("false"));
 }
@@ -795,8 +872,8 @@ fn test_sh_macro_capture_success_failure() {
 #[test]
 fn test_sh_macro_new_features() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -809,7 +886,11 @@ fn test_sh_macro_new_features() {
         let port = jq_file!("config.json", ".server.port");
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("sed -i 's|old_ip|new_ip|g' 'config.txt'"));
     assert!(bash.contains("command '-v' 'nginx'"));
     assert!(bash.contains("user=$(echo \"$info\" | jq -r '.user.name')"));
@@ -830,16 +911,22 @@ fn test_sh_macro_nested_captures() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-    assert!(bash.contains("status=$(if out=$(curl 'http://example.com'); then echo true; else echo false; fi)"));
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains(
+        "status=$(if out=$(curl 'http://example.com'); then echo true; else echo false; fi)"
+    ));
     assert!(bash.contains("status") && bash.contains("true"));
 }
 
 #[test]
 fn test_sh_macro_os_api_utilities() {
     use super::sh;
-    use crate::utils::os::OsCli;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -856,9 +943,15 @@ fn test_sh_macro_os_api_utilities() {
         os.sed_file("config.json", "s/foo/bar/g");
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("text=$(curl http://example.com)"));
-    assert!(bash.contains("status=$(if systemctl is-active sshd; then echo true; else echo false; fi)"));
+    assert!(
+        bash.contains("status=$(if systemctl is-active sshd; then echo true; else echo false; fi)")
+    );
     assert!(bash.contains("user=$(echo \"$text\" | jq -r '.user.name')"));
     assert!(bash.contains("port=$(jq -r '.server.port' 'config.json')"));
     assert!(bash.contains("col=$(echo \"$text\" | awk '{print $2}')"));
@@ -884,7 +977,11 @@ fn test_sh_macro_unified_capture() {
         }
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(bash.contains("res_stdout_file=$(mktemp)"));
     assert!(bash.contains("res_stderr_file=$(mktemp)"));
     assert!(bash.contains("curl 'http://example.com'"));
@@ -905,11 +1002,11 @@ fn test_auto_detect_outer_rust_vars() {
         cmd("systemctl", "restart", outer_var);
     );
 
-    let bash = script_ir.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
     println!("BASH GENERATED: {}", bash);
     assert!(bash.contains("systemctl 'restart' 'my_custom_service'"));
 }
-
-
-
-

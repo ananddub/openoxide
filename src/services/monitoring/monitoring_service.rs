@@ -56,9 +56,10 @@ impl MonitoringService {
             "http://127.0.0.1:50051".to_string()
         };
 
-        let mut client = proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
-            .await
-            .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
+        let mut client =
+            proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
+                .await
+                .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
 
         let response = client
             .get_server_metrics(proto::GetMetricsRequest {
@@ -88,9 +89,10 @@ impl MonitoringService {
             "http://127.0.0.1:50051".to_string()
         };
 
-        let mut client = proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
-            .await
-            .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
+        let mut client =
+            proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
+                .await
+                .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
 
         let response = client
             .get_container_metrics(proto::GetContainerMetricsRequest {

@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct LockAcquireBuilder<'a> {
@@ -30,15 +30,23 @@ impl<'a> LockAcquireBuilder<'a> {
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
         let lock_path = format!("{}/rustploy_lock_{}", self.lock_dir, self.name);
-        let cmd = format!("while ! mkdir \"$1\" 2>/dev/null; do sleep {}; done", self.sleep_seconds);
-        self.executor.run("sh", &["-c", &cmd, "dummy", &lock_path]).await
+        let cmd = format!(
+            "while ! mkdir \"$1\" 2>/dev/null; do sleep {}; done",
+            self.sleep_seconds
+        );
+        self.executor
+            .run("sh", &["-c", &cmd, "dummy", &lock_path])
+            .await
     }
 }
 
 impl<'a> IntoCommand for LockAcquireBuilder<'a> {
     fn build_str(&self) -> String {
         let lock_path = format!("{}/rustploy_lock_{}", self.lock_dir, self.name);
-        let cmd = format!("while ! mkdir \"$1\" 2>/dev/null; do sleep {}; done", self.sleep_seconds);
+        let cmd = format!(
+            "while ! mkdir \"$1\" 2>/dev/null; do sleep {}; done",
+            self.sleep_seconds
+        );
         format!("sh -c '{}' dummy {}", cmd, escape_arg(&lock_path))
     }
 }

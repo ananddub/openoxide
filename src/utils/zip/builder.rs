@@ -1,6 +1,5 @@
-use std::path::PathBuf;
 use crate::utils::exec::{CommandExecutor, ExecError};
-
+use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ZipError {
@@ -16,65 +15,62 @@ pub enum ZipError {
     Io(#[from] std::io::Error),
 }
 
-
 #[derive(Debug, Clone, Copy, Default)]
 pub enum CompressionLevel {
-    Stored,   // -0  no compression, fastest
-    Fast,     // -1
+    Stored, // -0  no compression, fastest
+    Fast,   // -1
     #[default]
-    Default,  // -6  zip default
-    Best,     // -9  max compression
+    Default, // -6  zip default
+    Best,   // -9  max compression
 }
 
 impl CompressionLevel {
     fn flag(&self) -> &'static str {
         match self {
-            Self::Stored  => "-0",
-            Self::Fast    => "-1",
+            Self::Stored => "-0",
+            Self::Fast => "-1",
             Self::Default => "-6",
-            Self::Best    => "-9",
+            Self::Best => "-9",
         }
     }
 }
 
-
 pub struct ZipBuilder<'e> {
     executor: &'e CommandExecutor,
 
-    source:      Option<PathBuf>,
+    source: Option<PathBuf>,
     destination: Option<PathBuf>,
 
     // zip options
-    recurse:      bool,
-    junk_paths:   bool,
-    compression:  CompressionLevel,
-    excludes:     Vec<String>,
+    recurse: bool,
+    junk_paths: bool,
+    compression: CompressionLevel,
+    excludes: Vec<String>,
 
     // unzip options
-    overwrite:    bool,
-    list_only:    bool,
-    only_files:   Vec<String>,
+    overwrite: bool,
+    list_only: bool,
+    only_files: Vec<String>,
 
-    extra_args:   Vec<String>,
+    extra_args: Vec<String>,
 }
 
 impl<'e> ZipBuilder<'e> {
     pub fn new(executor: &'e CommandExecutor) -> Self {
         Self {
             executor,
-            source:      None,
+            source: None,
             destination: None,
-            recurse:     false,
-            junk_paths:  false,
+            recurse: false,
+            junk_paths: false,
             compression: CompressionLevel::Default,
-            excludes:    Vec::new(),
-            overwrite:   false,
-            list_only:   false,
-            only_files:  Vec::new(),
-            extra_args:  Vec::new(),
+            excludes: Vec::new(),
+            overwrite: false,
+            list_only: false,
+            only_files: Vec::new(),
+            extra_args: Vec::new(),
         }
     }
-
 
     pub fn source(mut self, path: impl Into<PathBuf>) -> Self {
         self.source = Some(path.into());
@@ -90,7 +86,6 @@ impl<'e> ZipBuilder<'e> {
         self.extra_args.push(arg.into());
         self
     }
-
 
     /// `-r` recurse into directories.
     pub fn recurse(mut self) -> Self {
@@ -116,7 +111,6 @@ impl<'e> ZipBuilder<'e> {
         self
     }
 
-
     /// `-o` overwrite existing files without prompting.
     pub fn overwrite(mut self) -> Self {
         self.overwrite = true;
@@ -135,14 +129,20 @@ impl<'e> ZipBuilder<'e> {
         self
     }
 
-
     pub async fn zip(self) -> Result<(), ZipError> {
         let source = self.source.as_ref().ok_or(ZipError::MissingSource)?;
-        let dest   = self.destination.as_ref().ok_or(ZipError::MissingDestination)?;
+        let dest = self
+            .destination
+            .as_ref()
+            .ok_or(ZipError::MissingDestination)?;
 
         let mut args: Vec<String> = vec!["zip".into()];
-        if self.recurse    { args.push("-r".into()); }
-        if self.junk_paths { args.push("-j".into()); }
+        if self.recurse {
+            args.push("-r".into());
+        }
+        if self.junk_paths {
+            args.push("-j".into());
+        }
         args.push(self.compression.flag().into());
         for pat in &self.excludes {
             args.push("-x".into());
@@ -152,9 +152,7 @@ impl<'e> ZipBuilder<'e> {
         args.push(dest.to_string_lossy().into_owned());
         args.push(source.to_string_lossy().into_owned());
 
-        let out = self.executor
-            .run("zip", &args[1..])
-            .await?;
+        let out = self.executor.run("zip", &args[1..]).await?;
 
         if !out.status.success() {
             return Err(ZipError::Failed(out.stderr));
@@ -162,13 +160,16 @@ impl<'e> ZipBuilder<'e> {
         Ok(())
     }
 
-
     pub async fn unzip(self) -> Result<(), ZipError> {
         let source = self.source.as_ref().ok_or(ZipError::MissingSource)?;
 
         let mut args: Vec<String> = vec!["unzip".into()];
-        if self.overwrite  { args.push("-o".into()); }
-        if self.list_only  { args.push("-l".into()); }
+        if self.overwrite {
+            args.push("-o".into());
+        }
+        if self.list_only {
+            args.push("-l".into());
+        }
         args.extend(self.extra_args.iter().cloned());
         args.push(source.to_string_lossy().into_owned());
         args.extend(self.only_files.iter().cloned());
@@ -177,9 +178,7 @@ impl<'e> ZipBuilder<'e> {
             args.push(dest.to_string_lossy().into_owned());
         }
 
-        let out = self.executor
-            .run("unzip", &args[1..])
-            .await?;
+        let out = self.executor.run("unzip", &args[1..]).await?;
 
         if !out.status.success() {
             return Err(ZipError::Failed(out.stderr));
@@ -189,11 +188,18 @@ impl<'e> ZipBuilder<'e> {
 
     pub fn to_zip_command(&self) -> Result<ZipCommand, ZipError> {
         let source = self.source.as_ref().ok_or(ZipError::MissingSource)?;
-        let dest   = self.destination.as_ref().ok_or(ZipError::MissingDestination)?;
+        let dest = self
+            .destination
+            .as_ref()
+            .ok_or(ZipError::MissingDestination)?;
 
         let mut args: Vec<String> = Vec::new();
-        if self.recurse    { args.push("-r".into()); }
-        if self.junk_paths { args.push("-j".into()); }
+        if self.recurse {
+            args.push("-r".into());
+        }
+        if self.junk_paths {
+            args.push("-j".into());
+        }
         args.push(self.compression.flag().into());
         for pat in &self.excludes {
             args.push("-x".into());
@@ -210,8 +216,12 @@ impl<'e> ZipBuilder<'e> {
         let source = self.source.as_ref().ok_or(ZipError::MissingSource)?;
 
         let mut args: Vec<String> = Vec::new();
-        if self.overwrite  { args.push("-o".into()); }
-        if self.list_only  { args.push("-l".into()); }
+        if self.overwrite {
+            args.push("-o".into());
+        }
+        if self.list_only {
+            args.push("-l".into());
+        }
         args.extend(self.extra_args.iter().cloned());
         args.push(source.to_string_lossy().into_owned());
         args.extend(self.only_files.iter().cloned());
@@ -249,8 +259,8 @@ impl crate::utils::exec::pipeline::IntoCommand for UnzipCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::exec::{CommandExecutor, LocalExecutor};
     use crate::utils::exec::pipeline::IntoCommand;
+    use crate::utils::exec::{CommandExecutor, LocalExecutor};
 
     #[test]
     fn test_zip_pipeline_commands() {

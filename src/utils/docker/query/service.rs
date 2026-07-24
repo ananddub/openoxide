@@ -11,16 +11,28 @@ pub struct ServiceQuery<'a> {
 
 impl<'a> ServiceQuery<'a> {
     pub(super) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, filters: vec![] }
+        Self {
+            cli,
+            filters: vec![],
+        }
     }
 
-    pub fn filter(mut self, f: ServiceFilter) -> Self { self.filters.push(f); self }
+    pub fn filter(mut self, f: ServiceFilter) -> Self {
+        self.filters.push(f);
+        self
+    }
     pub fn filters(mut self, fs: impl IntoIterator<Item = ServiceFilter>) -> Self {
-        self.filters.extend(fs); self
+        self.filters.extend(fs);
+        self
     }
 
     fn args(&self) -> Vec<String> {
-        let mut a = vec!["service".into(), "ls".into(), "--format".into(), "{{json .}}".into()];
+        let mut a = vec![
+            "service".into(),
+            "ls".into(),
+            "--format".into(),
+            "{{json .}}".into(),
+        ];
         for f in &self.filters {
             a.extend(["--filter".into(), f.to_string()]);
         }
@@ -68,79 +80,167 @@ pub struct ServiceUpdate<'a> {
 impl<'a> ServiceUpdate<'a> {
     pub(super) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
         Self {
-            cli, name: name.into(),
-            image: None, replicas: None,
-            label_add: vec![], label_rm: vec![],
-            env_add: vec![], env_rm: vec![],
-            constraint_add: vec![], constraint_rm: vec![],
-            limit_memory: None, limit_cpu: None,
-            reserve_memory: None, reserve_cpu: None,
-            update_parallelism: None, update_delay: None,
-            rollback: false, force: false,
+            cli,
+            name: name.into(),
+            image: None,
+            replicas: None,
+            label_add: vec![],
+            label_rm: vec![],
+            env_add: vec![],
+            env_rm: vec![],
+            constraint_add: vec![],
+            constraint_rm: vec![],
+            limit_memory: None,
+            limit_cpu: None,
+            reserve_memory: None,
+            reserve_cpu: None,
+            update_parallelism: None,
+            update_delay: None,
+            rollback: false,
+            force: false,
             extra: vec![],
         }
     }
 
-    pub fn image(mut self, v: impl Into<String>) -> Self { self.image = Some(v.into()); self }
-    pub fn replicas(mut self, n: u32) -> Self { self.replicas = Some(n); self }
+    pub fn image(mut self, v: impl Into<String>) -> Self {
+        self.image = Some(v.into());
+        self
+    }
+    pub fn replicas(mut self, n: u32) -> Self {
+        self.replicas = Some(n);
+        self
+    }
 
     pub fn label_add(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
-        self.label_add.push((k.into(), v.into())); self
+        self.label_add.push((k.into(), v.into()));
+        self
     }
-    pub fn label_rm(mut self, k: impl Into<String>) -> Self { self.label_rm.push(k.into()); self }
+    pub fn label_rm(mut self, k: impl Into<String>) -> Self {
+        self.label_rm.push(k.into());
+        self
+    }
 
     pub fn env_add(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
-        self.env_add.push((k.into(), v.into())); self
+        self.env_add.push((k.into(), v.into()));
+        self
     }
-    pub fn env_rm(mut self, k: impl Into<String>) -> Self { self.env_rm.push(k.into()); self }
+    pub fn env_rm(mut self, k: impl Into<String>) -> Self {
+        self.env_rm.push(k.into());
+        self
+    }
 
-    pub fn constraint_add(mut self, c: impl Into<String>) -> Self { self.constraint_add.push(c.into()); self }
-    pub fn constraint_rm(mut self, c: impl Into<String>) -> Self { self.constraint_rm.push(c.into()); self }
+    pub fn constraint_add(mut self, c: impl Into<String>) -> Self {
+        self.constraint_add.push(c.into());
+        self
+    }
+    pub fn constraint_rm(mut self, c: impl Into<String>) -> Self {
+        self.constraint_rm.push(c.into());
+        self
+    }
 
-    pub fn limit_memory(mut self, v: impl Into<String>) -> Self { self.limit_memory = Some(v.into()); self }
-    pub fn limit_cpu(mut self, v: impl Into<String>) -> Self { self.limit_cpu = Some(v.into()); self }
-    pub fn reserve_memory(mut self, v: impl Into<String>) -> Self { self.reserve_memory = Some(v.into()); self }
-    pub fn reserve_cpu(mut self, v: impl Into<String>) -> Self { self.reserve_cpu = Some(v.into()); self }
+    pub fn limit_memory(mut self, v: impl Into<String>) -> Self {
+        self.limit_memory = Some(v.into());
+        self
+    }
+    pub fn limit_cpu(mut self, v: impl Into<String>) -> Self {
+        self.limit_cpu = Some(v.into());
+        self
+    }
+    pub fn reserve_memory(mut self, v: impl Into<String>) -> Self {
+        self.reserve_memory = Some(v.into());
+        self
+    }
+    pub fn reserve_cpu(mut self, v: impl Into<String>) -> Self {
+        self.reserve_cpu = Some(v.into());
+        self
+    }
 
-    pub fn update_parallelism(mut self, n: u32) -> Self { self.update_parallelism = Some(n); self }
-    pub fn update_delay(mut self, v: impl Into<String>) -> Self { self.update_delay = Some(v.into()); self }
+    pub fn update_parallelism(mut self, n: u32) -> Self {
+        self.update_parallelism = Some(n);
+        self
+    }
+    pub fn update_delay(mut self, v: impl Into<String>) -> Self {
+        self.update_delay = Some(v.into());
+        self
+    }
 
     /// Apply `--rollback` to revert the service to the previous spec.
-    pub fn rollback(mut self) -> Self { self.rollback = true; self }
+    pub fn rollback(mut self) -> Self {
+        self.rollback = true;
+        self
+    }
     /// Force an update even if nothing changed.
-    pub fn force(mut self) -> Self { self.force = true; self }
+    pub fn force(mut self) -> Self {
+        self.force = true;
+        self
+    }
     /// Pass any raw flag not yet covered.
-    pub fn arg(mut self, v: impl Into<String>) -> Self { self.extra.push(v.into()); self }
+    pub fn arg(mut self, v: impl Into<String>) -> Self {
+        self.extra.push(v.into());
+        self
+    }
 
     fn build_args(&self) -> Vec<String> {
         let mut a = vec!["service".to_string(), "update".to_string()];
 
-        if let Some(v) = &self.image       { a.extend(["--image".into(), v.clone()]); }
-        if let Some(n) = self.replicas      { a.extend(["--replicas".into(), n.to_string()]); }
+        if let Some(v) = &self.image {
+            a.extend(["--image".into(), v.clone()]);
+        }
+        if let Some(n) = self.replicas {
+            a.extend(["--replicas".into(), n.to_string()]);
+        }
 
-        for (k, v) in &self.label_add       { a.extend(["--label-add".into(), format!("{k}={v}")]); }
-        for k in &self.label_rm             { a.extend(["--label-rm".into(), k.clone()]); }
-        for (k, v) in &self.env_add         { a.extend(["--env-add".into(), format!("{k}={v}")]); }
-        for k in &self.env_rm               { a.extend(["--env-rm".into(), k.clone()]); }
-        for c in &self.constraint_add       { a.extend(["--constraint-add".into(), c.clone()]); }
-        for c in &self.constraint_rm        { a.extend(["--constraint-rm".into(), c.clone()]); }
+        for (k, v) in &self.label_add {
+            a.extend(["--label-add".into(), format!("{k}={v}")]);
+        }
+        for k in &self.label_rm {
+            a.extend(["--label-rm".into(), k.clone()]);
+        }
+        for (k, v) in &self.env_add {
+            a.extend(["--env-add".into(), format!("{k}={v}")]);
+        }
+        for k in &self.env_rm {
+            a.extend(["--env-rm".into(), k.clone()]);
+        }
+        for c in &self.constraint_add {
+            a.extend(["--constraint-add".into(), c.clone()]);
+        }
+        for c in &self.constraint_rm {
+            a.extend(["--constraint-rm".into(), c.clone()]);
+        }
 
-        if let Some(v) = &self.limit_memory   { a.extend(["--limit-memory".into(), v.clone()]); }
-        if let Some(v) = &self.limit_cpu      { a.extend(["--limit-cpu".into(), v.clone()]); }
-        if let Some(v) = &self.reserve_memory { a.extend(["--reserve-memory".into(), v.clone()]); }
-        if let Some(v) = &self.reserve_cpu    { a.extend(["--reserve-cpu".into(), v.clone()]); }
+        if let Some(v) = &self.limit_memory {
+            a.extend(["--limit-memory".into(), v.clone()]);
+        }
+        if let Some(v) = &self.limit_cpu {
+            a.extend(["--limit-cpu".into(), v.clone()]);
+        }
+        if let Some(v) = &self.reserve_memory {
+            a.extend(["--reserve-memory".into(), v.clone()]);
+        }
+        if let Some(v) = &self.reserve_cpu {
+            a.extend(["--reserve-cpu".into(), v.clone()]);
+        }
 
-        if let Some(n) = self.update_parallelism { a.extend(["--update-parallelism".into(), n.to_string()]); }
-        if let Some(v) = &self.update_delay      { a.extend(["--update-delay".into(), v.clone()]); }
+        if let Some(n) = self.update_parallelism {
+            a.extend(["--update-parallelism".into(), n.to_string()]);
+        }
+        if let Some(v) = &self.update_delay {
+            a.extend(["--update-delay".into(), v.clone()]);
+        }
 
-        if self.rollback { a.push("--rollback".into()); }
-        if self.force    { a.push("--force".into()); }
+        if self.rollback {
+            a.push("--rollback".into());
+        }
+        if self.force {
+            a.push("--force".into());
+        }
 
         a.extend(self.extra.clone());
         a.push(self.name.clone());
         a
     }
-    pub fn print(self)->String {
+    pub fn print(self) -> String {
         let args = self.build_args();
         args.join(" ")
     }
@@ -158,7 +258,9 @@ mod tests {
     use super::*;
     use crate::utils::docker::DockerCli;
 
-    fn fake() -> DockerCli { DockerCli::new_local() }
+    fn fake() -> DockerCli {
+        DockerCli::new_local()
+    }
 
     #[test]
     fn update_builds_correct_args() {
@@ -190,10 +292,9 @@ mod tests {
     }
 
     #[test]
-    fn service_test(){
+    fn service_test() {
         // let docker = DockerCli::new_local();
         // let data  = docker.services().list().filter(ServiceFilter::name("myservice")).print();
         // println!("Service data: {}", data);
     }
 }
-

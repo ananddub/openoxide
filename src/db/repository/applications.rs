@@ -1,8 +1,8 @@
 use crate::db::models::applications::Application;
 use crate::utils::builder::application::adapter::mapper::AppRow;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ApplicationRepository {
     pool: Arc<SqlitePool>,
@@ -245,16 +245,16 @@ impl ApplicationRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM applications WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM applications WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn list_by_environment(&self, environment_id: i64) -> Result<Vec<Application>, sqlx::Error> {
+    pub async fn list_by_environment(
+        &self,
+        environment_id: i64,
+    ) -> Result<Vec<Application>, sqlx::Error> {
         sqlx::query_as!(
             Application,
             r#"SELECT id AS "id?: String", name AS "name: String", app_name AS "app_name: String", description AS "description?: String", source_type AS "source_type: String", build_type AS "build_type: String", app_status AS "app_status: String", trigger_type AS "trigger_type: String", build_args AS "build_args?: String", build_secrets AS "build_secrets?: String", dockerfile AS "dockerfile?: String", docker_context_path AS "docker_context_path?: String", docker_build_stage AS "docker_build_stage?: String", publish_directory AS "publish_directory?: String", is_static_spa AS "is_static_spa?: i64", create_env_file AS "create_env_file: i64", railpack_version AS "railpack_version?: String", heroku_version AS "heroku_version?: String", command AS "command?: String", args AS "args?: String", env_var AS "env_var?: String", build_path AS "build_path?: String", clean_cache AS "clean_cache: i64", drop_build_path AS "drop_build_path?: String", enable_submodules AS "enable_submodules: i64", watch_paths AS "watch_paths?: String", refresh_token AS "refresh_token?: String", icon AS "icon?: String", memory_reservation AS "memory_reservation?: String", memory_limit AS "memory_limit?: String", cpu_reservation AS "cpu_reservation?: String", cpu_limit AS "cpu_limit?: String", replicas AS "replicas: i64", health_check_swarm AS "health_check_swarm?: String", restart_policy_swarm AS "restart_policy_swarm?: String", placement_swarm AS "placement_swarm?: String", update_config_swarm AS "update_config_swarm?: String", rollback_config_swarm AS "rollback_config_swarm?: String", mode_swarm AS "mode_swarm?: String", labels_swarm AS "labels_swarm?: String", network_swarm AS "network_swarm?: String", endpoint_spec_swarm AS "endpoint_spec_swarm?: String", ulimits_swarm AS "ulimits_swarm?: String", stop_grace_period_swarm AS "stop_grace_period_swarm?: i64", repository AS "repository?: String", owner AS "owner?: String", branch AS "branch?: String", auto_deploy AS "auto_deploy?: i64", gitlab_project_id AS "gitlab_project_id?: i64", gitlab_repository AS "gitlab_repository?: String", gitlab_owner AS "gitlab_owner?: String", gitlab_branch AS "gitlab_branch?: String", gitlab_build_path AS "gitlab_build_path?: String", gitlab_path_namespace AS "gitlab_path_namespace?: String", gitea_repository AS "gitea_repository?: String", gitea_owner AS "gitea_owner?: String", gitea_branch AS "gitea_branch?: String", gitea_build_path AS "gitea_build_path?: String", bitbucket_repository AS "bitbucket_repository?: String", bitbucket_repository_slug AS "bitbucket_repository_slug?: String", bitbucket_owner AS "bitbucket_owner?: String", bitbucket_branch AS "bitbucket_branch?: String", bitbucket_build_path AS "bitbucket_build_path?: String", docker_image AS "docker_image?: String", docker_username AS "docker_username?: String", docker_password AS "docker_password?: String", registry_url AS "registry_url?: String", custom_git_url AS "custom_git_url?: String", custom_git_branch AS "custom_git_branch?: String", custom_git_build_path AS "custom_git_build_path?: String", custom_git_ssh_key_id AS "custom_git_ssh_key_id?: i64", preview_env AS "preview_env?: String", preview_build_args AS "preview_build_args?: String", preview_build_secrets AS "preview_build_secrets?: String", preview_labels AS "preview_labels?: String", preview_wildcard AS "preview_wildcard?: String", preview_port AS "preview_port?: i64", preview_https AS "preview_https: i64", preview_path AS "preview_path?: String", preview_certificate_type AS "preview_certificate_type: String", preview_custom_cert_resolver AS "preview_custom_cert_resolver?: String", preview_limit AS "preview_limit?: i64", is_preview_deployments_active AS "is_preview_deployments_active: i64", preview_require_collaborator_permissions AS "preview_require_collaborator_permissions: i64", rollback_active AS "rollback_active: i64", environment_id AS "environment_id: i64", server_id AS "server_id?: i64", build_server_id AS "build_server_id?: i64", registry_id AS "registry_id?: i64", rollback_registry_id AS "rollback_registry_id?: i64", build_registry_id AS "build_registry_id?: i64", github_provider_id AS "github_provider_id?: i64", gitlab_provider_id AS "gitlab_provider_id?: i64", gitea_provider_id AS "gitea_provider_id?: i64", bitbucket_provider_id AS "bitbucket_provider_id?: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM applications WHERE environment_id = ? ORDER BY created_at DESC, id DESC"#,
@@ -264,7 +264,16 @@ impl ApplicationRepository {
         .await
     }
 
-    pub async fn create_simple(&self, name: String, app_name: String, description: Option<String>, source_type: String, build_type: String, environment_id: i64, server_id: Option<i64>) -> Result<Application, sqlx::Error> {
+    pub async fn create_simple(
+        &self,
+        name: String,
+        app_name: String,
+        description: Option<String>,
+        source_type: String,
+        build_type: String,
+        environment_id: i64,
+        server_id: Option<i64>,
+    ) -> Result<Application, sqlx::Error> {
         let res = sqlx::query!(
             r#"INSERT INTO applications (name, app_name, description, source_type, build_type, environment_id, server_id) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
             name,
@@ -277,11 +286,25 @@ impl ApplicationRepository {
         )
         .execute(self.pool.as_ref())
         .await?;
-        
-        self.get_by_id(res.last_insert_rowid()).await?.ok_or(sqlx::Error::RowNotFound)
+
+        self.get_by_id(res.last_insert_rowid())
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)
     }
 
-    pub async fn patch(&self, id: i64, name: String, description: Option<String>, build_type: String, trigger_type: String, env_var: Option<String>, icon: Option<String>, server_id: Option<i64>, build_server_id: Option<i64>, registry_id: Option<i64>) -> Result<Application, sqlx::Error> {
+    pub async fn patch(
+        &self,
+        id: i64,
+        name: String,
+        description: Option<String>,
+        build_type: String,
+        trigger_type: String,
+        env_var: Option<String>,
+        icon: Option<String>,
+        server_id: Option<i64>,
+        build_server_id: Option<i64>,
+        registry_id: Option<i64>,
+    ) -> Result<Application, sqlx::Error> {
         sqlx::query!(
             r#"UPDATE applications SET name = ?, description = ?, build_type = ?, trigger_type = ?, env_var = ?, icon = ?, server_id = ?, build_server_id = ?, registry_id = ? WHERE id = ?"#,
             name,
@@ -596,35 +619,38 @@ impl ApplicationRepository {
         .execute(self.pool.as_ref())
         .await?;
         Ok(())
-     }
+    }
 
-     pub async fn update_status(&self, id: i64, status: &str) -> Result<Application, sqlx::Error> {
-         sqlx::query!(
-             r#"UPDATE applications SET app_status = ? WHERE id = ?"#,
-             status,
-             id
-         )
-         .execute(self.pool.as_ref())
-         .await?;
+    pub async fn update_status(&self, id: i64, status: &str) -> Result<Application, sqlx::Error> {
+        sqlx::query!(
+            r#"UPDATE applications SET app_status = ? WHERE id = ?"#,
+            status,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
 
-         self.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)
-     }
+        self.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)
+    }
 
-     pub async fn get_deployment_context(&self, id: i64) -> Result<(i64, i64, Option<i64>), sqlx::Error> {
-         sqlx::query_as::<_, (i64, i64, Option<i64>)>(
-             r#"SELECT a.environment_id, e.project_id, a.server_id
+    pub async fn get_deployment_context(
+        &self,
+        id: i64,
+    ) -> Result<(i64, i64, Option<i64>), sqlx::Error> {
+        sqlx::query_as::<_, (i64, i64, Option<i64>)>(
+            r#"SELECT a.environment_id, e.project_id, a.server_id
                 FROM applications a
                 JOIN environments e ON e.id = a.environment_id
                 WHERE a.id = ?"#,
-         )
-         .bind(id)
-         .fetch_one(self.pool.as_ref())
-         .await
-     }
+        )
+        .bind(id)
+        .fetch_one(self.pool.as_ref())
+        .await
+    }
 
-     pub async fn get_spec_row(&self, application_id: i64) -> Result<AppRow, sqlx::Error> {
-         sqlx::query_as::<_, AppRow>(
-             r#"SELECT
+    pub async fn get_spec_row(&self, application_id: i64) -> Result<AppRow, sqlx::Error> {
+        sqlx::query_as::<_, AppRow>(
+            r#"SELECT
                 a.app_name, a.source_type, a.build_type, a.build_args, a.build_secrets,
                 a.dockerfile, a.docker_context_path, a.docker_build_stage,
                 a.publish_directory, a.is_static_spa, a.build_path, a.command, a.args, a.env_var,
@@ -654,9 +680,9 @@ impl ApplicationRepository {
                 LEFT JOIN gitea_providers gtp ON gtp.id = a.gitea_provider_id
                 LEFT JOIN ssh_keys sk ON sk.id = a.custom_git_ssh_key_id
                 WHERE a.id = ?"#,
-         )
-         .bind(application_id)
-         .fetch_one(self.pool.as_ref())
-         .await
-     }
+        )
+        .bind(application_id)
+        .fetch_one(self.pool.as_ref())
+        .await
+    }
 }

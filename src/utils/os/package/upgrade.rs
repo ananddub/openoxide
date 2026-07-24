@@ -1,6 +1,6 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
+use super::{PackageManager, detect_manager};
 use crate::utils::exec::script::{IntoCommand, sh};
-use super::{detect_manager, PackageManager};
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 #[allow(unused_macros)]
 macro_rules! rust {
@@ -34,9 +34,17 @@ impl<'a> PackageUpgradeAllBuilder<'a> {
             PackageManager::Yum => self.executor.run("yum", &["upgrade", "-y"]).await,
             PackageManager::Apk => self.executor.run("apk", &["upgrade"]).await,
             PackageManager::Pacman => self.executor.run("pacman", &["-Syu", "--noconfirm"]).await,
-            PackageManager::Zypper => self.executor.run("zypper", &["--non-interactive", "update"]).await,
+            PackageManager::Zypper => {
+                self.executor
+                    .run("zypper", &["--non-interactive", "update"])
+                    .await
+            }
             PackageManager::Xbps => self.executor.run("xbps-install", &["-Syu"]).await,
-            PackageManager::Emerge => self.executor.run("emerge", &["--update", "--deep", "--newuse", "@world"]).await,
+            PackageManager::Emerge => {
+                self.executor
+                    .run("emerge", &["--update", "--deep", "--newuse", "@world"])
+                    .await
+            }
             PackageManager::Nix => self.executor.run("nix-env", &["-u"]).await,
             PackageManager::Brew => self.executor.run("brew", &["upgrade"]).await,
         }
@@ -59,32 +67,30 @@ impl<'a> IntoCommand for PackageUpgradeAllBuilder<'a> {
                 PackageManager::Brew => "brew upgrade".to_string(),
             }
         } else {
-            let script = sh!(
-                if cmd("command", "-v", "apt-get").stdout("/dev/null") {
-                    cmd("apt-get", "upgrade", "-y");
-                } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                    cmd("dnf", "upgrade", "-y");
-                } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                    cmd("yum", "upgrade", "-y");
-                } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                    cmd("apk", "upgrade");
-                } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                    cmd("pacman", "-Syu", "--noconfirm");
-                } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                    cmd("zypper", "--non-interactive", "update");
-                } else if cmd("command", "-v", "xbps-install").stdout("/dev/null") {
-                    cmd("xbps-install", "-Syu");
-                } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
-                    cmd("emerge", "--update", "--deep", "--newuse", "@world");
-                } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                    cmd("nix-env", "-u");
-                } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                    cmd("brew", "upgrade");
-                } else {
-                    echo("No supported package manager found").stderr("/dev/stderr");
-                    cmd("exit", "1");
-                }
-            );
+            let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
+                cmd("apt-get", "upgrade", "-y");
+            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+                cmd("dnf", "upgrade", "-y");
+            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+                cmd("yum", "upgrade", "-y");
+            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+                cmd("apk", "upgrade");
+            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+                cmd("pacman", "-Syu", "--noconfirm");
+            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+                cmd("zypper", "--non-interactive", "update");
+            } else if cmd("command", "-v", "xbps-install").stdout("/dev/null") {
+                cmd("xbps-install", "-Syu");
+            } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
+                cmd("emerge", "--update", "--deep", "--newuse", "@world");
+            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+                cmd("nix-env", "-u");
+            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+                cmd("brew", "upgrade");
+            } else {
+                echo("No supported package manager found").stderr("/dev/stderr");
+                cmd("exit", "1");
+            });
             script.build_str()
         }
     }

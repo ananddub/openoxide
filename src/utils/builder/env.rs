@@ -4,7 +4,7 @@ use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
 
 use crate::repository::{
-    EnvironmentRepository, ProjectRepository, ApplicationRepository, ComposeProjectRepository
+    ApplicationRepository, ComposeProjectRepository, EnvironmentRepository, ProjectRepository,
 };
 
 pub fn generate_env_app(
@@ -90,10 +90,7 @@ pub async fn generate_env_compose(
     Some(convert_env_to_map(&compose_env))
 }
 
-pub async fn generate_env_db(
-    env_id: i64,
-    db_env_var: &str,
-) -> Option<HashMap<String, String>> {
+pub async fn generate_env_db(env_id: i64, db_env_var: &str) -> Option<HashMap<String, String>> {
     let repo_env = resolve::<EnvironmentRepository>().await.ok()?;
     let repo_project = resolve::<ProjectRepository>().await.ok()?;
 
@@ -111,10 +108,7 @@ pub async fn generate_env_db(
 
     let pro_map: HashMap<String, String> = convert_env_to_map(&pro_env);
 
-    let resolved_db_env = fix_env(
-        env_project_map(map, pro_map),
-        db_env_var,
-    );
+    let resolved_db_env = fix_env(env_project_map(map, pro_map), db_env_var);
 
     Some(convert_env_to_map(&resolved_db_env))
 }

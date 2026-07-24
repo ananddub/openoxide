@@ -1,7 +1,7 @@
 use crate::db::models::deployments::Deployment;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct DeploymentRepository {
     pool: Arc<SqlitePool>,
@@ -98,12 +98,9 @@ impl DeploymentRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM deployments WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM deployments WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
@@ -152,7 +149,12 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn update_state_if_running(&self, id: i64, state: &str, error_message: Option<&str>) -> Result<(), sqlx::Error> {
+    pub async fn update_state_if_running(
+        &self,
+        id: i64,
+        state: &str,
+        error_message: Option<&str>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments
              SET state         = ?,
@@ -168,7 +170,12 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn update_final_status(&self, id: i64, status: &str, error_message: Option<&str>) -> Result<(), sqlx::Error> {
+    pub async fn update_final_status(
+        &self,
+        id: i64,
+        status: &str,
+        error_message: Option<&str>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments
              SET status        = ?,
@@ -205,7 +212,12 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn set_database_status(&self, id: i64, db_kind: &str, status: &str) -> Result<(), sqlx::Error> {
+    pub async fn set_database_status(
+        &self,
+        id: i64,
+        db_kind: &str,
+        status: &str,
+    ) -> Result<(), sqlx::Error> {
         let table_name = match db_kind {
             "postgres" => "postgres_dbs",
             "mysql" => "mysql_dbs",
@@ -224,7 +236,11 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn get_database_deployment_context(&self, db_id: i64, kind: &str) -> Result<(Option<i64>, i64, i64, Option<String>, Option<String>), sqlx::Error> {
+    pub async fn get_database_deployment_context(
+        &self,
+        db_id: i64,
+        kind: &str,
+    ) -> Result<(Option<i64>, i64, i64, Option<String>, Option<String>), sqlx::Error> {
         let table = match kind {
             "postgres" => "postgres_dbs",
             "mysql" => "mysql_dbs",
@@ -241,14 +257,20 @@ impl DeploymentRepository {
              WHERE d.id = ?",
             table
         );
-        let row = sqlx::query_as::<_, (Option<i64>, i64, i64, Option<String>, Option<String>)>(sqlx::AssertSqlSafe(&*query_str))
-            .bind(db_id)
-            .fetch_one(self.pool.as_ref())
-            .await?;
+        let row = sqlx::query_as::<_, (Option<i64>, i64, i64, Option<String>, Option<String>)>(
+            sqlx::AssertSqlSafe(&*query_str),
+        )
+        .bind(db_id)
+        .fetch_one(self.pool.as_ref())
+        .await?;
         Ok(row)
     }
 
-    pub async fn get_database_app_name(&self, db_id: i64, kind: &str) -> Result<String, sqlx::Error> {
+    pub async fn get_database_app_name(
+        &self,
+        db_id: i64,
+        kind: &str,
+    ) -> Result<String, sqlx::Error> {
         let table = match kind {
             "postgres" => "postgres_dbs",
             "mysql" => "mysql_dbs",
@@ -265,7 +287,10 @@ impl DeploymentRepository {
             .await
     }
 
-    pub async fn has_running_status_deployment(&self, application_id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn has_running_status_deployment(
+        &self,
+        application_id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT EXISTS(SELECT 1 FROM deployments WHERE application_id = ? AND status = 'RUNNING') AS "exists_val!: i64""#,
             application_id
@@ -285,7 +310,10 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn has_running_compose_deployment(&self, compose_id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn has_running_compose_deployment(
+        &self,
+        compose_id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT EXISTS(SELECT 1 FROM deployments WHERE compose_id = ? AND status IN ('QUEUED', 'RUNNING')) AS "exists_val!: i64""#,
             compose_id
@@ -319,7 +347,10 @@ impl DeploymentRepository {
         Ok(res.last_insert_rowid())
     }
 
-    pub async fn has_running_status_compose_deployment(&self, compose_id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn has_running_status_compose_deployment(
+        &self,
+        compose_id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT EXISTS(SELECT 1 FROM deployments WHERE compose_id = ? AND status = 'RUNNING') AS "exists_val!: i64""#,
             compose_id
@@ -329,7 +360,10 @@ impl DeploymentRepository {
         Ok(res != 0)
     }
 
-    pub async fn request_cancel_compose_deployment(&self, compose_id: i64) -> Result<(), sqlx::Error> {
+    pub async fn request_cancel_compose_deployment(
+        &self,
+        compose_id: i64,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"UPDATE deployments SET state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE compose_id = ? AND status = 'RUNNING'"#,
             compose_id
@@ -339,7 +373,10 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn has_running_database_deployment(&self, database_id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn has_running_database_deployment(
+        &self,
+        database_id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT EXISTS(SELECT 1 FROM deployments WHERE database_id = ? AND status IN ('QUEUED', 'RUNNING')) AS "exists_val!: i64""#,
             database_id
@@ -375,7 +412,10 @@ impl DeploymentRepository {
         Ok(res.last_insert_rowid())
     }
 
-    pub async fn get_cancel_info(&self, id: i64) -> Result<Option<(Option<i64>, Option<i64>, Option<i64>, String)>, sqlx::Error> {
+    pub async fn get_cancel_info(
+        &self,
+        id: i64,
+    ) -> Result<Option<(Option<i64>, Option<i64>, Option<i64>, String)>, sqlx::Error> {
         let res = sqlx::query!(
             r#"SELECT application_id, compose_id, database_id, status FROM deployments WHERE id = ?"#,
             id
@@ -448,16 +488,16 @@ impl DeploymentRepository {
     }
 
     pub async fn get_status(&self, id: i64) -> Result<Option<String>, sqlx::Error> {
-        let res = sqlx::query_scalar!(
-            r#"SELECT status FROM deployments WHERE id = ?"#,
-            id
-        )
-        .fetch_optional(self.pool.as_ref())
-        .await?;
+        let res = sqlx::query_scalar!(r#"SELECT status FROM deployments WHERE id = ?"#, id)
+            .fetch_optional(self.pool.as_ref())
+            .await?;
         Ok(res)
     }
 
-    pub async fn get_latest_application_deployment_id(&self, application_id: i64) -> Result<Option<i64>, sqlx::Error> {
+    pub async fn get_latest_application_deployment_id(
+        &self,
+        application_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT id AS "id: i64" FROM deployments WHERE application_id = ? ORDER BY id DESC LIMIT 1"#,
             application_id
@@ -467,7 +507,10 @@ impl DeploymentRepository {
         Ok(res)
     }
 
-    pub async fn get_latest_compose_deployment_id(&self, compose_id: i64) -> Result<Option<i64>, sqlx::Error> {
+    pub async fn get_latest_compose_deployment_id(
+        &self,
+        compose_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
         let res = sqlx::query_scalar!(
             r#"SELECT id AS "id: i64" FROM deployments WHERE compose_id = ? ORDER BY id DESC LIMIT 1"#,
             compose_id
@@ -483,14 +526,22 @@ impl DeploymentRepository {
             .await
     }
 
-    pub async fn get_queued_ids_for_application(&self, application_id: i64) -> Result<Vec<i64>, sqlx::Error> {
-        sqlx::query_scalar("SELECT id FROM deployments WHERE application_id = ? AND status = 'QUEUED'")
-            .bind(application_id)
-            .fetch_all(self.pool.as_ref())
-            .await
+    pub async fn get_queued_ids_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar(
+            "SELECT id FROM deployments WHERE application_id = ? AND status = 'QUEUED'",
+        )
+        .bind(application_id)
+        .fetch_all(self.pool.as_ref())
+        .await
     }
 
-    pub async fn cancel_queued_for_application(&self, application_id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn cancel_queued_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let rows = sqlx::query(
             "UPDATE deployments
              SET status        = 'CANCELLED',
@@ -505,7 +556,10 @@ impl DeploymentRepository {
         Ok(rows.rows_affected() > 0)
     }
 
-    pub async fn get_queued_ids_for_compose(&self, compose_id: i64) -> Result<Vec<i64>, sqlx::Error> {
+    pub async fn get_queued_ids_for_compose(
+        &self,
+        compose_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar("SELECT id FROM deployments WHERE compose_id = ? AND status = 'QUEUED'")
             .bind(compose_id)
             .fetch_all(self.pool.as_ref())
@@ -571,14 +625,23 @@ impl DeploymentRepository {
     }
 
     pub async fn recover_stale_database_statuses(&self) -> Result<(), sqlx::Error> {
-        for table in &["postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs"] {
+        for table in &[
+            "postgres_dbs",
+            "mysql_dbs",
+            "mariadb_dbs",
+            "mongo_dbs",
+            "redis_dbs",
+            "libsql_dbs",
+        ] {
             let query_str = format!(
                 "UPDATE {} SET app_status = 'ERROR' WHERE app_status = 'RUNNING' AND id IN (
                     SELECT database_id FROM deployments WHERE state = 'RECOVERED_AFTER_RESTART' AND database_id IS NOT NULL
                 )",
                 table
             );
-            sqlx::query(sqlx::AssertSqlSafe(&*query_str)).execute(self.pool.as_ref()).await?;
+            sqlx::query(sqlx::AssertSqlSafe(&*query_str))
+                .execute(self.pool.as_ref())
+                .await?;
         }
         Ok(())
     }
@@ -619,7 +682,9 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn get_queued_deployments_grouped(&self) -> Result<Vec<(i64, Option<i64>)>, sqlx::Error> {
+    pub async fn get_queued_deployments_grouped(
+        &self,
+    ) -> Result<Vec<(i64, Option<i64>)>, sqlx::Error> {
         sqlx::query_as::<_, (i64, Option<i64>)>(
             "SELECT id, server_id FROM deployments
              WHERE status = 'QUEUED'
@@ -629,7 +694,10 @@ impl DeploymentRepository {
         .await
     }
 
-    pub async fn claim_queued_deployment(&self, id: i64) -> Result<Option<DeploymentClaim>, sqlx::Error> {
+    pub async fn claim_queued_deployment(
+        &self,
+        id: i64,
+    ) -> Result<Option<DeploymentClaim>, sqlx::Error> {
         sqlx::query_as!(
             DeploymentClaim,
             r#"UPDATE deployments

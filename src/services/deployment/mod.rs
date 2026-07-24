@@ -4,9 +4,8 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use crate::db::models::deployments::Deployment;
+use crate::repository::{ApplicationRepository, ComposeProjectRepository, DeploymentRepository};
 use crate::utils::builder::custom_type::IdType;
-use crate::repository::{DeploymentRepository, ApplicationRepository, ComposeProjectRepository};
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CancelDeploymentResult {
@@ -96,7 +95,9 @@ impl DeploymentService {
             .ok_or(sqlx::Error::RowNotFound)?;
 
         if status == "QUEUED" {
-            self.repo_deploy.cancel_queued_deployment(deployment_id).await?;
+            self.repo_deploy
+                .cancel_queued_deployment(deployment_id)
+                .await?;
             return Ok(CancelDeploymentResult::CancelRequested);
         }
 
@@ -124,7 +125,9 @@ impl DeploymentService {
         Ok(CancelDeploymentResult::CancelRequested)
     }
 
-    pub async fn list_active_components(&self) -> sqlx::Result<Vec<crate::utils::builder::custom_type::ActiveDeploySnapshot>> {
+    pub async fn list_active_components(
+        &self,
+    ) -> sqlx::Result<Vec<crate::utils::builder::custom_type::ActiveDeploySnapshot>> {
         let state = auto_di::resolve::<crate::utils::builder::hash_state::ApplicationState>()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;

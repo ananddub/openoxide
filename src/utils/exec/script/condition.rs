@@ -1,4 +1,4 @@
-use super::{shell_single_quote, IntoCommand};
+use super::{IntoCommand, shell_single_quote};
 use std::ops::{BitAnd, BitOr, Not};
 
 #[derive(Clone, Debug)]
@@ -130,7 +130,6 @@ impl Not for &Condition {
     }
 }
 
-
 impl std::ops::BitAndAssign<Condition> for Condition {
     fn bitand_assign(&mut self, rhs: Condition) {
         let old = std::mem::replace(self, Condition::EnvSet(String::new()));
@@ -166,14 +165,17 @@ mod tests {
         let c = Condition::dir_exists("/a")
             .and(Condition::file_exists("/b"))
             .or(Condition::env_set("X"));
-        assert_eq!(c.to_bash(), "([ -d '/a' ] && [ -f '/b' ]) || [ -n \"${X}\" ]");
+        assert_eq!(
+            c.to_bash(),
+            "([ -d '/a' ] && [ -f '/b' ]) || [ -n \"${X}\" ]"
+        );
     }
 
     #[test]
     fn or_with_and_precedence_operator() {
         // Rust precedence: & binds tighter than | — same as bash's && vs ||
-        let c = (Condition::dir_exists("/a") & Condition::file_exists("/b"))
-            | Condition::env_set("X");
+        let c =
+            (Condition::dir_exists("/a") & Condition::file_exists("/b")) | Condition::env_set("X");
         let bash = c.to_bash();
         assert_eq!(bash, "([ -d '/a' ] && [ -f '/b' ]) || [ -n \"${X}\" ]");
     }

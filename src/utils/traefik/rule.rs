@@ -62,7 +62,7 @@ impl Rule {
 
     fn needs_parens_within(&self, parent_is_and: bool) -> bool {
         match self {
-            Rule::Or(_, _) => true,           
+            Rule::Or(_, _) => true,
             Rule::And(_, _) => !parent_is_and,
             _ => false,
         }

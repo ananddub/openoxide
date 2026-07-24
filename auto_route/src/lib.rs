@@ -42,8 +42,13 @@ pub struct OpenApiRouteDescriptor {
     path: &'static str,
     operation_id: &'static str,
     tag: &'static str,
+    tag_description: Option<&'static str>,
+    summary: Option<&'static str>,
+    description: Option<&'static str>,
     params: &'static [OpenApiParamDescriptor],
+    request_description: Option<&'static str>,
     request: Option<OpenApiSchemaDescriptor>,
+    response_description: Option<&'static str>,
     response: Option<OpenApiSchemaDescriptor>,
 }
 
@@ -54,8 +59,13 @@ impl OpenApiRouteDescriptor {
         path: &'static str,
         operation_id: &'static str,
         tag: &'static str,
+        tag_description: Option<&'static str>,
+        summary: Option<&'static str>,
+        description: Option<&'static str>,
         params: &'static [OpenApiParamDescriptor],
+        request_description: Option<&'static str>,
         request: Option<OpenApiSchemaDescriptor>,
+        response_description: Option<&'static str>,
         response: Option<OpenApiSchemaDescriptor>,
     ) -> Self {
         Self {
@@ -63,8 +73,13 @@ impl OpenApiRouteDescriptor {
             path,
             operation_id,
             tag,
+            tag_description,
+            summary,
+            description,
             params,
+            request_description,
             request,
+            response_description,
             response,
         }
     }
@@ -105,6 +120,15 @@ impl OpenApiSchemaDescriptor {
         Self {
             schema_ref: sse_schema_ref,
             register: noop_register,
+            content_type: "text/event-stream",
+        }
+    }
+
+    #[doc(hidden)]
+    pub const fn sse_json<T: Type>() -> Self {
+        Self {
+            schema_ref: schema_ref::<T>,
+            register: register_type::<T>,
             content_type: "text/event-stream",
         }
     }
@@ -163,7 +187,8 @@ fn noop_register(_registry: &mut Registry) {}
 
 fn sse_schema_ref() -> MetaSchemaRef {
     let mut schema = poem_openapi::registry::MetaSchema::new_with_format("string", "event-stream");
-    schema.description = Some("Server-sent events stream. Each message is encoded as text/event-stream frames.");
+    schema.description =
+        Some("Server-sent events stream. Each message is encoded as text/event-stream frames.");
     schema.example = Some(serde_json::json!(
         "event: message\ndata: {\"type\":\"message\"}\n\n"
     ));
@@ -210,7 +235,7 @@ impl OpenApi for AutoRouteOpenApi {
         for descriptor in inventory::iter::<OpenApiRouteDescriptor> {
             registry.tags.insert(MetaTag {
                 name: descriptor.tag,
-                description: None,
+                description: descriptor.tag_description,
                 external_docs: None,
             });
             if let Some(schema) = descriptor.request {
@@ -251,8 +276,8 @@ fn openapi_operation(descriptor: &OpenApiRouteDescriptor) -> MetaOperation {
     MetaOperation {
         method: method_from_str(descriptor.method),
         tags: vec![descriptor.tag],
-        summary: None,
-        description: None,
+        summary: descriptor.summary,
+        description: descriptor.description,
         external_docs: None,
         params: descriptor
             .params
@@ -260,13 +285,15 @@ fn openapi_operation(descriptor: &OpenApiRouteDescriptor) -> MetaOperation {
             .map(|param| param.to_meta())
             .collect(),
         request: descriptor.request.map(|schema| MetaRequest {
-            description: None,
+            description: descriptor.request_description,
             content: vec![schema.media_type()],
             required: true,
         }),
         responses: MetaResponses {
             responses: vec![MetaResponse {
-                description: "Successful response",
+                description: descriptor
+                    .response_description
+                    .unwrap_or("Successful response"),
                 status: Some(200),
                 status_range: None,
                 content: descriptor

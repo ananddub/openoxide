@@ -3,10 +3,10 @@ use super::{
 };
 use std::time::Duration;
 use std::{ffi::OsStr, sync::Arc};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::{sync::mpsc, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[derive(Clone, Debug)]
 pub struct RemoteExecutor {
@@ -63,7 +63,10 @@ impl RemoteExecutor {
         }
     }
 
-    pub async fn new_with_db(_db: Arc<sqlx::SqlitePool>, server_id: i64) -> Result<RemoteExecutor, sqlx::Error> {
+    pub async fn new_with_db(
+        _db: Arc<sqlx::SqlitePool>,
+        server_id: i64,
+    ) -> Result<RemoteExecutor, sqlx::Error> {
         let repo = auto_di::resolve::<crate::repository::ServerRepository>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
@@ -79,8 +82,7 @@ impl RemoteExecutor {
             SshAuth::key_pair(server.3, server.4),
             SshHostKey::InsecureAcceptAny,
         )
-            .with_sudo()
-        )
+        .with_sudo())
     }
 
     pub fn with_sudo(mut self) -> Self {
@@ -124,7 +126,8 @@ impl RemoteExecutor {
         .connect_timeout(self.connect_timeout.as_secs() as u32)
         .tty(crate::utils::ssh::TtyMode::ForceTty);
 
-        let ssh_cmd = builder.build_command("sh", &[])
+        let ssh_cmd = builder
+            .build_command("sh", &[])
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
@@ -136,12 +139,22 @@ impl RemoteExecutor {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
-        let mut child = tokio_command.spawn()
+        let mut child = tokio_command
+            .spawn()
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
-        let mut child_stdin = child.stdin.take().ok_or_else(|| ExecError::Ssh("stdin failed".into()))?;
-        let mut child_stdout = child.stdout.take().ok_or_else(|| ExecError::Ssh("stdout failed".into()))?;
-        let mut child_stderr = child.stderr.take().ok_or_else(|| ExecError::Ssh("stderr failed".into()))?;
+        let mut child_stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| ExecError::Ssh("stdin failed".into()))?;
+        let mut child_stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| ExecError::Ssh("stdout failed".into()))?;
+        let mut child_stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| ExecError::Ssh("stderr failed".into()))?;
 
         let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(128);
         let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
@@ -314,7 +327,8 @@ impl RemoteExecutor {
             base_command
         };
 
-        let ssh_cmd = builder.build_command("sh", &["-c".to_string(), command])
+        let ssh_cmd = builder
+            .build_command("sh", &["-c".to_string(), command])
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
@@ -326,12 +340,22 @@ impl RemoteExecutor {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
-        let mut child = tokio_command.spawn()
+        let mut child = tokio_command
+            .spawn()
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
-        let mut child_stdin = child.stdin.take().ok_or_else(|| ExecError::Ssh("Failed to open stdin".into()))?;
-        let mut child_stdout = child.stdout.take().ok_or_else(|| ExecError::Ssh("Failed to open stdout".into()))?;
-        let mut child_stderr = child.stderr.take().ok_or_else(|| ExecError::Ssh("Failed to open stderr".into()))?;
+        let mut child_stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| ExecError::Ssh("Failed to open stdin".into()))?;
+        let mut child_stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| ExecError::Ssh("Failed to open stdout".into()))?;
+        let mut child_stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| ExecError::Ssh("Failed to open stderr".into()))?;
 
         let mut input_data = Vec::new();
         if let Some(password) = &self.sudo_password {
@@ -464,9 +488,9 @@ impl RemoteExecutor {
             }
         }
 
-        let status_code = exit_status.and_then(|s| s.code()).ok_or_else(|| {
-            ExecError::Ssh("remote command ended without an exit status".into())
-        })?;
+        let status_code = exit_status
+            .and_then(|s| s.code())
+            .ok_or_else(|| ExecError::Ssh("remote command ended without an exit status".into()))?;
 
         if status_code == 255 {
             return Err(ExecError::Ssh(format!(
@@ -520,7 +544,8 @@ impl RemoteExecutor {
         .port(self.port)
         .connect_timeout(timeout.as_secs() as u32);
 
-        let ssh_cmd = builder.build_command("sh", &["-c".to_string(), command])
+        let ssh_cmd = builder
+            .build_command("sh", &["-c".to_string(), command])
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
@@ -531,7 +556,8 @@ impl RemoteExecutor {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
-        let mut child = tokio_command.spawn()
+        let mut child = tokio_command
+            .spawn()
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         if send_sudo_password {
@@ -549,7 +575,9 @@ impl RemoteExecutor {
             Ok(Ok(status)) => {
                 let code = status.code().unwrap_or(0);
                 if code == 255 {
-                    return Err(ExecError::Ssh("SSH connection/authentication failed".into()));
+                    return Err(ExecError::Ssh(
+                        "SSH connection/authentication failed".into(),
+                    ));
                 }
                 if code == 0 {
                     Ok(())

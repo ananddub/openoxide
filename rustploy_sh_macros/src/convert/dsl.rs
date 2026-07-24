@@ -3,15 +3,13 @@ use syn::ExprMethodCall;
 
 fn is_os_receiver(expr: &syn::Expr) -> bool {
     match expr {
-        syn::Expr::Path(expr_path) => {
-            expr_path.path.get_ident().map(|id| id == "os").unwrap_or(false)
-        }
-        syn::Expr::MethodCall(method_call) => {
-            is_os_receiver(&method_call.receiver)
-        }
-        syn::Expr::Field(expr_field) => {
-            is_os_receiver(&expr_field.base)
-        }
+        syn::Expr::Path(expr_path) => expr_path
+            .path
+            .get_ident()
+            .map(|id| id == "os")
+            .unwrap_or(false),
+        syn::Expr::MethodCall(method_call) => is_os_receiver(&method_call.receiver),
+        syn::Expr::Field(expr_field) => is_os_receiver(&expr_field.base),
         _ => false,
     }
 }
@@ -41,17 +39,19 @@ fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
                                 let shell_var = format!("${}", ident);
                                 return syn::Expr::Lit(syn::ExprLit {
                                     attrs: vec![],
-                                    lit: syn::Lit::Str(syn::LitStr::new(
-                                        &shell_var,
-                                        ident.span(),
-                                    )),
+                                    lit: syn::Lit::Str(syn::LitStr::new(&shell_var, ident.span())),
                                 });
                             }
                         }
                         arg.clone()
                     }
                     syn::Expr::Macro(em) => {
-                        let macro_name = em.mac.path.get_ident().map(|i| i.to_string()).unwrap_or_default();
+                        let macro_name = em
+                            .mac
+                            .path
+                            .get_ident()
+                            .map(|i| i.to_string())
+                            .unwrap_or_default();
                         if macro_name == "rust" {
                             let parser = <syn::Expr as syn::parse::Parse>::parse;
                             if let Ok(inner) = em.mac.parse_body_with(parser) {
@@ -78,7 +78,9 @@ fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
     }
 }
 
-pub fn convert_method_call(method_call: &ExprMethodCall) -> Result<proc_macro2::TokenStream, syn::Error> {
+pub fn convert_method_call(
+    method_call: &ExprMethodCall,
+) -> Result<proc_macro2::TokenStream, syn::Error> {
     let receiver = &*method_call.receiver;
     let method_name = method_call.method.to_string();
     let is_special_method = method_name == "stdout"
@@ -121,7 +123,9 @@ pub fn convert_method_call(method_call: &ExprMethodCall) -> Result<proc_macro2::
                 })
             });
         }
-        let arg = method_call.args.first().ok_or_else(|| syn::Error::new_spanned(method_call, "stdout method needs one argument"))?;
+        let arg = method_call.args.first().ok_or_else(|| {
+            syn::Error::new_spanned(method_call, "stdout method needs one argument")
+        })?;
         let arg_tokens = crate::convert::convert_expr(arg)?;
         return Ok(quote! {
             (#receiver_tokens).stdout(
@@ -146,7 +150,9 @@ pub fn convert_method_call(method_call: &ExprMethodCall) -> Result<proc_macro2::
                 })
             });
         }
-        let arg = method_call.args.first().ok_or_else(|| syn::Error::new_spanned(method_call, "stderr method needs one argument"))?;
+        let arg = method_call.args.first().ok_or_else(|| {
+            syn::Error::new_spanned(method_call, "stderr method needs one argument")
+        })?;
         let arg_tokens = crate::convert::convert_expr(arg)?;
         return Ok(quote! {
             (#receiver_tokens).stderr(

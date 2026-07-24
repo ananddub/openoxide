@@ -1,7 +1,11 @@
 use std::sync::Arc;
 
 use auto_route::controller;
-use axum::{Json, extract::{Multipart, Path}, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Multipart, Path},
+    http::StatusCode,
+};
 
 use crate::{
     api::dto::compose::{
@@ -237,7 +241,10 @@ impl ComposeController {
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<ComposeOperationResponseDto>), ApiError> {
         match self.service.cancel_operation(id).await {
-            Ok(true) => Err((StatusCode::ACCEPTED, "your request has been canceled".into())),
+            Ok(true) => Err((
+                StatusCode::ACCEPTED,
+                "your request has been canceled".into(),
+            )),
             Ok(false) => Err((
                 StatusCode::CONFLICT,
                 "no running compose deployment to cancel".into(),

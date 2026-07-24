@@ -1,6 +1,6 @@
 use crate::utils::{
     exec::{ArgBuilder, ExecOutput, ExecResult},
-    git::{client::GitCli, GitBranch, types::GitAuth},
+    git::{GitBranch, client::GitCli, types::GitAuth},
 };
 use tokio_util::sync::CancellationToken;
 
@@ -21,10 +21,22 @@ impl<'a> LsRemoteBuilder<'a> {
         }
     }
 
-    pub fn heads(mut self) -> Self { self.args.flag("--heads"); self }
-    pub fn tags(mut self) -> Self { self.args.flag("--tags"); self }
-    pub fn symref(mut self) -> Self { self.args.flag("--symref"); self }
-    pub fn ref_pattern(mut self, pattern: impl Into<String>) -> Self { self.args.push(pattern.into()); self }
+    pub fn heads(mut self) -> Self {
+        self.args.flag("--heads");
+        self
+    }
+    pub fn tags(mut self) -> Self {
+        self.args.flag("--tags");
+        self
+    }
+    pub fn symref(mut self) -> Self {
+        self.args.flag("--symref");
+        self
+    }
+    pub fn ref_pattern(mut self, pattern: impl Into<String>) -> Self {
+        self.args.push(pattern.into());
+        self
+    }
     pub fn auth(mut self, auth: GitAuth) -> Self {
         let (k, v) = auth.to_config();
         self.args.insert_pair(0, "-c", format!("{}={}", k, v));
@@ -44,7 +56,7 @@ impl<'a> LsRemoteBuilder<'a> {
         let refs: Vec<&str> = built.iter().map(String::as_str).collect();
         self.cli.run(refs).await
     }
-    
+
     pub async fn output_cancelled(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
         let mut a = self.args;
         a.push(&self.repository);
@@ -54,7 +66,6 @@ impl<'a> LsRemoteBuilder<'a> {
     }
 }
 
-
 pub struct GitQueries<'a>(pub(crate) &'a GitCli);
 
 impl<'a> GitQueries<'a> {
@@ -62,7 +73,11 @@ impl<'a> GitQueries<'a> {
         LsRemoteBuilder::new(self.0, repository)
     }
 
-    pub async fn remote_branches(&self, repository_url: &str, auth: Option<GitAuth>) -> ExecResult<Vec<GitBranch>> {
+    pub async fn remote_branches(
+        &self,
+        repository_url: &str,
+        auth: Option<GitAuth>,
+    ) -> ExecResult<Vec<GitBranch>> {
         let mut builder = self.ls_remote(repository_url).heads();
         if let Some(a) = auth {
             builder = builder.auth(a);
@@ -71,7 +86,11 @@ impl<'a> GitQueries<'a> {
         parse_remote_branches(&out.stdout)
     }
 
-    pub async fn remote_default_branch(&self, repository_url: &str, auth: Option<GitAuth>) -> ExecResult<Option<String>> {
+    pub async fn remote_default_branch(
+        &self,
+        repository_url: &str,
+        auth: Option<GitAuth>,
+    ) -> ExecResult<Option<String>> {
         let mut builder = self.ls_remote(repository_url).symref().ref_pattern("HEAD");
         if let Some(a) = auth {
             builder = builder.auth(a);
@@ -94,7 +113,6 @@ impl<'a> GitQueries<'a> {
         Ok(parse_remote_default_branch(&out.stdout))
     }
 }
-
 
 fn parse_remote_default_branch(output: &str) -> Option<String> {
     output.lines().find_map(|line| {
@@ -142,8 +160,14 @@ mod tests {
         assert_eq!(
             branches,
             vec![
-                GitBranch { name: "feature/login".into(), current: false },
-                GitBranch { name: "main".into(), current: false },
+                GitBranch {
+                    name: "feature/login".into(),
+                    current: false
+                },
+                GitBranch {
+                    name: "main".into(),
+                    current: false
+                },
             ]
         );
     }

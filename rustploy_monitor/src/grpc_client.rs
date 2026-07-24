@@ -1,7 +1,6 @@
 use crate::grpc_server::proto::monitoring_service_client::MonitoringServiceClient;
 pub use crate::grpc_server::proto::{
-    ContainerMetricsRequest, HealthReportRequest, LogChunk, LogStreamRequest,
-    SystemMetricsRequest,
+    ContainerMetricsRequest, HealthReportRequest, LogChunk, LogStreamRequest, SystemMetricsRequest,
 };
 use tonic::transport::Channel;
 use tracing::{error, info};
@@ -20,7 +19,10 @@ impl GrpcTelemetryPusher {
                 }
             }
             Err(err) => {
-                error!("gRPC stream channel connection error to {}: {:?}", grpc_url, err);
+                error!(
+                    "gRPC stream channel connection error to {}: {:?}",
+                    grpc_url, err
+                );
                 Self { client: None }
             }
         }

@@ -1,5 +1,5 @@
-use std::fmt;
 use crate::utils::docker::VolumeDriver;
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VolumeFilter {
@@ -11,10 +11,18 @@ pub enum VolumeFilter {
 }
 
 impl VolumeFilter {
-    pub fn driver(v: impl Into<VolumeDriver>) -> Self { Self::Driver(v.into()) }
-    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::Label(k.into(), v.into()) }
-    pub fn label_key(k: impl Into<String>) -> Self { Self::LabelKey(k.into()) }
-    pub fn name(v: impl Into<String>) -> Self { Self::Name(v.into()) }
+    pub fn driver(v: impl Into<VolumeDriver>) -> Self {
+        Self::Driver(v.into())
+    }
+    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::Label(k.into(), v.into())
+    }
+    pub fn label_key(k: impl Into<String>) -> Self {
+        Self::LabelKey(k.into())
+    }
+    pub fn name(v: impl Into<String>) -> Self {
+        Self::Name(v.into())
+    }
 }
 
 impl fmt::Display for VolumeFilter {

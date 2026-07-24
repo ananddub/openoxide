@@ -1,8 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder,
-    client::DockerCli,
-    DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct StackPsBuilder<'a> {
     cli: &'a DockerCli,
@@ -12,12 +8,24 @@ pub struct StackPsBuilder<'a> {
 
 impl<'a> StackPsBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, stack_name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["stack", "ps"]), stack_name: stack_name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["stack", "ps"]),
+            stack_name: stack_name.into(),
+        }
     }
 
-    pub fn filter(mut self, f: crate::utils::docker::query::filter::TaskFilter) -> Self { self.args.filter(f); self }
-    pub fn filters(mut self, fs: impl IntoIterator<Item = crate::utils::docker::query::filter::TaskFilter>) -> Self {
-        for f in fs { self.args.filter(f); }
+    pub fn filter(mut self, f: crate::utils::docker::query::filter::TaskFilter) -> Self {
+        self.args.filter(f);
+        self
+    }
+    pub fn filters(
+        mut self,
+        fs: impl IntoIterator<Item = crate::utils::docker::query::filter::TaskFilter>,
+    ) -> Self {
+        for f in fs {
+            self.args.filter(f);
+        }
         self
     }
 

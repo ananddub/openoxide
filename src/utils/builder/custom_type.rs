@@ -2,7 +2,6 @@ use tokio::sync::broadcast;
 use tokio::sync::watch::Sender;
 use tokio_util::sync::CancellationToken;
 
-
 #[derive(Debug, Clone)]
 pub struct AppDeploy {
     pub app_id: IdType,

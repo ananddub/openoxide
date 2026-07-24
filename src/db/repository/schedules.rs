@@ -1,7 +1,7 @@
 use crate::db::models::schedules::Schedule;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ScheduleRepository {
     pool: Arc<SqlitePool>,
@@ -88,16 +88,16 @@ impl ScheduleRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM schedules WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM schedules WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn list_by_application(&self, application_id: i64) -> Result<Vec<Schedule>, sqlx::Error> {
+    pub async fn list_by_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<Schedule>, sqlx::Error> {
         sqlx::query_as!(
             Schedule,
             r#"SELECT id AS "id?", name, description, cron_expression, app_name, service_name,
@@ -139,7 +139,10 @@ impl ScheduleRepository {
         .await
     }
 
-    pub async fn list_by_organization(&self, organization_id: i64) -> Result<Vec<Schedule>, sqlx::Error> {
+    pub async fn list_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<Schedule>, sqlx::Error> {
         sqlx::query_as!(
             Schedule,
             r#"SELECT id AS "id?", name, description, cron_expression, app_name, service_name,

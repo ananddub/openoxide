@@ -1,8 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder,
-    client::DockerCli,
-    DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct StackListBuilder<'a> {
     cli: &'a DockerCli,
@@ -11,7 +7,10 @@ pub struct StackListBuilder<'a> {
 
 impl<'a> StackListBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["stack", "ls"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["stack", "ls"]),
+        }
     }
 
     pub async fn run(self) -> DockerResult<DockerOutput> {

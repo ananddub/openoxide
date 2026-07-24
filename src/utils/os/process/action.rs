@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct ProcessActionBuilder<'a> {
@@ -16,7 +16,11 @@ impl<'a> ProcessActionBuilder<'a> {
             is_shell: false,
         }
     }
-    pub(crate) fn new_shell(executor: &'a CommandExecutor, shell_cmd: &str, args: Vec<String>) -> Self {
+    pub(crate) fn new_shell(
+        executor: &'a CommandExecutor,
+        shell_cmd: &str,
+        args: Vec<String>,
+    ) -> Self {
         let mut parts = vec![shell_cmd.to_string()];
         parts.extend(args);
         Self {
@@ -34,7 +38,9 @@ impl<'a> ProcessActionBuilder<'a> {
             }
             self.executor.run("sh", &sh_args).await
         } else {
-            self.executor.run(&self.cmd_parts[0], &self.cmd_parts[1..]).await
+            self.executor
+                .run(&self.cmd_parts[0], &self.cmd_parts[1..])
+                .await
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::utils::{
-    cgroup::{MemoryLimit, CpuLimit},
+    cgroup::{CpuLimit, MemoryLimit},
     exec::CommandExecutor,
 };
 
@@ -8,10 +8,16 @@ pub fn parse_memory_limit(s: &str) -> Option<MemoryLimit> {
     if s == "max" {
         return Some(MemoryLimit::Max);
     }
-    let num_str = s.chars().take_while(|c| c.is_ascii_digit()).collect::<String>();
-    let suffix = s.chars().skip_while(|c| c.is_ascii_digit()).collect::<String>();
+    let num_str = s
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect::<String>();
+    let suffix = s
+        .chars()
+        .skip_while(|c| c.is_ascii_digit())
+        .collect::<String>();
     let val: u64 = num_str.parse().ok()?;
-    
+
     match suffix.trim() {
         "k" | "kb" => Some(MemoryLimit::KB(val)),
         "m" | "mb" => Some(MemoryLimit::MB(val)),

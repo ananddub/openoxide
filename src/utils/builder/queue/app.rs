@@ -10,22 +10,17 @@ use crate::{
         compose::remote::{deployment_pid_file, remote_executor},
     },
     utils::{
-        builder::{
-            adapter::ApplicationSpecAdapter,
-            application::ApplicationBuilder,
-            custom_type::IdType,
-            hash_state::ApplicationState,
-            queue::queue::BuilderQueue,
-        },
-        exec::{CommandExecutor, LocalExecutor},
         builder::errors::BuilderError,
-        cgroup::{CgroupBuilder, MemoryLimit, CpuLimit},
+        builder::{
+            adapter::ApplicationSpecAdapter, application::ApplicationBuilder, custom_type::IdType,
+            hash_state::ApplicationState, queue::queue::BuilderQueue,
+        },
+        cgroup::{CgroupBuilder, CpuLimit, MemoryLimit},
+        exec::{CommandExecutor, LocalExecutor},
     },
 };
 
-use super::resource::{parse_memory_limit, parse_cpu_limit, get_total_memory_kb, get_cpu_cores};
-
-
+use super::resource::{get_cpu_cores, get_total_memory_kb, parse_cpu_limit, parse_memory_limit};
 
 impl BuilderQueue {
     pub(crate) async fn execute_operation_app(
@@ -34,43 +29,56 @@ impl BuilderQueue {
         deployment_id: i64,
         _operation: ApplicationOperation,
     ) -> Result<(), BuilderError> {
-        let spec_adapter = resolve::<ApplicationSpecAdapter>()
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve ApplicationSpecAdapter: {e}")))?;
-        let spec = spec_adapter
-            .load(application_id)
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not load deployment config: {e}")))?;
+        let spec_adapter = resolve::<ApplicationSpecAdapter>().await.map_err(|e| {
+            BuilderError::Execution(format!("could not resolve ApplicationSpecAdapter: {e}"))
+        })?;
+        let spec = spec_adapter.load(application_id).await.map_err(|e| {
+            BuilderError::Execution(format!("could not load deployment config: {e}"))
+        })?;
 
         let app_repo = resolve::<crate::repository::ApplicationRepository>()
             .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve ApplicationRepository: {e}")))?;
-        let (environment_id, project_id, server_id) = app_repo.get_deployment_context(application_id)
+            .map_err(|e| {
+                BuilderError::Execution(format!("could not resolve ApplicationRepository: {e}"))
+            })?;
+        let (environment_id, project_id, server_id) = app_repo
+            .get_deployment_context(application_id)
             .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve deployment context: {e}")))?;
+            .map_err(|e| {
+                BuilderError::Execution(format!("could not resolve deployment context: {e}"))
+            })?;
 
         let app_key = IdType::AppId(application_id);
-        let state = resolve::<ApplicationState>()
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve application state: {e}")))?;
+        let state = resolve::<ApplicationState>().await.map_err(|e| {
+            BuilderError::Execution(format!("could not resolve application state: {e}"))
+        })?;
         state.reset_default(app_key.clone(), environment_id, project_id);
         let cancel = state
             .cancellation_token(app_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let config = resolve::<Config>()
-            .await
-            .map_err(|e| BuilderError::Execution(format!("could not resolve application config: {e}")))?;
+        let config = resolve::<Config>().await.map_err(|e| {
+            BuilderError::Execution(format!("could not resolve application config: {e}"))
+        })?;
 
         let executor = match server_id {
             Some(sid) => {
                 let pid_file = deployment_pid_file(deployment_id);
                 let dep_repo = resolve::<crate::repository::DeploymentRepository>()
                     .await
-                    .map_err(|e| BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}")))?;
-                dep_repo.set_pid(deployment_id, &pid_file)
+                    .map_err(|e| {
+                        BuilderError::Execution(format!(
+                            "could not resolve DeploymentRepository: {e}"
+                        ))
+                    })?;
+                dep_repo
+                    .set_pid(deployment_id, &pid_file)
                     .await
-                    .map_err(|e| BuilderError::Execution(format!("could not persist remote deployment pid file: {e}")))?;
+                    .map_err(|e| {
+                        BuilderError::Execution(format!(
+                            "could not persist remote deployment pid file: {e}"
+                        ))
+                    })?;
                 CommandExecutor::Remote(
                     remote_executor(self.db.as_ref(), sid)
                         .await
@@ -88,7 +96,9 @@ impl BuilderQueue {
         if let Some(sid) = server_id {
             let server_repo = resolve::<crate::repository::ServerRepository>()
                 .await
-                .map_err(|e| BuilderError::Execution(format!("could not resolve ServerRepository: {e}")))?;
+                .map_err(|e| {
+                    BuilderError::Execution(format!("could not resolve ServerRepository: {e}"))
+                })?;
             if let Ok(Some(server)) = server_repo.get_by_id(sid).await {
                 if let Some(val) = server.build_memory_limit {
                     if !val.trim().is_empty() {
@@ -144,7 +154,11 @@ impl BuilderQueue {
         }
 
         let (events_tx, events_rx) = mpsc::channel(6);
-        tokio::spawn(super::deployment_log::record_builder_events(deployment_id, events_rx, "app"));
+        tokio::spawn(super::deployment_log::record_builder_events(
+            deployment_id,
+            events_rx,
+            "app",
+        ));
 
         let spec_snapshot = spec.clone();
 
@@ -155,11 +169,11 @@ impl BuilderQueue {
             let mut builder = ApplicationBuilder::new(executor_clone)
                 .with_state(state, app_key)
                 .with_events(events_tx);
-                
+
             if let Some(cg) = cgroup_clone {
                 builder = builder.with_cgroup(cg);
             }
-            
+
             builder
                 .deploy(&spec, &cancel)
                 .await
@@ -198,7 +212,10 @@ impl BuilderQueue {
             }
         };
 
-        let version = match rollback_repo.get_next_version_for_application(application_id).await {
+        let version = match rollback_repo
+            .get_next_version_for_application(application_id)
+            .await
+        {
             Ok(v) => v,
             Err(e) => {
                 tracing::warn!(error = %e, "rollback: could not determine next version, skipping snapshot");
@@ -236,7 +253,6 @@ impl BuilderQueue {
             }
         };
 
-
         let rollback = Rollback {
             id: None,
             deployment_id,
@@ -248,7 +264,12 @@ impl BuilderQueue {
 
         match rollback_repo.create(&rollback).await {
             Ok(id) => {
-                tracing::info!(rollback_id = id, version, deployment_id, "rollback: snapshot saved");
+                tracing::info!(
+                    rollback_id = id,
+                    version,
+                    deployment_id,
+                    "rollback: snapshot saved"
+                );
             }
             Err(e) => {
                 tracing::warn!(error = %e, deployment_id, "rollback: failed to save snapshot");
@@ -269,4 +290,3 @@ fn format_versioned_image(image: &str, version: i64) -> String {
     };
     format!("{}:v{}", base, version)
 }
-

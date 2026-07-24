@@ -22,8 +22,6 @@ pub fn domain(d: Domain) -> Result<DomainSpec, AdapterError> {
     })
 }
 
-
-
 pub fn mount_spec(m: Mount, base_path: &str) -> Result<MountSpec, AdapterError> {
     let mount_type = MountType::from(m.mount_type.as_str());
     let is_file = mount_type == MountType::File;
@@ -33,7 +31,9 @@ pub fn mount_spec(m: Mount, base_path: &str) -> Result<MountSpec, AdapterError> 
         MountType::File => MountKind::File,
     };
     let source = match kind {
-        MountKind::Volume => m.volume_name.ok_or(AdapterError::MissingField("volume_name"))?,
+        MountKind::Volume => m
+            .volume_name
+            .ok_or(AdapterError::MissingField("volume_name"))?,
         MountKind::Bind => m.host_path.ok_or(AdapterError::MissingField("host_path"))?,
         MountKind::File => format!("{}/{}", base_path, m.id.unwrap_or_default()),
     };

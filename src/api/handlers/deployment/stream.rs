@@ -1,13 +1,13 @@
-use std::{convert::Infallible, pin::Pin};
-use axum::response::sse::Event;
-use futures::Stream;
-use serde_json::json;
-use tokio::sync::{broadcast, mpsc};
-use tokio::time::{Duration, MissedTickBehavior};
 use crate::utils::{
     builder::custom_type::{DeployEvent, DeployState, DeploySubscription},
     docker::DockerStreamEvent,
 };
+use axum::response::sse::Event;
+use futures::Stream;
+use serde_json::json;
+use std::{convert::Infallible, pin::Pin};
+use tokio::sync::{broadcast, mpsc};
+use tokio::time::{Duration, MissedTickBehavior};
 
 pub type DeploymentEventStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
 

@@ -1,7 +1,7 @@
 use crate::db::models::jwt_tokens::JwtToken;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct JwtTokenRepository {
     pool: Arc<SqlitePool>,
@@ -68,16 +68,17 @@ impl JwtTokenRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM jwt_tokens WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM jwt_tokens WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn blacklist_by_jti(&self, tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>, jti: &str) -> Result<(), sqlx::Error> {
+    pub async fn blacklist_by_jti(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        jti: &str,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s', 'now') WHERE jti = ?",
             jti

@@ -1,6 +1,6 @@
+use crate::utils::exec::ArgBuilder;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::rclone::RcloneBuilder;
-use crate::utils::exec::ArgBuilder;
 use tokio_util::sync::CancellationToken;
 
 /// Trait for types that can be compiled into a shell command string.
@@ -20,7 +20,9 @@ pub trait IntoCommand {
         cancel: &CancellationToken,
     ) -> ExecResult<ExecOutput> {
         let cmd_str = self.build_str();
-        executor.run_cancelled("sh", &["-c", &cmd_str], cancel).await
+        executor
+            .run_cancelled("sh", &["-c", &cmd_str], cancel)
+            .await
     }
 }
 

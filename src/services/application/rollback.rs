@@ -33,8 +33,9 @@ impl ApplicationService {
 
         // 2. Deserialize the saved ApplicationSpec from full_context
         let spec: ApplicationSpec = match rollback.full_context.as_deref() {
-            Some(json) => serde_json::from_str(json)
-                .map_err(|e| sqlx::Error::Protocol(format!("could not parse rollback context: {e}")))?,
+            Some(json) => serde_json::from_str(json).map_err(|e| {
+                sqlx::Error::Protocol(format!("could not parse rollback context: {e}"))
+            })?,
             None => {
                 return Err(sqlx::Error::Protocol(
                     "rollback has no saved context".into(),

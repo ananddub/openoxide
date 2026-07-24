@@ -28,13 +28,27 @@ pub enum NodeFilter {
 }
 
 impl NodeFilter {
-    pub fn id(v: impl Into<String>) -> Self { Self::Id(v.into()) }
-    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::Label(k.into(), v.into()) }
-    pub fn label_key(k: impl Into<String>) -> Self { Self::LabelKey(k.into()) }
-    pub fn name(v: impl Into<String>) -> Self { Self::Name(v.into()) }
-    pub fn membership(v: NodeMembership) -> Self { Self::Membership(v) }
-    pub fn node_label(k: impl Into<String>, v: impl Into<String>) -> Self { Self::NodeLabel(k.into(), v.into()) }
-    pub fn node_label_key(k: impl Into<String>) -> Self { Self::NodeLabelKey(k.into()) }
+    pub fn id(v: impl Into<String>) -> Self {
+        Self::Id(v.into())
+    }
+    pub fn label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::Label(k.into(), v.into())
+    }
+    pub fn label_key(k: impl Into<String>) -> Self {
+        Self::LabelKey(k.into())
+    }
+    pub fn name(v: impl Into<String>) -> Self {
+        Self::Name(v.into())
+    }
+    pub fn membership(v: NodeMembership) -> Self {
+        Self::Membership(v)
+    }
+    pub fn node_label(k: impl Into<String>, v: impl Into<String>) -> Self {
+        Self::NodeLabel(k.into(), v.into())
+    }
+    pub fn node_label_key(k: impl Into<String>) -> Self {
+        Self::NodeLabelKey(k.into())
+    }
 }
 
 impl fmt::Display for NodeFilter {

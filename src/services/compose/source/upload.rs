@@ -25,13 +25,16 @@ impl Drop for TempFileGuard {
     }
 }
 
-
 pub async fn save_multipart_to_file(
     mut multipart: axum::extract::Multipart,
     dest: &Path,
 ) -> Result<(), String> {
     let mut field = None;
-    while let Some(f) = multipart.next_field().await.map_err(|e| format!("Multipart error: {e}"))? {
+    while let Some(f) = multipart
+        .next_field()
+        .await
+        .map_err(|e| format!("Multipart error: {e}"))?
+    {
         field = Some(f);
         break;
     }
@@ -39,15 +42,23 @@ pub async fn save_multipart_to_file(
         return Err("No file uploaded".to_string());
     };
 
-    let mut file = tokio::fs::File::create(dest).await
+    let mut file = tokio::fs::File::create(dest)
+        .await
         .map_err(|e| format!("Failed to create temp file: {e}"))?;
 
-    while let Some(chunk) = field.chunk().await.map_err(|e| format!("Failed to read chunk: {e}"))? {
-        file.write_all(&chunk).await.map_err(|e| format!("Failed to write chunk: {e}"))?;
+    while let Some(chunk) = field
+        .chunk()
+        .await
+        .map_err(|e| format!("Failed to read chunk: {e}"))?
+    {
+        file.write_all(&chunk)
+            .await
+            .map_err(|e| format!("Failed to write chunk: {e}"))?;
     }
-    file.flush().await.map_err(|e| format!("Failed to flush file: {e}"))
+    file.flush()
+        .await
+        .map_err(|e| format!("Failed to flush file: {e}"))
 }
-
 
 pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), String> {
     crate::utils::zip::sanitize_zip(input, output)

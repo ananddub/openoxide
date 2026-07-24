@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use tokio_util::sync::CancellationToken;
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use super::command::RcloneCommand;
 use super::target::RcloneTarget;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
+use std::collections::HashMap;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
 pub struct RcloneBuilder {
@@ -289,10 +289,7 @@ impl RcloneBuilder {
         }
     }
 
-    pub async fn execute(
-        self,
-        executor: &CommandExecutor,
-    ) -> ExecResult<ExecOutput> {
+    pub async fn execute(self, executor: &CommandExecutor) -> ExecResult<ExecOutput> {
         let cmd = self.to_command_string();
         executor.run("sh", &["-c", &cmd]).await
     }

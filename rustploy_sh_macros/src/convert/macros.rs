@@ -1,12 +1,14 @@
+use crate::convert::{convert_expr, convert_sh_stmt, convert_stmt};
+use crate::parser::ShInput;
 use quote::quote;
 use syn::parse::Parse;
-use crate::parser::ShInput;
-use crate::convert::{convert_expr, convert_stmt, convert_sh_stmt};
 
 pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::Error> {
-    let macro_name = mac.path.get_ident().map(|i| i.to_string()).ok_or_else(|| {
-        syn::Error::new_spanned(mac, "Expected macro name")
-    })?;
+    let macro_name = mac
+        .path
+        .get_ident()
+        .map(|i| i.to_string())
+        .ok_or_else(|| syn::Error::new_spanned(mac, "Expected macro name"))?;
 
     if macro_name == "rust" {
         let parser = <syn::Expr as syn::parse::Parse>::parse;
@@ -27,17 +29,35 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
                     syn::Lit::Str(s) => format!("\\\"{}\\\"", s.value()),
                     syn::Lit::Bool(b) => b.value.to_string(),
                     syn::Lit::Int(i) => i.to_string(),
-                    _ => return Err(syn::Error::new_spanned(&pair.value, "Unsupported literal inside json!")),
+                    _ => {
+                        return Err(syn::Error::new_spanned(
+                            &pair.value,
+                            "Unsupported literal inside json!",
+                        ));
+                    }
                 },
                 syn::Expr::Path(p) => {
-                    let var_name = p.path.get_ident().map(|i| i.to_string()).unwrap_or_default();
-                    if var_name == "isEnabled" || var_name == "keyAuth" || var_name == "enabled" || var_name == "key_auth" {
+                    let var_name = p
+                        .path
+                        .get_ident()
+                        .map(|i| i.to_string())
+                        .unwrap_or_default();
+                    if var_name == "isEnabled"
+                        || var_name == "keyAuth"
+                        || var_name == "enabled"
+                        || var_name == "key_auth"
+                    {
                         format!("${}", var_name)
                     } else {
                         format!("\\\"${}\\\"", var_name)
                     }
                 }
-                _ => return Err(syn::Error::new_spanned(&pair.value, "Unsupported value inside json!")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        &pair.value,
+                        "Unsupported value inside json!",
+                    ));
+                }
             };
             parts.push(format!("\\\"{}\\\": {}", pair.key, val_str));
         }
@@ -286,7 +306,7 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
 
         return Ok(quote! {
             (crate::utils::exec::script::dsl::ShellIR::Raw(
-                format!("$(echo \"${}\" | jq -r {})", 
+                format!("$(echo \"${}\" | jq -r {})",
                     match #target_tokens {
                         crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Variable(ref v)) => v,
                         _ => panic!("jq! target must be a variable"),
@@ -323,7 +343,7 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
 
         return Ok(quote! {
             (crate::utils::exec::script::dsl::ShellIR::Raw(
-                format!("$(jq -r {} {})", 
+                format!("$(jq -r {} {})",
                     match #query_tokens {
                         crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Literal(ref l)) => {
                             crate::utils::exec::script::shell_single_quote(l)
@@ -380,7 +400,10 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
     })
 }
 
-fn validate_command_args(name: &str, exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_command_args(
+    name: &str,
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     match name {
         "grep" => validate_grep(exprs),
         "sed" => validate_sed(exprs),
@@ -393,13 +416,32 @@ fn validate_command_args(name: &str, exprs: &syn::punctuated::Punctuated<syn::Ex
     }
 }
 
-fn validate_grep(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_grep(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed_long = [
-        "--ignore-case", "--invert-match", "--line-number", "--quiet", "--silent",
-        "--only-matching", "--count", "--files-with-matches", "--recursive",
-        "--word-regexp", "--line-regexp", "--no-filename", "--with-filename",
-        "--text", "--binary-files", "--color", "--colour", "--include", "--exclude",
-        "--exclude-dir", "--help", "--version"
+        "--ignore-case",
+        "--invert-match",
+        "--line-number",
+        "--quiet",
+        "--silent",
+        "--only-matching",
+        "--count",
+        "--files-with-matches",
+        "--recursive",
+        "--word-regexp",
+        "--line-regexp",
+        "--no-filename",
+        "--with-filename",
+        "--text",
+        "--binary-files",
+        "--color",
+        "--colour",
+        "--include",
+        "--exclude",
+        "--exclude-dir",
+        "--help",
+        "--version",
     ];
     let allowed_short = "EFGPefinvnqoclrrwxhHae";
 
@@ -412,12 +454,18 @@ fn validate_grep(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
                     if val.starts_with("--") {
                         let flag_name = val.split('=').next().unwrap();
                         if !allowed_long.contains(&flag_name) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid grep flag: {}", val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid grep flag: {}", val),
+                            ));
                         }
                     } else {
                         for c in val.chars().skip(1) {
                             if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(lit_str, format!("Invalid grep short flag '{}' in {}", c, val)));
+                                return Err(syn::Error::new_spanned(
+                                    lit_str,
+                                    format!("Invalid grep short flag '{}' in {}", c, val),
+                                ));
                             }
                         }
                     }
@@ -425,7 +473,7 @@ fn validate_grep(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
                     if let Err(e) = regex::Regex::new(&val) {
                         return Err(syn::Error::new_spanned(
                             lit_str,
-                            format!("Invalid regular expression pattern in grep: {}", e)
+                            format!("Invalid regular expression pattern in grep: {}", e),
                         ));
                     }
                     pattern_validated = true;
@@ -436,10 +484,20 @@ fn validate_grep(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
     Ok(())
 }
 
-fn validate_sed(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_sed(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed_long = [
-        "--quiet", "--silent", "--expression", "--file", "--in-place",
-        "--regexp-extended", "--posix", "--sandbox", "--help", "--version"
+        "--quiet",
+        "--silent",
+        "--expression",
+        "--file",
+        "--in-place",
+        "--regexp-extended",
+        "--posix",
+        "--sandbox",
+        "--help",
+        "--version",
     ];
     let allowed_short = "nEefir";
 
@@ -452,30 +510,48 @@ fn validate_sed(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) 
                     if val.starts_with("--") {
                         let flag_name = val.split('=').next().unwrap();
                         if !allowed_long.contains(&flag_name) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid sed flag: {}", val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid sed flag: {}", val),
+                            ));
                         }
                     } else {
                         for c in val.chars().skip(1) {
                             if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(lit_str, format!("Invalid sed short flag '{}' in {}", c, val)));
+                                return Err(syn::Error::new_spanned(
+                                    lit_str,
+                                    format!("Invalid sed short flag '{}' in {}", c, val),
+                                ));
                             }
                         }
                     }
                 } else if !script_validated {
                     if val.starts_with('s') || val.starts_with('y') {
                         if val.len() < 2 {
-                            return Err(syn::Error::new_spanned(lit_str, "Invalid sed script: too short"));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                "Invalid sed script: too short",
+                            ));
                         }
                         let delim = val.chars().nth(1).unwrap();
                         let parts = split_sed_script(&val, delim);
                         if parts.len() < 3 {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid sed script structure, expected at least 3 parts separated by '{}'", delim)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!(
+                                    "Invalid sed script structure, expected at least 3 parts separated by '{}'",
+                                    delim
+                                ),
+                            ));
                         }
                         if val.starts_with('s') {
                             if let Err(e) = regex::Regex::new(&parts[0]) {
                                 return Err(syn::Error::new_spanned(
                                     lit_str,
-                                    format!("Invalid regular expression pattern in sed script: {}", e)
+                                    format!(
+                                        "Invalid regular expression pattern in sed script: {}",
+                                        e
+                                    ),
                                 ));
                             }
                         }
@@ -510,10 +586,17 @@ fn split_sed_script(s: &str, delim: char) -> Vec<String> {
     parts
 }
 
-fn validate_awk(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_awk(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed_long = [
-        "--field-separator", "--assign", "--file", "--help", "--version",
-        "--posix", "--traditional"
+        "--field-separator",
+        "--assign",
+        "--file",
+        "--help",
+        "--version",
+        "--posix",
+        "--traditional",
     ];
     let allowed_short = "FvW";
 
@@ -526,28 +609,41 @@ fn validate_awk(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) 
                     if val.starts_with("--") {
                         let flag_name = val.split('=').next().unwrap();
                         if !allowed_long.contains(&flag_name) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid awk flag: {}", val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid awk flag: {}", val),
+                            ));
                         }
                     } else {
                         for c in val.chars().skip(1) {
                             if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(lit_str, format!("Invalid awk short flag '{}' in {}", c, val)));
+                                return Err(syn::Error::new_spanned(
+                                    lit_str,
+                                    format!("Invalid awk short flag '{}' in {}", c, val),
+                                ));
                             }
                         }
                     }
                 } else if !script_validated {
                     let mut brace_count = 0;
                     for c in val.chars() {
-                        if c == '{' { brace_count += 1; }
-                        else if c == '}' {
+                        if c == '{' {
+                            brace_count += 1;
+                        } else if c == '}' {
                             brace_count -= 1;
                             if brace_count < 0 {
-                                return Err(syn::Error::new_spanned(lit_str, "Unmatched closing brace '}' in awk script"));
+                                return Err(syn::Error::new_spanned(
+                                    lit_str,
+                                    "Unmatched closing brace '}' in awk script",
+                                ));
                             }
                         }
                     }
                     if brace_count != 0 {
-                        return Err(syn::Error::new_spanned(lit_str, "Unclosed opening brace '{' in awk script"));
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            "Unclosed opening brace '{' in awk script",
+                        ));
                     }
                     script_validated = true;
                 }
@@ -557,15 +653,53 @@ fn validate_awk(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) 
     Ok(())
 }
 
-fn validate_find(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_find(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed = [
-        "-name", "-iname", "-path", "-ipath", "-regex", "-iregex",
-        "-type", "-size", "-mtime", "-atime", "-ctime", "-amin", "-cmin", "-mmin",
-        "-perm", "-user", "-group", "-nouser", "-nogroup", "-links", "-inum",
-        "-maxdepth", "-mindepth", "-depth", "-mount", "-xdev",
-        "-print", "-print0", "-printf", "-prune", "-quit",
-        "-exec", "-execdir", "-ok", "-okdir", "-delete", "-ls", "-fls",
-        "-and", "-or", "-not", "-a", "-o",
+        "-name",
+        "-iname",
+        "-path",
+        "-ipath",
+        "-regex",
+        "-iregex",
+        "-type",
+        "-size",
+        "-mtime",
+        "-atime",
+        "-ctime",
+        "-amin",
+        "-cmin",
+        "-mmin",
+        "-perm",
+        "-user",
+        "-group",
+        "-nouser",
+        "-nogroup",
+        "-links",
+        "-inum",
+        "-maxdepth",
+        "-mindepth",
+        "-depth",
+        "-mount",
+        "-xdev",
+        "-print",
+        "-print0",
+        "-printf",
+        "-prune",
+        "-quit",
+        "-exec",
+        "-execdir",
+        "-ok",
+        "-okdir",
+        "-delete",
+        "-ls",
+        "-fls",
+        "-and",
+        "-or",
+        "-not",
+        "-a",
+        "-o",
     ];
 
     for expr in exprs {
@@ -576,7 +710,10 @@ fn validate_find(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
                     let suffix = &val[1..];
                     if !suffix.chars().all(|c| c.is_ascii_digit()) {
                         if !allowed.contains(&val.as_str()) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid find option/test: {}", val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid find option/test: {}", val),
+                            ));
                         }
                     }
                 }
@@ -586,13 +723,39 @@ fn validate_find(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
     Ok(())
 }
 
-fn validate_xargs(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_xargs(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed = [
-        "-0", "--null", "-d", "--delimiter", "-E", "-e", "--eof",
-        "-I", "-i", "--replace", "-L", "-l", "--max-lines",
-        "-n", "--max-args", "-P", "--max-procs", "-p", "--interactive",
-        "-r", "--no-run-if-empty", "-s", "--max-chars",
-        "-t", "--verbose", "-x", "--exit", "--help", "--version",
+        "-0",
+        "--null",
+        "-d",
+        "--delimiter",
+        "-E",
+        "-e",
+        "--eof",
+        "-I",
+        "-i",
+        "--replace",
+        "-L",
+        "-l",
+        "--max-lines",
+        "-n",
+        "--max-args",
+        "-P",
+        "--max-procs",
+        "-p",
+        "--interactive",
+        "-r",
+        "--no-run-if-empty",
+        "-s",
+        "--max-chars",
+        "-t",
+        "--verbose",
+        "-x",
+        "--exit",
+        "--help",
+        "--version",
     ];
 
     for expr in exprs {
@@ -601,7 +764,10 @@ fn validate_xargs(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>
                 let val = lit_str.value();
                 if val.starts_with('-') {
                     if !allowed.contains(&val.as_str()) {
-                        return Err(syn::Error::new_spanned(lit_str, format!("Invalid xargs option: {}", val)));
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid xargs option: {}", val),
+                        ));
                     }
                 }
             }
@@ -610,11 +776,25 @@ fn validate_xargs(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>
     Ok(())
 }
 
-fn validate_tar(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_tar(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed_long = [
-        "--create", "--extract", "--get", "--list", "--file", "--directory",
-        "--gzip", "--bzip2", "--xz", "--lzma", "--verbose", "--exclude",
-        "--help", "--version", "--strip-components"
+        "--create",
+        "--extract",
+        "--get",
+        "--list",
+        "--file",
+        "--directory",
+        "--gzip",
+        "--bzip2",
+        "--xz",
+        "--lzma",
+        "--verbose",
+        "--exclude",
+        "--help",
+        "--version",
+        "--strip-components",
     ];
     let allowed_short = "cxtrudAazjJZaVfCpkhmkPNOOW";
 
@@ -626,18 +806,27 @@ fn validate_tar(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) 
                 if val.starts_with("--") {
                     let flag_name = val.split('=').next().unwrap();
                     if !allowed_long.contains(&flag_name) {
-                        return Err(syn::Error::new_spanned(lit_str, format!("Invalid tar long option: {}", val)));
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid tar long option: {}", val),
+                        ));
                     }
                 } else if val.starts_with('-') {
                     for c in val.chars().skip(1) {
                         if !allowed_short.contains(c) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid tar short option '{}' in {}", c, val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid tar short option '{}' in {}", c, val),
+                            ));
                         }
                     }
                 } else if is_first {
                     for c in val.chars() {
                         if !allowed_short.contains(c) {
-                            return Err(syn::Error::new_spanned(lit_str, format!("Invalid tar combined short option '{}' in {}", c, val)));
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid tar combined short option '{}' in {}", c, val),
+                            ));
                         }
                     }
                 }
@@ -648,15 +837,62 @@ fn validate_tar(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) 
     Ok(())
 }
 
-fn validate_curl(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>) -> Result<(), syn::Error> {
+fn validate_curl(
+    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Result<(), syn::Error> {
     let allowed = [
-        "-X", "--request", "-H", "--header", "-d", "--data", "--data-raw", "--data-binary",
-        "-o", "--output", "-O", "--remote-name", "-s", "--silent", "-S", "--show-error",
-        "-L", "--location", "-u", "--user", "-F", "--form", "-i", "--include", "-I", "--head",
-        "-v", "--verbose", "--url", "-k", "--insecure", "-f", "--fail", "-m", "--max-time",
-        "--connect-timeout", "-A", "--user-agent", "-e", "--referer", "-b", "--cookie",
-        "-c", "--cookie-jar", "-G", "--get", "-J", "--remote-header-name", "-x", "--proxy",
-        "--help", "--version",
+        "-X",
+        "--request",
+        "-H",
+        "--header",
+        "-d",
+        "--data",
+        "--data-raw",
+        "--data-binary",
+        "-o",
+        "--output",
+        "-O",
+        "--remote-name",
+        "-s",
+        "--silent",
+        "-S",
+        "--show-error",
+        "-L",
+        "--location",
+        "-u",
+        "--user",
+        "-F",
+        "--form",
+        "-i",
+        "--include",
+        "-I",
+        "--head",
+        "-v",
+        "--verbose",
+        "--url",
+        "-k",
+        "--insecure",
+        "-f",
+        "--fail",
+        "-m",
+        "--max-time",
+        "--connect-timeout",
+        "-A",
+        "--user-agent",
+        "-e",
+        "--referer",
+        "-b",
+        "--cookie",
+        "-c",
+        "--cookie-jar",
+        "-G",
+        "--get",
+        "-J",
+        "--remote-header-name",
+        "-x",
+        "--proxy",
+        "--help",
+        "--version",
     ];
 
     for expr in exprs {
@@ -665,7 +901,10 @@ fn validate_curl(exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>)
                 let val = lit_str.value();
                 if val.starts_with('-') {
                     if !allowed.contains(&val.as_str()) {
-                        return Err(syn::Error::new_spanned(lit_str, format!("Invalid curl option: {}", val)));
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid curl option: {}", val),
+                        ));
                     }
                 }
             }
@@ -703,10 +942,13 @@ impl syn::parse::Parse for JsonMacroInput {
         if input.peek(syn::token::Brace) {
             let content;
             syn::braced!(content in input);
-            let pairs = syn::punctuated::Punctuated::<JsonPair, syn::Token![,]>::parse_terminated(&content)?;
+            let pairs = syn::punctuated::Punctuated::<JsonPair, syn::Token![,]>::parse_terminated(
+                &content,
+            )?;
             Ok(JsonMacroInput { pairs })
         } else {
-            let pairs = syn::punctuated::Punctuated::<JsonPair, syn::Token![,]>::parse_terminated(input)?;
+            let pairs =
+                syn::punctuated::Punctuated::<JsonPair, syn::Token![,]>::parse_terminated(input)?;
             Ok(JsonMacroInput { pairs })
         }
     }

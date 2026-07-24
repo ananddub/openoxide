@@ -46,7 +46,21 @@ impl ServerMetricsMonitor {
     pub fn get_server_metrics(&self) -> ServerMetric {
         let timestamp = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Nanos, true);
 
-        let (cpu, cpu_model, cpu_cores, cpu_physical, cpu_speed, os_name, distro, kernel, arch, mem_used, mem_used_gb, mem_total_gb, uptime) = {
+        let (
+            cpu,
+            cpu_model,
+            cpu_cores,
+            cpu_physical,
+            cpu_speed,
+            os_name,
+            distro,
+            kernel,
+            arch,
+            mem_used,
+            mem_used_gb,
+            mem_total_gb,
+            uptime,
+        ) = {
             let mut sys = self.sys.lock().unwrap();
             sys.refresh_cpu_usage();
             sys.refresh_memory();
@@ -60,7 +74,11 @@ impl ServerMetricsMonitor {
             };
             let cores = cpus.len() as i32;
             let phys_cores = sys.physical_core_count().unwrap_or(cores as usize) as i32;
-            let speed = if !cpus.is_empty() { cpus[0].frequency() as f64 } else { 0.0 };
+            let speed = if !cpus.is_empty() {
+                cpus[0].frequency() as f64
+            } else {
+                0.0
+            };
 
             let os = System::name().unwrap_or_else(|| "linux".to_string());
             let distro = System::long_os_version().unwrap_or_else(|| os.clone());
@@ -70,10 +88,28 @@ impl ServerMetricsMonitor {
             let total_gb = sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
             let avail_gb = sys.available_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
             let used_gb = (total_gb - avail_gb).max(0.0);
-            let used_percent = if total_gb > 0.0 { (used_gb / total_gb) * 100.0 } else { 0.0 };
+            let used_percent = if total_gb > 0.0 {
+                (used_gb / total_gb) * 100.0
+            } else {
+                0.0
+            };
             let uptime = System::uptime();
 
-            (c, cpu_model, cores, phys_cores, speed, os, distro, kernel, arch, used_percent, used_gb, total_gb, uptime)
+            (
+                c,
+                cpu_model,
+                cores,
+                phys_cores,
+                speed,
+                os,
+                distro,
+                kernel,
+                arch,
+                used_percent,
+                used_gb,
+                total_gb,
+                uptime,
+            )
         };
 
         let disks = Disks::new_with_refreshed_list();
@@ -87,7 +123,11 @@ impl ServerMetricsMonitor {
         }
         let total_disk_gb = total_disk_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
         let used_disk_gb = used_disk_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-        let disk_used_percent = if total_disk_gb > 0.0 { (used_disk_gb / total_disk_gb) * 100.0 } else { 0.0 };
+        let disk_used_percent = if total_disk_gb > 0.0 {
+            (used_disk_gb / total_disk_gb) * 100.0
+        } else {
+            0.0
+        };
 
         let networks = Networks::new_with_refreshed_list();
         let mut net_in_bytes = 0u64;
@@ -138,7 +178,10 @@ impl ServerMetricsMonitor {
                     alert_type: "CPU".to_string(),
                     value: m.cpu,
                     threshold: cpu_threshold,
-                    message: format!("CPU usage ({:.2}%) exceeded threshold ({:.2}%)", m.cpu, cpu_threshold),
+                    message: format!(
+                        "CPU usage ({:.2}%) exceeded threshold ({:.2}%)",
+                        m.cpu, cpu_threshold
+                    ),
                     timestamp: m.timestamp.clone(),
                     token: metrics_token.to_string(),
                 },
@@ -153,7 +196,10 @@ impl ServerMetricsMonitor {
                     alert_type: "Memory".to_string(),
                     value: m.mem_used,
                     threshold: mem_threshold,
-                    message: format!("Memory usage ({:.2}%) exceeded threshold ({:.2}%)", m.mem_used, mem_threshold),
+                    message: format!(
+                        "Memory usage ({:.2}%) exceeded threshold ({:.2}%)",
+                        m.mem_used, mem_threshold
+                    ),
                     timestamp: m.timestamp.clone(),
                     token: metrics_token.to_string(),
                 },
@@ -162,7 +208,11 @@ impl ServerMetricsMonitor {
         }
     }
 
-    async fn send_alert(&self, callback_url: &str, payload: &AlertPayloadWrapper) -> Result<(), String> {
+    async fn send_alert(
+        &self,
+        callback_url: &str,
+        payload: &AlertPayloadWrapper,
+    ) -> Result<(), String> {
         if callback_url.is_empty() {
             return Err("callback URL is empty".to_string());
         }

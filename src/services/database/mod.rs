@@ -1,13 +1,12 @@
+pub use types::{DatabaseKind, DatabaseOperation, DatabaseOperationResult, DatabaseRecord};
 
-pub use types::{DatabaseKind, DatabaseRecord, DatabaseOperation, DatabaseOperationResult};
-
-use std::sync::Arc;
 use auto_di::singleton;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
 use crate::repository::{
-    PostgresRepository, MysqlRepository, MariadbRepository, MongoRepository,
-    RedisRepository, LibsqlRepository, DeploymentRepository,
+    DeploymentRepository, LibsqlRepository, MariadbRepository, MongoRepository, MysqlRepository,
+    PostgresRepository, RedisRepository,
 };
 
 pub struct DatabaseService {

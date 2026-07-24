@@ -11,16 +11,15 @@ use axum::{
 use crate::{
     api::dto::deployment::{
         ActiveDeploymentDto, ComposeLogQuery, DeploymentListQuery, DeploymentResponseDto,
-        DockerLogQuery, DockerStatsQuery,
+        DeploymentSseEventDto, DockerLogQuery, DockerStatsQuery,
     },
     services::deployment::{CancelDeploymentResult, DeploymentListFilter, DeploymentService},
     utils::builder::custom_type::IdType,
 };
 
-
 use stream::{
-    deployment_event_stream, deployment_log_stream, docker_stats_stream, docker_stream,
-    DeploymentEventStream,
+    DeploymentEventStream, deployment_event_stream, deployment_log_stream, docker_stats_stream,
+    docker_stream,
 };
 
 type ApiError = (StatusCode, String);
@@ -60,7 +59,10 @@ impl DeploymentController {
     }
 
     #[get("/active")]
-    async fn active(&self, _claims: crate::utils::jwt::claim::Claims) -> Result<Json<Vec<ActiveDeploymentDto>>, ApiError> {
+    async fn active(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+    ) -> Result<Json<Vec<ActiveDeploymentDto>>, ApiError> {
         self.service
             .list_active_components()
             .await
@@ -97,7 +99,7 @@ impl DeploymentController {
             .map_err(map_sqlx_error)
     }
 
-    #[get("/application/{id}/events")]
+    #[get("/application/{id}/events", sse = DeploymentSseEventDto)]
     async fn application_events(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -106,7 +108,7 @@ impl DeploymentController {
         self.events(IdType::AppId(id)).await
     }
 
-    #[get("/compose/{id}/events")]
+    #[get("/compose/{id}/events", sse = DeploymentSseEventDto)]
     async fn compose_events(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -115,7 +117,7 @@ impl DeploymentController {
         self.events(IdType::ComposeId(id)).await
     }
 
-    #[get("/database/{id}/events")]
+    #[get("/database/{id}/events", sse = DeploymentSseEventDto)]
     async fn database_events(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -124,7 +126,7 @@ impl DeploymentController {
         self.events(IdType::DatabaseId(id)).await
     }
 
-    #[get("/application/{id}/stats")]
+    #[get("/application/{id}/stats", sse = DeploymentSseEventDto)]
     async fn application_stats(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -140,7 +142,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
-    #[get("/compose/{id}/stats")]
+    #[get("/compose/{id}/stats", sse = DeploymentSseEventDto)]
     async fn compose_stats(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -156,7 +158,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
-    #[get("/docker/container/{target}/logs")]
+    #[get("/docker/container/{target}/logs", sse = DeploymentSseEventDto)]
     async fn docker_container_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -176,7 +178,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stream(receiver)))
     }
 
-    #[get("/docker/stats")]
+    #[get("/docker/stats", sse = DeploymentSseEventDto)]
     async fn docker_global_stats(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -191,7 +193,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
-    #[get("/docker/container/{target}/stats")]
+    #[get("/docker/container/{target}/stats", sse = DeploymentSseEventDto)]
     async fn docker_container_stats(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -207,7 +209,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
-    #[get("/docker/service/{target}/logs")]
+    #[get("/docker/service/{target}/logs", sse = DeploymentSseEventDto)]
     async fn docker_service_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -227,7 +229,7 @@ impl DeploymentController {
         Ok(Sse::new(docker_stream(receiver)))
     }
 
-    #[get("/docker/compose/logs")]
+    #[get("/docker/compose/logs", sse = DeploymentSseEventDto)]
     async fn docker_compose_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -245,7 +247,11 @@ impl DeploymentController {
     }
 
     #[post("/{id}/cancel")]
-    async fn cancel(&self, _claims: crate::utils::jwt::claim::Claims, Path(id): Path<i64>) -> Result<StatusCode, ApiError> {
+    async fn cancel(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
         match self.service.cancel(id).await {
             Ok(CancelDeploymentResult::CancelRequested) => Ok(StatusCode::ACCEPTED),
             Ok(CancelDeploymentResult::NotRunning) => Err((
@@ -264,7 +270,7 @@ impl DeploymentController {
         }
     }
 
-    #[get("/{id}/logs")]
+    #[get("/{id}/logs", sse = DeploymentSseEventDto)]
     async fn stream_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -279,7 +285,7 @@ impl DeploymentController {
         Ok(Sse::new(deployment_log_stream(receiver)))
     }
 
-    #[get("/application/{id}/logs")]
+    #[get("/application/{id}/logs", sse = DeploymentSseEventDto)]
     async fn application_latest_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -294,7 +300,7 @@ impl DeploymentController {
         Ok(Sse::new(deployment_log_stream(receiver)))
     }
 
-    #[get("/compose/{id}/logs")]
+    #[get("/compose/{id}/logs", sse = DeploymentSseEventDto)]
     async fn compose_latest_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,

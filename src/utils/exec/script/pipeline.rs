@@ -1,7 +1,7 @@
+use super::{Condition, IntoCommand, shell_single_quote};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::rclone::RcloneBuilder;
 use tokio_util::sync::CancellationToken;
-use super::{shell_single_quote, IntoCommand, Condition};
 
 /// Represents a single step in the execution pipeline.
 #[derive(Clone, Debug)]
@@ -165,7 +165,10 @@ impl ScriptPipeline {
 
     /// Adds a conditional block using fluent chaining.
     pub fn if_condition(self, cond: Condition) -> IfBuilder {
-        IfBuilder { condition: cond, parent: self }
+        IfBuilder {
+            condition: cond,
+            parent: self,
+        }
     }
 }
 
@@ -200,7 +203,8 @@ impl IfThenBuilder {
         F: FnOnce(ScriptPipeline) -> ScriptPipeline,
     {
         let else_branch = build(ScriptPipeline::new());
-        self.parent.if_else(self.condition, self.then_branch, Some(else_branch))
+        self.parent
+            .if_else(self.condition, self.then_branch, Some(else_branch))
     }
 
     pub fn end_if(self) -> ScriptPipeline {
@@ -254,7 +258,11 @@ impl ScriptPipeline {
                     script.push_str(" | ");
                     script.push_str(cmd);
                 }
-                PipelineStep::IfElse { condition, then_branch, else_branch } => {
+                PipelineStep::IfElse {
+                    condition,
+                    then_branch,
+                    else_branch,
+                } => {
                     if i > 0 {
                         script.push('\n');
                     }
@@ -298,6 +306,8 @@ impl ScriptPipeline {
         cancel: &CancellationToken,
     ) -> ExecResult<ExecOutput> {
         let script = self.compile();
-        executor.run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel).await
+        executor
+            .run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel)
+            .await
     }
 }

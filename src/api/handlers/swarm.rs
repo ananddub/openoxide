@@ -4,6 +4,7 @@ use auto_route::controller;
 use axum::{Json, http::StatusCode};
 use sqlx::SqlitePool;
 
+use crate::utils::docker::core::types::{NodeAvailability, SwarmRole};
 use crate::{
     api::dto::swarm::{
         NodeActionDto, NodeAvailabilityDto, NodeDto, SwarmConnectionDto, SwarmInfoDto,
@@ -15,7 +16,6 @@ use crate::{
         jwt::claim::Claims,
     },
 };
-use crate::utils::docker::core::types::{NodeAvailability, SwarmRole};
 
 type ApiError = (StatusCode, String);
 
@@ -56,8 +56,18 @@ impl SwarmController {
     ) -> Result<Json<SwarmTokensDto>, ApiError> {
         let docker = self.docker(body.server_id).await?;
 
-        let worker = docker.swarm().join_token().get(SwarmRole::Worker).await.map_err(map_exec)?;
-        let manager = docker.swarm().join_token().get(SwarmRole::Manager).await.map_err(map_exec)?;
+        let worker = docker
+            .swarm()
+            .join_token()
+            .get(SwarmRole::Worker)
+            .await
+            .map_err(map_exec)?;
+        let manager = docker
+            .swarm()
+            .join_token()
+            .get(SwarmRole::Manager)
+            .await
+            .map_err(map_exec)?;
 
         Ok(Json(SwarmTokensDto { worker, manager }))
     }
@@ -131,7 +141,13 @@ impl SwarmController {
         Json(body): Json<NodeActionDto>,
     ) -> Result<StatusCode, ApiError> {
         let docker = self.docker(body.server_id).await?;
-        docker.nodes().remove(body.node_id).force().run().await.map_err(map_exec)?;
+        docker
+            .nodes()
+            .remove(body.node_id)
+            .force()
+            .run()
+            .await
+            .map_err(map_exec)?;
         Ok(StatusCode::NO_CONTENT)
     }
 
@@ -170,8 +186,8 @@ async fn remote_executor_for(db: &SqlitePool, server_id: i64) -> Result<RemoteEx
     .await
     .map_err(|_| (StatusCode::NOT_FOUND, "server or SSH key not found".into()))?;
 
-    let port = u16::try_from(row.1)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid SSH port".into()))?;
+    let port =
+        u16::try_from(row.1).map_err(|_| (StatusCode::BAD_REQUEST, "invalid SSH port".into()))?;
 
     Ok(RemoteExecutor::new(
         row.0,

@@ -1,8 +1,8 @@
-use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
-use tokio_util::sync::CancellationToken;
 use crate::utils::docker::DockerCli;
 use crate::utils::docker::handles::RestartPolicy;
 use crate::utils::docker::query::ContainerFilter;
+use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
 pub struct RailpackCli<'a> {
@@ -66,7 +66,8 @@ impl<'a> RailpackPrepareBuilder<'a> {
     }
 
     pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
-        self.args.pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
+        self.args
+            .pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
         self
     }
 
@@ -98,14 +99,16 @@ impl<'a> RailpackPrepareBuilder<'a> {
     pub async fn run(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = "rustploy_buildkit".to_string();
-        let cointainer = docker.containers()
+        let cointainer = docker
+            .containers()
             .ps()
             .filter(ContainerFilter::Name(name.clone()))
             .list()
             .await?;
 
         if cointainer.is_empty() {
-            let _ = docker.containers()
+            let _ = docker
+                .containers()
                 .create("moby/buildkit")
                 .name(name.clone())
                 .detach()
@@ -113,11 +116,13 @@ impl<'a> RailpackPrepareBuilder<'a> {
                 .privileged()
                 .run()
                 .await;
-        }else {
+        } else {
             let _ = docker.containers().start(name.clone()).run().await;
         }
 
-        self.executor.run_cancelled("railpack", self.args.build(), cancel).await
+        self.executor
+            .run_cancelled("railpack", self.args.build(), cancel)
+            .await
     }
 
     pub async fn run_in_cgroup(
@@ -127,14 +132,16 @@ impl<'a> RailpackPrepareBuilder<'a> {
     ) -> ExecResult<ExecOutput> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = "rustploy_buildkit".to_string();
-        let cointainer = docker.containers()
+        let cointainer = docker
+            .containers()
             .ps()
             .filter(ContainerFilter::Name(name.clone()))
             .list()
             .await?;
 
         if cointainer.is_empty() {
-            let _ = docker.containers()
+            let _ = docker
+                .containers()
                 .create("moby/buildkit")
                 .name(name.clone())
                 .detach()
@@ -142,7 +149,7 @@ impl<'a> RailpackPrepareBuilder<'a> {
                 .privileged()
                 .run()
                 .await;
-        }else {
+        } else {
             let _ = docker.containers().start(name.clone()).run().await;
         }
 

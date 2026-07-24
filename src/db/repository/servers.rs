@@ -1,7 +1,7 @@
 use crate::db::models::servers::Server;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ServerRepository {
     pool: Arc<SqlitePool>,
@@ -86,16 +86,16 @@ impl ServerRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM servers WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM servers WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn get_ssh_credentials(&self, server_id: i64) -> Result<Option<(String, i64, String, String, String)>, sqlx::Error> {
+    pub async fn get_ssh_credentials(
+        &self,
+        server_id: i64,
+    ) -> Result<Option<(String, i64, String, String, String)>, sqlx::Error> {
         let res = sqlx::query!(
             r#"SELECT s.ip_address AS "ip_address: String", s.port AS "port: i64", s.username AS "username: String", k.private_key AS "private_key: String", k.public_key AS "public_key: String"
                FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?"#,
@@ -104,7 +104,15 @@ impl ServerRepository {
         .fetch_optional(self.pool.as_ref())
         .await?;
 
-        Ok(res.map(|r| (r.ip_address, r.port, r.username, r.private_key, r.public_key)))
+        Ok(res.map(|r| {
+            (
+                r.ip_address,
+                r.port,
+                r.username,
+                r.private_key,
+                r.public_key,
+            )
+        }))
     }
 
     pub async fn list_ordered(&self) -> Result<Vec<Server>, sqlx::Error> {

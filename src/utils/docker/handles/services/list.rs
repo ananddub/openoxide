@@ -1,10 +1,5 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        query::filter::ServiceFilter,
-        DockerOutput, DockerResult,
-    },
+use crate::utils::docker::{
+    DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder, query::filter::ServiceFilter,
 };
 
 pub struct ServiceListBuilder<'a> {
@@ -14,12 +9,20 @@ pub struct ServiceListBuilder<'a> {
 
 impl<'a> ServiceListBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "ls"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "ls"]),
+        }
     }
 
-    pub fn filter(mut self, f: ServiceFilter) -> Self { self.args.filter(f); self }
+    pub fn filter(mut self, f: ServiceFilter) -> Self {
+        self.args.filter(f);
+        self
+    }
     pub fn filters(mut self, fs: impl IntoIterator<Item = ServiceFilter>) -> Self {
-        for f in fs { self.args.filter(f); }
+        for f in fs {
+            self.args.filter(f);
+        }
         self
     }
 

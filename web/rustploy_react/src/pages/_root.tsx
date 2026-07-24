@@ -13,15 +13,20 @@ import '#/styles/index.css';
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
-		const {data: res} = await client.GET('/auth/whoami');
-		if (res) {
-			useAuthStore.getState().setAuth({
-				id: res.user_id,
-				email: res.email || '',
-				firstName: res.first_name,
-				lastName: res.last_name,
-			});
-		} else {
+		try {
+			const {data: res} = await client.GET('/auth/whoami');
+			if (res) {
+				useAuthStore.getState().setAuth({
+					id: res.user_id,
+					email: res.email || '',
+					firstName: res.first_name,
+					lastName: res.last_name,
+				});
+			} else {
+				useAuthStore.getState().logout();
+			}
+		} catch (error) {
+			console.error('Failed to authenticate session:', error);
 			useAuthStore.getState().logout();
 		}
 	},

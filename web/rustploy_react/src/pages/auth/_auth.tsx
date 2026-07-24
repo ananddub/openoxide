@@ -10,31 +10,30 @@ import {AuthLeftPanel} from '#/components/auth/auth-left-panel';
 
 export const Route = createFileRoute('/_auth')({
 	beforeLoad: async ({location}) => {
-		// Verify setup status
-		const {data: res} = await (client.GET(
-			'/auth/setup' as any,
-			{},
-		) as Promise<{
-			data?: {isOwnerPresent: boolean};
-			error?: any;
-		}>);
-		const isOwnerPresent = res?.isOwnerPresent ?? true;
-		// Owner not present & user is not on signup
-		if (!isOwnerPresent && location.pathname !== '/singup') {
-			throw redirect({
-				to: '/singup',
-				replace: true,
-			});
+		try {
+			// Verify setup status
+			const {data: res} = await (client.GET(
+				'/auth/setup' as any,
+				{},
+			) as Promise<{
+				data?: {isOwnerPresent: boolean};
+				error?: any;
+			}>);
+			const isOwnerPresent = res?.isOwnerPresent ?? true;
+			// Owner not present & user is not on signup
+			if (!isOwnerPresent && location.pathname !== '/singup') {
+				throw redirect({
+					to: '/singup',
+					replace: true,
+				});
+			}
+		} catch (error: any) {
+			// Rethrow router redirect objects
+			if (error && (error.isRedirect || 'to' in error || 'href' in error)) {
+				throw error;
+			}
+			console.error('Failed to verify auth setup status:', error);
 		}
-		// Owner is present & user attempts to signup (Disabled to allow accessing signup option)
-		/*
-		if (isOwnerPresent && location.pathname === '/singup') {
-			throw redirect({
-				to: '/singin',
-				replace: true,
-			});
-		}
-		*/
 	},
 	component: AuthLayout,
 });

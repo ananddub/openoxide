@@ -87,7 +87,10 @@ mod tests {
 
     #[test]
     fn cert_resolver_custom_name() {
-        assert_eq!(CertResolver::Custom("cloudflare".into()).name(), "cloudflare");
+        assert_eq!(
+            CertResolver::Custom("cloudflare".into()).name(),
+            "cloudflare"
+        );
     }
 
     #[test]

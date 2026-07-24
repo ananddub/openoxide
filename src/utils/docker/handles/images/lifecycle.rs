@@ -1,6 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder, DockerCli, DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
 pub struct ImagePushBuilder<'a> {
     pub(crate) cli: &'a DockerCli,
@@ -10,7 +8,11 @@ pub struct ImagePushBuilder<'a> {
 
 impl<'a> ImagePushBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, image: impl Into<String>) -> Self {
-        Self { cli, image: image.into(), args: ArgBuilder::cmd(&["image", "push"]) }
+        Self {
+            cli,
+            image: image.into(),
+            args: ArgBuilder::cmd(&["image", "push"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
@@ -28,9 +30,16 @@ pub struct ImageRmBuilder<'a> {
 
 impl<'a> ImageRmBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, image: impl Into<String>) -> Self {
-        Self { cli, image: image.into(), args: ArgBuilder::cmd(&["image", "rm"]) }
+        Self {
+            cli,
+            image: image.into(),
+            args: ArgBuilder::cmd(&["image", "rm"]),
+        }
     }
-    pub fn force(mut self) -> Self { self.args.flag("--force"); self }
+    pub fn force(mut self) -> Self {
+        self.args.flag("--force");
+        self
+    }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
         a.push(&self.image);
@@ -47,8 +56,17 @@ pub struct ImageTagBuilder<'a> {
 }
 
 impl<'a> ImageTagBuilder<'a> {
-    pub(crate) fn new(cli: &'a DockerCli, source: impl Into<String>, target: impl Into<String>) -> Self {
-        Self { cli, source: source.into(), target: target.into(), args: ArgBuilder::cmd(&["image", "tag"]) }
+    pub(crate) fn new(
+        cli: &'a DockerCli,
+        source: impl Into<String>,
+        target: impl Into<String>,
+    ) -> Self {
+        Self {
+            cli,
+            source: source.into(),
+            target: target.into(),
+            args: ArgBuilder::cmd(&["image", "tag"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
@@ -67,7 +85,11 @@ pub struct ImageHistoryBuilder<'a> {
 
 impl<'a> ImageHistoryBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, image: impl Into<String>) -> Self {
-        Self { cli, image: image.into(), args: ArgBuilder::cmd(&["image", "history"]) }
+        Self {
+            cli,
+            image: image.into(),
+            args: ArgBuilder::cmd(&["image", "history"]),
+        }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
@@ -85,9 +107,16 @@ pub struct ImageSaveBuilder<'a> {
 
 impl<'a> ImageSaveBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, image: impl Into<String>) -> Self {
-        Self { cli, image: image.into(), args: ArgBuilder::cmd(&["image", "save"]) }
+        Self {
+            cli,
+            image: image.into(),
+            args: ArgBuilder::cmd(&["image", "save"]),
+        }
     }
-    pub fn output(mut self, path: impl Into<String>) -> Self { self.args.pair("--output", path.into()); self }
+    pub fn output(mut self, path: impl Into<String>) -> Self {
+        self.args.pair("--output", path.into());
+        self
+    }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
         a.push(&self.image);
@@ -103,9 +132,15 @@ pub struct ImageLoadBuilder<'a> {
 
 impl<'a> ImageLoadBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["image", "load"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["image", "load"]),
+        }
     }
-    pub fn input(mut self, path: impl Into<String>) -> Self { self.args.pair("--input", path.into()); self }
+    pub fn input(mut self, path: impl Into<String>) -> Self {
+        self.args.pair("--input", path.into());
+        self
+    }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         self.cli.execute(&self.args).await
     }
@@ -120,9 +155,16 @@ pub struct ImageImportBuilder<'a> {
 
 impl<'a> ImageImportBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, source: impl Into<String>) -> Self {
-        Self { cli, source: source.into(), args: ArgBuilder::cmd(&["image", "import"]) }
+        Self {
+            cli,
+            source: source.into(),
+            args: ArgBuilder::cmd(&["image", "import"]),
+        }
     }
-    pub fn message(mut self, msg: impl Into<String>) -> Self { self.args.pair("--message", msg.into()); self }
+    pub fn message(mut self, msg: impl Into<String>) -> Self {
+        self.args.pair("--message", msg.into());
+        self
+    }
     pub async fn run(self) -> DockerResult<DockerOutput> {
         let mut a = self.args;
         a.push(&self.source);

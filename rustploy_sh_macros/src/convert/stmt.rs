@@ -1,7 +1,7 @@
-use quote::quote;
-use syn::{Expr, Pat, Stmt};
 use crate::convert::{convert_expr, convert_macro};
 use crate::parser::ShStmt;
+use quote::quote;
+use syn::{Expr, Pat, Stmt};
 
 /// Entry point for ShStmt (top-level, supports untyped `fn` params)
 pub fn convert_sh_stmt(sh_stmt: &ShStmt) -> Result<proc_macro2::TokenStream, syn::Error> {
@@ -28,13 +28,23 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
         Stmt::Local(local) => {
             let name_ident = match &local.pat {
                 Pat::Ident(pat_ident) => &pat_ident.ident,
-                _ => return Err(syn::Error::new_spanned(&local.pat, "Expected variable name")),
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        &local.pat,
+                        "Expected variable name",
+                    ));
+                }
             };
             let name_str = name_ident.to_string();
 
             let mut val_expr = match &local.init {
                 Some(local_init) => &local_init.expr,
-                None => return Err(syn::Error::new_spanned(local, "Variable must be initialized")),
+                None => {
+                    return Err(syn::Error::new_spanned(
+                        local,
+                        "Variable must be initialized",
+                    ));
+                }
             };
 
             // Check if RHS is a closure
@@ -44,7 +54,10 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
                     if let Pat::Ident(pat_ident) = param {
                         params.push(pat_ident.ident.to_string());
                     } else {
-                        return Err(syn::Error::new_spanned(param, "Expected identifier for closure parameter"));
+                        return Err(syn::Error::new_spanned(
+                            param,
+                            "Expected identifier for closure parameter",
+                        ));
                     }
                 }
                 let mut body_stmts = Vec::new();
@@ -54,7 +67,12 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
                             body_stmts.push(convert_stmt(stmt)?);
                         }
                     }
-                    _ => return Err(syn::Error::new_spanned(&closure.body, "Expected block for closure body")),
+                    _ => {
+                        return Err(syn::Error::new_spanned(
+                            &closure.body,
+                            "Expected block for closure body",
+                        ));
+                    }
                 }
                 return Ok(quote! {
                     (crate::utils::exec::script::dsl::ShellIR::Function {
@@ -94,15 +112,11 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
             } else {
                 match convert_expr(expr) {
                     Ok(tokens) => Ok(tokens),
-                    Err(_) => {
-                        Ok(quote! { #expr })
-                    }
+                    Err(_) => Ok(quote! { #expr }),
                 }
             }
         }
-        Stmt::Macro(stmt_macro) => {
-            convert_macro(&stmt_macro.mac)
-        }
+        Stmt::Macro(stmt_macro) => convert_macro(&stmt_macro.mac),
         Stmt::Item(syn::Item::Fn(item_fn)) => {
             let func_name = item_fn.sig.ident.to_string();
             let mut params = Vec::new();
@@ -127,8 +141,9 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
                 })
             })
         }
-        Stmt::Item(_) => {
-            Err(syn::Error::new_spanned(stmt, "Unsupported item in sh! block"))
-        }
+        Stmt::Item(_) => Err(syn::Error::new_spanned(
+            stmt,
+            "Unsupported item in sh! block",
+        )),
     }
 }

@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx_gen::SqlxGen;
 
-#[derive(Debug, Clone, PartialEq,  Serialize, Deserialize, sqlx::FromRow, SqlxGen)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow, SqlxGen)]
 #[sqlx_gen(kind = "table", schema = "main", table = "server_metrics")]
 pub struct ServerMetric {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]

@@ -52,8 +52,16 @@ pub fn collect_docker_container_metrics() -> Vec<ContainerMetricRow> {
         }
 
         if let Ok(stats) = serde_json::from_str::<DockerStatsJson>(line) {
-            let cpu_perc = stats.cpu_perc.trim_end_matches('%').parse::<f64>().unwrap_or(0.0);
-            let mem_perc = stats.mem_perc.trim_end_matches('%').parse::<f64>().unwrap_or(0.0);
+            let cpu_perc = stats
+                .cpu_perc
+                .trim_end_matches('%')
+                .parse::<f64>()
+                .unwrap_or(0.0);
+            let mem_perc = stats
+                .mem_perc
+                .trim_end_matches('%')
+                .parse::<f64>()
+                .unwrap_or(0.0);
 
             // Process Memory Usage "used / total"
             let mem_parts: Vec<&str> = stats.mem_usage.split(" / ").collect();
@@ -74,7 +82,10 @@ pub fn collect_docker_container_metrics() -> Vec<ContainerMetricRow> {
             // Process Block I/O "read / write"
             let block_parts: Vec<&str> = stats.block_io.split(" / ").collect();
             let (block_read_mb, block_write_mb) = if block_parts.len() == 2 {
-                (parse_memory_mb(block_parts[0]), parse_memory_mb(block_parts[1]))
+                (
+                    parse_memory_mb(block_parts[0]),
+                    parse_memory_mb(block_parts[1]),
+                )
             } else {
                 (0.0, 0.0)
             };
@@ -121,7 +132,10 @@ fn parse_memory_mb(val: &str) -> f64 {
         return 0.0;
     }
 
-    let num = parts[0].trim_end_matches(|c: char| c.is_alphabetic()).parse::<f64>().unwrap_or(0.0);
+    let num = parts[0]
+        .trim_end_matches(|c: char| c.is_alphabetic())
+        .parse::<f64>()
+        .unwrap_or(0.0);
     let unit = parts[0].trim_start_matches(|c: char| c.is_ascii_digit() || c == '.');
 
     match unit {

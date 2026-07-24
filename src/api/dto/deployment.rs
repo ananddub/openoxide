@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::db::models::deployments::Deployment;
 use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
@@ -113,4 +114,14 @@ pub struct ComposeLogQuery {
     pub tail: Option<usize>,
     pub timestamps: Option<bool>,
     pub follow: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+pub struct DeploymentSseEventDto {
+    pub r#type: String,
+    pub line: Option<String>,
+    pub state: Option<String>,
+    pub message: Option<String>,
+    pub skipped: Option<u64>,
+    pub stats: Option<Value>,
 }

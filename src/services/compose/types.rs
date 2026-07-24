@@ -1,6 +1,6 @@
 use crate::string_enum;
 
-string_enum!{
+string_enum! {
        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum ComposeType {
                 default = Stack;
@@ -8,8 +8,6 @@ string_enum!{
                 Stack => "STACK"
         }
 }
-
-
 
 // impl From<String> for ComposeType {
 //     fn from(value: String) -> Self {
@@ -102,14 +100,19 @@ pub struct ComposeOperationResult {
 impl From<crate::db::models::compose_projects::ComposeProject> for ComposeRecord {
     fn from(item: crate::db::models::compose_projects::ComposeProject) -> Self {
         Self {
-            id: item.id.as_deref().and_then(|s| s.parse::<i64>().ok()).unwrap_or(0),
+            id: item
+                .id
+                .as_deref()
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(0),
             name: item.name,
             app_name: item.app_name,
             description: item.description,
             env_var: item.env_var,
             compose_file: item.compose_file,
             source_type: item.source_type,
-            compose_type: ComposeType::from_str(&item.compose_type).unwrap_or(ComposeType::DockerCompose),
+            compose_type: ComposeType::from_str(&item.compose_type)
+                .unwrap_or(ComposeType::DockerCompose),
             compose_status: item.compose_status,
             trigger_type: item.trigger_type,
             repository: item.repository,
@@ -135,4 +138,3 @@ impl From<crate::db::models::compose_projects::ComposeProject> for ComposeRecord
         }
     }
 }
-

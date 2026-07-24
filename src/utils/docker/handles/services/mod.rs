@@ -1,12 +1,11 @@
-use crate::utils::docker::{client::DockerCli, DockerResult};
-
+use crate::utils::docker::{DockerResult, client::DockerCli};
 
 pub use create::ServiceCreateBuilder;
-pub use update::{ServiceUpdateBuilder, ServiceScaleBuilder, ServiceRollbackBuilder};
 pub use list::ServiceListBuilder;
-pub use ps::ServicePsBuilder;
 pub use logs::ServiceLogsBuilder;
+pub use ps::ServicePsBuilder;
 pub use remove::ServiceRemoveBuilder;
+pub use update::{ServiceRollbackBuilder, ServiceScaleBuilder, ServiceUpdateBuilder};
 
 // ── ServicesHandle ──────────────────────────────────────────────────────────
 

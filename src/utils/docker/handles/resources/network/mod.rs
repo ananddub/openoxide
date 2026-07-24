@@ -1,7 +1,8 @@
-
-pub use query::NetworkQuery;
 pub use create::NetworkCreate;
-pub use lifecycle::{NetworkPrune, NetworkRmBuilder, NetworkConnectBuilder, NetworkDisconnectBuilder};
+pub use lifecycle::{
+    NetworkConnectBuilder, NetworkDisconnectBuilder, NetworkPrune, NetworkRmBuilder,
+};
+pub use query::NetworkQuery;
 
 pub mod create;
 pub mod lifecycle;

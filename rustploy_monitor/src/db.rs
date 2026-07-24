@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 use std::path::Path;
 use tracing::info;
 
@@ -111,7 +111,10 @@ impl Db {
         .execute(&pool)
         .await?;
 
-        info!("Independent Dokploy-compatible Monitor SQLite DB initialized: {}", db_url);
+        info!(
+            "Independent Dokploy-compatible Monitor SQLite DB initialized: {}",
+            db_url
+        );
         Ok(Self { pool })
     }
 
@@ -148,7 +151,10 @@ impl Db {
         Ok(())
     }
 
-    pub async fn get_last_n_server_metrics(&self, limit: i64) -> Result<Vec<ServerMetric>, sqlx::Error> {
+    pub async fn get_last_n_server_metrics(
+        &self,
+        limit: i64,
+    ) -> Result<Vec<ServerMetric>, sqlx::Error> {
         sqlx::query_as::<_, ServerMetric>(
             r#"SELECT id, timestamp, cpu, cpu_model, cpu_cores, cpu_physical_cores, cpu_speed, os, distro, kernel, arch, mem_used, mem_used_gb, mem_total, uptime, disk_used, total_disk, network_in, network_out FROM server_metrics ORDER BY id DESC LIMIT ?"#
         )
@@ -182,7 +188,11 @@ impl Db {
         Ok(())
     }
 
-    pub async fn get_last_n_container_metrics(&self, app_name: &str, limit: i64) -> Result<Vec<ContainerMetricRow>, sqlx::Error> {
+    pub async fn get_last_n_container_metrics(
+        &self,
+        app_name: &str,
+        limit: i64,
+    ) -> Result<Vec<ContainerMetricRow>, sqlx::Error> {
         sqlx::query_as::<_, ContainerMetricRow>(
             r#"SELECT id, timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb, mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb FROM container_metrics WHERE name LIKE ? ORDER BY id DESC LIMIT ?"#
         )

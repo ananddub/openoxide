@@ -1,6 +1,5 @@
-
-use axum::http::StatusCode;
 use axum::Json;
+use axum::http::StatusCode;
 
 pub type ApiError = (StatusCode, String);
 
@@ -31,7 +30,13 @@ pub async fn run_operation(
     kind: crate::services::database::DatabaseKind,
     id: i64,
     operation: crate::services::database::DatabaseOperation,
-) -> Result<(StatusCode, Json<crate::api::dto::database::DatabaseOperationResponseDto>), ApiError> {
+) -> Result<
+    (
+        StatusCode,
+        Json<crate::api::dto::database::DatabaseOperationResponseDto>,
+    ),
+    ApiError,
+> {
     service
         .run_operation(kind, id, operation)
         .await

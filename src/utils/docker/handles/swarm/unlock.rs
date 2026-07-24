@@ -1,8 +1,4 @@
-use crate::utils::docker::{
-    core::ArgBuilder,
-    client::DockerCli,
-    DockerOutput, DockerResult,
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct SwarmUnlockKeyBuilder<'a> {
     cli: &'a DockerCli,
@@ -19,7 +15,10 @@ impl<'a> SwarmUnlockKeyBuilder<'a> {
     }
 
     pub async fn rotate(&self) -> DockerResult<String> {
-        let out = self.cli.run(["swarm", "unlock-key", "--rotate", "--quiet"]).await?;
+        let out = self
+            .cli
+            .run(["swarm", "unlock-key", "--rotate", "--quiet"])
+            .await?;
         Ok(out.stdout.trim().to_string())
     }
 }
@@ -32,7 +31,11 @@ pub struct SwarmUnlockBuilder<'a> {
 
 impl<'a> SwarmUnlockBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, key: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["swarm", "unlock"]), key: key.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["swarm", "unlock"]),
+            key: key.into(),
+        }
     }
 
     pub async fn run(self) -> DockerResult<DockerOutput> {

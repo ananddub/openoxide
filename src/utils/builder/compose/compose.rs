@@ -4,17 +4,17 @@ use super::{
     validation::validate_spec,
 };
 use crate::pipeline;
+use crate::utils::docker::core::types::ResolveImage;
 use crate::utils::exec::script::IntoCommand;
 use crate::utils::{
     builder::{
         shared::BuilderContext,
         spec::BuilderEvent,
-        swarm::{ensure_overlay_network, ensure_swarm_manager, RUSTPLOY_NETWORK},
+        swarm::{RUSTPLOY_NETWORK, ensure_overlay_network, ensure_swarm_manager},
     },
     exec::{CommandExecutor, ExecResult},
 };
 use tokio_util::sync::CancellationToken;
-use crate::utils::docker::core::types::ResolveImage;
 
 #[derive(Clone, Debug)]
 pub struct ComposeBuilder {
@@ -96,10 +96,18 @@ impl ComposeBuilder {
     pub async fn stop(&self, spec: &ComposeSpec) -> ExecResult<()> {
         match spec.runtime {
             ComposeRuntime::Stack => {
-                self.ctx.docker.stacks().remove(&spec.stack_name).run().await?;
+                self.ctx
+                    .docker
+                    .stacks()
+                    .remove(&spec.stack_name)
+                    .run()
+                    .await?;
             }
             ComposeRuntime::Compose => {
-                self.ctx.docker.compose().down()
+                self.ctx
+                    .docker
+                    .compose()
+                    .down()
                     .project(&spec.stack_name)
                     .env_file(&spec.env_file)
                     .file(&spec.compose_file_path())
@@ -115,12 +123,13 @@ impl ComposeBuilder {
     async fn deploy_stack(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
         ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel).await?;
         ensure_overlay_network(&self.ctx.docker, RUSTPLOY_NETWORK, cancel).await?;
-        self.ctx.emit(BuilderEvent::Message(format!(
-            "building compose stack {} from {}",
-            spec.stack_name,
-            spec.compose_file_path()
-        )))
-        .await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "building compose stack {} from {}",
+                spec.stack_name,
+                spec.compose_file_path()
+            )))
+            .await;
 
         let compose = self.ctx.docker.compose();
         let build_cmd = compose
@@ -144,7 +153,8 @@ impl ComposeBuilder {
         );
 
         let stacks = self.ctx.docker.stacks();
-        let deploy_cmd = stacks.deploy(&spec.stack_name)
+        let deploy_cmd = stacks
+            .deploy(&spec.stack_name)
             .compose_file(&spec.rendered_stack_file)
             .with_registry_auth()
             .resolve_image(ResolveImage::Never)
@@ -157,7 +167,8 @@ impl ComposeBuilder {
             deploy_cmd;
         };
 
-        self.ctx.apply_cgroup(pipeline)?
+        self.ctx
+            .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
         Ok(())
@@ -168,12 +179,13 @@ impl ComposeBuilder {
         spec: &ComposeSpec,
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!(
-            "docker compose build and up project {} file {}",
-            spec.stack_name,
-            spec.compose_file_path()
-        )))
-        .await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "docker compose build and up project {} file {}",
+                spec.stack_name,
+                spec.compose_file_path()
+            )))
+            .await;
 
         let compose = self.ctx.docker.compose();
         let build_cmd = compose
@@ -198,7 +210,8 @@ impl ComposeBuilder {
             up_cmd;
         };
 
-        self.ctx.apply_cgroup(pipeline)?
+        self.ctx
+            .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await
             .map_err(|e| {
@@ -211,19 +224,29 @@ impl ComposeBuilder {
     async fn cleanup_failed_deploy(&self, spec: &ComposeSpec) {
         match spec.runtime {
             ComposeRuntime::Stack => {
-                if let Err(error) = self.ctx.docker.stacks().remove(&spec.stack_name).run().await {
+                if let Err(error) = self
+                    .ctx
+                    .docker
+                    .stacks()
+                    .remove(&spec.stack_name)
+                    .run()
+                    .await
+                {
                     tracing::warn!(stack = %spec.stack_name, error = %error, "compose stack cleanup failed");
                 }
             }
             ComposeRuntime::Compose => {
-                if let Err(error) = self.ctx.docker.compose().down()
-                        .project(&spec.stack_name)
-                        .env_file(&spec.env_file)
-                        .file(&spec.compose_file_path())
-                        .retry(3)
-                        .run()
-                        .await
-
+                if let Err(error) = self
+                    .ctx
+                    .docker
+                    .compose()
+                    .down()
+                    .project(&spec.stack_name)
+                    .env_file(&spec.env_file)
+                    .file(&spec.compose_file_path())
+                    .retry(3)
+                    .run()
+                    .await
                 {
                     tracing::warn!(compose = %spec.stack_name, error = %error, "compose cleanup failed");
                 }

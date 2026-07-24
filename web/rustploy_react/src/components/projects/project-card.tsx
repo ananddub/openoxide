@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useNavigate} from '@tanstack/react-router';
 import type {components} from '#/types/api.d.ts';
 import {FolderOpen, Calendar, Terminal, MoreVertical, Trash2, Eye} from 'lucide-react';
 import {Button} from '#/components/ui/button';
@@ -19,16 +19,25 @@ type ProjectCardProps = {
 };
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({project, onDelete}) => {
+	const navigate = useNavigate();
+
 	return (
-		<Card className="group overflow-hidden border-border bg-card/40 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:border-primary/20 hover:bg-card/70 flex flex-col justify-between p-4 h-[160px]">
+		<Card 
+			onClick={() => navigate({ to: '/projects/$id', params: { id: String(project.id) } })}
+			className="group overflow-hidden border-border bg-card/40 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:border-primary/20 hover:bg-card/70 flex flex-col justify-between p-4 h-[160px] cursor-pointer"
+		>
 			{/* Top Row: Icon, Title, Description, Actions Switcher */}
 			<div className="flex items-start justify-between gap-3 min-w-0">
 				<div className="flex items-start gap-2.5 min-w-0">
-					<div className="p-2 rounded-lg bg-primary/5 text-primary border border-primary/10 group-hover:bg-primary/10 transition-all shrink-0 mt-0.5">
+					<div 
+						className="p-2 rounded-lg bg-primary/5 text-primary border border-primary/10 group-hover:bg-primary/10 transition-all shrink-0 mt-0.5"
+					>
 						<FolderOpen className="size-4.5" />
 					</div>
 					<div className="min-w-0">
-						<CardTitle className="text-sm font-semibold tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
+						<CardTitle 
+							className="text-sm font-semibold tracking-tight text-foreground truncate group-hover:text-primary transition-colors"
+						>
 							{project.name}
 						</CardTitle>
 						<p className="text-[12px] text-muted-foreground line-clamp-3 mt-1.5 leading-snug">
@@ -43,13 +52,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({project, onDelete}) => 
 							<Button
 								variant="ghost"
 								size="icon"
+								onClick={e => e.stopPropagation()}
 								className="size-7 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md shrink-0 focus-visible:ring-0">
 								<MoreVertical className="size-4" />
 							</Button>
 						}
 					/>
-					<DropdownMenuContent align="end" className="w-32 border border-border bg-popover">
-						<DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs">
+					<DropdownMenuContent align="end" className="w-32 border border-border bg-popover" onClick={e => e.stopPropagation()}>
+						<DropdownMenuItem 
+							onClick={() => navigate({ to: '/projects/$id', params: { id: String(project.id) } })}
+							className="flex items-center gap-2 cursor-pointer text-xs"
+						>
 							<Eye className="size-3.5 text-muted-foreground" />
 							View details
 						</DropdownMenuItem>

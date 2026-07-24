@@ -1,8 +1,9 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    Attribute, FnArg, GenericArgument, ImplItem, Item, ItemFn, ItemImpl, ItemMod, LitStr, PatType,
-    PathArguments, ReturnType, Type, parse_macro_input, spanned::Spanned,
+    Attribute, Expr, FnArg, GenericArgument, Ident, ImplItem, Item, ItemFn, ItemImpl, ItemMod, Lit,
+    LitStr, PatType, PathArguments, ReturnType, Token, Type, parse::Parse, parse::ParseStream,
+    parse_macro_input, spanned::Spanned,
 };
 
 const METHODS: &[&str] = &["get", "post", "put", "delete", "patch", "options", "head"];
@@ -13,12 +14,12 @@ const METHODS: &[&str] = &["get", "post", "put", "delete", "patch", "options", "
 /// `#[patch]`, `#[options]`, and `#[head]`, each with an optional path.
 #[proc_macro_attribute]
 pub fn controller(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let base_path = parse_macro_input!(attr as LitStr);
+    let controller_options = parse_macro_input!(attr as ControllerOptions);
     let item = parse_macro_input!(item as Item);
 
     let expanded = match item {
-        Item::Impl(item_impl) => expand_controller(base_path, item_impl),
-        Item::Mod(item_mod) => expand_controller_module(base_path, item_mod),
+        Item::Impl(item_impl) => expand_controller(controller_options, item_impl),
+        Item::Mod(item_mod) => expand_controller_module(controller_options, item_mod),
         other => Err(syn::Error::new_spanned(
             other,
             "#[controller] must be placed on an inherent impl or inline module",
@@ -49,17 +50,148 @@ route_attribute!(options);
 route_attribute!(head);
 
 fn standalone_route(method: &str, attr: TokenStream, item: TokenStream) -> TokenStream {
-    let path = parse_macro_input!(attr as LitStr);
+    let route_options = parse_macro_input!(attr as RouteOptions);
     let function = parse_macro_input!(item as ItemFn);
-    match expand_standalone_route(method, path, function) {
+    match expand_standalone_route(method, route_options, function) {
         Ok(tokens) => tokens.into(),
         Err(error) => error.to_compile_error().into(),
     }
 }
 
+struct RouteOptions {
+    path: LitStr,
+    sse_body: Option<Type>,
+    docs: Docs,
+}
+
+#[derive(Clone, Default)]
+struct Docs {
+    tag: Option<LitStr>,
+    tag_description: Option<LitStr>,
+    summary: Option<LitStr>,
+    description: Option<LitStr>,
+    request_description: Option<LitStr>,
+    response_description: Option<LitStr>,
+}
+
+struct ControllerOptions {
+    path: LitStr,
+    docs: Docs,
+}
+
+impl ControllerOptions {
+    fn empty() -> Self {
+        Self {
+            path: LitStr::new("", proc_macro2::Span::call_site()),
+            docs: Docs::default(),
+        }
+    }
+}
+
+impl RouteOptions {
+    fn empty() -> Self {
+        Self {
+            path: LitStr::new("", proc_macro2::Span::call_site()),
+            sse_body: None,
+            docs: Docs::default(),
+        }
+    }
+}
+
+impl Parse for ControllerOptions {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut options = ControllerOptions::empty();
+
+        let mut needs_comma = false;
+        if input.peek(LitStr) {
+            options.path = input.parse()?;
+            needs_comma = true;
+        }
+
+        while !input.is_empty() {
+            if needs_comma {
+                input.parse::<Token![,]>()?;
+                if input.is_empty() {
+                    break;
+                }
+            }
+
+            let key: Ident = input.parse()?;
+            input.parse::<Token![=]>()?;
+            parse_docs_option(&mut options.docs, key, input)?;
+            needs_comma = true;
+        }
+
+        Ok(options)
+    }
+}
+
+impl Parse for RouteOptions {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut options = RouteOptions::empty();
+
+        let mut needs_comma = false;
+        if input.peek(LitStr) {
+            options.path = input.parse()?;
+            needs_comma = true;
+        }
+
+        while !input.is_empty() {
+            if needs_comma {
+                input.parse::<Token![,]>()?;
+                if input.is_empty() {
+                    break;
+                }
+            }
+
+            let key: Ident = input.parse()?;
+            input.parse::<Token![=]>()?;
+            if key == "sse" {
+                if options.sse_body.is_some() {
+                    return Err(syn::Error::new_spanned(key, "duplicate `sse` route option"));
+                }
+                options.sse_body = Some(input.parse()?);
+            } else {
+                parse_docs_option(&mut options.docs, key, input)?;
+            }
+            needs_comma = true;
+        }
+
+        Ok(options)
+    }
+}
+
+fn parse_docs_option(docs: &mut Docs, key: Ident, input: ParseStream<'_>) -> syn::Result<()> {
+    let value: LitStr = input.parse()?;
+    match key.to_string().as_str() {
+        "tag" => set_lit(&mut docs.tag, key, value),
+        "tag_description" => set_lit(&mut docs.tag_description, key, value),
+        "summary" => set_lit(&mut docs.summary, key, value),
+        "description" | "docs" => set_lit(&mut docs.description, key, value),
+        "request_description" | "request_docs" => {
+            set_lit(&mut docs.request_description, key, value)
+        }
+        "response_description" | "response_docs" => {
+            set_lit(&mut docs.response_description, key, value)
+        }
+        _ => Err(syn::Error::new_spanned(
+            key,
+            "unsupported route option; expected `sse = Type`, `tag`, `summary`, `description`, `request_description`, or `response_description`",
+        )),
+    }
+}
+
+fn set_lit(slot: &mut Option<LitStr>, key: Ident, value: LitStr) -> syn::Result<()> {
+    if slot.is_some() {
+        return Err(syn::Error::new_spanned(key, "duplicate route option"));
+    }
+    *slot = Some(value);
+    Ok(())
+}
+
 fn expand_standalone_route(
     method: &str,
-    path: LitStr,
+    route_options: RouteOptions,
     function: ItemFn,
 ) -> syn::Result<proc_macro2::TokenStream> {
     if function.sig.asyncness.is_none() {
@@ -80,8 +212,10 @@ fn expand_standalone_route(
     let method = format_ident!("{method}");
     let method_name = method.to_string().to_ascii_uppercase();
     let factory = format_ident!("__auto_route_factory_{}", handler);
-    let path = LitStr::new(&join_paths("", &path.value()), path.span());
-    let tag = openapi_tag(&path.value());
+    let path = LitStr::new(
+        &join_paths("", &route_options.path.value()),
+        route_options.path.span(),
+    );
     let argument_types = function
         .sig
         .inputs
@@ -98,8 +232,20 @@ fn expand_standalone_route(
     let params = param_descriptor_tokens(&params);
     let request_schema =
         request_schema_descriptor_tokens(infer_request_body(&argument_types).as_ref());
-    let response_schema =
-        response_schema_descriptor_tokens(infer_response_body(&function.sig.output).as_ref());
+    let docs = merged_docs(&route_options.docs, doc_comment_summary(&function.attrs));
+    let tag = docs
+        .tag
+        .unwrap_or_else(|| LitStr::new(&openapi_tag(&path.value()), path.span()));
+    let tag_description = option_lit_tokens(docs.tag_description.as_ref());
+    let summary = option_lit_tokens(docs.summary.as_ref());
+    let description = option_lit_tokens(docs.description.as_ref());
+    let request_description = option_lit_tokens(docs.request_description.as_ref());
+    let response_description = option_lit_tokens(docs.response_description.as_ref());
+    let response_body = route_options
+        .sse_body
+        .map(|ty| ResponseBody::Sse(Some(ty)))
+        .or_else(|| infer_response_body(&function.sig.output));
+    let response_schema = response_schema_descriptor_tokens(response_body.as_ref());
 
     Ok(quote! {
         #function
@@ -132,8 +278,13 @@ fn expand_standalone_route(
                 #path,
                 #operation_id,
                 #tag,
+                #tag_description,
+                #summary,
+                #description,
                 #params,
+                #request_description,
                 #request_schema,
+                #response_description,
                 #response_schema,
             )
         }
@@ -144,6 +295,7 @@ struct Route {
     method: syn::Ident,
     handler: syn::Ident,
     path: LitStr,
+    docs: Docs,
     argument_types: Vec<Type>,
     request_body: Option<RequestBody>,
     response_body: Option<ResponseBody>,
@@ -154,6 +306,7 @@ struct ModuleRoute {
     method: syn::Ident,
     handler: syn::Ident,
     path: LitStr,
+    docs: Docs,
     request_body: Option<RequestBody>,
     response_body: Option<ResponseBody>,
     params: Vec<OpenApiParam>,
@@ -174,7 +327,7 @@ enum RequestContent {
 #[derive(Clone)]
 enum ResponseBody {
     Json(Type),
-    Sse,
+    Sse(Option<Type>),
 }
 
 struct OpenApiParam {
@@ -190,10 +343,14 @@ enum ParamSource {
 }
 
 fn expand_controller_module(
-    base_path: LitStr,
+    controller_options: ControllerOptions,
     mut item_mod: ItemMod,
 ) -> syn::Result<proc_macro2::TokenStream> {
     let module_ident = item_mod.ident.clone();
+    let controller_docs = merged_docs(
+        &controller_options.docs,
+        doc_comment_summary(&item_mod.attrs),
+    );
     let Some((_, items)) = &mut item_mod.content else {
         return Err(syn::Error::new_spanned(
             &item_mod,
@@ -228,18 +385,23 @@ fn expand_controller_module(
         };
         validate_route_function(function, "module route functions")?;
         let argument_types = route_argument_types(function.sig.inputs.iter())?;
-        let route_path = marker_path(&attribute)?;
+        let route_options = marker_options(&attribute)?;
+        let route_path = route_options.path.value();
         routes.push(ModuleRoute {
             method,
             handler: function.sig.ident.clone(),
             path: LitStr::new(
-                &join_paths(&base_path.value(), &route_path),
+                &join_paths(&controller_options.path.value(), &route_path),
                 attribute.span(),
             ),
+            docs: merged_docs(&route_options.docs, doc_comment_summary(&function.attrs)),
             request_body: infer_request_body(&argument_types),
-            response_body: infer_response_body(&function.sig.output),
+            response_body: route_options
+                .sse_body
+                .map(|ty| ResponseBody::Sse(Some(ty)))
+                .or_else(|| infer_response_body(&function.sig.output)),
             params: infer_params(
-                &join_paths(&base_path.value(), &route_path),
+                &join_paths(&controller_options.path.value(), &route_path),
                 &argument_types,
             ),
         });
@@ -292,7 +454,25 @@ fn expand_controller_module(
             let method = route.method.to_string().to_ascii_uppercase();
             let path = &route.path;
             let operation_id = format!("{}::{}", module_ident, route.handler);
-            let tag = openapi_tag(&path.value());
+            let tag = route
+                .docs
+                .tag
+                .as_ref()
+                .or(controller_docs.tag.as_ref())
+                .cloned()
+                .unwrap_or_else(|| LitStr::new(&openapi_tag(&path.value()), path.span()));
+            let tag_description = option_lit_tokens(
+                route
+                    .docs
+                    .tag_description
+                    .as_ref()
+                    .or(controller_docs.tag_description.as_ref())
+                    .or(controller_docs.description.as_ref()),
+            );
+            let summary = option_lit_tokens(route.docs.summary.as_ref());
+            let description = option_lit_tokens(route.docs.description.as_ref());
+            let request_description = option_lit_tokens(route.docs.request_description.as_ref());
+            let response_description = option_lit_tokens(route.docs.response_description.as_ref());
             let params = param_descriptor_tokens(&route.params);
             let request_schema = request_schema_descriptor_tokens(route.request_body.as_ref());
             let response_schema = response_schema_descriptor_tokens(route.response_body.as_ref());
@@ -303,8 +483,13 @@ fn expand_controller_module(
                         #path,
                         #operation_id,
                         #tag,
+                        #tag_description,
+                        #summary,
+                        #description,
                         #params,
+                        #request_description,
                         #request_schema,
+                        #response_description,
                         #response_schema,
                     )
                 }
@@ -320,7 +505,7 @@ fn expand_controller_module(
 }
 
 fn expand_controller(
-    base_path: LitStr,
+    controller_options: ControllerOptions,
     mut item_impl: ItemImpl,
 ) -> syn::Result<proc_macro2::TokenStream> {
     if item_impl.trait_.is_some() {
@@ -337,6 +522,10 @@ fn expand_controller(
     }
 
     let self_ty = item_impl.self_ty.as_ref().clone();
+    let controller_docs = merged_docs(
+        &controller_options.docs,
+        doc_comment_summary(&item_impl.attrs),
+    );
     let has_singleton = item_impl.attrs.iter().any(|attribute| {
         attribute
             .path()
@@ -396,15 +585,20 @@ fn expand_controller(
                 )),
             })
             .collect::<syn::Result<Vec<_>>>()?;
-        let route_path = marker_path(&attribute)?;
-        let full_path = join_paths(&base_path.value(), &route_path);
+        let route_options = marker_options(&attribute)?;
+        let route_path = route_options.path.value();
+        let full_path = join_paths(&controller_options.path.value(), &route_path);
 
         routes.push(Route {
             method,
             handler: function.sig.ident.clone(),
             path: LitStr::new(&full_path, attribute.span()),
+            docs: merged_docs(&route_options.docs, doc_comment_summary(&function.attrs)),
             request_body: infer_request_body(&argument_types),
-            response_body: infer_response_body(&function.sig.output),
+            response_body: route_options
+                .sse_body
+                .map(|ty| ResponseBody::Sse(Some(ty)))
+                .or_else(|| infer_response_body(&function.sig.output)),
             params: infer_params(&full_path, &argument_types),
             argument_types,
         });
@@ -455,7 +649,25 @@ fn expand_controller(
         let path = &route.path;
         let handler = &route.handler;
         let operation_id = format!("{type_ident}::{handler}");
-        let tag = openapi_tag(&path.value());
+        let tag = route
+            .docs
+            .tag
+            .as_ref()
+            .or(controller_docs.tag.as_ref())
+            .cloned()
+            .unwrap_or_else(|| LitStr::new(&openapi_tag(&path.value()), path.span()));
+        let tag_description = option_lit_tokens(
+            route
+                .docs
+                .tag_description
+                .as_ref()
+                .or(controller_docs.tag_description.as_ref())
+                .or(controller_docs.description.as_ref()),
+        );
+        let summary = option_lit_tokens(route.docs.summary.as_ref());
+        let description = option_lit_tokens(route.docs.description.as_ref());
+        let request_description = option_lit_tokens(route.docs.request_description.as_ref());
+        let response_description = option_lit_tokens(route.docs.response_description.as_ref());
         let params = param_descriptor_tokens(&route.params);
         let request_schema = request_schema_descriptor_tokens(route.request_body.as_ref());
         let response_schema = response_schema_descriptor_tokens(route.response_body.as_ref());
@@ -466,8 +678,13 @@ fn expand_controller(
                     #path,
                     #operation_id,
                     #tag,
+                    #tag_description,
+                    #summary,
+                    #description,
                     #params,
+                    #request_description,
                     #request_schema,
+                    #response_description,
                     #response_schema,
                 )
             }
@@ -554,7 +771,7 @@ fn infer_response_body(output: &ReturnType) -> Option<ResponseBody> {
 
 fn response_body_type(ty: &Type) -> Option<ResponseBody> {
     if is_sse_response_type(ty) {
-        return Some(ResponseBody::Sse);
+        return Some(ResponseBody::Sse(None));
     }
 
     if let Some(inner) = wrapper_inner_type(ty, &["Json"]) {
@@ -710,7 +927,10 @@ fn response_schema_descriptor_tokens(body: Option<&ResponseBody>) -> proc_macro2
         Some(ResponseBody::Json(ty)) => quote! {
             ::std::option::Option::Some(::auto_route::OpenApiSchemaDescriptor::json::<#ty>())
         },
-        Some(ResponseBody::Sse) => quote! {
+        Some(ResponseBody::Sse(Some(ty))) => quote! {
+            ::std::option::Option::Some(::auto_route::OpenApiSchemaDescriptor::sse_json::<#ty>())
+        },
+        Some(ResponseBody::Sse(None)) => quote! {
             ::std::option::Option::Some(::auto_route::OpenApiSchemaDescriptor::sse())
         },
         None => quote!(::std::option::Option::None),
@@ -746,17 +966,58 @@ fn validate_route_signature(signature: &syn::Signature, label: &str) -> syn::Res
     Ok(())
 }
 
-fn marker_path(attribute: &Attribute) -> syn::Result<String> {
-    attribute
-        .parse_args::<LitStr>()
-        .map(|path| path.value())
-        .or_else(|error| {
-            if matches!(&attribute.meta, syn::Meta::Path(_)) {
-                Ok(String::new())
-            } else {
-                Err(error)
+fn marker_options(attribute: &Attribute) -> syn::Result<RouteOptions> {
+    attribute.parse_args::<RouteOptions>().or_else(|error| {
+        if matches!(&attribute.meta, syn::Meta::Path(_)) {
+            Ok(RouteOptions::empty())
+        } else {
+            Err(error)
+        }
+    })
+}
+
+fn merged_docs(explicit: &Docs, fallback_summary: Option<LitStr>) -> Docs {
+    let mut docs = explicit.clone();
+    if docs.summary.is_none() {
+        docs.summary = fallback_summary;
+    }
+    docs
+}
+
+fn option_lit_tokens(value: Option<&LitStr>) -> proc_macro2::TokenStream {
+    match value {
+        Some(value) => quote!(::std::option::Option::Some(#value)),
+        None => quote!(::std::option::Option::None),
+    }
+}
+
+fn doc_comment_summary(attributes: &[Attribute]) -> Option<LitStr> {
+    let mut lines = attributes
+        .iter()
+        .filter_map(|attribute| {
+            if !attribute.path().is_ident("doc") {
+                return None;
             }
+            let syn::Meta::NameValue(name_value) = &attribute.meta else {
+                return None;
+            };
+            let Expr::Lit(expr_lit) = &name_value.value else {
+                return None;
+            };
+            let Lit::Str(value) = &expr_lit.lit else {
+                return None;
+            };
+            Some(value.value().trim().to_owned())
         })
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>();
+
+    if lines.is_empty() {
+        return None;
+    }
+
+    let summary = lines.remove(0);
+    Some(LitStr::new(&summary, proc_macro2::Span::call_site()))
 }
 
 fn route_method(attribute: &Attribute) -> Option<syn::Ident> {

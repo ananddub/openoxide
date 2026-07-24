@@ -1,6 +1,6 @@
+use crate::db::models::registries::Registry;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::db::models::registries::Registry;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateRegistryDto {

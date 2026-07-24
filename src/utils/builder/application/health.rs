@@ -16,7 +16,9 @@ impl ApplicationBuilder {
         let deadline = Instant::now() + self.ctx.health_timeout;
         loop {
             self.ctx.cancelled(cancel)?;
-            let health_result = self.ctx .docker
+            let health_result = self
+                .ctx
+                .docker
                 .services()
                 .ps(spec.service_name())
                 .filter(TaskFilter::DesiredState(TaskDesiredState::Running))
@@ -36,9 +38,10 @@ impl ApplicationBuilder {
                 }
                 Err(error) => return Err(error),
             };
-            if rows.iter().any(|row| {
-                row.current_state.starts_with("Running")
-            }) {
+            if rows
+                .iter()
+                .any(|row| row.current_state.starts_with("Running"))
+            {
                 return Ok(());
             }
             if let Some(error) = rows

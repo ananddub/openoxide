@@ -1,7 +1,9 @@
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, poem_openapi::Enum)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, poem_openapi::Enum,
+)]
 #[sqlx(rename_all = "lowercase")]
 #[oai(rename_all = "lowercase")]
 pub enum DatabaseKind {

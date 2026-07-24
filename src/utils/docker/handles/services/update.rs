@@ -1,10 +1,4 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult,
-    },
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 // Update
 pub struct ServiceUpdateBuilder<'a> {
@@ -15,20 +9,56 @@ pub struct ServiceUpdateBuilder<'a> {
 
 impl<'a> ServiceUpdateBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "update"]), name: name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "update"]),
+            name: name.into(),
+        }
     }
 
-    pub fn image(mut self, v: impl AsRef<str>) -> Self { self.args.pair("--image", v); self }
-    pub fn replicas(mut self, n: u32) -> Self { self.args.pair("--replicas", n.to_string()); self }
-    pub fn force(mut self) -> Self { self.args.flag("--force"); self }
-    pub fn label_add(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self { self.args.pair("--label-add", format!("{}={}", k.as_ref(), v.as_ref())); self }
-    pub fn label_rm(mut self, k: impl AsRef<str>) -> Self { self.args.pair("--label-rm", k); self }
-    pub fn env_add(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self { self.args.pair("--env-add", format!("{}={}", k.as_ref(), v.as_ref())); self }
-    pub fn env_rm(mut self, k: impl AsRef<str>) -> Self { self.args.pair("--env-rm", k); self }
-    pub fn limit_memory(mut self, v: impl AsRef<str>) -> Self { self.args.pair("--limit-memory", v); self }
-    pub fn update_parallelism(mut self, n: u32) -> Self { self.args.pair("--update-parallelism", n.to_string()); self }
-    pub fn update_delay(mut self, v: impl AsRef<str>) -> Self { self.args.pair("--update-delay", v); self }
-    
+    pub fn image(mut self, v: impl AsRef<str>) -> Self {
+        self.args.pair("--image", v);
+        self
+    }
+    pub fn replicas(mut self, n: u32) -> Self {
+        self.args.pair("--replicas", n.to_string());
+        self
+    }
+    pub fn force(mut self) -> Self {
+        self.args.flag("--force");
+        self
+    }
+    pub fn label_add(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
+        self.args
+            .pair("--label-add", format!("{}={}", k.as_ref(), v.as_ref()));
+        self
+    }
+    pub fn label_rm(mut self, k: impl AsRef<str>) -> Self {
+        self.args.pair("--label-rm", k);
+        self
+    }
+    pub fn env_add(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
+        self.args
+            .pair("--env-add", format!("{}={}", k.as_ref(), v.as_ref()));
+        self
+    }
+    pub fn env_rm(mut self, k: impl AsRef<str>) -> Self {
+        self.args.pair("--env-rm", k);
+        self
+    }
+    pub fn limit_memory(mut self, v: impl AsRef<str>) -> Self {
+        self.args.pair("--limit-memory", v);
+        self
+    }
+    pub fn update_parallelism(mut self, n: u32) -> Self {
+        self.args.pair("--update-parallelism", n.to_string());
+        self
+    }
+    pub fn update_delay(mut self, v: impl AsRef<str>) -> Self {
+        self.args.pair("--update-delay", v);
+        self
+    }
+
     pub fn arg(mut self, v: impl Into<String>) -> Self {
         self.args.push(v);
         self
@@ -49,7 +79,10 @@ pub struct ServiceScaleBuilder<'a> {
 
 impl<'a> ServiceScaleBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "scale"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "scale"]),
+        }
     }
 
     pub fn service(mut self, name: impl AsRef<str>, replicas: u32) -> Self {
@@ -72,7 +105,11 @@ pub struct ServiceRollbackBuilder<'a> {
 
 impl<'a> ServiceRollbackBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "rollback"]), name: name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "rollback"]),
+            name: name.into(),
+        }
     }
 
     pub async fn run(mut self) -> DockerResult<DockerOutput> {

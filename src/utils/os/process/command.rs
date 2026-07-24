@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct ProcessCommandBuilder<'a> {
@@ -18,7 +18,11 @@ impl<'a> ProcessCommandBuilder<'a> {
             is_shell: false,
         }
     }
-    pub(crate) fn new_shell(executor: &'a CommandExecutor, shell_cmd: &str, args: Vec<String>) -> Self {
+    pub(crate) fn new_shell(
+        executor: &'a CommandExecutor,
+        shell_cmd: &str,
+        args: Vec<String>,
+    ) -> Self {
         Self {
             executor,
             cmd: shell_cmd.to_string(),

@@ -721,6 +721,9 @@ export const projectControllerPatch = <ThrowOnError extends boolean = false>(opt
     }
 });
 
+/**
+ * Generate a domain for a given app name based on the server IP.
+ */
 export const publicGenerateDomain = <ThrowOnError extends boolean = false>(options: Options<PublicGenerateDomainData, ThrowOnError>): RequestResult<PublicGenerateDomainResponses, unknown, ThrowOnError> => (options.client ?? client).get<PublicGenerateDomainResponses, unknown, ThrowOnError>({ url: '/public/domain/generate', ...options });
 
 export const publicListBranches = <ThrowOnError extends boolean = false>(options: Options<PublicListBranchesData, ThrowOnError>): RequestResult<PublicListBranchesResponses, unknown, ThrowOnError> => (options.client ?? client).get<PublicListBranchesResponses, unknown, ThrowOnError>({ url: '/public/git/list_branches', ...options });

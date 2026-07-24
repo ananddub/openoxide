@@ -1,15 +1,9 @@
-use crate::utils::{
-    docker::{
-        client::DockerCli,
-        DockerResult,
-    },
-};
+use crate::utils::docker::{DockerResult, client::DockerCli};
 
-
-pub use update::NodeUpdateBuilder;
-pub use lifecycle::{NodePromoteBuilder, NodeDemoteBuilder, NodeRemoveBuilder};
+pub use lifecycle::{NodeDemoteBuilder, NodePromoteBuilder, NodeRemoveBuilder};
 pub use list::NodeListBuilder;
 pub use ps::NodePsBuilder;
+pub use update::NodeUpdateBuilder;
 
 // ── NodesHandle ─────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct FileWriteBuilder<'a> {
@@ -10,7 +10,12 @@ pub struct FileWriteBuilder<'a> {
 }
 
 impl<'a> FileWriteBuilder<'a> {
-    pub fn new(executor: &'a CommandExecutor, path: String, content: impl IntoCommand, append: bool) -> Self {
+    pub fn new(
+        executor: &'a CommandExecutor,
+        path: String,
+        content: impl IntoCommand,
+        append: bool,
+    ) -> Self {
         Self {
             executor,
             path,
@@ -26,7 +31,9 @@ impl<'a> FileWriteBuilder<'a> {
     pub async fn run(self) -> ExecResult<ExecOutput> {
         let op = if self.append { ">>" } else { ">" };
         let cmd = format!("echo \"$1\" {} \"$2\"", op);
-        self.executor.run("sh", &["-c", &cmd, "dummy", &self.content, &self.path]).await
+        self.executor
+            .run("sh", &["-c", &cmd, "dummy", &self.content, &self.path])
+            .await
     }
 }
 

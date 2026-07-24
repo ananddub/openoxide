@@ -34,7 +34,13 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-1">
 				{items.map(item => {
-					const isActive = currentPath === item.to;
+					const isActive = (() => {
+						if (!item.to) return false;
+						if (item.to === '/') return currentPath === '/';
+						if (item.to === '/settings') return currentPath === '/settings';
+						if (item.to === '/settings/server' || item.to === '/settings/servers') return currentPath === item.to;
+						return currentPath.startsWith(item.to);
+					})();
 					return (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton

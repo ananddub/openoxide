@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use auto_di::singleton;
 use crate::{
     api::dto::certificate::{CreateCertificateDto, PatchCertificateDto},
     db::models::certificates::Certificate,
     db::repository::certificates::CertificateRepository,
 };
+use auto_di::singleton;
+use std::sync::Arc;
 
 pub struct CertificateService {
     repo_cert: Arc<CertificateRepository>,

@@ -1,4 +1,3 @@
-
 pub use bitbucket::BitbucketClient;
 pub use custom::CustomClient;
 pub use gitea::GiteaClient;

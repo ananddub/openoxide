@@ -1,8 +1,8 @@
-use crate::utils::docker::{DockerCli, DockerError};
+use super::{destination::S3Destination, dumper::DatabaseDumper};
 use crate::utils::docker::query::filter::{ContainerFilter, ContainerStatus};
-use crate::utils::exec::{CommandExecutor, ExecError, ExecResult, ExecOutput};
+use crate::utils::docker::{DockerCli, DockerError};
+use crate::utils::exec::{CommandExecutor, ExecError, ExecOutput, ExecResult};
 use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
-use super::{dumper::DatabaseDumper, destination::S3Destination};
 use tokio_util::sync::CancellationToken;
 
 pub struct BackupRunner<'a> {
@@ -17,7 +17,11 @@ impl<'a> BackupRunner<'a> {
         dumper: &'a DatabaseDumper,
         destination: &'a S3Destination,
     ) -> Self {
-        Self { executor, dumper, destination }
+        Self {
+            executor,
+            dumper,
+            destination,
+        }
     }
 
     fn docker(&self) -> DockerCli {
@@ -29,7 +33,8 @@ impl<'a> BackupRunner<'a> {
 
         let label_key = self.dumper.container_label();
 
-        let containers = self.docker()
+        let containers = self
+            .docker()
             .containers()
             .ps()
             .filter(ContainerFilter::Status(ContainerStatus::Running))
@@ -41,10 +46,13 @@ impl<'a> BackupRunner<'a> {
             .await
             .map_err(docker_to_exec_error)?;
 
-        let container = containers.into_iter().next().ok_or_else(|| ExecError::CommandFailed {
-            code: Some(1),
-            stderr: format!("no running container found for service '{service_name}'"),
-        })?;
+        let container = containers
+            .into_iter()
+            .next()
+            .ok_or_else(|| ExecError::CommandFailed {
+                code: Some(1),
+                stderr: format!("no running container found for service '{service_name}'"),
+            })?;
 
         Ok(container.id)
     }
@@ -52,7 +60,8 @@ impl<'a> BackupRunner<'a> {
     async fn verify_connection(&self, container_id: &str) -> ExecResult<()> {
         let check_cmd = self.dumper.connection_check_command();
 
-        let out = self.docker()
+        let out = self
+            .docker()
             .containers()
             .exec(container_id)
             .interactive()
@@ -79,11 +88,10 @@ impl<'a> BackupRunner<'a> {
         self.verify_connection(&container_id).await?;
 
         let inner_cmd = self.dumper.inner_dump_command();
-        
+
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let mut builder = RcloneBuilder::new(RcloneCommand::Rcat)
-            .destination(rclone_target);
+        let mut builder = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
 
         if let Some(ref extra) = self.destination.additional_flags {
             for flag in extra.split_whitespace() {
@@ -95,7 +103,7 @@ impl<'a> BackupRunner<'a> {
 
         let pipeline = format!(
             "set -eo pipefail; docker exec -i {id} sh -c {inner} | {rclone}",
-            id    = container_id,
+            id = container_id,
             inner = shell_single_quote(&inner_cmd),
             rclone = rclone_cmd,
         );
@@ -118,8 +126,7 @@ impl<'a> BackupRunner<'a> {
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let mut builder = RcloneBuilder::new(RcloneCommand::Cat)
-            .source(rclone_target);
+        let mut builder = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
 
         if let Some(ref extra) = self.destination.additional_flags {
             for flag in extra.split_whitespace() {
@@ -132,7 +139,7 @@ impl<'a> BackupRunner<'a> {
         let pipeline = format!(
             "set -eo pipefail; {rclone} | docker exec -i {id} sh -c {inner}",
             rclone = rclone_cmd,
-            id    = container_id,
+            id = container_id,
             inner = shell_single_quote(&inner_cmd),
         );
 
@@ -143,7 +150,10 @@ impl<'a> BackupRunner<'a> {
 }
 
 fn docker_to_exec_error(e: DockerError) -> ExecError {
-    ExecError::CommandFailed { code: None, stderr: e.to_string() }
+    ExecError::CommandFailed {
+        code: None,
+        stderr: e.to_string(),
+    }
 }
 
 fn shell_single_quote(s: &str) -> String {

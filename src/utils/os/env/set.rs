@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 pub struct EnvSetBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -8,7 +8,11 @@ pub struct EnvSetBuilder<'a> {
 }
 
 impl<'a> EnvSetBuilder<'a> {
-    pub fn new(executor: &'a CommandExecutor, key: impl IntoCommand, val: impl IntoCommand) -> Self {
+    pub fn new(
+        executor: &'a CommandExecutor,
+        key: impl IntoCommand,
+        val: impl IntoCommand,
+    ) -> Self {
         Self {
             executor,
             key: key.build_str(),
@@ -16,7 +20,9 @@ impl<'a> EnvSetBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("sh", &["-c", &format!("export {}={}", self.key, self.val)]).await
+        self.executor
+            .run("sh", &["-c", &format!("export {}={}", self.key, self.val)])
+            .await
     }
 }
 

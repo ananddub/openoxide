@@ -73,7 +73,8 @@ impl<'a> NixpacksBuildBuilder<'a> {
     }
 
     pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
-        self.args.pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
+        self.args
+            .pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
         self
     }
 
@@ -165,7 +166,9 @@ impl<'a> NixpacksBuildBuilder<'a> {
     }
 
     pub async fn run(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
-        self.executor.run_cancelled("nixpacks", self.args.build(), cancel).await
+        self.executor
+            .run_cancelled("nixpacks", self.args.build(), cancel)
+            .await
     }
 
     pub async fn run_in_cgroup(

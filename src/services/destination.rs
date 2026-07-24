@@ -1,12 +1,12 @@
-use std::sync::Arc;
-use auto_di::singleton;
+use crate::utils::exec::{CommandExecutor, LocalExecutor};
+use crate::utils::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
 use crate::{
     api::dto::destination::{CreateDestinationDto, PatchDestinationDto},
     db::models::destinations::Destination,
     repository::destinations::DestinationRepository,
 };
-use crate::utils::exec::{CommandExecutor, LocalExecutor};
-use crate::utils::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
+use auto_di::singleton;
+use std::sync::Arc;
 
 pub struct DestinationService {
     repo_dest: Arc<DestinationRepository>,
@@ -46,29 +46,54 @@ impl DestinationService {
             updated_at: 0,
         };
         let new_id = self.repo_dest.create(&item).await?;
-        self.repo_dest.get_by_id(new_id).await?.ok_or(sqlx::Error::RowNotFound)
+        self.repo_dest
+            .get_by_id(new_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)
     }
 
     pub async fn patch(&self, id: &str, input: PatchDestinationDto) -> sqlx::Result<Destination> {
         let mut current = self.get_by_id(id).await?;
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
 
-        if let Some(v) = input.name { current.name = v; }
-        if let Some(v) = input.provider { current.provider = v; }
-        if let Some(v) = input.access_key { current.access_key = v; }
-        if let Some(v) = input.secret_access_key { current.secret_access_key = v; }
-        if let Some(v) = input.bucket { current.bucket = v; }
-        if let Some(v) = input.region { current.region = v; }
-        if let Some(v) = input.endpoint { current.endpoint = v; }
-        if let Some(v) = input.additional_flags { current.additional_flags = Some(v); }
+        if let Some(v) = input.name {
+            current.name = v;
+        }
+        if let Some(v) = input.provider {
+            current.provider = v;
+        }
+        if let Some(v) = input.access_key {
+            current.access_key = v;
+        }
+        if let Some(v) = input.secret_access_key {
+            current.secret_access_key = v;
+        }
+        if let Some(v) = input.bucket {
+            current.bucket = v;
+        }
+        if let Some(v) = input.region {
+            current.region = v;
+        }
+        if let Some(v) = input.endpoint {
+            current.endpoint = v;
+        }
+        if let Some(v) = input.additional_flags {
+            current.additional_flags = Some(v);
+        }
 
         self.repo_dest.update(id_i64, &current).await?;
-        self.repo_dest.get_by_id(id_i64).await?.ok_or(sqlx::Error::RowNotFound)
+        self.repo_dest
+            .get_by_id(id_i64)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)
     }
 
     pub async fn delete(&self, id: &str) -> sqlx::Result<()> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        self.repo_dest.get_by_id(id_i64).await?.ok_or(sqlx::Error::RowNotFound)?;
+        self.repo_dest
+            .get_by_id(id_i64)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         self.repo_dest.delete(id_i64).await
     }
 
@@ -82,7 +107,8 @@ impl DestinationService {
             &dest.region,
             &dest.endpoint,
             dest.additional_flags.as_deref(),
-        ).await
+        )
+        .await
     }
 
     pub async fn test_connection_raw(
@@ -95,7 +121,6 @@ impl DestinationService {
         endpoint: &str,
         additional_flags: Option<&str>,
     ) -> Result<(), String> {
-
         let target = RcloneTarget::S3 {
             provider: provider.to_string(),
             access_key_id: access_key.to_string(),
@@ -121,7 +146,10 @@ impl DestinationService {
         }
 
         let executor = CommandExecutor::Local(LocalExecutor::new());
-        let out = builder.execute(&executor).await.map_err(|e| e.to_string())?;
+        let out = builder
+            .execute(&executor)
+            .await
+            .map_err(|e| e.to_string())?;
 
         if !out.success() {
             return Err(format!("Connection test failed: {}", out.stderr));

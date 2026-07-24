@@ -7,8 +7,8 @@ pub mod chown;
 pub mod delete;
 pub mod exists;
 pub mod read;
-pub mod write;
 pub mod replace;
+pub mod write;
 
 pub use builder::FileBuilder;
 pub use chmod::FileChmodBuilder;
@@ -16,8 +16,8 @@ pub use chown::FileChownBuilder;
 pub use delete::FileDeleteBuilder;
 pub use exists::FileExistsBuilder;
 pub use read::FileReadBuilder;
-pub use write::FileWriteBuilder;
 pub use replace::FileReplaceBuilder;
+pub use write::FileWriteBuilder;
 
 pub struct FileCli<'a> {
     pub(crate) executor: &'a CommandExecutor,

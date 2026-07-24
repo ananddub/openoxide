@@ -1,9 +1,6 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult, DockerExitStatus, DockerStreamEvent,
-    },
+use crate::utils::docker::{
+    DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent, client::DockerCli,
+    core::ArgBuilder,
 };
 use tokio::sync::mpsc;
 
@@ -15,18 +12,31 @@ pub struct ServiceLogsBuilder<'a> {
 
 impl<'a> ServiceLogsBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "logs"]), name: name.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "logs"]),
+            name: name.into(),
+        }
     }
 
-    pub fn follow(mut self) -> Self { self.args.flag("--follow"); self }
-    pub fn tail(mut self, n: impl AsRef<str>) -> Self { self.args.pair("--tail", n); self }
+    pub fn follow(mut self) -> Self {
+        self.args.flag("--follow");
+        self
+    }
+    pub fn tail(mut self, n: impl AsRef<str>) -> Self {
+        self.args.pair("--tail", n);
+        self
+    }
 
     pub async fn run(mut self) -> DockerResult<DockerOutput> {
         self.args.push(&self.name);
         self.cli.execute(&self.args).await
     }
-    
-    pub async fn stream(mut self, sender: mpsc::Sender<DockerStreamEvent>) -> DockerResult<DockerExitStatus> {
+
+    pub async fn stream(
+        mut self,
+        sender: mpsc::Sender<DockerStreamEvent>,
+    ) -> DockerResult<DockerExitStatus> {
         self.args.push(&self.name);
         self.cli.execute_stream(&self.args, sender).await
     }

@@ -1,10 +1,4 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult,
-    },
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct SecretListBuilder<'a> {
     cli: &'a DockerCli,
@@ -13,12 +7,23 @@ pub struct SecretListBuilder<'a> {
 
 impl<'a> SecretListBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["secret", "ls"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["secret", "ls"]),
+        }
     }
 
-    pub fn filter(mut self, f: crate::utils::docker::query::filter::SecretFilter) -> Self { self.args.filter(f); self }
-    pub fn filters(mut self, fs: impl IntoIterator<Item = crate::utils::docker::query::filter::SecretFilter>) -> Self {
-        for f in fs { self.args.filter(f); }
+    pub fn filter(mut self, f: crate::utils::docker::query::filter::SecretFilter) -> Self {
+        self.args.filter(f);
+        self
+    }
+    pub fn filters(
+        mut self,
+        fs: impl IntoIterator<Item = crate::utils::docker::query::filter::SecretFilter>,
+    ) -> Self {
+        for f in fs {
+            self.args.filter(f);
+        }
         self
     }
 

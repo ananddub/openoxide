@@ -1,6 +1,6 @@
+use super::{ServiceActionBuilder, ServiceLogsBuilder};
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
-use super::{ServiceActionBuilder, ServiceLogsBuilder};
 
 pub struct ServiceBuilder<'a> {
     pub(crate) executor: &'a CommandExecutor,

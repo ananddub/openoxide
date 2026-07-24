@@ -1,8 +1,8 @@
 use super::*;
 use crate::utils::docker::{
+    DockerCli,
     core::{Cpu, Memory, Mount, Platform, Port},
     query::filter::{ContainerFilter, ContainerStatus},
-    DockerCli,
 };
 
 fn cli() -> DockerCli {

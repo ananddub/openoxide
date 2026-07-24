@@ -1,7 +1,7 @@
 use auto_di::resolve;
 
+use super::{DatabaseKind, DatabaseOperation, DatabaseOperationResult, DatabaseService};
 use crate::utils::builder::queue::BuilderQueue;
-use super::{DatabaseService, DatabaseKind, DatabaseOperation, DatabaseOperationResult};
 
 impl DatabaseService {
     pub async fn run_operation(
@@ -44,22 +44,37 @@ impl DatabaseService {
         };
 
         let log_path = format!("pending-db-{}", id);
-        let deployment_id = self.repo_deploy.create_queued_database_deployment(
-            operation.title().to_string(),
-            Some(format!("{} requested for database {}", operation.as_str(), name)),
-            log_path,
-            operation.as_str().to_string(),
-            id,
-            kind_str.to_string(),
-            server_id,
-        )
-        .await?;
+        let deployment_id = self
+            .repo_deploy
+            .create_queued_database_deployment(
+                operation.title().to_string(),
+                Some(format!(
+                    "{} requested for database {}",
+                    operation.as_str(),
+                    name
+                )),
+                log_path,
+                operation.as_str().to_string(),
+                id,
+                kind_str.to_string(),
+                server_id,
+            )
+            .await?;
 
         let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
-        self.repo_deploy.update_log_path(deployment_id, &log_path).await?;
+        self.repo_deploy
+            .update_log_path(deployment_id, &log_path)
+            .await?;
 
-        if let Ok(mut log) = crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await {
-            let _ = log.write_line(&format!("[QUEUED] database deployment queued for {}", operation.as_str())).await;
+        if let Ok(mut log) =
+            crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await
+        {
+            let _ = log
+                .write_line(&format!(
+                    "[QUEUED] database deployment queued for {}",
+                    operation.as_str()
+                ))
+                .await;
         }
 
         resolve::<BuilderQueue>()

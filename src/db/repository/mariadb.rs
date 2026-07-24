@@ -1,8 +1,8 @@
 use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
-use crate::services::database::{DatabaseRecord, DatabaseKind};
+use crate::services::database::{DatabaseKind, DatabaseRecord};
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct MariadbRepository {
     pool: Arc<SqlitePool>,
@@ -60,11 +60,7 @@ impl MariadbRepository {
         Ok(())
     }
 
-    pub async fn update(
-        &self,
-        id: i64,
-        input: &PatchDatabaseDto,
-    ) -> sqlx::Result<()> {
+    pub async fn update(&self, id: i64, input: &PatchDatabaseDto) -> sqlx::Result<()> {
         sqlx::query!(
             "UPDATE mariadb_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id) WHERE id = ?",
             input.name,
@@ -102,9 +98,13 @@ impl MariadbRepository {
     }
 
     pub async fn update_status(&self, id: i64, status: &str) -> sqlx::Result<()> {
-        sqlx::query!("UPDATE mariadb_dbs SET app_status = ? WHERE id = ?", status, id)
-            .execute(self.pool.as_ref())
-            .await?;
+        sqlx::query!(
+            "UPDATE mariadb_dbs SET app_status = ? WHERE id = ?",
+            status,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
         Ok(())
     }
 

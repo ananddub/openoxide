@@ -9,14 +9,16 @@ pub fn generate_keypair(key_type: &str) -> Result<(String, String), std::io::Err
 
     let mut cmd = Command::new("ssh-keygen");
     cmd.arg("-t").arg(key_type);
-    
+
     if key_type == "rsa" {
         cmd.arg("-b").arg("4096");
     }
-    
-    cmd.arg("-N").arg("") // No passphrase
-       .arg("-f").arg(&key_path)
-       .arg("-q"); // Quiet mode
+
+    cmd.arg("-N")
+        .arg("") // No passphrase
+        .arg("-f")
+        .arg(&key_path)
+        .arg("-q"); // Quiet mode
 
     let output = cmd.output()?;
     if !output.status.success() {

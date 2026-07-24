@@ -64,8 +64,18 @@ impl LocalExecutor {
             .try_with(|tx| tx.clone())
             .ok();
 
-        let stdout_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stdout", stdout, sender.clone()));
-        let stderr_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stderr", stderr, sender));
+        let stdout_task = tokio::spawn(read_pipe_with_trace(
+            program.to_owned(),
+            "stdout",
+            stdout,
+            sender.clone(),
+        ));
+        let stderr_task = tokio::spawn(read_pipe_with_trace(
+            program.to_owned(),
+            "stderr",
+            stderr,
+            sender,
+        ));
         tokio::select! {
             status = child.wait() => {
                 let stdout = join_pipe(stdout_task).await?;
@@ -143,8 +153,18 @@ impl LocalExecutor {
             .try_with(|tx| tx.clone())
             .ok();
 
-        let stdout_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stdout", stdout, sender.clone()));
-        let stderr_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stderr", stderr, sender));
+        let stdout_task = tokio::spawn(read_pipe_with_trace(
+            program.to_owned(),
+            "stdout",
+            stdout,
+            sender.clone(),
+        ));
+        let stderr_task = tokio::spawn(read_pipe_with_trace(
+            program.to_owned(),
+            "stderr",
+            stderr,
+            sender,
+        ));
         tokio::select! {
             status = child.wait() => {
                 let stdout = join_pipe(stdout_task).await?;
@@ -240,8 +260,11 @@ async fn read_pipe_with_trace(
                     tracing::info!(program = %program, stream, line = %line, "command output");
                 }
                 if let Some(ref tx) = sender {
-                    let event = crate::utils::builder::spec::BuilderEvent::Message(line.to_string());
-                    if let Err(tokio::sync::mpsc::error::TrySendError::Full(event)) = tx.try_send(event) {
+                    let event =
+                        crate::utils::builder::spec::BuilderEvent::Message(line.to_string());
+                    if let Err(tokio::sync::mpsc::error::TrySendError::Full(event)) =
+                        tx.try_send(event)
+                    {
                         let tx = tx.clone();
                         tokio::spawn(async move {
                             let _ = tx.send(event).await;
@@ -260,8 +283,7 @@ async fn read_pipe_with_trace(
 async fn join_pipe(
     task: tokio::task::JoinHandle<Result<Vec<u8>, std::io::Error>>,
 ) -> Result<Vec<u8>, std::io::Error> {
-    task.await
-        .map_err(|error| std::io::Error::other(error))?
+    task.await.map_err(|error| std::io::Error::other(error))?
 }
 fn checked(output: std::process::Output) -> ExecResult<ExecOutput> {
     let result = ExecOutput {

@@ -1,5 +1,5 @@
-use crate::utils::docker::{ContainerSummary, DockerCli, DockerResult};
 use crate::utils::docker::query::filter::ContainerFilter;
+use crate::utils::docker::{ContainerSummary, DockerCli, DockerResult};
 
 /// Fluent builder for `docker container ls`.
 pub struct ContainerQuery<'a> {

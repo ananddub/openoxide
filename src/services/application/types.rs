@@ -81,7 +81,11 @@ pub struct ApplicationOperationResult {
 impl From<crate::db::models::applications::Application> for ApplicationRecord {
     fn from(app: crate::db::models::applications::Application) -> Self {
         Self {
-            id: app.id.as_deref().and_then(|s| s.parse::<i64>().ok()).unwrap_or(0),
+            id: app
+                .id
+                .as_deref()
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(0),
             name: app.name,
             app_name: app.app_name,
             description: app.description,

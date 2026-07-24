@@ -1,11 +1,16 @@
 use super::application::ApplicationBuilder;
+use crate::pipeline;
+use crate::utils::builder::packs::{
+    heroku::{HerokuBuilderImage, HerokuCli},
+    nixpacks::NixpacksCli,
+    paketo::{PackCli, PaketoBuilderImage},
+    railpack::RailpackCli,
+};
 use crate::utils::{
     builder::spec::{ApplicationSpec, BuildStrategy, BuilderEvent, SourceSpec},
     exec::{ExecError, ExecResult},
 };
 use tokio_util::sync::CancellationToken;
-use crate::pipeline;
-use crate::utils::builder::packs::{nixpacks::NixpacksCli, paketo::{PackCli, PaketoBuilderImage}, railpack::RailpackCli, heroku::{HerokuCli, HerokuBuilderImage}};
 
 impl ApplicationBuilder {
     pub(super) async fn build_image(
@@ -35,11 +40,12 @@ impl ApplicationBuilder {
                     .await?
             }
             BuildStrategy::Nixpacks => {
-                self.ctx.emit(BuilderEvent::Message(format!(
-                    "building image {} with nixpacks from {}",
-                    spec.image, spec.work_directory
-                )))
-                .await;
+                self.ctx
+                    .emit(BuilderEvent::Message(format!(
+                        "building image {} with nixpacks from {}",
+                        spec.image, spec.work_directory
+                    )))
+                    .await;
                 let cli = NixpacksCli::new(&self.ctx.executor);
                 cli.if_not_exist_install().await?;
                 let mut builder = cli
@@ -49,16 +55,18 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx.apply_cgroup(pipeline)?
+                self.ctx
+                    .apply_cgroup(pipeline)?
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
             BuildStrategy::Paketo => {
-                self.ctx.emit(BuilderEvent::Message(format!(
-                    "building image {} with Paketo from {}",
-                    spec.image, spec.work_directory
-                )))
-                .await;
+                self.ctx
+                    .emit(BuilderEvent::Message(format!(
+                        "building image {} with Paketo from {}",
+                        spec.image, spec.work_directory
+                    )))
+                    .await;
                 let cli = PackCli::new(&self.ctx.executor);
                 cli.if_not_exist_install().await?;
                 let mut builder = cli
@@ -69,16 +77,18 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx.apply_cgroup(pipeline)?
+                self.ctx
+                    .apply_cgroup(pipeline)?
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
             BuildStrategy::Heroku => {
-                self.ctx.emit(BuilderEvent::Message(format!(
-                    "building image {} with Heroku from {}",
-                    spec.image, spec.work_directory
-                )))
-                .await;
+                self.ctx
+                    .emit(BuilderEvent::Message(format!(
+                        "building image {} with Heroku from {}",
+                        spec.image, spec.work_directory
+                    )))
+                    .await;
                 let cli = HerokuCli::new(&self.ctx.executor);
                 cli.if_not_exist_install().await?;
                 let mut builder = cli
@@ -89,18 +99,20 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx.apply_cgroup(pipeline)?
+                self.ctx
+                    .apply_cgroup(pipeline)?
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
             BuildStrategy::Railpack { version } => {
-                self.ctx.emit(BuilderEvent::Message(format!(
-                    "building image {} with railpack {version} from {}",
-                    spec.image, spec.work_directory
-                )))
-                .await;
+                self.ctx
+                    .emit(BuilderEvent::Message(format!(
+                        "building image {} with railpack {version} from {}",
+                        spec.image, spec.work_directory
+                    )))
+                    .await;
                 let plan = format!("{}/railpack-plan.json", spec.work_directory);
-                
+
                 let timestamp = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
@@ -117,10 +129,14 @@ impl ApplicationBuilder {
                 }
 
                 let images = self.ctx.docker.images();
-                let docker_build = images.build(&spec.work_directory)
+                let docker_build = images
+                    .build(&spec.work_directory)
                     .tag(spec.image.clone())
                     .dockerfile(&plan)
-                    .build_arg("BUILDKIT_SYNTAX", format!("ghcr.io/railwayapp/railpack-frontend:v{version}"))
+                    .build_arg(
+                        "BUILDKIT_SYNTAX",
+                        format!("ghcr.io/railwayapp/railpack-frontend:v{version}"),
+                    )
                     .cancel_with(cancel.clone());
 
                 let trap_cmd = format!(
@@ -141,7 +157,8 @@ impl ApplicationBuilder {
                     builder;
                     docker_build;
                 };
-                self.ctx.apply_cgroup(pipeline)?
+                self.ctx
+                    .apply_cgroup(pipeline)?
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
@@ -166,12 +183,16 @@ impl ApplicationBuilder {
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
         let context_path = join_path(&spec.work_directory, default_if_empty(context, "."));
-        let dockerfile_path = join_path(&spec.work_directory, default_if_empty(dockerfile, "Dockerfile"));
-        
+        let dockerfile_path = join_path(
+            &spec.work_directory,
+            default_if_empty(dockerfile, "Dockerfile"),
+        );
+
         validate_build_context(Some(&context_path))?;
-        
+
         let images = self.ctx.docker.images();
-        let mut builder = images.build(context_path.clone())
+        let mut builder = images
+            .build(context_path.clone())
             .tag(spec.image.clone())
             .dockerfile(dockerfile_path.clone());
 
@@ -187,37 +208,44 @@ impl ApplicationBuilder {
 
         let secret_dir = format!("/tmp/rustploy-secrets-{}", spec.app_name);
         if !spec.build_secrets.is_empty() {
-            self.ctx.executor
+            self.ctx
+                .executor
                 .run("mkdir", ["-p", secret_dir.as_str()])
                 .await?;
         }
         for (key, value) in &spec.build_secrets {
             let path = format!("{secret_dir}/{key}");
-            self.ctx.write_file_cancelled(&path, value.as_bytes(), cancel)
+            self.ctx
+                .write_file_cancelled(&path, value.as_bytes(), cancel)
                 .await?;
             builder = builder.secret(format!("id={key},src={path}"));
         }
 
-        self.ctx.emit(BuilderEvent::Message(format!(
-            "docker build image {} using dockerfile {} and context {}",
-            spec.image,
-            dockerfile_path,
-            context_path
-        )))
-        .await;
-        
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "docker build image {} using dockerfile {} and context {}",
+                spec.image, dockerfile_path, context_path
+            )))
+            .await;
+
         let print_args = builder.print();
         tracing::info!(image = %spec.image, command = %print_args, "running docker image build");
-        
+
         let build_cmd = builder.cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        let result = self.ctx.apply_cgroup(pipeline)?
+        let result = self
+            .ctx
+            .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
-            
-        let _ = self.ctx.executor.run("rm", ["-rf", secret_dir.as_str()]).await;
-        
+
+        let _ = self
+            .ctx
+            .executor
+            .run("rm", ["-rf", secret_dir.as_str()])
+            .await;
+
         result.map(|_| ())
     }
 
@@ -237,35 +265,37 @@ impl ApplicationBuilder {
             },
             publish_directory
         );
-        self.ctx.write_file_cancelled(
-            &format!("{}/Dockerfile.rustploy", spec.work_directory),
-            dockerfile.as_bytes(),
-            cancel,
-        )
-        .await?;
-        if spa {
-            self.ctx.write_file_cancelled(
-                &format!("{}/nginx.conf", spec.work_directory),
-                SPA_NGINX.as_bytes(),
+        self.ctx
+            .write_file_cancelled(
+                &format!("{}/Dockerfile.rustploy", spec.work_directory),
+                dockerfile.as_bytes(),
                 cancel,
             )
             .await?;
+        if spa {
+            self.ctx
+                .write_file_cancelled(
+                    &format!("{}/nginx.conf", spec.work_directory),
+                    SPA_NGINX.as_bytes(),
+                    cancel,
+                )
+                .await?;
         }
         let images = self.ctx.docker.images();
-        let build_cmd = images.build(spec.work_directory.clone())
+        let build_cmd = images
+            .build(spec.work_directory.clone())
             .tag(spec.image.clone())
             .dockerfile(format!("{}/Dockerfile.rustploy", spec.work_directory))
             .cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        self.ctx.apply_cgroup(pipeline)?
+        self.ctx
+            .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
         Ok(())
     }
 }
-
-
 
 fn default_if_empty<'a>(value: &'a str, default: &'a str) -> &'a str {
     let value = value.trim();

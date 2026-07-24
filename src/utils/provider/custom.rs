@@ -22,7 +22,11 @@ impl<'a> CustomRepoBuilder<'a> {
         self.url.to_string()
     }
 
-    pub fn sync_into(&self, destination: &'a str, protocol: CloneProtocol) -> ProviderSyncBuilder<'a> {
+    pub fn sync_into(
+        &self,
+        destination: &'a str,
+        protocol: CloneProtocol,
+    ) -> ProviderSyncBuilder<'a> {
         ProviderSyncBuilder::new(self.clone_url(protocol), destination)
     }
 }

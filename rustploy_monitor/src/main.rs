@@ -24,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting Rustploy Dedicated gRPC Monitoring Service...");
 
-    let db_url = std::env::var("MONITOR_DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite://monitor.db".to_string());
+    let db_url =
+        std::env::var("MONITOR_DATABASE_URL").unwrap_or_else(|_| "sqlite://monitor.db".to_string());
 
     let grpc_port = std::env::var("GRPC_PORT")
         .ok()
@@ -53,9 +53,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. gRPC Server on 0.0.0.0:50051
     let grpc_db = db.clone();
     let grpc_addr: SocketAddr = format!("0.0.0.0:{}", grpc_port).parse()?;
-    
+
     let grpc_server_handle = tokio::spawn(async move {
-        info!("Starting gRPC Telemetry Server listening on gRPC://{}", grpc_addr);
+        info!(
+            "Starting gRPC Telemetry Server listening on gRPC://{}",
+            grpc_addr
+        );
         let grpc_service = MonitoringGrpcServer::new(grpc_db);
         if let Err(err) = tonic::transport::Server::builder()
             .add_service(MonitoringServiceServer::new(grpc_service))

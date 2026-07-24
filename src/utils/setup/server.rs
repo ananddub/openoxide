@@ -195,7 +195,7 @@ fi
         }
         let image = format!("traefik:v{}", self.config.traefik_version);
         docker.images().pull(&image).pull().await?;
-        
+
         let static_mount = Mount::bind_ro(
             format!("{}/traefik.yml", self.config.paths.traefik),
             "/etc/traefik/traefik.yml",
@@ -204,10 +204,7 @@ fi
             &self.config.paths.traefik_dynamic,
             "/etc/rustploy/traefik/dynamic",
         );
-        let docker_socket_mount = Mount::bind_ro(
-            "/var/run/docker.sock",
-            "/var/run/docker.sock",
-        );
+        let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
 
         let p_http = Port::tcp(self.config.http_port, self.config.http_port);
         let p_https = Port::tcp(self.config.https_port, self.config.https_port);

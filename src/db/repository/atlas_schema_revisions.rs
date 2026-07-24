@@ -1,7 +1,7 @@
 use crate::db::models::atlas_schema_revisions::AtlasSchemaRevision;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct AtlasSchemaRevisionRepository {
     pool: Arc<SqlitePool>,
@@ -22,7 +22,10 @@ impl AtlasSchemaRevisionRepository {
         .await
     }
 
-    pub async fn get_by_id(&self, version: &str) -> Result<Option<AtlasSchemaRevision>, sqlx::Error> {
+    pub async fn get_by_id(
+        &self,
+        version: &str,
+    ) -> Result<Option<AtlasSchemaRevision>, sqlx::Error> {
         sqlx::query_as!(
             AtlasSchemaRevision,
             r#"SELECT version AS "version: String", description AS "description: String", type AS "atlas_schema_revision_type: i64", applied AS "applied: i64", total AS "total: i64", executed_at AS "executed_at: chrono::NaiveDateTime", execution_time AS "execution_time: i64", error AS "error?: String", error_stmt AS "error_stmt?: String", hash AS "hash: String", partial_hashes AS "partial_hashes?: String", operator_version AS "operator_version: String" FROM atlas_schema_revisions WHERE version = ?"#,
@@ -53,7 +56,11 @@ impl AtlasSchemaRevisionRepository {
         Ok(item.version.clone())
     }
 
-    pub async fn update(&self, version: &str, item: &AtlasSchemaRevision) -> Result<(), sqlx::Error> {
+    pub async fn update(
+        &self,
+        version: &str,
+        item: &AtlasSchemaRevision,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"UPDATE atlas_schema_revisions SET description = ?, type = ?, applied = ?, total = ?, executed_at = ?, execution_time = ?, error = ?, error_stmt = ?, hash = ?, partial_hashes = ?, operator_version = ? WHERE version = ?"#,
             &item.description,

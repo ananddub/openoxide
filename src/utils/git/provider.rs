@@ -78,33 +78,50 @@ impl<'a> GitProviderBuilder<'a> {
     pub fn build(self) -> Result<GitProvider, AdapterError> {
         match self.source_type {
             SourceType::Github => Ok(GitProvider::Github {
-                owner: self.owner.ok_or(AdapterError::MissingField("owner"))?.into(),
-                repo: self.repository.ok_or(AdapterError::MissingField("repository"))?.into(),
+                owner: self
+                    .owner
+                    .ok_or(AdapterError::MissingField("owner"))?
+                    .into(),
+                repo: self
+                    .repository
+                    .ok_or(AdapterError::MissingField("repository"))?
+                    .into(),
             }),
             SourceType::Gitlab => {
-                let url = self.gitlab_repository.ok_or(AdapterError::MissingField("gitlab_repository"))?;
+                let url = self
+                    .gitlab_repository
+                    .ok_or(AdapterError::MissingField("gitlab_repository"))?;
                 if url.contains("://") || url.starts_with("git@") {
                     Ok(GitProvider::Custom { url: url.into() })
                 } else {
                     Ok(GitProvider::Gitlab {
-                        owner: self.gitlab_owner.ok_or(AdapterError::MissingField("gitlab_owner"))?.into(),
+                        owner: self
+                            .gitlab_owner
+                            .ok_or(AdapterError::MissingField("gitlab_owner"))?
+                            .into(),
                         repo: url.into(),
                     })
                 }
             }
             SourceType::Bitbucket => {
-                let url = self.bitbucket_repository.ok_or(AdapterError::MissingField("bitbucket_repository"))?;
+                let url = self
+                    .bitbucket_repository
+                    .ok_or(AdapterError::MissingField("bitbucket_repository"))?;
                 if url.contains("://") || url.starts_with("git@") {
                     Ok(GitProvider::Custom { url: url.into() })
                 } else {
                     Ok(GitProvider::Bitbucket {
-                        owner: self.bitbucket_owner.ok_or(AdapterError::MissingField("bitbucket_owner"))?.into(),
+                        owner: self
+                            .bitbucket_owner
+                            .ok_or(AdapterError::MissingField("bitbucket_owner"))?
+                            .into(),
                         repo: url.into(),
                     })
                 }
             }
             SourceType::Gitea => {
-                let url = self.gitea_repository
+                let url = self
+                    .gitea_repository
                     .filter(|value| value.contains("://") || value.starts_with("git@"))
                     .ok_or_else(|| AdapterError::InvalidField {
                         field: "gitea_repository",
@@ -113,7 +130,9 @@ impl<'a> GitProviderBuilder<'a> {
                 Ok(GitProvider::Gitea { url: url.into() })
             }
             SourceType::Git => {
-                let url = self.custom_git_url.ok_or(AdapterError::MissingField("custom_git_url"))?;
+                let url = self
+                    .custom_git_url
+                    .ok_or(AdapterError::MissingField("custom_git_url"))?;
                 Ok(GitProvider::Custom { url: url.into() })
             }
             other => Err(AdapterError::UnsupportedSourceType(other.to_string())),

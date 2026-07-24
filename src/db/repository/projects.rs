@@ -1,7 +1,7 @@
 use crate::db::models::projects::Project;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct ProjectRepository {
     pool: Arc<SqlitePool>,
@@ -64,16 +64,16 @@ impl ProjectRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM projects WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM projects WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn list_by_organization(&self, organization_id: i64) -> Result<Vec<Project>, sqlx::Error> {
+    pub async fn list_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<Project>, sqlx::Error> {
         sqlx::query_as!(
             Project,
             r#"SELECT id AS "id?", name, description, env_var, organization_id, created_at, updated_at

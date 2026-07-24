@@ -1,10 +1,4 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult,
-    },
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct ConfigListBuilder<'a> {
     cli: &'a DockerCli,
@@ -13,12 +7,23 @@ pub struct ConfigListBuilder<'a> {
 
 impl<'a> ConfigListBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["config", "ls"]) }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["config", "ls"]),
+        }
     }
 
-    pub fn filter(mut self, f: crate::utils::docker::query::filter::ConfigFilter) -> Self { self.args.filter(f); self }
-    pub fn filters(mut self, fs: impl IntoIterator<Item = crate::utils::docker::query::filter::ConfigFilter>) -> Self {
-        for f in fs { self.args.filter(f); }
+    pub fn filter(mut self, f: crate::utils::docker::query::filter::ConfigFilter) -> Self {
+        self.args.filter(f);
+        self
+    }
+    pub fn filters(
+        mut self,
+        fs: impl IntoIterator<Item = crate::utils::docker::query::filter::ConfigFilter>,
+    ) -> Self {
+        for f in fs {
+            self.args.filter(f);
+        }
         self
     }
 

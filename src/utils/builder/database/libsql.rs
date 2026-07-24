@@ -1,30 +1,44 @@
-use crate::utils::exec::{ExecResult, ExecError};
 use crate::db::models::mounts::Mount;
 use crate::repository::LibsqlRepository;
-use crate::utils::builder::database::builder::{StackFile, StackService, StackMount, DeploySpec, DeployResources, Limits, RestartPolicy, UpdateConfig, ExternalNetwork};
+use crate::utils::builder::database::builder::{
+    DeployResources, DeploySpec, ExternalNetwork, Limits, RestartPolicy, StackFile, StackMount,
+    StackService, UpdateConfig,
+};
+use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
 
 pub async fn build_libsql_stack(
     db_id: i64,
     mounts: &[Mount],
 ) -> ExecResult<(String, String, String)> {
-    let repo = auto_di::resolve::<LibsqlRepository>().await.map_err(|e| ExecError::CommandFailed {
-        code: None,
-        stderr: format!("Failed to resolve LibsqlRepository: {}", e),
-    })?;
-    let db = repo.get_details(db_id).await.map_err(|e| ExecError::CommandFailed {
-        code: None,
-        stderr: format!("Failed to fetch libsql db: {}", e),
-    })?;
+    let repo =
+        auto_di::resolve::<LibsqlRepository>()
+            .await
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: format!("Failed to resolve LibsqlRepository: {}", e),
+            })?;
+    let db = repo
+        .get_details(db_id)
+        .await
+        .map_err(|e| ExecError::CommandFailed {
+            code: None,
+            stderr: format!("Failed to fetch libsql db: {}", e),
+        })?;
 
     // Parse command and args
-    let command = db.command.map(|c| c.split_whitespace().map(String::from).collect::<Vec<_>>());
-    let args = db.args.map(|a| serde_json::from_str::<Vec<String>>(&a).unwrap_or_default()).unwrap_or_default();
+    let command = db
+        .command
+        .map(|c| c.split_whitespace().map(String::from).collect::<Vec<_>>());
+    let args = db
+        .args
+        .map(|a| serde_json::from_str::<Vec<String>>(&a).unwrap_or_default())
+        .unwrap_or_default();
 
     // Parse environment variables
     let mut resolved_env = crate::utils::builder::env::generate_env_db(
         db.environment_id,
-        db.env_var.as_deref().unwrap_or("")
+        db.env_var.as_deref().unwrap_or(""),
     )
     .await
     .unwrap_or_default();
@@ -49,7 +63,10 @@ pub async fn build_libsql_stack(
                 _ => "bind",
             },
             source: match m.mount_type.as_str() {
-                "VOLUME" => m.volume_name.clone().unwrap_or_else(|| format!("{}-data", db.app_name)),
+                "VOLUME" => m
+                    .volume_name
+                    .clone()
+                    .unwrap_or_else(|| format!("{}-data", db.app_name)),
                 _ => m.host_path.clone().unwrap_or_default(),
             },
             target: m.mount_path.clone(),
@@ -89,24 +106,24 @@ pub async fn build_libsql_stack(
                     memory: db.memory_reservation.clone(),
                 },
             },
-			restart_policy: RestartPolicy {
-				condition: "on-failure",
-				delay: "5s",
-				max_attempts: 3,
-				window: "120s",
-			},
-			update_config: UpdateConfig {
-				parallelism: 1,
-				delay: "5s",
-				order: "stop-first",
-				failure_action: "rollback",
-			},
-			rollback_config: UpdateConfig {
-				parallelism: 1,
-				delay: "5s",
-				order: "stop-first",
-				failure_action: "pause",
-			},
+            restart_policy: RestartPolicy {
+                condition: "on-failure",
+                delay: "5s",
+                max_attempts: 3,
+                window: "120s",
+            },
+            update_config: UpdateConfig {
+                parallelism: 1,
+                delay: "5s",
+                order: "stop-first",
+                failure_action: "rollback",
+            },
+            rollback_config: UpdateConfig {
+                parallelism: 1,
+                delay: "5s",
+                order: "stop-first",
+                failure_action: "pause",
+            },
             placement: Default::default(),
             labels: Vec::new(),
         },

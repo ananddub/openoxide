@@ -1,12 +1,11 @@
-use crate::utils::docker::{client::DockerCli, DockerResult};
+use crate::utils::docker::{DockerResult, client::DockerCli};
 
-
+pub use ca::SwarmCaBuilder;
 pub use init::SwarmInitBuilder;
 pub use join::{SwarmJoinBuilder, SwarmJoinTokenBuilder};
 pub use leave::SwarmLeaveBuilder;
+pub use unlock::{SwarmUnlockBuilder, SwarmUnlockKeyBuilder};
 pub use update::SwarmUpdateBuilder;
-pub use unlock::{SwarmUnlockKeyBuilder, SwarmUnlockBuilder};
-pub use ca::SwarmCaBuilder;
 
 // ── SwarmHandle ─────────────────────────────────────────────────────────────
 
@@ -52,7 +51,10 @@ impl<'a> SwarmHandle<'a> {
     }
 
     pub async fn inspect(&self) -> DockerResult<crate::utils::docker::SwarmInfo> {
-        let output = self.cli.run(["info", "--format", "{{json .Swarm}}"]).await?;
+        let output = self
+            .cli
+            .run(["info", "--format", "{{json .Swarm}}"])
+            .await?;
         let json = serde_json::from_str(&output.stdout)?;
         Ok(json)
     }

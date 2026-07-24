@@ -1,10 +1,4 @@
-use crate::utils::{
-    docker::{
-        core::ArgBuilder,
-        client::DockerCli,
-        DockerOutput, DockerResult,
-    },
-};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub struct ServiceCreateBuilder<'a> {
     cli: &'a DockerCli,
@@ -14,13 +8,27 @@ pub struct ServiceCreateBuilder<'a> {
 
 impl<'a> ServiceCreateBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, image: impl Into<String>) -> Self {
-        Self { cli, args: ArgBuilder::cmd(&["service", "create"]), image: image.into() }
+        Self {
+            cli,
+            args: ArgBuilder::cmd(&["service", "create"]),
+            image: image.into(),
+        }
     }
 
-    pub fn name(mut self, v: impl AsRef<str>) -> Self { self.args.pair("--name", v); self }
-    pub fn replicas(mut self, n: u32) -> Self { self.args.pair("--replicas", n.to_string()); self }
-    pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self { self.args.pair("--env", format!("{}={}", k.as_ref(), v.as_ref())); self }
-    
+    pub fn name(mut self, v: impl AsRef<str>) -> Self {
+        self.args.pair("--name", v);
+        self
+    }
+    pub fn replicas(mut self, n: u32) -> Self {
+        self.args.pair("--replicas", n.to_string());
+        self
+    }
+    pub fn env(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {
+        self.args
+            .pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
+        self
+    }
+
     pub fn arg(mut self, v: impl Into<String>) -> Self {
         self.args.push(v);
         self

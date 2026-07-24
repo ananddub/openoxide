@@ -1,6 +1,6 @@
-use std::path::Path;
-use crate::utils::exec::{CommandExecutor, LocalExecutor};
 use super::builder::{ZipBuilder, ZipError};
+use crate::utils::exec::{CommandExecutor, LocalExecutor};
+use std::path::Path;
 
 /// Security-check `input` ZIP, then write a sanitized copy to `output`.
 ///
@@ -14,18 +14,26 @@ pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), ZipError> {
     let local = CommandExecutor::Local(LocalExecutor::new());
 
     // 1. List entries via `unzip -Z1` (one path per line, no headers)
-    let list_out = local.run("unzip", &["-Z1", &input.to_string_lossy()]).await?;
+    let list_out = local
+        .run("unzip", &["-Z1", &input.to_string_lossy()])
+        .await?;
     if !list_out.status.success() {
-        return Err(ZipError::Failed(format!("unzip -Z1 failed: {}", list_out.stderr)));
+        return Err(ZipError::Failed(format!(
+            "unzip -Z1 failed: {}",
+            list_out.stderr
+        )));
     }
 
-    let entries: Vec<&str> = list_out.stdout
+    let entries: Vec<&str> = list_out
+        .stdout
         .lines()
         .filter(|l| !l.contains("__MACOSX"))
         .collect();
 
     if entries.is_empty() {
-        return Err(ZipError::Failed("ZIP archive is empty after filtering __MACOSX".into()));
+        return Err(ZipError::Failed(
+            "ZIP archive is empty after filtering __MACOSX".into(),
+        ));
     }
 
     // 2. Path traversal + symlink checks
@@ -42,14 +50,16 @@ pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), ZipError> {
         .source(input)
         .destination(extract_dir)
         .overwrite()
-        .arg("-x").arg("__MACOSX/*").arg("*/__MACOSX/*")
+        .arg("-x")
+        .arg("__MACOSX/*")
+        .arg("*/__MACOSX/*")
         .unzip()
         .await?;
 
     // 4. Strip single root-folder wrapper if present
     let source_dir = match detect_single_root(&entries) {
         Some(root) => extract_dir.join(&root),
-        None       => extract_dir.to_path_buf(),
+        None => extract_dir.to_path_buf(),
     };
 
     // 5. Re-zip sanitized contents into output
@@ -76,29 +86,41 @@ pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), ZipError> {
 
 fn check_path(entry: &str) -> Result<(), ZipError> {
     if entry.starts_with('/') || entry.starts_with('\\') {
-        return Err(ZipError::Failed(format!("path traversal in entry: {entry}")));
+        return Err(ZipError::Failed(format!(
+            "path traversal in entry: {entry}"
+        )));
     }
     if entry.len() >= 2 && entry.chars().nth(1) == Some(':') {
-        return Err(ZipError::Failed(format!("absolute Windows path in entry: {entry}")));
+        return Err(ZipError::Failed(format!(
+            "absolute Windows path in entry: {entry}"
+        )));
     }
     for component in entry.split(['/', '\\']) {
         if component == ".." {
-            return Err(ZipError::Failed(format!("path traversal in entry: {entry}")));
+            return Err(ZipError::Failed(format!(
+                "path traversal in entry: {entry}"
+            )));
         }
     }
     Ok(())
 }
 
 async fn check_symlinks(zip: &Path, executor: &CommandExecutor) -> Result<(), ZipError> {
-    let out = executor.run("unzip", &["-v", &zip.to_string_lossy()]).await?;
-    if !out.status.success() { return Ok(()); } // non-fatal if -v unsupported
+    let out = executor
+        .run("unzip", &["-v", &zip.to_string_lossy()])
+        .await?;
+    if !out.status.success() {
+        return Ok(());
+    } // non-fatal if -v unsupported
 
     for line in out.stdout.lines() {
         // `unzip -v` attribute column starts with 'l' for symlinks
         if line.trim_start().starts_with('l') {
             let name = line.split_whitespace().last().unwrap_or("");
             if !name.contains("__MACOSX") {
-                return Err(ZipError::Failed(format!("symlink forbidden in entry: {name}")));
+                return Err(ZipError::Failed(format!(
+                    "symlink forbidden in entry: {name}"
+                )));
             }
         }
     }
@@ -112,7 +134,7 @@ fn detect_single_root(entries: &[&str]) -> Option<String> {
     for entry in entries {
         let top = entry.split(['/', '\\']).next().filter(|s| !s.is_empty())?;
         match root {
-            None    => root = Some(top),
+            None => root = Some(top),
             Some(r) if r != top => return None,
             _ => {}
         }

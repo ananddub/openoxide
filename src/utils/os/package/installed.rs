@@ -1,7 +1,7 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
+use super::{PackageManager, detect_manager};
 use crate::utils::exec::script::{IntoCommand, sh};
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
-use super::{detect_manager, PackageManager};
 
 #[allow(unused_macros)]
 macro_rules! rust {
@@ -62,33 +62,37 @@ impl<'a> IntoCommand for PackageCheckInstalledBuilder<'a> {
                 PackageManager::Zypper => format!("rpm -q {}", escape_arg(&self.name)),
                 PackageManager::Xbps => format!("xbps-query -S {}", escape_arg(&self.name)),
                 PackageManager::Emerge => format!("qlist -I -e {}", escape_arg(&self.name)),
-                PackageManager::Nix => format!("nix-env -q | grep -q '^{}-'", escape_arg(&self.name)),
+                PackageManager::Nix => {
+                    format!("nix-env -q | grep -q '^{}-'", escape_arg(&self.name))
+                }
                 PackageManager::Brew => format!("brew list {}", escape_arg(&self.name)),
             }
         } else {
             let pkg = &self.name;
-            let script = sh!(
-                if cmd("command", "-v", "dpkg").stdout("/dev/null") {
-                    cmd("dpkg", "-s", rust!(pkg));
-                } else if cmd("command", "-v", "rpm").stdout("/dev/null") {
-                    cmd("rpm", "-q", rust!(pkg));
-                } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                    cmd("apk", "info", "-e", rust!(pkg));
-                } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                    cmd("pacman", "-Q", rust!(pkg));
-                } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
-                    cmd("xbps-query", "-S", rust!(pkg));
-                } else if cmd("command", "-v", "qlist").stdout("/dev/null") {
-                    cmd("qlist", "-I", "-e", rust!(pkg));
-                } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                    cmd("sh", "-c", rust!(format!("nix-env -q | grep -q '^{}-'", pkg)));
-                } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                    cmd("brew", "list", rust!(pkg));
-                } else {
-                    echo("No supported package manager found").stderr("/dev/stderr");
-                    cmd("exit", "1");
-                }
-            );
+            let script = sh!(if cmd("command", "-v", "dpkg").stdout("/dev/null") {
+                cmd("dpkg", "-s", rust!(pkg));
+            } else if cmd("command", "-v", "rpm").stdout("/dev/null") {
+                cmd("rpm", "-q", rust!(pkg));
+            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+                cmd("apk", "info", "-e", rust!(pkg));
+            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+                cmd("pacman", "-Q", rust!(pkg));
+            } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
+                cmd("xbps-query", "-S", rust!(pkg));
+            } else if cmd("command", "-v", "qlist").stdout("/dev/null") {
+                cmd("qlist", "-I", "-e", rust!(pkg));
+            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+                cmd(
+                    "sh",
+                    "-c",
+                    rust!(format!("nix-env -q | grep -q '^{}-'", pkg)),
+                );
+            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+                cmd("brew", "list", rust!(pkg));
+            } else {
+                echo("No supported package manager found").stderr("/dev/stderr");
+                cmd("exit", "1");
+            });
             script.build_str()
         }
     }

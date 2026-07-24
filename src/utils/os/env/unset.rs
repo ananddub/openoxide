@@ -1,5 +1,5 @@
-use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
 pub struct EnvUnsetBuilder<'a> {
@@ -15,7 +15,9 @@ impl<'a> EnvUnsetBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("sh", &["-c", &format!("unset {}", self.key)]).await
+        self.executor
+            .run("sh", &["-c", &format!("unset {}", self.key)])
+            .await
     }
 }
 

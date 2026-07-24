@@ -1,4 +1,3 @@
-
 pub use db::repository;
 
 // Required by pipeline! macro — $crate::ScriptPipeline and $crate::shell_single_quote

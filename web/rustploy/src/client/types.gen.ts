@@ -181,6 +181,33 @@ export type ComposeResponseDto = {
 };
 
 /**
+ * ContainerLogSseEventDto
+ */
+export type ContainerLogSseEventDto = {
+    container_id: string;
+    is_stderr: boolean;
+    log_line: string;
+    timestamp: number;
+};
+
+/**
+ * ContainerMetricSseEventDto
+ */
+export type ContainerMetricSseEventDto = {
+    application_id: number;
+    compose_id: number;
+    container_id: string;
+    container_name: string;
+    cpu_percent: number;
+    memory_limit_mb: number;
+    memory_used_mb: number;
+    net_rx_kbps: number;
+    net_tx_kbps: number;
+    server_id: number;
+    timestamp: number;
+};
+
+/**
  * ContainerQueryParam
  */
 export type ContainerQueryParam = {
@@ -490,6 +517,18 @@ export type DeploymentResponseDto = {
     state: string;
     status: string;
     title: string;
+};
+
+/**
+ * DeploymentSseEventDto
+ */
+export type DeploymentSseEventDto = {
+    line?: string;
+    message?: string;
+    skipped?: number;
+    state?: string;
+    stats?: unknown;
+    type: string;
 };
 
 /**
@@ -1505,7 +1544,7 @@ export type MonitoringControllerStreamContainerMetricsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: ContainerMetricSseEventDto;
 };
 
 export type MonitoringControllerStreamContainerMetricsResponse = MonitoringControllerStreamContainerMetricsResponses[keyof MonitoringControllerStreamContainerMetricsResponses];
@@ -1521,7 +1560,7 @@ export type MonitoringControllerStreamLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: ContainerLogSseEventDto;
 };
 
 export type MonitoringControllerStreamLogsResponse = MonitoringControllerStreamLogsResponses[keyof MonitoringControllerStreamLogsResponses];
@@ -2639,7 +2678,7 @@ export type DeploymentControllerApplicationEventsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerApplicationEventsResponse = DeploymentControllerApplicationEventsResponses[keyof DeploymentControllerApplicationEventsResponses];
@@ -2657,7 +2696,7 @@ export type DeploymentControllerApplicationLatestLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerApplicationLatestLogsResponse = DeploymentControllerApplicationLatestLogsResponses[keyof DeploymentControllerApplicationLatestLogsResponses];
@@ -2677,7 +2716,7 @@ export type DeploymentControllerApplicationStatsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerApplicationStatsResponse = DeploymentControllerApplicationStatsResponses[keyof DeploymentControllerApplicationStatsResponses];
@@ -2695,7 +2734,7 @@ export type DeploymentControllerComposeEventsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerComposeEventsResponse = DeploymentControllerComposeEventsResponses[keyof DeploymentControllerComposeEventsResponses];
@@ -2713,7 +2752,7 @@ export type DeploymentControllerComposeLatestLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerComposeLatestLogsResponse = DeploymentControllerComposeLatestLogsResponses[keyof DeploymentControllerComposeLatestLogsResponses];
@@ -2733,7 +2772,7 @@ export type DeploymentControllerComposeStatsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerComposeStatsResponse = DeploymentControllerComposeStatsResponses[keyof DeploymentControllerComposeStatsResponses];
@@ -2751,7 +2790,7 @@ export type DeploymentControllerDatabaseEventsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDatabaseEventsResponse = DeploymentControllerDatabaseEventsResponses[keyof DeploymentControllerDatabaseEventsResponses];
@@ -2769,7 +2808,7 @@ export type DeploymentControllerDockerComposeLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDockerComposeLogsResponse = DeploymentControllerDockerComposeLogsResponses[keyof DeploymentControllerDockerComposeLogsResponses];
@@ -2789,7 +2828,7 @@ export type DeploymentControllerDockerContainerLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDockerContainerLogsResponse = DeploymentControllerDockerContainerLogsResponses[keyof DeploymentControllerDockerContainerLogsResponses];
@@ -2809,7 +2848,7 @@ export type DeploymentControllerDockerContainerStatsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDockerContainerStatsResponse = DeploymentControllerDockerContainerStatsResponses[keyof DeploymentControllerDockerContainerStatsResponses];
@@ -2829,7 +2868,7 @@ export type DeploymentControllerDockerServiceLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDockerServiceLogsResponse = DeploymentControllerDockerServiceLogsResponses[keyof DeploymentControllerDockerServiceLogsResponses];
@@ -2847,7 +2886,7 @@ export type DeploymentControllerDockerGlobalStatsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerDockerGlobalStatsResponse = DeploymentControllerDockerGlobalStatsResponses[keyof DeploymentControllerDockerGlobalStatsResponses];
@@ -2917,7 +2956,7 @@ export type DeploymentControllerStreamLogsResponses = {
     /**
      * Successful response
      */
-    200: string;
+    200: DeploymentSseEventDto;
 };
 
 export type DeploymentControllerStreamLogsResponse = DeploymentControllerStreamLogsResponses[keyof DeploymentControllerStreamLogsResponses];

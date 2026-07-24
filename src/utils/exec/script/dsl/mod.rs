@@ -98,8 +98,17 @@ impl ShellIR {
         match self {
             ShellIR::Raw(s) => s.clone(),
             ShellIR::Command(cmd) => cmd.to_bash(),
-            ShellIR::Pipeline(cmds) => cmds.iter().map(|c| c.to_bash()).collect::<Vec<_>>().join(" | "),
-            ShellIR::Redirect { cmd, target, append, fd } => {
+            ShellIR::Pipeline(cmds) => cmds
+                .iter()
+                .map(|c| c.to_bash())
+                .collect::<Vec<_>>()
+                .join(" | "),
+            ShellIR::Redirect {
+                cmd,
+                target,
+                append,
+                fd,
+            } => {
                 let op = if *append { ">>" } else { ">" };
                 let fd_prefix = match fd {
                     RedirectionFd::Stdout => "",
@@ -108,35 +117,65 @@ impl ShellIR {
                 };
                 format!("{} {}{} {}", cmd.to_bash(), fd_prefix, op, target)
             }
-            ShellIR::Capture { cmd, source } => {
-                match source {
-                    CaptureSource::Status => {
-                        format!("$(if {}; then echo true; else echo false; fi)", cmd.to_bash())
-                    }
-                    _ => format!("$({})", cmd.to_bash()),
+            ShellIR::Capture { cmd, source } => match source {
+                CaptureSource::Status => {
+                    format!(
+                        "$(if {}; then echo true; else echo false; fi)",
+                        cmd.to_bash()
+                    )
                 }
-            }
-            ShellIR::If { cond, then_branch, else_branch } => {
+                _ => format!("$({})", cmd.to_bash()),
+            },
+            ShellIR::If {
+                cond,
+                then_branch,
+                else_branch,
+            } => {
                 let cond_str = cond.to_bash();
-                let then_str = then_branch.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+                let then_str = then_branch
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 let mut out = format!("if {}; then\n{}", cond_str, indent(&then_str));
                 if let Some(eb) = else_branch {
-                    let else_str = eb.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+                    let else_str = eb
+                        .iter()
+                        .map(|s| s.to_bash())
+                        .collect::<Vec<_>>()
+                        .join("\n");
                     out.push_str(&format!("\nelse\n{}", indent(&else_str)));
                 }
                 out.push_str("\nfi");
                 out
             }
-            ShellIR::Loop { var, iterator, body } => {
+            ShellIR::Loop {
+                var,
+                iterator,
+                body,
+            } => {
                 let iter_str = match &**iterator {
                     ShellIR::Expr(Expr::Variable(v)) => format!("\"${{{}[@]}}\"", v),
                     _ => iterator.to_bash(),
                 };
-                let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-                format!("for {} in {}; do\n{}\ndone", var, iter_str, indent(&body_str))
+                let body_str = body
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                format!(
+                    "for {} in {}; do\n{}\ndone",
+                    var,
+                    iter_str,
+                    indent(&body_str)
+                )
             }
             ShellIR::Function { name, params, body } => {
-                let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+                let body_str = body
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 let mut inside = String::new();
                 for (i, param) in params.iter().enumerate() {
                     inside.push_str(&format!("local {}=\"${}\"\n", param, i + 1));
@@ -145,15 +184,30 @@ impl ShellIR {
                 format!("{}() {{\n{}\n}}", name, indent(&inside))
             }
             ShellIR::Defer { body } => {
-                let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-                format!("_cleanup() {{\n{}\n}}\ntrap _cleanup EXIT", indent(&body_str))
+                let body_str = body
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                format!(
+                    "_cleanup() {{\n{}\n}}\ntrap _cleanup EXIT",
+                    indent(&body_str)
+                )
             }
             ShellIR::Parallel { body } => {
-                let body_str = body.iter().map(|s| format!("{} &", s.to_bash())).collect::<Vec<_>>().join("\n");
+                let body_str = body
+                    .iter()
+                    .map(|s| format!("{} &", s.to_bash()))
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 format!("{}\nwait", body_str)
             }
             ShellIR::Retry { count, body } => {
-                let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+                let body_str = body
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 let count_str = count.to_bash();
                 format!(
                     "for i in $(seq 1 {}); do\n{}\n    && break || sleep 1\ndone",
@@ -162,7 +216,11 @@ impl ShellIR {
                 )
             }
             ShellIR::CaptureBlock(body) => {
-                let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
+                let body_str = body
+                    .iter()
+                    .map(|s| s.to_bash())
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 format!("(\n{}\n)", indent(&body_str))
             }
             ShellIR::Expr(expr) => expr.to_bash(),
@@ -235,13 +293,21 @@ impl ShellIR {
 
     pub fn success(self) -> Self {
         match self {
-            ShellIR::Expr(Expr::Variable(v)) => {
-                ShellIR::Raw(format!("[ \"${{_status:-}}\" = \"true\" ] 2>/dev/null || [ \"${{{}_status:-}}\" = \"true\" ] || [ \"${{{}:-}}\" = \"true\" ]", v, v))
-            }
+            ShellIR::Expr(Expr::Variable(v)) => ShellIR::Raw(format!(
+                "[ \"${{_status:-}}\" = \"true\" ] 2>/dev/null || [ \"${{{}_status:-}}\" = \"true\" ] || [ \"${{{}:-}}\" = \"true\" ]",
+                v, v
+            )),
             ShellIR::Raw(s) => {
                 if s.starts_with('$') {
-                    let clean = s.trim_start_matches('$').trim_matches('"').trim_matches('{').trim_matches('}');
-                    ShellIR::Raw(format!("[ \"${{{}_status:-}}\" = \"true\" ] || [ \"{}\" = \"true\" ]", clean, s))
+                    let clean = s
+                        .trim_start_matches('$')
+                        .trim_matches('"')
+                        .trim_matches('{')
+                        .trim_matches('}');
+                    ShellIR::Raw(format!(
+                        "[ \"${{{}_status:-}}\" = \"true\" ] || [ \"{}\" = \"true\" ]",
+                        clean, s
+                    ))
                 } else {
                     ShellIR::Raw(s)
                 }
@@ -256,13 +322,21 @@ impl ShellIR {
 
     pub fn failure(self) -> Self {
         match self {
-            ShellIR::Expr(Expr::Variable(v)) => {
-                ShellIR::Raw(format!("[ \"${{_status:-}}\" = \"false\" ] 2>/dev/null || [ \"${{{}_status:-}}\" = \"false\" ] || [ \"${{{}:-}}\" = \"false\" ]", v, v))
-            }
+            ShellIR::Expr(Expr::Variable(v)) => ShellIR::Raw(format!(
+                "[ \"${{_status:-}}\" = \"false\" ] 2>/dev/null || [ \"${{{}_status:-}}\" = \"false\" ] || [ \"${{{}:-}}\" = \"false\" ]",
+                v, v
+            )),
             ShellIR::Raw(s) => {
                 if s.starts_with('$') {
-                    let clean = s.trim_start_matches('$').trim_matches('"').trim_matches('{').trim_matches('}');
-                    ShellIR::Raw(format!("[ \"${{{}_status:-}}\" = \"false\" ] || [ \"{}\" = \"false\" ]", clean, s))
+                    let clean = s
+                        .trim_start_matches('$')
+                        .trim_matches('"')
+                        .trim_matches('{')
+                        .trim_matches('}');
+                    ShellIR::Raw(format!(
+                        "[ \"${{{}_status:-}}\" = \"false\" ] || [ \"{}\" = \"false\" ]",
+                        clean, s
+                    ))
                 } else {
                     ShellIR::Raw(format!("! {}", s))
                 }
@@ -283,7 +357,11 @@ impl Expr {
             Expr::EnvVar(env) => format!("\"${}\"", env),
             Expr::Glob(glob) => glob.clone(),
             Expr::Array(arr) => {
-                let elements = arr.iter().map(|e| e.to_bash()).collect::<Vec<_>>().join(" ");
+                let elements = arr
+                    .iter()
+                    .map(|e| e.to_bash())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 format!("({})", elements)
             }
         }
@@ -293,13 +371,16 @@ impl Expr {
 impl Statement {
     pub fn to_bash(&self) -> String {
         match self {
-            Statement::VarAssign { name, val, default } => {
-                match &**val {
-                    ShellIR::CaptureBlock(body) => {
-                        let body_str = body.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n");
-                        let indent_body = indent(&body_str);
-                        format!(
-                            "{name}_stdout_file=$(mktemp)\n\
+            Statement::VarAssign { name, val, default } => match &**val {
+                ShellIR::CaptureBlock(body) => {
+                    let body_str = body
+                        .iter()
+                        .map(|s| s.to_bash())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    let indent_body = indent(&body_str);
+                    format!(
+                        "{name}_stdout_file=$(mktemp)\n\
                              {name}_stderr_file=$(mktemp)\n\
                              if (\n\
                              {indent_body}\n\
@@ -311,19 +392,23 @@ impl Statement {
                              {name}_stdout=$(cat \"${name}_stdout_file\")\n\
                              {name}_stderr=$(cat \"${name}_stderr_file\")\n\
                              rm -f \"${name}_stdout_file\" \"${name}_stderr_file\"",
-                            name = name,
-                            indent_body = indent_body
-                        )
-                    }
-                    _ => {
-                        let mut assign = format!("{}={}", name, val.to_bash());
-                        if let Some(def) = default {
-                            assign.push_str(&format!("\n[ -z \"${}\" ] && {}={}", name, name, shell_single_quote(def)));
-                        }
-                        assign
-                    }
+                        name = name,
+                        indent_body = indent_body
+                    )
                 }
-            }
+                _ => {
+                    let mut assign = format!("{}={}", name, val.to_bash());
+                    if let Some(def) = default {
+                        assign.push_str(&format!(
+                            "\n[ -z \"${}\" ] && {}={}",
+                            name,
+                            name,
+                            shell_single_quote(def)
+                        ));
+                    }
+                    assign
+                }
+            },
             Statement::Echo(val) => {
                 format!("echo {}", val.to_bash())
             }
@@ -360,13 +445,22 @@ impl IntoCommand for ShellIR {
 
 impl IntoCommand for Vec<ShellIR> {
     fn build_str(&self) -> String {
-        self.iter().map(|s| s.to_bash()).collect::<Vec<_>>().join("\n")
+        self.iter()
+            .map(|s| s.to_bash())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
 fn indent(s: &str) -> String {
     s.lines()
-        .map(|line| if line.is_empty() { String::new() } else { format!("    {}", line) })
+        .map(|line| {
+            if line.is_empty() {
+                String::new()
+            } else {
+                format!("    {}", line)
+            }
+        })
         .collect::<Vec<_>>()
         .join("\n")
 }

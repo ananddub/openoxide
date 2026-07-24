@@ -1,6 +1,6 @@
-use tokio::sync::mpsc;
-use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use crate::services::deployment::DeploymentService;
+use crate::utils::docker::{DockerCli, DockerStreamEvent};
+use tokio::sync::mpsc;
 
 impl DeploymentService {
     pub async fn stream_docker_container_logs(
@@ -41,7 +41,11 @@ impl DeploymentService {
         application_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let app = self.repo_app.get_by_id(application_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let app = self
+            .repo_app
+            .get_by_id(application_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let app_name = app.app_name;
         let server_id = app.server_id;
 
@@ -72,7 +76,11 @@ impl DeploymentService {
         compose_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let compose = self.repo_compose.get_by_id(compose_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let compose = self
+            .repo_compose
+            .get_by_id(compose_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let app_name = compose.app_name;
         let server_id = compose.server_id;
 

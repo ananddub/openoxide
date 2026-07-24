@@ -1,6 +1,6 @@
+use crate::db::models::destinations::Destination;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::db::models::destinations::Destination;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateDestinationDto {

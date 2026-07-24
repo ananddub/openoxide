@@ -1,7 +1,7 @@
 use crate::db::models::groups::Group;
+use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use auto_di::singleton;
 
 pub struct GroupRepository {
     pool: Arc<SqlitePool>,
@@ -58,16 +58,16 @@ impl GroupRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"DELETE FROM groups WHERE id = ?"#,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
+        sqlx::query!(r#"DELETE FROM groups WHERE id = ?"#, id)
+            .execute(self.pool.as_ref())
+            .await?;
         Ok(())
     }
 
-    pub async fn create_owner_group_if_not_exists(&self, tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>) -> Result<i64, sqlx::Error> {
+    pub async fn create_owner_group_if_not_exists(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<i64, sqlx::Error> {
         sqlx::query!("INSERT OR IGNORE INTO groups (name) VALUES ('owner')")
             .execute(&mut **tx)
             .await?;
@@ -77,7 +77,11 @@ impl GroupRepository {
         Ok(id)
     }
 
-    pub async fn get_user_final_permissions(&self, user_id: i64, org_id: i64) -> Result<Vec<String>, sqlx::Error> {
+    pub async fn get_user_final_permissions(
+        &self,
+        user_id: i64,
+        org_id: i64,
+    ) -> Result<Vec<String>, sqlx::Error> {
         sqlx::query_scalar::<_, String>(
             r#"
             WITH user_permissions AS (
@@ -96,7 +100,7 @@ impl GroupRepository {
                 SELECT action FROM user_permissions WHERE effect = 'GRANT'
             ) perms
             WHERE action NOT IN (SELECT action FROM user_permissions WHERE effect = 'DENY')
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(org_id)
