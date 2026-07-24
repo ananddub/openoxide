@@ -1,6 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {LogLine} from '#/components/shared/log-line';
 
 interface LogsTabProps {
 	app: any;
@@ -138,20 +139,7 @@ export function LogsTab({app}: LogsTabProps) {
 	};
 
 	const renderLogLine = (line: string, i: number) => {
-		const l = line.toLowerCase();
-		let colorClass = 'text-zinc-300';
-		if (l.includes('error') || l.includes('failed') || l.includes('err!')) {
-			colorClass = 'text-rose-400 font-medium';
-		} else if (l.includes('warn') || l.includes('warning')) {
-			colorClass = 'text-amber-400';
-		} else if (l.includes('success') || l.includes('done') || l.includes('started')) {
-			colorClass = 'text-emerald-400';
-		}
-		return (
-			<div key={i} className={`whitespace-pre-wrap break-all leading-relaxed ${colorClass}`}>
-				{line}
-			</div>
-		);
+		return <LogLine key={i} line={line} index={i} />;
 	};
 
 	return (
