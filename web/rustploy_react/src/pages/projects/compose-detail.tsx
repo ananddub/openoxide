@@ -2,6 +2,7 @@ import {createFileRoute, Link} from '@tanstack/react-router';
 import {FolderOpen, Layers2, ChevronRight} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
+import {$api} from '#/api/query';
 
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
