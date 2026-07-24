@@ -169,6 +169,11 @@ pub struct ApplicationResponseDto {
     pub registry_url: Option<String>,
     pub custom_git_url: Option<String>,
     pub custom_git_branch: Option<String>,
+    pub memory_reservation: Option<String>,
+    pub memory_limit: Option<String>,
+    pub cpu_reservation: Option<String>,
+    pub cpu_limit: Option<String>,
+    pub replicas: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -206,6 +211,11 @@ impl From<ApplicationRecord> for ApplicationResponseDto {
             registry_url: value.registry_url,
             custom_git_url: value.custom_git_url,
             custom_git_branch: value.custom_git_branch,
+            memory_reservation: value.memory_reservation,
+            memory_limit: value.memory_limit,
+            cpu_reservation: value.cpu_reservation,
+            cpu_limit: value.cpu_limit,
+            replicas: value.replicas,
             created_at: value.created_at,
             updated_at: value.updated_at,
         }

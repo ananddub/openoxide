@@ -30,6 +30,11 @@ pub struct ApplicationRecord {
     pub registry_url: Option<String>,
     pub custom_git_url: Option<String>,
     pub custom_git_branch: Option<String>,
+    pub memory_reservation: Option<String>,
+    pub memory_limit: Option<String>,
+    pub cpu_reservation: Option<String>,
+    pub cpu_limit: Option<String>,
+    pub replicas: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -115,6 +120,11 @@ impl From<crate::db::models::applications::Application> for ApplicationRecord {
             registry_url: app.registry_url,
             custom_git_url: app.custom_git_url,
             custom_git_branch: app.custom_git_branch,
+            memory_reservation: app.memory_reservation,
+            memory_limit: app.memory_limit,
+            cpu_reservation: app.cpu_reservation,
+            cpu_limit: app.cpu_limit,
+            replicas: Some(app.replicas),
             created_at: app.created_at,
             updated_at: app.updated_at,
         }
