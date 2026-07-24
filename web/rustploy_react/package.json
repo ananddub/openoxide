@@ -29,6 +29,8 @@
 		"class-variance-authority": "^0.7.1",
 		"ky": "^2.0.2",
 		"lucide-react": "^1.25.0",
+		"openapi-fetch": "^0.17.0",
+		"openapi-react-query": "^0.5.4",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"react-hook-form": "^7.82.0",
