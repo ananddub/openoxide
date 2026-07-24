@@ -4,6 +4,7 @@ import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
+import {TerminalModal} from '#/components/projects/app/detail/terminal-modal';
 
 interface GeneralTabProps {
 	compose: any;
@@ -15,6 +16,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 	const [provider, setProvider] = useState<string>(compose?.source_type || 'GITHUB');
 	const [composeFile, setComposeFile] = useState<string>(compose?.compose_file || '');
 	const [command, setCommand] = useState<string>(compose?.command || '');
+	const [showTerminal, setShowTerminal] = useState(false);
 	
 	const [repoOwner, setRepoOwner] = useState<string>(compose?.owner || compose?.gitlab_owner || compose?.gitea_owner || compose?.bitbucket_owner || '');
 	const [repoName, setRepoName] = useState<string>(compose?.repository || compose?.gitlab_repository || compose?.gitea_repository || compose?.bitbucket_repository || '');
@@ -64,9 +66,9 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					params: {path: {id: compose.id}},
 					body: {
 						custom_git_url: gitUrl,
-						custom_git_branch: gitBranch || 'main',
-						custom_git_build_path: gitBuildPath || 'docker-compose.yml',
-						custom_git_ssh_key_id: gitSshKeyId || undefined,
+						custom_git_branch: gitBranch,
+						custom_git_build_path: gitBuildPath,
+						custom_git_ssh_key_id: gitSshKeyId,
 					} as any,
 				});
 			} else if (provider === 'GITHUB') {
@@ -85,8 +87,8 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					body: {
 						gitlab_owner: repoOwner,
 						gitlab_repository: repoName,
-						branch: gitBranch,
-						build_path: gitBuildPath,
+						gitlab_branch: gitBranch,
+						gitlab_build_path: gitBuildPath,
 					} as any,
 				});
 			} else if (provider === 'GITEA') {
@@ -95,8 +97,8 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					body: {
 						gitea_owner: repoOwner,
 						gitea_repository: repoName,
-						branch: gitBranch,
-						build_path: gitBuildPath,
+						gitea_branch: gitBranch,
+						gitea_build_path: gitBuildPath,
 					} as any,
 				});
 			} else if (provider === 'BITBUCKET') {
@@ -105,12 +107,11 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					body: {
 						bitbucket_owner: repoOwner,
 						bitbucket_repository: repoName,
-						branch: gitBranch,
-						build_path: gitBuildPath,
+						bitbucket_branch: gitBranch,
 					} as any,
 				});
 			}
-			toast.success('Compose source settings saved');
+			toast.success('Compose source settings saved successfully');
 			onUpdated();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -121,11 +122,11 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 
 	return (
 		<div className="flex flex-col gap-6">
-			{/* Deploy Controls Card Component (< 200 lines) */}
+			{/* Deploy Settings Card Component (< 200 lines) */}
 			<ComposeDeployCard
 				compose={compose}
-				handleAction={onAction}
 				onUpdated={onUpdated}
+				onOpenTerminal={() => setShowTerminal(true)}
 			/>
 
 			{/* Source Settings Card Component (< 200 lines) */}
@@ -151,6 +152,13 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 				sshKeys={sshKeys}
 				savingSource={savingSource}
 				onSave={handleSaveSource}
+			/>
+
+			{/* Interactive WebSockets Terminal Modal for Compose Containers */}
+			<TerminalModal
+				app={compose}
+				open={showTerminal}
+				onClose={() => setShowTerminal(false)}
 			/>
 		</div>
 	);
