@@ -144,7 +144,7 @@ function ComposeDetailPage() {
 					<SchedulesTab targetId={parsedComposeId} targetType="compose" />
 				)}
 				{activeTab === 'Logs' && (
-					<LogsTab targetId={compose.name} targetType="compose" />
+					<LogsTab app={compose} />
 				)}
 				{activeTab === 'Monitoring' && (
 					<MonitoringTab app={compose} />

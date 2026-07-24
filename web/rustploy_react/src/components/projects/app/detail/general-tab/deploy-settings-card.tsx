@@ -29,7 +29,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 		{
 			params: {
 				query: {
-					application_id: app.id,
+					application_id: app?.id || 0,
 					limit: 20,
 				} as any,
 			},

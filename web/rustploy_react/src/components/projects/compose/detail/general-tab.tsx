@@ -72,6 +72,7 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 	const handleSaveSource = async () => {
 		setSavingSource(true);
 		try {
+			if (!compose?.id) return;
 			if (provider === 'RAW') {
 				await patchRawMutation.mutateAsync({
 					params: {path: {id: compose.id}},

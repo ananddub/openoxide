@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Globe, Trash2, ExternalLink, RefreshCw, Info, Lock, LockOpen, X} from 'lucide-react';
+import {Globe, Trash2, ExternalLink, RefreshCw, Info, Lock, LockOpen, X, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Badge} from '#/components/ui/badge';
@@ -9,12 +9,18 @@ import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 
 interface DomainsTabProps {
-	app: any;
+	app?: any;
+	targetId?: number;
+	targetType?: 'application' | 'compose';
 }
 
-export function DomainsTab({app}: DomainsTabProps) {
+export function DomainsTab({app, targetId, targetType}: DomainsTabProps) {
+	const entityId = app?.id || targetId || 0;
+	const isCompose = targetType === 'compose' || app?.compose_type !== undefined || app?.compose_file !== undefined;
+
 	const [showAdd, setShowAdd] = useState(false);
 	const [host, setHost] = useState('');
+	const [serviceName, setServiceName] = useState('');
 	const [port, setPort] = useState('3000');
 	const [path, setPath] = useState('/');
 	const [https, setHttps] = useState(false);
@@ -24,14 +30,33 @@ export function DomainsTab({app}: DomainsTabProps) {
 	const [deleteId, setDeleteId] = useState<number | null>(null);
 	const [deleting, setDeleting] = useState(false);
 
-	// Fetch Domains
-	const {data: domains = [], isLoading: isLoadingDomains, refetch} = $api.useQuery(
+	// Fetch Application Domains
+	const {data: appDomains = [], isLoading: isLoadingApp, refetch: refetchApp} = $api.useQuery(
 		'get',
 		'/domains/application/{application_id}',
 		{
-			params: {path: {application_id: app.id}},
+			params: {path: {application_id: entityId}},
+		},
+		{
+			enabled: !isCompose && entityId > 0,
 		}
 	);
+
+	// Fetch Compose Domains
+	const {data: composeDomains = [], isLoading: isLoadingCompose, refetch: refetchCompose} = $api.useQuery(
+		'get',
+		'/domains/compose/{compose_id}',
+		{
+			params: {path: {compose_id: entityId}},
+		},
+		{
+			enabled: isCompose && entityId > 0,
+		}
+	);
+
+	const domains = isCompose ? composeDomains : appDomains;
+	const isLoadingDomains = isCompose ? isLoadingCompose : isLoadingApp;
+	const refetch = isCompose ? refetchCompose : refetchApp;
 
 	// Mutations
 	const createDomain = $api.useMutation('post', '/domains');
@@ -45,7 +70,9 @@ export function DomainsTab({app}: DomainsTabProps) {
 		try {
 			await createDomain.mutateAsync({
 				body: {
-					application_id: app.id,
+					application_id: isCompose ? undefined : entityId,
+					compose_id: isCompose ? entityId : undefined,
+					service_name: isCompose ? (serviceName.trim() || undefined) : undefined,
 					host: host.trim(),
 					port: port ? parseInt(port) : undefined,
 					path: path || '/',
@@ -60,6 +87,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 			toast.success('Domain added successfully');
 			setShowAdd(false);
 			setHost('');
+			setServiceName('');
 			setPort('3000');
 			setPath('/');
 			setHttps(false);
@@ -88,92 +116,108 @@ export function DomainsTab({app}: DomainsTabProps) {
 	};
 
 	return (
-		<div className="flex flex-col gap-5 w-full">
-			<Card className="bg-background border border-border">
-				<CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-4">
-					<div className="flex flex-col gap-1">
-						<CardTitle className="text-xl font-bold">Domains</CardTitle>
-						<CardDescription className="text-xs text-muted-foreground">
-							Domains are used to access the application
+		<div className="flex flex-col gap-6">
+			<Card className="bg-card border-border shadow-sm">
+				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+					<div>
+						<CardTitle className="text-base font-bold flex items-center gap-2">
+							<Globe className="w-4 h-4 text-primary" /> Domains
+						</CardTitle>
+						<CardDescription className="text-xs mt-1">
+							Configure HTTP/HTTPS proxy domains, ports, and SSL certificates for your service.
 						</CardDescription>
 					</div>
-
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 text-xs font-semibold">
-							<RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Refresh
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => refetch()}
+							disabled={isLoadingDomains}
+							className="h-8 text-xs font-semibold"
+						>
+							<RefreshCw className={`w-3.5 h-3.5 ${isLoadingDomains ? 'animate-spin' : ''}`} />
 						</Button>
 						<Button size="sm" onClick={() => setShowAdd(true)} className="h-8 text-xs font-semibold">
-							<Globe className="w-3.5 h-3.5 mr-1.5" /> Add Domain
+							+ Add Domain
 						</Button>
 					</div>
 				</CardHeader>
 
 				<CardContent>
 					{isLoadingDomains ? (
-						<div className="flex w-full flex-row gap-2 min-h-[30vh] justify-center items-center">
+						<div className="flex justify-center py-10">
 							<RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
-							<span className="text-sm text-muted-foreground font-medium">Loading domains...</span>
 						</div>
 					) : domains.length === 0 ? (
-						<div className="flex w-full flex-col items-center justify-center gap-3 min-h-[35vh]">
-							<Globe className="w-8 h-8 text-muted-foreground/40" />
-							<span className="text-sm font-medium text-muted-foreground">
-								To access the application it is required to set at least 1 domain
-							</span>
+						<div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/80 rounded-xl bg-muted/10">
+							<Globe className="w-8 h-8 text-muted-foreground/50 mb-2" />
+							<p className="text-sm font-semibold text-foreground">No custom domains configured</p>
+							<p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
+								Add a domain name to expose your service to the internet via Traefik reverse proxy.
+							</p>
+							<Button size="sm" onClick={() => setShowAdd(true)} className="h-8 text-xs font-semibold">
+								Add your first domain
+							</Button>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 gap-4 xl:grid-cols-2 w-full">
-							{domains.map((d: any) => {
-								const url = `${d.https ? 'https' : 'http'}://${d.host}${d.port && d.port !== 80 && d.port !== 443 ? `:${d.port}` : ''}${d.path || ''}`;
-								return (
-									<Card key={d.id} className="relative overflow-hidden w-full border border-border transition-all hover:shadow-sm bg-card">
-										<CardContent className="p-5 flex flex-col gap-3">
-											{/* Top Row: URL & Action */}
-											<div className="flex items-center justify-between gap-2">
+						<div className="flex flex-col gap-3">
+							{domains.map((d: any) => (
+								<div
+									key={d.id}
+									className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-xl bg-card hover:bg-muted/20 transition-colors gap-3"
+								>
+									<div className="flex items-start gap-3">
+										<div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0 mt-0.5">
+											{d.https ? <Lock className="w-4 h-4 text-emerald-500" /> : <LockOpen className="w-4 h-4 text-amber-500" />}
+										</div>
+										<div className="flex flex-col gap-1">
+											<div className="flex items-center gap-2 flex-wrap">
 												<a
-													href={url}
+													href={`${d.https ? 'https' : 'http'}://${d.host}`}
 													target="_blank"
 													rel="noreferrer"
-													className="text-base font-semibold text-foreground hover:underline flex items-center gap-1.5 break-all"
+													className="text-sm font-bold text-foreground hover:text-primary flex items-center gap-1"
 												>
 													{d.host}
-													<ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+													<ExternalLink className="w-3 h-3 text-muted-foreground" />
 												</a>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => setDeleteId(d.id)}
-													className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											</div>
 
-											{/* Badges Row */}
-											<div className="flex flex-wrap items-center gap-2 pt-1">
-												<Badge variant="secondary" className="text-xs font-normal">
-													<Info className="w-3 h-3 mr-1" /> Path: {d.path || '/'}
-												</Badge>
-												<Badge variant="secondary" className="text-xs font-normal">
-													<Info className="w-3 h-3 mr-1" /> Port: {d.port || 80}
-												</Badge>
-												<Badge variant={d.https ? 'default' : 'secondary'} className="text-xs font-normal">
-													{d.https ? (
-														<span className="flex items-center gap-1"><Lock className="w-3 h-3" /> HTTPS</span>
-													) : (
-														<span className="flex items-center gap-1"><LockOpen className="w-3 h-3" /> HTTP</span>
-													)}
-												</Badge>
-												{d.certificate_type && d.certificate_type !== 'none' && (
-													<Badge variant="outline" className="text-xs font-normal">
-														Cert: {d.certificate_type}
+												{d.https ? (
+													<Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 text-[10px] h-5 font-bold">
+														HTTPS ({d.certificate_type || 'SSL'})
+													</Badge>
+												) : (
+													<Badge variant="outline" className="border-amber-500/30 text-amber-500 bg-amber-500/10 text-[10px] h-5 font-bold">
+														HTTP
+													</Badge>
+												)}
+
+												{d.service_name && (
+													<Badge variant="outline" className="border-primary/30 text-primary bg-primary/10 text-[10px] h-5 font-bold flex items-center gap-1">
+														<Box className="w-3 h-3" /> {d.service_name}
 													</Badge>
 												)}
 											</div>
-										</CardContent>
-									</Card>
-								);
-							})}
+
+											<div className="flex items-center gap-3 text-xs text-muted-foreground">
+												<span>Port: <strong className="text-foreground font-mono">{d.port || 3000}</strong></span>
+												<span>Path: <strong className="text-foreground font-mono">{d.path || '/'}</strong></span>
+											</div>
+										</div>
+									</div>
+
+									<div className="flex items-center justify-end gap-2 shrink-0">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setDeleteId(d.id)}
+											className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
+										>
+											<Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+										</Button>
+									</div>
+								</div>
+							))}
 						</div>
 					)}
 				</CardContent>
@@ -186,7 +230,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 						<div className="flex items-center justify-between border-b border-border/60 pb-3">
 							<div>
 								<h3 className="text-base font-bold text-foreground">Add Domain</h3>
-								<p className="text-xs text-muted-foreground mt-0.5">Configure domain proxy routing for your application</p>
+								<p className="text-xs text-muted-foreground mt-0.5">Configure domain proxy routing for your service</p>
 							</div>
 							<Button variant="ghost" size="icon" onClick={() => setShowAdd(false)} className="h-7 w-7 p-0 text-muted-foreground">
 								<X className="w-4 h-4" />
@@ -194,10 +238,23 @@ export function DomainsTab({app}: DomainsTabProps) {
 						</div>
 
 						<form onSubmit={handleAdd} className="flex flex-col gap-4">
+							{/* Service Name (for Compose Stacks) */}
+							{isCompose && (
+								<div className="flex flex-col gap-1.5">
+									<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+										<Box className="w-3.5 h-3.5 text-primary" /> Service Name inside Compose Stack
+									</label>
+									<p className="text-[11px] text-muted-foreground leading-tight">
+										Target compose service (e.g. <code className="text-primary font-mono">web</code>, <code className="text-primary font-mono">api</code>, <code className="text-primary font-mono">frontend</code>)
+									</p>
+									<Input placeholder="e.g. web" value={serviceName} onChange={e => setServiceName(e.target.value)} required className="text-xs h-9 font-mono" />
+								</div>
+							)}
+
 							{/* Host */}
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-semibold text-foreground">Host</label>
-								<Input placeholder="api.dokploy.com" value={host} onChange={e => setHost(e.target.value)} required className="text-xs h-9" />
+								<Input placeholder="api.mydomain.com" value={host} onChange={e => setHost(e.target.value)} required className="text-xs h-9" />
 							</div>
 
 							{/* Path */}
@@ -210,7 +267,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-semibold text-foreground">Container Port</label>
 								<p className="text-[11px] text-muted-foreground leading-tight">
-									The port where your application is running inside the container (e.g., 3000 for Node.js, 80 for Nginx, 8080 for Java)
+									Port inside the container (e.g., 3000 for Node.js, 80 for Nginx, 8080 for Java)
 								</p>
 								<Input type="number" placeholder="3000" value={port} onChange={e => setPort(e.target.value)} className="text-xs h-9" />
 							</div>
@@ -219,7 +276,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 							<div className="flex items-center justify-between p-3 border border-border rounded-lg bg-card/50">
 								<div className="flex flex-col gap-0.5">
 									<label className="text-xs font-semibold text-foreground">HTTPS</label>
-									<span className="text-[11px] text-muted-foreground">Enable SSL / HTTPS secure connection for this domain</span>
+									<span className="text-[11px] text-muted-foreground">Enable SSL / HTTPS secure connection</span>
 								</div>
 								<button
 									type="button"
@@ -262,32 +319,20 @@ export function DomainsTab({app}: DomainsTabProps) {
 				</div>
 			)}
 
-			{/* Delete Domain Confirmation Modal */}
-			{deleteId !== null && (
+			{/* Delete Confirmation Modal */}
+			{deleteId && (
 				<div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-					<div className="bg-card border border-border rounded-xl w-full max-w-sm shadow-2xl p-5 flex flex-col gap-4 animate-in fade-in duration-150">
-						<div className="flex items-center justify-between border-b border-border/60 pb-3">
-							<h3 className="text-sm font-bold text-foreground">Delete Domain</h3>
-							<Button variant="ghost" size="icon" onClick={() => setDeleteId(null)} className="h-7 w-7 p-0 text-muted-foreground">
-								<X className="w-4 h-4" />
-							</Button>
-						</div>
+					<div className="bg-card border border-border rounded-xl w-full max-w-sm shadow-2xl p-5 flex flex-col gap-4">
+						<h3 className="text-sm font-bold text-foreground">Delete Domain</h3>
 						<p className="text-xs text-muted-foreground leading-relaxed">
-							Are you sure you want to delete this domain?
+							Are you sure you want to remove this domain routing configuration? Traefik proxy rules will be removed.
 						</p>
 						<div className="flex justify-end gap-2 border-t border-border/60 pt-3">
 							<Button variant="outline" size="sm" onClick={() => setDeleteId(null)} className="h-8 text-xs font-semibold">
 								Cancel
 							</Button>
-							<Button
-								size="sm"
-								variant="destructive"
-								disabled={deleting}
-								onClick={confirmDelete}
-								className="h-8 text-xs font-semibold"
-							>
-								{deleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-								{deleting ? 'Deleting...' : 'Delete'}
+							<Button variant="destructive" size="sm" onClick={confirmDelete} disabled={deleting} className="h-8 text-xs font-semibold">
+								{deleting ? 'Deleting...' : 'Delete Domain'}
 							</Button>
 						</div>
 					</div>
