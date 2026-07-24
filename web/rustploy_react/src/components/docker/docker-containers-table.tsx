@@ -13,11 +13,33 @@ import type {GlobalContainerItem} from './docker-inspect-modal';
 
 interface DockerContainersTableProps {
 	containers: GlobalContainerItem[];
+	isLoading?: boolean;
 	onOpenModal: (container: GlobalContainerItem, type: 'logs' | 'config' | 'mount' | 'network') => void;
 	onAction: (container: GlobalContainerItem, action: 'start' | 'stop' | 'restart' | 'kill') => void;
 }
 
-export function DockerContainersTable({containers, onOpenModal, onAction}: DockerContainersTableProps) {
+export function DockerContainersTable({containers, isLoading, onOpenModal, onAction}: DockerContainersTableProps) {
+	const safeContainers = Array.isArray(containers) ? containers : [];
+
+	if (isLoading && safeContainers.length === 0) {
+		return (
+			<section className="bg-card border border-border rounded-xl p-12 flex flex-col items-center justify-center text-xs text-muted-foreground gap-2 shadow-sm">
+				<Package className="w-6 h-6 animate-bounce text-primary" />
+				<p>Loading Docker containers...</p>
+			</section>
+		);
+	}
+
+	if (safeContainers.length === 0) {
+		return (
+			<section className="bg-card border border-border rounded-xl p-12 flex flex-col items-center justify-center text-xs text-muted-foreground gap-2 shadow-sm text-center">
+				<Package className="w-10 h-10 opacity-30 text-primary" />
+				<p className="text-sm font-bold text-foreground">No Docker containers found</p>
+				<p className="text-xs text-muted-foreground">There are currently no active Docker containers running on this server.</p>
+			</section>
+		);
+	}
+
 	return (
 		<section className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
 			<div className="overflow-x-auto">
@@ -32,7 +54,7 @@ export function DockerContainersTable({containers, onOpenModal, onAction}: Docke
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border/60">
-						{containers.map((c) => (
+						{safeContainers.map((c) => (
 							<tr key={c.id} className="hover:bg-muted/20 transition-colors">
 								{/* Container Name */}
 								<td className="py-3.5 px-4">
