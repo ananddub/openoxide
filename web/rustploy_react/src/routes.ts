@@ -16,6 +16,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('Deployments', 'deployments/index.tsx'),
 		route('schedules', 'schedules.tsx'),
 		route('docker', 'docker.tsx'),
+		route('destinations', 'destinations.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [

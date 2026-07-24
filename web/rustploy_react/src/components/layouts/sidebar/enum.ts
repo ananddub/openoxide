@@ -87,7 +87,7 @@ export const MENU: Menu = {
 			to: '/settings/git-providers',
 		},
 		{title: 'Registry', icon: Database, to: '/settings/registry'},
-		{title: 'S3 Destinations', icon: Layers, to: '/settings/destinations'},
+		{title: 'S3 Destinations', icon: Layers, to: '/destinations'},
 		{title: 'Certificates', icon: Shield, to: '/settings/certificates'},
 		{title: 'Notifications', icon: Bell, to: '/settings/notifications'},
 	],
