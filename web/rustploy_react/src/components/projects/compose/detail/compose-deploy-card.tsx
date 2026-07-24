@@ -1,25 +1,25 @@
-import {useState, useMemo} from 'react';
-import {Rocket, RefreshCw, Hammer, Play, Square, StopCircle, Terminal} from 'lucide-react';
-import {Button} from '#/components/ui/button';
+import {useState} from 'react';
 import {$api} from '#/api/query';
-import {TerminalModal} from '#/components/projects/app/detail/terminal-modal';
-import {ComposeConfirmDialog, type ActionType} from './cards/compose-confirm-dialog';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
+import {ComposeConfirmDialog} from './cards/compose-confirm-dialog';
+import {ComposeDeployActions} from './cards/compose-deploy-actions';
 
 interface ComposeDeployCardProps {
 	compose: any;
-	handleAction: (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel') => Promise<void>;
 	onUpdated?: () => void;
+	onOpenTerminal?: () => void;
 }
 
-const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
+type ActionType = 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel';
 
-export function ComposeDeployCard({compose, handleAction, onUpdated}: ComposeDeployCardProps) {
-	const [autoDeploy, setAutoDeploy] = useState(compose?.auto_deploy !== false);
-	const [cleanCache, setCleanCache] = useState(false);
-	const [showTerminal, setShowTerminal] = useState(false);
-	
+const FINAL_STATES = ['DEPLOYED', 'SUCCESS', 'FAILED', 'CANCELLED', 'ERROR'];
+
+export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeDeployCardProps) {
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(null);
 	const [activeLoading, setActiveLoading] = useState<ActionType | null>(null);
+	const [autoDeploy, setAutoDeploy] = useState<boolean>(compose?.auto_deploy ?? true);
+	const [cleanCache, setCleanCache] = useState<boolean>(compose?.clean_cache ?? false);
 
 	// Fetch compose deployments query
 	const {data: rawEvents = [], refetch} = $api.useQuery(
@@ -48,145 +48,78 @@ export function ComposeDeployCard({compose, handleAction, onUpdated}: ComposeDep
 		}
 	);
 
-	const events = useMemo(() => (Array.isArray(rawEvents) ? rawEvents : []), [rawEvents]);
+	const events = Array.isArray(rawEvents) ? rawEvents : [];
 
 	const isBuilding = events.some(e => {
 		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
 		const s = (e.status || '').toUpperCase();
 		const st = (e.state || '').toUpperCase();
-		if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
-		const activeKeywords = ['BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING'];
-		return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
+		return !FINAL_STATES.includes(s) && !FINAL_STATES.includes(st);
 	});
+
+	// Mutations
+	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy');
+	const reloadMutation = $api.useMutation('post', '/compose/{id}/reload');
+	const rebuildMutation = $api.useMutation('post', '/compose/{id}/rebuild');
+	const startMutation = $api.useMutation('post', '/compose/{id}/start');
+	const stopMutation = $api.useMutation('post', '/compose/{id}/stop');
 
 	const executeAction = async (action: ActionType) => {
 		setConfirmAction(null);
-		const targetAction = action === 'stop' ? 'cancel' : action;
 		setActiveLoading(action);
 		try {
-			await handleAction(targetAction as any);
-			await refetch();
+			const path = {id: compose?.id};
+			if (action === 'deploy') {
+				await deployMutation.mutateAsync({params: {path}});
+				toast.success('Compose stack deployment initiated');
+			} else if (action === 'reload') {
+				await reloadMutation.mutateAsync({params: {path}});
+				toast.success('Compose stack reloaded');
+			} else if (action === 'rebuild') {
+				await rebuildMutation.mutateAsync({params: {path}});
+				toast.success('Compose stack rebuild initiated');
+			} else if (action === 'start') {
+				await startMutation.mutateAsync({params: {path}});
+				toast.success('Compose stack started');
+			} else if (action === 'stop') {
+				await stopMutation.mutateAsync({params: {path}});
+				toast.success('Compose stack stopped');
+			}
+			refetch();
 			onUpdated?.();
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		} finally {
 			setActiveLoading(null);
 		}
 	};
 
 	const isProcessing = activeLoading !== null;
+	const rawStatus = (compose?.compose_status || compose?.status || '').toLowerCase();
+	const isRunning = rawStatus === 'running' || rawStatus === 'deployed';
 
 	return (
 		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
 			<h3 className="text-sm font-bold text-foreground">Deploy Settings</h3>
-			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						disabled={isProcessing || isBuilding}
-						onClick={() => setConfirmAction('deploy')}
-						size="sm"
-						className="h-8 text-xs font-semibold flex items-center gap-1.5"
-					>
-						<Rocket className="w-3.5 h-3.5" /> Deploy Stack
-					</Button>
+			
+			<ComposeDeployActions
+				isProcessing={isProcessing}
+				isBuilding={isBuilding}
+				isRunning={isRunning}
+				activeLoading={activeLoading}
+				autoDeploy={autoDeploy}
+				setAutoDeploy={setAutoDeploy}
+				cleanCache={cleanCache}
+				setCleanCache={setCleanCache}
+				setConfirmAction={setConfirmAction}
+				onOpenTerminal={onOpenTerminal}
+			/>
 
-					<Button
-						disabled={isProcessing || isBuilding}
-						onClick={() => setConfirmAction('reload')}
-						variant="outline"
-						size="sm"
-						className="h-8 text-xs font-semibold flex items-center gap-1.5"
-					>
-						<RefreshCw className="w-3.5 h-3.5" /> Reload
-					</Button>
-
-					<Button
-						disabled={isProcessing || isBuilding}
-						onClick={() => setConfirmAction('rebuild')}
-						variant="outline"
-						size="sm"
-						className="h-8 text-xs font-semibold flex items-center gap-1.5"
-					>
-						<Hammer className="w-3.5 h-3.5" /> Rebuild
-					</Button>
-
-					{/* Dynamic 3-State Action Button: Cancel (Building), Stop (Running), Start (Stopped) */}
-					{isBuilding ? (
-						<Button
-							disabled={isProcessing}
-							onClick={() => setConfirmAction('cancel')}
-							variant="destructive"
-							size="sm"
-							className="h-8 text-xs font-semibold flex items-center gap-1.5"
-						>
-							<StopCircle className="w-3.5 h-3.5" /> Cancel Build
-						</Button>
-					) : (compose?.compose_status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'deployed') ? (
-						<Button
-							disabled={isProcessing}
-							onClick={() => setConfirmAction('stop')}
-							variant="outline"
-							size="sm"
-							className="h-8 text-xs font-semibold flex items-center gap-1.5 border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
-						>
-							<Square className="w-3.5 h-3.5" /> Stop
-						</Button>
-					) : (
-						<Button
-							disabled={isProcessing}
-							onClick={() => setConfirmAction('start')}
-							variant="outline"
-							size="sm"
-							className="h-8 text-xs font-semibold flex items-center gap-1.5 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-						>
-							<Play className="w-3.5 h-3.5 fill-current" /> Start
-						</Button>
-					)}
-				</div>
-
-				<Button
-					variant="secondary"
-					size="sm"
-					onClick={() => setShowTerminal(true)}
-					className="h-8 text-xs font-semibold flex items-center gap-1.5"
-				>
-					<Terminal className="w-3.5 h-3.5" /> Open Container Terminal
-				</Button>
-			</div>
-
-			<div className="flex flex-wrap items-center gap-6 pt-3 border-t border-border/40 text-xs text-muted-foreground">
-				<label className="flex items-center gap-2 cursor-pointer font-semibold">
-					<input
-						type="checkbox"
-						checked={autoDeploy}
-						onChange={e => setAutoDeploy(e.target.checked)}
-						className="accent-primary w-4 h-4 rounded"
-					/>
-					Auto Deploy on Push
-				</label>
-				<label className="flex items-center gap-2 cursor-pointer font-semibold">
-					<input
-						type="checkbox"
-						checked={cleanCache}
-						onChange={e => setCleanCache(e.target.checked)}
-						className="accent-primary w-4 h-4 rounded"
-					/>
-					Clean Cache Before Build
-				</label>
-			</div>
-
-			{/* Confirm Action Dialog Component (< 200 lines) */}
 			<ComposeConfirmDialog
-				confirmAction={confirmAction}
+				action={confirmAction}
 				onClose={() => setConfirmAction(null)}
 				onConfirm={executeAction}
 			/>
-
-			{/* Terminal Exec Modal Component */}
-			{showTerminal && (
-				<TerminalModal
-					app={compose}
-					onClose={() => setShowTerminal(false)}
-				/>
-			)}
 		</section>
 	);
 }
