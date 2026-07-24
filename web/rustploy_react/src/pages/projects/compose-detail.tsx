@@ -7,9 +7,9 @@ import {$api} from '#/api/query';
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
 import {EnvironmentTab} from '#/components/projects/app/detail/environment-tab';
-import {DomainsTab} from '#/components/projects/app/detail/domains-tab';
+import {ComposeDomainsTab} from '#/components/projects/compose/detail/compose-domains-tab';
 import {DeploymentsTab} from '#/components/projects/app/detail/deployments-tab';
-import {LogsTab} from '#/components/projects/app/detail/logs-tab';
+import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
 import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
 import {SchedulesTab} from '#/components/projects/app/detail/schedules-tab';
 import {AdvancedTab} from '#/components/projects/app/detail/advanced-tab';
@@ -135,7 +135,7 @@ function ComposeDetailPage() {
 					<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
 				)}
 				{activeTab === 'Domains' && (
-					<DomainsTab targetId={parsedComposeId} targetType="compose" />
+					<ComposeDomainsTab composeId={parsedComposeId} />
 				)}
 				{activeTab === 'Deployments' && (
 					<DeploymentsTab targetId={parsedComposeId} targetType="compose" />
@@ -144,7 +144,7 @@ function ComposeDetailPage() {
 					<SchedulesTab targetId={parsedComposeId} targetType="compose" />
 				)}
 				{activeTab === 'Logs' && (
-					<LogsTab app={compose} />
+					<ComposeLogsTab compose={compose} />
 				)}
 				{activeTab === 'Monitoring' && (
 					<MonitoringTab app={compose} />

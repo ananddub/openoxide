@@ -1,14 +1,12 @@
 import {useState, useEffect, useRef} from 'react';
-import {FileText, RefreshCw, Download, Play, Square, Box} from 'lucide-react';
+import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
 
 interface LogsTabProps {
 	app: any;
 }
 
 export function LogsTab({app}: LogsTabProps) {
-	const [selectedContainer, setSelectedContainer] = useState('');
 	const [lines, setLines] = useState('100');
 	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
@@ -19,7 +17,7 @@ export function LogsTab({app}: LogsTabProps) {
 
 	// Connect to backend Server-Sent Events (SSE) docker service log stream
 	useEffect(() => {
-		const targetName = selectedContainer.trim() || app?.app_name || app?.name;
+		const targetName = app?.app_name || app?.name;
 		if (!targetName) return;
 
 		let isMounted = true;
@@ -155,16 +153,7 @@ export function LogsTab({app}: LogsTabProps) {
 					<p className="text-xs text-muted-foreground mt-1">Real-time terminal output stream from the running container</p>
 				</div>
 
-				<div className="flex items-center gap-3 flex-wrap">
-					<div className="flex items-center gap-1.5 bg-muted/20 border border-border rounded-lg px-2 py-0.5">
-						<Box className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-						<Input
-							placeholder="Service / Container (e.g. redis)"
-							value={selectedContainer}
-							onChange={e => setSelectedContainer(e.target.value)}
-							className="h-7 w-48 border-none bg-transparent text-xs font-mono p-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
-						/>
-					</div>
+				<div className="flex items-center gap-3">
 					<Button
 						variant={isLive ? 'default' : 'outline'}
 						size="sm"

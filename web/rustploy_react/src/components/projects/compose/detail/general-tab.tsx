@@ -7,7 +7,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/c
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import {DeploySettingsCard} from '#/components/projects/app/detail/general-tab/deploy-settings-card';
+import {ComposeDeployCard} from './compose-deploy-card';
 import {
 	GithubIcon,
 	GitlabIcon,
@@ -143,8 +143,8 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
-			{/* Shared Deploy Settings Card — Exact same card component as Application! */}
-			<DeploySettingsCard app={compose} handleAction={onAction} onUpdated={onUpdated} />
+			{/* Dedicated Compose Deploy Settings Card */}
+			<ComposeDeployCard compose={compose} handleAction={onAction} onUpdated={onUpdated} />
 
 			{/* Source Settings Provider Card — 100% Identical to Application SourceSettingsCard! */}
 			<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
