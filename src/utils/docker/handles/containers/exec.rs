@@ -74,5 +74,14 @@ impl<'a> ExecBuilder<'a> {
         a.push_all(cmd.into_iter().map(Into::into));
         self.cli.execute_stream(&a, sender).await
     }
+
+    pub fn build_args(self, cmd: impl IntoIterator<Item = impl Into<String>>) -> Vec<String> {
+        let mut a = ArgBuilder::cmd(&["exec"]);
+        a.inherit_meta(&self.args);
+        a.push_all(self.args.build());
+        a.push(&self.id);
+        a.push_all(cmd.into_iter().map(Into::into));
+        a.build()
+    }
 }
 crate::impl_builder_opts!(ExecBuilder);

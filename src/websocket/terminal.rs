@@ -150,8 +150,20 @@ impl TerminalSocket {
             }
         };
 
+        let exec_args = docker
+            .containers()
+            .exec(&target_container)
+            .interactive()
+            .tty(true)
+            .workdir("/")
+            .build_args([&shell]);
+
         let mut cmd = CommandBuilder::new("docker");
-        cmd.args(["exec", "-it", "-w", "/", &target_container, &shell]);
+        if exec_args.first().map(|s| s.as_str()) == Some("exec") {
+            cmd.args(&exec_args[1..]);
+        } else {
+            cmd.args(&exec_args);
+        }
 
         let child = match pair.slave.spawn_command(cmd) {
             Ok(child) => child,
