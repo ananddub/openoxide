@@ -159,11 +159,7 @@ impl TerminalSocket {
             .build_args([&shell]);
 
         let mut cmd = CommandBuilder::new("docker");
-        if exec_args.first().map(|s| s.as_str()) == Some("exec") {
-            cmd.args(&exec_args[1..]);
-        } else {
-            cmd.args(&exec_args);
-        }
+        cmd.args(&exec_args);
 
         let child = match pair.slave.spawn_command(cmd) {
             Ok(child) => child,
