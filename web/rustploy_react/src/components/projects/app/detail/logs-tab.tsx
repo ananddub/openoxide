@@ -2,6 +2,7 @@ import {useState, useEffect, useRef} from 'react';
 import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {LogLine} from '#/components/shared/log-line';
+import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 
 interface LogsTabProps {
 	app: any;
@@ -236,22 +237,15 @@ export function LogsTab({app}: LogsTabProps) {
 				</div>
 			</div>
 
-			{isLoading && streamedLogs.length === 0 ? (
-				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex items-center justify-center text-zinc-500">
-					<RefreshCw className="w-4 h-4 animate-spin mr-2" /> Connecting to real-time container log stream...
-				</div>
-			) : streamedLogs.length === 0 ? (
-				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex flex-col items-center justify-center text-zinc-600">
-					<FileText className="w-8 h-8 mb-2 opacity-50" />
-					<p>No container log entries found. The application container may be stopped or initializing.</p>
-				</div>
-			) : (
-				<div ref={scrollRef} className="rounded-xl bg-[#090d16] border border-border/80 p-3 font-mono text-xs h-96 overflow-y-auto flex flex-col gap-0.5 shadow-inner">
-					{streamedLogs.map((line, idx) => (
-						<LogLine key={idx} line={line} index={idx} />
-					))}
-				</div>
-			)}
+			<DeploymentViewer
+				logs={streamedLogs}
+				isLoading={isLoading}
+				isLive={isLive}
+				loadingText="Connecting to real-time container log stream..."
+				emptyText="No container log entries found. The application container may be stopped or initializing."
+				onDownload={handleDownload}
+				onReload={() => setRefetchTrigger(prev => prev + 1)}
+			/>
 		</div>
 	);
 }
