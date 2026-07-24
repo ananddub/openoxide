@@ -26,13 +26,15 @@ export const Route = createFileRoute('/_auth')({
 				replace: true,
 			});
 		}
-		// Owner is present & user attempts to signup
+		// Owner is present & user attempts to signup (Disabled to allow accessing signup option)
+		/*
 		if (isOwnerPresent && location.pathname === '/singup') {
 			throw redirect({
 				to: '/singin',
 				replace: true,
 			});
 		}
+		*/
 	},
 	component: AuthLayout,
 });
