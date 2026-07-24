@@ -7,7 +7,7 @@ const AUTH_STORAGE_KEY = 'rustploy-auth-session';
 const authMiddleware: Middleware = {
 	async onRequest({request}) {
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
-		if (sessionRaw) {
+		if (sessionRaw && sessionRaw !== 'undefined') {
 			try {
 				const session = JSON.parse(sessionRaw);
 				const accessToken = session?.tokens?.access_token;
@@ -33,7 +33,7 @@ const authMiddleware: Middleware = {
 
 		// Attempt token refresh
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
-		if (!sessionRaw) {
+		if (!sessionRaw || sessionRaw === 'undefined') {
 			useAuthStore.getState().logout();
 			return response;
 		}
