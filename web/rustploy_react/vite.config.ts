@@ -1,0 +1,33 @@
+import tailwindcss from '@tailwindcss/vite';
+import {devtools} from '@tanstack/devtools-vite';
+import {tanstackRouter} from '@tanstack/router-plugin/vite';
+import viteReact from '@vitejs/plugin-react';
+import {defineConfig} from 'vite';
+import {routes} from './src/routes';
+
+const config = defineConfig({
+	resolve: {tsconfigPaths: true},
+	plugins: [
+		devtools(),
+		tailwindcss(),
+		tanstackRouter({
+			target: 'react',
+			autoCodeSplitting: true,
+			routesDirectory: './src/pages',
+			virtualRouteConfig: routes,
+		}),
+		viteReact(),
+	],
+	server: {
+		proxy: {
+			'/api': {
+				target: 'http://das.tail25b5a0.ts.net:4000',
+				changeOrigin: true,
+				secure: false,
+				rewrite: path => path.replace(/^\/api/, ''),
+			},
+		},
+	},
+});
+
+export default config;

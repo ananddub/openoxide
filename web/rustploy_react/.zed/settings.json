@@ -1,0 +1,54 @@
+{
+	"formatter": "language_server",
+	"languages": {
+		"JavaScript": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"TypeScript": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"TSX": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"JSON": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"CSS": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"HTML": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		},
+		"Markdown": {
+			"formatter": {
+				"language_server": {
+					"name": "oxc"
+				}
+			}
+		}
+	}
+}
