@@ -5,7 +5,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -82,13 +81,7 @@ export function DeleteOrganization({organizationId, onDelete, disabled}: Props) 
 						cannot be undone.
 					</DialogDescription>
 				</DialogHeader>
-				<DialogFooter className="mt-4 flex justify-end gap-2">
-					<Button
-						variant="outline"
-						disabled={isPending}
-						onClick={() => setOpen(false)}>
-						Cancel
-					</Button>
+				<div className="mt-4 flex justify-end">
 					<Button
 						variant="destructive"
 						disabled={isPending}
@@ -97,7 +90,7 @@ export function DeleteOrganization({organizationId, onDelete, disabled}: Props) 
 						{isPending && <Loader2 className="size-4 animate-spin" />}
 						Delete
 					</Button>
-				</DialogFooter>
+				</div>
 			</DialogContent>
 		</Dialog>
 	);

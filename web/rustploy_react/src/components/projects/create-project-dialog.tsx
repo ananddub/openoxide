@@ -5,7 +5,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
@@ -109,15 +108,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 						</div>
 					</div>
 
-					<DialogFooter className="gap-2 sm:gap-0 mt-2 border-t border-border/30 pt-4">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => onOpenChange(false)}
-							disabled={isSubmitting}
-							className="text-muted-foreground hover:bg-muted font-medium">
-							Cancel
-						</Button>
+					<div className="flex justify-end mt-2">
 						<Button
 							type="submit"
 							disabled={isSubmitting}
@@ -131,7 +122,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 								'Create Project'
 							)}
 						</Button>
-					</DialogFooter>
+					</div>
 				</form>
 			</DialogContent>
 		</Dialog>

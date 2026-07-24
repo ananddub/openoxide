@@ -7,7 +7,6 @@ import {Loader2} from 'lucide-react';
 import {
 	Dialog,
 	DialogTitle,
-	DialogFooter,
 	DialogHeader,
 	DialogContent,
 	DialogDescription,
@@ -150,7 +149,7 @@ export function AddOrganization({
 						/>
 						<FieldError>{errors.logo?.message}</FieldError>
 					</Field>
-					<DialogFooter className="mt-2">
+					<div className="flex justify-end mt-2">
 						<Button
 							type="submit"
 							disabled={isPending}
@@ -158,7 +157,7 @@ export function AddOrganization({
 							{isPending && <Loader2 className="size-4 animate-spin" />}
 							{isEdit ? 'Update organization' : 'Create organization'}
 						</Button>
-					</DialogFooter>
+					</div>
 				</form>
 			</DialogContent>
 		</Dialog>
