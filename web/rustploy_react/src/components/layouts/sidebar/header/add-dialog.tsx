@@ -14,8 +14,10 @@ import {
 } from '#/components/ui/dialog';
 import {toast} from 'sonner';
 import {Input} from '#/components/ui/input';
-import {organizations} from '#/consts/data';
 import {Field, FieldLabel, FieldError} from '#/components/ui/field';
+import {$api} from '#/api/query';
+import {useQueryClient} from '@tanstack/react-query';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 const organizationSchema = v.object({
 	name: v.pipe(
@@ -40,6 +42,11 @@ export function AddOrganization({
 }: Props) {
 	const isEdit = !!organizationId;
 	const [isPending, setIsPending] = React.useState(false);
+	const queryClient = useQueryClient();
+	const orgList = useOrganizationStore(state => state.organizations);
+
+	const createMutation = $api.useMutation('post', '/organizations');
+	const patchMutation = $api.useMutation('patch', '/organizations/{id}');
 
 	const {
 		register,
@@ -55,32 +62,62 @@ export function AddOrganization({
 	React.useEffect(() => {
 		if (open) {
 			if (isEdit) {
-				const org = organizations.find(
+				const org = orgList.find(
 					o => String(o.id) === organizationId,
 				);
 				reset({
-					name: org ? org.name : 'Goploy Self-Hosted',
-					logo: org ? org.logo : 'https://example.com/logo.png',
+					name: org ? org.name : '',
+					logo: org ? org.logo || '' : '',
 				});
 			} else {
 				reset({name: '', logo: ''});
 			}
 		}
-	}, [organizationId, reset, open, isEdit]);
+	}, [organizationId, reset, open, isEdit, orgList]);
 
-	const onSubmit = async (_: OrganizationFormValues) => {
+	const onSubmit = async (data: OrganizationFormValues) => {
 		setIsPending(true);
 		try {
-			// Simulate api delay
-			await new Promise(resolve => setTimeout(resolve, 800));
-			toast.success(
-				`Organization ${isEdit ? 'updated' : 'created'} successfully (Mock)`,
-			);
-			// Close dialog upon successful save
-			onOpenChange(false);
-		} catch (error) {
-			console.error(error);
-			toast.error('Failed to save organization');
+			if (isEdit && organizationId) {
+				const {error} = await patchMutation.mutateAsync({
+					params: {
+						path: {
+							id: Number(organizationId),
+						},
+					},
+					body: {
+						name: data.name,
+						logo: data.logo || undefined,
+					},
+				});
+
+				if (error) {
+					const errBody = error as any;
+					toast.error(errBody?.message || 'Failed to update organization');
+				} else {
+					toast.success('Organization updated successfully');
+					queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+					onOpenChange(false);
+				}
+			} else {
+				const {error} = await createMutation.mutateAsync({
+					body: {
+						name: data.name,
+						logo: data.logo || undefined,
+					},
+				});
+
+				if (error) {
+					const errBody = error as any;
+					toast.error(errBody?.message || 'Failed to create organization');
+				} else {
+					toast.success('Organization created successfully');
+					queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+					onOpenChange(false);
+				}
+			}
+		} catch {
+			toast.error('An unexpected error occurred');
 		} finally {
 			setIsPending(false);
 		}

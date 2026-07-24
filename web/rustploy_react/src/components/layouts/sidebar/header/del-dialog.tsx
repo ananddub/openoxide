@@ -12,6 +12,8 @@ import {
 } from '#/components/ui/dialog';
 import {toast} from 'sonner';
 import {cn} from '#/api/utils';
+import {$api} from '#/api/query';
+import {useQueryClient} from '@tanstack/react-query';
 
 type Props = {
 	organizationId: string;
@@ -21,21 +23,36 @@ type Props = {
 
 // Confirmation dialog before deleting an organization.
 // Disabled when only one org remains to prevent leaving an empty state.
-export function DeleteOrganization({onDelete, disabled}: Props) {
+export function DeleteOrganization({organizationId, onDelete, disabled}: Props) {
 	const [open, setOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
+	const queryClient = useQueryClient();
+
+	const deleteMutation = $api.useMutation('delete', '/organizations/{id}');
 
 	const handleConfirm = async () => {
 		if (disabled) return;
 		setIsPending(true);
 		try {
-			await new Promise(resolve => setTimeout(resolve, 800));
-			onDelete();
-			toast.success('Organization deleted successfully');
-			setOpen(false);
-		} catch (error) {
-			console.error(error);
-			toast.error('Failed to delete organization');
+			const {error} = await deleteMutation.mutateAsync({
+				params: {
+					path: {
+						id: Number(organizationId),
+					},
+				},
+			});
+
+			if (error) {
+				const errBody = error as any;
+				toast.error(errBody?.message || 'Failed to delete organization');
+			} else {
+				toast.success('Organization deleted successfully');
+				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+				onDelete();
+				setOpen(false);
+			}
+		} catch {
+			toast.error('An unexpected error occurred');
 		} finally {
 			setIsPending(false);
 		}
