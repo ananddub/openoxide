@@ -83,6 +83,7 @@ export function DeploymentLogsDialog({
 						logs={logLines}
 						isLoading={isLogsLoading}
 						isLive={isRunning}
+						isDeployment={true}
 						heightClass="h-[480px]"
 						loadingText="Connecting to console stream..."
 						emptyText="Waiting for build console outputs..."
