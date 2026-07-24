@@ -119,13 +119,14 @@ export function ComposeSourceCard({
 					</div>
 				</div>
 			) : provider === 'GIT' ? (
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-					<div className="flex flex-col gap-1.5 md:col-span-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+					<div className="flex flex-col gap-1.5 md:col-span-2">
 						<label className="text-xs font-semibold text-foreground">Repository URL *</label>
 						<Input value={gitUrl} onChange={e => setGitUrl(e.target.value)} placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git" className="h-9 text-xs font-mono" />
 					</div>
-					<div className="flex flex-col gap-1.5 md:col-span-1">
-						<label className="text-xs font-semibold text-foreground">SSH Key</label>
+
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-semibold text-foreground">SSH Key (Optional for private repos)</label>
 						<Select
 							value={gitSshKeyId ? String(gitSshKeyId) : 'none'}
 							onValueChange={v => setGitSshKeyId(v === 'none' ? undefined : Number(v))}
@@ -144,12 +145,13 @@ export function ComposeSourceCard({
 						</Select>
 					</div>
 
-					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground font-sans">Git Branch *</label>
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-semibold text-foreground">Git Branch *</label>
 						<Input value={gitBranch} onChange={e => setGitBranch(e.target.value)} placeholder="main" className="h-9 text-xs font-mono" />
 					</div>
+
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground font-sans">Compose File Path *</label>
+						<label className="text-xs font-semibold text-foreground">Compose File Path *</label>
 						<Input value={gitBuildPath} onChange={e => setGitBuildPath(e.target.value)} placeholder="docker-compose.yml" className="h-9 text-xs font-mono" />
 					</div>
 				</div>
