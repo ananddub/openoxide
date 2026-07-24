@@ -26,6 +26,7 @@ export function useSignin(onErrorCallback?: (msg: string) => void) {
 				}
 				onErrorCallback?.(message);
 			} else if (res?.user) {
+				localStorage.setItem('rustploy-auth-session', JSON.stringify(res));
 				setAuth({
 					id: res.user.user_id,
 					email: res.user.email || '',
