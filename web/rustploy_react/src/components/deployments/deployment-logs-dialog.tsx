@@ -1,7 +1,6 @@
 import {useMemo} from 'react';
 import {Terminal, Copy, Check, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {cn} from '#/api/utils';
 import {
 	Dialog,
 	DialogContent,
@@ -9,6 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
+import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import type {Deployment} from '#/hooks/deployments/use-deployments';
 
 interface DeploymentLogsDialogProps {
@@ -18,70 +18,6 @@ interface DeploymentLogsDialogProps {
 	isLogsLoading: boolean;
 	copied: boolean;
 	onCopyLogs: () => void;
-}
-
-// ANSI Escape Code Parser to React Elements
-function parseAnsiToReact(text: string): React.ReactNode[] {
-	if (!text) return [];
-
-	const regex = /(\x1B\[[0-9;]*m)/g;
-	const parts = text.split(regex);
-
-	let currentClasses: string[] = [];
-	let isBold = false;
-
-	return parts.map((part, index) => {
-		if (part.startsWith('\x1B[')) {
-			const codes = part.replace('\x1B[', '').replace('m', '').split(';').map(Number);
-			for (const code of codes) {
-				if (code === 0) {
-					currentClasses = [];
-					isBold = false;
-				} else if (code === 1) {
-					isBold = true;
-				} else if (code === 31 || code === 91) {
-					currentClasses = ['text-red-400 font-semibold'];
-				} else if (code === 32 || code === 92) {
-					currentClasses = ['text-emerald-400 font-semibold'];
-				} else if (code === 33 || code === 93) {
-					currentClasses = ['text-amber-400 font-medium'];
-				} else if (code === 34 || code === 94) {
-					currentClasses = ['text-blue-400 font-medium'];
-				} else if (code === 35 || code === 95) {
-					currentClasses = ['text-fuchsia-400 font-medium'];
-				} else if (code === 36 || code === 96) {
-					currentClasses = ['text-cyan-400 font-medium'];
-				} else if (code === 37) {
-					currentClasses = ['text-zinc-100'];
-				} else if (code === 90) {
-					currentClasses = ['text-zinc-500'];
-				}
-			}
-			return null;
-		}
-
-		if (!part) return null;
-
-		let finalClass = currentClasses.join(' ');
-		if (!finalClass) {
-			const lowerPart = part.toLowerCase();
-			if (lowerPart.includes('error') || lowerPart.includes('failed') || lowerPart.includes('exception')) {
-				finalClass = 'text-red-400 font-semibold';
-			} else if (lowerPart.includes('warning') || lowerPart.includes('warn:')) {
-				finalClass = 'text-amber-400 font-medium';
-			} else if (lowerPart.includes('success') || lowerPart.includes('successfully') || lowerPart.includes('done')) {
-				finalClass = 'text-emerald-400 font-semibold';
-			} else if (lowerPart.includes('info') || lowerPart.includes('building') || lowerPart.includes('compiling')) {
-				finalClass = 'text-cyan-400';
-			}
-		}
-
-		return (
-			<span key={index} className={cn(finalClass, isBold && 'font-bold')}>
-				{part}
-			</span>
-		);
-	});
 }
 
 export function DeploymentLogsDialog({
@@ -142,34 +78,15 @@ export function DeploymentLogsDialog({
 					</div>
 				</DialogHeader>
 
-				<div className="grow overflow-hidden my-4 relative">
-					{isLogsLoading ? (
-						<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#08080a]/95 rounded-lg border border-zinc-900 z-10">
-							<RefreshCw className="size-6 animate-spin text-primary" />
-							<p className="text-xs font-medium text-zinc-400">
-								Connecting to console stream...
-							</p>
-						</div>
-					) : null}
-
-					<div className="h-full w-full bg-[#050506] text-zinc-300 border border-zinc-900 rounded-lg font-mono text-[11px] leading-relaxed overflow-y-auto select-text p-4">
-						{logLines.length > 0 ? (
-							logLines.map((line, idx) => (
-								<div key={idx} className="flex hover:bg-zinc-900/30 py-0.5 px-1 rounded transition-colors group">
-									<span className="w-9 text-zinc-700 select-none text-right pr-3 font-mono opacity-50 group-hover:opacity-90 transition-opacity">
-										{idx + 1}
-									</span>
-									<span className="flex-1 whitespace-pre-wrap break-all text-zinc-300">
-										{parseAnsiToReact(line)}
-									</span>
-								</div>
-							))
-						) : (
-							<div className="text-zinc-600 italic p-2 animate-pulse">
-								Waiting for build console outputs...
-							</div>
-						)}
-					</div>
+				<div className="grow overflow-y-auto my-2">
+					<DeploymentViewer
+						logs={logLines}
+						isLoading={isLogsLoading}
+						isLive={isRunning}
+						heightClass="h-[480px]"
+						loadingText="Connecting to console stream..."
+						emptyText="Waiting for build console outputs..."
+					/>
 				</div>
 			</DialogContent>
 		</Dialog>
