@@ -1,7 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {$api} from '#/api/query';
 
 interface LogsTabProps {
 	app: any;
@@ -11,34 +10,107 @@ export function LogsTab({app}: LogsTabProps) {
 	const [lines, setLines] = useState('100');
 	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
+	const [isLoading, setIsLoading] = useState(true);
 	const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
+	const [refetchTrigger, setRefetchTrigger] = useState(0);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
-	const {data: logsRaw = '', isLoading, refetch} = $api.useQuery(
-		'get',
-		'/deployments/docker/service/{target}/logs',
-		{
-			params: {
-				path: {target: app.app_name},
-				query: {
-					tail: parseInt(lines),
-					timestamps,
-				} as any,
-			},
-		},
-		{
-			enabled: !!app.app_name,
-			refetchInterval: isLive ? 3000 : false,
-		}
-	);
-
+	// Connect to backend Server-Sent Events (SSE) docker service log stream
 	useEffect(() => {
-		const raw = logsRaw as unknown as string;
-		if (typeof raw === 'string' && raw) {
-			const parsed = raw.split('\n').filter(Boolean);
-			setStreamedLogs(parsed);
-		}
-	}, [logsRaw]);
+		const targetName = app?.app_name || app?.name;
+		if (!targetName) return;
+
+		let isMounted = true;
+		const controller = new AbortController();
+		setIsLoading(true);
+		setStreamedLogs([]);
+
+		const startStream = async () => {
+			try {
+				let accessToken = '';
+				const sessionRaw = localStorage.getItem('rustploy-auth-session');
+				if (sessionRaw) {
+					try {
+						const session = JSON.parse(sessionRaw);
+						accessToken = session?.tokens?.access_token || '';
+					} catch {}
+				}
+
+				const params = new URLSearchParams({
+					tail: lines,
+					timestamps: String(timestamps),
+					follow: String(isLive),
+				});
+
+				const response = await fetch(
+					`/api/deployments/docker/service/${encodeURIComponent(targetName)}/logs?${params.toString()}`,
+					{
+						headers: {
+							Authorization: accessToken ? `Bearer ${accessToken}` : '',
+						},
+						signal: controller.signal,
+					}
+				);
+
+				if (!response.ok) {
+					if (isMounted) {
+						setStreamedLogs([`Log stream notice: Container service '${targetName}' is not active or has no logs.`]);
+						setIsLoading(false);
+					}
+					return;
+				}
+
+				const reader = response.body?.getReader();
+				const decoder = new TextDecoder();
+				if (!reader) return;
+
+				if (isMounted) setIsLoading(false);
+
+				let buffer = '';
+				while (isMounted) {
+					const {done, value} = await reader.read();
+					if (done) break;
+
+					buffer += decoder.decode(value, {stream: true});
+					const rawLines = buffer.split('\n');
+					buffer = rawLines.pop() || '';
+
+					for (const rawLine of rawLines) {
+						const trimmed = rawLine.trim();
+						if (!trimmed || trimmed.startsWith('event:') || trimmed.startsWith(':')) continue;
+
+						if (rawLine.startsWith('data:')) {
+							const jsonStr = rawLine.slice(5).trim();
+							if (jsonStr) {
+								try {
+									const data = JSON.parse(jsonStr);
+									const text = data.line || data.data || data.message;
+									if (text && isMounted) {
+										setStreamedLogs(prev => [...prev, text]);
+									}
+								} catch {
+									if (isMounted) setStreamedLogs(prev => [...prev, jsonStr]);
+								}
+							}
+						}
+					}
+				}
+			} catch (err: any) {
+				if (err.name !== 'AbortError' && isMounted) {
+					setStreamedLogs(prev => [...prev, `Container log stream ended.`]);
+				}
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		};
+
+		startStream();
+
+		return () => {
+			isMounted = false;
+			controller.abort();
+		};
+	}, [app?.app_name, app?.name, lines, timestamps, isLive, refetchTrigger]);
 
 	useEffect(() => {
 		if (isLive && scrollRef.current) {
@@ -51,7 +123,7 @@ export function LogsTab({app}: LogsTabProps) {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${app.app_name || 'logs'}.txt`;
+		a.download = `${app?.app_name || app?.name || 'logs'}.txt`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
@@ -74,7 +146,7 @@ export function LogsTab({app}: LogsTabProps) {
 	};
 
 	return (
-		<div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4">
+		<div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
 			<div className="flex items-center justify-between gap-4 flex-wrap">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">Container Logs</h3>
@@ -93,7 +165,12 @@ export function LogsTab({app}: LogsTabProps) {
 					</Button>
 
 					<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-muted-foreground">
-						<input type="checkbox" checked={timestamps} onChange={e => setTimestamps(e.target.checked)} className="accent-primary w-4 h-4 rounded" />
+						<input
+							type="checkbox"
+							checked={timestamps}
+							onChange={e => setTimestamps(e.target.checked)}
+							className="accent-primary w-4 h-4 rounded"
+						/>
 						Timestamps
 					</label>
 
@@ -106,14 +183,25 @@ export function LogsTab({app}: LogsTabProps) {
 						<option value="100">100 lines</option>
 						<option value="200">200 lines</option>
 						<option value="500">500 lines</option>
+						<option value="1000">1000 lines</option>
 					</select>
 
-					<Button variant="outline" size="sm" onClick={() => refetch()} className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setRefetchTrigger(prev => prev + 1)}
+						className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5"
+					>
 						<RefreshCw className="w-3.5 h-3.5" /> Refresh
 					</Button>
 
 					{streamedLogs.length > 0 && (
-						<Button variant="outline" size="sm" onClick={handleDownload} className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleDownload}
+							className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5"
+						>
 							<Download className="w-3.5 h-3.5" /> Download
 						</Button>
 					)}
@@ -122,12 +210,12 @@ export function LogsTab({app}: LogsTabProps) {
 
 			{isLoading && streamedLogs.length === 0 ? (
 				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex items-center justify-center text-zinc-500">
-					<RefreshCw className="w-4 h-4 animate-spin mr-2" /> Connecting to container log stream...
+					<RefreshCw className="w-4 h-4 animate-spin mr-2" /> Connecting to real-time container log stream...
 				</div>
 			) : streamedLogs.length === 0 ? (
 				<div className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-xs h-96 flex flex-col items-center justify-center text-zinc-600">
 					<FileText className="w-8 h-8 mb-2 opacity-50" />
-					<p>No container log entries found. The application may be stopped.</p>
+					<p>No container log entries found. The application container may be stopped or initializing.</p>
 				</div>
 			) : (
 				<div ref={scrollRef} className="rounded-lg bg-zinc-950 border border-border p-4 font-mono text-[11px] h-96 overflow-y-auto flex flex-col gap-1">
