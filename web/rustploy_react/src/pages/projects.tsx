@@ -145,7 +145,7 @@ function ProjectsPage() {
 					{[1, 2, 3].map(i => (
 						<Card
 							key={i}
-							className="h-[145px] border-border bg-card/45 animate-pulse"
+							className="h-[160px] border-border bg-card/45 animate-pulse"
 						/>
 					))}
 				</div>
