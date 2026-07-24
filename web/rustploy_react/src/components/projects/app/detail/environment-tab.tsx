@@ -208,7 +208,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 				{/* Monaco Editor Container */}
 				<div 
 					ref={containerRef}
-					className="rounded-xl border border-border bg-zinc-950 overflow-hidden relative shadow-inner" 
+					className={`rounded-xl border border-border bg-zinc-950 overflow-hidden relative shadow-inner transition-all duration-300 ${!showSecrets ? 'opacity-60 grayscale-[30%]' : 'opacity-100'}`} 
 					style={{ height: '420px', width: '100%' }}
 				/>
 
