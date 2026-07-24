@@ -118,12 +118,13 @@ export function DockerPage() {
 				totalContainers={globalContainers.length}
 				runningContainers={runningCount}
 				onRefresh={handleRefresh}
-				isRefreshing={isLoading || isRefetching}
+				isRefreshing={isDockerLoading || isRefetching}
 			/>
 
 			{/* Containers Table Component (< 200 lines) */}
 			<DockerContainersTable
 				containers={globalContainers}
+				isLoading={isDockerLoading || isRunningLoading}
 				onOpenModal={handleOpenModal}
 				onAction={handleAction}
 			/>
