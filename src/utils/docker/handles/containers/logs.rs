@@ -5,6 +5,7 @@ use tokio::sync::mpsc;
 
 pub struct LogsBuilder<'a> {
     pub(crate) cli: &'a DockerCli,
+    pub(crate) kind: &'static str,
     pub(crate) id: String,
     pub(crate) args: ArgBuilder,
 }
@@ -13,10 +14,17 @@ impl<'a> LogsBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, id: impl Into<String>) -> Self {
         Self {
             cli,
+            kind: "container",
             id: id.into(),
             args: ArgBuilder::default(),
         }
     }
+
+    pub fn kind(mut self, kind: &'static str) -> Self {
+        self.kind = kind;
+        self
+    }
+
     pub fn follow(mut self) -> Self {
         self.args.flag("--follow");
         self
@@ -46,15 +54,23 @@ impl<'a> LogsBuilder<'a> {
         self
     }
 
+    pub fn build_command_args(&self) -> Vec<String> {
+        let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
+        a.inherit_meta(&self.args);
+        a.push_all(self.args.clone().build());
+        a.push(&self.id);
+        a.build()
+    }
+
     pub fn print(&self) -> String {
-        let mut a = ArgBuilder::cmd(&["container", "logs"]);
+        let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
         a.push_all(self.args.clone().build());
         a.push(&self.id);
         a.preview()
     }
 
     pub async fn output(self) -> DockerResult<String> {
-        let mut a = ArgBuilder::cmd(&["container", "logs"]);
+        let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());
         a.push(&self.id);
@@ -66,7 +82,7 @@ impl<'a> LogsBuilder<'a> {
         self,
         sender: mpsc::Sender<DockerStreamEvent>,
     ) -> DockerResult<DockerExitStatus> {
-        let mut a = ArgBuilder::cmd(&["container", "logs"]);
+        let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());
         a.push(&self.id);

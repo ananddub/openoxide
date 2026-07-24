@@ -10,10 +10,24 @@ impl DeploymentService {
         options: Vec<String>,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
-        Ok(spawn_docker_stream(
-            docker,
-            docker_logs_command("container", target, options),
-        ))
+        let handle = docker.containers();
+        let mut builder = handle.logs(target).kind("container");
+        if options.iter().any(|o| o == "--follow" || o == "-f") {
+            builder = builder.follow();
+        }
+        if options.iter().any(|o| o == "--timestamps" || o == "-t") {
+            builder = builder.timestamps();
+        }
+        if let Some(pos) = options.iter().position(|o| o == "--tail" || o == "-n") {
+            if let Some(val) = options.get(pos + 1) {
+                if let Ok(n) = val.parse::<usize>() {
+                    builder = builder.tail(n);
+                }
+            }
+        }
+
+        let cmd_args = builder.build_command_args();
+        Ok(spawn_docker_stream(docker, cmd_args))
     }
 
     pub async fn stream_docker_container_stats(
@@ -137,10 +151,24 @@ impl DeploymentService {
             }
         }
 
-        Ok(spawn_docker_stream(
-            docker,
-            docker_logs_command(logs_subcommand, resolved_target, options),
-        ))
+        let handle = docker.containers();
+        let mut builder = handle.logs(resolved_target).kind(logs_subcommand);
+        if options.iter().any(|o| o == "--follow" || o == "-f") {
+            builder = builder.follow();
+        }
+        if options.iter().any(|o| o == "--timestamps" || o == "-t") {
+            builder = builder.timestamps();
+        }
+        if let Some(pos) = options.iter().position(|o| o == "--tail" || o == "-n") {
+            if let Some(val) = options.get(pos + 1) {
+                if let Ok(n) = val.parse::<usize>() {
+                    builder = builder.tail(n);
+                }
+            }
+        }
+
+        let cmd_args = builder.build_command_args();
+        Ok(spawn_docker_stream(docker, cmd_args))
     }
 
     pub async fn stream_docker_compose_logs(
