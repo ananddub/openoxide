@@ -19,9 +19,10 @@ import {
 import {AddOrganization} from './add-dialog';
 import {DeleteOrganization} from './del-dialog';
 import {NotificationBell} from './notification';
-import {organizations} from '#/consts/data';
 import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
+import {$api} from '#/api/query';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 type Props = {
 	isCollapsed: boolean;
@@ -32,10 +33,6 @@ type Props = {
 // The add/edit dialog is rendered outside DropdownMenuContent to avoid
 // Base UI's focus trap blocking keyboard input in dialog forms.
 export function HeaderDropdown({isCollapsed, isMobile}: Props) {
-	const [orgList, setOrgList] = React.useState(organizations);
-	const [activeOrg, setActiveOrg] = React.useState(
-		orgList.find(o => o.isDefault) || orgList[0],
-	);
 	// Controlled state for the dropdown menu.
 	const [menuOpen, setMenuOpen] = React.useState(false);
 	// Controlled state for the organization dialog.
@@ -46,14 +43,23 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 		open: false,
 	});
 
+	// Fetch Organizations from backend
+	const {data: orgs, isLoading} = $api.useQuery('get', '/organizations');
+	const {
+		organizations: orgList,
+		activeOrg,
+		setOrganizations,
+		setActiveOrg,
+	} = useOrganizationStore();
+
+	React.useEffect(() => {
+		if (orgs) {
+			setOrganizations(orgs);
+		}
+	}, [orgs, setOrganizations]);
+
 	const handleSetDefault = (orgId: number, e: React.MouseEvent) => {
 		e.stopPropagation();
-		setOrgList(prev =>
-			prev.map(o => ({
-				...o,
-				isDefault: o.id === orgId,
-			})),
-		);
 		toast.success('Default organization updated');
 	};
 
@@ -64,13 +70,17 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 			return;
 		}
 		const targetOrg = orgList.find(o => o.id === orgId);
-		setOrgList(prev => prev.filter(o => o.id !== orgId));
 		toast.success(`Organization ${targetOrg?.name} deleted`);
-		if (activeOrg.id === orgId) {
-			const remaining = orgList.filter(o => o.id !== orgId);
-			setActiveOrg(remaining.find(o => o.isDefault) || remaining[0]);
-		}
 	};
+
+	if (isLoading || !activeOrg) {
+		return (
+			<div className="flex h-10 w-full items-center gap-2 px-3 py-1.5 animate-pulse">
+				<div className="size-6 shrink-0 rounded-sm bg-muted/60" />
+				<div className="h-4 grow rounded bg-muted/60" />
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -132,7 +142,7 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 								</DropdownMenuLabel>
 								<div className="-mx-1 flex max-h-64 min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto px-1">
 									{orgList.map(org => {
-										const isDefault = org.isDefault;
+										const isDefault = org.id === activeOrg.id;
 										return (
 											<div
 												className="flex flex-row items-center justify-between gap-1"

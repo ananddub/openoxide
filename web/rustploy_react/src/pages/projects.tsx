@@ -7,16 +7,10 @@ import {toast} from 'sonner';
 
 import {Button} from '#/components/ui/button';
 import {Card} from '#/components/ui/card';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
 import {ProjectCard} from '#/components/projects/project-card';
 import {EmptyState} from '#/components/projects/empty-state';
 import {CreateProjectDialog} from '#/components/projects/create-project-dialog';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 export const Route = createFileRoute('/_app/projects')({
 	component: ProjectsPage,
@@ -24,36 +18,25 @@ export const Route = createFileRoute('/_app/projects')({
 
 function ProjectsPage() {
 	const queryClient = useQueryClient();
-	const [selectedOrgId, setSelectedOrgId] = React.useState<number | null>(null);
 	const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-	// Fetch Organizations
-	const {data: organizations, isLoading: isLoadingOrgs} = $api.useQuery(
-		'get',
-		'/organizations',
-	);
+	// Get active organization from global layout switcher store
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
-	// Auto-select first organization if available
-	React.useEffect(() => {
-		if (organizations && organizations.length > 0 && selectedOrgId === null) {
-			setSelectedOrgId(organizations[0].id);
-		}
-	}, [organizations, selectedOrgId]);
-
-	// Fetch Projects
+	// Fetch Projects for the active organization
 	const {data: projects, isLoading: isLoadingProjects} = $api.useQuery(
 		'get',
 		'/projects/organization/{organization_id}',
 		{
 			params: {
 				path: {
-					organization_id: selectedOrgId || 0,
+					organization_id: activeOrg?.id || 0,
 				},
 			},
 		},
 		{
-			enabled: selectedOrgId !== null,
+			enabled: activeOrg !== null,
 		},
 	);
 
@@ -68,7 +51,7 @@ function ProjectsPage() {
 		description: string,
 		envVar: string,
 	) => {
-		if (!name.trim() || selectedOrgId === null) {
+		if (!name.trim() || !activeOrg) {
 			toast.error('Project name is required');
 			return;
 		}
@@ -80,7 +63,7 @@ function ProjectsPage() {
 					name,
 					description: description || undefined,
 					env_var: envVar,
-					organization_id: selectedOrgId,
+					organization_id: activeOrg.id,
 				},
 			});
 
@@ -95,7 +78,7 @@ function ProjectsPage() {
 					queryKey: [
 						'get',
 						'/projects/organization/{organization_id}',
-						{params: {path: {organization_id: selectedOrgId}}},
+						{params: {path: {organization_id: activeOrg.id}}},
 					],
 				});
 			}
@@ -108,6 +91,7 @@ function ProjectsPage() {
 
 	const handleDeleteProject = async (projectId: number) => {
 		if (!confirm('Are you sure you want to delete this project?')) return;
+		if (!activeOrg) return;
 
 		try {
 			const {error} = await deleteProjectMutation.mutateAsync({
@@ -127,7 +111,7 @@ function ProjectsPage() {
 					queryKey: [
 						'get',
 						'/projects/organization/{organization_id}',
-						{params: {path: {organization_id: selectedOrgId}}},
+						{params: {path: {organization_id: activeOrg.id}}},
 					],
 				});
 			}
@@ -145,39 +129,18 @@ function ProjectsPage() {
 						Projects
 					</h1>
 					<p className="text-muted-foreground mt-1.5 text-sm">
-						Organize, manage and deploy applications inside your environments.
+						Organize, manage and deploy applications inside{' '}
+						<span className="font-semibold text-foreground">
+							{activeOrg?.name || 'your environment'}
+						</span>
+						.
 					</p>
 				</div>
 
 				<div className="flex items-center gap-3">
-					{/* Org Select Dropdown */}
-					{isLoadingOrgs ? (
-						<div className="h-10 w-44 rounded-lg bg-muted animate-pulse" />
-					) : (
-						organizations &&
-						organizations.length > 0 && (
-							<Select
-								value={selectedOrgId?.toString()}
-								onValueChange={val => setSelectedOrgId(Number(val))}>
-								<SelectTrigger className="w-[180px] bg-card border-border/80 h-10 shadow-sm font-medium">
-									<SelectValue placeholder="Select Organization" />
-								</SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									{organizations.map(org => (
-										<SelectItem
-											key={org.id}
-											value={org.id.toString()}>
-											{org.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						)
-					)}
-
 					<Button
 						onClick={() => setIsCreateOpen(true)}
-						disabled={selectedOrgId === null}
+						disabled={!activeOrg}
 						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold h-10 px-4 rounded-lg flex items-center gap-2 shadow-lg shadow-primary/10">
 						<Plus className="size-4" />
 						Create Project
@@ -208,7 +171,7 @@ function ProjectsPage() {
 			) : (
 				<EmptyState
 					onCreateClick={() => setIsCreateOpen(true)}
-					disabled={selectedOrgId === null}
+					disabled={!activeOrg}
 				/>
 			)}
 
