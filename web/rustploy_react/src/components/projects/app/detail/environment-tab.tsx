@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {loader} from '@monaco-editor/react';
 import {Button} from '#/components/ui/button';
-import {Save, Info, ShieldAlert, Check} from 'lucide-react';
+import {Save, Info, ShieldAlert, Check, Eye, EyeOff} from 'lucide-react';
 import {toast} from 'sonner';
 
 interface EnvironmentTabProps {
@@ -12,6 +12,7 @@ interface EnvironmentTabProps {
 export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 	const originalEnv = app.env_var || '';
 	const [envVars, setEnvVars] = useState(originalEnv);
+	const [showSecrets, setShowSecrets] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -20,12 +21,26 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 	// Sync environment variables when app updates
 	useEffect(() => {
 		setEnvVars(app.env_var || '');
-		if (editorRef.current && typeof editorRef.current.getValue === 'function' && editorRef.current.getValue() !== (app.env_var || '')) {
-			editorRef.current.setValue(app.env_var || '');
-		}
 	}, [app.env_var]);
 
 	const isModified = envVars !== originalEnv;
+
+	// Mask environment variable values when secrets are hidden
+	const maskEnvText = (raw: string): string => {
+		return raw
+			.split('\n')
+			.map(line => {
+				const trimmed = line.trim();
+				if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith(';')) return line;
+				const eqIdx = line.indexOf('=');
+				if (eqIdx === -1) return line;
+				const key = line.slice(0, eqIdx + 1);
+				const val = line.slice(eqIdx + 1);
+				if (!val) return line;
+				return `${key}••••••••`;
+			})
+			.join('\n');
+	};
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -41,7 +56,17 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 		}
 	};
 
-	// Initialize Monaco Editor dynamically via vanilla JS on mount to bypass React 19 timing bugs
+	// Update Monaco Editor content & readOnly state dynamically when showSecrets or envVars change
+	useEffect(() => {
+		if (!editorRef.current) return;
+		const targetVal = showSecrets ? envVars : maskEnvText(envVars);
+		if (editorRef.current.getValue() !== targetVal) {
+			editorRef.current.setValue(targetVal);
+		}
+		editorRef.current.updateOptions({readOnly: !showSecrets});
+	}, [showSecrets, envVars]);
+
+	// Initialize Monaco Editor dynamically on mount
 	useEffect(() => {
 		let isMounted = true;
 		let editorInstance: any;
@@ -49,7 +74,6 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 		loader.init().then(monaco => {
 			if (!isMounted || !containerRef.current) return;
 
-			// Register standard monarch language configuration for INI/env files
 			if (!monaco.languages.getLanguages().some((l: any) => l.id === 'ini')) {
 				monaco.languages.register({ id: 'ini' });
 				monaco.languages.setMonarchTokensProvider('ini', {
@@ -68,7 +92,8 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			}
 
 			editorInstance = monaco.editor.create(containerRef.current, {
-				value: envVars,
+				value: showSecrets ? envVars : maskEnvText(envVars),
+				readOnly: !showSecrets,
 				language: 'ini',
 				theme: 'vs-dark',
 				fontSize: 13,
@@ -92,7 +117,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			editorRef.current = editorInstance;
 
 			editorInstance.onDidChangeModelContent(() => {
-				if (isMounted) {
+				if (isMounted && showSecrets) {
 					setEnvVars(editorInstance.getValue());
 				}
 			});
@@ -139,12 +164,31 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 						)}
 					</div>
 
-					<div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold bg-muted/20 border border-border/40 px-2 py-1 rounded-lg">
-						<ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> Secrets are encrypted at rest
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setShowSecrets(!showSecrets)}
+							className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs rounded-lg"
+						>
+							{showSecrets ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-primary" />}
+							{showSecrets ? 'Hide Values' : 'Show Values'}
+						</Button>
+
+						<div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground font-semibold bg-muted/20 border border-border/40 px-2 py-1 rounded-lg">
+							<ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> Secrets encrypted
+						</div>
 					</div>
 				</div>
 
-				{/* Clear Editor Wrapper: height is strictly set to 420px inline to prevent any collapse bugs */}
+				{/* Notice when values are hidden */}
+				{!showSecrets && (
+					<div className="bg-muted/30 border border-border/60 rounded-lg px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
+						<span>Secret values are masked for security. Click <strong>Show Values</strong> (eye icon) to edit or view exact values.</span>
+					</div>
+				)}
+
+				{/* Monaco Editor Container */}
 				<div 
 					ref={containerRef}
 					className="rounded-xl border border-border bg-zinc-950 overflow-hidden relative shadow-inner" 
@@ -158,7 +202,12 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 						</span>
 					)}
 
-					<Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
+					<Button
+						onClick={handleSave}
+						disabled={saving || !showSecrets}
+						title={!showSecrets ? 'Click Show Values (eye icon) to edit and save' : ''}
+						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs"
+					>
 						<Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Environment'}
 					</Button>
 				</div>
