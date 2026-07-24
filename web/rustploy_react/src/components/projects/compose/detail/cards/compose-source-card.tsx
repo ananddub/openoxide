@@ -127,22 +127,30 @@ export function ComposeSourceCard({
 
 					<div className="flex flex-col gap-1.5 md:col-span-1">
 						<label className="text-xs font-semibold text-foreground">SSH Key (Optional for private repos)</label>
-						<Select
-							value={gitSshKeyId ? String(gitSshKeyId) : 'none'}
-							onValueChange={v => setGitSshKeyId(v === 'none' ? undefined : Number(v))}
-						>
-							<SelectTrigger className="w-full h-9 text-xs font-mono bg-card border-border">
-								<SelectValue placeholder="No SSH Key Selected" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none" className="text-xs font-mono">None (Public Repo)</SelectItem>
-								{sshKeys?.map((key: any) => (
-									<SelectItem key={key.id} value={String(key.id)} className="text-xs font-mono">
-										{key.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						{(() => {
+							const selectedKey = sshKeys?.find((k: any) => Number(k.id) === Number(gitSshKeyId));
+							const selectedName = gitSshKeyId ? (selectedKey?.name || `SSH Key #${gitSshKeyId}`) : 'None (Public Repo)';
+							return (
+								<Select
+									value={gitSshKeyId ? String(gitSshKeyId) : 'none'}
+									onValueChange={v => setGitSshKeyId(v === 'none' ? undefined : Number(v))}
+								>
+									<SelectTrigger className="w-full h-9 text-xs font-sans bg-card border-border">
+										<SelectValue placeholder="No SSH Key Selected">
+											{selectedName}
+										</SelectValue>
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none" className="text-xs font-sans">None (Public Repo)</SelectItem>
+										{sshKeys?.map((key: any) => (
+											<SelectItem key={key.id} value={String(key.id)} className="text-xs font-sans">
+												{key.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							);
+						})()}
 					</div>
 
 					<div className="flex flex-col gap-1.5 md:col-span-1">

@@ -203,24 +203,32 @@ export function SourceSettingsCard({app, onUpdated}: SourceSettingsCardProps) {
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-1">
 								<span className="text-xs font-bold text-foreground">SSH Key</span>
-								<Select 
-									value={gitSshKeyId ? String(gitSshKeyId) : 'none'} 
-									onValueChange={(val) => setGitSshKeyId(val === 'none' ? undefined : Number(val))}
-								>
-									<SelectTrigger className="w-full bg-card border-border text-xs h-9">
-										<SelectValue placeholder="No SSH Key Selected" />
-									</SelectTrigger>
-									<SelectContent className="bg-popover border border-border">
-										<SelectItem value="none" className="text-xs cursor-pointer hover:bg-muted font-bold text-primary">
-											None (Public Repo)
-										</SelectItem>
-										{sshKeys?.map(key => (
-											<SelectItem key={key.id} value={String(key.id)} className="text-xs cursor-pointer hover:bg-muted font-mono">
-												{key.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								{(() => {
+									const selectedKey = sshKeys?.find((k: any) => Number(k.id) === Number(gitSshKeyId));
+									const selectedName = gitSshKeyId ? (selectedKey?.name || `SSH Key #${gitSshKeyId}`) : 'None (Public Repo)';
+									return (
+										<Select 
+											value={gitSshKeyId ? String(gitSshKeyId) : 'none'} 
+											onValueChange={(val) => setGitSshKeyId(val === 'none' ? undefined : Number(val))}
+										>
+											<SelectTrigger className="w-full bg-card border-border text-xs h-9">
+												<SelectValue placeholder="No SSH Key Selected">
+													{selectedName}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent className="bg-popover border border-border">
+												<SelectItem value="none" className="text-xs cursor-pointer hover:bg-muted font-bold text-primary">
+													None (Public Repo)
+												</SelectItem>
+												{sshKeys?.map(key => (
+													<SelectItem key={key.id} value={String(key.id)} className="text-xs cursor-pointer hover:bg-muted font-mono">
+														{key.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									);
+								})()}
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-2">
 								<span className="text-xs font-bold text-foreground">Branch</span>
