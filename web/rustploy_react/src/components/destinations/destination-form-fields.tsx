@@ -43,78 +43,76 @@ export function DestinationFormFields({
 	providers,
 }: DestinationFormFieldsProps) {
 	return (
-		<div className="flex flex-col gap-5 py-1">
-			{/* Name Field */}
-			<div className="flex flex-col gap-2">
+		<div className="flex flex-col gap-4 py-1">
+			{/* 1. Name Field (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Name</label>
 				<Input
 					value={name}
 					onChange={e => setName(e.target.value)}
 					placeholder="My S3 Storage"
-					className="h-10 text-xs bg-background border-border rounded-md px-3 font-sans"
+					className="h-10 text-xs bg-background border-border rounded-md px-3 font-sans w-full"
 				/>
 			</div>
 
-			{/* Access Key ID & Secret Access Key */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div className="flex flex-col gap-2">
-					<label className="text-xs font-semibold text-foreground">Access Key ID</label>
-					<Input
-						value={accessKey}
-						onChange={e => setAccessKey(e.target.value)}
-						placeholder="Access Key ID"
-						className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-					/>
-				</div>
-
-				<div className="flex flex-col gap-2">
-					<label className="text-xs font-semibold text-foreground">Secret Access Key</label>
-					<Input
-						type="password"
-						value={secretKey}
-						onChange={e => setSecretKey(e.target.value)}
-						placeholder="Secret Access Key"
-						className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-					/>
-				</div>
+			{/* 2. Access Key ID (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-xs font-semibold text-foreground">Access Key ID</label>
+				<Input
+					value={accessKey}
+					onChange={e => setAccessKey(e.target.value)}
+					placeholder="AKIAIOSFODNN7EXAMPLE"
+					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
+				/>
 			</div>
 
-			{/* Bucket & Region */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div className="flex flex-col gap-2">
-					<label className="text-xs font-semibold text-foreground">Bucket</label>
-					<Input
-						value={bucket}
-						onChange={e => setBucket(e.target.value)}
-						placeholder="my-bucket-name"
-						className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-					/>
-				</div>
-
-				<div className="flex flex-col gap-2">
-					<label className="text-xs font-semibold text-foreground">Region</label>
-					<Input
-						value={region}
-						onChange={e => setRegion(e.target.value)}
-						placeholder="us-east-1"
-						className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-					/>
-				</div>
+			{/* 3. Secret Access Key (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-xs font-semibold text-foreground">Secret Access Key</label>
+				<Input
+					type="password"
+					value={secretKey}
+					onChange={e => setSecretKey(e.target.value)}
+					placeholder="Secret Access Key"
+					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
+				/>
 			</div>
 
-			{/* Endpoint */}
-			<div className="flex flex-col gap-2">
+			{/* 4. Bucket Name (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-xs font-semibold text-foreground">Bucket</label>
+				<Input
+					value={bucket}
+					onChange={e => setBucket(e.target.value)}
+					placeholder="my-bucket-name"
+					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
+				/>
+			</div>
+
+			{/* 5. Region (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
+				<label className="text-xs font-semibold text-foreground">Region</label>
+				<Input
+					value={region}
+					onChange={e => setRegion(e.target.value)}
+					placeholder="us-east-1"
+					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
+				/>
+			</div>
+
+			{/* 6. Endpoint URL (Single Full-Width Input) */}
+			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Endpoint</label>
 				<Input
 					value={endpoint}
 					onChange={e => setEndpoint(e.target.value)}
 					placeholder="https://s3.amazonaws.com"
-					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
+					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
 				/>
 			</div>
 
-			{/* Provider Preset */}
-			<div className="flex flex-col gap-2">
+			{/* 7. Provider Preset (Single Full-Width Dropdown) */}
+			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Provider Preset</label>
 				<Select value={provider} onValueChange={onProviderChange}>
 					<SelectTrigger className="h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3">
