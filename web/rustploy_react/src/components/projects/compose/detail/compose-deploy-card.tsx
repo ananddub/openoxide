@@ -96,7 +96,7 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 
 	const isProcessing = activeLoading !== null;
 	const rawStatus = (compose?.compose_status || compose?.status || '').toLowerCase();
-	const isRunning = rawStatus === 'running' || rawStatus === 'deployed';
+	const isRunning = ['running', 'deployed', 'done', 'success', 'active', 'ok'].includes(rawStatus);
 
 	return (
 		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">

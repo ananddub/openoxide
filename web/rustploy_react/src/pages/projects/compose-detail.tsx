@@ -106,7 +106,23 @@ function ComposeDetailPage() {
 						<Button variant="outline" size="icon" onClick={() => refetch()} className="w-8 h-8 border-border rounded-lg">
 							<RefreshCw className="w-3.5 h-3.5" />
 						</Button>
-						<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none">
+						<span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-semibold select-none ${
+							['done', 'success', 'running', 'deployed', 'active'].includes((compose?.compose_status || '').toLowerCase())
+								? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+								: (compose?.compose_status || '').toLowerCase() === 'error'
+								? 'bg-destructive/10 text-destructive border-destructive/30'
+								: 'bg-muted/20 text-muted-foreground border-border'
+						}`}>
+							<span className={`w-2 h-2 rounded-full ${
+								['done', 'success', 'running', 'deployed', 'active'].includes((compose?.compose_status || '').toLowerCase())
+									? 'bg-emerald-500 animate-pulse'
+									: (compose?.compose_status || '').toLowerCase() === 'error'
+									? 'bg-destructive'
+									: 'bg-muted-foreground'
+							}`} />
+							{compose?.compose_status || 'IDLE'}
+						</span>
+						<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none">
 							<Layers2 className="w-3.5 h-3.5" /> Docker Compose
 						</span>
 					</div>

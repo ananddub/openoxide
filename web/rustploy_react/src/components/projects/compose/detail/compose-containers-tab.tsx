@@ -60,7 +60,9 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 
 	const containersList: ContainerItem[] = useMemo(() => {
 		const appName = compose?.app_name || compose?.name || 'compose';
-		const isStackRunning = ['running', 'deployed'].includes((compose?.compose_status || compose?.status || '').toLowerCase());
+		const isStackRunning = ['running', 'deployed', 'done', 'success', 'active', 'ok'].includes(
+			(compose?.compose_status || compose?.status || '').toLowerCase()
+		);
 
 		const matched = (rawContainers || []).filter((c: any) => {
 			const n = (c.names || '').toLowerCase();
