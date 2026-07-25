@@ -1,5 +1,5 @@
 import {useState, useMemo} from 'react';
-import {Box} from 'lucide-react';
+import {Box, RefreshCw} from 'lucide-react';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
@@ -12,35 +12,30 @@ interface ComposeContainersTabProps {
 	onUpdated?: () => void;
 }
 
-// Extract service names defined under 'services:' in docker-compose.yml content
 const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	if (!yamlStr) return [];
 	const lines = yamlStr.split('\n');
 	const services: string[] = [];
-	let inServicesBlock = false;
+	let inServices = false;
 	let servicesIndent = 0;
 
 	for (const line of lines) {
 		const trimmed = line.trimEnd();
 		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-
 		const indent = line.search(/\S/);
 		const text = trimmed.trim();
 
-		if (text === 'services:' || text.startsWith('services:')) {
-			inServicesBlock = true;
+		if (text.startsWith('services:')) {
+			inServices = true;
 			servicesIndent = indent;
 			continue;
 		}
-
-		if (inServicesBlock) {
+		if (inServices) {
 			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServicesBlock = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
-				const serviceName = text.slice(0, -1).trim();
-				if (serviceName && !services.includes(serviceName)) {
-					services.push(serviceName);
-				}
+				inServices = false;
+			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ')) {
+				const srv = text.slice(0, -1).trim();
+				if (srv && !services.includes(srv)) services.push(srv);
 			}
 		}
 	}
@@ -48,50 +43,66 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 };
 
 export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabProps) {
-	const [activeModal, setActiveModal] = useState<{
-		type: 'logs' | 'config' | 'mount' | 'network';
-		container: ContainerItem;
-	} | null>(null);
-
+	const [activeModal, setActiveModal] = useState<{type: 'logs' | 'config' | 'mount' | 'network'; container: ContainerItem} | null>(null);
 	const [logsStream, setLogsStream] = useState<string[]>([]);
+
+	const {data: rawContainers = [], refetch: refetchContainers, isFetching} = $api.useQuery(
+		'get',
+		'/docker/containers',
+		{params: {query: {server_id: compose?.destination_id}}},
+		{refetchInterval: 3000},
+	);
 
 	const serviceNames = useMemo(() => {
 		const extracted = extractServicesFromYaml(compose?.compose_file);
 		return extracted.length > 0 ? extracted : ['app'];
 	}, [compose?.compose_file]);
 
-	// Build structured container items list for the compose stack
 	const containersList: ContainerItem[] = useMemo(() => {
 		const appName = compose?.app_name || compose?.name || 'compose';
-		const isRunning = compose?.compose_status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'running' || compose?.status?.toLowerCase() === 'deployed';
+		const isStackRunning = ['running', 'deployed'].includes((compose?.compose_status || compose?.status || '').toLowerCase());
 
-		return serviceNames.map((srv, idx) => {
-			const containerId = `${appName}_${srv}_${idx + 1}`.slice(0, 12);
-			return {
-				id: containerId,
-				name: `${appName}-${srv}-1`,
-				service: srv,
-				image: `${appName}-${srv}:latest`,
-				status: isRunning ? 'running' : 'stopped',
-				statusText: isRunning ? 'Up Less than a second (healthy)' : 'Exited (0) 5 minutes ago',
-				ports: '3000/tcp -> 0.0.0.0:6000',
-				networks: [`${appName}_default`, 'traefik_proxy'],
-				mounts: [
-					{
-						source: `/run/media/das/SSD/Devloper/rustploy/.runtime/rustploy/compose/${appName}/source`,
-						destination: '/usr/src/app',
-						mode: 'rw',
-					},
-				],
-				env: {
-					NODE_ENV: 'production',
-					PORT: '3000',
-					COMPOSE_PROJECT: appName,
-					SERVICE_NAME: srv,
-				},
-			};
+		const matched = (rawContainers || []).filter((c: any) => {
+			const n = (c.names || '').toLowerCase();
+			const l = (c.labels || '').toLowerCase();
+			const cleanApp = appName.toLowerCase().replace(/[^a-z0-9]/g, '');
+			return n.includes(cleanApp) || l.includes(cleanApp) || serviceNames.some(s => n.includes(s.toLowerCase()));
 		});
-	}, [compose, serviceNames]);
+
+		if (matched.length > 0) {
+			return matched.map((c: any) => {
+				const st = (c.state || c.status || '').toLowerCase();
+				const isRunning = st.includes('up') || st.includes('running');
+				const cleanName = (c.names || c.id || 'container').replace(/^\//, '');
+
+				return {
+					id: (c.id || 'id').slice(0, 12),
+					name: cleanName,
+					service: cleanName.split(/[-_]/).pop() || 'service',
+					image: c.image || `${appName}:latest`,
+					status: isRunning ? 'running' : 'stopped',
+					statusText: c.status || (isRunning ? 'Up (healthy)' : 'Exited'),
+					ports: c.ports || 'N/A',
+					networks: c.networks ? [c.networks] : [`${appName}_default`],
+					mounts: c.mounts ? [{source: c.mounts, destination: '/app', mode: 'rw'}] : [],
+					env: {COMPOSE_PROJECT: appName, CONTAINER_ID: c.id},
+				};
+			});
+		}
+
+		return serviceNames.map((srv, idx) => ({
+			id: `${appName}_${srv}_${idx + 1}`.slice(0, 12),
+			name: `${appName}-${srv}-1`,
+			service: srv,
+			image: `${appName}-${srv}:latest`,
+			status: isStackRunning ? 'running' : 'stopped',
+			statusText: isStackRunning ? 'Running' : 'Stopped / Not Deployed',
+			ports: 'N/A',
+			networks: [`${appName}_default`],
+			mounts: [],
+			env: {COMPOSE_PROJECT: appName, SERVICE_NAME: srv},
+		}));
+	}, [compose, rawContainers, serviceNames]);
 
 	const postAction = $api.useMutation('post', '/compose/{id}/start');
 	const stopAction = $api.useMutation('post', '/compose/{id}/stop');
@@ -100,11 +111,11 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 		try {
 			if (action === 'start' || action === 'restart') {
 				await postAction.mutateAsync({params: {path: {id: compose?.id}}});
-				toast.success(`Container '${container.name}' ${action}ed successfully`);
 			} else {
 				await stopAction.mutateAsync({params: {path: {id: compose?.id}}});
-				toast.success(`Container '${container.name}' ${action}ed successfully`);
 			}
+			toast.success(`Container '${container.name}' ${action}ed successfully`);
+			refetchContainers();
 			onUpdated?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -115,42 +126,28 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 		setActiveModal({type, container});
 		if (type === 'logs') {
 			setLogsStream([
-				`[${new Date().toISOString()}] [INFO] Attached to container stdout/stderr stream '${container.name}'`,
-				`[${new Date().toISOString()}] [INFO] Starting container process inside ${container.name}`,
-				`[${new Date().toISOString()}] [INFO] Listening on port 3000 (0.0.0.0)`,
-				`[${new Date().toISOString()}] [SUCCESS] Service ${container.service} container is healthy & ready`,
+				`[${new Date().toISOString()}] Attached to container stdout/stderr stream '${container.name}'`,
+				`[${new Date().toISOString()}] Container status: ${container.statusText}`,
+				`[${new Date().toISOString()}] Image: ${container.image}`,
 			]);
 		}
 	};
 
 	return (
 		<div className="flex flex-col gap-6">
-			{/* Header Section */}
 			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4 shadow-sm">
 				<div>
 					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
 						<Box className="w-4 h-4 text-primary" /> Compose Stack Containers
+						{isFetching && <RefreshCw className="w-3.5 h-3.5 animate-spin text-muted-foreground ml-1" />}
 					</h3>
-					<p className="text-xs text-muted-foreground mt-1">Manage and inspect all active containers in this Docker Compose stack</p>
+					<p className="text-xs text-muted-foreground mt-1">Real-time status and telemetry of live Docker containers</p>
 				</div>
-				<Badge variant="outline" className="text-xs font-mono px-3 py-1">
-					Total Containers: {containersList.length}
-				</Badge>
+				<Badge variant="outline" className="text-xs font-mono px-3 py-1">Total Containers: {containersList.length}</Badge>
 			</section>
 
-			{/* Container Table Component (< 200 lines) */}
-			<ComposeContainersTable
-				containers={containersList}
-				onOpenModal={handleOpenViewModal}
-				onAction={handleContainerAction}
-			/>
-
-			{/* View Detail Modal Component (< 200 lines) */}
-			<ContainerInspectModal
-				activeModal={activeModal}
-				onClose={() => setActiveModal(null)}
-				logsStream={logsStream}
-			/>
+			<ComposeContainersTable containers={containersList} onOpenModal={handleOpenViewModal} onAction={handleContainerAction} />
+			<ContainerInspectModal activeModal={activeModal} onClose={() => setActiveModal(null)} logsStream={logsStream} />
 		</div>
 	);
 }
