@@ -240,17 +240,7 @@ impl ComposeController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<ComposeOperationResponseDto>), ApiError> {
-        match self.service.cancel_operation(id).await {
-            Ok(true) => Err((
-                StatusCode::ACCEPTED,
-                "your request has been canceled".into(),
-            )),
-            Ok(false) => Err((
-                StatusCode::CONFLICT,
-                "no running compose deployment to cancel".into(),
-            )),
-            Err(error) => Err(map_sqlx_error(error)),
-        }
+        self.operation(id, ComposeOperation::Stop).await
     }
 
     #[post("/{id}/cancel")]

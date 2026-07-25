@@ -116,7 +116,7 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 			/>
 
 			<ComposeConfirmDialog
-				action={confirmAction}
+				confirmAction={confirmAction}
 				onClose={() => setConfirmAction(null)}
 				onConfirm={executeAction}
 			/>
