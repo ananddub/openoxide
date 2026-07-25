@@ -1,0 +1,102 @@
+import {useState} from 'react';
+import {createFileRoute} from '@tanstack/react-router';
+import {$api} from '#/api/query';
+import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
+import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
+import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
+import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
+import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
+
+export const Route = createFileRoute('/_app/remote-servers')({
+	component: RemoteServersPage,
+});
+
+export function RemoteServersPage() {
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [editingServer, setEditingServer] = useState<any | null>(null);
+	const [setupServer, setSetupServer] = useState<any | null>(null);
+	const [deletingServer, setDeletingServer] = useState<any | null>(null);
+
+	const {
+		data: rawServers = [],
+		isLoading: isServersLoading,
+		refetch,
+		isRefetching,
+	} = $api.useQuery('get', '/remote-servers');
+
+	const {data: rawSshKeys = []} = $api.useQuery('get', '/ssh-keys');
+
+	const servers = Array.isArray(rawServers) ? rawServers : [];
+	const sshKeys = Array.isArray(rawSshKeys) ? rawSshKeys : [];
+
+	const activateMutation = $api.useMutation('post', '/remote-servers/{id}/activate');
+	const deactivateMutation = $api.useMutation('post', '/remote-servers/{id}/deactivate');
+
+	const handleToggleStatus = async (server: any) => {
+		const isActive = (server.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+		try {
+			if (isActive) {
+				await deactivateMutation.mutateAsync({params: {path: {id: server.id}}});
+				toast.success(`Server "${server.name}" disabled`);
+			} else {
+				await activateMutation.mutateAsync({params: {path: {id: server.id}}});
+				toast.success(`Server "${server.name}" activated`);
+			}
+			refetch();
+		} catch (err: any) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	return (
+		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+			<RemoteServersHeader
+				onOpenCreate={() => {
+					setEditingServer(null);
+					setIsCreateOpen(true);
+				}}
+				onRefresh={refetch}
+				isRefetching={isRefetching}
+			/>
+
+			<RemoteServersList
+				servers={servers}
+				sshKeys={sshKeys}
+				isLoading={isServersLoading}
+				onEditServer={server => {
+					setEditingServer(server);
+					setIsCreateOpen(true);
+				}}
+				onDeleteServer={server => setDeletingServer(server)}
+				onSetupServer={server => setSetupServer(server)}
+				onToggleStatus={handleToggleStatus}
+			/>
+
+			<CreateServerModal
+				isOpen={isCreateOpen}
+				sshKeys={sshKeys}
+				editingServer={editingServer}
+				onClose={() => {
+					setIsCreateOpen(false);
+					setEditingServer(null);
+				}}
+				onSuccess={refetch}
+			/>
+
+			<SetupServerModal
+				isOpen={!!setupServer}
+				server={setupServer}
+				onClose={() => setSetupServer(null)}
+			/>
+
+			<DeleteServerModal
+				isOpen={!!deletingServer}
+				server={deletingServer}
+				onClose={() => setDeletingServer(null)}
+				onSuccess={refetch}
+			/>
+		</div>
+	);
+}

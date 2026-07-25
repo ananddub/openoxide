@@ -18,6 +18,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('docker', 'docker.tsx'),
 		route('destinations', 'destinations.tsx'),
 		route('ssh-keys', 'ssh-keys.tsx'),
+		route('remote-servers', 'remote-servers.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [
