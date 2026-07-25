@@ -377,6 +377,9 @@ impl SshBuilder {
 
         match &self.auth {
             SshAuth::KeyPair { private_key, .. } => {
+                Self::push_option(&mut args, "IdentitiesOnly", "yes");
+                Self::push_option(&mut args, "PubkeyAuthentication", "yes");
+                Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
                 let mut temp_file = tempfile::Builder::new()
                     .prefix("rustploy-ssh-key-")
                     .tempfile()?;
@@ -391,6 +394,9 @@ impl SshBuilder {
                 temp_key_file = Some(temp_file.into_temp_path());
             }
             SshAuth::KeyFile(path) => {
+                Self::push_option(&mut args, "IdentitiesOnly", "yes");
+                Self::push_option(&mut args, "PubkeyAuthentication", "yes");
+                Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
                 #[cfg(unix)]
                 {
                     let metadata = std::fs::metadata(path)?;
