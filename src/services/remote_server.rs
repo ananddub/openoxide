@@ -50,6 +50,10 @@ impl ServerService {
 
     pub async fn create(&self, input: CreateRemoteServerDto) -> sqlx::Result<Server> {
         let app_name = generate_app_name(&input.name);
+        let server_type = match input.server_type.to_uppercase().as_str() {
+            "BUILD" => "BUILD".to_string(),
+            _ => "DEPLOY".to_string(),
+        };
 
         self.repo_server
             .create_and_return(
@@ -59,7 +63,7 @@ impl ServerService {
                 input.port,
                 input.username,
                 app_name,
-                input.server_type,
+                server_type,
                 input.ssh_key_id,
                 input.build_memory_limit,
                 input.build_cpu_limit,
@@ -76,6 +80,10 @@ impl ServerService {
         let username = input.username.unwrap_or(current.username);
         let server_status = input.server_status.unwrap_or(current.server_status);
         let server_type = input.server_type.unwrap_or(current.server_type);
+        let server_type = match server_type.to_uppercase().as_str() {
+            "BUILD" => "BUILD".to_string(),
+            _ => "DEPLOY".to_string(),
+        };
         let enable_docker_cleanup = input
             .enable_docker_cleanup
             .unwrap_or(current.enable_docker_cleanup);

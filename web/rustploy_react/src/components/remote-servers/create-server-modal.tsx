@@ -80,7 +80,7 @@ export function CreateServerModal({
 						port: parseInt(port) || 22,
 						username,
 						ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
-						server_type: 'REMOTE',
+						server_type: 'DEPLOY',
 						description: description || undefined,
 					} as any,
 				});
@@ -113,7 +113,7 @@ export function CreateServerModal({
 				port: parseInt(port) || 22,
 				username,
 				ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
-				server_type: 'REMOTE',
+				server_type: 'DEPLOY',
 				description: description || undefined,
 			};
 
