@@ -148,7 +148,7 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-w-xl bg-card border-border p-6 shadow-xl rounded-xl">
+			<DialogContent className="max-w-2xl bg-card border-border p-6 shadow-xl rounded-xl">
 				<DialogHeader className="pb-3 border-b border-border/40">
 					<DialogTitle className="text-base font-bold text-foreground">
 						{editingDestination ? 'Edit Destination' : 'Create Destination'}
