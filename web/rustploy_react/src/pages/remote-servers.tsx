@@ -9,8 +9,6 @@ import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
-import {RemoteServersGuide} from '#/components/remote-servers/remote-servers-guide';
-
 export const Route = createFileRoute('/_app/remote-servers')({
 	component: RemoteServersPage,
 });
@@ -75,8 +73,6 @@ export function RemoteServersPage() {
 				onSetupServer={server => setSetupServer(server)}
 				onToggleStatus={handleToggleStatus}
 			/>
-
-			<RemoteServersGuide />
 
 			<CreateServerModal
 				isOpen={isCreateOpen}
