@@ -149,12 +149,7 @@ async fn scale_down_compose(
     let docker = DockerCli::from_executor(cmd);
 
     match compose_type {
-        ComposeType::DockerCompose => docker
-            .compose()
-            .down()
-            .project(app_name)
-            .run()
-            .await
+        ComposeType::DockerCompose => docker.compose().down().project(app_name).run().await
             .map(|_| ())
             .map_err(|e| format!("compose down failed: {e}")),
         ComposeType::Stack => {
