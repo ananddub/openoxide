@@ -8,6 +8,16 @@ use crate::{
 use auto_di::singleton;
 use std::sync::Arc;
 
+fn normalize_provider(p: &str) -> String {
+    match p.to_lowercase().as_str() {
+        "r2" | "cloudflare_r2" => "R2".to_string(),
+        "backblaze" | "b2" => "BACKBLAZE".to_string(),
+        "gcs" | "gcp" | "google" => "GCS".to_string(),
+        "do_spaces" | "digitalocean" | "spaces" => "DO_SPACES".to_string(),
+        _ => "S3".to_string(),
+    }
+}
+
 pub struct DestinationService {
     repo_dest: Arc<DestinationRepository>,
 }
@@ -34,7 +44,7 @@ impl DestinationService {
         let item = Destination {
             id: None,
             name: input.name,
-            provider: input.provider,
+            provider: normalize_provider(&input.provider),
             access_key: input.access_key,
             secret_access_key: input.secret_access_key,
             bucket: input.bucket,
@@ -60,7 +70,7 @@ impl DestinationService {
             current.name = v;
         }
         if let Some(v) = input.provider {
-            current.provider = v;
+            current.provider = normalize_provider(&v);
         }
         if let Some(v) = input.access_key {
             current.access_key = v;
