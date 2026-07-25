@@ -60,14 +60,38 @@ export function CreateServerModal({
 	}, [editingServer, isOpen, sshKeys]);
 
 	const handleTestConnection = async () => {
-		if (!editingServer?.id) return;
+		if (!ipAddress || !username) {
+			toast.error('IP Address and Username are required to test connection');
+			return;
+		}
 		setTestingConn(true);
 		try {
-			await testConnMutation.mutateAsync({
-				params: {path: {id: editingServer.id}},
-				body: {host_key_fingerprint: ''} as any,
-			});
-			toast.success(`SSH Connection to "${name}" (${ipAddress}) verified successfully!`);
+			if (editingServer?.id) {
+				await testConnMutation.mutateAsync({
+					params: {path: {id: editingServer.id}},
+					body: {host_key_fingerprint: ''} as any,
+				});
+				toast.success(`SSH Connection to "${name || ipAddress}" verified successfully!`);
+			} else {
+				const newServer = await createMutation.mutateAsync({
+					body: {
+						name: name || `Server-${ipAddress}`,
+						ip_address: ipAddress,
+						port: parseInt(port) || 22,
+						username,
+						ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
+						server_type: 'REMOTE',
+						description: description || undefined,
+					} as any,
+				});
+				await testConnMutation.mutateAsync({
+					params: {path: {id: (newServer as any).id}},
+					body: {host_key_fingerprint: ''} as any,
+				});
+				toast.success(`Server node added & SSH Connection verified successfully!`);
+				onSuccess();
+				onClose();
+			}
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -143,20 +167,18 @@ export function CreateServerModal({
 					/>
 
 					<div className="flex items-center justify-between pt-4 border-t border-border/40 mt-1">
-						{editingServer ? (
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleTestConnection}
-								disabled={testingConn}
-								className="h-9 text-xs font-semibold gap-1.5"
-							>
-								{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
-								{testingConn ? 'Testing...' : 'Test Connection'}
-							</Button>
-						) : <div />}
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleTestConnection}
+							disabled={testingConn || submitting}
+							className="h-9 text-xs font-semibold gap-1.5"
+						>
+							{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
+							{testingConn ? 'Testing...' : 'Test Connection'}
+						</Button>
 
-						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-6">
+						<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6">
 							{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
 						</Button>
 					</div>
