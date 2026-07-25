@@ -91,7 +91,7 @@ export function SshKeysList({
 								</Button>
 							</div>
 
-							<div className="bg-muted/30 p-2.5 rounded-lg border border-border/40 text-[11px] font-mono text-muted-foreground truncate">
+							<div className="bg-muted/30 p-2.5 rounded-lg border border-border/40 text-[11px] font-mono text-muted-foreground truncate overflow-hidden max-w-full">
 								{item.public_key || 'No public key attached'}
 							</div>
 

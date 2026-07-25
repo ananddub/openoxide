@@ -68,7 +68,7 @@ export function DeleteKeyModal({
 				<div className="flex flex-col gap-3 py-3">
 					<div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex flex-col gap-1">
 						<span className="text-xs font-bold text-foreground">{sshKey.name}</span>
-						<span className="text-[11px] text-muted-foreground font-mono truncate">
+						<span className="text-[11px] text-muted-foreground font-mono truncate overflow-hidden max-w-full block">
 							{sshKey.public_key || 'No public key preview'}
 						</span>
 					</div>
