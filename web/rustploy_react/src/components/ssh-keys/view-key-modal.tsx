@@ -89,7 +89,7 @@ export function ViewKeyModal({
 						<Textarea
 							readOnly
 							value={activeKey.public_key || ''}
-							className="h-28 text-xs font-mono bg-muted/20 border-border rounded-md p-3 resize-none break-all w-full max-w-full overflow-y-auto leading-relaxed"
+							className="h-28 text-xs font-mono bg-muted/20 border-border rounded-md p-3 resize-none break-all [word-break:break-all] whitespace-pre-wrap w-full max-w-full overflow-y-auto leading-relaxed"
 						/>
 					</div>
 
@@ -119,7 +119,7 @@ export function ViewKeyModal({
 							<Textarea
 								readOnly
 								value={activeKey.private_key || 'Private key restricted or missing'}
-								className="h-40 text-xs font-mono bg-muted/20 border-border rounded-md p-3 resize-none break-all w-full max-w-full overflow-y-auto leading-relaxed"
+								className="h-40 text-xs font-mono bg-muted/20 border-border rounded-md p-3 resize-none break-all [word-break:break-all] whitespace-pre-wrap w-full max-w-full overflow-y-auto leading-relaxed"
 							/>
 						) : (
 							<div className="h-20 flex items-center justify-center bg-muted/20 border border-border rounded-md text-xs text-muted-foreground font-mono w-full">
