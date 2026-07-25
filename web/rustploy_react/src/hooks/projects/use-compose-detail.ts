@@ -12,7 +12,6 @@ export function useComposeDetail(composeId: number) {
 		refetch,
 	} = $api.useQuery('get', '/compose/{id}', {
 		params: {path: {id: composeId}},
-	}, {
 		refetchInterval: 3000,
 	});
 

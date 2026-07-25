@@ -49,8 +49,10 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 	const {data: rawContainers = [], refetch: refetchContainers, isFetching} = $api.useQuery(
 		'get',
 		'/docker/containers',
-		{params: {query: {server_id: compose?.destination_id}}},
-		{refetchInterval: 3000},
+		{
+			params: {query: {server_id: compose?.destination_id}},
+			refetchInterval: 3000,
+		},
 	);
 
 	const serviceNames = useMemo(() => {
