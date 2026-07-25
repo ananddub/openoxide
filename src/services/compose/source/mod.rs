@@ -1,9 +1,11 @@
+use std::env::temp_dir;
 use super::{ComposeRecord, ComposeService};
 use crate::api::dto::compose::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
 use upload::{TempFileGuard, sanitize_zip, save_multipart_to_file};
+use crate::utils::paths::rustploy_paths;
 
 impl ComposeService {
     // ── Git provider sources ──────────────────────────────────────────────────
@@ -128,8 +130,8 @@ impl ComposeService {
         let uuid = uuid::Uuid::new_v4().to_string();
         let mut cleanup = TempFileGuard::new();
 
-        let upload_zip = std::env::temp_dir().join(format!("upload-{uuid}.zip"));
-        let clean_zip = std::env::temp_dir().join(format!("clean-{uuid}.zip"));
+        let upload_zip = temp_dir().join(format!("upload-{uuid}.zip"));
+        let clean_zip = temp_dir().join(format!("clean-{uuid}.zip"));
         cleanup.track(&upload_zip);
         cleanup.track(&clean_zip);
 
@@ -138,13 +140,13 @@ impl ComposeService {
         sanitize_zip(&upload_zip, &clean_zip).await?;
 
         // 4. Deploy — local or remote
-        let dest_path = crate::utils::paths::rustploy_paths().compose_source(&project.app_name);
+        let dest_path = rustploy_paths().compose_source(&project.app_name);
         match project.server_id {
             None => {
                 local::deploy_zip_locally(&clean_zip, &dest_path).await?;
             }
             Some(server_id) => {
-                let key_path = std::env::temp_dir().join(format!("key-{uuid}.pem"));
+                let key_path = temp_dir().join(format!("key-{uuid}.pem"));
                 cleanup.track(&key_path);
                 remote::deploy_zip_to_remote(
                     &self.db, &clean_zip, &dest_path, server_id, &key_path, &uuid,
