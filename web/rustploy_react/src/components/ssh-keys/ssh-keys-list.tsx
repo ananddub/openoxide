@@ -9,7 +9,7 @@ interface SshKeysListProps {
 	keys: any[];
 	isLoading: boolean;
 	onViewKey: (key: any) => void;
-	onDeleteKey: (id: number) => void;
+	onDeleteKey: (key: any) => void;
 }
 
 export function SshKeysList({
@@ -84,7 +84,7 @@ export function SshKeysList({
 								<Button
 									variant="ghost"
 									size="icon"
-									onClick={() => onDeleteKey(item.id)}
+									onClick={() => onDeleteKey(item)}
 									className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
 								>
 									<Trash2 className="w-4 h-4" />

@@ -6,8 +6,7 @@ import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
 import {GenerateKeyModal} from '#/components/ssh-keys/generate-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
+import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
 export const Route = createFileRoute('/_app/ssh-keys')({
 	component: SshKeysPage,
@@ -17,6 +16,7 @@ export function SshKeysPage() {
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [isGenerateOpen, setIsGenerateOpen] = useState(false);
 	const [selectedKeyForView, setSelectedKeyForView] = useState<any | null>(null);
+	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<any | null>(null);
 
 	const {
 		data: sshKeys = [],
@@ -24,26 +24,6 @@ export function SshKeysPage() {
 		refetch,
 		isRefetching,
 	} = $api.useQuery('get', '/ssh-keys');
-
-	const deleteMutation = $api.useMutation('delete', '/ssh-keys/{id}');
-
-	const handleDeleteKey = async (id: number | string) => {
-		if (!confirm('Are you sure you want to delete this SSH Key pair?')) return;
-
-		try {
-			await deleteMutation.mutateAsync({
-				params: {
-					path: {
-						id: Number(id),
-					},
-				},
-			});
-			toast.success('SSH Key deleted successfully');
-			refetch();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
 
 	return (
 		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
@@ -58,7 +38,7 @@ export function SshKeysPage() {
 				keys={sshKeys}
 				isLoading={isLoading}
 				onViewKey={key => setSelectedKeyForView(key)}
-				onDeleteKey={handleDeleteKey}
+				onDeleteKey={key => setSelectedKeyForDelete(key)}
 			/>
 
 			<CreateKeyModal
@@ -77,6 +57,13 @@ export function SshKeysPage() {
 				isOpen={!!selectedKeyForView}
 				sshKey={selectedKeyForView}
 				onClose={() => setSelectedKeyForView(null)}
+			/>
+
+			<DeleteKeyModal
+				isOpen={!!selectedKeyForDelete}
+				sshKey={selectedKeyForDelete}
+				onClose={() => setSelectedKeyForDelete(null)}
+				onSuccess={refetch}
 			/>
 		</div>
 	);
