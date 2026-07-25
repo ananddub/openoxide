@@ -267,10 +267,14 @@ impl SshBuilder {
                 SshHostKey::PinnedSha256(fingerprint) => {
                     Self::push_option(&mut args, "StrictHostKeyChecking", "yes");
 
-                    let escaped_fingerprint = fingerprint.replace('\'', "'\\''");
+                    let check_script = rustploy_sh_macros::sh!(
+                        if cmd("[", "$2", "=", fingerprint.as_str(), "]") || cmd("[", "$2", "=", format!("SHA256:{}", fingerprint).as_str(), "]") {
+                            cmd("echo", "$1", "$3", "$4")
+                        }
+                    ).to_bash();
                     let cmd = format!(
-                        "/bin/sh -c 'if [ \"$2\" = \"$5\" ] || [ \"$2\" = \"SHA256:$5\" ]; then echo \"$1 $3 $4\"; fi' -- %H %f %t %K '{}'",
-                        escaped_fingerprint
+                        "/bin/sh -c {} -- %H %f %t %K",
+                        crate::utils::exec::shell_single_quote(&check_script)
                     );
                     Self::push_option(&mut args, "KnownHostsCommand", &cmd);
                 }
