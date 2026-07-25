@@ -148,18 +148,18 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-w-md bg-card border-border p-6 shadow-xl">
-				<DialogHeader className="pb-3 border-b border-border/40">
-					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-						<HardDrive className="w-5 h-5 text-primary" />
-						{editingDestination ? 'Edit S3 Storage Destination' : 'Add S3 Storage Destination'}
+			<DialogContent className="max-w-2xl bg-card border-border p-6 shadow-2xl rounded-2xl">
+				<DialogHeader className="pb-4 border-b border-border/50">
+					<DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2.5">
+						<HardDrive className="w-5.5 h-5.5 text-primary" />
+						{editingDestination ? 'Edit S3 Destination' : 'Add S3 Destination'}
 					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+					<DialogDescription className="text-xs text-muted-foreground mt-0.5">
 						Configure S3 compatible bucket credentials for volume snapshots & database backups
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
+				<form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
 					<DestinationFormFields
 						name={name}
 						setName={setName}
@@ -178,12 +178,18 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 						providers={PROVIDERS}
 					/>
 
-					<div className="flex items-center justify-between gap-3 pt-3 border-t border-border/40 mt-2">
-						<Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="h-9 text-xs font-semibold flex items-center gap-1.5">
-							{testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />} Test Connection
+					<div className="flex items-center justify-between gap-4 pt-4 border-t border-border/50 mt-2">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleTestConnection}
+							disabled={testing}
+							className="h-10 text-xs font-semibold flex items-center gap-2 px-4 rounded-lg border-border"
+						>
+							{testing ? <RefreshCw className="w-4 h-4 animate-spin text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />} Test Connection
 						</Button>
-						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-5">
-							{submitting ? 'Saving...' : editingDestination ? 'Update' : 'Create'}
+						<Button type="submit" disabled={submitting} className="h-10 text-xs font-bold px-6 rounded-lg shadow-sm">
+							{submitting ? 'Saving...' : editingDestination ? 'Save Changes' : 'Create Destination'}
 						</Button>
 					</div>
 				</form>
