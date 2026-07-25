@@ -12,7 +12,7 @@ import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Key} from 'lucide-react';
+import {Key, Terminal, Copy, Check} from 'lucide-react';
 
 interface CreateKeyModalProps {
 	isOpen: boolean;
@@ -30,8 +30,22 @@ export function CreateKeyModal({
 	const [privateKey, setPrivateKey] = useState('');
 	const [publicKey, setPublicKey] = useState('');
 	const [submitting, setSubmitting] = useState(false);
+	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/ssh-keys');
+
+	const setupCommand = publicKey.trim()
+		? `mkdir -p ~/.ssh && echo "${publicKey.trim()}" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
+		: '';
+
+	const handleCopyCommand = () => {
+		if (setupCommand) {
+			navigator.clipboard.writeText(setupCommand);
+			setCopiedCmd(true);
+			toast.success('Server setup command copied!');
+			setTimeout(() => setCopiedCmd(false), 2000);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -107,6 +121,24 @@ export function CreateKeyModal({
 							className="h-20 text-xs font-mono bg-background border-border rounded-md p-3 resize-none"
 						/>
 					</div>
+
+					{setupCommand && (
+						<div className="bg-primary/5 p-3 rounded-xl border border-primary/20 flex flex-col gap-2 min-w-0 w-full">
+							<div className="flex items-center justify-between gap-2 min-w-0">
+								<span className="text-xs font-bold text-foreground flex items-center gap-1.5 truncate">
+									<Terminal className="w-4 h-4 text-primary shrink-0" />
+									Run on Remote Server to Authorize Key:
+								</span>
+								<Button type="button" variant="secondary" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-semibold gap-1 shrink-0">
+									{copiedCmd ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+									{copiedCmd ? 'Copied' : 'Copy Command'}
+								</Button>
+							</div>
+							<div className="p-2.5 bg-background/80 border border-border/60 rounded-lg text-[11px] font-mono text-foreground break-all [word-break:break-all] select-all max-h-24 overflow-y-auto leading-relaxed">
+								{setupCommand}
+							</div>
+						</div>
+					)}
 
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-semibold text-foreground">Private Key *</label>
