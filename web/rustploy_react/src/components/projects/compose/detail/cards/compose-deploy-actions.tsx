@@ -66,8 +66,18 @@ export function ComposeDeployActions({
 					{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
 				</Button>
 
-				{/* 3-State Action Button: Cancel (Building), Stop (Running), Start (Stopped) */}
-				{isBuilding ? (
+				{/* 4-State Dynamic Action Button: Stopping (Stop Loading), Cancel (Deploy Building), Stop (Running), Start (Stopped) */}
+				{activeLoading === 'stop' ? (
+					<Button
+						disabled
+						variant="outline"
+						size="sm"
+						className="border-border text-destructive font-semibold flex items-center gap-1.5 h-9 rounded-lg opacity-80"
+					>
+						<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+						Stopping...
+					</Button>
+				) : isBuilding ? (
 					<Button
 						onClick={() => setConfirmAction('cancel')}
 						disabled={isProcessing}
@@ -86,8 +96,8 @@ export function ComposeDeployActions({
 						size="sm"
 						className="border-border text-destructive hover:bg-destructive/10 font-semibold flex items-center gap-1.5 h-9 rounded-lg"
 					>
-						{activeLoading === 'stop' ? <RefreshCw className="w-4 h-4 animate-spin text-destructive" /> : <StopCircle className="w-4 h-4" />}
-						{activeLoading === 'stop' ? 'Stopping...' : 'Stop'}
+						<StopCircle className="w-4 h-4" />
+						Stop
 					</Button>
 				) : (
 					<Button
@@ -108,36 +118,12 @@ export function ComposeDeployActions({
 						onClick={onOpenTerminal}
 						variant="outline"
 						size="sm"
-						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg ml-auto sm:ml-0"
 					>
-						<Terminal className="w-4 h-4 text-primary" /> Open Terminal
+						<Terminal className="w-4 h-4" />
+						Terminal
 					</Button>
 				)}
-			</div>
-
-			{/* Switches */}
-			<div className="flex items-center gap-4 border-l border-border/40 pl-4">
-				<label className="flex items-center gap-2 cursor-pointer select-none">
-					<button
-						type="button"
-						onClick={() => setAutoDeploy(!autoDeploy)}
-						className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${autoDeploy ? 'bg-primary' : 'bg-muted'}`}
-					>
-						<span className={`pointer-events-none block w-3 h-3 rounded-full bg-background shadow-lg transition-transform ${autoDeploy ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
-					</button>
-					<span className="text-[11px] font-bold text-muted-foreground">Autodeploy</span>
-				</label>
-
-				<label className="flex items-center gap-2 cursor-pointer select-none">
-					<button
-						type="button"
-						onClick={() => setCleanCache(!cleanCache)}
-						className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${cleanCache ? 'bg-primary' : 'bg-muted'}`}
-					>
-						<span className={`pointer-events-none block w-3 h-3 rounded-full bg-background shadow-lg transition-transform ${cleanCache ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
-					</button>
-					<span className="text-[11px] font-bold text-muted-foreground">Clean Cache</span>
-				</label>
 			</div>
 		</div>
 	);
