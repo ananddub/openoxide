@@ -1,0 +1,83 @@
+import {useState} from 'react';
+import {createFileRoute} from '@tanstack/react-router';
+import {$api} from '#/api/query';
+import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
+import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
+import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
+import {GenerateKeyModal} from '#/components/ssh-keys/generate-key-modal';
+import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
+
+export const Route = createFileRoute('/_app/ssh-keys')({
+	component: SshKeysPage,
+});
+
+export function SshKeysPage() {
+	const [isAddOpen, setIsAddOpen] = useState(false);
+	const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+	const [selectedKeyForView, setSelectedKeyForView] = useState<any | null>(null);
+
+	const {
+		data: sshKeys = [],
+		isLoading,
+		refetch,
+		isRefetching,
+	} = $api.useQuery('get', '/ssh-keys');
+
+	const deleteMutation = $api.useMutation('delete', '/ssh-keys/{id}');
+
+	const handleDeleteKey = async (id: number) => {
+		if (!confirm('Are you sure you want to delete this SSH Key pair?')) return;
+
+		try {
+			await deleteMutation.mutateAsync({
+				params: {
+					path: {
+						id,
+					},
+				},
+			});
+			toast.success('SSH Key deleted successfully');
+			refetch();
+		} catch (err: any) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	return (
+		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+			<SshKeysHeader
+				onOpenAdd={() => setIsAddOpen(true)}
+				onOpenGenerate={() => setIsGenerateOpen(true)}
+				onRefresh={refetch}
+				isRefetching={isRefetching}
+			/>
+
+			<SshKeysList
+				keys={sshKeys}
+				isLoading={isLoading}
+				onViewKey={key => setSelectedKeyForView(key)}
+				onDeleteKey={handleDeleteKey}
+			/>
+
+			<CreateKeyModal
+				isOpen={isAddOpen}
+				onClose={() => setIsAddOpen(false)}
+				onSuccess={refetch}
+			/>
+
+			<GenerateKeyModal
+				isOpen={isGenerateOpen}
+				onClose={() => setIsGenerateOpen(false)}
+				onSuccess={refetch}
+			/>
+
+			<ViewKeyModal
+				isOpen={!!selectedKeyForView}
+				sshKey={selectedKeyForView}
+				onClose={() => setSelectedKeyForView(null)}
+			/>
+		</div>
+	);
+}
