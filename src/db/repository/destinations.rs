@@ -16,7 +16,7 @@ impl DestinationRepository {
     pub async fn get_all(&self) -> Result<Vec<Destination>, sqlx::Error> {
         sqlx::query_as!(
             Destination,
-            r#"SELECT id AS "id?: String", name AS "name: String", provider AS "provider: String", access_key AS "access_key: String", secret_access_key AS "secret_access_key: String", bucket AS "bucket: String", region AS "region: String", endpoint AS "endpoint: String", additional_flags AS "additional_flags?: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM destinations"#
+            r#"SELECT CAST(id AS TEXT) AS "id?: String", name AS "name: String", provider AS "provider: String", access_key AS "access_key: String", secret_access_key AS "secret_access_key: String", bucket AS "bucket: String", region AS "region: String", endpoint AS "endpoint: String", additional_flags AS "additional_flags?: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM destinations"#
         )
         .fetch_all(self.pool.as_ref())
         .await
@@ -25,7 +25,7 @@ impl DestinationRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Destination>, sqlx::Error> {
         sqlx::query_as!(
             Destination,
-            r#"SELECT id AS "id?: String", name AS "name: String", provider AS "provider: String", access_key AS "access_key: String", secret_access_key AS "secret_access_key: String", bucket AS "bucket: String", region AS "region: String", endpoint AS "endpoint: String", additional_flags AS "additional_flags?: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM destinations WHERE id = ?"#,
+            r#"SELECT CAST(id AS TEXT) AS "id?: String", name AS "name: String", provider AS "provider: String", access_key AS "access_key: String", secret_access_key AS "secret_access_key: String", bucket AS "bucket: String", region AS "region: String", endpoint AS "endpoint: String", additional_flags AS "additional_flags?: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM destinations WHERE id = ?"#,
             id
         )
         .fetch_optional(self.pool.as_ref())
