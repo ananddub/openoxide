@@ -182,12 +182,9 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 						<Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing} className="h-9 text-xs font-semibold flex items-center gap-1.5">
 							{testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />} Test Connection
 						</Button>
-						<div className="flex items-center gap-2">
-							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs">Cancel</Button>
-							<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold">
-								{submitting ? 'Saving...' : editingDestination ? 'Update Destination' : 'Save Destination'}
-							</Button>
-						</div>
+						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-5">
+							{submitting ? 'Saving...' : editingDestination ? 'Update' : 'Create'}
+						</Button>
 					</div>
 				</form>
 			</DialogContent>
