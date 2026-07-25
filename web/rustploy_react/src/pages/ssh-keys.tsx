@@ -8,6 +8,8 @@ import {GenerateKeyModal} from '#/components/ssh-keys/generate-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
+import {SshKeysGuide} from '#/components/ssh-keys/ssh-keys-guide';
+
 export const Route = createFileRoute('/_app/ssh-keys')({
 	component: SshKeysPage,
 });
@@ -40,6 +42,8 @@ export function SshKeysPage() {
 				onViewKey={key => setSelectedKeyForView(key)}
 				onDeleteKey={key => setSelectedKeyForDelete(key)}
 			/>
+
+			<SshKeysGuide />
 
 			<CreateKeyModal
 				isOpen={isAddOpen}
