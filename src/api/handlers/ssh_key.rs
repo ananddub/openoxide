@@ -130,6 +130,12 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }
+        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
+            (
+                StatusCode::BAD_REQUEST,
+                "Cannot delete SSH Key: It is currently assigned to active servers or git repositories.".into(),
+            )
+        }
         other => {
             tracing::error!(error = %other, "ssh key database operation failed");
             (

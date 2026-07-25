@@ -27,14 +27,14 @@ export function SshKeysPage() {
 
 	const deleteMutation = $api.useMutation('delete', '/ssh-keys/{id}');
 
-	const handleDeleteKey = async (id: number) => {
+	const handleDeleteKey = async (id: number | string) => {
 		if (!confirm('Are you sure you want to delete this SSH Key pair?')) return;
 
 		try {
 			await deleteMutation.mutateAsync({
 				params: {
 					path: {
-						id,
+						id: Number(id),
 					},
 				},
 			});

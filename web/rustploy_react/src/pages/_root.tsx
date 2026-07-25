@@ -23,11 +23,11 @@ export const Route = createRootRoute({
 					lastName: res.last_name,
 				});
 			} else {
-				useAuthStore.getState().logout();
+				// useAuthStore.getState().logout();
 			}
 		} catch (error) {
 			console.error('Failed to authenticate session:', error);
-			useAuthStore.getState().logout();
+			// useAuthStore.getState().logout();
 		}
 	},
 	component: RootComponent,
