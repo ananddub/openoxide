@@ -119,9 +119,10 @@ db-gen:
 
     echo ">> Done!"
 
-run: gen-mod
+run:
     cargo run
-
+dev:
+    cargo watch -x check -x run
 # Build standalone rustploy_monitor binary
 build-monitor:
     cargo build --release -p rustploy_monitor

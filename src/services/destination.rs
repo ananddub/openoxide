@@ -8,13 +8,27 @@ use crate::{
 use auto_di::singleton;
 use std::sync::Arc;
 
-fn normalize_provider(p: &str) -> String {
-    match p.to_lowercase().as_str() {
-        "r2" | "cloudflare_r2" => "R2".to_string(),
-        "backblaze" | "b2" => "BACKBLAZE".to_string(),
-        "gcs" | "gcp" | "google" => "GCS".to_string(),
-        "do_spaces" | "digitalocean" | "spaces" => "DO_SPACES".to_string(),
-        _ => "S3".to_string(),
+use crate::db::models::types::DestinationsProviderEnum;
+
+impl DestinationsProviderEnum {
+    pub fn from_preset(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "r2" | "cloudflare_r2" => Self::R2,
+            "backblaze" | "b2" => Self::Backblaze,
+            "gcs" | "gcp" | "google" => Self::Gcs,
+            "do_spaces" | "digitalocean" | "spaces" => Self::DoSpaces,
+            _ => Self::S3,
+        }
+    }
+
+    pub fn as_db_str(&self) -> &'static str {
+        match self {
+            Self::S3 => "S3",
+            Self::R2 => "R2",
+            Self::Backblaze => "BACKBLAZE",
+            Self::Gcs => "GCS",
+            Self::DoSpaces => "DO_SPACES",
+        }
     }
 }
 
@@ -44,7 +58,7 @@ impl DestinationService {
         let item = Destination {
             id: None,
             name: input.name,
-            provider: normalize_provider(&input.provider),
+            provider: DestinationsProviderEnum::from_preset(&input.provider).as_db_str().to_string(),
             access_key: input.access_key,
             secret_access_key: input.secret_access_key,
             bucket: input.bucket,
@@ -70,7 +84,7 @@ impl DestinationService {
             current.name = v;
         }
         if let Some(v) = input.provider {
-            current.provider = normalize_provider(&v);
+            current.provider = DestinationsProviderEnum::from_preset(&v).as_db_str().to_string();
         }
         if let Some(v) = input.access_key {
             current.access_key = v;
