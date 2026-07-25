@@ -159,7 +159,9 @@ export function CreateServerModal({
 						<label className="text-xs font-semibold text-foreground">SSH Key Credential</label>
 						<Select value={sshKeyId} onValueChange={val => setSshKeyId(val)}>
 							<SelectTrigger className="h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3">
-								<SelectValue placeholder="Select SSH Key" />
+								<SelectValue placeholder="Select SSH Key">
+									{sshKeys?.find((k: any) => Number(k.id) === Number(sshKeyId))?.name || 'Select SSH Key'}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								{sshKeys?.map(key => (
