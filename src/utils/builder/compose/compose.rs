@@ -96,24 +96,35 @@ impl ComposeBuilder {
     pub async fn stop(&self, spec: &ComposeSpec) -> ExecResult<()> {
         match spec.runtime {
             ComposeRuntime::Stack => {
-                self.ctx
+                let _ = self
+                    .ctx
                     .docker
                     .stacks()
                     .remove(&spec.stack_name)
                     .run()
-                    .await?;
+                    .await;
             }
             ComposeRuntime::Compose => {
-                self.ctx
+                let primary_down = self
+                    .ctx
                     .docker
                     .compose()
                     .down()
                     .project(&spec.stack_name)
-                    .env_file(&spec.env_file)
-                    .file(&spec.compose_file_path())
-                    .retry(3)
+                    .remove_orphans()
                     .run()
-                    .await?;
+                    .await;
+
+                if primary_down.is_err() {
+                    let _ = self
+                        .ctx
+                        .docker
+                        .compose()
+                        .stop()
+                        .project(&spec.stack_name)
+                        .run()
+                        .await;
+                }
             }
         }
         self.ctx.emit(BuilderEvent::Cancelled).await;
