@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_app/ssh-keys')({
 	component: SshKeysPage,
 });
 
-export function SshKeysPage() {
+function SshKeysPage() {
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [isGenerateOpen, setIsGenerateOpen] = useState(false);
 	const [selectedKeyForView, setSelectedKeyForView] = useState<any | null>(null);

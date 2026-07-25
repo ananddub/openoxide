@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_app/remote-servers')({
 	component: RemoteServersPage,
 });
 
-export function RemoteServersPage() {
+function RemoteServersPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingServer, setEditingServer] = useState<any | null>(null);
 	const [setupServer, setSetupServer] = useState<any | null>(null);

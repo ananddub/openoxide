@@ -1,17 +1,20 @@
+import {useState} from 'react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {Card, CardContent} from '#/components/ui/card';
+import {$api} from '#/api/query';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 import {
 	Server,
 	Globe,
 	Key,
 	ShieldCheck,
-	Activity,
 	Trash2,
 	Edit,
 	Terminal,
-	Cpu,
 	Power,
+	RefreshCw,
 } from 'lucide-react';
 
 interface RemoteServersListProps {
@@ -33,6 +36,24 @@ export function RemoteServersList({
 	onSetupServer,
 	onToggleStatus,
 }: RemoteServersListProps) {
+	const [testingConnId, setTestingConnId] = useState<number | null>(null);
+	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
+
+	const handleTestConnection = async (server: any) => {
+		setTestingConnId(server.id);
+		try {
+			await testConnMutation.mutateAsync({
+				params: {path: {id: server.id}},
+				body: {host_key_fingerprint: ''} as any,
+			});
+			toast.success(`SSH Connection to "${server.name}" (${server.ip_address}) successful!`);
+		} catch (err: any) {
+			toast.error(formatApiError(err));
+		} finally {
+			setTestingConnId(null);
+		}
+	};
+
 	if (isLoading) {
 		return (
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-6">
@@ -62,6 +83,7 @@ export function RemoteServersList({
 			{servers.map((item: any) => {
 				const attachedKey = sshKeys?.find((k: any) => Number(k.id) === Number(item.ssh_key_id));
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+				const isTesting = testingConnId === item.id;
 
 				return (
 					<Card key={item.id} className="bg-card border-border/70 hover:border-primary/40 transition-colors shadow-sm min-w-0 w-full overflow-hidden">
@@ -123,15 +145,27 @@ export function RemoteServersList({
 							</div>
 
 							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs min-w-0 w-full">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => onToggleStatus(item)}
-									className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
-								>
-									<Power className="w-3.5 h-3.5" />
-									{isActive ? 'Disable' : 'Enable'}
-								</Button>
+								<div className="flex items-center gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => onToggleStatus(item)}
+										className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
+									>
+										<Power className="w-3.5 h-3.5" />
+										{isActive ? 'Disable' : 'Enable'}
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => handleTestConnection(item)}
+										disabled={isTesting}
+										className="h-8 text-xs font-semibold gap-1"
+									>
+										{isTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
+										{isTesting ? 'Testing...' : 'Test Connection'}
+									</Button>
+								</div>
 
 								<Button
 									variant="secondary"
