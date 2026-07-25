@@ -17,6 +17,7 @@ pub struct CreateRemoteServerDto {
     pub username: String,
     #[serde(default = "default_server_type")]
     pub server_type: String,
+    pub ssh_key_id: Option<i64>,
     pub build_memory_limit: Option<String>,
     pub build_cpu_limit: Option<String>,
 }
