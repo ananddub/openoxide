@@ -269,7 +269,7 @@ impl SshBuilder {
 
                     let escaped_fingerprint = fingerprint.replace('\'', "'\\''");
                     let cmd = format!(
-                        "sh -c 'if [ \"$2\" = \"$5\" ] || [ \"$2\" = \"SHA256:$5\" ]; then echo \"$1 $3 $4\"; fi' -- %H %f %t %K '{}'",
+                        "/bin/sh -c 'if [ \"$2\" = \"$5\" ] || [ \"$2\" = \"SHA256:$5\" ]; then echo \"$1 $3 $4\"; fi' -- %H %f %t %K '{}'",
                         escaped_fingerprint
                     );
                     Self::push_option(&mut args, "KnownHostsCommand", &cmd);
