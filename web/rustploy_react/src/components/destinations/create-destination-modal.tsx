@@ -21,12 +21,17 @@ interface CreateDestinationModalProps {
 }
 
 const PROVIDERS = [
-	{id: 'aws', name: 'AWS S3', region: 'us-east-1', endpoint: 'https://s3.us-east-1.amazonaws.com'},
-	{id: 'cloudflare_r2', name: 'Cloudflare R2', region: 'auto', endpoint: 'https://<accountid>.r2.cloudflarestorage.com'},
+	{id: 'aws', name: 'Amazon Web Services (AWS S3)', region: 'us-east-1', endpoint: 'https://s3.us-east-1.amazonaws.com'},
+	{id: 'cloudflare_r2', name: 'Cloudflare R2', region: 'auto', endpoint: 'https://<account-id>.r2.cloudflarestorage.com'},
 	{id: 'minio', name: 'MinIO Storage', region: 'us-east-1', endpoint: 'http://localhost:9000'},
-	{id: 'wasabi', name: 'Wasabi S3', region: 'us-east-1', endpoint: 'https://s3.wasabisys.com'},
 	{id: 'digitalocean', name: 'DigitalOcean Spaces', region: 'nyc3', endpoint: 'https://nyc3.digitaloceanspaces.com'},
-	{id: 'custom', name: 'Custom S3 Compatible', region: 'us-east-1', endpoint: ''},
+	{id: 'wasabi', name: 'Wasabi Hot Cloud Storage', region: 'us-east-1', endpoint: 'https://s3.wasabisys.com'},
+	{id: 'backblaze', name: 'Backblaze B2 Cloud Storage', region: 'us-west-004', endpoint: 'https://s3.us-west-004.backblazeb2.com'},
+	{id: 'scaleway', name: 'Scaleway Elements Object Storage', region: 'fr-par', endpoint: 'https://s3.fr-par.scw.cloud'},
+	{id: 'linode', name: 'Akamai / Linode Object Storage', region: 'us-east-1', endpoint: 'https://us-east-1.linodeobjects.com'},
+	{id: 'hetzner', name: 'Hetzner Object Storage', region: 'fsn1', endpoint: 'https://fsn1.your-objectstorage.com'},
+	{id: 'gcp', name: 'Google Cloud Storage (S3 Interoperable)', region: 'auto', endpoint: 'https://storage.googleapis.com'},
+	{id: 'custom', name: 'Custom S3 Compatible Provider', region: 'us-east-1', endpoint: ''},
 ];
 
 export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDestination}: CreateDestinationModalProps) {
@@ -81,16 +86,7 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 		setTesting(true);
 		try {
 			await testRawMutation.mutateAsync({
-				body: {
-					name: name || 'Test',
-					provider,
-					bucket,
-					region,
-					endpoint,
-					access_key: accessKey,
-					secret_access_key: secretKey,
-					organization_id: 1,
-				} as any,
+				body: {name: name || 'Test', provider, bucket, region, endpoint, access_key: accessKey, secret_access_key: secretKey, organization_id: 1} as any,
 			});
 			toast.success('S3 Connection & Bucket Write Permissions Verified Successfully!');
 		} catch (err: any) {
@@ -111,29 +107,12 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 			if (editingDestination) {
 				await patchMutation.mutateAsync({
 					params: {path: {id: String(editingDestination.id)}},
-					body: {
-						name,
-						provider,
-						bucket,
-						region,
-						endpoint,
-						access_key: accessKey,
-						secret_access_key: secretKey,
-					} as any,
+					body: {name, provider, bucket, region, endpoint, access_key: accessKey, secret_access_key: secretKey} as any,
 				});
 				toast.success('S3 Storage Destination updated');
 			} else {
 				await createMutation.mutateAsync({
-					body: {
-						name,
-						provider,
-						bucket,
-						region,
-						endpoint,
-						access_key: accessKey,
-						secret_access_key: secretKey,
-						organization_id: 1,
-					} as any,
+					body: {name, provider, bucket, region, endpoint, access_key: accessKey, secret_access_key: secretKey, organization_id: 1} as any,
 				});
 				toast.success('S3 Storage Destination added successfully');
 			}
