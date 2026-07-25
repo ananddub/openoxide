@@ -23,7 +23,7 @@ interface CreateDestinationModalProps {
 const PROVIDERS = [
 	{id: 'aws', name: 'Amazon Web Services (AWS S3)', region: 'us-east-1', endpoint: 'https://s3.us-east-1.amazonaws.com'},
 	{id: 'cloudflare_r2', name: 'Cloudflare R2', region: 'auto', endpoint: 'https://<account-id>.r2.cloudflarestorage.com'},
-	{id: 'minio', name: 'MinIO Storage', region: 'us-east-1', endpoint: 'http://localhost:9000'},
+	{id: 'minio', name: 'MinIO Storage (Self-Hosted)', region: 'us-east-1', endpoint: 'http://localhost:9000'},
 	{id: 'digitalocean', name: 'DigitalOcean Spaces', region: 'nyc3', endpoint: 'https://nyc3.digitaloceanspaces.com'},
 	{id: 'wasabi', name: 'Wasabi Hot Cloud Storage', region: 'us-east-1', endpoint: 'https://s3.wasabisys.com'},
 	{id: 'backblaze', name: 'Backblaze B2 Cloud Storage', region: 'us-west-004', endpoint: 'https://s3.us-west-004.backblazeb2.com'},
@@ -31,6 +31,15 @@ const PROVIDERS = [
 	{id: 'linode', name: 'Akamai / Linode Object Storage', region: 'us-east-1', endpoint: 'https://us-east-1.linodeobjects.com'},
 	{id: 'hetzner', name: 'Hetzner Object Storage', region: 'fsn1', endpoint: 'https://fsn1.your-objectstorage.com'},
 	{id: 'gcp', name: 'Google Cloud Storage (S3 Interoperable)', region: 'auto', endpoint: 'https://storage.googleapis.com'},
+	{id: 'vultr', name: 'Vultr Object Storage', region: 'ewr1', endpoint: 'https://ewr1.vultrobjects.com'},
+	{id: 'ovh', name: 'OVHcloud Object Storage', region: 'gra', endpoint: 'https://s3.gra.io.cloud.ovh.net'},
+	{id: 'oracle', name: 'Oracle Cloud Infrastructure (OCI S3)', region: 'us-ashburn-1', endpoint: 'https://<namespace>.compat.objectstorage.us-ashburn-1.oraclecloud.com'},
+	{id: 'azure', name: 'Microsoft Azure Blob Storage (S3 Gateway)', region: 'auto', endpoint: 'https://<account>.blob.core.windows.net'},
+	{id: 'upcloud', name: 'UpCloud Object Storage', region: 'fi-hel2', endpoint: 'https://fi-hel2.objectstorage.upcloud.com'},
+	{id: 'storj', name: 'Storj Distributed Cloud Storage', region: 'us-east-1', endpoint: 'https://gateway.storjshare.io'},
+	{id: 'ceph', name: 'Ceph RADOS Gateway (RGW)', region: 'us-east-1', endpoint: 'https://rgw.yourdomain.com'},
+	{id: 'garage', name: 'Garage S3 Storage', region: 'garage', endpoint: 'http://localhost:3900'},
+	{id: 'seaweedfs', name: 'SeaweedFS S3 Gateway', region: 'us-east-1', endpoint: 'http://localhost:8333'},
 	{id: 'custom', name: 'Custom S3 Compatible Provider', region: 'us-east-1', endpoint: ''},
 ];
 
