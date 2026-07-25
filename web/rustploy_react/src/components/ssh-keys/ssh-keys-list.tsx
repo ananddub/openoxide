@@ -52,30 +52,30 @@ export function SshKeysList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+		<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 w-full">
 			{keys.map((item: any) => {
 				const isCopied = copiedId === item.id;
 				const createdDate = item.created_at ? new Date(item.created_at * 1000).toLocaleDateString() : 'N/A';
 				const lastUsed = item.last_used_at ? new Date(item.last_used_at * 1000).toLocaleDateString() : 'Never';
 
 				return (
-					<Card key={item.id} className="bg-card border-border/70 hover:border-primary/40 transition-colors shadow-sm">
-						<CardContent className="p-5 flex flex-col justify-between gap-4 h-full">
-							<div className="flex items-start justify-between gap-3">
-								<div className="flex items-start gap-3">
-									<div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-primary mt-0.5">
+					<Card key={item.id} className="bg-card border-border/70 hover:border-primary/40 transition-colors shadow-sm min-w-0 w-full overflow-hidden">
+						<CardContent className="p-5 flex flex-col justify-between gap-4 h-full min-w-0 w-full">
+							<div className="flex items-start justify-between gap-3 min-w-0 w-full">
+								<div className="flex items-start gap-3 min-w-0 flex-1">
+									<div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-primary shrink-0 mt-0.5">
 										<Key className="w-5 h-5" />
 									</div>
-									<div className="flex flex-col">
-										<div className="flex items-center gap-2">
-											<span className="text-sm font-bold text-foreground">{item.name}</span>
+									<div className="flex flex-col min-w-0 flex-1">
+										<div className="flex items-center gap-2 min-w-0">
+											<span className="text-sm font-bold text-foreground truncate min-w-0">{item.name}</span>
 											{item.has_private_key && (
-												<Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 px-1.5 py-0">
+												<Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 px-1.5 py-0 shrink-0">
 													<ShieldCheck className="w-3 h-3 mr-1" /> Key Pair
 												</Badge>
 											)}
 										</div>
-										<p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+										<p className="text-xs text-muted-foreground truncate min-w-0 mt-0.5">
 											{item.description || 'No description provided'}
 										</p>
 									</div>
@@ -85,26 +85,26 @@ export function SshKeysList({
 									variant="ghost"
 									size="icon"
 									onClick={() => onDeleteKey(item)}
-									className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+									className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
 								>
 									<Trash2 className="w-4 h-4" />
 								</Button>
 							</div>
 
-							<div className="bg-muted/30 p-2.5 rounded-lg border border-border/40 text-[11px] font-mono text-muted-foreground truncate overflow-hidden max-w-full">
+							<div className="bg-muted/30 px-3 py-2.5 rounded-lg border border-border/40 text-[11px] font-mono text-muted-foreground truncate overflow-hidden min-w-0 w-full block">
 								{item.public_key || 'No public key attached'}
 							</div>
 
-							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
-								<div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-									<span className="flex items-center gap-1">
+							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs min-w-0 w-full">
+								<div className="flex items-center gap-2 text-[11px] text-muted-foreground truncate min-w-0">
+									<span className="flex items-center gap-1 shrink-0">
 										<Clock className="w-3 h-3" /> Used: {lastUsed}
 									</span>
-									<span>•</span>
-									<span>Added: {createdDate}</span>
+									<span className="shrink-0">•</span>
+									<span className="truncate">Added: {createdDate}</span>
 								</div>
 
-								<div className="flex items-center gap-2">
+								<div className="flex items-center gap-2 shrink-0">
 									<Button
 										variant="outline"
 										size="sm"
@@ -112,7 +112,7 @@ export function SshKeysList({
 										className="h-8 text-xs font-medium gap-1 px-2.5"
 									>
 										{isCopied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-										{isCopied ? 'Copied' : 'Copy Public'}
+										{isCopied ? 'Copied' : 'Copy'}
 									</Button>
 									<Button
 										variant="secondary"
@@ -121,7 +121,7 @@ export function SshKeysList({
 										className="h-8 text-xs font-semibold gap-1 px-2.5"
 									>
 										<Eye className="w-3.5 h-3.5" />
-										View Key
+										View
 									</Button>
 								</div>
 							</div>
