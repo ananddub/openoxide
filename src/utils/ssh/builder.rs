@@ -1,3 +1,4 @@
+use crate::utils::exec::script::{shell_single_quote, IntoCommand};
 use crate::utils::exec::{SshAuth, SshHostKey};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -267,14 +268,17 @@ impl SshBuilder {
                 SshHostKey::PinnedSha256(fingerprint) => {
                     Self::push_option(&mut args, "StrictHostKeyChecking", "yes");
 
+                    let fp_str = fingerprint.as_str();
+                    let sha256_fp = format!("SHA256:{}", fingerprint);
+                    let sha256_str = sha256_fp.as_str();
                     let check_script = rustploy_sh_macros::sh!(
-                        if cmd("[", "$2", "=", fingerprint.as_str(), "]") || cmd("[", "$2", "=", format!("SHA256:{}", fingerprint).as_str(), "]") {
-                            cmd("echo", "$1", "$3", "$4")
+                        if cmd("[", "$2", "=", fp_str, "]") || cmd("[", "$2", "=", sha256_str, "]") {
+                            cmd("echo", "$1", "$3", "$4");
                         }
-                    ).to_bash();
+                    ).build_str();
                     let cmd = format!(
                         "/bin/sh -c {} -- %H %f %t %K",
-                        crate::utils::exec::shell_single_quote(&check_script)
+                        shell_single_quote(&check_script)
                     );
                     Self::push_option(&mut args, "KnownHostsCommand", &cmd);
                 }
