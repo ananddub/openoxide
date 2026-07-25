@@ -7,18 +7,11 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Server} from 'lucide-react';
+import {Server, ShieldCheck, RefreshCw} from 'lucide-react';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -42,9 +35,11 @@ export function CreateServerModal({
 	const [sshKeyId, setSshKeyId] = useState<string>('');
 	const [description, setDescription] = useState('');
 	const [submitting, setSubmitting] = useState(false);
+	const [testingConn, setTestingConn] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
+	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
 	useEffect(() => {
 		if (editingServer) {
@@ -63,6 +58,22 @@ export function CreateServerModal({
 			setDescription('');
 		}
 	}, [editingServer, isOpen, sshKeys]);
+
+	const handleTestConnection = async () => {
+		if (!editingServer?.id) return;
+		setTestingConn(true);
+		try {
+			await testConnMutation.mutateAsync({
+				params: {path: {id: editingServer.id}},
+				body: {host_key_fingerprint: ''} as any,
+			});
+			toast.success(`SSH Connection to "${name}" (${ipAddress}) verified successfully!`);
+		} catch (err: any) {
+			toast.error(formatApiError(err));
+		} finally {
+			setTestingConn(false);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -115,75 +126,36 @@ export function CreateServerModal({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">Server Name *</label>
-						<Input
-							value={name}
-							onChange={e => setName(e.target.value)}
-							placeholder="e.g. EU Worker Node 1"
-							className="h-10 text-xs bg-background border-border rounded-md px-3"
-						/>
-					</div>
+					<ServerFormFields
+						name={name}
+						setName={setName}
+						ipAddress={ipAddress}
+						setIpAddress={setIpAddress}
+						port={port}
+						setPort={setPort}
+						username={username}
+						setUsername={setUsername}
+						sshKeyId={sshKeyId}
+						setSshKeyId={setSshKeyId}
+						description={description}
+						setDescription={setDescription}
+						sshKeys={sshKeys}
+					/>
 
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">IP Address / Hostname *</label>
-						<Input
-							value={ipAddress}
-							onChange={e => setIpAddress(e.target.value)}
-							placeholder="192.168.1.100 or node.yourdomain.com"
-							className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-						/>
-					</div>
+					<div className="flex items-center justify-between pt-4 border-t border-border/40 mt-1">
+						{editingServer ? (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleTestConnection}
+								disabled={testingConn}
+								className="h-9 text-xs font-semibold gap-1.5"
+							>
+								{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
+								{testingConn ? 'Testing...' : 'Test Connection'}
+							</Button>
+						) : <div />}
 
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">SSH Port</label>
-						<Input
-							value={port}
-							onChange={e => setPort(e.target.value)}
-							placeholder="22"
-							className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">Username *</label>
-						<Input
-							value={username}
-							onChange={e => setUsername(e.target.value)}
-							placeholder="root"
-							className="h-10 text-xs font-mono bg-background border-border rounded-md px-3"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">SSH Key Credential</label>
-						<Select value={sshKeyId} onValueChange={val => setSshKeyId(val)}>
-							<SelectTrigger className="h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3">
-								<SelectValue placeholder="Select SSH Key">
-									{sshKeys?.find((k: any) => Number(k.id) === Number(sshKeyId))?.name || 'Select SSH Key'}
-								</SelectValue>
-							</SelectTrigger>
-							<SelectContent>
-								{sshKeys?.map(key => (
-									<SelectItem key={key.id} value={String(key.id)} className="text-xs font-sans">
-										{key.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">Description (Optional)</label>
-						<Input
-							value={description}
-							onChange={e => setDescription(e.target.value)}
-							placeholder="Production worker node in Hetzner"
-							className="h-10 text-xs bg-background border-border rounded-md px-3"
-						/>
-					</div>
-
-					<div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40 mt-1">
 						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-6">
 							{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
 						</Button>
