@@ -105,6 +105,8 @@ function RemoteServersPage() {
 				app={{
 					app_name: terminalServer?.ip_address || terminalServer?.name || 'server',
 					name: terminalServer?.name || 'Remote Server',
+					server_id: terminalServer?.id,
+					isRemoteServer: true,
 				}}
 				open={!!terminalServer}
 				onClose={() => setTerminalServer(null)}

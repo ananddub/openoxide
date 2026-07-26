@@ -86,13 +86,21 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			setStatus('connecting');
 			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-			const socket = io(window.location.origin, {path: '/socket.io', transports: ['websocket', 'polling']});
+			const targetPort = window.location.port === '5173' ? '4000' : window.location.port;
+			const socketUrl = `${window.location.protocol}//${window.location.hostname}${targetPort ? `:${targetPort}` : ''}`;
+
+			const socket = io(socketUrl, {path: '/socket.io', transports: ['websocket', 'polling']});
 			socketRef.current = socket;
 
 			socket.on('connect', () => {
 				setStatus('connected');
-				term?.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
-				socket.emit('docker:start', {container: targetContainer, shell});
+				term?.writeln(`\x1b[32mSocket connected to ${socketUrl}. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
+				const serverId = app?.server_id || app?.serverId;
+				if (app?.isRemoteServer && serverId) {
+					socket.emit('server:start', {server_id: serverId, command: shell});
+				} else {
+					socket.emit('docker:start', {container: targetContainer, shell});
+				}
 			});
 			socket.on('started', (data: any) => {
 				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
@@ -128,7 +136,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			}
 			if (term) term.dispose();
 		};
-	}, [open, shell, targetContainer]);
+	}, [open, shell, targetContainer, app]);
 
 	if (!open) return null;
 
@@ -140,7 +148,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 						<TerminalIcon className="w-5 h-5 text-primary" />
 						<div>
 							<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-								Docker Terminal
+								Docker / SSH Terminal
 								<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${status === 'connected' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : status === 'connecting' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20 animate-pulse' : 'text-rose-500 bg-rose-500/10 border-rose-500/20'}`}>{status}</span>
 							</h3>
 							<p className="text-[11px] text-muted-foreground font-mono">{targetContainer}</p>
