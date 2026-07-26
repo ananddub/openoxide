@@ -19,14 +19,14 @@ export function SshKeysList({
 }: SshKeysListProps) {
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 
-	const handleCopyPublicKey = (id: number, pubKey: string) => {
+	const handleCopyPublicKey = (id: number, pubKey: string, keyName: string) => {
 		if (!pubKey) {
 			toast.error('No public key available to copy');
 			return;
 		}
 		navigator.clipboard.writeText(pubKey);
 		setCopiedId(id);
-		toast.success('Public SSH Key copied to clipboard');
+		toast.success(`SSH Key "${keyName}" copied to clipboard!`);
 		setTimeout(() => setCopiedId(null), 2000);
 	};
 
@@ -88,9 +88,18 @@ export function SshKeysList({
 								</Button>
 							</div>
 
-							{/* Public Key Single-Line Preview */}
-							<div className="bg-muted/40 px-3 py-2 rounded-lg border border-border/50 text-xs font-mono text-muted-foreground truncate">
-								{item.public_key || 'No public key preview'}
+							{/* Clickable Public Key Single-Line Preview Box with Copy Toast */}
+							<div
+								onClick={() => handleCopyPublicKey(item.id, item.public_key, item.name)}
+								className="bg-muted/40 hover:bg-muted/70 cursor-pointer px-3 py-2 rounded-lg border border-border/50 text-xs font-mono text-muted-foreground truncate transition-colors flex items-center justify-between group/key"
+								title="Click to copy public key"
+							>
+								<span className="truncate">{item.public_key || 'No public key preview'}</span>
+								{isCopied ? (
+									<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-2" />
+								) : (
+									<Copy className="w-3.5 h-3.5 text-muted-foreground/60 opacity-0 group-hover/key:opacity-100 transition-opacity shrink-0 ml-2" />
+								)}
 							</div>
 
 							{/* Bottom Action Bar */}
@@ -103,7 +112,7 @@ export function SshKeysList({
 									<Button
 										variant="outline"
 										size="sm"
-										onClick={() => handleCopyPublicKey(item.id, item.public_key)}
+										onClick={() => handleCopyPublicKey(item.id, item.public_key, item.name)}
 										className="h-8 text-xs font-medium gap-1.5 px-3"
 									>
 										{isCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
