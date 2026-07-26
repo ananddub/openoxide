@@ -25,14 +25,14 @@ type NavMenuGroupProps = {
 	currentPath: string;
 };
 
-// Pure standard Shadcn UI NavMenuGroup implementation.
+// Renders a labeled group of nav items with active-state highlighting.
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 	return (
-		<SidebarGroup>
-			<SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
+		<SidebarGroup className="py-1">
+			<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-2 mb-1 group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
-			<SidebarMenu>
+			<SidebarMenu className="gap-0.5">
 				{items.map(item => {
 					const isActive = (() => {
 						if (!item.to) return false;
@@ -46,8 +46,14 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 							<SidebarMenuButton
 								render={<Link to={item.to as any} />}
 								isActive={isActive}
-								tooltip={item.title}>
-								<item.icon className="size-4" />
+								tooltip={item.title}
+								className={`h-8 text-xs font-medium rounded-lg transition-colors px-2.5 ${
+									isActive
+										? 'bg-primary/10 text-primary font-semibold'
+										: 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+								}`}
+							>
+								<item.icon className={`size-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
 								<span>{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
@@ -61,8 +67,8 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 // Thin horizontal rule with consistent horizontal padding between nav groups.
 function SidebarSeparator() {
 	return (
-		<div className="px-3.5">
-			<Separator />
+		<div className="px-3.5 my-1">
+			<Separator className="bg-border/30" />
 		</div>
 	);
 }
@@ -74,14 +80,14 @@ export function AppSidebar() {
 
 	return (
 		<>
-			<Sidebar collapsible="icon" variant="sidebar">
+			<Sidebar collapsible="icon" variant="sidebar" className="rounded-none border-r border-border/40 bg-card/60 backdrop-blur-xl">
 				{/* Brand Header */}
-				<SidebarHeader>
+				<SidebarHeader className="border-b border-border/30 px-3 py-3 group-data-[collapsible=icon]:p-1.5">
 					<HeaderDropdown isCollapsed={isCollapsed} isMobile={isMobile} />
 				</SidebarHeader>
 
 				{/* Navigation Content */}
-				<SidebarContent>
+				<SidebarContent className="gap-1 px-1.5 py-2">
 					{/* Quick Search */}
 					<SearchButton />
 
@@ -104,9 +110,11 @@ export function AppSidebar() {
 					<SidebarSeparator />
 
 					{/* Extra / Help Group */}
-					<SidebarGroup className="group-data-[collapsible=icon]:hidden">
-						<SidebarGroupLabel>Extra</SidebarGroupLabel>
-						<SidebarMenu>
+					<SidebarGroup className="py-1 group-data-[collapsible=icon]:hidden">
+						<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-2 mb-1">
+							Extra
+						</SidebarGroupLabel>
+						<SidebarMenu className="gap-0.5">
 							{MENU.help.map(item => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton
@@ -117,8 +125,10 @@ export function AppSidebar() {
 												rel="noopener noreferrer"
 											/>
 										}
-										tooltip={item.title}>
-										<item.icon className="size-4" />
+										tooltip={item.title}
+										className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg px-2.5"
+									>
+										<item.icon className="size-4 text-muted-foreground/70" />
 										<span>{item.title}</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -128,7 +138,7 @@ export function AppSidebar() {
 				</SidebarContent>
 
 				{/* Footer */}
-				<SidebarFooter>
+				<SidebarFooter className="border-t border-border/30 p-3 group-data-[collapsible=icon]:p-2">
 					<AppSidebarFooter isCollapsed={isCollapsed} />
 				</SidebarFooter>
 
