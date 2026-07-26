@@ -61,6 +61,9 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const targetContainer = selectedService || defaultContainer;
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
+	const isRemoteServer = Boolean(app?.isRemoteServer);
+	const serverId = app?.server_id || app?.serverId;
+
 	useEffect(() => {
 		if (!open) return;
 		let term: Terminal | null = null;
@@ -97,8 +100,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			socket.on('connect', () => {
 				setStatus('connected');
 				term?.writeln(`\x1b[32mSocket connected to ${socketUrl}. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
-				const serverId = app?.server_id || app?.serverId;
-				if (app?.isRemoteServer && serverId) {
+				if (isRemoteServer && serverId) {
 					socket.emit('server:start', {server_id: serverId, command: shell});
 				} else {
 					socket.emit('docker:start', {container: targetContainer, shell});
@@ -143,7 +145,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			if (term) term.dispose();
 			termInstanceRef.current = null;
 		};
-	}, [open, shell, targetContainer, app]);
+	}, [open, shell, targetContainer, isRemoteServer, serverId]);
 
 	if (!open) return null;
 
