@@ -42,7 +42,8 @@ pub async fn spawn_remote_terminal(
             return;
         }
     };
-    args.push(shell);
+    let remote_cmd = format!("export TERM=xterm-256color 2>/dev/null; exec {shell}");
+    args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
