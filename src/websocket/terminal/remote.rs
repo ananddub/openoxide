@@ -32,6 +32,7 @@ pub async fn spawn_remote_terminal(
         executor.host_key().clone(),
     )
     .port(executor.port())
+    .disable_multiplexing()
     .tty(crate::utils::ssh::TtyMode::ForceTty);
 
     let (mut args, temp_key, temp_askpass, agent_socket) = match builder.build_args() {
