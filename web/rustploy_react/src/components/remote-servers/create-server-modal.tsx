@@ -36,16 +36,14 @@ export function CreateServerModal({
 	const [description, setDescription] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [testingConn, setTestingConn] = useState(false);
-	const [testResult, setTestResult] = useState<{status: 'idle' | 'success' | 'failed'; error?: string}>({
-		status: 'idle',
-	});
+	const [testResult, setTestResult] = useState<'idle' | 'success' | 'failed'>('idle');
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
 	const testDirectMutation = $api.useMutation('post', '/servers/test-direct-connection');
 
 	useEffect(() => {
-		setTestResult({status: 'idle'});
+		setTestResult('idle');
 		if (editingServer) {
 			setName(editingServer.name || '');
 			setIpAddress(editingServer.ip_address || '');
@@ -69,7 +67,7 @@ export function CreateServerModal({
 			return;
 		}
 		setTestingConn(true);
-		setTestResult({status: 'idle'});
+		setTestResult('idle');
 		try {
 			await testDirectMutation.mutateAsync({
 				body: {
@@ -79,12 +77,11 @@ export function CreateServerModal({
 					ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
 				} as any,
 			});
-			setTestResult({status: 'success'});
+			setTestResult('success');
 			toast.success(`SSH Connection to "${name || ipAddress}" verified!`);
 		} catch (err: any) {
-			const errMessage = formatApiError(err);
-			setTestResult({status: 'failed', error: errMessage});
-			toast.error(errMessage);
+			setTestResult('failed');
+			toast.error(formatApiError(err));
 		} finally {
 			setTestingConn(false);
 		}
@@ -169,20 +166,14 @@ export function CreateServerModal({
 						>
 							{testingConn ? (
 								<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
-							) : testResult.status === 'success' ? (
+							) : testResult === 'success' ? (
 								<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-							) : testResult.status === 'failed' ? (
+							) : testResult === 'failed' ? (
 								<XCircle className="w-4 h-4 text-rose-500 shrink-0" />
 							) : (
 								<ShieldCheck className="w-3.5 h-3.5 text-primary" />
 							)}
-							{testingConn
-								? 'Testing SSH...'
-								: testResult.status === 'success'
-									? 'Passed'
-									: testResult.status === 'failed'
-										? 'Failed'
-										: 'Test Connection'}
+							{testingConn ? 'Testing...' : 'Test Connection'}
 						</Button>
 
 						<div className="flex items-center gap-2">
