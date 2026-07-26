@@ -7,7 +7,6 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {Copy, Check, Eye, EyeOff, Key, Terminal} from 'lucide-react';
@@ -76,6 +75,23 @@ export function ViewKeyModal({
 		}
 	};
 
+	// Format public key parts with syntax highlighting colors
+	const renderHighlightedPublicKey = (pubKey: string) => {
+		if (!pubKey) return null;
+		const parts = pubKey.trim().split(/\s+/);
+		const keyType = parts[0] || '';
+		const keyBody = parts[1] || '';
+		const keyComment = parts.slice(2).join(' ') || '';
+
+		return (
+			<span>
+				<span className="text-amber-400 font-bold">{keyType}</span>{' '}
+				<span className="text-emerald-300">{keyBody}</span>
+				{keyComment && <span className="text-sky-400 font-semibold"> {keyComment}</span>}
+			</span>
+		);
+	};
+
 	if (!activeKey) return null;
 
 	return (
@@ -92,6 +108,7 @@ export function ViewKeyModal({
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4 py-2">
+					{/* Public Key Block */}
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between">
 							<label className="text-xs font-semibold text-foreground">Public Key</label>
@@ -100,13 +117,12 @@ export function ViewKeyModal({
 								{copiedPublic ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<Textarea
-							readOnly
-							value={activeKey.public_key || ''}
-							className="h-20 text-xs font-mono bg-muted/30 border-border rounded-md p-3 resize-none break-all"
-						/>
+						<div className="h-20 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 resize-none break-all overflow-y-auto leading-relaxed text-zinc-100">
+							{renderHighlightedPublicKey(activeKey.public_key || '')}
+						</div>
 					</div>
 
+					{/* Private Key Block */}
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between">
 							<label className="text-xs font-semibold text-foreground">Private Key</label>
@@ -130,19 +146,17 @@ export function ViewKeyModal({
 						</div>
 
 						{showPrivate ? (
-							<Textarea
-								readOnly
-								value={activeKey.private_key || ''}
-								className="h-28 text-xs font-mono bg-muted/30 border-border rounded-md p-3 resize-none break-all"
-							/>
+							<div className="h-28 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-emerald-400 whitespace-pre-wrap">
+								{activeKey.private_key}
+							</div>
 						) : (
-							<div className="h-10 bg-muted/20 border border-border/50 rounded-md flex items-center px-3 text-xs text-muted-foreground italic font-mono">
+							<div className="h-10 bg-zinc-950/60 border border-zinc-800 rounded-md flex items-center px-3 text-xs text-zinc-500 italic font-mono">
 								•••••••••••••••••••••••• (Hidden for security)
 							</div>
 						)}
 					</div>
 
-					{/* Server Authorization Command Section (Placed at the very bottom) */}
+					{/* Server Authorization Command Block (Highlighted Shell Code) */}
 					{setupCommand && (
 						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
 							<div className="flex items-center justify-between">
@@ -155,8 +169,8 @@ export function ViewKeyModal({
 									{copiedCmd ? 'Copied' : 'Copy Command'}
 								</Button>
 							</div>
-							<div className="p-2.5 bg-muted/40 border border-border/50 rounded-md text-[11px] font-mono text-muted-foreground break-all select-all leading-relaxed max-h-20 overflow-y-auto">
-								{setupCommand}
+							<div className="p-3 bg-zinc-950/90 border border-zinc-800 rounded-md text-[11px] font-mono break-all select-all leading-relaxed max-h-24 overflow-y-auto text-zinc-200">
+								<span className="text-emerald-400 font-bold">mkdir</span> <span className="text-amber-400">-p</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">echo</span> <span className="text-sky-300">"{activeKey.public_key?.trim()}"</span> <span className="text-amber-400">&gt;&gt;</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">700</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">600</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span>
 							</div>
 						</div>
 					)}
