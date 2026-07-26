@@ -6,14 +6,14 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Globe2, RefreshCw, MoreVertical, Check} from 'lucide-react';
+import {Globe2, RefreshCw, MoreVertical, Check, Server} from 'lucide-react';
 
 interface SwarmHeaderProps {
 	servers: any[];
 	selectedServerId: string;
 	onSelectServer: (id: string) => void;
 	onRefresh: () => void;
-	onOpenTokens: () => void;
+	onToggleTokens: () => void;
 	isRefreshing: boolean;
 	isSwarmActive: boolean;
 }
@@ -23,10 +23,14 @@ export function SwarmHeader({
 	selectedServerId,
 	onSelectServer,
 	onRefresh,
-	onOpenTokens,
+	onToggleTokens,
 	isRefreshing,
 	isSwarmActive,
 }: SwarmHeaderProps) {
+	// Find currently selected server name for header pill display
+	const selectedServer = servers.find((s: any) => String(s.id) === selectedServerId);
+	const selectedEngineName = selectedServerId === 'local' ? 'Local Server (Engine)' : selectedServer?.name || 'Remote Server';
+
 	return (
 		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/50">
 			{/* Title & Subtitle */}
@@ -42,8 +46,14 @@ export function SwarmHeader({
 				</div>
 			</div>
 
-			{/* Top Right Controls: Refresh & 3-Dots Menu */}
+			{/* Top Right Controls: Selected Engine Pill, Refresh & 3-Dots Menu */}
 			<div className="flex items-center gap-2 shrink-0">
+				{/* Active Engine Name Display Pill */}
+				<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-foreground shadow-xs">
+					<Server className="w-3.5 h-3.5 text-primary shrink-0" />
+					<span className="truncate max-w-[140px] sm:max-w-[180px]">{selectedEngineName}</span>
+				</div>
+
 				<Button
 					variant="outline"
 					size="icon"
@@ -102,9 +112,9 @@ export function SwarmHeader({
 						<DropdownMenuItem
 							disabled={!isSwarmActive}
 							className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-							onClick={onOpenTokens}
+							onClick={onToggleTokens}
 						>
-							Join Tokens
+							Join Tokens (Expand/Collapse)
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

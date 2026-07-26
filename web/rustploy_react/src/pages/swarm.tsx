@@ -145,7 +145,7 @@ function SwarmPage() {
 				selectedServerId={selectedServerId}
 				onSelectServer={setSelectedServerId}
 				onRefresh={loadSwarmData}
-				onOpenTokens={() => setIsTokensOpen(true)}
+				onToggleTokens={() => setIsTokensOpen(!isTokensOpen)}
 				isRefreshing={isLoading}
 				isSwarmActive={isSwarmActive}
 			/>
