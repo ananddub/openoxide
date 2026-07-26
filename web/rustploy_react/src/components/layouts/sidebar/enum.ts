@@ -1,7 +1,7 @@
 import {
-	House,
+	LayoutGrid,
 	FolderKanban,
-	Zap,
+	Rocket,
 	Activity,
 	Clock,
 	Globe,
@@ -14,7 +14,7 @@ import {
 	Users,
 	ClipboardList,
 	KeyRound,
-	Settings,
+	Building2,
 	Tag,
 	GitBranch,
 	Box,
@@ -61,9 +61,9 @@ export type Menu = {
 
 export const MENU: Menu = {
 	platform: [
-		{title: 'Home', icon: House, to: '/'},
+		{title: 'Home', icon: LayoutGrid, to: '/'},
 		{title: 'Projects', icon: FolderKanban, to: '/projects'},
-		{title: 'Deployments', icon: Zap, to: '/Deployments'},
+		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Monitoring', icon: Activity, to: '/monitoring'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
 		{title: 'Traefik', icon: Globe, to: '/traefik'},
@@ -78,7 +78,7 @@ export const MENU: Menu = {
 		{title: 'Users', icon: Users, to: '/settings/users'},
 		{title: 'Audit Logs', icon: ClipboardList, to: '/settings/audit-logs'},
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
-		{title: 'Organization', icon: Settings, to: '/settings'},
+		{title: 'Organization', icon: Building2, to: '/settings'},
 		{title: 'Tags', icon: Tag, to: '/settings/tags'},
 		{
 			title: 'Git Providers',
