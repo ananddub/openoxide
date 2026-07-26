@@ -219,7 +219,7 @@ export function CreateRegistryModal({
 					</div>
 
 					{/* Minimal Footer Buttons */}
-					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2">
+					<div className="flex items-center gap-3 pt-4 border-t border-border/50 mt-2">
 						<Button
 							type="button"
 							variant="outline"
@@ -227,7 +227,7 @@ export function CreateRegistryModal({
 							onClick={handleTestRaw}
 							disabled={isTesting}
 							title="Test Registry Connection"
-							className="h-9 w-9 shrink-0"
+							className="h-10 w-10 shrink-0 rounded-xl"
 						>
 							{isTesting ? (
 								<RefreshCw className="w-4 h-4 animate-spin text-primary" />
@@ -236,8 +236,8 @@ export function CreateRegistryModal({
 							)}
 						</Button>
 
-						<Button type="submit" className="h-9 text-xs font-semibold px-5">
-							{initialData ? 'Update' : 'Save'} Registry
+						<Button type="submit" className="h-10 flex-1 text-xs font-bold rounded-xl shadow-sm">
+							{initialData ? 'Update Registry' : 'Save Registry'}
 						</Button>
 					</div>
 				</form>
