@@ -41,6 +41,18 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return services;
 };
 
+const CONTROL_KEY_MAP: Record<string, string> = {
+	l: '\x0c', // Clear screen (Ctrl+L)
+	c: '\x03', // SIGINT (Ctrl+C)
+	d: '\x04', // EOF (Ctrl+D)
+	z: '\x1a', // SIGTSTP (Ctrl+Z)
+	u: '\x15', // Clear line (Ctrl+U)
+	a: '\x01', // Beginning of line (Ctrl+A)
+	e: '\x05', // End of line (Ctrl+E)
+	k: '\x0b', // Kill line (Ctrl+K)
+	w: '\x17', // Erase word (Ctrl+W)
+};
+
 export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('sh');
 	const [selectedService, setSelectedService] = useState('');
@@ -104,16 +116,18 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			const el = termRef.current;
 			if (el) el.addEventListener('paste', handlePaste);
 
-			// Custom key bindings (Clipboard Copy, Paste, Ctrl+L address bar hijack prevention)
+			// Custom key bindings (Control shortcuts, Copy, Paste, Ctrl+L hijack prevention)
 			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
 				if (event.ctrlKey || event.metaKey) {
 					const k = event.key.toLowerCase();
-					if (k === 'l') {
+					if (k === 'c' && term?.hasSelection()) {
+						if (event.type === 'keydown') {
+							navigator.clipboard.writeText(term.getSelection());
+						}
 						event.preventDefault();
-					} else if (k === 'c' && term?.hasSelection()) {
-						navigator.clipboard.writeText(term.getSelection());
 						return false;
-					} else if (k === 'v') {
+					}
+					if (k === 'v') {
 						if (event.type === 'keydown') {
 							navigator.clipboard.readText().then(text => {
 								if (text && socketRef.current?.connected) {
@@ -121,7 +135,15 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 								}
 							}).catch(() => {});
 						}
-						return true;
+						event.preventDefault();
+						return false;
+					}
+					if (CONTROL_KEY_MAP[k]) {
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', { data: CONTROL_KEY_MAP[k] });
+						}
+						event.preventDefault();
+						return false;
 					}
 				}
 				return true;
