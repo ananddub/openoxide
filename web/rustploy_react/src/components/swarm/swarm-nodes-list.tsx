@@ -10,10 +10,6 @@ import {
 import {
 	Server,
 	MoreVertical,
-	ShieldCheck,
-	UserCheck,
-	UserMinus,
-	Trash2,
 	Check,
 	Copy,
 } from 'lucide-react';
@@ -117,7 +113,7 @@ export function SwarmNodesList({
 									</div>
 								</div>
 
-								{/* Right: Actions Dropdown */}
+								{/* Right: Clean Text-Only Actions Dropdown */}
 								<DropdownMenu>
 									<DropdownMenuTrigger
 										render={
@@ -129,19 +125,17 @@ export function SwarmNodesList({
 									<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
 										{isManager ? (
 											<DropdownMenuItem
-												className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+												className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 												onClick={() => onDemote(node.id)}
 											>
-												<UserMinus className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-												<span>Demote to Worker</span>
+												Demote to Worker
 											</DropdownMenuItem>
 										) : (
 											<DropdownMenuItem
-												className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+												className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 												onClick={() => onPromote(node.id)}
 											>
-												<UserCheck className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-												<span>Promote to Manager</span>
+												Promote to Manager
 											</DropdownMenuItem>
 										)}
 
@@ -149,37 +143,35 @@ export function SwarmNodesList({
 
 										<DropdownMenuItem
 											disabled={availability === 'active'}
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onSetAvailability(node.id, 'active')}
 										>
-											<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-											<span>Set Active</span>
+											Set Active
 										</DropdownMenuItem>
 
 										<DropdownMenuItem
 											disabled={availability === 'pause'}
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onSetAvailability(node.id, 'pause')}
 										>
-											<span>Set Pause</span>
+											Set Pause
 										</DropdownMenuItem>
 
 										<DropdownMenuItem
 											disabled={availability === 'drain'}
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onSetAvailability(node.id, 'drain')}
 										>
-											<span>Set Drain</span>
+											Set Drain
 										</DropdownMenuItem>
 
 										<DropdownMenuSeparator className="my-1 border-border/50" />
 
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
+											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
 											onClick={() => onRemoveNode(node.id)}
 										>
-											<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-											<span>Remove Node</span>
+											Remove Node
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
