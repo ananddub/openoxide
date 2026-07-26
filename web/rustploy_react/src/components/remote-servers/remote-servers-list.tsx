@@ -96,19 +96,19 @@ export function RemoteServersList({
 				const isTesting = testingConnId === item.id;
 				const status = testStateMap[item.id];
 
-				// Status Dot Color according to Test Connection & Server Status
+				// Status Dot Color: Gray by default, Amber while testing, Green on success, Red on failure
 				const getDotColor = () => {
 					if (isTesting) return 'bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50';
 					if (status === 'success') return 'bg-emerald-500 shadow-sm shadow-emerald-500/50';
 					if (status === 'failed') return 'bg-rose-500 shadow-sm shadow-rose-500/50';
-					return isActive ? 'bg-emerald-500' : 'bg-rose-500';
+					return 'bg-zinc-400/80'; // Default gray dot until tested
 				};
 
 				const getStatusTooltip = () => {
 					if (isTesting) return 'Testing SSH connection...';
-					if (status === 'success') return 'SSH Connection Verified (Active)';
-					if (status === 'failed') return 'SSH Connection Failed';
-					return `Status: ${isActive ? 'Active' : 'Disabled'} (Click to toggle)`;
+					if (status === 'success') return 'SSH Connection Verified (Green)';
+					if (status === 'failed') return 'SSH Connection Failed (Red)';
+					return 'SSH Connection Untested (Click Plug icon to verify)';
 				};
 
 				return (
