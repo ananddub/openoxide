@@ -20,6 +20,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('ssh-keys', 'ssh-keys.tsx'),
 		route('remote-servers', 'remote-servers.tsx'),
 		route('swarm', 'swarm.tsx'),
+		route('registry', 'registry.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [

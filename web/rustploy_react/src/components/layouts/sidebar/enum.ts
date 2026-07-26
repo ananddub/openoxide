@@ -85,7 +85,7 @@ export const MENU: Menu = {
 			icon: GitBranch,
 			to: '/settings/git-providers',
 		},
-		{title: 'Registry', icon: Database, to: '/settings/registry'},
+		{title: 'Registry', icon: Database, to: '/registry'},
 		{title: 'S3 Destinations', icon: Layers, to: '/destinations'},
 		{title: 'Certificates', icon: Shield, to: '/settings/certificates'},
 		{title: 'Notifications', icon: Bell, to: '/settings/notifications'},
