@@ -47,6 +47,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
+	const termInstanceRef = useRef<Terminal | null>(null);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -76,6 +77,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				fontFamily: 'Menlo, Monaco, "Courier New", monospace',
 				theme: {background: '#09090b', foreground: '#f4f4f5', cursor: '#3b82f6'},
 			});
+			termInstanceRef.current = term;
 
 			fitAddon = new FitAddon();
 			term.loadAddon(fitAddon);
@@ -120,8 +122,12 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				term?.writeln('\r\n\x1b[31mSocket disconnected.\x1b[0m\r\n');
 			});
 
-			term.onData(data => { if (socket.connected) socket.emit('input', {data}); });
-			term.onResize(({cols, rows}) => { if (socket.connected) socket.emit('resize', {cols, rows}); });
+			term.onData(data => {
+				if (socketRef.current?.connected) socketRef.current.emit('input', {data});
+			});
+			term.onResize(({cols, rows}) => {
+				if (socketRef.current?.connected) socketRef.current.emit('resize', {cols, rows});
+			});
 		}, 100);
 
 		const handleResize = () => { try { fitAddon?.fit(); } catch (_) {} };
@@ -135,6 +141,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				socketRef.current.disconnect();
 			}
 			if (term) term.dispose();
+			termInstanceRef.current = null;
 		};
 	}, [open, shell, targetContainer, app]);
 
@@ -177,7 +184,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					</div>
 				</div>
 
-				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative">
+				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative cursor-text" onClick={() => termInstanceRef.current?.focus()}>
 					<div ref={termRef} className="absolute inset-2" />
 				</div>
 			</div>
