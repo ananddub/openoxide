@@ -207,7 +207,7 @@ export function CreateRegistryModal({
 										? 'Local Server (Default)'
 										: (() => {
 												const srv = servers.find((s: any) => String(s.id) === String(serverId));
-												return srv ? `${srv.name} (${srv.ip_address})` : 'Select server';
+												return srv ? srv.name : 'Select server';
 											})()}
 								</SelectValue>
 							</SelectTrigger>
@@ -215,7 +215,7 @@ export function CreateRegistryModal({
 								<SelectItem value="local">Local Server (Default)</SelectItem>
 								{servers.map((srv: any) => (
 									<SelectItem key={srv.id} value={String(srv.id)}>
-										{srv.name} ({srv.ip_address})
+										{srv.name}
 									</SelectItem>
 								))}
 							</SelectContent>
