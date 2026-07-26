@@ -28,8 +28,36 @@ function AppNameBreadcrumb({ id }: { id: number }) {
 	return <>{app?.name || app?.app_name || 'Loading...'}</>;
 }
 
+import {Construction} from 'lucide-react';
+
+function AppNotFoundPlaceholder() {
+	return (
+		<div className="flex h-[calc(100vh-10rem)] w-full flex-col items-center justify-center gap-4 text-center p-6 animate-in fade-in duration-200">
+			<div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
+				<Construction className="size-7" />
+			</div>
+			<div className="max-w-md space-y-1.5">
+				<h2 className="text-lg font-bold tracking-tight text-foreground">
+					Page Under Construction
+				</h2>
+				<p className="text-xs text-muted-foreground leading-relaxed">
+					This feature is currently being crafted. Your sidebar remains fully active for seamless navigation across all platform tools.
+				</p>
+			</div>
+			<div className="flex items-center gap-3 pt-2">
+				<Link
+					to="/"
+					className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
+					Return to Dashboard
+				</Link>
+			</div>
+		</div>
+	);
+}
+
 export const Route = createFileRoute('/_app')({
 	component: AppLayout,
+	notFoundComponent: AppNotFoundPlaceholder,
 });
 
 function AppLayout() {
