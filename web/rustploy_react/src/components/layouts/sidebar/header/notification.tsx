@@ -113,7 +113,7 @@ export function NotificationBell({isCollapsed, isMobile}: Props) {
 				render={
 					<button
 						className={cn(
-							'relative flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-border/50 bg-background/50 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+							'relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground',
 							isCollapsed ? 'size-8' : 'size-9',
 						)}
 						title="Notifications"
