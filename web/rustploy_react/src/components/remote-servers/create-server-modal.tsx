@@ -11,7 +11,7 @@ import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Server, ShieldCheck, RefreshCw, CheckCircle2, XCircle} from 'lucide-react';
+import {Server, RefreshCw, CheckCircle2, XCircle, Plug} from 'lucide-react';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -188,7 +188,7 @@ export function CreateServerModal({
 							) : testResult === 'failed' ? (
 								<XCircle className="w-4 h-4 text-rose-500" />
 							) : (
-								<ShieldCheck className="w-4 h-4 text-primary" />
+								<Plug className="w-4 h-4 text-muted-foreground hover:text-foreground" />
 							)}
 						</Button>
 
