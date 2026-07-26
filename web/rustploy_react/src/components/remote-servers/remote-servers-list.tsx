@@ -80,9 +80,9 @@ export function RemoteServersList({
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
 				{[1, 2, 3].map(i => (
-					<div key={i} className="h-44 bg-muted/40 animate-pulse rounded-xl border border-border/60" />
+					<div key={i} className="h-32 bg-muted/40 animate-pulse rounded-xl border border-border/60" />
 				))}
 			</div>
 		);
@@ -90,11 +90,11 @@ export function RemoteServersList({
 
 	if (servers.length === 0) {
 		return (
-			<Card className="bg-card border-border shadow-sm p-12 text-center flex flex-col items-center justify-center rounded-xl">
+			<Card className="bg-card border-border shadow-sm p-12 text-center flex flex-col items-center justify-center rounded-xl my-4">
 				<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
 					<Server className="w-6 h-6" />
 				</div>
-				<h3 className="text-sm font-bold text-foreground">No Remote Servers Registered</h3>
+				<h3 className="text-sm font-bold text-foreground">No Remote Servers Found</h3>
 				<p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
 					Connect external Linux nodes via SSH for remote application deployment.
 				</p>
@@ -103,7 +103,7 @@ export function RemoteServersList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4 w-full">
 			{servers.map(item => {
 				const attachedKey = sshKeys.find((k: any) => k.id === item.ssh_key_id);
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
@@ -111,17 +111,17 @@ export function RemoteServersList({
 				const status = testStateMap[item.id];
 
 				return (
-					<Card key={item.id} className="bg-card border-border shadow-sm hover:border-border/80 transition-all rounded-xl">
-						<CardContent className="p-4 flex flex-col gap-3">
-							{/* Header: Server Name, Status & 3-Dots Dropdown */}
-							<div className="flex items-center justify-between gap-2">
-								<div className="flex items-center gap-2.5 min-w-0 flex-1">
+					<Card key={item.id} className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm">
+						<CardContent className="p-4 flex flex-col gap-2.5">
+							{/* Header: Server Icon, Name, Status & 3-Dots Menu */}
+							<div className="flex items-center justify-between gap-2 min-w-0">
+								<div className="flex items-center gap-2 min-w-0 flex-1">
 									<Server className="w-4 h-4 text-primary shrink-0" />
 									<h3 className="text-sm font-bold text-foreground truncate">{item.name}</h3>
 									<button
 										type="button"
 										onClick={() => onToggleStatus(item)}
-										className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+										className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground shrink-0"
 										title="Toggle server status"
 									>
 										<span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -129,7 +129,6 @@ export function RemoteServersList({
 									</button>
 								</div>
 
-								{/* Top Right 3-Dots Actions Dropdown */}
 								<DropdownMenu>
 									<DropdownMenuTrigger
 										render={
@@ -138,9 +137,9 @@ export function RemoteServersList({
 									>
 										<MoreVertical className="w-4 h-4" />
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-48 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+									<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => handleTestConnection(item)}
 										>
 											{isTesting ? (
@@ -152,11 +151,11 @@ export function RemoteServersList({
 											) : (
 												<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
 											)}
-											<span>{isTesting ? 'Testing SSH...' : 'Test Connection'}</span>
+											<span>{isTesting ? 'Testing...' : 'Test Connection'}</span>
 										</DropdownMenuItem>
 
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onSetupServer(item)}
 										>
 											<Activity className="w-3.5 h-3.5 text-sky-500 shrink-0" />
@@ -165,7 +164,7 @@ export function RemoteServersList({
 
 										{onOpenTerminal && (
 											<DropdownMenuItem
-												className="flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+												className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 												onClick={() => onOpenTerminal(item)}
 											>
 												<Terminal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -176,7 +175,7 @@ export function RemoteServersList({
 										<DropdownMenuSeparator className="my-1 border-border/50" />
 
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onEditServer(item)}
 										>
 											<Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -184,7 +183,7 @@ export function RemoteServersList({
 										</DropdownMenuItem>
 
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
+											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
 											onClick={() => onDeleteServer(item)}
 										>
 											<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -194,26 +193,24 @@ export function RemoteServersList({
 								</DropdownMenu>
 							</div>
 
-							{/* Connection Details */}
-							<div className="flex flex-col gap-1 text-xs text-muted-foreground font-mono bg-muted/30 p-2.5 rounded-lg border border-border/50">
-								<div className="flex items-center justify-between gap-2">
-									<div className="flex items-center gap-2 min-w-0">
-										<Globe className="w-3.5 h-3.5 shrink-0 text-muted-foreground/70" />
-										<span className="text-foreground truncate">{item.username || 'root'}@{item.ip_address}:{item.port || 22}</span>
-									</div>
+							{/* Connection Details: Host & Key Info */}
+							<div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/40">
+								<div className="flex items-center gap-1.5 min-w-0 font-mono text-foreground">
+									<Globe className="w-3.5 h-3.5 shrink-0 text-muted-foreground/70" />
+									<span className="truncate">{item.username || 'root'}@{item.ip_address}:{item.port || 22}</span>
 									<button
 										type="button"
 										onClick={() => handleCopyIp(item.id, item.ip_address)}
-										className="text-muted-foreground/60 hover:text-foreground shrink-0"
+										className="text-muted-foreground/60 hover:text-foreground shrink-0 ml-0.5"
 										title="Copy IP"
 									>
 										{copiedId === item.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
 									</button>
 								</div>
 
-								<div className="flex items-center gap-2 text-muted-foreground pt-0.5">
+								<div className="flex items-center gap-1.5 shrink-0 text-muted-foreground pl-2">
 									<Key className="w-3.5 h-3.5 shrink-0 text-muted-foreground/70" />
-									<span className="truncate">{attachedKey?.name || 'No Key'}</span>
+									<span className="truncate max-w-[100px]">{attachedKey?.name || 'No Key'}</span>
 								</div>
 							</div>
 						</CardContent>
