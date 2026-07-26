@@ -6,6 +6,7 @@ import {RemoteServersList} from '#/components/remote-servers/remote-servers-list
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
 import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
 import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
+import {TerminalModal} from '#/components/projects/app/detail/terminal-modal';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -18,6 +19,7 @@ function RemoteServersPage() {
 	const [editingServer, setEditingServer] = useState<any | null>(null);
 	const [setupServer, setSetupServer] = useState<any | null>(null);
 	const [deletingServer, setDeletingServer] = useState<any | null>(null);
+	const [terminalServer, setTerminalServer] = useState<any | null>(null);
 
 	const {
 		data: rawServers = [],
@@ -72,6 +74,7 @@ function RemoteServersPage() {
 				onDeleteServer={server => setDeletingServer(server)}
 				onSetupServer={server => setSetupServer(server)}
 				onToggleStatus={handleToggleStatus}
+				onOpenTerminal={server => setTerminalServer(server)}
 			/>
 
 			<CreateServerModal
@@ -96,6 +99,15 @@ function RemoteServersPage() {
 				server={deletingServer}
 				onClose={() => setDeletingServer(null)}
 				onSuccess={refetch}
+			/>
+
+			<TerminalModal
+				app={{
+					app_name: terminalServer?.ip_address || terminalServer?.name || 'server',
+					name: terminalServer?.name || 'Remote Server',
+				}}
+				open={!!terminalServer}
+				onClose={() => setTerminalServer(null)}
 			/>
 		</div>
 	);

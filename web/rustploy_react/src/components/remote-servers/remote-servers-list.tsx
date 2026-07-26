@@ -25,6 +25,7 @@ interface RemoteServersListProps {
 	onDeleteServer: (server: any) => void;
 	onSetupServer: (server: any) => void;
 	onToggleStatus: (server: any) => void;
+	onOpenTerminal?: (server: any) => void;
 }
 
 export function RemoteServersList({
@@ -35,6 +36,7 @@ export function RemoteServersList({
 	onDeleteServer,
 	onSetupServer,
 	onToggleStatus,
+	onOpenTerminal,
 }: RemoteServersListProps) {
 	const [testingConnId, setTestingConnId] = useState<number | null>(null);
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
@@ -46,7 +48,7 @@ export function RemoteServersList({
 				params: {path: {id: server.id}},
 				body: {host_key_fingerprint: ''} as any,
 			});
-			toast.success(`SSH Connection to "${server.name}" (${server.ip_address}) successful!`);
+			toast.success(`Connection test succeeded for ${server.name}`);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -56,55 +58,46 @@ export function RemoteServersList({
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-6">
-				{[1, 2].map(i => (
-					<div key={i} className="h-44 rounded-xl bg-card/60 animate-pulse border border-border/40" />
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{[1, 2, 3].map(i => (
+					<div key={i} className="h-44 bg-muted/40 animate-pulse rounded-xl border border-border" />
 				))}
 			</div>
 		);
 	}
 
-	if (!servers || servers.length === 0) {
+	if (servers.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center p-12 border border-dashed border-border/60 rounded-2xl bg-card/40 my-6 text-center">
-				<div className="p-4 rounded-full bg-primary/10 mb-4 text-primary">
-					<Server className="w-8 h-8" />
-				</div>
-				<h3 className="text-base font-bold text-foreground">No Remote Servers Connected</h3>
+			<Card className="bg-card border-border shadow-sm p-12 text-center flex flex-col items-center justify-center">
+				<Server className="w-12 h-12 text-muted-foreground/40 mb-3" />
+				<h3 className="text-base font-bold text-foreground">No Remote Servers Registered</h3>
 				<p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
-					You have not connected any external Linux server nodes. Add a remote server with SSH credentials to deploy distributed apps.
+					Connect external Linux servers via SSH for remote application deployment and Docker compose orchestration.
 				</p>
-			</div>
+			</Card>
 		);
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 w-full">
-			{servers.map((item: any) => {
-				const attachedKey = sshKeys?.find((k: any) => Number(k.id) === Number(item.ssh_key_id));
+		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			{servers.map(item => {
+				const attachedKey = sshKeys.find((k: any) => k.id === item.ssh_key_id);
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 				const isTesting = testingConnId === item.id;
 
 				return (
-					<Card key={item.id} className="bg-card border-border/70 hover:border-primary/40 transition-colors shadow-sm min-w-0 w-full overflow-hidden">
-						<CardContent className="p-5 flex flex-col justify-between gap-4 h-full min-w-0 w-full">
-							<div className="flex items-start justify-between gap-3 min-w-0 w-full">
-								<div className="flex items-start gap-3 min-w-0 flex-1">
-									<div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-primary shrink-0 mt-0.5">
-										<Server className="w-5 h-5" />
+					<Card key={item.id} className="bg-card border-border shadow-sm hover:border-border/80 transition-all flex flex-col justify-between">
+						<CardContent className="p-4 flex flex-col gap-3">
+							<div className="flex items-start justify-between gap-2">
+								<div className="flex items-center gap-2.5 min-w-0">
+									<div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+										<Server className="w-4 h-4" />
 									</div>
-									<div className="flex flex-col min-w-0 flex-1">
-										<div className="flex items-center gap-2 min-w-0">
-											<span className="text-sm font-bold text-foreground truncate min-w-0">{item.name}</span>
-											<Badge
-												variant="outline"
-												className={`text-[10px] px-1.5 py-0 shrink-0 ${
-													isActive
-														? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-														: 'bg-muted text-muted-foreground border-border'
-												}`}
-											>
-												{isActive ? 'ACTIVE' : 'DISABLED'}
+									<div className="min-w-0">
+										<div className="flex items-center gap-2">
+											<h3 className="text-sm font-bold text-foreground truncate">{item.name}</h3>
+											<Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 font-semibold">
+												{isActive ? 'Active' : 'Disabled'}
 											</Badge>
 										</div>
 										<p className="text-xs text-muted-foreground truncate min-w-0 mt-0.5">
@@ -114,20 +107,10 @@ export function RemoteServersList({
 								</div>
 
 								<div className="flex items-center gap-1 shrink-0">
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => onEditServer(item)}
-										className="h-8 w-8 text-muted-foreground hover:text-foreground"
-									>
+									<Button variant="ghost" size="icon" onClick={() => onEditServer(item)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
 										<Edit className="w-4 h-4" />
 									</Button>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => onDeleteServer(item)}
-										className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-									>
+									<Button variant="ghost" size="icon" onClick={() => onDeleteServer(item)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
 										<Trash2 className="w-4 h-4" />
 									</Button>
 								</div>
@@ -144,38 +127,27 @@ export function RemoteServersList({
 								</div>
 							</div>
 
-							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs min-w-0 w-full">
+							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs min-w-0 w-full gap-1 flex-wrap">
 								<div className="flex items-center gap-1">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => onToggleStatus(item)}
-										className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
-									>
+									<Button variant="ghost" size="sm" onClick={() => onToggleStatus(item)} className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground">
 										<Power className="w-3.5 h-3.5" />
 										{isActive ? 'Disable' : 'Enable'}
 									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => handleTestConnection(item)}
-										disabled={isTesting}
-										className="h-8 text-xs font-semibold gap-1"
-									>
+									<Button variant="outline" size="sm" onClick={() => handleTestConnection(item)} disabled={isTesting} className="h-8 text-xs font-semibold gap-1">
 										{isTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
 										{isTesting ? 'Testing...' : 'Test Connection'}
 									</Button>
 								</div>
 
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => onSetupServer(item)}
-									className="h-8 text-xs font-semibold gap-1.5 px-3"
-								>
-									<Terminal className="w-3.5 h-3.5 text-primary" />
-									Setup & Audit
-								</Button>
+								<div className="flex items-center gap-1">
+									<Button variant="outline" size="sm" onClick={() => onOpenTerminal?.(item)} className="h-8 text-xs font-semibold gap-1 border-primary/40 text-primary hover:bg-primary/10">
+										<Terminal className="w-3.5 h-3.5" />
+										Terminal
+									</Button>
+									<Button variant="secondary" size="sm" onClick={() => onSetupServer(item)} className="h-8 text-xs font-semibold gap-1 px-2.5">
+										Audit
+									</Button>
+								</div>
 							</div>
 						</CardContent>
 					</Card>
