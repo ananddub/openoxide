@@ -35,7 +35,13 @@ impl<'a> NetworkHandle<'a> {
     ) -> NetworkDisconnectBuilder<'_> {
         NetworkDisconnectBuilder::new(self.0, network, container)
     }
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
+    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::NetworkInspect> {
+        let out = self.0.run(["network", "inspect", name.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::NetworkInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
         let out = self.0.run(["network", "inspect", name.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
@@ -57,7 +63,13 @@ impl<'a> VolumeHandle<'a> {
     pub fn rm(&self, name: impl Into<String>) -> VolumeRmBuilder<'_> {
         VolumeRmBuilder::new(self.0, name)
     }
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
+    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::VolumeInspect> {
+        let out = self.0.run(["volume", "inspect", name.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::VolumeInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
         let out = self.0.run(["volume", "inspect", name.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

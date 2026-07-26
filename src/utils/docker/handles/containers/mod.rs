@@ -74,7 +74,13 @@ impl<'a> ContainerHandle<'a> {
     pub fn top(&self, id: impl Into<String>) -> ContainerTopBuilder<'_> {
         ContainerTopBuilder::new(self.0, id)
     }
-    pub async fn inspect(&self, id: impl AsRef<str>) -> DockerResult<serde_json::Value> {
+    pub async fn inspect(&self, id: impl AsRef<str>) -> DockerResult<crate::utils::docker::ContainerInspect> {
+        let out = self.0.run(["container", "inspect", id.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::ContainerInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(&self, id: impl AsRef<str>) -> DockerResult<serde_json::Value> {
         let out = self.0.run(["container", "inspect", id.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

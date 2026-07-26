@@ -50,7 +50,13 @@ impl<'a> ServicesHandle<'a> {
         ServiceRollbackBuilder::new(self.cli, name)
     }
 
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
+    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::ServiceInspect> {
+        let out = self.cli.run(["service", "inspect", name.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::ServiceInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(&self, name: impl AsRef<str>) -> DockerResult<serde_json::Value> {
         let out = self.cli.run(["service", "inspect", name.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

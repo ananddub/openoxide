@@ -40,7 +40,13 @@ impl<'a> NodesHandle<'a> {
         NodePsBuilder::new(self.cli, node_id)
     }
 
-    pub async fn inspect(&self, node_id: impl AsRef<str>) -> DockerResult<serde_json::Value> {
+    pub async fn inspect(&self, node_id: impl AsRef<str>) -> DockerResult<crate::utils::docker::NodeInspect> {
+        let out = self.cli.run(["node", "inspect", node_id.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::NodeInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(&self, node_id: impl AsRef<str>) -> DockerResult<serde_json::Value> {
         let out = self.cli.run(["node", "inspect", node_id.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

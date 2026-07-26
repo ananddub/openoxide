@@ -1,3 +1,5 @@
+use crate::utils::docker::DockerCli;
+
 pub mod backup;
 pub mod builder;
 pub mod cgroup;
@@ -15,3 +17,11 @@ pub mod traefik;
 pub mod zip;
 // pub mod k8s;
 pub mod os;
+
+
+#[tokio::test]
+async fn test_docker(){
+    let docker = DockerCli::new_local();
+    let data = docker.containers().inspect("b671b4542569").await.unwrap();
+    println!("{:?}", data);
+}

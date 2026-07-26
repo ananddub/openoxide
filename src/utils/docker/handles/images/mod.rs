@@ -50,6 +50,15 @@ impl<'a> ImageHandle<'a> {
     pub async fn inspect(
         &self,
         image: impl AsRef<str>,
+    ) -> crate::utils::docker::DockerResult<crate::utils::docker::ImageInspect> {
+        let out = self.0.run(["image", "inspect", image.as_ref()]).await?;
+        let mut json: Vec<crate::utils::docker::ImageInspect> = serde_json::from_str(&out.stdout)?;
+        Ok(json.pop().unwrap_or_default())
+    }
+
+    pub async fn inspect_raw(
+        &self,
+        image: impl AsRef<str>,
     ) -> crate::utils::docker::DockerResult<serde_json::Value> {
         let out = self.0.run(["image", "inspect", image.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;

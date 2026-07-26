@@ -259,10 +259,7 @@ impl DomainService {
             .await
             .map_err(|e| format!("service inspect failed: {e}"))?;
 
-        let current = inspect_res["Spec"]["Labels"]
-            .as_object()
-            .cloned()
-            .unwrap_or_default();
+        let current = inspect_res.spec.labels;
 
         let stale: Vec<String> = current
             .keys()
@@ -351,10 +348,7 @@ impl DomainService {
                         .inspect(&service_name)
                         .await
                         .map_err(|e| format!("service inspect failed: {e}"))?;
-                    let current = inspect_res["Spec"]["Labels"]
-                        .as_object()
-                        .cloned()
-                        .unwrap_or_default();
+                    let current = inspect_res.spec.labels;
                     let stale: Vec<String> = current
                         .keys()
                         .filter(|k| k.starts_with("traefik."))
