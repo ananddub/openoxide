@@ -104,10 +104,12 @@ export function CreateKeyModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && handleCloseModal()}>
-			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
-				<DialogHeader className="pb-3 border-b border-border/50">
-					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Key className="w-4 h-4 text-primary shrink-0" />
+			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card border-border p-6 shadow-2xl rounded-2xl">
+				<DialogHeader className="pb-3.5 border-b border-border/50">
+					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
+						<div className="p-2 rounded-xl bg-primary/10 text-primary">
+							<Key className="w-4 h-4 shrink-0" />
+						</div>
 						<span>Add SSH Key</span>
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
@@ -115,8 +117,8 @@ export function CreateKeyModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
-					{/* Centered Auto Generate Buttons */}
+				<form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+					{/* Centered Taller Auto Generate Buttons */}
 					<div className="flex items-center justify-center gap-3 py-1.5">
 						<Button
 							type="button"
@@ -148,7 +150,7 @@ export function CreateKeyModal({
 							value={name}
 							onChange={e => setName(e.target.value)}
 							placeholder="e.g. Production Key"
-							className="h-9 text-xs bg-background border-border rounded-md px-3"
+							className="h-9.5 text-xs bg-background border-border rounded-lg px-3"
 						/>
 					</div>
 
@@ -158,7 +160,7 @@ export function CreateKeyModal({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							placeholder="Optional description for this key pair"
-							className="h-9 text-xs bg-background border-border rounded-md px-3"
+							className="h-9.5 text-xs bg-background border-border rounded-lg px-3"
 						/>
 					</div>
 
@@ -168,7 +170,7 @@ export function CreateKeyModal({
 							value={publicKey}
 							onChange={e => setPublicKey(e.target.value)}
 							placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@server"
-							className="h-16 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
+							className="h-20 text-xs font-mono bg-background border-border rounded-lg p-3 resize-none break-all leading-relaxed"
 						/>
 					</div>
 
@@ -178,24 +180,25 @@ export function CreateKeyModal({
 							value={privateKey}
 							onChange={e => setPrivateKey(e.target.value)}
 							placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..."
-							className="h-24 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
+							className="h-28 text-xs font-mono bg-background border-border rounded-lg p-3 resize-none break-all leading-relaxed"
 						/>
 					</div>
 
+					{/* Highlighted Server Authorization Shell Command */}
 					{setupCommand && (
-						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
+						<div className="flex flex-col gap-2 pt-2 border-t border-border/40">
 							<div className="flex items-center justify-between">
-								<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-									<Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
+								<label className="text-xs font-semibold text-foreground flex items-center gap-2">
+									<Terminal className="w-4 h-4 text-primary shrink-0" />
 									<span>Authorize Key on Remote Server</span>
 								</label>
-								<Button type="button" variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-medium gap-1.5 px-2.5">
+								<Button type="button" variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-semibold gap-1.5 px-3 rounded-lg">
 									{copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
 									{copiedCmd ? 'Copied' : 'Copy Command'}
 								</Button>
 							</div>
-							<div className="p-2.5 bg-muted/40 border border-border/50 rounded-md text-[11px] font-mono text-muted-foreground break-all select-all leading-relaxed max-h-20 overflow-y-auto">
-								{setupCommand}
+							<div className="p-3 bg-zinc-950/90 border border-zinc-800 rounded-lg text-[11px] font-mono break-all select-all leading-relaxed max-h-24 overflow-y-auto text-zinc-200 shadow-inner">
+								<span className="text-emerald-400 font-bold">mkdir</span> <span className="text-amber-400">-p</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">echo</span> <span className="text-sky-300">"{publicKey.trim()}"</span> <span className="text-amber-400">&gt;&gt;</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">700</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">600</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span>
 							</div>
 						</div>
 					)}
