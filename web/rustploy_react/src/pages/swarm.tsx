@@ -152,6 +152,7 @@ function SwarmPage() {
 
 			<SwarmInfoCard
 				info={info}
+				tokens={tokens}
 				isLoading={isLoading}
 				onLeaveSwarm={handleLeaveSwarm}
 			/>

@@ -1,6 +1,19 @@
+import {useState} from 'react';
 import {Card, CardContent} from '#/components/ui/card';
 import {Button} from '#/components/ui/button';
-import {ShieldCheck, Server, Network, ShieldAlert, LogOut} from 'lucide-react';
+import {
+	ShieldCheck,
+	Server,
+	Network,
+	ShieldAlert,
+	LogOut,
+	KeyRound,
+	ChevronDown,
+	ChevronUp,
+	Copy,
+	Check,
+} from 'lucide-react';
+import {toast} from 'sonner';
 
 interface SwarmInfoCardProps {
 	info?: {
@@ -11,15 +24,32 @@ interface SwarmInfoCardProps {
 		nodes?: number;
 		managers?: number;
 	} | null;
+	tokens?: {worker?: string; manager?: string} | null;
 	isLoading: boolean;
 	onLeaveSwarm: () => void;
 }
 
 export function SwarmInfoCard({
 	info,
+	tokens,
 	isLoading,
 	onLeaveSwarm,
 }: SwarmInfoCardProps) {
+	const [isTokensExpanded, setIsTokensExpanded] = useState(false);
+	const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+	const handleCopy = (type: 'worker' | 'manager', token?: string) => {
+		if (!token) {
+			toast.error('Token not available');
+			return;
+		}
+		const cmd = `docker swarm join --token ${token}`;
+		navigator.clipboard.writeText(cmd);
+		setCopiedKey(type);
+		toast.success(`Copied ${type} join command`);
+		setTimeout(() => setCopiedKey(null), 2000);
+	};
+
 	if (isLoading) {
 		return (
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 py-4">
@@ -47,7 +77,8 @@ export function SwarmInfoCard({
 	}
 
 	return (
-		<div className="flex flex-col gap-3 py-4">
+		<div className="flex flex-col gap-3 py-3">
+			{/* Top Overview Cards Grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				{/* State */}
 				<Card className="bg-card border-border rounded-xl p-3.5 shadow-sm">
@@ -91,7 +122,7 @@ export function SwarmInfoCard({
 					</CardContent>
 				</Card>
 
-				{/* Node IP & Control */}
+				{/* Node IP & Expand Join Tokens Toggle */}
 				<Card className="bg-card border-border rounded-xl p-3.5 shadow-sm">
 					<CardContent className="p-0 flex items-center justify-between">
 						<div className="min-w-0 flex-1">
@@ -100,18 +131,89 @@ export function SwarmInfoCard({
 								{info?.node_addr || '127.0.0.1'} ({info?.control_available ? 'Manager' : 'Worker'})
 							</h4>
 						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={onLeaveSwarm}
-							title="Leave Swarm Cluster"
-							className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0 ml-2"
-						>
-							<LogOut className="w-4 h-4" />
-						</Button>
+						<div className="flex items-center gap-1 shrink-0 ml-2">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => setIsTokensExpanded(!isTokensExpanded)}
+								title={isTokensExpanded ? 'Collapse Join Tokens' : 'Expand Join Tokens'}
+								className={`h-8 w-8 ${isTokensExpanded ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
+							>
+								{isTokensExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={onLeaveSwarm}
+								title="Leave Swarm Cluster"
+								className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+							>
+								<LogOut className="w-4 h-4" />
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Expandable Join Tokens Section */}
+			{isTokensExpanded && (
+				<Card className="bg-card border-border/80 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+					<div className="flex items-center justify-between border-b border-border/40 pb-2">
+						<span className="text-xs font-bold text-foreground flex items-center gap-2">
+							<KeyRound className="w-4 h-4 text-primary" />
+							Swarm Join Tokens
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsTokensExpanded(false)}
+							className="h-6 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+						>
+							Collapse
+						</Button>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+						{/* Worker Token */}
+						<div className="flex flex-col gap-1.5 bg-muted/30 p-3 rounded-lg border border-border/50">
+							<div className="flex items-center justify-between">
+								<span className="font-semibold text-foreground">Worker Join Command</span>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => handleCopy('worker', tokens?.worker)}
+									className="h-6 text-[11px] font-medium gap-1 px-2"
+								>
+									{copiedKey === 'worker' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+									{copiedKey === 'worker' ? 'Copied' : 'Copy'}
+								</Button>
+							</div>
+							<code className="font-mono text-[11px] break-all select-all text-muted-foreground bg-background p-2 rounded border border-border/60">
+								{tokens?.worker ? `docker swarm join --token ${tokens.worker}` : 'Token loading or unavailable'}
+							</code>
+						</div>
+
+						{/* Manager Token */}
+						<div className="flex flex-col gap-1.5 bg-muted/30 p-3 rounded-lg border border-border/50">
+							<div className="flex items-center justify-between">
+								<span className="font-semibold text-foreground">Manager Join Command</span>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => handleCopy('manager', tokens?.manager)}
+									className="h-6 text-[11px] font-medium gap-1 px-2"
+								>
+									{copiedKey === 'manager' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+									{copiedKey === 'manager' ? 'Copied' : 'Copy'}
+								</Button>
+							</div>
+							<code className="font-mono text-[11px] break-all select-all text-muted-foreground bg-background p-2 rounded border border-border/60">
+								{tokens?.manager ? `docker swarm join --token ${tokens.manager}` : 'Token loading or unavailable'}
+							</code>
+						</div>
+					</div>
+				</Card>
+			)}
 		</div>
 	);
 }
