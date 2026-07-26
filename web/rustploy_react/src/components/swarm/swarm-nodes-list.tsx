@@ -12,6 +12,7 @@ import {
 	MoreVertical,
 	Check,
 	Copy,
+	Crown,
 } from 'lucide-react';
 import {useState} from 'react';
 import {toast} from 'sonner';
@@ -76,9 +77,14 @@ export function SwarmNodesList({
 					const availability = (node.availability || 'active').toLowerCase();
 
 					return (
-						<Card key={node.id} className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm">
+						<Card
+							key={node.id}
+							className={`bg-card border transition-all rounded-xl shadow-sm ${
+								isManager ? 'border-amber-500/40 bg-amber-500/[0.02]' : 'border-border hover:border-border/80'
+							}`}
+						>
 							<CardContent className="p-3 flex items-center justify-between gap-2">
-								{/* Left: Status Dot, Node Name & Role */}
+								{/* Left: Status Dot, Node Name & Master/Worker Badge */}
 								<div className="flex items-center gap-2 min-w-0 flex-1">
 									<span
 										className={`block w-2.5 h-2.5 rounded-full shrink-0 ${
@@ -90,13 +96,18 @@ export function SwarmNodesList({
 									<div className="flex flex-col min-w-0 flex-1">
 										<div className="flex items-center gap-1.5 min-w-0">
 											<h4 className="text-xs font-bold text-foreground truncate">{node.hostname || node.name || 'Node'}</h4>
-											<span
-												className={`text-[9px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-													isManager ? 'bg-sky-500/10 text-sky-500 border border-sky-500/30' : 'bg-muted text-muted-foreground'
-												}`}
-											>
-												{isManager ? 'Manager' : 'Worker'}
-											</span>
+
+											{/* Master / Manager Node Visual Badge */}
+											{isManager ? (
+												<span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30 shrink-0">
+													<Crown className="w-2.5 h-2.5 fill-amber-500/20" />
+													Master
+												</span>
+											) : (
+												<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+													Worker
+												</span>
+											)}
 										</div>
 
 										<div className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground truncate mt-0.5">
@@ -113,7 +124,7 @@ export function SwarmNodesList({
 									</div>
 								</div>
 
-								{/* Right: Clean Text-Only Actions Dropdown */}
+								{/* Right: Actions Dropdown */}
 								<DropdownMenu>
 									<DropdownMenuTrigger
 										render={

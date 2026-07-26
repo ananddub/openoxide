@@ -6,7 +6,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {Globe2, RefreshCw, KeyRound, Server} from 'lucide-react';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '#/components/ui/dropdown';
+import {Globe2, RefreshCw, Server, MoreVertical} from 'lucide-react';
 
 interface SwarmHeaderProps {
 	servers: any[];
@@ -63,18 +69,6 @@ export function SwarmHeader({
 					</Select>
 				</div>
 
-				{isSwarmActive && (
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onOpenTokens}
-						className="h-8 text-xs font-semibold gap-1.5"
-					>
-						<KeyRound className="w-3.5 h-3.5 text-primary" />
-						Join Tokens
-					</Button>
-				)}
-
 				<Button
 					variant="outline"
 					size="icon"
@@ -85,6 +79,26 @@ export function SwarmHeader({
 				>
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
 				</Button>
+
+				{/* Header 3-Dots Dropdown */}
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" />
+						}
+					>
+						<MoreVertical className="w-4 h-4" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+						<DropdownMenuItem
+							disabled={!isSwarmActive}
+							className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+							onClick={onOpenTokens}
+						>
+							Join Tokens
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 		</div>
 	);
