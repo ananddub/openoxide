@@ -86,7 +86,13 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			term.loadAddon(fitAddon);
 			term.open(termRef.current);
 			try { fitAddon.fit(); } catch (_) {}
-			term.focus();
+
+			// Force focus on xterm helper textarea
+			setTimeout(() => {
+				term?.focus();
+				const helper = termRef.current?.querySelector('textarea');
+				if (helper) helper.focus();
+			}, 50);
 
 			setStatus('connecting');
 			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
@@ -109,6 +115,8 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			socket.on('started', (data: any) => {
 				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
 				term?.focus();
+				const helper = termRef.current?.querySelector('textarea');
+				if (helper) helper.focus();
 			});
 			socket.on('output', (evt: {data: string}) => { if (evt?.data) term?.write(evt.data); });
 			socket.on('error', (err: any) => {
@@ -125,10 +133,14 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			});
 
 			term.onData(data => {
-				if (socketRef.current?.connected) socketRef.current.emit('input', {data});
+				if (socketRef.current?.connected) {
+					socketRef.current.emit('input', {data});
+				}
 			});
 			term.onResize(({cols, rows}) => {
-				if (socketRef.current?.connected) socketRef.current.emit('resize', {cols, rows});
+				if (socketRef.current?.connected) {
+					socketRef.current.emit('resize', {cols, rows});
+				}
 			});
 		}, 100);
 
@@ -148,6 +160,12 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	}, [open, shell, targetContainer, isRemoteServer, serverId]);
 
 	if (!open) return null;
+
+	const handleFocus = () => {
+		termInstanceRef.current?.focus();
+		const helper = termRef.current?.querySelector('textarea');
+		if (helper) helper.focus();
+	};
 
 	return (
 		<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -186,8 +204,8 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					</div>
 				</div>
 
-				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative cursor-text" onClick={() => termInstanceRef.current?.focus()}>
-					<div ref={termRef} className="absolute inset-2" />
+				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative cursor-text" onClick={handleFocus}>
+					<div ref={termRef} tabIndex={0} onFocus={handleFocus} className="absolute inset-2 outline-none" />
 				</div>
 			</div>
 		</div>
