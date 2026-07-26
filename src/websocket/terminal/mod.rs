@@ -205,3 +205,14 @@ impl TerminalSocket {
         self.stop_socket_session(&socket).await;
     }
 }
+
+
+#[test]
+fn test_data(){
+    use zeroize::Zeroize;
+
+    let mut s = String::from("secret");
+    s.zeroize();
+
+    println!("{}", s);
+}

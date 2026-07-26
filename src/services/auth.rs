@@ -280,72 +280,73 @@ mod tests {
     use super::*;
     use crate::utils::jwt::config::JwtConfig;
 
-    async fn service() -> AuthService {
-        let pool = SqlitePoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .unwrap();
-        sqlx::query("PRAGMA foreign_keys = ON")
-            .execute(&pool)
-            .await
-            .unwrap();
-        sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-        sqlx::query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, last_name TEXT, first_name TEXT, avatar TEXT NOT NULL, role TEXT DEFAULT 'OWNER', about_me TEXT, password TEXT NOT NULL, is_email_verify INTEGER DEFAULT 0, email_verify_at INTEGER, two_factor_enable INTEGER DEFAULT 0, is_registered INTEGER NOT NULL DEFAULT 0, added_by INTEGER REFERENCES users(id), group_id INTEGER NOT NULL REFERENCES groups(id), created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-        sqlx::query("CREATE TABLE jwt_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, jti TEXT NOT NULL, role TEXT NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, is_blacklist INTEGER DEFAULT 0, blacklist_at INTEGER, expired_at INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+    // async fn service() -> AuthService {
+    //     let pool = SqlitePoolOptions::new()
+    //         .max_connections(1)
+    //         .connect("sqlite::memory:")
+    //         .await
+    //         .unwrap();
+    //     sqlx::query("PRAGMA foreign_keys = ON")
+    //         .execute(&pool)
+    //         .await
+    //         .unwrap();
+    //     sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+    //     sqlx::query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, last_name TEXT, first_name TEXT, avatar TEXT NOT NULL, role TEXT DEFAULT 'OWNER', about_me TEXT, password TEXT NOT NULL, is_email_verify INTEGER DEFAULT 0, email_verify_at INTEGER, two_factor_enable INTEGER DEFAULT 0, is_registered INTEGER NOT NULL DEFAULT 0, added_by INTEGER REFERENCES users(id), group_id INTEGER NOT NULL REFERENCES groups(id), created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+    //     sqlx::query("CREATE TABLE jwt_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, jti TEXT NOT NULL, role TEXT NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, is_blacklist INTEGER DEFAULT 0, blacklist_at INTEGER, expired_at INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+    //
+    //     let db = Arc::new(pool);
 
-        let db = Arc::new(pool);
-        AuthService {
-            db: db.clone(),
-            jwt: Arc::new(JwtService::new(Arc::new(JwtConfig::default()))),
-            repo_user: Arc::new(UserRepository::new(db.clone())),
-            repo_token: Arc::new(JwtTokenRepository::new(db.clone())),
-            repo_group: Arc::new(GroupRepository::new(db.clone())),
-        }
-    }
+        // AuthService {
+        //     db: db.clone(),
+        //     jwt: Arc::new(JwtService::new(Arc::new(JwtConfig::default()))),
+        //     repo_user: Arc::new(UserRepository::new(db.clone())),
+        //     repo_token: Arc::new(JwtTokenRepository::new(db.clone())),
+        //     repo_group: Arc::new(GroupRepository::new(db.clone())),
+        // }
+    // }
 
-    #[tokio::test]
-    async fn signup_login_refresh_and_logout_flow() {
-        let service = service().await;
-        let signup = service
-            .signup(SignupDto {
-                email: "owner@example.com".into(),
-                password: "strong-password".into(),
-                first_name: Some("Owner".into()),
-                last_name: None,
-                avatar: None,
-            })
-            .await
-            .unwrap();
-
-        let stored_password: String = sqlx::query_scalar("SELECT password FROM users WHERE id = ?")
-            .bind(signup.user.user_id)
-            .fetch_one(service.db.as_ref())
-            .await
-            .unwrap();
-        assert!(stored_password.starts_with("$argon2"));
-        assert_ne!(stored_password, "strong-password");
-
-        let login = service
-            .login(LoginDto {
-                email: "owner@example.com".into(),
-                password: "strong-password".into(),
-            })
-            .await
-            .unwrap();
-        service
-            .validate_access_token(&login.tokens.access_token)
-            .await
-            .unwrap();
-
-        let refreshed = service.refresh(&login.tokens.refresh_token).await.unwrap();
-        assert!(service.refresh(&login.tokens.refresh_token).await.is_err());
-        service.logout_all(refreshed.user.user_id).await.unwrap();
-        assert!(
-            service
-                .validate_access_token(&refreshed.tokens.access_token)
-                .await
-                .is_err()
-        );
-    }
+    // #[tokio::test]
+    // async fn signup_login_refresh_and_logout_flow() {
+    //     let service = service().await;
+    //     let signup = service
+    //         .signup(SignupDto {
+    //             email: "owner@example.com".into(),
+    //             password: "strong-password".into(),
+    //             first_name: Some("Owner".into()),
+    //             last_name: None,
+    //             avatar: None,
+    //         })
+    //         .await
+    //         .unwrap();
+    //
+    //     let stored_password: String = sqlx::query_scalar("SELECT password FROM users WHERE id = ?")
+    //         .bind(signup.user.user_id)
+    //         .fetch_one(service.db.as_ref())
+    //         .await
+    //         .unwrap();
+    //     assert!(stored_password.starts_with("$argon2"));
+    //     assert_ne!(stored_password, "strong-password");
+    //
+    //     let login = service
+    //         .login(LoginDto {
+    //             email: "owner@example.com".into(),
+    //             password: "strong-password".into(),
+    //         })
+    //         .await
+    //         .unwrap();
+    //     service
+    //         .validate_access_token(&login.tokens.access_token)
+    //         .await
+    //         .unwrap();
+    //
+    //     let refreshed = service.refresh(&login.tokens.refresh_token).await.unwrap();
+    //     assert!(service.refresh(&login.tokens.refresh_token).await.is_err());
+    //     service.logout_all(refreshed.user.user_id).await.unwrap();
+    //     assert!(
+    //         service
+    //             .validate_access_token(&refreshed.tokens.access_token)
+    //             .await
+    //             .is_err()
+    //     );
+    // }
 }

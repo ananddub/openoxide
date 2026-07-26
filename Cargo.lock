@@ -3089,6 +3089,7 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "validator",
+ "zeroize",
 ]
 
 [[package]]
