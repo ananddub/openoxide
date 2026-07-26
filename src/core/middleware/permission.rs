@@ -1,4 +1,3 @@
-use auto_di::resolve;
 use axum::{
     Json,
     extract::FromRequestParts,
@@ -8,7 +7,7 @@ use serde_json::json;
 use std::marker::PhantomData;
 
 use crate::{
-    services::permission::{PermissionService, PolicyAction},
+    services::permission::PolicyAction,
     utils::jwt::claim::Claims,
 };
 
