@@ -201,7 +201,7 @@ export function CreateRegistryModal({
 					<div className="flex flex-col gap-1.5">
 						<Label className="text-xs font-semibold">Authenticate From Server</Label>
 						<Select value={serverId} onValueChange={val => val && setServerId(val)}>
-							<SelectTrigger className="h-9 text-xs bg-card border-border/80 w-full px-3">
+							<SelectTrigger className="h-9 text-xs bg-card border-border/80 w-full px-3 font-sans">
 								<SelectValue placeholder="Select server" />
 							</SelectTrigger>
 							<SelectContent className="bg-card border-border text-xs z-50">
@@ -219,7 +219,7 @@ export function CreateRegistryModal({
 					</div>
 
 					{/* Minimal Footer Buttons */}
-					<div className="flex items-center gap-3 pt-4 border-t border-border/50 mt-2">
+					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2">
 						<Button
 							type="button"
 							variant="outline"
@@ -227,7 +227,7 @@ export function CreateRegistryModal({
 							onClick={handleTestRaw}
 							disabled={isTesting}
 							title="Test Registry Connection"
-							className="h-10 w-10 shrink-0 rounded-xl"
+							className="h-9 w-9 shrink-0"
 						>
 							{isTesting ? (
 								<RefreshCw className="w-4 h-4 animate-spin text-primary" />
@@ -236,7 +236,7 @@ export function CreateRegistryModal({
 							)}
 						</Button>
 
-						<Button type="submit" className="h-10 flex-1 text-xs font-bold rounded-xl shadow-sm">
+						<Button type="submit" className="h-9 text-xs font-semibold px-5">
 							{initialData ? 'Update Registry' : 'Save Registry'}
 						</Button>
 					</div>
