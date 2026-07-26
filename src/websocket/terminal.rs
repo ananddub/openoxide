@@ -19,8 +19,6 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-use crate::utils::exec::ExecStreamEvent;
-
 #[derive(Debug, Deserialize)]
 pub struct DockerTerminalStart {
     pub container: String,
@@ -377,7 +375,6 @@ impl TerminalSocket {
 
         let key = socket_key(&socket);
         self.bind_disconnect_cleanup(&socket, key.clone());
-        let (output_tx, mut output_rx) = mpsc::channel::<ExecStreamEvent>(256);
 
         let executor =
             match crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
@@ -393,28 +390,71 @@ impl TerminalSocket {
                 }
             };
 
-        let terminal = match executor
-            .open_terminal(
-                output_tx,
-                input.shell.unwrap_or_else(|| "xterm-256color".into()),
-                80,
-                24,
-            )
-            .await
-        {
-            Ok(terminal) => terminal,
+        let shell = input.shell.unwrap_or_else(|| "sh".into());
+        let builder = crate::utils::ssh::SshBuilder::new(
+            executor.host(),
+            executor.username(),
+            executor.auth().clone(),
+            executor.host_key().clone(),
+        )
+        .port(executor.port())
+        .connect_timeout(executor.connect_timeout().as_secs() as u32)
+        .tty(crate::utils::ssh::TtyMode::ForceTty);
+
+        let (args, temp_key, temp_askpass) = match builder.build_args(&shell, &[]) {
+            Ok(res) => res,
+            Err(e) => {
+                emit_error(&socket, format!("could not build ssh command: {e}"));
+                return;
+            }
+        };
+
+        let pty_system = native_pty_system();
+        let pair = match pty_system.openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        }) {
+            Ok(pair) => pair,
             Err(error) => {
-                emit_error(&socket, format!("could not start remote terminal: {error}"));
+                emit_error(&socket, format!("could not open PTY: {error}"));
+                return;
+            }
+        };
+
+        let mut cmd = CommandBuilder::new("ssh");
+        cmd.args(&args);
+
+        let _child = match pair.slave.spawn_command(cmd) {
+            Ok(child) => child,
+            Err(error) => {
+                emit_error(&socket, format!("could not start remote PTY terminal: {error}"));
+                return;
+            }
+        };
+
+        let reader = match pair.master.try_clone_reader() {
+            Ok(r) => r,
+            Err(error) => {
+                emit_error(&socket, format!("could not clone PTY reader: {error}"));
+                return;
+            }
+        };
+
+        let writer = match pair.master.take_writer() {
+            Ok(w) => w,
+            Err(error) => {
+                emit_error(&socket, format!("could not take PTY writer: {error}"));
                 return;
             }
         };
 
         self.sessions.insert(
             key.clone(),
-            TerminalSession::Remote {
-                input: terminal.input.clone(),
-                resize: terminal.resize.clone(),
-                cancel: terminal.cancel.clone(),
+            TerminalSession::Pty {
+                writer: Arc::new(Mutex::new(writer)),
+                master: Arc::new(Mutex::new(pair.master)),
             },
         );
 
@@ -426,29 +466,19 @@ impl TerminalSocket {
         );
 
         let output_socket = socket.clone();
-        tokio::spawn(async move {
-            while let Some(event) = output_rx.recv().await {
-                match event {
-                    ExecStreamEvent::Stdout(bytes) => {
-                        emit_terminal_bytes(&output_socket, "stdout", bytes)
-                    }
-                    ExecStreamEvent::Stderr(bytes) => {
-                        emit_terminal_bytes(&output_socket, "stderr", bytes)
-                    }
+        std::thread::spawn(move || {
+            let _temp_key = temp_key;
+            let _temp_askpass = temp_askpass;
+            let mut reader = reader;
+            let mut buffer = [0u8; 8192];
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => emit_terminal_bytes(&output_socket, "stdout", buffer[..n].to_vec()),
+                    Err(_) => break,
                 }
             }
-        });
-
-        let sessions = self.sessions.clone();
-        tokio::spawn(async move {
-            let result = terminal.wait().await;
-            sessions.remove(&key);
-            match result {
-                Ok(()) => {
-                    let _ = socket.emit("exit", &TerminalExit { code: None });
-                }
-                Err(error) => emit_error(&socket, format!("remote terminal failed: {error}")),
-            }
+            let _ = output_socket.emit("exit", &TerminalExit { code: Some(0) });
         });
     }
 
