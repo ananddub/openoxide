@@ -94,6 +94,53 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				if (helper) helper.focus();
 			}, 50);
 
+			// Intercept browser hotkeys (Ctrl+L, Ctrl+C, Ctrl+D, Ctrl+Z) so they execute inside xterm
+			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+				if (event.ctrlKey || event.metaKey) {
+					const key = event.key.toLowerCase();
+					if (key === 'l') {
+						if (event.type === 'keydown') {
+							term?.clear();
+							if (socketRef.current?.connected) {
+								socketRef.current.emit('input', {data: '\x0c'});
+							}
+						}
+						event.preventDefault();
+						return false;
+					}
+					if (key === 'c') {
+						if (term?.hasSelection()) return true;
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', {data: '\x03'});
+						}
+						event.preventDefault();
+						return false;
+					}
+					if (key === 'd') {
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', {data: '\x04'});
+						}
+						event.preventDefault();
+						return false;
+					}
+					if (key === 'z') {
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', {data: '\x1a'});
+						}
+						event.preventDefault();
+						return false;
+					}
+					if (key === 'u') {
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', {data: '\x15'});
+						}
+						event.preventDefault();
+						return false;
+					}
+				}
+				return true;
+			});
+
 			setStatus('connecting');
 			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
