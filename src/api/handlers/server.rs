@@ -1,11 +1,12 @@
 use crate::{
     api::dto::server::{
         ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
-        SetupServerDto,
+        SetupServerDto, TestDirectConnectionDto,
     },
     core::middleware::permission::{
         RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
     },
+    db::repository::ssh_keys::SshKeyRepository,
     services::remote_server::ServerService,
     utils::{
         exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
@@ -20,12 +21,52 @@ type ApiError = (StatusCode, String);
 
 pub struct ServerController {
     service: Arc<ServerService>,
+    ssh_key_repo: Arc<SshKeyRepository>,
 }
 
 #[controller("/servers")]
 impl ServerController {
-    fn new(service: Arc<ServerService>) -> Self {
-        Self { service }
+    fn new(service: Arc<ServerService>, ssh_key_repo: Arc<SshKeyRepository>) -> Self {
+        Self { service, ssh_key_repo }
+    }
+
+    #[post("/test-direct-connection")]
+    async fn test_direct_connection(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Json(body): Json<TestDirectConnectionDto>,
+    ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
+        let port = body.port.unwrap_or(22);
+        let auth = if let Some(key_id) = body.ssh_key_id {
+            if let Some(key) = self.ssh_key_repo.get_by_id(key_id).await.map_err(map_sqlx_error)? {
+                SshAuth::key_pair(key.private_key, key.public_key)
+            } else {
+                return Err((StatusCode::BAD_REQUEST, "SSH Key not found".into()));
+            }
+        } else {
+            return Err((StatusCode::BAD_REQUEST, "SSH Key ID is required to test connection".into()));
+        };
+
+        let executor = RemoteExecutor::new(
+            body.ip_address,
+            port,
+            body.username,
+            auth,
+            SshHostKey::InsecureAcceptAny,
+        );
+        executor
+            .run("true", std::iter::empty::<&str>())
+            .await
+            .map_err(map_exec_error)?;
+
+        Ok(Json(ServerConnectionResponseDto {
+            connected: true,
+            reused_sessions: 0,
+            max_pool_size: 0,
+            connections: 0,
+            active_channels: 0,
+            max_channels_per_session: 0,
+        }))
     }
 
     #[post("/{id}/test-connection")]

@@ -37,16 +37,13 @@ export function CreateServerModal({
 	const [submitting, setSubmitting] = useState(false);
 	const [testingConn, setTestingConn] = useState(false);
 	const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
-	const [draftCreatedId, setDraftCreatedId] = useState<number | null>(null);
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
-	const deleteMutation = $api.useMutation('delete', '/remote-servers/{id}');
-	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
+	const testDirectMutation = $api.useMutation('post', '/servers/test-direct-connection');
 
 	useEffect(() => {
 		setTestStatus('idle');
-		setDraftCreatedId(null);
 		if (editingServer) {
 			setName(editingServer.name || '');
 			setIpAddress(editingServer.ip_address || '');
@@ -64,17 +61,6 @@ export function CreateServerModal({
 		}
 	}, [editingServer, isOpen, sshKeys]);
 
-	const handleCancelClose = async () => {
-		if (draftCreatedId) {
-			try {
-				await deleteMutation.mutateAsync({params: {path: {id: draftCreatedId}}});
-				onSuccess();
-			} catch (_) {}
-		}
-		setDraftCreatedId(null);
-		onClose();
-	};
-
 	const handleTestConnection = async () => {
 		if (!ipAddress || !username) {
 			toast.error('IP Address and Username are required to test connection');
@@ -83,39 +69,13 @@ export function CreateServerModal({
 		setTestingConn(true);
 		setTestStatus('idle');
 		try {
-			let targetId = editingServer?.id || draftCreatedId;
-			if (!targetId) {
-				const newServer = await createMutation.mutateAsync({
-					body: {
-						name: name || `Server-${ipAddress}`,
-						ip_address: ipAddress,
-						port: parseInt(port) || 22,
-						username,
-						ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
-						server_type: 'DEPLOY',
-						description: description || undefined,
-					} as any,
-				});
-				targetId = (newServer as any).id;
-				setDraftCreatedId(targetId);
-			} else {
-				await patchMutation.mutateAsync({
-					params: {path: {id: targetId}},
-					body: {
-						name: name || `Server-${ipAddress}`,
-						ip_address: ipAddress,
-						port: parseInt(port) || 22,
-						username,
-						ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
-						server_type: 'DEPLOY',
-						description: description || undefined,
-					} as any,
-				});
-			}
-
-			await testConnMutation.mutateAsync({
-				params: {path: {id: targetId}},
-				body: {host_key_fingerprint: ''} as any,
+			await testDirectMutation.mutateAsync({
+				body: {
+					ip_address: ipAddress,
+					port: parseInt(port) || 22,
+					username,
+					ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
+				} as any,
 			});
 			setTestStatus('success');
 			toast.success(`SSH Connection to "${name || ipAddress}" verified successfully!`);
@@ -145,18 +105,16 @@ export function CreateServerModal({
 				description: description || undefined,
 			};
 
-			const targetId = editingServer?.id || draftCreatedId;
-			if (targetId) {
+			if (editingServer?.id) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: targetId}},
+					params: {path: {id: editingServer.id}},
 					body: payload as any,
 				});
-				toast.success(editingServer ? 'Remote Server updated successfully' : 'Remote Server added successfully');
+				toast.success('Remote Server updated successfully');
 			} else {
 				await createMutation.mutateAsync({body: payload as any});
 				toast.success('Remote Server added successfully');
 			}
-			setDraftCreatedId(null);
 			onSuccess();
 			onClose();
 		} catch (err: any) {
@@ -167,7 +125,7 @@ export function CreateServerModal({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && handleCancelClose()}>
+		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
 			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card/95 backdrop-blur-md border-border/80 p-6 shadow-2xl rounded-2xl">
 				<DialogHeader className="pb-4 border-b border-border/50">
 					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
@@ -218,7 +176,7 @@ export function CreateServerModal({
 						</Button>
 
 						<div className="flex items-center gap-2">
-							<Button type="button" variant="ghost" onClick={handleCancelClose} className="h-9 text-xs font-semibold px-4">
+							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs font-semibold px-4">
 								Cancel
 							</Button>
 							<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6 shadow-md">

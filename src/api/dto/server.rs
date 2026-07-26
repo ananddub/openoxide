@@ -10,6 +10,14 @@ pub struct ServerConnectionDto {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Object)]
+pub struct TestDirectConnectionDto {
+    pub ip_address: String,
+    pub port: Option<u16>,
+    pub username: String,
+    pub ssh_key_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Object)]
 pub struct SetupServerDto {
     #[serde(default)]
     pub install_dependencies: bool,
