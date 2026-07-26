@@ -392,8 +392,8 @@ impl TerminalSocket {
 
         let shell = input.shell.unwrap_or_else(|| "sh".into());
         let builder = crate::utils::ssh::SshBuilder::new(
-            executor.host(),
-            executor.username(),
+            executor.host().to_string(),
+            executor.username().to_string(),
             executor.auth().clone(),
             executor.host_key().clone(),
         )
@@ -401,13 +401,14 @@ impl TerminalSocket {
         .connect_timeout(executor.connect_timeout().as_secs() as u32)
         .tty(crate::utils::ssh::TtyMode::ForceTty);
 
-        let (args, temp_key, temp_askpass) = match builder.build_args(&shell, &[]) {
+        let (mut args, temp_key, temp_askpass, _env_file) = match builder.build_args() {
             Ok(res) => res,
             Err(e) => {
                 emit_error(&socket, format!("could not build ssh command: {e}"));
                 return;
             }
         };
+        args.push(shell);
 
         let pty_system = native_pty_system();
         let pair = match pty_system.openpty(PtySize {
