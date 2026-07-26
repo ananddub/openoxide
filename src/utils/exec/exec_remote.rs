@@ -186,7 +186,7 @@ impl RemoteExecutor {
                         let Some(input) = input else {
                             break;
                         };
-                        if child_stdin.write_all(&input).await.is_err() {
+                        if child_stdin.write_all(&input).await.is_err() || child_stdin.flush().await.is_err() {
                             break;
                         }
                     }

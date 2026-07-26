@@ -119,9 +119,12 @@ impl TerminalSocket {
                 }
             }
             TerminalSession::Local { stdin, .. } => {
-                if let Err(error) = stdin.lock().await.write_all(input.data.as_bytes()).await {
+                let mut s = stdin.lock().await;
+                if let Err(error) = s.write_all(input.data.as_bytes()).await {
                     tracing::warn!("Local terminal write_all failed: {error}");
                     emit_error(&socket, format!("could not write terminal input: {error}"));
+                } else {
+                    let _ = s.flush().await;
                 }
             }
             TerminalSession::Remote { input: tx, .. } => {
