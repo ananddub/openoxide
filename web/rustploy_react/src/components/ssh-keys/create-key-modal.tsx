@@ -45,9 +45,6 @@ export function CreateKeyModal({
 			const keyPair = res as any;
 			setPublicKey(keyPair.public_key || '');
 			setPrivateKey(keyPair.private_key || '');
-			if (!name) {
-				setName(`Generated-${type.toUpperCase()}-Key`);
-			}
 			toast.success(`Auto-generated ${type.toUpperCase()} SSH key pair!`);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -119,7 +116,7 @@ export function CreateKeyModal({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
-					{/* Centered Taller Auto Generate Buttons */}
+					{/* Centered Auto Generate Buttons */}
 					<div className="flex items-center justify-center gap-3 py-1.5">
 						<Button
 							type="button"
