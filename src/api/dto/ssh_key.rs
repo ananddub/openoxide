@@ -26,6 +26,22 @@ pub struct GenerateSshKeyDto {
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct GeneratePairRequestDto {
+    #[serde(default = "default_key_type")]
+    pub key_type: String, // "ed25519" or "rsa"
+}
+
+fn default_key_type() -> String {
+    "ed25519".into()
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct GeneratePairResponseDto {
+    pub private_key: String,
+    pub public_key: String,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct PatchSshKeyDto {
     #[validate(length(min = 1, max = 255))]
     pub name: Option<String>,

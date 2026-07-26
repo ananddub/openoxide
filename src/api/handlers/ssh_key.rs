@@ -81,6 +81,17 @@ impl SshKeyController {
             .map_err(map_sqlx_error)
     }
 
+    #[post("/generate-pair")]
+    async fn generate_pair(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Json(body): Json<crate::api::dto::ssh_key::GeneratePairRequestDto>,
+    ) -> Result<Json<crate::api::dto::ssh_key::GeneratePairResponseDto>, ApiError> {
+        let (private_key, public_key) = crate::utils::ssh::generate_keypair(&body.key_type)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        Ok(Json(crate::api::dto::ssh_key::GeneratePairResponseDto { private_key, public_key }))
+    }
+
     #[patch("/{id}")]
     async fn patch(
         &self,
