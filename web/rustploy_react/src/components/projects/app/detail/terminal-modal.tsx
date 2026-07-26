@@ -94,10 +94,22 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				if (helper) helper.focus();
 			}, 50);
 
-			// Prevent browser hotkey hijacking (e.g. Ctrl+L address bar focus) while letting xterm handle all keybindings natively
+			// Intercept browser shortcuts (Ctrl+L, Ctrl+C, Ctrl+D, Ctrl+Z, Ctrl+U) to prevent browser default action
 			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-				if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
-					event.preventDefault();
+				if (event.ctrlKey || event.metaKey) {
+					const k = event.key.toLowerCase();
+					if (['l', 'c', 'd', 'z', 'u'].includes(k)) {
+						if (k === 'c' && term?.hasSelection()) return true;
+						event.preventDefault();
+						if (event.type === 'keydown') {
+							const ctrlMap: Record<string, string> = { l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15' };
+							if (ctrlMap[k] && socketRef.current?.connected) {
+								if (k === 'l') term?.clear();
+								socketRef.current.emit('input', { data: ctrlMap[k] });
+							}
+						}
+						return false;
+					}
 				}
 				return true;
 			});
