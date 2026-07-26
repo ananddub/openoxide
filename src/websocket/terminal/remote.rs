@@ -1,12 +1,11 @@
-use std::io::Read;
 use std::sync::Arc;
 
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use socketioxide::extract::SocketRef;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, emit_terminal_bytes, socket_key};
-use super::types::{ServerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted};
+use super::helpers::{emit_error, socket_key, spawn_blocking_pty_reader};
+use super::types::{ServerTerminalStart, SessionMap, TerminalSession, TerminalStarted};
 
 pub async fn spawn_remote_terminal(
     socket: SocketRef,
@@ -101,19 +100,10 @@ pub async fn spawn_remote_terminal(
         },
     );
 
-    let output_socket = socket.clone();
-    std::thread::spawn(move || {
+    tokio::spawn(async move {
         let _temp_key = temp_key;
         let _temp_askpass = temp_askpass;
-        let mut reader = reader;
-        let mut buffer = [0u8; 8192];
-        loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&output_socket, "stdout", buffer[..n].to_vec()),
-                Err(_) => break,
-            }
-        }
-        let _ = output_socket.emit("exit", &TerminalExit { code: Some(0) });
     });
+
+    spawn_blocking_pty_reader(socket.clone(), reader);
 }

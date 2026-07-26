@@ -1,3 +1,4 @@
+use std::io::Read;
 use socketioxide::extract::SocketRef;
 use tokio::io::AsyncReadExt;
 
@@ -36,6 +37,19 @@ pub fn spawn_output_task(
                     emit_error(&socket, format!("terminal read failed: {error}"));
                     return;
                 }
+            }
+        }
+    });
+}
+
+pub fn spawn_blocking_pty_reader(socket: SocketRef, mut reader: Box<dyn Read + Send>) {
+    tokio::task::spawn_blocking(move || {
+        let mut buffer = [0u8; 8192];
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => emit_terminal_bytes(&socket, "stdout", buffer[..n].to_vec()),
+                Err(_) => break,
             }
         }
     });

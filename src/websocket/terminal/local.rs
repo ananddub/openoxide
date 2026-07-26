@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::sync::Arc;
 
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
@@ -6,7 +5,7 @@ use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, emit_terminal_bytes, socket_key, spawn_output_task};
+use super::helpers::{emit_error, socket_key, spawn_blocking_pty_reader, spawn_output_task};
 use super::types::{DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted};
 
 pub async fn spawn_docker_terminal(
@@ -98,19 +97,7 @@ pub async fn spawn_docker_terminal(
 
     let _ = socket.emit("started", &TerminalStarted { kind: "docker" });
 
-    let output_socket = socket.clone();
-    std::thread::spawn(move || {
-        let mut reader = reader;
-        let mut buffer = [0u8; 8192];
-        loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&output_socket, "stdout", buffer[..n].to_vec()),
-                Err(_) => break,
-            }
-        }
-        let _ = output_socket.emit("exit", &TerminalExit { code: Some(0) });
-    });
+    spawn_blocking_pty_reader(socket.clone(), reader);
 
     let mut child = child;
     let sessions_clone = sessions.clone();
