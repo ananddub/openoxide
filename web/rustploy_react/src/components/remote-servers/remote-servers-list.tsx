@@ -155,12 +155,22 @@ export function RemoteServersList({
 							{/* Actions Row */}
 							<div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
 								<div className="flex items-center gap-1.5">
+									{/* Clean Icon-Only Test Connection Button */}
 									<Button
 										variant="outline"
-										size="sm"
+										size="icon"
 										onClick={() => handleTestConnection(item)}
 										disabled={isTesting}
-										className={`h-8 text-xs font-medium gap-1.5 px-3 transition-all ${
+										title={
+											isTesting
+												? 'Testing SSH Connection...'
+												: status === 'success'
+													? 'SSH Connection Verified'
+													: status === 'failed'
+														? 'SSH Connection Failed'
+														: 'Test SSH Connection'
+										}
+										className={`h-8 w-8 rounded-lg transition-all ${
 											status === 'success'
 												? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
 												: status === 'failed'
@@ -177,7 +187,6 @@ export function RemoteServersList({
 										) : (
 											<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
 										)}
-										{isTesting ? 'Testing...' : 'Test Connection'}
 									</Button>
 
 									<Button

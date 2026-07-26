@@ -157,12 +157,23 @@ export function CreateServerModal({
 					/>
 
 					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-1">
+						{/* Clean Icon-Only Test Connection Button */}
 						<Button
 							type="button"
 							variant="outline"
+							size="icon"
 							onClick={handleTestConnection}
 							disabled={testingConn || submitting}
-							className={`h-9 text-xs font-semibold gap-2 transition-all ${
+							title={
+								testingConn
+									? 'Testing SSH Connection...'
+									: testResult === 'success'
+										? 'SSH Connection Verified'
+										: testResult === 'failed'
+											? 'SSH Connection Failed'
+											: 'Test SSH Connection'
+							}
+							className={`h-9 w-9 rounded-lg transition-all ${
 								testResult === 'success'
 									? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
 									: testResult === 'failed'
@@ -171,15 +182,14 @@ export function CreateServerModal({
 							}`}
 						>
 							{testingConn ? (
-								<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+								<RefreshCw className="w-4 h-4 animate-spin text-primary" />
 							) : testResult === 'success' ? (
-								<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+								<CheckCircle2 className="w-4 h-4 text-emerald-500" />
 							) : testResult === 'failed' ? (
-								<XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+								<XCircle className="w-4 h-4 text-rose-500" />
 							) : (
-								<ShieldCheck className="w-3.5 h-3.5 text-primary" />
+								<ShieldCheck className="w-4 h-4 text-primary" />
 							)}
-							{testingConn ? 'Testing SSH...' : 'Test Connection'}
 						</Button>
 
 						<div className="flex items-center gap-2">
