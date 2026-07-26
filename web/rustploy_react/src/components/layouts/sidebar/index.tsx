@@ -24,11 +24,11 @@ type NavMenuGroupProps = {
 	currentPath: string;
 };
 
-// Renders a labeled group of nav items with active-state highlighting.
+// Renders a labeled group of nav items with high-contrast Dokploy color styling.
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 	return (
 		<SidebarGroup className="py-1">
-			<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-2 mb-1 group-data-[collapsible=icon]:hidden">
+			<SidebarGroupLabel className="text-[11px] font-mono tracking-wider text-muted-foreground font-semibold uppercase px-2 mb-1 group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-0.5">
@@ -46,13 +46,13 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 								render={<Link to={item.to as any} />}
 								isActive={isActive}
 								tooltip={item.title}
-								className={`h-8 text-xs font-medium rounded-lg transition-colors px-2.5 ${
+								className={`h-8.5 text-xs font-medium rounded-lg transition-colors px-2.5 ${
 									isActive
-										? 'bg-primary/10 text-primary font-semibold'
-										: 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+										? 'bg-primary/15 text-primary font-semibold'
+										: 'text-foreground/90 hover:text-foreground hover:bg-accent/60'
 								}`}
 							>
-								<item.icon className={`size-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
+								<item.icon className={`size-4 shrink-0 ${isActive ? 'text-primary' : 'text-foreground/80'}`} />
 								<span>{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
@@ -67,7 +67,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 function SidebarSeparator() {
 	return (
 		<div className="px-3.5 my-1">
-			<Separator className="bg-border/30" />
+			<Separator className="bg-border/40" />
 		</div>
 	);
 }
@@ -107,7 +107,7 @@ export function AppSidebar() {
 
 					{/* Extra / Help Group */}
 					<SidebarGroup className="py-1 group-data-[collapsible=icon]:hidden">
-						<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-2 mb-1">
+						<SidebarGroupLabel className="text-[11px] font-mono tracking-wider text-muted-foreground font-semibold uppercase px-2 mb-1">
 							Extra
 						</SidebarGroupLabel>
 						<SidebarMenu className="gap-0.5">
@@ -122,9 +122,9 @@ export function AppSidebar() {
 											/>
 										}
 										tooltip={item.title}
-										className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg px-2.5"
+										className="h-8.5 text-xs font-medium text-foreground/90 hover:text-foreground hover:bg-accent/60 rounded-lg px-2.5 transition-colors"
 									>
-										<item.icon className="size-4 text-muted-foreground/70" />
+										<item.icon className="size-4 shrink-0 text-foreground/80" />
 										<span>{item.title}</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
