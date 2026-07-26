@@ -25,15 +25,15 @@ pub async fn spawn_docker_terminal(
     let mut target_container = input.container.clone();
 
     let docker = crate::utils::docker::DockerCli::new_local();
-    if let Ok(containers) = docker
-        .containers()
-        .ps()
-        .filter(crate::utils::docker::query::ContainerFilter::Name(input.container.clone()))
-        .list()
-        .await
-    {
-        if let Some(first) = containers.first() {
-            target_container = first.names.trim_start_matches('/').to_string();
+    let mut use_docker = false;
+    if let Ok(containers) = docker.containers().ps().list().await {
+        if !containers.is_empty() {
+            use_docker = true;
+            if let Some(matching) = containers.iter().find(|c| c.names.contains(&input.container)) {
+                target_container = matching.names.trim_start_matches('/').to_string();
+            } else if let Some(first) = containers.first() {
+                target_container = first.names.trim_start_matches('/').to_string();
+            }
         }
     }
 
@@ -46,20 +46,23 @@ pub async fn spawn_docker_terminal(
     };
     let _ = pty.resize(Size::new(24, 80));
 
-    let exec_args = docker
-        .containers()
-        .exec(&target_container)
-        .interactive()
-        .tty(true)
-        .workdir("/")
-        .build_args([&shell]);
-
-    let cmd = PtyCommand::new("docker").args(&exec_args);
+    let cmd = if use_docker {
+        let exec_args = docker
+            .containers()
+            .exec(&target_container)
+            .interactive()
+            .tty(true)
+            .workdir("/")
+            .build_args([&shell]);
+        PtyCommand::new("docker").args(&exec_args)
+    } else {
+        PtyCommand::new(&shell)
+    };
 
     let mut child = match cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
-            emit_error(&socket, format!("could not start docker terminal: {error}"));
+            emit_error(&socket, format!("could not start terminal: {error}"));
             return;
         }
     };
