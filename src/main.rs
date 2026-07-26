@@ -11,6 +11,20 @@ use tokio::net::TcpListener;
 async fn main() {
     dotenvy::dotenv().ok();
     init_logs();
+
+    // 1. Core dump suppression (RLIMIT_CORE = 0) so crashes never dump key memory to disk
+    #[cfg(unix)]
+    unsafe {
+        let rlim = libc::rlimit {
+            rlim_cur: 0,
+            rlim_max: 0,
+        };
+        let _ = libc::setrlimit(libc::RLIMIT_CORE, &rlim);
+    }
+
+    // 2. Orphaned agent socket cleanup on server boot
+    rustploy::utils::ssh::agent::sweep_orphaned_agent_sockets();
+
     let service: Arc<Router> = resolve::<Router<()>>().await.unwrap();
     resolve::<ScheduleRunner>()
         .await

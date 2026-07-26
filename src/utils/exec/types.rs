@@ -66,6 +66,26 @@ pub enum SshAuth {
     AgentWithSocket(std::path::PathBuf),
     KeyFile(std::path::PathBuf),
 }
+
+impl zeroize::Zeroize for SshAuth {
+    fn zeroize(&mut self) {
+        match self {
+            SshAuth::Password(p) => p.zeroize(),
+            SshAuth::KeyPair { private_key, public_key, passphrase } => {
+                private_key.zeroize();
+                if let Some(pk) = public_key { pk.zeroize(); }
+                if let Some(pp) = passphrase { pp.zeroize(); }
+            }
+            _ => {}
+        }
+    }
+}
+
+impl Drop for SshAuth {
+    fn drop(&mut self) {
+        zeroize::Zeroize::zeroize(self);
+    }
+}
 impl SshAuth {
     pub fn password(value: impl Into<String>) -> Self {
         Self::Password(value.into())

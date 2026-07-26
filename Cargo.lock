@@ -3060,6 +3060,7 @@ dependencies = [
  "dotenvy",
  "futures",
  "jsonwebtoken",
+ "libc",
  "minijinja",
  "notify",
  "paste",
