@@ -144,11 +144,8 @@ export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: C
 						/>
 					</div>
 
-					<div className="pt-3 flex items-center justify-end gap-2 border-t border-border/30">
-						<Button type="button" variant="outline" onClick={onClose} className="h-9 text-xs font-semibold">
-							Cancel
-						</Button>
-						<Button type="submit" disabled={creating} className="h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/95 px-4 shadow-sm">
+					<div className="pt-3 flex items-center justify-end border-t border-border/30">
+						<Button type="submit" disabled={creating} className="h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/95 px-5 shadow-sm w-full sm:w-auto">
 							{creating ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
 							Create Schedule
 						</Button>

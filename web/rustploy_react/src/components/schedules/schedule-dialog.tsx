@@ -223,11 +223,8 @@ export function ScheduleDialog({
 						/>
 					</div>
 
-					<div className="flex justify-end gap-2.5 pt-3 border-t border-border/30">
-						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="h-9 text-xs">
-							Cancel
-						</Button>
-						<Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4 font-semibold shadow-sm">
+					<div className="flex justify-end pt-3 border-t border-border/30">
+						<Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-5 font-semibold shadow-sm w-full sm:w-auto">
 							{isSubmitting ? 'Saving...' : editingSchedule ? 'Save Changes' : 'Create Schedule'}
 						</Button>
 					</div>
