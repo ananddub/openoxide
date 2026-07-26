@@ -68,9 +68,9 @@ export function RemoteServersList({
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 py-4">
-				{[1, 2, 3].map(i => (
-					<div key={i} className="h-20 bg-muted/40 animate-pulse rounded-xl border border-border/60" />
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-4">
+				{[1, 2, 3, 4].map(i => (
+					<div key={i} className="h-16 bg-muted/40 animate-pulse rounded-xl border border-border/60" />
 				))}
 			</div>
 		);
@@ -91,7 +91,7 @@ export function RemoteServersList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 py-3 w-full">
+		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-3 w-full">
 			{servers.map(item => {
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 				const isTesting = testingConnId === item.id;
@@ -102,9 +102,9 @@ export function RemoteServersList({
 						key={item.id}
 						className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm"
 					>
-						<CardContent className="p-3.5 flex items-center justify-between gap-3">
+						<CardContent className="p-3 flex items-center justify-between gap-2">
 							{/* Left: Status Dot, Server Name & Host IP */}
-							<div className="flex items-center gap-2.5 min-w-0 flex-1">
+							<div className="flex items-center gap-2 min-w-0 flex-1">
 								<button
 									type="button"
 									onClick={() => onToggleStatus(item)}
