@@ -192,14 +192,9 @@ export function CreateServerModal({
 							)}
 						</Button>
 
-						<div className="flex items-center gap-2">
-							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs font-semibold px-4">
-								Cancel
-							</Button>
-							<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6 shadow-md">
-								{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
-							</Button>
-						</div>
+						<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6 shadow-md">
+							{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
+						</Button>
 					</div>
 				</form>
 			</DialogContent>
