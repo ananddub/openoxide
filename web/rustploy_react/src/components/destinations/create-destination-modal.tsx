@@ -169,11 +169,13 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 						<Button
 							type="button"
 							variant="outline"
+							size="icon"
 							onClick={handleTestConnection}
 							disabled={testing}
-							className="h-9 text-xs font-medium flex items-center gap-1.5"
+							title="Test Connection"
+							className="h-9 w-9 shrink-0"
 						>
-							{testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plug className="w-3.5 h-3.5 text-primary" />} Test Connection
+							{testing ? <RefreshCw className="w-4 h-4 animate-spin text-primary" /> : <Plug className="w-4 h-4 text-muted-foreground hover:text-foreground" />}
 						</Button>
 						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-5">
 							{submitting ? 'Saving...' : editingDestination ? 'Save' : 'Create'}

@@ -115,7 +115,7 @@ export function DestinationFormFields({
 			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Provider Preset</label>
 				<Select value={provider} onValueChange={onProviderChange}>
-					<SelectTrigger className="h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3">
+					<SelectTrigger className="!h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3 flex items-center justify-between">
 						<SelectValue placeholder="Select Provider" />
 					</SelectTrigger>
 					<SelectContent>
