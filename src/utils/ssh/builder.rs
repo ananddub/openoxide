@@ -418,7 +418,7 @@ impl SshBuilder {
                 Self::push_option(&mut args, "IdentitiesOnly", "no");
             }
             SshAuth::AgentWithSocket(socket) => {
-                Self::push_option(&mut args, "IdentitiesOnly", "yes");
+                Self::push_option(&mut args, "IdentitiesOnly", "no");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
                 Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
                 agent_socket_path = Some(socket.clone());
