@@ -91,7 +91,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			setStatus('connecting');
 			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-			const targetPort = window.location.port === '5173' ? '4000' : window.location.port;
+			const targetPort = window.location.port && window.location.port !== '4000' ? '4000' : window.location.port;
 			const socketUrl = `${window.location.protocol}//${window.location.hostname}${targetPort ? `:${targetPort}` : ''}`;
 
 			const socket = io(`${socketUrl}/terminal`, {path: '/socket.io', transports: ['websocket', 'polling']});
