@@ -1,3 +1,4 @@
+import {useMemo} from 'react';
 import {
 	Play,
 	Pause,
@@ -13,6 +14,7 @@ import {Button} from '#/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '#/components/ui/card';
 import {cn} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
+import {$api} from '#/api/query';
 
 interface ScheduleCardProps {
 	schedule: Schedule;
@@ -34,8 +36,34 @@ export function ScheduleCard({
 	const s = schedule;
 	const isEnabled = s.enabled === 1;
 
+	// Query projects to resolve application names
+	const {data: projectsList} = $api.useQuery('get', '/projects') as any;
+
 	// Find linked server details if any
 	const linkedServer = servers.find(srv => srv.id === s.server_id);
+
+	// Find linked application details if any
+	const linkedApp = useMemo(() => {
+		if (!s.application_id || !Array.isArray(projectsList)) return null;
+		for (const proj of projectsList) {
+			if (proj.applications) {
+				const found = proj.applications.find((a: any) => (a.id || a.application_id) === s.application_id);
+				if (found) return found;
+			}
+			if (proj.environments) {
+				for (const env of proj.environments) {
+					if (env.applications) {
+						const found = env.applications.find((a: any) => (a.id || a.application_id) === s.application_id);
+						if (found) return found;
+					}
+				}
+			}
+		}
+		return null;
+	}, [s.application_id, projectsList]);
+
+	const appName = linkedApp?.name || linkedApp?.app_name || (s.application_id ? `App #${s.application_id}` : null);
+	const serverName = linkedServer?.name || (s.server_id ? `Server #${s.server_id}` : null);
 
 	return (
 		<Card className={cn(
@@ -111,19 +139,19 @@ export function ScheduleCard({
 					<div className="space-y-1">
 						<span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Target Destination</span>
 						<span className="font-medium text-foreground flex items-center gap-1.5">
-							{linkedServer ? (
+							{serverName ? (
 								<>
-									<Server className="size-3.5 text-zinc-400" />
-									<span className="truncate max-w-[120px]">{linkedServer.name}</span>
+									<Server className="size-3.5 text-zinc-400 shrink-0" />
+									<span className="truncate max-w-[130px]" title={serverName}>{serverName}</span>
 								</>
-							) : s.application_id ? (
+							) : appName ? (
 								<>
-									<Cpu className="size-3.5 text-blue-400" />
-									<span>App #{s.application_id}</span>
+									<Cpu className="size-3.5 text-blue-400 shrink-0" />
+									<span className="truncate max-w-[130px]" title={appName}>{appName}</span>
 								</>
 							) : (
 								<>
-									<ServerCrash className="size-3.5 text-zinc-500" />
+									<ServerCrash className="size-3.5 text-zinc-500 shrink-0" />
 									<span className="text-muted-foreground">None</span>
 								</>
 							)}
