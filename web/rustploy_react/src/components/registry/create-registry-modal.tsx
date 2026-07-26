@@ -201,7 +201,7 @@ export function CreateRegistryModal({
 					<div className="flex flex-col gap-1.5">
 						<Label className="text-xs font-semibold">Authenticate From Server</Label>
 						<Select value={serverId} onValueChange={val => val && setServerId(val)}>
-							<SelectTrigger className="h-9 text-xs bg-card border-border/80 w-full px-3 font-sans">
+							<SelectTrigger className="!h-9 text-xs bg-card border-border/80 w-full px-3 font-sans flex items-center justify-between">
 								<SelectValue placeholder="Select server" />
 							</SelectTrigger>
 							<SelectContent className="bg-card border-border text-xs z-50">
