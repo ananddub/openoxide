@@ -12,7 +12,7 @@ import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Key, Sparkles, RefreshCw, Terminal, Copy, Check, Shield} from 'lucide-react';
+import {Key, RefreshCw, Terminal, Copy, Check} from 'lucide-react';
 
 interface CreateKeyModalProps {
 	isOpen: boolean;
@@ -119,6 +119,35 @@ export function CreateKeyModal({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
+					{/* 2 Simple Plain Generation Options at the Very Top */}
+					<div className="flex items-center justify-between gap-2 p-2 bg-muted/40 rounded-md border border-border/60">
+						<span className="text-xs font-medium text-muted-foreground shrink-0 pl-1">Auto Generate:</span>
+						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => handleGeneratePair('ed25519')}
+								disabled={!!generatingType || submitting}
+								className="h-7 text-xs font-medium px-3"
+							>
+								{generatingType === 'ed25519' && <RefreshCw className="w-3 h-3 animate-spin mr-1" />}
+								Generate ED25519
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => handleGeneratePair('rsa')}
+								disabled={!!generatingType || submitting}
+								className="h-7 text-xs font-medium px-3"
+							>
+								{generatingType === 'rsa' && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" />}
+								Generate RSA 4096
+							</Button>
+						</div>
+					</div>
+
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-semibold text-foreground">Key Name *</label>
 						<Input
@@ -137,35 +166,6 @@ export function CreateKeyModal({
 							placeholder="Optional description for this key pair"
 							className="h-9 text-xs bg-background border-border rounded-md px-3"
 						/>
-					</div>
-
-					{/* 2 Generation Options directly under Description */}
-					<div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/50">
-						<span className="text-xs font-medium text-muted-foreground shrink-0">Auto-Generate:</span>
-						<div className="flex items-center gap-2 w-full">
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => handleGeneratePair('ed25519')}
-								disabled={!!generatingType || submitting}
-								className="h-8 text-xs font-semibold gap-1.5 border-amber-500/30 text-amber-500 hover:bg-amber-500/10 flex-1"
-							>
-								{generatingType === 'ed25519' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-								{generatingType === 'ed25519' ? 'Generating...' : 'Generate ED25519'}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => handleGeneratePair('rsa')}
-								disabled={!!generatingType || submitting}
-								className="h-8 text-xs font-semibold gap-1.5 border-sky-500/30 text-sky-500 hover:bg-sky-500/10 flex-1"
-							>
-								{generatingType === 'rsa' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
-								{generatingType === 'rsa' ? 'Generating...' : 'Generate RSA 4096'}
-							</Button>
-						</div>
 					</div>
 
 					<div className="flex flex-col gap-1.5">
@@ -206,9 +206,8 @@ export function CreateKeyModal({
 						</div>
 					)}
 
-					{/* Single Clean Save Button (Cancel removed) */}
 					<div className="flex items-center justify-end pt-3 border-t border-border/50">
-						<Button type="submit" disabled={submitting || !!generatingType} className="h-9 text-xs font-bold px-6 shadow-md w-full sm:w-auto">
+						<Button type="submit" disabled={submitting || !!generatingType} className="h-8 text-xs font-medium px-4">
 							{submitting ? 'Saving SSH Key...' : 'Save SSH Key'}
 						</Button>
 					</div>
