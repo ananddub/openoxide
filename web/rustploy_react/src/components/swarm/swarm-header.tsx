@@ -51,7 +51,7 @@ export function SwarmHeader({
 			</div>
 
 			{/* Host Engine Dropdown Selector, Refresh & 3-Dots Menu */}
-			<div className="flex items-center gap-2 shrink-0">
+			<div className="flex items-center gap-2 shrink-0 ml-auto">
 				{/* Host Engine Select Dropdown */}
 				<div className="w-52 sm:w-60">
 					<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
