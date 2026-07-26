@@ -113,7 +113,7 @@ export function ScheduleDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg bg-card border-border p-6 rounded-xl shadow-2xl">
+			<DialogContent className="sm:max-w-lg bg-card border-border p-6 rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/40 pb-4">
 					<div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
 						<Clock className="size-5" />
@@ -129,18 +129,50 @@ export function ScheduleDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
-					<div className="grid grid-cols-2 gap-3">
-						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold">Name *</Label>
-							<Input placeholder="Daily Cache Backup" value={name} onChange={e => setName(e.target.value)} required className="h-9 text-xs" />
+					{/* Name - Full Width */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold">Name *</Label>
+						<Input placeholder="e.g. Daily Database Backup" value={name} onChange={e => setName(e.target.value)} required className="h-9 text-xs w-full" />
+					</div>
+
+					{/* Description - Full Width */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold">Description</Label>
+						<Input placeholder="Optional task details..." value={description} onChange={e => setDescription(e.target.value)} className="h-9 text-xs w-full" />
+					</div>
+
+					{/* Target Type & Target Item - 2 Equal Columns (Full Width) */}
+					<div className="grid grid-cols-2 gap-3 w-full">
+						<div className="space-y-1.5 w-full">
+							<Label className="text-xs font-semibold">Target Type *</Label>
+							<Select value={targetType} onValueChange={val => {
+								setTargetType(val as any);
+								setTargetId(val === 'SERVER' && servers[0]?.id ? String(servers[0].id) : '');
+							}}>
+								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+								<SelectContent className="bg-card border-border">
+									<SelectItem value="SERVER" className="text-xs">Server</SelectItem>
+									<SelectItem value="APPLICATION" className="text-xs">Application</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
-						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold">Description</Label>
-							<Input placeholder="Optional details..." value={description} onChange={e => setDescription(e.target.value)} className="h-9 text-xs" />
+						<div className="space-y-1.5 w-full">
+							<Label className="text-xs font-semibold">Target Item *</Label>
+							{targetType === 'SERVER' ? (
+								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
+									<SelectTrigger className="!h-9 text-xs w-full"><SelectValue placeholder="Select server" /></SelectTrigger>
+									<SelectContent className="bg-card border-border">
+										{servers.map(srv => <SelectItem key={srv.id} value={String(srv.id)} className="text-xs">{srv.name}</SelectItem>)}
+									</SelectContent>
+								</Select>
+							) : (
+								<Input type="number" placeholder="App ID" value={targetId} onChange={e => setTargetId(e.target.value)} required className="h-9 text-xs w-full" />
+							)}
 						</div>
 					</div>
 
-					<div className="space-y-1.5">
+					{/* Cron Expression - Full Width */}
+					<div className="space-y-1.5 w-full">
 						<div className="flex items-center justify-between">
 							<Label className="text-xs font-semibold">Cron Expression *</Label>
 							<div className="flex items-center gap-1">
@@ -160,55 +192,27 @@ export function ScheduleDialog({
 								))}
 							</div>
 						</div>
-						<Input placeholder="*/5 * * * *" value={cronExpression} onChange={e => setCronExpression(e.target.value)} required className="h-9 text-xs font-mono" />
+						<Input placeholder="*/5 * * * *" value={cronExpression} onChange={e => setCronExpression(e.target.value)} required className="h-9 text-xs font-mono w-full" />
 					</div>
 
-					<div className="grid grid-cols-3 gap-3">
-						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold">Shell Type</Label>
-							<Select value={shellType} onValueChange={val => setShellType(val ?? 'bash')}>
-								<SelectTrigger className="!h-9 text-xs"><SelectValue /></SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									<SelectItem value="bash" className="text-xs">BASH</SelectItem>
-									<SelectItem value="sh" className="text-xs">SH</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold">Target Type *</Label>
-							<Select value={targetType} onValueChange={val => {
-								setTargetType(val as any);
-								setTargetId(val === 'SERVER' && servers[0]?.id ? String(servers[0].id) : '');
-							}}>
-								<SelectTrigger className="!h-9 text-xs"><SelectValue /></SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									<SelectItem value="SERVER" className="text-xs">Server</SelectItem>
-									<SelectItem value="APPLICATION" className="text-xs">Application</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold">Target Item *</Label>
-							{targetType === 'SERVER' ? (
-								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="!h-9 text-xs"><SelectValue placeholder="Select server" /></SelectTrigger>
-									<SelectContent className="bg-card border-border">
-										{servers.map(srv => <SelectItem key={srv.id} value={String(srv.id)} className="text-xs">{srv.name}</SelectItem>)}
-									</SelectContent>
-								</Select>
-							) : (
-								<Input type="number" placeholder="App ID" value={targetId} onChange={e => setTargetId(e.target.value)} required className="h-9 text-xs" />
-							)}
-						</div>
+					{/* Shell Type - Full Width */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold">Shell Type</Label>
+						<Select value={shellType} onValueChange={val => setShellType(val ?? 'bash')}>
+							<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								<SelectItem value="bash" className="text-xs">BASH</SelectItem>
+								<SelectItem value="sh" className="text-xs">SH</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 
-					<div className="space-y-1.5">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs font-semibold flex items-center gap-1.5">
-								<Terminal className="size-3.5 text-muted-foreground" />
-								Command *
-							</Label>
-						</div>
+					{/* Command - Full Width */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold flex items-center gap-1.5">
+							<Terminal className="size-3.5 text-muted-foreground" />
+							Command *
+						</Label>
 						<textarea
 							placeholder="e.g. docker exec my_app npm run cleanup"
 							value={command}
