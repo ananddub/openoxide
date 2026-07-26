@@ -14,10 +14,12 @@ pub fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: Vec<
 }
 
 pub fn emit_error(socket: &SocketRef, message: impl Into<String>) {
+    let message_str = message.into();
+    tracing::warn!("Terminal socket error emitted: {message_str}");
     let _ = socket.emit(
         "error",
         &TerminalError {
-            message: message.into(),
+            message: message_str,
         },
     );
 }
@@ -34,6 +36,7 @@ pub fn spawn_output_task(
                 Ok(0) => return,
                 Ok(n) => emit_terminal_bytes(&socket, stream, buffer[..n].to_vec()),
                 Err(error) => {
+                    tracing::warn!("Terminal output read error: {error}");
                     emit_error(&socket, format!("terminal read failed: {error}"));
                     return;
                 }
@@ -49,7 +52,11 @@ pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
             match reader.read(&mut buffer).await {
                 Ok(0) => break,
                 Ok(n) => emit_terminal_bytes(&socket, "stdout", buffer[..n].to_vec()),
-                Err(_) => break,
+                Err(error) => {
+                    tracing::warn!("PTY reader stream error: {error}");
+                    emit_error(&socket, format!("PTY stream read error: {error}"));
+                    break;
+                }
             }
         }
     });

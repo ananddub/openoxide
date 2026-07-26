@@ -79,9 +79,12 @@ pub async fn spawn_docker_terminal(
     spawn_pty_reader(socket.clone(), reader);
 
     let sessions_clone = sessions.clone();
+    let socket_clone = socket.clone();
     tokio::spawn(async move {
-        let _ = child.wait().await;
+        let status = child.wait().await;
         sessions_clone.remove(&key);
+        let code = status.ok().and_then(|s| s.code());
+        let _ = socket_clone.emit("exit", &TerminalExit { code });
     });
 }
 

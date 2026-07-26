@@ -147,9 +147,16 @@ impl TerminalSocket {
         let rows = input.rows.unwrap_or(24);
 
         match session {
-            TerminalSession::Pty { .. } => {}
+            TerminalSession::Pty { writer, .. } => {
+                let w = writer.lock().await;
+                if let Err(error) = w.resize(pty_process::Size::new(rows, cols)) {
+                    tracing::warn!("PTY resize failed: {error}");
+                    emit_error(&socket, format!("could not resize PTY: {error}"));
+                }
+            }
             TerminalSession::Remote { resize, .. } => {
                 if resize.send((cols, rows)).await.is_err() {
+                    tracing::warn!("Remote resize channel is closed");
                     emit_error(&socket, "remote terminal resize channel is closed");
                 }
             }
