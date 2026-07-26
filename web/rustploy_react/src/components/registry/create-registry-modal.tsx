@@ -218,28 +218,27 @@ export function CreateRegistryModal({
 						</p>
 					</div>
 
-					{/* Footer Buttons */}
+					{/* Minimal Footer Buttons */}
 					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2">
 						<Button
 							type="button"
 							variant="outline"
-							size="sm"
+							size="icon"
 							onClick={handleTestRaw}
 							disabled={isTesting}
-							className="h-9 text-xs font-semibold gap-1.5"
+							title="Test Registry Connection"
+							className="h-9 w-9 shrink-0"
 						>
-							{isTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" /> : <Plug className="w-3.5 h-3.5" />}
-							Test Registry
+							{isTesting ? (
+								<RefreshCw className="w-4 h-4 animate-spin text-primary" />
+							) : (
+								<Plug className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+							)}
 						</Button>
 
-						<div className="flex items-center gap-2">
-							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs font-semibold px-3">
-								Cancel
-							</Button>
-							<Button type="submit" className="h-9 text-xs font-semibold px-4">
-								{initialData ? 'Update' : 'Save'} Registry
-							</Button>
-						</div>
+						<Button type="submit" className="h-9 text-xs font-semibold px-5">
+							{initialData ? 'Update' : 'Save'} Registry
+						</Button>
 					</div>
 				</form>
 			</DialogContent>
