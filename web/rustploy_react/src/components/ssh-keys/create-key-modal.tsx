@@ -124,9 +124,9 @@ export function CreateKeyModal({
 							size="sm"
 							onClick={() => handleGeneratePair('ed25519')}
 							disabled={!!generatingType || submitting}
-							className="h-8 text-xs font-semibold px-4 rounded-md border-border"
+							className="h-9 text-xs font-semibold px-5 rounded-md border-border"
 						>
-							{generatingType === 'ed25519' && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
+							{generatingType === 'ed25519' && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />}
 							Auto Generate ED25519
 						</Button>
 						<Button
@@ -135,9 +135,9 @@ export function CreateKeyModal({
 							size="sm"
 							onClick={() => handleGeneratePair('rsa')}
 							disabled={!!generatingType || submitting}
-							className="h-8 text-xs font-semibold px-4 rounded-md border-border"
+							className="h-9 text-xs font-semibold px-5 rounded-md border-border"
 						>
-							{generatingType === 'rsa' && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
+							{generatingType === 'rsa' && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />}
 							Auto Generate RSA 4096
 						</Button>
 					</div>
@@ -202,7 +202,7 @@ export function CreateKeyModal({
 					)}
 
 					<div className="flex items-center justify-end pt-3 border-t border-border/50">
-						<Button type="submit" disabled={submitting || !!generatingType} className="h-8 text-xs font-semibold px-5">
+						<Button type="submit" disabled={submitting || !!generatingType} className="h-9 text-xs font-semibold px-6">
 							{submitting ? 'Saving SSH Key...' : 'Save SSH Key'}
 						</Button>
 					</div>
