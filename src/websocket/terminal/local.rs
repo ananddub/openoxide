@@ -52,11 +52,14 @@ pub async fn spawn_docker_terminal(
             .exec(&target_container)
             .interactive()
             .tty(true)
+            .env("TERM", "xterm-256color")
             .workdir("/")
             .build_args([&shell]);
-        PtyCommand::new("docker").args(&exec_args)
+        PtyCommand::new("docker")
+            .args(&exec_args)
+            .env("TERM", "xterm-256color")
     } else {
-        PtyCommand::new(&shell)
+        PtyCommand::new(&shell).env("TERM", "xterm-256color")
     };
 
     let mut child = match cmd.spawn(pts) {

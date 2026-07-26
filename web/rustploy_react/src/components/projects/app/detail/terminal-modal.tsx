@@ -104,7 +104,6 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 						if (event.type === 'keydown') {
 							const ctrlMap: Record<string, string> = { l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15' };
 							if (ctrlMap[k] && socketRef.current?.connected) {
-								if (k === 'l') term?.clear();
 								socketRef.current.emit('input', { data: ctrlMap[k] });
 							}
 						}

@@ -52,7 +52,9 @@ pub async fn spawn_remote_terminal(
     };
     let _ = pty.resize(Size::new(24, 80));
 
-    let mut cmd = PtyCommand::new("ssh").args(&args);
+    let mut cmd = PtyCommand::new("ssh")
+        .args(&args)
+        .env("TERM", "xterm-256color");
     if let Some(socket_path) = agent_socket {
         cmd = cmd.env("SSH_AUTH_SOCK", socket_path);
     }
