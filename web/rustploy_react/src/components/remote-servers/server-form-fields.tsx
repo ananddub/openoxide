@@ -83,7 +83,7 @@ export function ServerFormFields({
 			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">SSH Key Credential</label>
 				<Select value={sshKeyId} onValueChange={val => val && setSshKeyId(val)}>
-					<SelectTrigger className="h-9 text-xs font-sans bg-background border-border rounded-md w-full px-3">
+					<SelectTrigger className="!h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3 flex items-center justify-between">
 						<SelectValue placeholder="Select SSH Key">
 							{sshKeys?.find((k: any) => Number(k.id) === Number(sshKeyId))?.name || 'Select SSH Key'}
 						</SelectValue>
