@@ -6,13 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '#/components/ui/dropdown';
-import {Globe2, RefreshCw, MoreVertical, Server} from 'lucide-react';
+import {Globe2, RefreshCw, KeyRound, Server} from 'lucide-react';
 
 interface SwarmHeaderProps {
 	servers: any[];
@@ -70,8 +64,8 @@ export function SwarmHeader({
 				</div>
 			</div>
 
-			{/* Right: Refresh & 3-Dots Menu */}
-			<div className="flex items-center gap-1.5 shrink-0">
+			{/* Right: Refresh & Direct Join Tokens Toggle Button */}
+			<div className="flex items-center gap-2 shrink-0">
 				<Button
 					variant="outline"
 					size="icon"
@@ -83,27 +77,17 @@ export function SwarmHeader({
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
 				</Button>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" />
-						}
+				{isSwarmActive && (
+					<Button
+						variant={isTokensExpanded ? 'default' : 'outline'}
+						size="sm"
+						onClick={onToggleTokens}
+						className="h-8 text-xs font-semibold gap-1.5 px-3"
 					>
-						<MoreVertical className="w-4 h-4" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-48 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
-						<DropdownMenuItem
-							disabled={!isSwarmActive}
-							className="flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-							onClick={onToggleTokens}
-						>
-							<span>Join Tokens</span>
-							<span className="text-[10px] text-muted-foreground font-mono">
-								{isTokensExpanded ? 'Hide' : 'Show'}
-							</span>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+						<KeyRound className="w-3.5 h-3.5" />
+						<span>Join Tokens</span>
+					</Button>
+				)}
 			</div>
 		</div>
 	);
