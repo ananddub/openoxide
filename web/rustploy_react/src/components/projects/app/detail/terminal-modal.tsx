@@ -140,8 +140,12 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					}
 					if (CONTROL_KEY_MAP[k]) {
 						if (event.type === 'keydown' && socketRef.current?.connected) {
-							if (k === 'l') term?.clear();
-							socketRef.current.emit('input', { data: CONTROL_KEY_MAP[k] });
+							if (k === 'l') {
+								term?.clear();
+								socketRef.current.emit('input', { data: '\x1b[2J\x1b[H' });
+							} else {
+								socketRef.current.emit('input', { data: CONTROL_KEY_MAP[k] });
+							}
 						}
 						event.preventDefault();
 						return false;
