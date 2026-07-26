@@ -114,13 +114,16 @@ impl TerminalSocket {
             TerminalSession::Pty { writer, .. } => {
                 let mut w = writer.lock().await;
                 if let Err(error) = w.write_all(input.data.as_bytes()).await {
+                    tracing::warn!("PTY write_all failed: {error}");
                     emit_error(&socket, format!("could not write PTY input: {error}"));
-                } else {
-                    let _ = w.flush().await;
+                } else if let Err(error) = w.flush().await {
+                    tracing::warn!("PTY flush failed: {error}");
+                    emit_error(&socket, format!("could not flush PTY input: {error}"));
                 }
             }
             TerminalSession::Local { stdin, .. } => {
                 if let Err(error) = stdin.lock().await.write_all(input.data.as_bytes()).await {
+                    tracing::warn!("Local terminal write_all failed: {error}");
                     emit_error(&socket, format!("could not write terminal input: {error}"));
                 }
             }
