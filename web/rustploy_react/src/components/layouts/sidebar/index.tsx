@@ -14,7 +14,6 @@ import {
 } from '#/components/ui/sidebar';
 import {type NavItem, MENU} from './enum';
 import {Separator} from '#/components/ui/separator';
-import {SearchButton} from './search';
 import {SearchDialog} from './search/dialog';
 import {HeaderDropdown} from './header';
 import {AppSidebarFooter} from './footer';
@@ -88,9 +87,6 @@ export function AppSidebar() {
 
 				{/* Navigation Content */}
 				<SidebarContent className="gap-1 px-1.5 py-2">
-					{/* Quick Search */}
-					<SearchButton />
-
 					{/* Platform Group */}
 					<NavMenuGroup
 						label="Platform"
