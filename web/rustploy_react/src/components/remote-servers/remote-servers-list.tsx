@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Button} from '#/components/ui/button';
-import {Card, CardContent} from '#/components/ui/card';
+import {Card} from '#/components/ui/card';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,13 +13,11 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
 	Server,
-	Key,
 	ShieldCheck,
 	Trash2,
 	Edit,
 	Terminal,
 	RefreshCw,
-	Copy,
 	Check,
 	Activity,
 	AlertCircle,
@@ -39,7 +37,6 @@ interface RemoteServersListProps {
 
 export function RemoteServersList({
 	servers,
-	sshKeys,
 	isLoading,
 	onEditServer,
 	onDeleteServer,
@@ -49,7 +46,6 @@ export function RemoteServersList({
 }: RemoteServersListProps) {
 	const [testingConnId, setTestingConnId] = useState<number | null>(null);
 	const [testStateMap, setTestStateMap] = useState<Record<number, 'success' | 'failed'>>({});
-	const [copiedId, setCopiedId] = useState<number | null>(null);
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
 	const handleTestConnection = async (server: any) => {
@@ -69,18 +65,11 @@ export function RemoteServersList({
 		}
 	};
 
-	const handleCopyIp = (id: number, ip: string) => {
-		navigator.clipboard.writeText(ip);
-		setCopiedId(id);
-		toast.success(`Copied IP ${ip} to clipboard`);
-		setTimeout(() => setCopiedId(null), 2000);
-	};
-
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-4">
+			<div className="flex flex-col gap-2 py-4">
 				{[1, 2, 3].map(i => (
-					<div key={i} className="h-16 bg-muted/40 animate-pulse rounded-xl border border-border/60" />
+					<div key={i} className="h-12 bg-muted/40 animate-pulse rounded-lg border border-border/60" />
 				))}
 			</div>
 		);
@@ -101,143 +90,119 @@ export function RemoteServersList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-4 w-full">
+		<div className="flex flex-col gap-2 py-3 w-full">
 			{servers.map(item => {
-				const attachedKey = sshKeys.find((k: any) => k.id === item.ssh_key_id);
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 				const isTesting = testingConnId === item.id;
 				const status = testStateMap[item.id];
 
 				return (
-					<Card key={item.id} className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm">
-						<CardContent className="p-3.5 flex items-center justify-between gap-3">
-							{/* Left: Status Dot, Server Name & IP Info */}
-							<div className="flex items-center gap-3 min-w-0 flex-1">
-								<button
-									type="button"
-									onClick={() => onToggleStatus(item)}
-									title={`Status: ${isActive ? 'Active' : 'Disabled'} (Click to toggle)`}
-									className="shrink-0"
-								>
-									<span className={`block w-2.5 h-2.5 rounded-full transition-transform hover:scale-125 ${isActive ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-rose-500'}`} />
-								</button>
+					<div
+						key={item.id}
+						className="flex items-center justify-between px-3.5 py-2.5 bg-card border border-border rounded-lg hover:border-border/80 transition-colors shadow-sm"
+					>
+						{/* Left: Status Dot, Server Name & IP */}
+						<div className="flex items-center gap-3 min-w-0 flex-1">
+							<button
+								type="button"
+								onClick={() => onToggleStatus(item)}
+								title={`Status: ${isActive ? 'Active' : 'Disabled'} (Click to toggle)`}
+								className="shrink-0"
+							>
+								<span className={`block w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+							</button>
 
-								<div className="flex flex-col min-w-0 flex-1">
-									<div className="flex items-center gap-2">
-										<h3 className="text-xs font-bold text-foreground truncate">{item.name}</h3>
-										{attachedKey && (
-											<span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 shrink-0">
-												<Key className="w-2.5 h-2.5" />
-												<span className="truncate max-w-[80px]">{attachedKey.name}</span>
-											</span>
-										)}
-									</div>
-									<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono truncate mt-0.5">
-										<span className="truncate">{item.username || 'root'}@{item.ip_address}:{item.port || 22}</span>
-										<button
-											type="button"
-											onClick={() => handleCopyIp(item.id, item.ip_address)}
-											className="text-muted-foreground/60 hover:text-foreground shrink-0"
-											title="Copy IP"
-										>
-											{copiedId === item.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-										</button>
-									</div>
-								</div>
-							</div>
+							<span className="text-xs font-bold text-foreground truncate">{item.name}</span>
+							<span className="text-xs font-mono text-muted-foreground truncate hidden sm:inline">
+								{item.username || 'root'}@{item.ip_address}:{item.port || 22}
+							</span>
+						</div>
 
-							{/* Right: Test Connection Icon Button & 3-Dots Dropdown */}
-							<div className="flex items-center gap-1 shrink-0">
-								<Button
-									variant="outline"
-									size="icon"
-									onClick={() => handleTestConnection(item)}
-									disabled={isTesting}
-									title={
-										isTesting
-											? 'Testing SSH Connection...'
-											: status === 'success'
-												? 'SSH Connection Verified'
-												: status === 'failed'
-													? 'SSH Connection Failed'
-													: 'Test SSH Connection'
-									}
-									className={`h-7 w-7 rounded-lg transition-all ${
-										status === 'success'
-											? 'border-emerald-500/40 bg-emerald-500/10'
+						{/* Right: Test Connection Icon Button & 3-Dots Dropdown */}
+						<div className="flex items-center gap-1 shrink-0">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => handleTestConnection(item)}
+								disabled={isTesting}
+								title={
+									isTesting
+										? 'Testing...'
+										: status === 'success'
+											? 'SSH Connection Verified'
 											: status === 'failed'
-												? 'border-rose-500/40 bg-rose-500/10'
-												: 'border-border/60 bg-muted/20 hover:bg-muted/60'
-									}`}
+												? 'SSH Connection Failed'
+												: 'Test Connection'
+								}
+								className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+							>
+								{isTesting ? (
+									<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+								) : status === 'success' ? (
+									<Check className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" />
+								) : status === 'failed' ? (
+									<AlertCircle className="w-3.5 h-3.5 text-rose-500 stroke-[2.5]" />
+								) : (
+									<ShieldCheck className="w-3.5 h-3.5" />
+								)}
+							</Button>
+
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0" />
+									}
 								>
-									{isTesting ? (
-										<RefreshCw className="w-3 h-3 animate-spin text-primary" />
-									) : status === 'success' ? (
-										<Check className="w-3 h-3 text-emerald-500 stroke-[2.5]" />
-									) : status === 'failed' ? (
-										<AlertCircle className="w-3 h-3 text-rose-500 stroke-[2.5]" />
-									) : (
-										<ShieldCheck className="w-3 h-3 text-emerald-500" />
-									)}
-								</Button>
-
-								<DropdownMenu>
-									<DropdownMenuTrigger
-										render={
-											<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0" />
-										}
+									<MoreVertical className="w-4 h-4" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => handleTestConnection(item)}
 									>
-										<MoreVertical className="w-4 h-4" />
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+										<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+										<span>Test Connection</span>
+									</DropdownMenuItem>
+
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => onSetupServer(item)}
+									>
+										<Activity className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+										<span>Audit Server</span>
+									</DropdownMenuItem>
+
+									{onOpenTerminal && (
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => handleTestConnection(item)}
+											onClick={() => onOpenTerminal(item)}
 										>
-											<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-											<span>Test Connection</span>
+											<Terminal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+											<span>Open Terminal</span>
 										</DropdownMenuItem>
+									)}
 
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => onSetupServer(item)}
-										>
-											<Activity className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-											<span>Audit Server</span>
-										</DropdownMenuItem>
+									<DropdownMenuSeparator className="my-1 border-border/50" />
 
-										{onOpenTerminal && (
-											<DropdownMenuItem
-												className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-												onClick={() => onOpenTerminal(item)}
-											>
-												<Terminal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-												<span>Open Terminal</span>
-											</DropdownMenuItem>
-										)}
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => onEditServer(item)}
+									>
+										<Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+										<span>Edit Server</span>
+									</DropdownMenuItem>
 
-										<DropdownMenuSeparator className="my-1 border-border/50" />
-
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => onEditServer(item)}
-										>
-											<Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-											<span>Edit Server</span>
-										</DropdownMenuItem>
-
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
-											onClick={() => onDeleteServer(item)}
-										>
-											<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-											<span>Delete Server</span>
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
-						</CardContent>
-					</Card>
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
+										onClick={() => onDeleteServer(item)}
+									>
+										<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+										<span>Delete Server</span>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					</div>
 				);
 			})}
 		</div>
