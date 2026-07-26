@@ -17,6 +17,26 @@ interface JoinTokensModalProps {
 	onClose: () => void;
 }
 
+function HighlightedJoinCommand({command}: {command: string}) {
+	if (!command || command.startsWith('Loading') || command === 'N/A') {
+		return <span className="text-muted-foreground">{command}</span>;
+	}
+
+	const tokenPrefix = 'docker swarm join --token ';
+	if (command.startsWith(tokenPrefix)) {
+		const tokenValue = command.slice(tokenPrefix.length);
+		return (
+			<span className="font-mono text-[11px] leading-relaxed">
+				<span className="text-emerald-500 font-bold">docker swarm join</span>{' '}
+				<span className="text-amber-500 font-medium">--token</span>{' '}
+				<span className="text-foreground font-medium break-all">{tokenValue}</span>
+			</span>
+		);
+	}
+
+	return <span className="font-mono text-[11px] text-foreground">{command}</span>;
+}
+
 export function JoinTokensModal({
 	isOpen,
 	tokens,
@@ -36,6 +56,18 @@ export function JoinTokensModal({
 		toast.success(`Copied ${type} join command to clipboard`);
 		setTimeout(() => setCopiedKey(null), 2000);
 	};
+
+	const workerCmd = isLoading
+		? 'Loading worker token...'
+		: tokens?.worker
+			? `docker swarm join --token ${tokens.worker}`
+			: 'N/A';
+
+	const managerCmd = isLoading
+		? 'Loading manager token...'
+		: tokens?.manager
+			? `docker swarm join --token ${tokens.manager}`
+			: 'N/A';
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -67,8 +99,8 @@ export function JoinTokensModal({
 								{copiedKey === 'worker' ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<div className="bg-muted/40 p-2.5 rounded-lg border border-border/60 font-mono text-[11px] break-all select-all text-muted-foreground">
-							{isLoading ? 'Loading worker token...' : tokens?.worker ? `docker swarm join --token ${tokens.worker}` : 'N/A'}
+						<div className="bg-zinc-950 dark:bg-zinc-950/80 p-3 rounded-xl border border-zinc-800 shadow-inner overflow-x-auto select-all">
+							<HighlightedJoinCommand command={workerCmd} />
 						</div>
 					</div>
 
@@ -86,8 +118,8 @@ export function JoinTokensModal({
 								{copiedKey === 'manager' ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<div className="bg-muted/40 p-2.5 rounded-lg border border-border/60 font-mono text-[11px] break-all select-all text-muted-foreground">
-							{isLoading ? 'Loading manager token...' : tokens?.manager ? `docker swarm join --token ${tokens.manager}` : 'N/A'}
+						<div className="bg-zinc-950 dark:bg-zinc-950/80 p-3 rounded-xl border border-zinc-800 shadow-inner overflow-x-auto select-all">
+							<HighlightedJoinCommand command={managerCmd} />
 						</div>
 					</div>
 
