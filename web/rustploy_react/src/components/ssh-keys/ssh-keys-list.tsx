@@ -30,8 +30,6 @@ export function SshKeysList({
 		setTimeout(() => setCopiedId(null), 2000);
 	};
 
-	const keysList = Array.isArray(keys) ? keys : [];
-
 	if (isLoading) {
 		return (
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -42,7 +40,7 @@ export function SshKeysList({
 		);
 	}
 
-	if (!keysList || keysList.length === 0) {
+	if (!keys || keys.length === 0) {
 		return (
 			<Card className="bg-card border-border p-12 text-center flex flex-col items-center justify-center rounded-xl my-4">
 				<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
@@ -58,7 +56,7 @@ export function SshKeysList({
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 w-full">
-			{keysList.map((item: any) => {
+			{keys.map((item: any) => {
 				const isCopied = copiedId === item.id;
 				const createdDate = item.created_at ? new Date(item.created_at * 1000).toLocaleDateString() : 'N/A';
 
