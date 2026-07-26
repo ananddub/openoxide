@@ -54,7 +54,7 @@ export function RemoteServersList({
 			setTestStateMap(prev => ({...prev, [server.id]: 'success'}));
 			toast.success(`SSH Connection verified for ${server.name}`);
 		} catch (err: any) {
-			setTestStateMap(prev => ({...prev, [server.id]: 'failed'});
+			setTestStateMap(prev => ({...prev, [server.id]: 'failed'}));
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConnId(null);
