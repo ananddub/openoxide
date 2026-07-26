@@ -50,10 +50,21 @@ export function CreateDestinationModal({
 	const testMutation = $api.useMutation('post', '/destinations/{id}/test');
 	const testRawMutation = $api.useMutation('post', '/destinations/test-raw');
 
+	const matchProvider = (raw?: string) => {
+		if (!raw) return 'aws';
+		const lower = raw.toLowerCase();
+		if (lower.includes('aws') || lower === 's3' || lower.includes('amazon')) return 'aws';
+		if (lower.includes('r2') || lower.includes('cloudflare')) return 'r2';
+		if (lower.includes('minio')) return 'minio';
+		if (lower.includes('digital') || lower.includes('ocean')) return 'digitalocean';
+		if (lower.includes('wasabi')) return 'wasabi';
+		return 'custom';
+	};
+
 	useEffect(() => {
 		if (editingDestination) {
 			setName(editingDestination.name || '');
-			setProvider(editingDestination.provider || 'aws');
+			setProvider(matchProvider(editingDestination.provider));
 			setBucket(editingDestination.bucket || '');
 			setRegion(editingDestination.region || 'us-east-1');
 			setEndpoint(editingDestination.endpoint || '');

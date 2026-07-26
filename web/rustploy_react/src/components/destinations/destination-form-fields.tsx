@@ -47,6 +47,10 @@ export function DestinationFormFields({
 }: DestinationFormFieldsProps) {
 	const [showSecret, setShowSecret] = useState(false);
 
+	const selectedProviderObj = providers.find(
+		p => p.id === provider || p.name.toLowerCase() === provider?.toLowerCase()
+	);
+
 	return (
 		<div className="flex flex-col gap-4 py-1">
 			{/* 1. Name Field (Single Full-Width Input) */}
@@ -130,11 +134,13 @@ export function DestinationFormFields({
 			{/* 7. Provider Preset (Single Full-Width Dropdown) */}
 			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Provider Preset</label>
-				<Select value={provider} onValueChange={onProviderChange}>
+				<Select value={selectedProviderObj?.id || provider || 'aws'} onValueChange={onProviderChange}>
 					<SelectTrigger className="!h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3 flex items-center justify-between">
-						<SelectValue placeholder="Select Provider" />
+						<SelectValue placeholder="Select Provider">
+							{selectedProviderObj?.name || provider || 'Select Provider'}
+						</SelectValue>
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="bg-card border-border text-xs z-50">
 						{providers.map(p => (
 							<SelectItem key={p.id} value={p.id} className="text-xs font-sans">
 								{p.name}
