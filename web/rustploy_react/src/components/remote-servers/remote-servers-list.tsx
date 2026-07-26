@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {Button} from '#/components/ui/button';
 import {Card, CardContent} from '#/components/ui/card';
 import {
@@ -11,16 +11,13 @@ import {
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {globalServerConnStore, ConnectionStatus} from '#/hooks/use-server-connection-store';
 import {
 	Server,
 	Plug,
-	Trash2,
-	Edit,
-	Terminal,
 	RefreshCw,
 	Check,
 	X,
-	Activity,
 	MoreVertical,
 } from 'lucide-react';
 
@@ -44,24 +41,28 @@ export function RemoteServersList({
 	onToggleStatus,
 	onOpenTerminal,
 }: RemoteServersListProps) {
-	const [testingConnId, setTestingConnId] = useState<number | null>(null);
-	const [testStateMap, setTestStateMap] = useState<Record<number, 'success' | 'failed'>>({});
+	const [, forceUpdate] = useState({});
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
+	useEffect(() => {
+		const unsubscribe = globalServerConnStore.subscribe(() => {
+			forceUpdate({});
+		});
+		return unsubscribe;
+	}, []);
+
 	const handleTestConnection = async (server: any) => {
-		setTestingConnId(server.id);
+		globalServerConnStore.setStatus(server.id, 'testing');
 		try {
 			await testConnMutation.mutateAsync({
 				params: {path: {id: server.id}},
 				body: {host_key_fingerprint: ''} as any,
 			});
-			setTestStateMap(prev => ({...prev, [server.id]: 'success'}));
+			globalServerConnStore.setStatus(server.id, 'success');
 			toast.success(`SSH Connection verified for ${server.name}`);
 		} catch (err: any) {
-			setTestStateMap(prev => ({...prev, [server.id]: 'failed'}));
+			globalServerConnStore.setStatus(server.id, 'failed');
 			toast.error(formatApiError(err));
-		} finally {
-			setTestingConnId(null);
 		}
 	};
 
@@ -92,11 +93,10 @@ export function RemoteServersList({
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-3 w-full">
 			{servers.map(item => {
-				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
-				const isTesting = testingConnId === item.id;
-				const status = testStateMap[item.id];
+				const status: ConnectionStatus = globalServerConnStore.getStatus(item.id);
+				const isTesting = status === 'testing';
 
-				// Status Dot Color: Gray by default, Amber while testing, Green on success, Red on failure
+				// Global Reactive Status Dot Color
 				const getDotColor = () => {
 					if (isTesting) return 'bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50';
 					if (status === 'success') return 'bg-emerald-500 shadow-sm shadow-emerald-500/50';
@@ -117,7 +117,7 @@ export function RemoteServersList({
 						className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm"
 					>
 						<CardContent className="p-3 flex items-center justify-between gap-2">
-							{/* Left: Dynamic Test Status Dot, Server Name & Host IP */}
+							{/* Left: Global Reactive Status Dot, Server Name & Host IP */}
 							<div className="flex items-center gap-2 min-w-0 flex-1">
 								<button
 									type="button"
@@ -136,7 +136,7 @@ export function RemoteServersList({
 								</div>
 							</div>
 
-							{/* Right: Plug Test Icon Button & Clean 3-Dots Dropdown (No duplicate Test item) */}
+							{/* Right: Plug Test Icon Button & Clean 3-Dots Dropdown */}
 							<div className="flex items-center gap-1 shrink-0">
 								<Button
 									variant="ghost"

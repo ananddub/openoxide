@@ -8,7 +8,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Key, Copy, Check, Eye, Trash2, FileKey2, MoreVertical} from 'lucide-react';
+import {Key, Copy, Check, FileKey2, MoreVertical} from 'lucide-react';
 import {toast} from 'sonner';
 
 interface SshKeysListProps {
