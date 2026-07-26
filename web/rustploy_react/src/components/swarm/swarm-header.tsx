@@ -28,22 +28,22 @@ export function SwarmHeader({
 	isSwarmActive,
 }: SwarmHeaderProps) {
 	return (
-		<div className="flex items-center justify-between gap-3 pb-3 border-b border-border/50">
-			{/* Left: Icon, Title & Host Engine Selector Tightly Grouped */}
-			<div className="flex items-center gap-3">
+		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+			{/* Left: Icon, Title & Full-Width Host Engine Selector */}
+			<div className="flex items-center gap-3 w-full sm:w-auto">
 				<div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
 					<Globe2 className="w-5 h-5" />
 				</div>
 
-				<div className="flex items-center gap-2.5">
+				<div className="flex items-center gap-2.5 w-full sm:w-auto">
 					<h1 className="text-base font-bold tracking-tight text-foreground whitespace-nowrap">
 						Docker Swarm
 					</h1>
 
-					{/* Host Engine Dropdown Select Tightly Attached to Title */}
-					<div className="w-40">
+					{/* Full Width Host Engine Dropdown Select */}
+					<div className="w-full sm:w-64">
 						<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
-							<SelectTrigger className="h-8 text-xs bg-card border-border/80 px-2.5">
+							<SelectTrigger className="!h-8 text-xs bg-card border-border/80 w-full px-3 flex items-center justify-between">
 								<div className="flex items-center gap-1.5 truncate">
 									<Server className="w-3.5 h-3.5 text-primary shrink-0" />
 									<SelectValue placeholder="Select Host" />
@@ -63,7 +63,7 @@ export function SwarmHeader({
 			</div>
 
 			{/* Right: Refresh & Join Tokens Popup Button */}
-			<div className="flex items-center gap-2 shrink-0">
+			<div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
 				<Button
 					variant="outline"
 					size="icon"
