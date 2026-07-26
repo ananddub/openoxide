@@ -48,7 +48,7 @@ export function CreateKeyModal({
 			if (!name) {
 				setName(`Generated-${type.toUpperCase()}-Key`);
 			}
-			toast.success(`Generated ${type.toUpperCase()} SSH key pair auto-filled!`);
+			toast.success(`Auto-generated ${type.toUpperCase()} SSH key pair!`);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -114,38 +114,35 @@ export function CreateKeyModal({
 						<span>Add SSH Key</span>
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Paste an existing SSH key pair or click one of the generation options below
+						Paste an existing SSH key pair or click an auto-generate option below
 					</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
-					{/* 2 Simple Plain Generation Options at the Very Top */}
-					<div className="flex items-center justify-between gap-2 p-2 bg-muted/40 rounded-md border border-border/60">
-						<span className="text-xs font-medium text-muted-foreground shrink-0 pl-1">Auto Generate:</span>
-						<div className="flex items-center gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => handleGeneratePair('ed25519')}
-								disabled={!!generatingType || submitting}
-								className="h-7 text-xs font-medium px-3"
-							>
-								{generatingType === 'ed25519' && <RefreshCw className="w-3 h-3 animate-spin mr-1" />}
-								Generate ED25519
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => handleGeneratePair('rsa')}
-								disabled={!!generatingType || submitting}
-								className="h-7 text-xs font-medium px-3"
-							>
-								{generatingType === 'rsa' && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" />}
-								Generate RSA 4096
-							</Button>
-						</div>
+					{/* Centered borderless Auto Generate Buttons at the Very Top */}
+					<div className="flex items-center justify-center gap-2 py-1">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => handleGeneratePair('ed25519')}
+							disabled={!!generatingType || submitting}
+							className="h-8 text-xs font-medium px-4"
+						>
+							{generatingType === 'ed25519' && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
+							Auto Generate ED25519
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => handleGeneratePair('rsa')}
+							disabled={!!generatingType || submitting}
+							className="h-8 text-xs font-medium px-4"
+						>
+							{generatingType === 'rsa' && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+							Auto Generate RSA 4096
+						</Button>
 					</div>
 
 					<div className="flex flex-col gap-1.5">
