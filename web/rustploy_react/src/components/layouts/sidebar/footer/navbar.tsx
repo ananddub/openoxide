@@ -144,9 +144,9 @@ export function UserNav({isCollapsed}: Props) {
 					</DropdownMenuLabel>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/settings/servers' as any})}>
+						onClick={() => navigate({to: '/remote-servers' as any})}>
 						<Monitor className="size-3.5 text-muted-foreground" />
-						Servers
+						Remote Servers
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"

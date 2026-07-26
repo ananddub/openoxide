@@ -38,7 +38,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 						if (!item.to) return false;
 						if (item.to === '/') return currentPath === '/';
 						if (item.to === '/settings') return currentPath === '/settings';
-						if (item.to === '/settings/server' || item.to === '/settings/servers') return currentPath === item.to;
+						if (item.to === '/settings/server') return currentPath === '/settings/server';
 						return currentPath.startsWith(item.to);
 					})();
 					return (

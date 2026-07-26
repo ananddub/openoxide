@@ -74,8 +74,7 @@ export const MENU: Menu = {
 	settings: [
 		{title: 'Web Server', icon: Cpu, to: '/settings/server'},
 		{title: 'Profile', icon: User, to: '/settings/profile'},
-		{title: 'Servers', icon: Server, to: '/settings/servers'},
-		{title: 'Remote Servers', icon: Cpu, to: '/remote-servers'},
+		{title: 'Remote Servers', icon: Server, to: '/remote-servers'},
 		{title: 'Users', icon: Users, to: '/settings/users'},
 		{title: 'Audit Logs', icon: FileText, to: '/settings/audit-logs'},
 		{title: 'SSH Keys', icon: Key, to: '/ssh-keys'},
