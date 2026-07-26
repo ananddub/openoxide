@@ -155,7 +155,7 @@ impl TerminalSocket {
                 }
             }
             TerminalSession::Remote { resize, .. } => {
-                if resize.send((cols, rows)).await.is_err() {
+                if resize.send((rows, cols)).await.is_err() {
                     tracing::warn!("Remote resize channel is closed");
                     emit_error(&socket, "remote terminal resize channel is closed");
                 }
