@@ -202,7 +202,7 @@ export function CreateKeyModal({
 					)}
 
 					<div className="flex items-center justify-end pt-3 border-t border-border/50">
-						<Button type="submit" disabled={submitting || !!generatingType} className="h-9 text-xs font-semibold px-6">
+						<Button type="submit" disabled={submitting || !!generatingType} className="h-10 text-xs sm:text-sm font-bold px-7 rounded-lg shadow-sm">
 							{submitting ? 'Saving SSH Key...' : 'Save SSH Key'}
 						</Button>
 					</div>
