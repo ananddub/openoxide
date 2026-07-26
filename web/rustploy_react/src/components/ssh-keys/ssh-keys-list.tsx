@@ -1,8 +1,7 @@
 import {useState} from 'react';
 import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
 import {Card, CardContent} from '#/components/ui/card';
-import {Key, Copy, Check, Eye, Trash2, ShieldCheck, Clock, FileKey2} from 'lucide-react';
+import {Key, Copy, Check, Eye, Trash2, FileKey2} from 'lucide-react';
 import {toast} from 'sonner';
 
 interface SshKeysListProps {
@@ -21,6 +20,10 @@ export function SshKeysList({
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 
 	const handleCopyPublicKey = (id: number, pubKey: string) => {
+		if (!pubKey) {
+			toast.error('No public key available to copy');
+			return;
+		}
 		navigator.clipboard.writeText(pubKey);
 		setCopiedId(id);
 		toast.success('Public SSH Key copied to clipboard');
@@ -29,9 +32,9 @@ export function SshKeysList({
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
 				{[1, 2].map(i => (
-					<div key={i} className="h-36 rounded-xl bg-card/60 animate-pulse border border-border/40" />
+					<div key={i} className="h-36 rounded-xl bg-muted/40 animate-pulse border border-border/60" />
 				))}
 			</div>
 		);
@@ -39,15 +42,15 @@ export function SshKeysList({
 
 	if (!keys || keys.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center p-12 border border-dashed border-border/60 rounded-2xl bg-card/40 my-6 text-center">
-				<div className="p-4 rounded-full bg-primary/10 mb-4 text-primary">
-					<FileKey2 className="w-8 h-8" />
+			<Card className="bg-card border-border p-12 text-center flex flex-col items-center justify-center rounded-xl my-4">
+				<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
+					<FileKey2 className="w-6 h-6" />
 				</div>
-				<h3 className="text-base font-bold text-foreground">No SSH Keys Found</h3>
+				<h3 className="text-sm font-bold text-foreground">No SSH Keys Found</h3>
 				<p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
-					You have not added any SSH key pairs yet. Add an existing key or generate a new ED25519/RSA key pair to get started.
+					Add an existing SSH key pair or generate a new key pair to authenticate remote servers.
 				</p>
-			</div>
+			</Card>
 		);
 	}
 
@@ -56,28 +59,21 @@ export function SshKeysList({
 			{keys.map((item: any) => {
 				const isCopied = copiedId === item.id;
 				const createdDate = item.created_at ? new Date(item.created_at * 1000).toLocaleDateString() : 'N/A';
-				const lastUsed = item.last_used_at ? new Date(item.last_used_at * 1000).toLocaleDateString() : 'Never';
 
 				return (
-					<Card key={item.id} className="bg-card border-border/70 hover:border-primary/40 transition-colors shadow-sm min-w-0 w-full overflow-hidden">
-						<CardContent className="p-5 flex flex-col justify-between gap-4 h-full min-w-0 w-full">
-							<div className="flex items-start justify-between gap-3 min-w-0 w-full">
-								<div className="flex items-start gap-3 min-w-0 flex-1">
-									<div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-primary shrink-0 mt-0.5">
-										<Key className="w-5 h-5" />
-									</div>
-									<div className="flex flex-col min-w-0 flex-1">
-										<div className="flex items-center gap-2 min-w-0">
-											<span className="text-sm font-bold text-foreground truncate min-w-0">{item.name}</span>
-											{item.has_private_key && (
-												<Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 px-1.5 py-0 shrink-0">
-													<ShieldCheck className="w-3 h-3 mr-1" /> Key Pair
-												</Badge>
-											)}
-										</div>
-										<p className="text-xs text-muted-foreground truncate min-w-0 mt-0.5">
-											{item.description || 'No description provided'}
-										</p>
+					<Card key={item.id} className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm">
+						<CardContent className="p-4 flex flex-col gap-3">
+							{/* Header: Key Icon, Name, Description & Delete */}
+							<div className="flex items-start justify-between gap-3 min-w-0">
+								<div className="flex items-center gap-2.5 min-w-0 flex-1">
+									<Key className="w-4 h-4 text-primary shrink-0" />
+									<div className="min-w-0 flex-1">
+										<h3 className="text-sm font-bold text-foreground truncate">{item.name}</h3>
+										{item.description && (
+											<p className="text-xs text-muted-foreground truncate mt-0.5 font-normal">
+												{item.description}
+											</p>
+										)}
 									</div>
 								</div>
 
@@ -85,43 +81,42 @@ export function SshKeysList({
 									variant="ghost"
 									size="icon"
 									onClick={() => onDeleteKey(item)}
-									className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+									title="Delete key"
+									className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
 								>
-									<Trash2 className="w-4 h-4" />
+									<Trash2 className="w-3.5 h-3.5" />
 								</Button>
 							</div>
 
-							<div className="bg-muted/30 px-3 py-2.5 rounded-lg border border-border/40 text-[11px] font-mono text-muted-foreground break-all line-clamp-2 max-w-full overflow-hidden min-w-0 w-full">
-								{item.public_key || 'No public key attached'}
+							{/* Public Key Single-Line Preview */}
+							<div className="bg-muted/40 px-3 py-2 rounded-lg border border-border/50 text-xs font-mono text-muted-foreground truncate">
+								{item.public_key || 'No public key preview'}
 							</div>
 
-							<div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs min-w-0 w-full">
-								<div className="flex items-center gap-2 text-[11px] text-muted-foreground truncate min-w-0">
-									<span className="flex items-center gap-1 shrink-0">
-										<Clock className="w-3 h-3" /> Used: {lastUsed}
-									</span>
-									<span className="shrink-0">•</span>
-									<span className="truncate">Added: {createdDate}</span>
-								</div>
+							{/* Bottom Action Bar */}
+							<div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs gap-2">
+								<span className="text-[11px] text-muted-foreground truncate">
+									Added: {createdDate}
+								</span>
 
-								<div className="flex items-center gap-2 shrink-0">
+								<div className="flex items-center gap-1.5 shrink-0">
 									<Button
 										variant="outline"
 										size="sm"
 										onClick={() => handleCopyPublicKey(item.id, item.public_key)}
-										className="h-8 text-xs font-medium gap-1 px-2.5"
+										className="h-8 text-xs font-medium gap-1.5 px-3"
 									>
-										{isCopied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-										{isCopied ? 'Copied' : 'Copy'}
+										{isCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+										{isCopied ? 'Copied' : 'Copy Key'}
 									</Button>
 									<Button
 										variant="secondary"
 										size="sm"
 										onClick={() => onViewKey(item)}
-										className="h-8 text-xs font-semibold gap-1 px-2.5"
+										className="h-8 text-xs font-medium gap-1.5 px-3"
 									>
-										<Eye className="w-3.5 h-3.5" />
-										View
+										<Eye className="w-3 h-3" />
+										View Details
 									</Button>
 								</div>
 							</div>
