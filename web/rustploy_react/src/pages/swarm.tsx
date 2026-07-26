@@ -6,7 +6,6 @@ import {formatApiError} from '#/api/utils';
 import {SwarmHeader} from '#/components/swarm/swarm-header';
 import {SwarmInfoCard} from '#/components/swarm/swarm-info-card';
 import {SwarmNodesList} from '#/components/swarm/swarm-nodes-list';
-import {JoinTokensModal} from '#/components/swarm/join-tokens-modal';
 
 export const Route = createFileRoute('/_app/swarm')({
 	component: SwarmPage,
@@ -14,7 +13,7 @@ export const Route = createFileRoute('/_app/swarm')({
 
 function SwarmPage() {
 	const [selectedServerId, setSelectedServerId] = useState<string>('local');
-	const [isTokensOpen, setIsTokensOpen] = useState(false);
+	const [isTokensExpanded, setIsTokensExpanded] = useState(false);
 	const [info, setInfo] = useState<any>(null);
 	const [tokens, setTokens] = useState<any>(null);
 	const [nodes, setNodes] = useState<any[]>([]);
@@ -145,14 +144,16 @@ function SwarmPage() {
 				selectedServerId={selectedServerId}
 				onSelectServer={setSelectedServerId}
 				onRefresh={loadSwarmData}
-				onToggleTokens={() => setIsTokensOpen(!isTokensOpen)}
+				onToggleTokens={() => setIsTokensExpanded(!isTokensExpanded)}
 				isRefreshing={isLoading}
 				isSwarmActive={isSwarmActive}
+				isTokensExpanded={isTokensExpanded}
 			/>
 
 			<SwarmInfoCard
 				info={info}
 				tokens={tokens}
+				isTokensExpanded={isTokensExpanded}
 				isLoading={isLoading}
 				onLeaveSwarm={handleLeaveSwarm}
 			/>
@@ -167,13 +168,6 @@ function SwarmPage() {
 					onRemoveNode={handleRemoveNode}
 				/>
 			)}
-
-			<JoinTokensModal
-				isOpen={isTokensOpen}
-				tokens={tokens}
-				isLoading={isLoading}
-				onClose={() => setIsTokensOpen(false)}
-			/>
 		</div>
 	);
 }

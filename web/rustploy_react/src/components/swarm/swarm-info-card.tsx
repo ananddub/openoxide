@@ -8,8 +8,6 @@ import {
 	ShieldAlert,
 	LogOut,
 	KeyRound,
-	ChevronDown,
-	ChevronUp,
 	Copy,
 	Check,
 } from 'lucide-react';
@@ -25,6 +23,7 @@ interface SwarmInfoCardProps {
 		managers?: number;
 	} | null;
 	tokens?: {worker?: string; manager?: string} | null;
+	isTokensExpanded?: boolean;
 	isLoading: boolean;
 	onLeaveSwarm: () => void;
 }
@@ -32,10 +31,10 @@ interface SwarmInfoCardProps {
 export function SwarmInfoCard({
 	info,
 	tokens,
+	isTokensExpanded = false,
 	isLoading,
 	onLeaveSwarm,
 }: SwarmInfoCardProps) {
-	const [isTokensExpanded, setIsTokensExpanded] = useState(false);
 	const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
 	const handleCopy = (type: 'worker' | 'manager', token?: string) => {
@@ -122,7 +121,7 @@ export function SwarmInfoCard({
 					</CardContent>
 				</Card>
 
-				{/* Node IP & Expand Join Tokens Toggle */}
+				{/* Clean Node IP & Role Card */}
 				<Card className="bg-card border-border rounded-xl p-3.5 shadow-sm">
 					<CardContent className="p-0 flex items-center justify-between">
 						<div className="min-w-0 flex-1">
@@ -131,31 +130,20 @@ export function SwarmInfoCard({
 								{info?.node_addr || '127.0.0.1'} ({info?.control_available ? 'Manager' : 'Worker'})
 							</h4>
 						</div>
-						<div className="flex items-center gap-1 shrink-0 ml-2">
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setIsTokensExpanded(!isTokensExpanded)}
-								title={isTokensExpanded ? 'Collapse Join Tokens' : 'Expand Join Tokens'}
-								className={`h-8 w-8 ${isTokensExpanded ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
-							>
-								{isTokensExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={onLeaveSwarm}
-								title="Leave Swarm Cluster"
-								className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-							>
-								<LogOut className="w-4 h-4" />
-							</Button>
-						</div>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={onLeaveSwarm}
+							title="Leave Swarm Cluster"
+							className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 shrink-0 ml-2"
+						>
+							<LogOut className="w-4 h-4" />
+						</Button>
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Expandable Join Tokens Section */}
+			{/* Expandable Join Tokens Section (Toggled from 3-dots header menu) */}
 			{isTokensExpanded && (
 				<Card className="bg-card border-border/80 rounded-xl p-4 shadow-sm flex flex-col gap-3">
 					<div className="flex items-center justify-between border-b border-border/40 pb-2">
@@ -163,14 +151,6 @@ export function SwarmInfoCard({
 							<KeyRound className="w-4 h-4 text-primary" />
 							Swarm Join Tokens
 						</span>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setIsTokensExpanded(false)}
-							className="h-6 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-						>
-							Collapse
-						</Button>
 					</div>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">

@@ -16,6 +16,7 @@ interface SwarmHeaderProps {
 	onToggleTokens: () => void;
 	isRefreshing: boolean;
 	isSwarmActive: boolean;
+	isTokensExpanded: boolean;
 }
 
 export function SwarmHeader({
@@ -26,6 +27,7 @@ export function SwarmHeader({
 	onToggleTokens,
 	isRefreshing,
 	isSwarmActive,
+	isTokensExpanded,
 }: SwarmHeaderProps) {
 	// Find currently selected server name for header pill display
 	const selectedServer = servers.find((s: any) => String(s.id) === selectedServerId);
@@ -111,10 +113,13 @@ export function SwarmHeader({
 
 						<DropdownMenuItem
 							disabled={!isSwarmActive}
-							className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+							className="flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 							onClick={onToggleTokens}
 						>
-							Join Tokens (Expand/Collapse)
+							<span>Join Tokens</span>
+							<span className="text-[10px] text-muted-foreground font-mono">
+								{isTokensExpanded ? 'Hide' : 'Show'}
+							</span>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
