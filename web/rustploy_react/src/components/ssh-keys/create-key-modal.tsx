@@ -12,7 +12,7 @@ import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Key, RefreshCw, Terminal, Copy, Check, Sparkles, Shield} from 'lucide-react';
+import {Key, RefreshCw, Terminal, Copy, Check} from 'lucide-react';
 
 interface CreateKeyModalProps {
 	isOpen: boolean;
@@ -104,50 +104,40 @@ export function CreateKeyModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && handleCloseModal()}>
-			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card border-border p-6 sm:p-8 shadow-2xl rounded-2xl">
-				<DialogHeader className="pb-4 border-b border-border/50">
-					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
-						<div className="p-2 rounded-xl bg-primary/10 text-primary">
-							<Key className="w-5 h-5 shrink-0" />
-						</div>
+			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
+				<DialogHeader className="pb-3 border-b border-border/50">
+					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+						<Key className="w-4 h-4 text-primary shrink-0" />
 						<span>Add SSH Key</span>
 					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground mt-1">
+					<DialogDescription className="text-xs text-muted-foreground">
 						Paste an existing SSH key pair or click an auto-generate option below
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
-					{/* Proportional Pro-Level Auto Generate Buttons */}
-					<div className="flex items-center justify-center gap-3.5 py-2">
+				<form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
+					{/* Centered Auto Generate Buttons */}
+					<div className="flex items-center justify-center gap-3 py-1">
 						<Button
 							type="button"
 							variant="outline"
-							size="default"
+							size="sm"
 							onClick={() => handleGeneratePair('ed25519')}
 							disabled={!!generatingType || submitting}
-							className="h-10 text-xs sm:text-sm font-semibold px-6 rounded-xl border-border bg-muted/20 hover:bg-muted/60 shadow-sm transition-all"
+							className="h-8 text-xs font-semibold px-4 rounded-md border-border"
 						>
-							{generatingType === 'ed25519' ? (
-								<RefreshCw className="w-4 h-4 animate-spin mr-2 text-primary" />
-							) : (
-								<Sparkles className="w-4 h-4 mr-2 text-amber-500 shrink-0" />
-							)}
+							{generatingType === 'ed25519' && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
 							Auto Generate ED25519
 						</Button>
 						<Button
 							type="button"
 							variant="outline"
-							size="default"
+							size="sm"
 							onClick={() => handleGeneratePair('rsa')}
 							disabled={!!generatingType || submitting}
-							className="h-10 text-xs sm:text-sm font-semibold px-6 rounded-xl border-border bg-muted/20 hover:bg-muted/60 shadow-sm transition-all"
+							className="h-8 text-xs font-semibold px-4 rounded-md border-border"
 						>
-							{generatingType === 'rsa' ? (
-								<RefreshCw className="w-4 h-4 animate-spin mr-2 text-primary" />
-							) : (
-								<Shield className="w-4 h-4 mr-2 text-sky-500 shrink-0" />
-							)}
+							{generatingType === 'rsa' && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
 							Auto Generate RSA 4096
 						</Button>
 					</div>
@@ -158,7 +148,7 @@ export function CreateKeyModal({
 							value={name}
 							onChange={e => setName(e.target.value)}
 							placeholder="e.g. Production Key"
-							className="h-10 text-xs bg-background border-border rounded-xl px-3.5"
+							className="h-9 text-xs bg-background border-border rounded-md px-3"
 						/>
 					</div>
 
@@ -168,7 +158,7 @@ export function CreateKeyModal({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							placeholder="Optional description for this key pair"
-							className="h-10 text-xs bg-background border-border rounded-xl px-3.5"
+							className="h-9 text-xs bg-background border-border rounded-md px-3"
 						/>
 					</div>
 
@@ -178,7 +168,7 @@ export function CreateKeyModal({
 							value={publicKey}
 							onChange={e => setPublicKey(e.target.value)}
 							placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@server"
-							className="h-24 text-xs font-mono bg-background border-border rounded-xl p-3.5 resize-none break-all leading-relaxed"
+							className="h-16 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
 						/>
 					</div>
 
@@ -188,31 +178,31 @@ export function CreateKeyModal({
 							value={privateKey}
 							onChange={e => setPrivateKey(e.target.value)}
 							placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..."
-							className="h-32 text-xs font-mono bg-background border-border rounded-xl p-3.5 resize-none break-all leading-relaxed"
+							className="h-24 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
 						/>
 					</div>
 
-					{/* Highlighted Server Authorization Shell Command */}
+					{/* Highlighted Server Authorization Command */}
 					{setupCommand && (
-						<div className="flex flex-col gap-2 pt-2 border-t border-border/40">
+						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
 							<div className="flex items-center justify-between">
-								<label className="text-xs font-semibold text-foreground flex items-center gap-2">
-									<Terminal className="w-4 h-4 text-primary shrink-0" />
+								<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+									<Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
 									<span>Authorize Key on Remote Server</span>
 								</label>
-								<Button type="button" variant="outline" size="sm" onClick={handleCopyCommand} className="h-8 text-xs font-semibold gap-1.5 px-3.5 rounded-lg">
+								<Button type="button" variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-medium gap-1.5 px-2.5">
 									{copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
 									{copiedCmd ? 'Copied' : 'Copy Command'}
 								</Button>
 							</div>
-							<div className="p-3.5 bg-zinc-950/90 border border-zinc-800 rounded-xl text-[11px] font-mono break-all select-all leading-relaxed max-h-24 overflow-y-auto text-zinc-200 shadow-inner">
+							<div className="p-2.5 bg-zinc-950/90 border border-zinc-800 rounded-md text-[11px] font-mono break-all select-all leading-relaxed max-h-20 overflow-y-auto text-zinc-200">
 								<span className="text-emerald-400 font-bold">mkdir</span> <span className="text-amber-400">-p</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">echo</span> <span className="text-sky-300">"{publicKey.trim()}"</span> <span className="text-amber-400">&gt;&gt;</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">700</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">600</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span>
 							</div>
 						</div>
 					)}
 
 					<div className="flex items-center justify-end pt-3 border-t border-border/50">
-						<Button type="submit" disabled={submitting || !!generatingType} className="h-10 text-xs sm:text-sm font-bold px-8 shadow-md rounded-xl w-full sm:w-auto">
+						<Button type="submit" disabled={submitting || !!generatingType} className="h-8 text-xs font-semibold px-5">
 							{submitting ? 'Saving SSH Key...' : 'Save SSH Key'}
 						</Button>
 					</div>
