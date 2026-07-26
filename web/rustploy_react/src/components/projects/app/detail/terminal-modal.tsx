@@ -1,13 +1,7 @@
 import {useEffect, useRef, useState, useMemo} from 'react';
 import {Terminal as TerminalIcon, X, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -19,35 +13,28 @@ interface TerminalModalProps {
 	onClose: () => void;
 }
 
-// Extract service names defined under 'services:' in docker-compose.yml content
 const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	if (!yamlStr) return [];
-	const lines = yamlStr.split('\n');
 	const services: string[] = [];
-	let inServicesBlock = false;
-	let servicesIndent = 0;
+	let inServices = false;
+	let indentLevel = 0;
 
-	for (const line of lines) {
+	for (const line of yamlStr.split('\n')) {
 		const trimmed = line.trimEnd();
 		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-
 		const indent = line.search(/\S/);
 		const text = trimmed.trim();
 
-		if (text === 'services:' || text.startsWith('services:')) {
-			inServicesBlock = true;
-			servicesIndent = indent;
+		if (text.startsWith('services:')) {
+			inServices = true;
+			indentLevel = indent;
 			continue;
 		}
-
-		if (inServicesBlock) {
-			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServicesBlock = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
-				const serviceName = text.slice(0, -1).trim();
-				if (serviceName && !services.includes(serviceName)) {
-					services.push(serviceName);
-				}
+		if (inServices) {
+			if (indent <= indentLevel && text.endsWith(':') && !text.startsWith('-')) inServices = false;
+			else if (indent > indentLevel && text.endsWith(':') && !text.includes(' ')) {
+				const srv = text.slice(0, -1).trim();
+				if (srv && !services.includes(srv)) services.push(srv);
 			}
 		}
 	}
@@ -61,14 +48,9 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 
-	// Extract available compose services if compose_file is present
-	const availableServices = useMemo(() => {
-		return extractServicesFromYaml(app?.compose_file);
-	}, [app?.compose_file]);
-
+	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
 
-	// Default container name: Top/first extracted service for Compose, 'app' fallback for Compose, or app_name for Application
 	const defaultContainer = useMemo(() => {
 		if (availableServices.length > 0) return availableServices[0];
 		if (isCompose) return 'app';
@@ -79,97 +61,72 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
 	useEffect(() => {
-		if (!open || !termRef.current) return;
+		if (!open) return;
+		let term: Terminal | null = null;
+		let fitAddon: FitAddon | null = null;
 
-		termRef.current.innerHTML = '';
-		const term = new Terminal({
-			cursorBlink: true,
-			lineHeight: 1.4,
-			convertEol: true,
-			fontSize: 13,
-			fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-			theme: {
-				background: '#09090b',
-				foreground: '#f4f4f5',
-				cursor: '#3b82f6',
-			},
-		});
-
-		const fitAddon = new FitAddon();
-		term.loadAddon(fitAddon);
-		term.open(termRef.current);
-		fitAddon.fit();
-		term.focus();
-
-		setStatus('connecting');
-		term.writeln(`\x1b[33mConnecting to container '${targetContainer}'...\x1b[0m\r\n`);
-
-		const socket = io('/terminal', {
-			path: '/socket.io',
-			transports: ['websocket', 'polling'],
-		});
-		socketRef.current = socket;
-
-		socket.on('connect', () => {
-			setStatus('connected');
-			term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
-			socket.emit('docker:start', {
-				container: targetContainer,
-				shell,
+		const timer = setTimeout(() => {
+			if (!termRef.current) return;
+			termRef.current.innerHTML = '';
+			term = new Terminal({
+				cursorBlink: true,
+				lineHeight: 1.4,
+				convertEol: true,
+				fontSize: 13,
+				fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+				theme: {background: '#09090b', foreground: '#f4f4f5', cursor: '#3b82f6'},
 			});
-		});
 
-		socket.on('started', (data: any) => {
-			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+			fitAddon = new FitAddon();
+			term.loadAddon(fitAddon);
+			term.open(termRef.current);
+			try { fitAddon.fit(); } catch (_) {}
 			term.focus();
-		});
 
-		socket.on('output', (evt: {stream: string; data: string}) => {
-			if (evt?.data) {
-				term.write(evt.data);
-			}
-		});
+			setStatus('connecting');
+			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-		socket.on('error', (err: {message: string} | string) => {
-			const msg = typeof err === 'string' ? err : err?.message || 'Terminal error';
-			term.writeln(`\r\n\x1b[31mError: ${msg}\x1b[0m\r\n`);
-			setStatus('error');
-		});
+			const socket = io(window.location.origin, {path: '/socket.io', transports: ['websocket', 'polling']});
+			socketRef.current = socket;
 
-		socket.on('exit', (evt: {code: number}) => {
-			term.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
-			setStatus('disconnected');
-		});
+			socket.on('connect', () => {
+				setStatus('connected');
+				term?.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
+				socket.emit('docker:start', {container: targetContainer, shell});
+			});
+			socket.on('started', (data: any) => {
+				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+				term?.focus();
+			});
+			socket.on('output', (evt: {data: string}) => { if (evt?.data) term?.write(evt.data); });
+			socket.on('error', (err: any) => {
+				term?.writeln(`\r\n\x1b[31mError: ${typeof err === 'string' ? err : err?.message || 'Error'}\x1b[0m\r\n`);
+				setStatus('error');
+			});
+			socket.on('exit', (evt: {code: number}) => {
+				term?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
+				setStatus('disconnected');
+			});
+			socket.on('disconnect', () => {
+				setStatus('disconnected');
+				term?.writeln('\r\n\x1b[31mSocket disconnected.\x1b[0m\r\n');
+			});
 
-		socket.on('disconnect', () => {
-			setStatus('disconnected');
-			term.writeln('\r\n\x1b[31mSocket disconnected.\x1b[0m\r\n');
-		});
+			term.onData(data => { if (socket.connected) socket.emit('input', {data}); });
+			term.onResize(({cols, rows}) => { if (socket.connected) socket.emit('resize', {cols, rows}); });
+		}, 100);
 
-		term.onData(data => {
-			if (socket.connected) {
-				socket.emit('input', {data});
-			}
-		});
-
-		term.onResize(({cols, rows}) => {
-			if (socket.connected) {
-				socket.emit('resize', {cols, rows});
-			}
-		});
-
-		const handleResize = () => {
-			fitAddon.fit();
-		};
+		const handleResize = () => { try { fitAddon?.fit(); } catch (_) {} };
 		window.addEventListener('resize', handleResize);
 
 		return () => {
+			clearTimeout(timer);
 			window.removeEventListener('resize', handleResize);
-			if (socket.connected) {
-				socket.emit('stop');
-				socket.disconnect();
+			if (socketRef.current) {
+				socketRef.current.emit('stop');
+				socketRef.current.disconnect();
 			}
-			term.dispose();
+			if (term) term.dispose();
 		};
 	}, [open, shell, targetContainer]);
 
@@ -177,30 +134,20 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 
 	return (
 		<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
-				{/* Modal Header */}
-				<div className="flex items-center justify-between border-b border-border p-4 bg-card">
+			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] h-[550px] flex flex-col overflow-hidden animate-in fade-in duration-150">
+				<div className="flex items-center justify-between border-b border-border p-4 bg-card shrink-0">
 					<div className="flex items-center gap-3">
 						<TerminalIcon className="w-5 h-5 text-primary" />
 						<div>
 							<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
 								Docker Terminal
-								<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-									status === 'connected'
-										? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
-										: status === 'connecting'
-										? 'text-amber-500 bg-amber-500/10 border-amber-500/20 animate-pulse'
-										: 'text-rose-500 bg-rose-500/10 border-rose-500/20'
-								}`}>
-									{status}
-								</span>
+								<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${status === 'connected' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : status === 'connecting' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20 animate-pulse' : 'text-rose-500 bg-rose-500/10 border-rose-500/20'}`}>{status}</span>
 							</h3>
 							<p className="text-[11px] text-muted-foreground font-mono">{targetContainer}</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-3">
-						{/* Shadcn Premium Automatic Service Dropdown Selector */}
 						{isCompose && (
 							<Select value={targetContainer} onValueChange={v => setSelectedService(v)}>
 								<SelectTrigger size="sm" className="h-8 text-xs font-bold bg-muted/50 border-border hover:bg-muted/80">
@@ -209,41 +156,21 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 								</SelectTrigger>
 								<SelectContent>
 									{servicesList.map(service => (
-										<SelectItem key={service} value={service}>
-											<span className="font-semibold">Service: {service}</span>
-										</SelectItem>
+										<SelectItem key={service} value={service}><span className="font-semibold">Service: {service}</span></SelectItem>
 									))}
 								</SelectContent>
 							</Select>
 						)}
-
-						{/* Shell Switcher */}
 						<div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
-							<button
-								type="button"
-								onClick={() => setShell('sh')}
-								className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${shell === 'sh' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-							>
-								/bin/sh
-							</button>
-							<button
-								type="button"
-								onClick={() => setShell('bash')}
-								className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${shell === 'bash' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-							>
-								bash
-							</button>
+							<button type="button" onClick={() => setShell('sh')} className={`px-2.5 py-1 text-xs font-semibold rounded-md ${shell === 'sh' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>/bin/sh</button>
+							<button type="button" onClick={() => setShell('bash')} className={`px-2.5 py-1 text-xs font-semibold rounded-md ${shell === 'bash' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>bash</button>
 						</div>
-
-						<Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-							<X className="w-4 h-4" />
-						</Button>
+						<Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></Button>
 					</div>
 				</div>
 
-				{/* Terminal Output Container */}
-				<div className="flex-1 bg-[#09090b] p-3 min-h-[400px] overflow-hidden">
-					<div ref={termRef} className="w-full h-full" />
+				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative">
+					<div ref={termRef} className="absolute inset-2" />
 				</div>
 			</div>
 		</div>

@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_app/docker')({
 	component: DockerPage,
 });
 
-export function DockerPage() {
+function DockerPage() {
 	const [activeModal, setActiveModal] = useState<{
 		type: 'logs' | 'config' | 'mount' | 'network';
 		container: GlobalContainerItem;

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_app/destinations')({
 	component: DestinationsPage,
 });
 
-export function DestinationsPage() {
+function DestinationsPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingDestination, setEditingDestination] = useState<any | null>(null);
 
