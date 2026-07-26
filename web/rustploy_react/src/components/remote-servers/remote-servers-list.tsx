@@ -16,6 +16,7 @@ import {
 	Copy,
 	Check,
 	Activity,
+	AlertCircle,
 } from 'lucide-react';
 
 interface RemoteServersListProps {
@@ -40,6 +41,7 @@ export function RemoteServersList({
 	onOpenTerminal,
 }: RemoteServersListProps) {
 	const [testingConnId, setTestingConnId] = useState<number | null>(null);
+	const [testStateMap, setTestStateMap] = useState<Record<number, 'success' | 'failed'>>({});
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
@@ -50,8 +52,10 @@ export function RemoteServersList({
 				params: {path: {id: server.id}},
 				body: {host_key_fingerprint: ''} as any,
 			});
+			setTestStateMap(prev => ({...prev, [server.id]: 'success'}));
 			toast.success(`SSH Connection verified for ${server.name}`);
 		} catch (err: any) {
+			setTestStateMap(prev => ({...prev, [server.id]: 'failed'}));
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConnId(null);
@@ -95,6 +99,7 @@ export function RemoteServersList({
 				const attachedKey = sshKeys.find((k: any) => k.id === item.ssh_key_id);
 				const isActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 				const isTesting = testingConnId === item.id;
+				const status = testStateMap[item.id];
 
 				return (
 					<Card key={item.id} className="bg-card border-border shadow-sm hover:border-border/80 transition-all rounded-xl">
@@ -149,16 +154,54 @@ export function RemoteServersList({
 							{/* Actions Row */}
 							<div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
 								<div className="flex items-center gap-1.5">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => handleTestConnection(item)}
-										disabled={isTesting}
-										className="h-8 text-xs font-medium gap-1.5 px-3"
-									>
-										{isTesting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3 text-emerald-500" />}
-										{isTesting ? 'Testing...' : 'Test Connection'}
-									</Button>
+									{(() => {
+										if (isTesting) {
+											return (
+												<Button variant="outline" size="sm" disabled className="h-8 text-xs font-medium gap-1.5 px-3">
+													<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+													Testing...
+												</Button>
+											);
+										}
+										if (status === 'success') {
+											return (
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleTestConnection(item)}
+													className="h-8 text-xs font-semibold gap-1.5 px-3 border-emerald-500/40 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10"
+												>
+													<Check className="w-3.5 h-3.5 text-emerald-500" />
+													Connected
+												</Button>
+											);
+										}
+										if (status === 'failed') {
+											return (
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleTestConnection(item)}
+													className="h-8 text-xs font-semibold gap-1.5 px-3 border-rose-500/40 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10"
+												>
+													<AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+													Failed
+												</Button>
+											);
+										}
+										return (
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => handleTestConnection(item)}
+												className="h-8 text-xs font-medium gap-1.5 px-3"
+											>
+												<ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+												Test Connection
+											</Button>
+										);
+									})()}
+
 									<Button
 										variant="ghost"
 										size="sm"

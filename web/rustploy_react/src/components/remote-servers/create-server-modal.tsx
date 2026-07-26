@@ -11,7 +11,7 @@ import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Server, ShieldCheck, RefreshCw, CheckCircle2, XCircle} from 'lucide-react';
+import {Server, ShieldCheck, RefreshCw, Check, AlertCircle} from 'lucide-react';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -157,24 +157,56 @@ export function CreateServerModal({
 					/>
 
 					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-1">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleTestConnection}
-							disabled={testingConn || submitting}
-							className="h-9 text-xs font-semibold gap-2 border-border/80 hover:bg-muted/80"
-						>
-							{testingConn ? (
-								<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
-							) : testResult === 'success' ? (
-								<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-							) : testResult === 'failed' ? (
-								<XCircle className="w-4 h-4 text-rose-500 shrink-0" />
-							) : (
-								<ShieldCheck className="w-3.5 h-3.5 text-primary" />
-							)}
-							{testingConn ? 'Testing...' : 'Test Connection'}
-						</Button>
+						{(() => {
+							if (testingConn) {
+								return (
+									<Button type="button" variant="outline" disabled className="h-9 text-xs font-semibold gap-2 border-border/80">
+										<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+										Testing SSH...
+									</Button>
+								);
+							}
+							if (testResult === 'success') {
+								return (
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handleTestConnection}
+										disabled={submitting}
+										className="h-9 text-xs font-semibold gap-2 border-emerald-500/40 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10"
+									>
+										<Check className="w-4 h-4 text-emerald-500 shrink-0" />
+										Connected
+									</Button>
+								);
+							}
+							if (testResult === 'failed') {
+								return (
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handleTestConnection}
+										disabled={submitting}
+										className="h-9 text-xs font-semibold gap-2 border-rose-500/40 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10"
+									>
+										<AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+										Failed
+									</Button>
+								);
+							}
+							return (
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleTestConnection}
+									disabled={submitting}
+									className="h-9 text-xs font-semibold gap-2 border-border/80 hover:bg-muted/80"
+								>
+									<ShieldCheck className="w-3.5 h-3.5 text-primary" />
+									Test Connection
+								</Button>
+							);
+						})()}
 
 						<div className="flex items-center gap-2">
 							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs font-semibold px-4">
