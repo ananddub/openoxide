@@ -162,7 +162,13 @@ export function CreateServerModal({
 							variant="outline"
 							onClick={handleTestConnection}
 							disabled={testingConn || submitting}
-							className="h-9 text-xs font-semibold gap-2 border-border/80 hover:bg-muted/80"
+							className={`h-9 text-xs font-semibold gap-2 transition-all ${
+								testResult === 'success'
+									? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+									: testResult === 'failed'
+										? 'border-rose-500/50 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
+										: 'border-border/80 hover:bg-muted/80'
+							}`}
 						>
 							{testingConn ? (
 								<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
@@ -173,7 +179,7 @@ export function CreateServerModal({
 							) : (
 								<ShieldCheck className="w-3.5 h-3.5 text-primary" />
 							)}
-							{testingConn ? 'Testing...' : 'Test Connection'}
+							{testingConn ? 'Testing SSH...' : 'Test Connection'}
 						</Button>
 
 						<div className="flex items-center gap-2">

@@ -160,7 +160,13 @@ export function RemoteServersList({
 										size="sm"
 										onClick={() => handleTestConnection(item)}
 										disabled={isTesting}
-										className="h-8 text-xs font-medium gap-1.5 px-3"
+										className={`h-8 text-xs font-medium gap-1.5 px-3 transition-all ${
+											status === 'success'
+												? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+												: status === 'failed'
+													? 'border-rose-500/50 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
+													: ''
+										}`}
 									>
 										{isTesting ? (
 											<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
