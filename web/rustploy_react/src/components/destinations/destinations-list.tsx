@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {HardDrive, ShieldCheck, Trash2, Edit2, Globe, RefreshCw, CheckCircle2} from 'lucide-react';
+import {HardDrive, ShieldCheck, Trash2, Edit2, Globe, RefreshCw, CheckCircle2, Plug} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 
@@ -109,7 +109,7 @@ export function DestinationsList({
 							disabled={testingId === d.id}
 							className="h-8 text-xs font-semibold flex items-center gap-1.5"
 						>
-							<ShieldCheck className="w-3.5 h-3.5 text-primary" />
+							<Plug className="w-3.5 h-3.5 text-primary" />
 							{testingId === d.id ? 'Testing...' : 'Test'}
 						</Button>
 

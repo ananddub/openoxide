@@ -10,7 +10,7 @@ import {Button} from '#/components/ui/button';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Terminal, ShieldCheck, Cpu, RefreshCw, CheckCircle2} from 'lucide-react';
+import {Terminal, ShieldCheck, Cpu, RefreshCw, CheckCircle2, Plug} from 'lucide-react';
 
 interface SetupServerModalProps {
 	isOpen: boolean;
@@ -94,7 +94,7 @@ export function SetupServerModal({
 							disabled={testingConn}
 							className="h-8 text-xs font-semibold gap-1.5"
 						>
-							{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+							{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plug className="w-3.5 h-3.5 text-primary" />}
 							{testingConn ? 'Testing...' : 'Test Connection'}
 						</Button>
 					</div>

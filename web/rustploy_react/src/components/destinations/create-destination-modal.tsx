@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import {HardDrive, RefreshCw, ShieldCheck} from 'lucide-react';
+import {HardDrive, RefreshCw, ShieldCheck, Plug} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Dialog,
@@ -173,7 +173,7 @@ export function CreateDestinationModal({isOpen, onClose, onSuccess, editingDesti
 							disabled={testing}
 							className="h-9 text-xs font-medium flex items-center gap-1.5"
 						>
-							{testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />} Test Connection
+							{testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plug className="w-3.5 h-3.5 text-primary" />} Test Connection
 						</Button>
 						<Button type="submit" disabled={submitting} className="h-9 text-xs font-semibold px-5">
 							{submitting ? 'Saving...' : editingDestination ? 'Save' : 'Create'}
