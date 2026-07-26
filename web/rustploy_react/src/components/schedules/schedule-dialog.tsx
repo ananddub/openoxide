@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
@@ -8,6 +8,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/c
 import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
+import {$api} from '#/api/query';
 
 interface ScheduleDialogProps {
 	isOpen: boolean;
@@ -40,6 +41,37 @@ export function ScheduleDialog({
 	const [targetId, setTargetId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Fetch projects to list application names dynamically
+	const {data: projectsList} = $api.useQuery('get', '/projects') as any;
+
+	const allApplications = useMemo(() => {
+		if (!Array.isArray(projectsList)) return [];
+		const apps: { id: number; name: string }[] = [];
+		(projectsList as any[]).forEach((proj: any) => {
+			if (proj.applications) {
+				proj.applications.forEach((app: any) => {
+					apps.push({
+						id: app.id || app.application_id,
+						name: app.name || app.app_name || `App #${app.id}`,
+					});
+				});
+			}
+			if (proj.environments) {
+				proj.environments.forEach((env: any) => {
+					if (env.applications) {
+						env.applications.forEach((app: any) => {
+							apps.push({
+								id: app.id || app.application_id,
+								name: app.name || app.app_name || `App #${app.id}`,
+							});
+						});
+					}
+				});
+			}
+		});
+		return apps;
+	}, [projectsList]);
+
 	useEffect(() => {
 		if (editingSchedule) {
 			setName(editingSchedule.name);
@@ -68,7 +100,7 @@ export function ScheduleDialog({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!name.trim() || !cronExpression.trim() || !command.trim() || !targetId) {
-			toast.error('Please fill in all required fields including Target');
+			toast.error('Please fill in all required fields including Target Item');
 			return;
 		}
 
@@ -146,8 +178,13 @@ export function ScheduleDialog({
 						<div className="space-y-1.5 w-full">
 							<Label className="text-xs font-semibold">Target Type *</Label>
 							<Select value={targetType} onValueChange={val => {
-								setTargetType(val as any);
-								setTargetId(val === 'SERVER' && servers[0]?.id ? String(servers[0].id) : '');
+								const newType = val as 'SERVER' | 'APPLICATION';
+								setTargetType(newType);
+								if (newType === 'SERVER') {
+									setTargetId(servers[0]?.id ? String(servers[0].id) : '');
+								} else {
+									setTargetId(allApplications[0]?.id ? String(allApplications[0].id) : '');
+								}
 							}}>
 								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
 								<SelectContent className="bg-card border-border">
@@ -166,7 +203,22 @@ export function ScheduleDialog({
 									</SelectContent>
 								</Select>
 							) : (
-								<Input type="number" placeholder="App ID" value={targetId} onChange={e => setTargetId(e.target.value)} required className="h-9 text-xs w-full" />
+								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
+									<SelectTrigger className="!h-9 text-xs w-full"><SelectValue placeholder="Select application" /></SelectTrigger>
+									<SelectContent className="bg-card border-border">
+										{allApplications.length > 0 ? (
+											allApplications.map(app => (
+												<SelectItem key={app.id} value={String(app.id)} className="text-xs">
+													{app.name}
+												</SelectItem>
+											))
+										) : (
+											<SelectItem value={targetId || '1'} className="text-xs">
+												{targetId ? `Application #${targetId}` : 'No applications found'}
+											</SelectItem>
+										)}
+									</SelectContent>
+								</Select>
 							)}
 						</div>
 					</div>
