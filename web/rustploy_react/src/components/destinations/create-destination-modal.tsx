@@ -58,7 +58,7 @@ export function CreateDestinationModal({
 			setRegion(editingDestination.region || 'us-east-1');
 			setEndpoint(editingDestination.endpoint || '');
 			setAccessKey(editingDestination.access_key || '');
-			setSecretKey('');
+			setSecretKey(editingDestination.secret_access_key || editingDestination.secret_key || '');
 		} else {
 			setName('');
 			setProvider('aws');

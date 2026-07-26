@@ -1,4 +1,6 @@
+import {useState} from 'react';
 import {Input} from '#/components/ui/input';
+import {Button} from '#/components/ui/button';
 import {
 	Select,
 	SelectContent,
@@ -6,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {Eye, EyeOff} from 'lucide-react';
 
 interface DestinationFormFieldsProps {
 	name: string;
@@ -42,6 +45,8 @@ export function DestinationFormFields({
 	setSecretKey,
 	providers,
 }: DestinationFormFieldsProps) {
+	const [showSecret, setShowSecret] = useState(false);
+
 	return (
 		<div className="flex flex-col gap-4 py-1">
 			{/* 1. Name Field (Single Full-Width Input) */}
@@ -66,16 +71,27 @@ export function DestinationFormFields({
 				/>
 			</div>
 
-			{/* 3. Secret Access Key (Single Full-Width Input) */}
+			{/* 3. Secret Access Key with Show/Hide Toggle */}
 			<div className="flex flex-col gap-1.5">
 				<label className="text-xs font-semibold text-foreground">Secret Access Key</label>
-				<Input
-					type="password"
-					value={secretKey}
-					onChange={e => setSecretKey(e.target.value)}
-					placeholder="Secret Access Key"
-					className="h-10 text-xs font-mono bg-background border-border rounded-md px-3 w-full"
-				/>
+				<div className="relative flex items-center w-full">
+					<Input
+						type={showSecret ? 'text' : 'password'}
+						value={secretKey}
+						onChange={e => setSecretKey(e.target.value)}
+						placeholder="Secret Access Key"
+						className="h-10 text-xs font-mono bg-background border-border rounded-md pl-3 pr-10 w-full"
+					/>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={() => setShowSecret(!showSecret)}
+						className="absolute right-1 h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+					>
+						{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+					</Button>
+				</div>
 			</div>
 
 			{/* 4. Bucket Name (Single Full-Width Input) */}
