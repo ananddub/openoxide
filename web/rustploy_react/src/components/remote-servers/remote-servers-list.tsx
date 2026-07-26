@@ -11,7 +11,7 @@ import {
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {globalServerConnStore, type ConnectionStatus} from '#/hooks/use-server-connection-store';
+import {globalServerConnStore} from '#/hooks/use-server-connection-store';
 import {
 	Server,
 	Plug,
@@ -93,7 +93,7 @@ export function RemoteServersList({
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-3 w-full">
 			{servers.map(item => {
-				const status: ConnectionStatus = globalServerConnStore.getStatus(item.id);
+				const status = globalServerConnStore.getStatus(item.id);
 				const isTesting = status === 'testing';
 
 				// Global Reactive Status Dot Color
