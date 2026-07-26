@@ -25,11 +25,11 @@ type NavMenuGroupProps = {
 	currentPath: string;
 };
 
-// Renders a labeled group of nav items with full-width active selection background color.
+// Renders a labeled group of nav items with 100% wall-to-wall (edge-to-edge, unrounded) active selection background color.
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 	return (
-		<SidebarGroup className="py-1 px-1.5">
-			<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-3 mb-1 group-data-[collapsible=icon]:hidden">
+		<SidebarGroup className="py-1 px-0">
+			<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-4 mb-1 group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-0.5 w-full">
@@ -47,7 +47,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 								render={<Link to={item.to as any} />}
 								isActive={isActive}
 								tooltip={item.title}
-								className={`h-8.5 w-full text-xs font-medium rounded-md transition-all px-3 flex items-center gap-2.5 ${
+								className={`h-8.5 w-full text-xs font-medium rounded-none transition-all px-4 flex items-center justify-start gap-2.5 ${
 									isActive
 										? 'bg-primary/10 text-primary font-semibold'
 										: 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -67,7 +67,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 // Thin horizontal rule with consistent horizontal padding between nav groups.
 function SidebarSeparator() {
 	return (
-		<div className="px-3.5 my-1">
+		<div className="px-4 my-1">
 			<Separator className="bg-border/30" />
 		</div>
 	);
@@ -87,9 +87,9 @@ export function AppSidebar() {
 				</SidebarHeader>
 
 				{/* Navigation Content */}
-				<SidebarContent className="gap-1 px-1 py-2">
+				<SidebarContent className="gap-1 px-0 py-2">
 					{/* Quick Search */}
-					<div className="px-2">
+					<div className="px-3">
 						<SearchButton />
 					</div>
 
@@ -112,8 +112,8 @@ export function AppSidebar() {
 					<SidebarSeparator />
 
 					{/* Extra / Help Group */}
-					<SidebarGroup className="py-1 px-1.5 group-data-[collapsible=icon]:hidden">
-						<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-3 mb-1">
+					<SidebarGroup className="py-1 px-0 group-data-[collapsible=icon]:hidden">
+						<SidebarGroupLabel className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase px-4 mb-1">
 							Extra
 						</SidebarGroupLabel>
 						<SidebarMenu className="gap-0.5 w-full">
@@ -128,7 +128,7 @@ export function AppSidebar() {
 											/>
 										}
 										tooltip={item.title}
-										className="h-8.5 w-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-md px-3 flex items-center gap-2.5 transition-all"
+										className="h-8.5 w-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-none px-4 flex items-center justify-start gap-2.5 transition-all"
 									>
 										<item.icon className="size-4 text-muted-foreground/70" />
 										<span>{item.title}</span>
