@@ -11,7 +11,7 @@ import {
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {globalServerConnStore, ConnectionStatus} from '#/hooks/use-server-connection-store';
+import {globalServerConnStore, type ConnectionStatus} from '#/hooks/use-server-connection-store';
 import {
 	Server,
 	Plug,
