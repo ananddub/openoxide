@@ -1,4 +1,5 @@
 import {useState, useEffect, useCallback} from 'react';
+import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -7,7 +8,11 @@ import {SwarmInfoCard} from '#/components/swarm/swarm-info-card';
 import {SwarmNodesList} from '#/components/swarm/swarm-nodes-list';
 import {JoinTokensModal} from '#/components/swarm/join-tokens-modal';
 
-export default function SwarmPage() {
+export const Route = createFileRoute('/_app/swarm')({
+	component: SwarmPage,
+});
+
+function SwarmPage() {
 	const [selectedServerId, setSelectedServerId] = useState<string>('local');
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
 	const [info, setInfo] = useState<any>(null);
