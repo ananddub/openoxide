@@ -19,11 +19,13 @@ function SshKeysPage() {
 	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<any | null>(null);
 
 	const {
-		data: sshKeys = [],
+		data: rawSshKeys = [],
 		isLoading,
 		refetch,
 		isRefetching,
 	} = $api.useQuery('get', '/ssh-keys');
+
+	const sshKeys = Array.isArray(rawSshKeys) ? rawSshKeys : (rawSshKeys as any)?.data || (rawSshKeys as any)?.keys || [];
 
 	return (
 		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
