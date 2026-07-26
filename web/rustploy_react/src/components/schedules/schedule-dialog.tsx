@@ -157,7 +157,7 @@ export function ScheduleDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg bg-card border-border p-6 rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="sm:max-w-2xl bg-card border-border p-6.5 rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/40 pb-4">
 					<div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
 						<Clock className="size-5" />

@@ -58,7 +58,7 @@ export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: C
 
 	return (
 		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in duration-150">
+			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in duration-150">
 				<div className="p-4 border-b border-border/40 flex items-center justify-between bg-muted/20">
 					<div className="flex items-center gap-2.5">
 						<div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
