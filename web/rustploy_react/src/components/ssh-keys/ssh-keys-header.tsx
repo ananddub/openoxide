@@ -1,16 +1,14 @@
 import {Button} from '#/components/ui/button';
-import {KeyRound, Plus, Sparkles, RefreshCw} from 'lucide-react';
+import {KeyRound, Plus, RefreshCw} from 'lucide-react';
 
 interface SshKeysHeaderProps {
 	onOpenAdd: () => void;
-	onOpenGenerate: () => void;
 	onRefresh: () => void;
 	isRefetching: boolean;
 }
 
 export function SshKeysHeader({
 	onOpenAdd,
-	onOpenGenerate,
 	onRefresh,
 	isRefetching,
 }: SshKeysHeaderProps) {
@@ -36,16 +34,6 @@ export function SshKeysHeader({
 				>
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
 					Reload
-				</Button>
-
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={onOpenGenerate}
-					className="h-9 text-xs font-semibold gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-				>
-					<Sparkles className="w-3.5 h-3.5 text-primary" />
-					Generate Pair
 				</Button>
 
 				<Button

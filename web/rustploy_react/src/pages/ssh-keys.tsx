@@ -4,7 +4,6 @@ import {$api} from '#/api/query';
 import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
 import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
-import {GenerateKeyModal} from '#/components/ssh-keys/generate-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
@@ -14,7 +13,6 @@ export const Route = createFileRoute('/_app/ssh-keys')({
 
 function SshKeysPage() {
 	const [isAddOpen, setIsAddOpen] = useState(false);
-	const [isGenerateOpen, setIsGenerateOpen] = useState(false);
 	const [selectedKeyForView, setSelectedKeyForView] = useState<any | null>(null);
 	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<any | null>(null);
 
@@ -31,7 +29,6 @@ function SshKeysPage() {
 		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
 			<SshKeysHeader
 				onOpenAdd={() => setIsAddOpen(true)}
-				onOpenGenerate={() => setIsGenerateOpen(true)}
 				onRefresh={refetch}
 				isRefetching={isRefetching}
 			/>
@@ -46,12 +43,6 @@ function SshKeysPage() {
 			<CreateKeyModal
 				isOpen={isAddOpen}
 				onClose={() => setIsAddOpen(false)}
-				onSuccess={refetch}
-			/>
-
-			<GenerateKeyModal
-				isOpen={isGenerateOpen}
-				onClose={() => setIsGenerateOpen(false)}
 				onSuccess={refetch}
 			/>
 
