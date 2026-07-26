@@ -19,6 +19,10 @@ const config = defineConfig({
 		viteReact(),
 	],
 	server: {
+		host: '0.0.0.0',
+		port: 3001,
+		strictPort: false,
+		allowedHosts: true,
 		proxy: {
 			'/api': {
 				target: 'http://das.tail25b5a0.ts.net:4000',
