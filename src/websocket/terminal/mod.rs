@@ -1,0 +1,169 @@
+pub mod helpers;
+pub mod local;
+pub mod remote;
+pub mod types;
+
+use std::sync::Arc;
+
+use auto_di::singleton;
+#[allow(unused_imports)]
+use auto_socket::{auto_socket, on};
+use dashmap::DashMap;
+use socketioxide::{
+    extract::{Data, SocketRef},
+    socket::DisconnectReason,
+};
+use sqlx::SqlitePool;
+use tokio::{io::AsyncWriteExt, process::Command};
+
+use helpers::{emit_error, socket_key};
+use local::{spawn_docker_terminal, spawn_local_terminal};
+use remote::spawn_remote_terminal;
+pub use types::{DockerTerminalStart, ServerTerminalStart, TerminalInput, TerminalResize, TerminalSession};
+
+#[derive(Debug)]
+pub struct TerminalSocket {
+    sessions: Arc<DashMap<String, TerminalSession>>,
+    db: Arc<SqlitePool>,
+}
+
+#[singleton]
+#[auto_socket("/terminal")]
+impl TerminalSocket {
+    fn new(db: Arc<SqlitePool>) -> Self {
+        Self {
+            sessions: Arc::new(DashMap::new()),
+            db,
+        }
+    }
+
+    async fn stop_socket_session(&self, socket: &SocketRef) {
+        let key = socket_key(socket);
+        if let Some((_, session)) = self.sessions.remove(&key) {
+            match session {
+                TerminalSession::Pty { .. } => {}
+                TerminalSession::Local { child, .. } => {
+                    let _ = child.lock().await.kill().await;
+                }
+                TerminalSession::Remote { cancel, .. } => {
+                    cancel.cancel();
+                }
+            }
+        }
+    }
+
+    fn bind_disconnect_cleanup(&self, socket: &SocketRef, key: String) {
+        let sessions = self.sessions.clone();
+        socket.on_disconnect(move |_socket: SocketRef, _reason: DisconnectReason| {
+            let sessions = sessions.clone();
+            let key = key.clone();
+            async move {
+                if let Some((_, session)) = sessions.remove(&key) {
+                    match session {
+                        TerminalSession::Pty { .. } => {}
+                        TerminalSession::Local { child, .. } => {
+                            let _ = child.lock().await.kill().await;
+                        }
+                        TerminalSession::Remote { cancel, .. } => {
+                            cancel.cancel();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    #[on("docker:start")]
+    async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
+        self.stop_socket_session(&socket).await;
+        self.bind_disconnect_cleanup(&socket, socket_key(&socket));
+        spawn_docker_terminal(socket, &self.sessions, input).await;
+    }
+
+    #[on("server:start")]
+    async fn server_start(&self, socket: SocketRef, Data(input): Data<ServerTerminalStart>) {
+        self.stop_socket_session(&socket).await;
+        self.bind_disconnect_cleanup(&socket, socket_key(&socket));
+
+        if let Some(server_id) = input.server_id {
+            spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
+            return;
+        }
+
+        let shell = input
+            .shell
+            .unwrap_or_else(|| std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()));
+        let mut command = Command::new(shell);
+        command
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+
+        spawn_local_terminal(socket, &self.sessions, "server", command).await;
+    }
+
+    #[on("input")]
+    async fn input(&self, socket: SocketRef, Data(input): Data<TerminalInput>) {
+        let key = socket_key(&socket);
+        let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
+            emit_error(&socket, "terminal session is not running");
+            return;
+        };
+
+        match session {
+            TerminalSession::Pty { writer, .. } => {
+                let mut w = writer.lock().await;
+                if let Err(error) = w.write_all(input.data.as_bytes()) {
+                    emit_error(&socket, format!("could not write PTY input: {error}"));
+                } else {
+                    let _ = w.flush();
+                }
+            }
+            TerminalSession::Local { stdin, .. } => {
+                if let Err(error) = stdin.lock().await.write_all(input.data.as_bytes()).await {
+                    emit_error(&socket, format!("could not write terminal input: {error}"));
+                }
+            }
+            TerminalSession::Remote { input: tx, .. } => {
+                if tx.send(input.data.into_bytes()).await.is_err() {
+                    emit_error(&socket, "remote terminal input channel is closed");
+                }
+            }
+        }
+    }
+
+    #[on("resize")]
+    async fn resize(&self, socket: SocketRef, Data(input): Data<TerminalResize>) {
+        let key = socket_key(&socket);
+        let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
+            emit_error(&socket, "terminal session is not running");
+            return;
+        };
+
+        let cols = input.cols.unwrap_or(80);
+        let rows = input.rows.unwrap_or(24);
+
+        match session {
+            TerminalSession::Pty { master, .. } => {
+                let m = master.lock().await;
+                let _ = m.resize(portable_pty::PtySize {
+                    rows,
+                    cols,
+                    pixel_width: 0,
+                    pixel_height: 0,
+                });
+            }
+            TerminalSession::Remote { resize, .. } => {
+                if resize.send((cols, rows)).await.is_err() {
+                    emit_error(&socket, "remote terminal resize channel is closed");
+                }
+            }
+            TerminalSession::Local { .. } => {}
+        }
+    }
+
+    #[on("stop")]
+    async fn stop(&self, socket: SocketRef) {
+        self.stop_socket_session(&socket).await;
+    }
+}

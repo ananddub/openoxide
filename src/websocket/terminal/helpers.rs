@@ -1,0 +1,42 @@
+use socketioxide::extract::SocketRef;
+use tokio::io::AsyncReadExt;
+
+use super::types::{TerminalError, TerminalOutput};
+
+pub fn socket_key(socket: &SocketRef) -> String {
+    socket.id.to_string()
+}
+
+pub fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: Vec<u8>) {
+    let data = String::from_utf8_lossy(&bytes).into_owned();
+    let _ = socket.emit("output", &TerminalOutput { stream, data });
+}
+
+pub fn emit_error(socket: &SocketRef, message: impl Into<String>) {
+    let _ = socket.emit(
+        "error",
+        &TerminalError {
+            message: message.into(),
+        },
+    );
+}
+
+pub fn spawn_output_task(
+    socket: SocketRef,
+    stream: &'static str,
+    mut reader: impl tokio::io::AsyncRead + Unpin + Send + 'static,
+) {
+    tokio::spawn(async move {
+        let mut buffer = vec![0; 8192];
+        loop {
+            match reader.read(&mut buffer).await {
+                Ok(0) => return,
+                Ok(n) => emit_terminal_bytes(&socket, stream, buffer[..n].to_vec()),
+                Err(error) => {
+                    emit_error(&socket, format!("terminal read failed: {error}"));
+                    return;
+                }
+            }
+        }
+    });
+}
