@@ -12,7 +12,7 @@ import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Key} from 'lucide-react';
+import {Key, Sparkles, RefreshCw, Terminal, Copy, Check} from 'lucide-react';
 
 interface CreateKeyModalProps {
 	isOpen: boolean;
@@ -30,8 +30,44 @@ export function CreateKeyModal({
 	const [privateKey, setPrivateKey] = useState('');
 	const [publicKey, setPublicKey] = useState('');
 	const [submitting, setSubmitting] = useState(false);
+	const [generating, setGenerating] = useState(false);
+	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/ssh-keys');
+	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair');
+
+	const handleAutoGenerate = async () => {
+		setGenerating(true);
+		try {
+			const res = await generatePairMutation.mutateAsync({
+				body: {key_type: 'ed25519'} as any,
+			});
+			const keyPair = res as any;
+			setPublicKey(keyPair.public_key || '');
+			setPrivateKey(keyPair.private_key || '');
+			if (!name) {
+				setName(`Generated-Key-${Date.now().toString().slice(-4)}`);
+			}
+			toast.success('Generated ED25519 SSH Key pair auto-filled!');
+		} catch (err: any) {
+			toast.error(formatApiError(err));
+		} finally {
+			setGenerating(false);
+		}
+	};
+
+	const setupCommand = publicKey.trim()
+		? `mkdir -p ~/.ssh && echo "${publicKey.trim()}" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
+		: '';
+
+	const handleCopyCommand = () => {
+		if (setupCommand) {
+			navigator.clipboard.writeText(setupCommand);
+			setCopiedCmd(true);
+			toast.success('Server authorization command copied!');
+			setTimeout(() => setCopiedCmd(false), 2000);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -50,13 +86,9 @@ export function CreateKeyModal({
 					public_key: publicKey,
 				},
 			});
-			toast.success('SSH Key added successfully');
-			setName('');
-			setDescription('');
-			setPrivateKey('');
-			setPublicKey('');
+			toast.success('SSH Key saved successfully');
+			handleCloseModal();
 			onSuccess();
-			onClose();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -64,16 +96,37 @@ export function CreateKeyModal({
 		}
 	};
 
+	const handleCloseModal = () => {
+		setName('');
+		setDescription('');
+		setPrivateKey('');
+		setPublicKey('');
+		onClose();
+	};
+
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+		<Dialog open={isOpen} onOpenChange={open => !open && handleCloseModal()}>
 			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
 				<DialogHeader className="pb-3 border-b border-border/50">
-					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Key className="w-4 h-4 text-primary shrink-0" />
-						<span>Add Existing SSH Key</span>
-					</DialogTitle>
+					<div className="flex items-center justify-between gap-2">
+						<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+							<Key className="w-4 h-4 text-primary shrink-0" />
+							<span>Add SSH Key</span>
+						</DialogTitle>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleAutoGenerate}
+							disabled={generating || submitting}
+							className="h-8 text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-lg shrink-0"
+						>
+							{generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
+							{generating ? 'Generating...' : 'Auto-Generate Key Pair'}
+						</Button>
+					</div>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Paste your SSH key pair credentials to authenticate remote servers
+						Paste your existing SSH key pair or click Auto-Generate to create a new key pair
 					</DialogDescription>
 				</DialogHeader>
 
@@ -104,7 +157,7 @@ export function CreateKeyModal({
 							value={publicKey}
 							onChange={e => setPublicKey(e.target.value)}
 							placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@server"
-							className="h-16 text-xs font-mono bg-background border-border rounded-md p-3 resize-none"
+							className="h-16 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
 						/>
 					</div>
 
@@ -114,16 +167,34 @@ export function CreateKeyModal({
 							value={privateKey}
 							onChange={e => setPrivateKey(e.target.value)}
 							placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..."
-							className="h-24 text-xs font-mono bg-background border-border rounded-md p-3 resize-none"
+							className="h-24 text-xs font-mono bg-background border-border rounded-md p-3 resize-none break-all"
 						/>
 					</div>
 
+					{setupCommand && (
+						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+									<Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
+									<span>Authorize Key on Remote Server</span>
+								</label>
+								<Button type="button" variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-medium gap-1.5 px-2.5">
+									{copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+									{copiedCmd ? 'Copied' : 'Copy Command'}
+								</Button>
+							</div>
+							<div className="p-2.5 bg-muted/40 border border-border/50 rounded-md text-[11px] font-mono text-muted-foreground break-all select-all leading-relaxed max-h-20 overflow-y-auto">
+								{setupCommand}
+							</div>
+						</div>
+					)}
+
 					<div className="flex items-center justify-end gap-2 pt-3 border-t border-border/50">
-						<Button type="button" variant="ghost" onClick={onClose} className="h-8 text-xs px-3">
+						<Button type="button" variant="ghost" onClick={handleCloseModal} className="h-8 text-xs px-3">
 							Cancel
 						</Button>
-						<Button type="submit" disabled={submitting} className="h-8 text-xs font-medium px-4">
-							{submitting ? 'Adding...' : 'Add SSH Key'}
+						<Button type="submit" disabled={submitting || generating} className="h-8 text-xs font-medium px-4">
+							{submitting ? 'Saving...' : 'Save SSH Key'}
 						</Button>
 					</div>
 				</form>
