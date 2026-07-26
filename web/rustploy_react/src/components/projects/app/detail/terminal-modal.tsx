@@ -142,7 +142,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 						if (event.type === 'keydown' && socketRef.current?.connected) {
 							if (k === 'l') {
 								term?.clear();
-								socketRef.current.emit('input', { data: '\r' });
+								socketRef.current.emit('input', { data: 'clear\r' });
 							} else {
 								socketRef.current.emit('input', { data: CONTROL_KEY_MAP[k] });
 							}
