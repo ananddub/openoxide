@@ -14,7 +14,6 @@ import {formatApiError} from '#/api/utils';
 import {
 	Server,
 	Plug,
-	PlugZap,
 	Trash2,
 	Edit,
 	Terminal,
@@ -97,21 +96,36 @@ export function RemoteServersList({
 				const isTesting = testingConnId === item.id;
 				const status = testStateMap[item.id];
 
+				// Status Dot Color according to Test Connection & Server Status
+				const getDotColor = () => {
+					if (isTesting) return 'bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50';
+					if (status === 'success') return 'bg-emerald-500 shadow-sm shadow-emerald-500/50';
+					if (status === 'failed') return 'bg-rose-500 shadow-sm shadow-rose-500/50';
+					return isActive ? 'bg-emerald-500' : 'bg-rose-500';
+				};
+
+				const getStatusTooltip = () => {
+					if (isTesting) return 'Testing SSH connection...';
+					if (status === 'success') return 'SSH Connection Verified (Active)';
+					if (status === 'failed') return 'SSH Connection Failed';
+					return `Status: ${isActive ? 'Active' : 'Disabled'} (Click to toggle)`;
+				};
+
 				return (
 					<Card
 						key={item.id}
 						className="bg-card border-border hover:border-border/80 transition-all rounded-xl shadow-sm"
 					>
 						<CardContent className="p-3 flex items-center justify-between gap-2">
-							{/* Left: Status Dot, Server Name & Host IP */}
+							{/* Left: Dynamic Test Status Dot, Server Name & Host IP */}
 							<div className="flex items-center gap-2 min-w-0 flex-1">
 								<button
 									type="button"
 									onClick={() => onToggleStatus(item)}
-									title={`Status: ${isActive ? 'Active' : 'Disabled'} (Click to toggle)`}
+									title={getStatusTooltip()}
 									className="shrink-0"
 								>
-									<span className={`block w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+									<span className={`block w-2.5 h-2.5 rounded-full transition-all ${getDotColor()}`} />
 								</button>
 
 								<div className="flex flex-col min-w-0 flex-1">
@@ -122,7 +136,7 @@ export function RemoteServersList({
 								</div>
 							</div>
 
-							{/* Right: Plug Test Icon Button & Text-Only 3-Dots Dropdown */}
+							{/* Right: Plug Test Icon Button & Clean 3-Dots Dropdown (No duplicate Test item) */}
 							<div className="flex items-center gap-1 shrink-0">
 								<Button
 									variant="ghost"
@@ -131,12 +145,12 @@ export function RemoteServersList({
 									disabled={isTesting}
 									title={
 										isTesting
-											? 'Testing Connection...'
+											? 'Testing SSH Connection...'
 											: status === 'success'
 												? 'SSH Connection Verified'
 												: status === 'failed'
 													? 'SSH Connection Failed'
-													: 'Test Connection'
+													: 'Test SSH Connection'
 									}
 									className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
 								>
@@ -160,13 +174,6 @@ export function RemoteServersList({
 										<MoreVertical className="w-4 h-4" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-40 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => handleTestConnection(item)}
-										>
-											{isTesting ? 'Testing...' : 'Test Connection'}
-										</DropdownMenuItem>
-
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onSetupServer(item)}
