@@ -16,7 +16,8 @@ import {
 	Copy,
 	Check,
 	Activity,
-	AlertCircle,
+	CheckCircle2,
+	XCircle,
 } from 'lucide-react';
 
 interface RemoteServersListProps {
@@ -154,53 +155,24 @@ export function RemoteServersList({
 							{/* Actions Row */}
 							<div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
 								<div className="flex items-center gap-1.5">
-									{(() => {
-										if (isTesting) {
-											return (
-												<Button variant="outline" size="sm" disabled className="h-8 text-xs font-medium gap-1.5 px-3">
-													<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
-													Testing...
-												</Button>
-											);
-										}
-										if (status === 'success') {
-											return (
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => handleTestConnection(item)}
-													className="h-8 text-xs font-semibold gap-1.5 px-3 border-emerald-500/40 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10"
-												>
-													<Check className="w-3.5 h-3.5 text-emerald-500" />
-													Connected
-												</Button>
-											);
-										}
-										if (status === 'failed') {
-											return (
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => handleTestConnection(item)}
-													className="h-8 text-xs font-semibold gap-1.5 px-3 border-rose-500/40 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10"
-												>
-													<AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-													Failed
-												</Button>
-											);
-										}
-										return (
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => handleTestConnection(item)}
-												className="h-8 text-xs font-medium gap-1.5 px-3"
-											>
-												<ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-												Test Connection
-											</Button>
-										);
-									})()}
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => handleTestConnection(item)}
+										disabled={isTesting}
+										className="h-8 text-xs font-medium gap-1.5 px-3"
+									>
+										{isTesting ? (
+											<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+										) : status === 'success' ? (
+											<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+										) : status === 'failed' ? (
+											<XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+										) : (
+											<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+										)}
+										{isTesting ? 'Testing...' : 'Test Connection'}
+									</Button>
 
 									<Button
 										variant="ghost"
