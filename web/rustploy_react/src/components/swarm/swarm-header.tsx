@@ -3,7 +3,6 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
@@ -66,9 +65,9 @@ export function SwarmHeader({
 						<MoreVertical className="w-4 h-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
-						<DropdownMenuLabel className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+						<div className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
 							Select Host Engine
-						</DropdownMenuLabel>
+						</div>
 
 						<DropdownMenuItem
 							className={`flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium ${
