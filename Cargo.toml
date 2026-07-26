@@ -50,7 +50,6 @@ notify = "8.1.0"
 minijinja = "2.21.0"
 tonic = "0.12.3"
 prost = "0.13.5"
-portable-pty = "0.9"
 pty-process = { version = "0.5.3", features = ["async", "tokio"] }
 
 [build-dependencies]
