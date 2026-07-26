@@ -104,13 +104,17 @@ export function DestinationsList({
 					<div className="flex items-center justify-between gap-2 border-t border-border/40 pt-3 mt-1">
 						<Button
 							variant="outline"
-							size="sm"
+							size="icon"
 							onClick={() => handleTest(d.id)}
 							disabled={testingId === d.id}
-							className="h-8 text-xs font-semibold flex items-center gap-1.5"
+							title={testingId === d.id ? 'Testing S3 Connection...' : 'Test Connection'}
+							className="h-8 w-8 shrink-0"
 						>
-							<Plug className="w-3.5 h-3.5 text-primary" />
-							{testingId === d.id ? 'Testing...' : 'Test'}
+							{testingId === d.id ? (
+								<RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+							) : (
+								<Plug className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+							)}
 						</Button>
 
 						<div className="flex items-center gap-1">
