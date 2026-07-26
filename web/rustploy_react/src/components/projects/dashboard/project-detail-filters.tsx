@@ -46,7 +46,7 @@ export function ProjectDetailFilters({
 				<div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
 					<span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">Type:</span>
 					<Select value={typeFilter} onValueChange={val => setTypeFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 h-10 shadow-sm text-xs font-medium">
+						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 !h-10 shadow-sm text-xs font-medium">
 							<span className="text-foreground text-left">
 								{typeFilter === 'all' ? 'All Types' : typeFilter === 'app' ? 'Applications' : typeFilter === 'compose' ? 'Compose Stacks' : 'Databases'}
 							</span>
@@ -64,7 +64,7 @@ export function ProjectDetailFilters({
 				<div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
 					<span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">Status:</span>
 					<Select value={statusFilter} onValueChange={val => setStatusFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 h-10 shadow-sm text-xs font-medium">
+						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 !h-10 shadow-sm text-xs font-medium">
 							<span className="text-foreground text-left">
 								{statusFilter === 'all' ? 'All Status' : statusFilter === 'running' ? 'Running' : 'Stopped'}
 							</span>

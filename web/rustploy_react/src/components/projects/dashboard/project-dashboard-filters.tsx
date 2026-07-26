@@ -54,7 +54,7 @@ export function ProjectDashboardFilters({
 						Sort by:
 					</span>
 					<Select value={sortBy} onValueChange={val => setSortBy(val ?? 'newest')}>
-						<SelectTrigger className="w-full sm:w-[160px] bg-card/45 border-border/80 h-10 shadow-sm font-medium">
+						<SelectTrigger className="w-full sm:w-[160px] bg-card/45 border-border/80 !h-10 shadow-sm font-medium">
 							<SelectValue placeholder="Sort" />
 						</SelectTrigger>
 						<SelectContent className="bg-card border-border">
