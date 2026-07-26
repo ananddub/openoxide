@@ -138,7 +138,7 @@ function SwarmPage() {
 	const isSwarmActive = info?.local_node_state?.toLowerCase() === 'active';
 
 	return (
-		<div className="flex flex-col gap-4 p-6 max-w-7xl mx-auto w-full">
+		<div className="flex flex-col gap-3 p-4 max-w-7xl mx-auto w-full">
 			<SwarmHeader
 				servers={servers}
 				selectedServerId={selectedServerId}

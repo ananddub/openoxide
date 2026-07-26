@@ -36,42 +36,42 @@ export function SwarmHeader({
 	isTokensExpanded,
 }: SwarmHeaderProps) {
 	return (
-		<div className="flex items-center justify-between gap-3 pb-4 border-b border-border/50">
-			{/* Title & Subtitle */}
-			<div className="flex items-center gap-3 min-w-0">
+		<div className="flex items-center justify-between gap-3 pb-3 border-b border-border/50">
+			{/* Left: Icon, Title & Host Engine Selector Tightly Grouped */}
+			<div className="flex items-center gap-3">
 				<div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
 					<Globe2 className="w-5 h-5" />
 				</div>
-				<div className="min-w-0">
-					<h1 className="text-base font-bold tracking-tight text-foreground truncate">Docker Swarm Cluster</h1>
-					<p className="text-xs text-muted-foreground truncate">
-						Inspect Swarm cluster state, manager tokens, and node availability
-					</p>
+
+				<div className="flex items-center gap-2.5">
+					<h1 className="text-base font-bold tracking-tight text-foreground whitespace-nowrap">
+						Docker Swarm
+					</h1>
+
+					{/* Host Engine Dropdown Select Tightly Attached to Title */}
+					<div className="w-40">
+						<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
+							<SelectTrigger className="h-8 text-xs bg-card border-border/80 px-2.5">
+								<div className="flex items-center gap-1.5 truncate">
+									<Server className="w-3.5 h-3.5 text-primary shrink-0" />
+									<SelectValue placeholder="Select Host" />
+								</div>
+							</SelectTrigger>
+							<SelectContent className="bg-card border-border text-xs z-50">
+								<SelectItem value="local">Local Server (Engine)</SelectItem>
+								{servers.map((srv: any) => (
+									<SelectItem key={srv.id} value={String(srv.id)}>
+										{srv.name} ({srv.ip_address})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 			</div>
 
-			{/* Host Engine Dropdown Selector, Refresh & 3-Dots Menu */}
+			{/* Right: Refresh & 3-Dots Menu */}
 			<div className="flex items-center gap-1.5 shrink-0">
-				{/* Compact Host Engine Select Dropdown */}
-				<div className="w-36 sm:w-40">
-					<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
-						<SelectTrigger className="h-8 text-xs bg-card border-border/80 px-2">
-							<div className="flex items-center gap-1.5 truncate">
-								<Server className="w-3.5 h-3.5 text-primary shrink-0" />
-								<SelectValue placeholder="Host" />
-							</div>
-						</SelectTrigger>
-						<SelectContent className="bg-card border-border text-xs z-50">
-							<SelectItem value="local">Local Server (Engine)</SelectItem>
-							{servers.map((srv: any) => (
-								<SelectItem key={srv.id} value={String(srv.id)}>
-									{srv.name} ({srv.ip_address})
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
 				<Button
 					variant="outline"
 					size="icon"
@@ -83,7 +83,6 @@ export function SwarmHeader({
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
 				</Button>
 
-				{/* Header 3-Dots Dropdown containing ONLY Join Tokens toggle */}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
