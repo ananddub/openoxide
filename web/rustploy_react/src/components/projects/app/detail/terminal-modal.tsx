@@ -99,11 +99,8 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				if (event.ctrlKey || event.metaKey) {
 					const key = event.key.toLowerCase();
 					if (key === 'l') {
-						if (event.type === 'keydown') {
-							term?.clear();
-							if (socketRef.current?.connected) {
-								socketRef.current.emit('input', {data: '\x0c'});
-							}
+						if (event.type === 'keydown' && socketRef.current?.connected) {
+							socketRef.current.emit('input', {data: '\x0c'});
 						}
 						event.preventDefault();
 						return false;
