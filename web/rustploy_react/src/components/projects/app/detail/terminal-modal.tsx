@@ -94,10 +94,35 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 				if (helper) helper.focus();
 			}, 50);
 
-			// Prevent browser Ctrl+L address bar hijack, let xterm handle ALL keybindings natively
+			// Clipboard paste event listener (Right-click paste & Ctrl+V)
+			const handlePaste = (e: ClipboardEvent) => {
+				const text = e.clipboardData?.getData('text');
+				if (text && socketRef.current?.connected) {
+					socketRef.current.emit('input', { data: text });
+				}
+			};
+			const el = termRef.current;
+			if (el) el.addEventListener('paste', handlePaste);
+
+			// Custom key bindings (Clipboard Copy, Paste, Ctrl+L address bar hijack prevention)
 			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-				if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
-					event.preventDefault();
+				if (event.ctrlKey || event.metaKey) {
+					const k = event.key.toLowerCase();
+					if (k === 'l') {
+						event.preventDefault();
+					} else if (k === 'c' && term?.hasSelection()) {
+						navigator.clipboard.writeText(term.getSelection());
+						return false;
+					} else if (k === 'v') {
+						if (event.type === 'keydown') {
+							navigator.clipboard.readText().then(text => {
+								if (text && socketRef.current?.connected) {
+									socketRef.current.emit('input', { data: text });
+								}
+							}).catch(() => {});
+						}
+						return true;
+					}
 				}
 				return true;
 			});
@@ -150,6 +175,10 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 					socketRef.current.emit('resize', {cols, rows});
 				}
 			});
+
+			return () => {
+				if (el) el.removeEventListener('paste', handlePaste);
+			};
 		}, 100);
 
 		const handleResize = () => { try { fitAddon?.fit(); } catch (_) {} };
