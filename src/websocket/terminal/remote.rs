@@ -24,11 +24,28 @@ pub async fn spawn_remote_terminal(
         }
     };
 
+    // Load key directly into RAM-based ssh-agent via stdin (zero disk writes!)
+    let (agent_session, auth) = match executor.auth() {
+        crate::utils::exec::SshAuth::KeyPair { private_key, .. } => {
+            match crate::utils::ssh::SshAgentSession::start_and_add_key(private_key).await {
+                Ok(agent) => {
+                    let socket_path = agent.socket_path.clone();
+                    (Some(agent), crate::utils::exec::SshAuth::AgentWithSocket(socket_path))
+                }
+                Err(err) => {
+                    tracing::warn!("ssh-agent fallback to KeyPair: {err}");
+                    (None, executor.auth().clone())
+                }
+            }
+        }
+        _ => (None, executor.auth().clone()),
+    };
+
     let shell = input.shell.unwrap_or_else(|| "sh".into());
     let builder = crate::utils::ssh::SshBuilder::new(
         executor.host().to_string(),
         executor.username().to_string(),
-        executor.auth().clone(),
+        auth,
         executor.host_key().clone(),
     )
     .port(executor.port())
@@ -96,6 +113,7 @@ pub async fn spawn_remote_terminal(
     let sessions_clone = sessions.clone();
     let socket_clone = socket.clone();
     tokio::spawn(async move {
+        let _keep_alive_agent = agent_session;
         let _keep_alive_key = temp_key;
         let _keep_alive_askpass = temp_askpass;
         let status = child.wait().await;
