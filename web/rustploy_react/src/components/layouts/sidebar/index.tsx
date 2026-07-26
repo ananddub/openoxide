@@ -25,11 +25,11 @@ type NavMenuGroupProps = {
 	currentPath: string;
 };
 
-// Renders a labeled group of nav items with active-state highlighting.
+// Renders a labeled group of nav items with Dokploy signature icon badge boxes.
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel className="uppercase group-data-[collapsible=icon]:hidden">
+			<SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-1">
@@ -46,8 +46,23 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 							<SidebarMenuButton
 								render={<Link to={item.to as any} />}
 								isActive={isActive}
-								tooltip={item.title}>
-								<item.icon className="size-4" />
+								tooltip={item.title}
+								className={`h-9 text-xs font-medium rounded-lg transition-all gap-2.5 px-2.5 ${
+									isActive
+										? 'bg-accent/60 text-foreground font-semibold'
+										: 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+								}`}
+							>
+								{/* Dokploy Signature Icon Badge Box */}
+								<div
+									className={`w-6.5 h-6.5 rounded-md flex items-center justify-center shrink-0 border transition-all ${
+										isActive
+											? 'bg-primary text-primary-foreground border-primary shadow-xs'
+											: 'bg-muted/50 border-border/40 text-muted-foreground group-hover:border-border group-hover:text-foreground'
+									}`}
+								>
+									<item.icon className="w-3.5 h-3.5" />
+								</div>
 								<span>{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
@@ -61,7 +76,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 // Thin horizontal rule with consistent horizontal padding between nav groups.
 function SidebarSeparator() {
 	return (
-		<div className="px-3.5">
+		<div className="px-3.5 my-1">
 			<Separator />
 		</div>
 	);
@@ -70,33 +85,39 @@ function SidebarSeparator() {
 export function AppSidebar() {
 	const location = useLocation();
 	const {isMobile, state} = useSidebar();
-	const isCollapsed = state == 'collapsed';
+	const isCollapsed = state === 'collapsed';
 
 	return (
 		<>
 			<Sidebar collapsible="icon" variant="floating">
 				{/* Brand Header */}
-				<SidebarHeader className="border-b border-border/40 px-4 py-4 group-data-[collapsible=icon]:p-1.5">
+				<SidebarHeader>
 					<HeaderDropdown isCollapsed={isCollapsed} isMobile={isMobile} />
 				</SidebarHeader>
+
 				{/* Navigation Content */}
-				<SidebarContent className="gap-2 py-2">
+				<SidebarContent>
 					{/* Quick Search */}
 					<SearchButton />
+
 					{/* Platform Group */}
 					<NavMenuGroup
 						label="Platform"
 						items={MENU.platform}
 						currentPath={location.pathname}
 					/>
+
 					<SidebarSeparator />
+
 					{/* Settings Group */}
 					<NavMenuGroup
 						label="Settings"
 						items={MENU.settings}
 						currentPath={location.pathname}
 					/>
+
 					<SidebarSeparator />
+
 					{/* Extra / Help Group */}
 					<SidebarGroup className="group-data-[collapsible=icon]:hidden">
 						<SidebarGroupLabel>Extra</SidebarGroupLabel>
@@ -111,8 +132,12 @@ export function AppSidebar() {
 												rel="noopener noreferrer"
 											/>
 										}
-										tooltip={item.title}>
-										<item.icon className="size-4" />
+										tooltip={item.title}
+										className="h-9 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg gap-2.5 px-2.5 transition-all"
+									>
+										<div className="w-6.5 h-6.5 rounded-md bg-muted/50 border border-border/40 text-muted-foreground flex items-center justify-center shrink-0 group-hover:border-border group-hover:text-foreground transition-all">
+											<item.icon className="w-3.5 h-3.5" />
+										</div>
 										<span>{item.title}</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -120,10 +145,12 @@ export function AppSidebar() {
 						</SidebarMenu>
 					</SidebarGroup>
 				</SidebarContent>
+
 				{/* Footer */}
-				<SidebarFooter className="border-t border-border/40 p-4 group-data-[collapsible=icon]:p-2">
+				<SidebarFooter>
 					<AppSidebarFooter isCollapsed={isCollapsed} />
 				</SidebarFooter>
+
 				<SidebarRail />
 			</Sidebar>
 			<SearchDialog />
