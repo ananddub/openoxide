@@ -12,7 +12,7 @@ import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Key, Sparkles, RefreshCw, Terminal, Copy, Check} from 'lucide-react';
+import {Key, Sparkles, RefreshCw, Terminal, Copy, Check, Shield} from 'lucide-react';
 
 interface CreateKeyModalProps {
 	isOpen: boolean;
@@ -30,29 +30,29 @@ export function CreateKeyModal({
 	const [privateKey, setPrivateKey] = useState('');
 	const [publicKey, setPublicKey] = useState('');
 	const [submitting, setSubmitting] = useState(false);
-	const [generating, setGenerating] = useState(false);
+	const [generatingType, setGeneratingType] = useState<'ed25519' | 'rsa' | null>(null);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/ssh-keys');
 	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair');
 
-	const handleAutoGenerate = async () => {
-		setGenerating(true);
+	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
+		setGeneratingType(type);
 		try {
 			const res = await generatePairMutation.mutateAsync({
-				body: {key_type: 'ed25519'} as any,
+				body: {key_type: type} as any,
 			});
 			const keyPair = res as any;
 			setPublicKey(keyPair.public_key || '');
 			setPrivateKey(keyPair.private_key || '');
 			if (!name) {
-				setName(`Generated-Key-${Date.now().toString().slice(-4)}`);
+				setName(`Generated-${type.toUpperCase()}-Key`);
 			}
-			toast.success('Generated ED25519 SSH Key pair auto-filled!');
+			toast.success(`Generated ${type.toUpperCase()} SSH key pair auto-filled!`);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
-			setGenerating(false);
+			setGeneratingType(null);
 		}
 	};
 
@@ -86,7 +86,7 @@ export function CreateKeyModal({
 					public_key: publicKey,
 				},
 			});
-			toast.success('SSH Key saved successfully');
+			toast.success(`SSH Key "${name}" saved successfully`);
 			handleCloseModal();
 			onSuccess();
 		} catch (err: any) {
@@ -101,6 +101,7 @@ export function CreateKeyModal({
 		setDescription('');
 		setPrivateKey('');
 		setPublicKey('');
+		setGeneratingType(null);
 		onClose();
 	};
 
@@ -108,25 +109,12 @@ export function CreateKeyModal({
 		<Dialog open={isOpen} onOpenChange={open => !open && handleCloseModal()}>
 			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
 				<DialogHeader className="pb-3 border-b border-border/50">
-					<div className="flex items-center justify-between gap-2">
-						<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-							<Key className="w-4 h-4 text-primary shrink-0" />
-							<span>Add SSH Key</span>
-						</DialogTitle>
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={handleAutoGenerate}
-							disabled={generating || submitting}
-							className="h-8 text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-lg shrink-0"
-						>
-							{generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
-							{generating ? 'Generating...' : 'Auto-Generate Key Pair'}
-						</Button>
-					</div>
+					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+						<Key className="w-4 h-4 text-primary shrink-0" />
+						<span>Add SSH Key</span>
+					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Paste your existing SSH key pair or click Auto-Generate to create a new key pair
+						Paste an existing SSH key pair or click one of the generation options below
 					</DialogDescription>
 				</DialogHeader>
 
@@ -149,6 +137,35 @@ export function CreateKeyModal({
 							placeholder="Optional description for this key pair"
 							className="h-9 text-xs bg-background border-border rounded-md px-3"
 						/>
+					</div>
+
+					{/* 2 Generation Options directly under Description */}
+					<div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/50">
+						<span className="text-xs font-medium text-muted-foreground shrink-0">Auto-Generate:</span>
+						<div className="flex items-center gap-2 w-full">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => handleGeneratePair('ed25519')}
+								disabled={!!generatingType || submitting}
+								className="h-8 text-xs font-semibold gap-1.5 border-amber-500/30 text-amber-500 hover:bg-amber-500/10 flex-1"
+							>
+								{generatingType === 'ed25519' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+								{generatingType === 'ed25519' ? 'Generating...' : 'Generate ED25519'}
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => handleGeneratePair('rsa')}
+								disabled={!!generatingType || submitting}
+								className="h-8 text-xs font-semibold gap-1.5 border-sky-500/30 text-sky-500 hover:bg-sky-500/10 flex-1"
+							>
+								{generatingType === 'rsa' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+								{generatingType === 'rsa' ? 'Generating...' : 'Generate RSA 4096'}
+							</Button>
+						</div>
 					</div>
 
 					<div className="flex flex-col gap-1.5">
@@ -189,12 +206,10 @@ export function CreateKeyModal({
 						</div>
 					)}
 
-					<div className="flex items-center justify-end gap-2 pt-3 border-t border-border/50">
-						<Button type="button" variant="ghost" onClick={handleCloseModal} className="h-8 text-xs px-3">
-							Cancel
-						</Button>
-						<Button type="submit" disabled={submitting || generating} className="h-8 text-xs font-medium px-4">
-							{submitting ? 'Saving...' : 'Save SSH Key'}
+					{/* Single Clean Save Button (Cancel removed) */}
+					<div className="flex items-center justify-end pt-3 border-t border-border/50">
+						<Button type="submit" disabled={submitting || !!generatingType} className="h-9 text-xs font-bold px-6 shadow-md w-full sm:w-auto">
+							{submitting ? 'Saving SSH Key...' : 'Save SSH Key'}
 						</Button>
 					</div>
 				</form>
