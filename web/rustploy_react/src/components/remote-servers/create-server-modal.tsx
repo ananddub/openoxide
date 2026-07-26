@@ -11,7 +11,7 @@ import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Server, ShieldCheck, RefreshCw} from 'lucide-react';
+import {Server, ShieldCheck, RefreshCw, CheckCircle2, AlertCircle} from 'lucide-react';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -36,12 +36,14 @@ export function CreateServerModal({
 	const [description, setDescription] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [testingConn, setTestingConn] = useState(false);
+	const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
 	useEffect(() => {
+		setTestStatus('idle');
 		if (editingServer) {
 			setName(editingServer.name || '');
 			setIpAddress(editingServer.ip_address || '');
@@ -65,12 +67,14 @@ export function CreateServerModal({
 			return;
 		}
 		setTestingConn(true);
+		setTestStatus('idle');
 		try {
 			if (editingServer?.id) {
 				await testConnMutation.mutateAsync({
 					params: {path: {id: editingServer.id}},
 					body: {host_key_fingerprint: ''} as any,
 				});
+				setTestStatus('success');
 				toast.success(`SSH Connection to "${name || ipAddress}" verified successfully!`);
 			} else {
 				const newServer = await createMutation.mutateAsync({
@@ -88,10 +92,12 @@ export function CreateServerModal({
 					params: {path: {id: (newServer as any).id}},
 					body: {host_key_fingerprint: ''} as any,
 				});
+				setTestStatus('success');
 				toast.success(`Server node created & SSH connection to "${name || ipAddress}" verified successfully!`);
 				onSuccess();
 			}
 		} catch (err: any) {
+			setTestStatus('failed');
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConn(false);
@@ -137,14 +143,16 @@ export function CreateServerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
-				<DialogHeader className="pb-3 border-b border-border/40">
-					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-						<Server className="w-5 h-5 text-primary" />
+			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card/95 backdrop-blur-md border-border/80 p-6 shadow-2xl rounded-2xl">
+				<DialogHeader className="pb-4 border-b border-border/50">
+					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
+						<div className="p-2 rounded-xl bg-primary/10 text-primary">
+							<Server className="w-5 h-5" />
+						</div>
 						{editingServer ? 'Edit Remote Server' : 'Add Remote Server'}
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Configure host IP address, SSH port, and credentials for remote Linux deployment node
+						Configure host IP address, SSH port, and authentication credentials for remote Linux deployment node
 					</DialogDescription>
 				</DialogHeader>
 
@@ -165,21 +173,33 @@ export function CreateServerModal({
 						sshKeys={sshKeys}
 					/>
 
-					<div className="flex items-center justify-between pt-4 border-t border-border/40 mt-1">
+					{testStatus !== 'idle' && (
+						<div className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all ${testStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-rose-500/10 border-rose-500/30 text-rose-500'}`}>
+							{testStatus === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+							{testStatus === 'success' ? 'SSH Connection Verified & Active' : 'SSH Connection Test Failed. Check credentials and firewall.'}
+						</div>
+					)}
+
+					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-1">
 						<Button
 							type="button"
 							variant="outline"
 							onClick={handleTestConnection}
 							disabled={testingConn || submitting}
-							className="h-9 text-xs font-semibold gap-1.5"
+							className="h-9 text-xs font-semibold gap-2 border-border/80 hover:bg-muted/80"
 						>
-							{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
-							{testingConn ? 'Testing...' : 'Test Connection'}
+							{testingConn ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" /> : <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />}
+							{testingConn ? 'Testing SSH...' : 'Test Connection'}
 						</Button>
 
-						<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6">
-							{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
-						</Button>
+						<div className="flex items-center gap-2">
+							<Button type="button" variant="ghost" onClick={onClose} className="h-9 text-xs font-semibold px-4">
+								Cancel
+							</Button>
+							<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6 shadow-md">
+								{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
+							</Button>
+						</div>
 					</div>
 				</form>
 			</DialogContent>
