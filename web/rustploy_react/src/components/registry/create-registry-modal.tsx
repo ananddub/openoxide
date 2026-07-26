@@ -202,7 +202,14 @@ export function CreateRegistryModal({
 						<Label className="text-xs font-semibold">Authenticate From Server</Label>
 						<Select value={serverId} onValueChange={val => val && setServerId(val)}>
 							<SelectTrigger className="!h-9 text-xs bg-card border-border/80 w-full px-3 font-sans flex items-center justify-between">
-								<SelectValue placeholder="Select server" />
+								<SelectValue placeholder="Select server">
+									{serverId === 'local'
+										? 'Local Server (Default)'
+										: (() => {
+												const srv = servers.find((s: any) => String(s.id) === String(serverId));
+												return srv ? `${srv.name} (${srv.ip_address})` : 'Select server';
+											})()}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent className="bg-card border-border text-xs z-50">
 								<SelectItem value="local">Local Server (Default)</SelectItem>
