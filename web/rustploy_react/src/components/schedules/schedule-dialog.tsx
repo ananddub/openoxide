@@ -72,6 +72,18 @@ export function ScheduleDialog({
 		return apps;
 	}, [projectsList]);
 
+	const selectedAppName = useMemo(() => {
+		if (!targetId) return '';
+		const found = allApplications.find(a => String(a.id) === String(targetId));
+		return found?.name || (targetId ? `Application #${targetId}` : '');
+	}, [targetId, allApplications]);
+
+	const selectedServerName = useMemo(() => {
+		if (!targetId) return '';
+		const found = servers.find(s => String(s.id) === String(targetId));
+		return found?.name || (targetId ? `Server #${targetId}` : '');
+	}, [targetId, servers]);
+
 	useEffect(() => {
 		if (editingSchedule) {
 			setName(editingSchedule.name);
@@ -197,14 +209,26 @@ export function ScheduleDialog({
 							<Label className="text-xs font-semibold">Target Item *</Label>
 							{targetType === 'SERVER' ? (
 								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="!h-9 text-xs w-full"><SelectValue placeholder="Select server" /></SelectTrigger>
+									<SelectTrigger className="!h-9 text-xs w-full">
+										<SelectValue placeholder="Select server">
+											{selectedServerName || 'Select server'}
+										</SelectValue>
+									</SelectTrigger>
 									<SelectContent className="bg-card border-border">
-										{servers.map(srv => <SelectItem key={srv.id} value={String(srv.id)} className="text-xs">{srv.name}</SelectItem>)}
+										{servers.map(srv => (
+											<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
+												{srv.name}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
 							) : (
 								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="!h-9 text-xs w-full"><SelectValue placeholder="Select application" /></SelectTrigger>
+									<SelectTrigger className="!h-9 text-xs w-full">
+										<SelectValue placeholder="Select application">
+											{selectedAppName || 'Select application'}
+										</SelectValue>
+									</SelectTrigger>
 									<SelectContent className="bg-card border-border">
 										{allApplications.length > 0 ? (
 											allApplications.map(app => (
