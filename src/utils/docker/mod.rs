@@ -3,7 +3,7 @@ pub use client::{DockerCli, RemoteDockerConfig, RemoteHostKey};
 pub use error::{DockerError, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent};
 pub use query::DockerQuery;
 pub use types::*;
-pub use inspect_types::*;
+pub use core::types::inspect::*;
 
 #[macro_use]
 
@@ -15,7 +15,6 @@ pub mod error;
 pub mod expand;
 pub mod handles;
 pub mod image;
-pub mod inspect_types;
 pub mod macros;
 pub mod query;
 pub mod system;
