@@ -2,10 +2,12 @@ import {useState, useEffect} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {Label} from '#/components/ui/label';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '#/components/ui/dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
+import {Clock, Terminal} from 'lucide-react';
 
 interface ScheduleDialogProps {
 	isOpen: boolean;
@@ -17,6 +19,14 @@ interface ScheduleDialogProps {
 	createMutation: any;
 	patchMutation: any;
 }
+
+const CRON_PRESETS = [
+	{label: 'Every 5m', value: '*/5 * * * *'},
+	{label: 'Every 15m', value: '*/15 * * * *'},
+	{label: 'Hourly', value: '0 * * * *'},
+	{label: 'Daily', value: '0 0 * * *'},
+	{label: 'Weekly', value: '0 0 * * 0'},
+];
 
 export function ScheduleDialog({
 	isOpen, onClose, editingSchedule, servers, refetch, activeOrgId, createMutation, patchMutation
@@ -103,82 +113,117 @@ export function ScheduleDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg bg-card border-border p-6">
-				<DialogHeader>
-					<DialogTitle className="text-lg font-bold">
-						{editingSchedule ? 'Edit Schedule' : 'Create Schedule'}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
-						Configure automated command execution tasks.
-					</DialogDescription>
+			<DialogContent className="sm:max-w-lg bg-card border-border p-6 rounded-xl shadow-2xl">
+				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/40 pb-4">
+					<div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
+						<Clock className="size-5" />
+					</div>
+					<div>
+						<DialogTitle className="text-base font-bold text-foreground">
+							{editingSchedule ? 'Edit Schedule Task' : 'Create Schedule Task'}
+						</DialogTitle>
+						<DialogDescription className="text-xs text-muted-foreground mt-0.5">
+							Configure automated cron jobs and command executions.
+						</DialogDescription>
+					</div>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 mt-4">
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Name *</label>
-							<Input placeholder="Daily Backup" value={name} onChange={e => setName(e.target.value)} required className="h-9" />
+				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
+					<div className="grid grid-cols-2 gap-3">
+						<div className="space-y-1.5">
+							<Label className="text-xs font-semibold">Name *</Label>
+							<Input placeholder="Daily Cache Backup" value={name} onChange={e => setName(e.target.value)} required className="h-9 text-xs" />
 						</div>
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Description</label>
-							<Input placeholder="Details" value={description} onChange={e => setDescription(e.target.value)} className="h-9" />
+						<div className="space-y-1.5">
+							<Label className="text-xs font-semibold">Description</Label>
+							<Input placeholder="Optional details..." value={description} onChange={e => setDescription(e.target.value)} className="h-9 text-xs" />
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Cron Expression *</label>
-							<Input placeholder="*/5 * * * *" value={cronExpression} onChange={e => setCronExpression(e.target.value)} required className="h-9 font-mono" />
+					<div className="space-y-1.5">
+						<div className="flex items-center justify-between">
+							<Label className="text-xs font-semibold">Cron Expression *</Label>
+							<div className="flex items-center gap-1">
+								{CRON_PRESETS.map(preset => (
+									<button
+										key={preset.value}
+										type="button"
+										onClick={() => setCronExpression(preset.value)}
+										className={`text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors border ${
+											cronExpression === preset.value
+												? 'bg-primary text-primary-foreground border-primary'
+												: 'bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground hover:bg-muted'
+										}`}
+									>
+										{preset.label}
+									</button>
+								))}
+							</div>
 						</div>
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Shell Type</label>
+						<Input placeholder="*/5 * * * *" value={cronExpression} onChange={e => setCronExpression(e.target.value)} required className="h-9 text-xs font-mono" />
+					</div>
+
+					<div className="grid grid-cols-3 gap-3">
+						<div className="space-y-1.5">
+							<Label className="text-xs font-semibold">Shell Type</Label>
 							<Select value={shellType} onValueChange={val => setShellType(val ?? 'bash')}>
-								<SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+								<SelectTrigger className="!h-9 text-xs"><SelectValue /></SelectTrigger>
 								<SelectContent className="bg-card border-border">
-									<SelectItem value="bash">BASH</SelectItem>
-									<SelectItem value="sh">SH</SelectItem>
+									<SelectItem value="bash" className="text-xs">BASH</SelectItem>
+									<SelectItem value="sh" className="text-xs">SH</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
-					</div>
-
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Target Type *</label>
+						<div className="space-y-1.5">
+							<Label className="text-xs font-semibold">Target Type *</Label>
 							<Select value={targetType} onValueChange={val => {
 								setTargetType(val as any);
 								setTargetId(val === 'SERVER' && servers[0]?.id ? String(servers[0].id) : '');
 							}}>
-								<SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+								<SelectTrigger className="!h-9 text-xs"><SelectValue /></SelectTrigger>
 								<SelectContent className="bg-card border-border">
-									<SelectItem value="SERVER">Server</SelectItem>
-									<SelectItem value="APPLICATION">Application</SelectItem>
+									<SelectItem value="SERVER" className="text-xs">Server</SelectItem>
+									<SelectItem value="APPLICATION" className="text-xs">Application</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Target Selection *</label>
+						<div className="space-y-1.5">
+							<Label className="text-xs font-semibold">Target Item *</Label>
 							{targetType === 'SERVER' ? (
 								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="h-9"><SelectValue placeholder="Select server" /></SelectTrigger>
+									<SelectTrigger className="!h-9 text-xs"><SelectValue placeholder="Select server" /></SelectTrigger>
 									<SelectContent className="bg-card border-border">
-										{servers.map(srv => <SelectItem key={srv.id} value={String(srv.id)}>{srv.name}</SelectItem>)}
+										{servers.map(srv => <SelectItem key={srv.id} value={String(srv.id)} className="text-xs">{srv.name}</SelectItem>)}
 									</SelectContent>
 								</Select>
 							) : (
-								<Input type="number" placeholder="Application ID" value={targetId} onChange={e => setTargetId(e.target.value)} required className="h-9" />
+								<Input type="number" placeholder="App ID" value={targetId} onChange={e => setTargetId(e.target.value)} required className="h-9 text-xs" />
 							)}
 						</div>
 					</div>
 
-					<div className="space-y-1">
-						<label className="text-xs font-semibold text-foreground">Command *</label>
-						<textarea placeholder="Command to run..." value={command} onChange={e => setCommand(e.target.value)} required rows={3} className="flex w-full rounded-lg border border-border bg-card/50 px-3 py-2 text-xs font-mono focus-visible:outline-none" />
+					<div className="space-y-1.5">
+						<div className="flex items-center justify-between">
+							<Label className="text-xs font-semibold flex items-center gap-1.5">
+								<Terminal className="size-3.5 text-muted-foreground" />
+								Command *
+							</Label>
+						</div>
+						<textarea
+							placeholder="e.g. docker exec my_app npm run cleanup"
+							value={command}
+							onChange={e => setCommand(e.target.value)}
+							required
+							rows={3}
+							className="flex w-full rounded-lg border border-border/80 bg-muted/20 px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+						/>
 					</div>
 
-					<div className="flex justify-end gap-3 pt-3 border-t border-border/20">
-						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="h-9 text-xs">Cancel</Button>
-						<Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4">
+					<div className="flex justify-end gap-2.5 pt-3 border-t border-border/30">
+						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="h-9 text-xs">
+							Cancel
+						</Button>
+						<Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4 font-semibold shadow-sm">
 							{isSubmitting ? 'Saving...' : editingSchedule ? 'Save Changes' : 'Create Schedule'}
 						</Button>
 					</div>
