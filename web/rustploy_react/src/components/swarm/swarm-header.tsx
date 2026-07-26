@@ -13,10 +13,9 @@ interface SwarmHeaderProps {
 	selectedServerId: string;
 	onSelectServer: (id: string) => void;
 	onRefresh: () => void;
-	onToggleTokens: () => void;
+	onOpenTokens: () => void;
 	isRefreshing: boolean;
 	isSwarmActive: boolean;
-	isTokensExpanded: boolean;
 }
 
 export function SwarmHeader({
@@ -24,10 +23,9 @@ export function SwarmHeader({
 	selectedServerId,
 	onSelectServer,
 	onRefresh,
-	onToggleTokens,
+	onOpenTokens,
 	isRefreshing,
 	isSwarmActive,
-	isTokensExpanded,
 }: SwarmHeaderProps) {
 	return (
 		<div className="flex items-center justify-between gap-3 pb-3 border-b border-border/50">
@@ -64,7 +62,7 @@ export function SwarmHeader({
 				</div>
 			</div>
 
-			{/* Right: Refresh & Direct Join Tokens Toggle Button */}
+			{/* Right: Refresh & Join Tokens Popup Button */}
 			<div className="flex items-center gap-2 shrink-0">
 				<Button
 					variant="outline"
@@ -79,12 +77,12 @@ export function SwarmHeader({
 
 				{isSwarmActive && (
 					<Button
-						variant={isTokensExpanded ? 'default' : 'outline'}
+						variant="outline"
 						size="sm"
-						onClick={onToggleTokens}
+						onClick={onOpenTokens}
 						className="h-8 text-xs font-semibold gap-1.5 px-3"
 					>
-						<KeyRound className="w-3.5 h-3.5" />
+						<KeyRound className="w-3.5 h-3.5 text-primary" />
 						<span>Join Tokens</span>
 					</Button>
 				)}
