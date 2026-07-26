@@ -14,12 +14,8 @@ import {formatApiError} from '#/api/utils';
 import {
 	Server,
 	ShieldCheck,
-	Trash2,
-	Edit,
-	Terminal,
 	RefreshCw,
 	Check,
-	Activity,
 	AlertCircle,
 	MoreVertical,
 } from 'lucide-react';
@@ -58,7 +54,7 @@ export function RemoteServersList({
 			setTestStateMap(prev => ({...prev, [server.id]: 'success'}));
 			toast.success(`SSH Connection verified for ${server.name}`);
 		} catch (err: any) {
-			setTestStateMap(prev => ({...prev, [server.id]: 'failed'}));
+			setTestStateMap(prev => ({...prev, [server.id]: 'failed'});
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConnId(null);
@@ -118,7 +114,7 @@ export function RemoteServersList({
 							</span>
 						</div>
 
-						{/* Right: Test Connection Icon Button & 3-Dots Dropdown */}
+						{/* Right: Test Connection Icon Button & Text-Only 3-Dots Dropdown */}
 						<div className="flex items-center gap-1 shrink-0">
 							<Button
 								variant="ghost"
@@ -155,49 +151,44 @@ export function RemoteServersList({
 								>
 									<MoreVertical className="w-4 h-4" />
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+								<DropdownMenuContent align="end" className="w-40 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 										onClick={() => handleTestConnection(item)}
 									>
-										<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-										<span>Test Connection</span>
+										{isTesting ? 'Testing...' : 'Test Connection'}
 									</DropdownMenuItem>
 
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 										onClick={() => onSetupServer(item)}
 									>
-										<Activity className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-										<span>Audit Server</span>
+										Audit Server
 									</DropdownMenuItem>
 
 									{onOpenTerminal && (
 										<DropdownMenuItem
-											className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 											onClick={() => onOpenTerminal(item)}
 										>
-											<Terminal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-											<span>Open Terminal</span>
+											Open Terminal
 										</DropdownMenuItem>
 									)}
 
 									<DropdownMenuSeparator className="my-1 border-border/50" />
 
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
 										onClick={() => onEditServer(item)}
 									>
-										<Edit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-										<span>Edit Server</span>
+										Edit Server
 									</DropdownMenuItem>
 
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
+										className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
 										onClick={() => onDeleteServer(item)}
 									>
-										<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-										<span>Delete Server</span>
+										Delete Server
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
