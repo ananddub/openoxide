@@ -1,49 +1,37 @@
-import {Clock, RefreshCw, Terminal, XCircle, Activity} from 'lucide-react';
+import {Clock, RefreshCw, Terminal, XCircle, Zap} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 
 interface ComposeDeploymentsListProps {
 	deployments: any[];
 	isLoading: boolean;
 	onOpenStream: (id: number) => void;
+	onCancelBuild?: (id: number) => void;
 }
 
-export function ComposeDeploymentsList({deployments, isLoading, onOpenStream}: ComposeDeploymentsListProps) {
-	const getStatusBadge = (statusStr?: string, stateStr?: string) => {
-		const s = (statusStr || '').toUpperCase();
-		const st = (stateStr || '').toUpperCase();
+const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
 
-		if (s.includes('DEPLOYED') || s.includes('SUCCESS') || st.includes('SUCCESS')) {
-			return (
-				<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-					<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-					DEPLOYED
-				</span>
-			);
-		}
+const isBuildActive = (e: any) => {
+	if (!e) return false;
+	if (e.finished_at && Number(e.finished_at) > 0) return false;
+	const s = (e.status || '').toUpperCase();
+	const st = (e.state || '').toUpperCase();
+	if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
+	const activeKeywords = ['BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING', 'GIT', 'DOCKER'];
+	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
+};
 
-		if (s.includes('FAIL') || s.includes('ERROR') || st.includes('FAIL') || st.includes('ERROR')) {
-			return (
-				<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-					<XCircle className="w-3 h-3" />
-					FAILED
-				</span>
-			);
-		}
+export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, onCancelBuild}: ComposeDeploymentsListProps) {
+	const getStatusBadge = (e: any) => {
+		const s = (e.status || '').toUpperCase();
+		const st = (e.state || '').toUpperCase();
 
-		if (s.includes('CANCEL') || st.includes('CANCEL') || s.includes('STOPPED')) {
-			return (
-				<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-					CANCELLED
-				</span>
-			);
-		}
-
-		return (
-			<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 animate-pulse">
-				<Activity className="w-3 h-3 animate-spin" />
-				{s || st || 'BUILDING'}
-			</span>
-		);
+		if (s === 'DONE' || s === 'HEALTHY' || s === 'SUCCESS' || s === 'DEPLOYED' || st.includes('SUCCESS')) 
+			return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED' || st.includes('FAIL')) 
+			return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+		if (isBuildActive(e)) 
+			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
+		return 'text-muted-foreground bg-muted border-border';
 	};
 
 	const formatTimestamp = (raw: any) => {
@@ -51,59 +39,67 @@ export function ComposeDeploymentsList({deployments, isLoading, onOpenStream}: C
 		const num = Number(raw);
 		if (isNaN(num)) return String(raw);
 		const ms = num < 1e11 ? num * 1000 : num;
-		return new Date(ms).toLocaleString();
+		return new Date(ms).toLocaleDateString();
 	};
 
 	return (
-		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
+		<section className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
 			{isLoading && deployments.length === 0 ? (
-				<div className="flex items-center justify-center h-48 text-xs text-muted-foreground gap-2">
-					<RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading deployment logs...
+				<div className="flex justify-center py-12">
+					<RefreshCw className="w-6 h-6 animate-spin text-muted-foreground/45" />
 				</div>
 			) : deployments.length === 0 ? (
-				<div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2 text-xs">
-					<Clock className="w-8 h-8 opacity-40" />
-					<p>No compose stack deployments found.</p>
+				<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+					<Zap className="w-10 h-10 opacity-30 mb-3" />
+					<p className="text-xs font-semibold">No deployments registered yet</p>
 				</div>
 			) : (
-				<div className="flex flex-col gap-3">
-					{deployments.map((d: any) => (
-						<div
-							key={d.id}
-							className="border border-border/80 rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors flex items-center justify-between gap-4 flex-wrap"
-						>
-							<div className="flex items-start gap-3">
-								<div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-foreground font-mono font-bold text-xs shrink-0 border border-border/40">
-									#{d.id}
-								</div>
-								<div className="flex flex-col gap-1">
-									<div className="flex items-center gap-2 flex-wrap">
-										<span className="text-xs font-bold text-foreground">
-											{d.type || 'Manual Deploy'}
-										</span>
-										{getStatusBadge(d.status, d.state)}
-									</div>
-									<p className="text-xs text-muted-foreground">
-										{d.description || d.message || 'Triggered via Compose Stack Manager'}
-									</p>
-									<span className="text-[11px] text-muted-foreground/70 font-mono">
-										Started: {formatTimestamp(d.created_at)}
+				<div className="divide-y divide-border/60">
+					{deployments.map((e: any) => {
+						const isActive = isBuildActive(e);
+						return (
+							<div key={e.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
+								<div className="min-w-0 flex flex-col gap-0.5">
+									<span className="text-xs font-semibold text-foreground truncate">
+										{e.title || e.type || `Deployment #${e.id}`}
+									</span>
+									<span className="text-[11px] text-muted-foreground truncate">
+										{e.description || e.message || 'Triggered via Compose Stack Manager'}
 									</span>
 								</div>
-							</div>
 
-							<div className="flex items-center gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => onOpenStream(d.id)}
-									className="h-8 text-xs font-semibold border-border hover:bg-muted flex items-center gap-1.5"
-								>
-									<Terminal className="w-3.5 h-3.5 text-primary" /> Stream Logs
-								</Button>
+								<div className="flex items-center gap-3 shrink-0">
+									<span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${getStatusBadge(e)}`}>
+										{e.status || e.state || 'PENDING'}
+									</span>
+									<span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+										<Clock className="w-3 h-3" />
+										{formatTimestamp(e.created_at)}
+									</span>
+
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => onOpenStream(e.id)}
+										className="h-7 text-xs border-border text-foreground hover:bg-muted px-2 rounded-lg font-semibold flex items-center gap-1"
+									>
+										<Terminal className="w-3 h-3" /> Stream Logs
+									</Button>
+
+									{isActive && onCancelBuild && (
+										<Button
+											size="sm"
+											variant="ghost"
+											onClick={() => onCancelBuild(e.id)}
+											className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1"
+										>
+											<XCircle className="w-3 h-3" /> Cancel
+										</Button>
+									)}
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			)}
 		</section>
