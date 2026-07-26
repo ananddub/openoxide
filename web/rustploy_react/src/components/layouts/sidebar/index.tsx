@@ -74,7 +74,7 @@ export function AppSidebar() {
 
 	return (
 		<>
-			<Sidebar collapsible="icon" variant="floating">
+			<Sidebar collapsible="icon" variant="sidebar" className="rounded-none border-r border-border/50">
 				{/* Brand Header */}
 				<SidebarHeader className="border-b border-border/40 px-4 py-4 group-data-[collapsible=icon]:p-1.5">
 					<HeaderDropdown isCollapsed={isCollapsed} isMobile={isMobile} />
