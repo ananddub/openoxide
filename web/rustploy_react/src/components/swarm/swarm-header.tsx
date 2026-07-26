@@ -1,18 +1,13 @@
 import {Button} from '#/components/ui/button';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
-import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Globe2, RefreshCw, Server, MoreVertical} from 'lucide-react';
+import {Globe2, RefreshCw, MoreVertical, Check} from 'lucide-react';
 
 interface SwarmHeaderProps {
 	servers: any[];
@@ -48,27 +43,8 @@ export function SwarmHeader({
 				</div>
 			</div>
 
-			{/* Inline Actions & Node Selector */}
+			{/* Top Right Controls: Refresh & 3-Dots Menu */}
 			<div className="flex items-center gap-2 shrink-0">
-				<div className="w-52">
-					<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
-						<SelectTrigger className="h-8 text-xs bg-card">
-							<div className="flex items-center gap-1.5 truncate">
-								<Server className="w-3.5 h-3.5 text-primary shrink-0" />
-								<SelectValue placeholder="Select Host Node" />
-							</div>
-						</SelectTrigger>
-						<SelectContent className="bg-card border-border text-xs z-50">
-							<SelectItem value="local">Local Server (Engine)</SelectItem>
-							{servers.map((srv: any) => (
-								<SelectItem key={srv.id} value={String(srv.id)}>
-									{srv.name} ({srv.ip_address})
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
 				<Button
 					variant="outline"
 					size="icon"
@@ -80,7 +56,7 @@ export function SwarmHeader({
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
 				</Button>
 
-				{/* Header 3-Dots Dropdown */}
+				{/* Header 3-Dots Dropdown containing Engine Selection & Swarm Actions */}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
@@ -89,7 +65,41 @@ export function SwarmHeader({
 					>
 						<MoreVertical className="w-4 h-4" />
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+					<DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+						<DropdownMenuLabel className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+							Select Host Engine
+						</DropdownMenuLabel>
+
+						<DropdownMenuItem
+							className={`flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+								selectedServerId === 'local' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'
+							}`}
+							onClick={() => onSelectServer('local')}
+						>
+							<span>Local Server (Engine)</span>
+							{selectedServerId === 'local' && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+						</DropdownMenuItem>
+
+						{servers.map((srv: any) => {
+							const srvIdStr = String(srv.id);
+							const isSelected = selectedServerId === srvIdStr;
+
+							return (
+								<DropdownMenuItem
+									key={srv.id}
+									className={`flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+										isSelected ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'
+									}`}
+									onClick={() => onSelectServer(srvIdStr)}
+								>
+									<span className="truncate">{srv.name} ({srv.ip_address})</span>
+									{isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+								</DropdownMenuItem>
+							);
+						})}
+
+						<DropdownMenuSeparator className="my-1 border-border/50" />
+
 						<DropdownMenuItem
 							disabled={!isSwarmActive}
 							className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
