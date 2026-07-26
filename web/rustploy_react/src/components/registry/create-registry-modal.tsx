@@ -46,6 +46,7 @@ export function CreateRegistryModal({
 
 	const createMutation = $api.useMutation('post', '/registries');
 	const patchMutation = $api.useMutation('patch', '/registries/{id}');
+	const testMutation = $api.useMutation('post', '/registries/{id}/test');
 	const testRawMutation = $api.useMutation('post', '/registries/test-raw');
 
 	useEffect(() => {
@@ -65,19 +66,28 @@ export function CreateRegistryModal({
 	}, [initialData, isOpen]);
 
 	const handleTestRaw = async () => {
-		if (!registryUrl || !username || !password) {
-			toast.error('Image Prefix (URL), Username, and Password are required to test');
+		if (!registryUrl || !username) {
+			toast.error('Image Prefix (URL) and Username are required to test');
 			return;
 		}
 		setIsTesting(true);
 		try {
-			await testRawMutation.mutateAsync({
-				body: {
-					registry_url: registryUrl,
-					username,
-					password,
-				} as any,
-			});
+			if (initialData?.id && !password) {
+				await testMutation.mutateAsync({params: {path: {id: initialData.id}}});
+			} else {
+				if (!password) {
+					toast.error('Password is required to test connection');
+					setIsTesting(false);
+					return;
+				}
+				await testRawMutation.mutateAsync({
+					body: {
+						registry_url: registryUrl,
+						username,
+						password,
+					} as any,
+				});
+			}
 			toast.success('Registry authentication test passed!');
 		} catch (err: any) {
 			toast.error(formatApiError(err));

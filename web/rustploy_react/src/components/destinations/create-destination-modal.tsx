@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import {HardDrive, RefreshCw, Plug, Check, X} from 'lucide-react';
+import {RefreshCw, Plug, Check, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Dialog,
@@ -47,6 +47,7 @@ export function CreateDestinationModal({
 
 	const createMutation = $api.useMutation('post', '/destinations');
 	const updateMutation = $api.useMutation('patch', '/destinations/{id}');
+	const testMutation = $api.useMutation('post', '/destinations/{id}/test');
 	const testRawMutation = $api.useMutation('post', '/destinations/test-raw');
 
 	useEffect(() => {
@@ -83,15 +84,24 @@ export function CreateDestinationModal({
 		}
 		setTestStatus('testing');
 		try {
-			await testRawMutation.mutateAsync({
-				body: {
-					bucket,
-					region,
-					endpoint: endpoint || undefined,
-					access_key: accessKey,
-					secret_access_key: secretKey,
-				} as any,
-			});
+			if (editingDestination?.id && !secretKey) {
+				await testMutation.mutateAsync({params: {path: {id: String(editingDestination.id)}}});
+			} else {
+				if (!secretKey) {
+					toast.error('Secret Access Key is required to test connection');
+					setTestStatus('idle');
+					return;
+				}
+				await testRawMutation.mutateAsync({
+					body: {
+						bucket,
+						region,
+						endpoint: endpoint || undefined,
+						access_key: accessKey,
+						secret_access_key: secretKey,
+					} as any,
+				});
+			}
 			setTestStatus('success');
 			toast.success('S3 Storage Destination connection test passed!');
 			setTimeout(() => setTestStatus('idle'), 3000);
