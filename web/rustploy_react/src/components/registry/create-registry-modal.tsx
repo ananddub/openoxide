@@ -63,11 +63,7 @@ export function CreateRegistryModal({
 		setIsTesting(true);
 		try {
 			await testRawMutation.mutateAsync({
-				body: {
-					registry_url: registryUrl,
-					username,
-					password,
-				} as any,
+				body: {registry_url: registryUrl, username, password} as any,
 			});
 			toast.success('Registry credentials verified successfully!');
 		} catch (err: any) {
@@ -122,7 +118,7 @@ export function CreateRegistryModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-md w-full bg-card border-border p-6 shadow-2xl rounded-2xl">
+			<DialogContent className="sm:max-w-xl w-full bg-card border-border p-6 shadow-2xl rounded-2xl">
 				<DialogHeader className="pb-3 border-b border-border/50">
 					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
 						<Database className="w-5 h-5 text-primary" />
@@ -156,29 +152,27 @@ export function CreateRegistryModal({
 						/>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Username *</Label>
-							<Input
-								placeholder="e.g. goploy-bot"
-								value={username}
-								onChange={e => setUsername(e.target.value)}
-								required
-								className="h-9 text-xs"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">Username *</Label>
+						<Input
+							placeholder="e.g. goploy-bot"
+							value={username}
+							onChange={e => setUsername(e.target.value)}
+							required
+							className="h-9 text-xs"
+						/>
+					</div>
 
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Password / Token {initialData ? '(Optional)' : '*'}</Label>
-							<Input
-								type="password"
-								placeholder={initialData ? '••••••••' : 'Access Token'}
-								value={password}
-								onChange={e => setPassword(e.target.value)}
-								required={!initialData}
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">Password / Token {initialData ? '(Optional)' : '*'}</Label>
+						<Input
+							type="password"
+							placeholder={initialData ? '••••••••' : 'Access Token'}
+							value={password}
+							onChange={e => setPassword(e.target.value)}
+							required={!initialData}
+							className="h-9 text-xs font-mono"
+						/>
 					</div>
 
 					<div className="flex items-center gap-2 pt-1">
