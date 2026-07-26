@@ -2636,6 +2636,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95067976aca6421a523e491fce939a3e65249bac4b977adee0ee9771568e8aa3"
 
 [[package]]
+name = "pty-process"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71cec9e2670207c5ebb9e477763c74436af3b9091dd550b9fb3c1bec7f3ea266"
+dependencies = [
+ "rustix",
+ "tokio",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.36.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3120,6 +3130,7 @@ dependencies = [
  "prost",
  "prost-build",
  "protoc-bin-vendored",
+ "pty-process",
  "reqwest",
  "rustploy_sh_macros",
  "serde",

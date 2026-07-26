@@ -1,7 +1,6 @@
 use dashmap::DashMap;
-use portable_pty::MasterPty;
+use pty_process::OwnedWritePty;
 use serde::{Deserialize, Serialize};
-use std::io::Write;
 use std::sync::Arc;
 use tokio::{
     process::{Child, ChildStdin},
@@ -57,8 +56,7 @@ pub struct TerminalExit {
 #[derive(Clone)]
 pub enum TerminalSession {
     Pty {
-        writer: Arc<Mutex<Box<dyn Write + Send>>>,
-        master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
+        writer: Arc<Mutex<OwnedWritePty>>,
     },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,

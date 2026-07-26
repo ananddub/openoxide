@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use pty_process::{Command as PtyCommand, Size};
 use socketioxide::extract::SocketRef;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, socket_key, spawn_blocking_pty_reader};
+use super::helpers::{emit_error, socket_key, spawn_pty_reader};
 use super::types::{ServerTerminalStart, SessionMap, TerminalSession, TerminalStarted};
 
 pub async fn spawn_remote_terminal(
@@ -44,24 +44,18 @@ pub async fn spawn_remote_terminal(
     };
     args.push(shell);
 
-    let pty_system = native_pty_system();
-    let pair = match pty_system.openpty(PtySize {
-        rows: 24,
-        cols: 80,
-        pixel_width: 0,
-        pixel_height: 0,
-    }) {
-        Ok(pair) => pair,
+    let (pty, pts) = match pty_process::open() {
+        Ok(res) => res,
         Err(error) => {
             emit_error(&socket, format!("could not open PTY: {error}"));
             return;
         }
     };
+    let _ = pty.resize(Size::new(24, 80));
 
-    let mut cmd = CommandBuilder::new("ssh");
-    cmd.args(&args);
+    let cmd = PtyCommand::new("ssh").args(&args);
 
-    let _child = match pair.slave.spawn_command(cmd) {
+    let mut child = match cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
             emit_error(&socket, format!("could not start remote PTY terminal: {error}"));
@@ -69,27 +63,12 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    let reader = match pair.master.try_clone_reader() {
-        Ok(r) => r,
-        Err(error) => {
-            emit_error(&socket, format!("could not clone PTY reader: {error}"));
-            return;
-        }
-    };
-
-    let writer = match pair.master.take_writer() {
-        Ok(w) => w,
-        Err(error) => {
-            emit_error(&socket, format!("could not take PTY writer: {error}"));
-            return;
-        }
-    };
+    let (reader, writer) = pty.into_split();
 
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
-            master: Arc::new(Mutex::new(pair.master)),
         },
     );
 
@@ -103,7 +82,8 @@ pub async fn spawn_remote_terminal(
     tokio::spawn(async move {
         let _temp_key = temp_key;
         let _temp_askpass = temp_askpass;
+        let _ = child.wait().await;
     });
 
-    spawn_blocking_pty_reader(socket.clone(), reader);
+    spawn_pty_reader(socket.clone(), reader);
 }

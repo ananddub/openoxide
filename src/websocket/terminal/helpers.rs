@@ -1,4 +1,4 @@
-use std::io::Read;
+use pty_process::OwnedReadPty;
 use socketioxide::extract::SocketRef;
 use tokio::io::AsyncReadExt;
 
@@ -42,11 +42,11 @@ pub fn spawn_output_task(
     });
 }
 
-pub fn spawn_blocking_pty_reader(socket: SocketRef, mut reader: Box<dyn Read + Send>) {
-    tokio::task::spawn_blocking(move || {
-        let mut buffer = [0u8; 8192];
+pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
+    tokio::spawn(async move {
+        let mut buffer = vec![0u8; 8192];
         loop {
-            match reader.read(&mut buffer) {
+            match reader.read(&mut buffer).await {
                 Ok(0) => break,
                 Ok(n) => emit_terminal_bytes(&socket, "stdout", buffer[..n].to_vec()),
                 Err(_) => break,

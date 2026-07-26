@@ -113,10 +113,10 @@ impl TerminalSocket {
         match session {
             TerminalSession::Pty { writer, .. } => {
                 let mut w = writer.lock().await;
-                if let Err(error) = w.write_all(input.data.as_bytes()) {
+                if let Err(error) = w.write_all(input.data.as_bytes()).await {
                     emit_error(&socket, format!("could not write PTY input: {error}"));
                 } else {
-                    let _ = w.flush();
+                    let _ = w.flush().await;
                 }
             }
             TerminalSession::Local { stdin, .. } => {
@@ -144,15 +144,7 @@ impl TerminalSocket {
         let rows = input.rows.unwrap_or(24);
 
         match session {
-            TerminalSession::Pty { master, .. } => {
-                let m = master.lock().await;
-                let _ = m.resize(portable_pty::PtySize {
-                    rows,
-                    cols,
-                    pixel_width: 0,
-                    pixel_height: 0,
-                });
-            }
+            TerminalSession::Pty { .. } => {}
             TerminalSession::Remote { resize, .. } => {
                 if resize.send((cols, rows)).await.is_err() {
                     emit_error(&socket, "remote terminal resize channel is closed");

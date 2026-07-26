@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use pty_process::{Command as PtyCommand, Size};
 use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, socket_key, spawn_blocking_pty_reader, spawn_output_task};
+use super::helpers::{emit_error, socket_key, spawn_output_task, spawn_pty_reader};
 use super::types::{DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted};
 
 pub async fn spawn_docker_terminal(
@@ -37,19 +37,14 @@ pub async fn spawn_docker_terminal(
         }
     }
 
-    let pty_system = native_pty_system();
-    let pair = match pty_system.openpty(PtySize {
-        rows: 24,
-        cols: 80,
-        pixel_width: 0,
-        pixel_height: 0,
-    }) {
-        Ok(pair) => pair,
+    let (pty, pts) = match pty_process::open() {
+        Ok(res) => res,
         Err(error) => {
             emit_error(&socket, format!("could not open PTY: {error}"));
             return;
         }
     };
+    let _ = pty.resize(Size::new(24, 80));
 
     let exec_args = docker
         .containers()
@@ -59,10 +54,9 @@ pub async fn spawn_docker_terminal(
         .workdir("/")
         .build_args([&shell]);
 
-    let mut cmd = CommandBuilder::new("docker");
-    cmd.args(&exec_args);
+    let cmd = PtyCommand::new("docker").args(&exec_args);
 
-    let child = match pair.slave.spawn_command(cmd) {
+    let mut child = match cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
             emit_error(&socket, format!("could not start docker terminal: {error}"));
@@ -70,39 +64,23 @@ pub async fn spawn_docker_terminal(
         }
     };
 
-    let reader = match pair.master.try_clone_reader() {
-        Ok(r) => r,
-        Err(error) => {
-            emit_error(&socket, format!("could not clone PTY reader: {error}"));
-            return;
-        }
-    };
-
-    let writer = match pair.master.take_writer() {
-        Ok(w) => w,
-        Err(error) => {
-            emit_error(&socket, format!("could not take PTY writer: {error}"));
-            return;
-        }
-    };
+    let (reader, writer) = pty.into_split();
 
     let key = socket_key(&socket);
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
-            master: Arc::new(Mutex::new(pair.master)),
         },
     );
 
     let _ = socket.emit("started", &TerminalStarted { kind: "docker" });
 
-    spawn_blocking_pty_reader(socket.clone(), reader);
+    spawn_pty_reader(socket.clone(), reader);
 
-    let mut child = child;
     let sessions_clone = sessions.clone();
     tokio::spawn(async move {
-        let _ = tokio::task::spawn_blocking(move || child.wait()).await;
+        let _ = child.wait().await;
         sessions_clone.remove(&key);
     });
 }
