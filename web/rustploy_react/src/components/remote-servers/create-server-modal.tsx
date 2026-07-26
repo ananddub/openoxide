@@ -88,9 +88,8 @@ export function CreateServerModal({
 					params: {path: {id: (newServer as any).id}},
 					body: {host_key_fingerprint: ''} as any,
 				});
-				toast.success(`Server node added & SSH Connection verified successfully!`);
+				toast.success(`Server node created & SSH connection to "${name || ipAddress}" verified successfully!`);
 				onSuccess();
-				onClose();
 			}
 		} catch (err: any) {
 			toast.error(formatApiError(err));
