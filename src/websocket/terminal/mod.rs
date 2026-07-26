@@ -74,26 +74,58 @@ impl TerminalSocket {
     }
 
     #[on("docker:start")]
-    async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
+    async fn docker_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
+
+        let container = payload
+            .get("container")
+            .and_then(|v| v.as_str())
+            .unwrap_or("app")
+            .to_string();
+        let shell = payload
+            .get("shell")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let server_id = payload
+            .get("server_id")
+            .and_then(|v| v.as_i64())
+            .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
+
+        let input = DockerTerminalStart {
+            container,
+            shell,
+            server_id,
+        };
         spawn_docker_terminal(socket, &self.sessions, input).await;
     }
 
     #[on("server:start")]
-    async fn server_start(&self, socket: SocketRef, Data(input): Data<ServerTerminalStart>) {
+    async fn server_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
+
+        let server_id = payload
+            .get("server_id")
+            .and_then(|v| v.as_i64())
+            .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
+        let shell = payload
+            .get("shell")
+            .and_then(|v| v.as_str())
+            .or_else(|| payload.get("command").and_then(|v| v.as_str()))
+            .map(|s| s.to_string());
+
+        let input = ServerTerminalStart { shell, server_id };
 
         if let Some(server_id) = input.server_id {
             spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
             return;
         }
 
-        let shell = input
+        let shell_cmd = input
             .shell
             .unwrap_or_else(|| std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()));
-        let mut command = Command::new(shell);
+        let mut command = Command::new(shell_cmd);
         command
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -103,9 +135,18 @@ impl TerminalSocket {
     }
 
     #[on("input")]
-    async fn input(&self, socket: SocketRef, Data(input): Data<TerminalInput>) {
+    async fn input(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
         let key = socket_key(&socket);
+        let data = if let Some(s) = payload.as_str() {
+            s.to_string()
+        } else if let Some(s) = payload.get("data").and_then(|v| v.as_str()) {
+            s.to_string()
+        } else {
+            return;
+        };
+
         let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
+            tracing::warn!("Input received for session {key} but session is not found");
             emit_error(&socket, "terminal session is not running");
             return;
         };
@@ -113,14 +154,14 @@ impl TerminalSocket {
         match session {
             TerminalSession::Pty { writer, .. } => {
                 let mut w = writer.lock().await;
-                if let Err(error) = w.write_all(input.data.as_bytes()).await {
+                if let Err(error) = w.write_all(data.as_bytes()).await {
                     tracing::warn!("PTY write_all failed: {error}");
                     emit_error(&socket, format!("could not write PTY input: {error}"));
                 }
             }
             TerminalSession::Local { stdin, .. } => {
                 let mut s = stdin.lock().await;
-                if let Err(error) = s.write_all(input.data.as_bytes()).await {
+                if let Err(error) = s.write_all(data.as_bytes()).await {
                     tracing::warn!("Local terminal write_all failed: {error}");
                     emit_error(&socket, format!("could not write terminal input: {error}"));
                 } else {
@@ -128,7 +169,7 @@ impl TerminalSocket {
                 }
             }
             TerminalSession::Remote { input: tx, .. } => {
-                if tx.send(input.data.into_bytes()).await.is_err() {
+                if tx.send(data.into_bytes()).await.is_err() {
                     emit_error(&socket, "remote terminal input channel is closed");
                 }
             }
@@ -136,29 +177,24 @@ impl TerminalSocket {
     }
 
     #[on("resize")]
-    async fn resize(&self, socket: SocketRef, Data(input): Data<TerminalResize>) {
+    async fn resize(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
         let key = socket_key(&socket);
         let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
-            emit_error(&socket, "terminal session is not running");
             return;
         };
 
-        let cols = input.cols.unwrap_or(80);
-        let rows = input.rows.unwrap_or(24);
+        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16).unwrap_or(80);
+        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16).unwrap_or(24);
 
         match session {
             TerminalSession::Pty { writer, .. } => {
                 let w = writer.lock().await;
                 if let Err(error) = w.resize(pty_process::Size::new(rows, cols)) {
                     tracing::warn!("PTY resize failed: {error}");
-                    emit_error(&socket, format!("could not resize PTY: {error}"));
                 }
             }
             TerminalSession::Remote { resize, .. } => {
-                if resize.send((rows, cols)).await.is_err() {
-                    tracing::warn!("Remote resize channel is closed");
-                    emit_error(&socket, "remote terminal resize channel is closed");
-                }
+                let _ = resize.send((rows, cols)).await;
             }
             TerminalSession::Local { .. } => {}
         }
