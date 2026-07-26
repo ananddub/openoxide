@@ -1,12 +1,18 @@
 import {Button} from '#/components/ui/button';
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Globe2, RefreshCw, MoreVertical, Check, Server} from 'lucide-react';
+import {Globe2, RefreshCw, MoreVertical, Server} from 'lucide-react';
 
 interface SwarmHeaderProps {
 	servers: any[];
@@ -29,10 +35,6 @@ export function SwarmHeader({
 	isSwarmActive,
 	isTokensExpanded,
 }: SwarmHeaderProps) {
-	// Find currently selected server name for header pill display
-	const selectedServer = servers.find((s: any) => String(s.id) === selectedServerId);
-	const selectedEngineName = selectedServerId === 'local' ? 'Local Server (Engine)' : selectedServer?.name || 'Remote Server';
-
 	return (
 		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/50">
 			{/* Title & Subtitle */}
@@ -48,12 +50,26 @@ export function SwarmHeader({
 				</div>
 			</div>
 
-			{/* Top Right Controls: Selected Engine Pill, Refresh & 3-Dots Menu */}
+			{/* Host Engine Dropdown Selector, Refresh & 3-Dots Menu */}
 			<div className="flex items-center gap-2 shrink-0">
-				{/* Active Engine Name Display Pill */}
-				<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-foreground shadow-xs">
-					<Server className="w-3.5 h-3.5 text-primary shrink-0" />
-					<span className="truncate max-w-[140px] sm:max-w-[180px]">{selectedEngineName}</span>
+				{/* Host Engine Select Dropdown */}
+				<div className="w-52 sm:w-60">
+					<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
+						<SelectTrigger className="h-8 text-xs bg-card border-border/80">
+							<div className="flex items-center gap-1.5 truncate">
+								<Server className="w-3.5 h-3.5 text-primary shrink-0" />
+								<SelectValue placeholder="Select Host Engine" />
+							</div>
+						</SelectTrigger>
+						<SelectContent className="bg-card border-border text-xs z-50">
+							<SelectItem value="local">Local Server (Engine)</SelectItem>
+							{servers.map((srv: any) => (
+								<SelectItem key={srv.id} value={String(srv.id)}>
+									{srv.name} ({srv.ip_address})
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 
 				<Button
@@ -67,7 +83,7 @@ export function SwarmHeader({
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
 				</Button>
 
-				{/* Header 3-Dots Dropdown containing Engine Selection & Swarm Actions */}
+				{/* Header 3-Dots Dropdown containing ONLY Join Tokens toggle */}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
@@ -76,41 +92,7 @@ export function SwarmHeader({
 					>
 						<MoreVertical className="w-4 h-4" />
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
-						<div className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-							Select Host Engine
-						</div>
-
-						<DropdownMenuItem
-							className={`flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium ${
-								selectedServerId === 'local' ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'
-							}`}
-							onClick={() => onSelectServer('local')}
-						>
-							<span>Local Server (Engine)</span>
-							{selectedServerId === 'local' && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-						</DropdownMenuItem>
-
-						{servers.map((srv: any) => {
-							const srvIdStr = String(srv.id);
-							const isSelected = selectedServerId === srvIdStr;
-
-							return (
-								<DropdownMenuItem
-									key={srv.id}
-									className={`flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium ${
-										isSelected ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'
-									}`}
-									onClick={() => onSelectServer(srvIdStr)}
-								>
-									<span className="truncate">{srv.name} ({srv.ip_address})</span>
-									{isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-								</DropdownMenuItem>
-							);
-						})}
-
-						<DropdownMenuSeparator className="my-1 border-border/50" />
-
+					<DropdownMenuContent align="end" className="w-48 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
 						<DropdownMenuItem
 							disabled={!isSwarmActive}
 							className="flex cursor-pointer items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
