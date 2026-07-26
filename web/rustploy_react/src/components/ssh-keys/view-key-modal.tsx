@@ -10,7 +10,7 @@ import {Button} from '#/components/ui/button';
 import {Textarea} from '#/components/ui/textarea';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
-import {Copy, Check, Eye, EyeOff, Key} from 'lucide-react';
+import {Copy, Check, Eye, EyeOff, Key, Terminal} from 'lucide-react';
 
 interface ViewKeyModalProps {
 	isOpen: boolean;
@@ -26,6 +26,7 @@ export function ViewKeyModal({
 	const [showPrivate, setShowPrivate] = useState(false);
 	const [copiedPublic, setCopiedPublic] = useState(false);
 	const [copiedPrivate, setCopiedPrivate] = useState(false);
+	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	const {data: fullKeyDetails} = $api.useQuery(
 		'get',
@@ -59,6 +60,19 @@ export function ViewKeyModal({
 			setCopiedPrivate(true);
 			toast.success('Private SSH Key copied to clipboard');
 			setTimeout(() => setCopiedPrivate(false), 2000);
+		}
+	};
+
+	const setupCommand = activeKey?.public_key
+		? `mkdir -p ~/.ssh && echo "${activeKey.public_key.trim()}" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
+		: '';
+
+	const handleCopyCommand = () => {
+		if (setupCommand) {
+			navigator.clipboard.writeText(setupCommand);
+			setCopiedCmd(true);
+			toast.success('Server authorization command copied');
+			setTimeout(() => setCopiedCmd(false), 2000);
 		}
 	};
 
@@ -127,6 +141,25 @@ export function ViewKeyModal({
 							</div>
 						)}
 					</div>
+
+					{/* Server Authorization Command Section (Placed at the very bottom) */}
+					{setupCommand && (
+						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+									<Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
+									<span>Authorize Key on Remote Server</span>
+								</label>
+								<Button variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-medium gap-1.5 px-2.5">
+									{copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+									{copiedCmd ? 'Copied' : 'Copy Command'}
+								</Button>
+							</div>
+							<div className="p-2.5 bg-muted/40 border border-border/50 rounded-md text-[11px] font-mono text-muted-foreground break-all select-all leading-relaxed max-h-20 overflow-y-auto">
+								{setupCommand}
+							</div>
+						</div>
+					)}
 				</div>
 
 				<div className="flex justify-end pt-2 border-t border-border/50">
