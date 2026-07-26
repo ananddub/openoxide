@@ -4090,6 +4090,7 @@ export interface components {
 			/** Format: int64 */
 			last_used_at?: number;
 			name: string;
+			private_key?: string;
 			public_key: string;
 			/** Format: int64 */
 			updated_at: number;

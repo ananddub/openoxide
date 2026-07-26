@@ -147,7 +147,7 @@ export function ViewKeyModal({
 
 						{showPrivate ? (
 							<div className="h-28 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-emerald-400 whitespace-pre-wrap">
-								{activeKey.private_key}
+								{activeKey.private_key || 'No private key stored for this SSH key.'}
 							</div>
 						) : (
 							<div className="h-10 bg-zinc-950/60 border border-zinc-800 rounded-md flex items-center px-3 text-xs text-zinc-500 italic font-mono">

@@ -57,6 +57,7 @@ pub struct SshKeyResponseDto {
     pub name: String,
     pub description: Option<String>,
     pub public_key: String,
+    pub private_key: Option<String>,
     pub has_private_key: bool,
     pub last_used_at: Option<i64>,
     pub created_at: i64,
@@ -65,12 +66,15 @@ pub struct SshKeyResponseDto {
 
 impl From<SshKey> for SshKeyResponseDto {
     fn from(value: SshKey) -> Self {
+        let has_priv = !value.private_key.is_empty();
+        let priv_key = if has_priv { Some(value.private_key) } else { None };
         Self {
             id: value.id.expect("persisted ssh key must have an id"),
             name: value.name,
             description: value.description,
             public_key: value.public_key,
-            has_private_key: !value.private_key.is_empty(),
+            private_key: priv_key,
+            has_private_key: has_priv,
             last_used_at: value.last_used_at,
             created_at: value.created_at,
             updated_at: value.updated_at,
