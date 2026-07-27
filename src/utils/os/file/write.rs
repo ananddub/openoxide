@@ -1,4 +1,4 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, shell_single_quote};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
@@ -44,8 +44,27 @@ impl<'a> FileWriteBuilder<'a> {
 impl<'a> IntoCommand for FileWriteBuilder<'a> {
     fn build_str(&self) -> String {
         let safe_path = escape_arg(&self.path);
-        let safe_content = escape_arg(&self.content);
         let op = if self.append { ">>" } else { ">" };
-        format!("printf '%s' {} {} {}", safe_content, op, safe_path)
+        if self.content.starts_with('$') {
+            let safe_content = escape_arg(&self.content);
+            format!("printf '%s' {} {} {}", safe_content, op, safe_path)
+        } else {
+            let safe_content = shell_single_quote(&printf_b_escape(&self.content));
+            format!("printf '%b' {} {} {}", safe_content, op, safe_path)
+        }
     }
+}
+
+fn printf_b_escape(content: &str) -> String {
+    let mut escaped = String::with_capacity(content.len());
+    for ch in content.chars() {
+        match ch {
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            _ => escaped.push(ch),
+        }
+    }
+    escaped
 }

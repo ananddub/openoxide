@@ -507,7 +507,7 @@ fn test_sh_macro_convenience_dsls() {
     assert!(bash.contains("arch=$(uname '-m')"));
 
     // 2. File DSL
-    assert!(bash.contains("printf '%s' 'hello' > \"$tmp\""));
+    assert!(bash.contains("printf '%b' 'hello' > \"$tmp\""));
     assert!(bash.contains("cat '/etc/passwd'"));
     assert!(bash.contains("test -f \"$tmp\""));
     assert!(bash.contains("rm -f \"$tmp\""));
@@ -846,8 +846,27 @@ fn test_rust_dsl_api_usage() {
     assert!(
         config
             .build_str()
-            .contains("printf '%s' 'production' > 'config.json'")
+            .contains("printf '%b' 'production' > 'config.json'")
     );
+}
+
+#[test]
+fn test_file_write_escapes_multiline_literals() {
+    use crate::utils::exec::script::IntoCommand;
+    use crate::utils::exec::{CommandExecutor, LocalExecutor};
+    use crate::utils::os::OsCli;
+
+    let executor = CommandExecutor::Local(LocalExecutor::new());
+    let os = OsCli::new(&executor);
+
+    let command = os
+        .file("traefik.yml")
+        .write("global:\n  sendAnonymousUsage: false\nproviders:\n  docker: {}\n")
+        .build_str();
+
+    assert!(command.contains("printf '%b'"));
+    assert!(command.contains("global:\\n  sendAnonymousUsage: false\\nproviders:"));
+    assert!(!command.contains("global:\n"));
 }
 
 #[test]
