@@ -8,7 +8,7 @@ use crate::utils::{
     },
     exec::{
         CommandExecutor, ExecResult,
-        script::{IntoCommand, ScriptPipeline, ShellIR, sh},
+        script::{ScriptPipeline, ShellIR, sh},
     },
     os::OsCli,
 };
@@ -417,58 +417,51 @@ impl ServerSetup {
 
     fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         if let Some(advertise_addr) = &self.config.advertise_addr {
-            let swarm_init = docker
-                .swarm()
-                .init()
-                .advertise_addr(advertise_addr)
-                .listen_addr("0.0.0.0:2377");
-            steps.extend(sh!(if !pipe![
-                cmd("docker", "info", "--format", "{{.Swarm.LocalNodeState}}"),
-                grep!("-q", "^active$")
-            ] {
-                swarm_init;
+            steps.extend(sh!(if !docker.swarm().active() {
+                docker
+                    .swarm()
+                    .init()
+                    .advertise_addr(advertise_addr)
+                    .listen_addr("0.0.0.0:2377");
             }));
         } else {
-            steps.extend(sh!(if !pipe![
-                cmd("docker", "info", "--format", "{{.Swarm.LocalNodeState}}"),
-                grep!("-q", "^active$")
-            ] {
+            steps.extend(sh!(if !docker.swarm().active() {
                 let _rustploy_advertise_addr = capture_stdout! {
                     pipe![
                         cmd("hostname", "-I"),
-                        awk("{ for (i=1; i<=NF; i++) if ($i != \"127.0.0.1\") { print $i; exit } }")
+                        awk(awk_for_fields! {
+                            if field != "127.0.0.1" {
+                                print(field);
+                                exit;
+                            }
+                        })
                     ];
                 }
                 .default("127.0.0.1");
-                cmd(
-                    "docker",
-                    "swarm",
-                    "init",
-                    "--advertise-addr",
-                    _rustploy_advertise_addr,
-                    "--listen-addr",
-                    "0.0.0.0:2377",
-                );
+                docker
+                    .swarm()
+                    .init()
+                    .advertise_addr(_rustploy_advertise_addr)
+                    .listen_addr("0.0.0.0:2377");
             }));
         }
     }
 
     fn append_network_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let network_name = self.config.network_name.as_str();
-        let networks = docker.networks();
-        let network_create = networks
-            .create(network_name)
-            .driver(crate::utils::docker::NetworkDriver::Overlay)
-            .attachable();
 
-        steps.extend(sh!(
-            if !cmd("docker", "network", "inspect", rust!(network_name))
-                .stdout("/dev/null")
-                .stderr("/dev/null")
-            {
-                network_create;
-            }
-        ));
+        steps.extend(sh!(if !docker
+            .networks()
+            .inspect_cmd(network_name)
+            .stdout("/dev/null")
+            .stderr("/dev/null")
+        {
+            docker
+                .networks()
+                .create(network_name)
+                .driver(crate::utils::docker::NetworkDriver::Overlay)
+                .attachable();
+        }));
     }
 
     fn append_traefik_config_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
@@ -501,71 +494,64 @@ impl ServerSetup {
             "/etc/rustploy/traefik/dynamic",
         );
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
-        let containers = docker.containers();
-        let create = containers
-            .create(&image)
-            .detach()
-            .name(name)
-            .restart(RestartPolicy::Always)
-            .network(self.config.network_name.as_str())
-            .mount(static_mount)
-            .mount(dynamic_mount)
-            .mount(docker_socket_mount)
-            .publish(Port::tcp(self.config.http_port, self.config.http_port))
-            .publish(Port::tcp(self.config.https_port, self.config.https_port))
-            .publish(Port::udp(self.config.http3_port, self.config.http3_port))
-            .publish(Port::tcp(self.config.dashboard_port, 8080));
-
-        let start = containers.start(name);
-        let services = docker.services();
-        let service_remove = services.remove(name);
-        let images = docker.images();
-        let image_pull = images.pull(&image);
-
-        steps.extend(sh!(if cmd("docker", "container", "inspect", rust!(name))
+        steps.extend(sh!(if docker
+            .containers()
+            .inspect_cmd(name)
             .stdout("/dev/null")
             .stderr("/dev/null")
         {
-            start;
+            docker.containers().start(name);
         } else {
-            if cmd("docker", "service", "inspect", rust!(name))
+            if docker
+                .services()
+                .inspect_cmd(name)
                 .stdout("/dev/null")
                 .stderr("/dev/null")
             {
-                service_remove;
+                docker.services().remove(name);
             }
-            image_pull;
-            create;
+            docker.images().pull(image.as_str());
+            docker
+                .containers()
+                .create(image.as_str())
+                .detach()
+                .name(name)
+                .restart(RestartPolicy::Always)
+                .network(self.config.network_name.as_str())
+                .mount(static_mount)
+                .mount(dynamic_mount)
+                .mount(docker_socket_mount)
+                .publish(Port::tcp(self.config.http_port, self.config.http_port))
+                .publish(Port::tcp(self.config.https_port, self.config.https_port))
+                .publish(Port::udp(self.config.http3_port, self.config.http3_port))
+                .publish(Port::tcp(self.config.dashboard_port, 8080));
         }));
     }
 
     fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = "rustploy-monitor";
         let image = "dubeyanand/rustploy-monitor:latest";
-        let containers = docker.containers();
-        let create = containers
-            .create(image)
-            .detach()
-            .name(name)
-            .restart(RestartPolicy::Always)
-            .mount(Mount::bind_ro(
-                "/var/run/docker.sock",
-                "/var/run/docker.sock",
-            ))
-            .publish(Port::tcp(50051, 50051));
 
-        let start = containers.start(name);
-        let images = docker.images();
-        let image_pull = images.pull(image);
-
-        steps.extend(sh!(if cmd("docker", "container", "inspect", rust!(name))
+        steps.extend(sh!(if docker
+            .containers()
+            .inspect_cmd(name)
             .stdout("/dev/null")
             .stderr("/dev/null")
         {
-            start;
+            docker.containers().start(name);
         } else {
-            image_pull;
-            create;
+            docker.images().pull(image);
+            docker
+                .containers()
+                .create(image)
+                .detach()
+                .name(name)
+                .restart(RestartPolicy::Always)
+                .mount(Mount::bind_ro(
+                    "/var/run/docker.sock",
+                    "/var/run/docker.sock",
+                ))
+                .publish(Port::tcp(50051, 50051));
         }));
     }
 }
@@ -601,10 +587,7 @@ mod tests {
         assert!(script.contains("https://get.docker.com"));
         assert!(script.contains("https://nixpacks.com/install.sh"));
         assert!(script.contains("_rustploy_pack_url="));
-        assert!(
-            script
-                .contains("docker 'swarm' 'init' '--advertise-addr' \"$_rustploy_advertise_addr\"")
-        );
+        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_advertise_addr"));
         assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
         assert!(script.contains("traefik:v"));
         assert!(script.contains("dubeyanand/rustploy-monitor:latest"));
@@ -617,7 +600,7 @@ mod tests {
 
         assert!(!script.contains("https://get.docker.com"));
         assert!(!script.contains("https://nixpacks.com/install.sh"));
-        assert!(script.contains("docker 'swarm' 'init'"));
+        assert!(script.contains("docker swarm init"));
         assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
     }
 

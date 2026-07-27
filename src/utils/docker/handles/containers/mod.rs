@@ -1,4 +1,4 @@
-use crate::utils::docker::{DockerCli, DockerResult};
+use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
 pub use create::ContainerCreate;
 pub use exec::ExecBuilder;
@@ -74,9 +74,16 @@ impl<'a> ContainerHandle<'a> {
     pub fn top(&self, id: impl Into<String>) -> ContainerTopBuilder<'_> {
         ContainerTopBuilder::new(self.0, id)
     }
-    pub async fn inspect(&self, id: impl AsRef<str>) -> DockerResult<crate::utils::docker::ContainerInspect> {
+    pub fn inspect_cmd(&self, id: impl Into<String>) -> ContainerInspectBuilder<'_> {
+        ContainerInspectBuilder::new(self.0, id)
+    }
+    pub async fn inspect(
+        &self,
+        id: impl AsRef<str>,
+    ) -> DockerResult<crate::utils::docker::ContainerInspect> {
         let out = self.0.run(["container", "inspect", id.as_ref()]).await?;
-        let mut json: Vec<crate::utils::docker::ContainerInspect> = serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::utils::docker::ContainerInspect> =
+            serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 
@@ -84,6 +91,37 @@ impl<'a> ContainerHandle<'a> {
         let out = self.0.run(["container", "inspect", id.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
+    }
+}
+
+pub struct ContainerInspectBuilder<'a> {
+    cli: &'a DockerCli,
+    id: String,
+    args: ArgBuilder,
+}
+
+impl<'a> ContainerInspectBuilder<'a> {
+    pub(crate) fn new(cli: &'a DockerCli, id: impl Into<String>) -> Self {
+        Self {
+            cli,
+            id: id.into(),
+            args: ArgBuilder::cmd(&["container", "inspect"]),
+        }
+    }
+
+    pub async fn run(mut self) -> DockerResult<DockerOutput> {
+        self.args.push(&self.id);
+        self.cli.execute(&self.args).await
+    }
+}
+
+crate::impl_builder_opts!(ContainerInspectBuilder);
+
+impl crate::utils::exec::script::IntoCommand for ContainerInspectBuilder<'_> {
+    fn build_str(&self) -> String {
+        let mut args = self.args.clone();
+        args.push(&self.id);
+        args.preview()
     }
 }
 

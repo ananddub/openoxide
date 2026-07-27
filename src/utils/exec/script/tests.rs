@@ -568,6 +568,53 @@ fn test_sh_macro_builder_inside_if_branch() {
 }
 
 #[test]
+fn test_sh_macro_docker_chain_inside_if_branch() {
+    use super::sh;
+    let docker = crate::utils::docker::DockerCli::new_local();
+
+    let script_ir = sh!(if docker
+        .containers()
+        .inspect_cmd("web")
+        .stdout("/dev/null")
+        .stderr("/dev/null")
+    {
+        docker.containers().start("web");
+    });
+
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains("if docker container inspect web > /dev/null 2> /dev/null; then"));
+    assert!(bash.contains("docker container start web"));
+}
+
+#[test]
+fn test_sh_macro_awk_for_fields() {
+    use super::sh;
+
+    let script_ir = sh!(
+        pipe![
+            cmd("hostname", "-I"),
+            awk(awk_for_fields! {
+                if field != "127.0.0.1" {
+                    print(field);
+                    exit;
+                }
+            })
+        ];
+    );
+
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains("hostname '-I' | awk '{ for (i=1; i<=NF; i++) if ($i != \"127.0.0.1\") { print $i; exit } }'"));
+}
+
+#[test]
 fn test_sh_macro_break_continue() {
     use super::sh;
     let script_ir = sh!(

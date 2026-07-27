@@ -1,11 +1,11 @@
 pub use compose::ComposeHandle;
 pub use configs::ConfigsHandle;
 pub use containers::{
-    ContainerCreate, ContainerHandle, ContainerKillBuilder, ContainerPauseBuilder,
-    ContainerPortBuilder, ContainerPrune, ContainerQuery, ContainerRenameBuilder,
-    ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder, ContainerStopBuilder,
-    ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, ContainerWaitBuilder,
-    ExecBuilder, LogsBuilder, RestartPolicy, StatsBuilder,
+    ContainerCreate, ContainerHandle, ContainerInspectBuilder, ContainerKillBuilder,
+    ContainerPauseBuilder, ContainerPortBuilder, ContainerPrune, ContainerQuery,
+    ContainerRenameBuilder, ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder,
+    ContainerStopBuilder, ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder,
+    ContainerWaitBuilder, ExecBuilder, LogsBuilder, RestartPolicy, StatsBuilder,
 };
 pub use images::{
     BuildBuilder, ImageHandle, ImageHistoryBuilder, ImageImportBuilder, ImageLoadBuilder,
@@ -14,14 +14,14 @@ pub use images::{
 };
 pub use nodes::NodesHandle;
 pub use resources::{
-    NetworkConnectBuilder, NetworkCreate, NetworkDisconnectBuilder, NetworkHandle, NetworkPrune,
-    NetworkQuery, NetworkRmBuilder, VolumeCreate, VolumeHandle, VolumePrune, VolumeQuery,
-    VolumeRmBuilder,
+    NetworkConnectBuilder, NetworkCreate, NetworkDisconnectBuilder, NetworkHandle,
+    NetworkInspectBuilder, NetworkPrune, NetworkQuery, NetworkRmBuilder, VolumeCreate,
+    VolumeHandle, VolumePrune, VolumeQuery, VolumeRmBuilder,
 };
 pub use secrets::SecretsHandle;
-pub use services::ServicesHandle;
+pub use services::{ServiceInspectBuilder, ServicesHandle};
 pub use stacks::StacksHandle;
-pub use swarm::SwarmHandle;
+pub use swarm::{SwarmActiveBuilder, SwarmHandle};
 
 pub mod compose;
 pub mod configs;

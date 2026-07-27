@@ -1,4 +1,4 @@
-use crate::utils::docker::{DockerCli, DockerResult};
+use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
 pub use network::{
     NetworkConnectBuilder, NetworkCreate, NetworkDisconnectBuilder, NetworkPrune, NetworkQuery,
@@ -35,9 +35,16 @@ impl<'a> NetworkHandle<'a> {
     ) -> NetworkDisconnectBuilder<'_> {
         NetworkDisconnectBuilder::new(self.0, network, container)
     }
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::NetworkInspect> {
+    pub fn inspect_cmd(&self, name: impl Into<String>) -> NetworkInspectBuilder<'_> {
+        NetworkInspectBuilder::new(self.0, name)
+    }
+    pub async fn inspect(
+        &self,
+        name: impl AsRef<str>,
+    ) -> DockerResult<crate::utils::docker::NetworkInspect> {
         let out = self.0.run(["network", "inspect", name.as_ref()]).await?;
-        let mut json: Vec<crate::utils::docker::NetworkInspect> = serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::utils::docker::NetworkInspect> =
+            serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 
@@ -45,6 +52,37 @@ impl<'a> NetworkHandle<'a> {
         let out = self.0.run(["network", "inspect", name.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
+    }
+}
+
+pub struct NetworkInspectBuilder<'a> {
+    cli: &'a DockerCli,
+    name: String,
+    args: ArgBuilder,
+}
+
+impl<'a> NetworkInspectBuilder<'a> {
+    pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
+        Self {
+            cli,
+            name: name.into(),
+            args: ArgBuilder::cmd(&["network", "inspect"]),
+        }
+    }
+
+    pub async fn run(mut self) -> DockerResult<DockerOutput> {
+        self.args.push(&self.name);
+        self.cli.execute(&self.args).await
+    }
+}
+
+crate::impl_builder_opts!(NetworkInspectBuilder);
+
+impl crate::utils::exec::script::IntoCommand for NetworkInspectBuilder<'_> {
+    fn build_str(&self) -> String {
+        let mut args = self.args.clone();
+        args.push(&self.name);
+        args.preview()
     }
 }
 
@@ -63,7 +101,10 @@ impl<'a> VolumeHandle<'a> {
     pub fn rm(&self, name: impl Into<String>) -> VolumeRmBuilder<'_> {
         VolumeRmBuilder::new(self.0, name)
     }
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::VolumeInspect> {
+    pub async fn inspect(
+        &self,
+        name: impl AsRef<str>,
+    ) -> DockerResult<crate::utils::docker::VolumeInspect> {
         let out = self.0.run(["volume", "inspect", name.as_ref()]).await?;
         let mut json: Vec<crate::utils::docker::VolumeInspect> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

@@ -136,6 +136,16 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         }});
     }
 
+    if macro_name == "awk_for_fields" {
+        let parsed = mac.parse_body_with(AwkForFieldsInput::parse)?;
+        let program = parsed.to_awk();
+        return Ok(quote! {
+            (crate::utils::exec::script::dsl::ShellIR::Expr(
+                crate::utils::exec::script::dsl::Expr::Literal(#program.to_string())
+            ))
+        });
+    }
+
     if macro_name == "json" {
         let parsed = mac.parse_body_with(JsonMacroInput::parse)?;
         let mut parts = Vec::new();
@@ -1123,4 +1133,122 @@ impl syn::parse::Parse for JsonMacroInput {
             Ok(JsonMacroInput { pairs })
         }
     }
+}
+
+enum AwkComparison {
+    Eq,
+    Ne,
+}
+
+enum AwkAction {
+    PrintField,
+    PrintLiteral(String),
+    Exit,
+}
+
+struct AwkForFieldsInput {
+    comparison: AwkComparison,
+    value: String,
+    actions: Vec<AwkAction>,
+}
+
+impl AwkForFieldsInput {
+    fn to_awk(&self) -> String {
+        let op = match self.comparison {
+            AwkComparison::Eq => "==",
+            AwkComparison::Ne => "!=",
+        };
+        let actions = self
+            .actions
+            .iter()
+            .map(|action| match action {
+                AwkAction::PrintField => "print $i".to_owned(),
+                AwkAction::PrintLiteral(value) => {
+                    format!("print \"{}\"", escape_awk_string(value))
+                }
+                AwkAction::Exit => "exit".to_owned(),
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+
+        format!(
+            "{{ for (i=1; i<=NF; i++) if ($i {op} \"{}\") {{ {actions} }} }}",
+            escape_awk_string(&self.value)
+        )
+    }
+}
+
+impl syn::parse::Parse for AwkForFieldsInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        input.parse::<syn::Token![if]>()?;
+        let field: syn::Ident = input.parse()?;
+        if field != "field" {
+            return Err(syn::Error::new_spanned(
+                field,
+                "awk_for_fields! condition must compare `field`",
+            ));
+        }
+
+        let comparison = if input.peek(syn::Token![!=]) {
+            input.parse::<syn::Token![!=]>()?;
+            AwkComparison::Ne
+        } else if input.peek(syn::Token![==]) {
+            input.parse::<syn::Token![==]>()?;
+            AwkComparison::Eq
+        } else {
+            return Err(input.error("expected `!=` or `==` in awk_for_fields! condition"));
+        };
+
+        let value: syn::LitStr = input.parse()?;
+        let content;
+        syn::braced!(content in input);
+
+        let mut actions = Vec::new();
+        while !content.is_empty() {
+            let ident: syn::Ident = content.parse()?;
+            match ident.to_string().as_str() {
+                "print" => {
+                    let args;
+                    syn::parenthesized!(args in content);
+                    if args.peek(syn::Ident) {
+                        let target: syn::Ident = args.parse()?;
+                        if target != "field" {
+                            return Err(syn::Error::new_spanned(
+                                target,
+                                "awk_for_fields! only supports print(field) for field output",
+                            ));
+                        }
+                        actions.push(AwkAction::PrintField);
+                    } else {
+                        let literal: syn::LitStr = args.parse()?;
+                        actions.push(AwkAction::PrintLiteral(literal.value()));
+                    }
+                }
+                "exit" => actions.push(AwkAction::Exit),
+                other => {
+                    return Err(syn::Error::new_spanned(
+                        ident,
+                        format!("unsupported awk_for_fields! action `{other}`"),
+                    ));
+                }
+            }
+            if content.peek(syn::Token![;]) {
+                content.parse::<syn::Token![;]>()?;
+            }
+        }
+
+        if actions.is_empty() {
+            return Err(input.error("awk_for_fields! requires at least one action"));
+        }
+
+        Ok(Self {
+            comparison,
+            value: value.value(),
+            actions,
+        })
+    }
+}
+
+fn escape_awk_string(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
 }

@@ -1,4 +1,4 @@
-use crate::utils::docker::{DockerResult, client::DockerCli};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub use create::ServiceCreateBuilder;
 pub use list::ServiceListBuilder;
@@ -42,6 +42,10 @@ impl<'a> ServicesHandle<'a> {
         ServiceLogsBuilder::new(self.cli, name)
     }
 
+    pub fn inspect_cmd(&self, name: impl Into<String>) -> ServiceInspectBuilder<'a> {
+        ServiceInspectBuilder::new(self.cli, name)
+    }
+
     pub fn scale(&self) -> ServiceScaleBuilder<'a> {
         ServiceScaleBuilder::new(self.cli)
     }
@@ -50,9 +54,13 @@ impl<'a> ServicesHandle<'a> {
         ServiceRollbackBuilder::new(self.cli, name)
     }
 
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::ServiceInspect> {
+    pub async fn inspect(
+        &self,
+        name: impl AsRef<str>,
+    ) -> DockerResult<crate::utils::docker::ServiceInspect> {
         let out = self.cli.run(["service", "inspect", name.as_ref()]).await?;
-        let mut json: Vec<crate::utils::docker::ServiceInspect> = serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::utils::docker::ServiceInspect> =
+            serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 
@@ -60,6 +68,37 @@ impl<'a> ServicesHandle<'a> {
         let out = self.cli.run(["service", "inspect", name.as_ref()]).await?;
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
+    }
+}
+
+pub struct ServiceInspectBuilder<'a> {
+    cli: &'a DockerCli,
+    name: String,
+    args: ArgBuilder,
+}
+
+impl<'a> ServiceInspectBuilder<'a> {
+    pub(crate) fn new(cli: &'a DockerCli, name: impl Into<String>) -> Self {
+        Self {
+            cli,
+            name: name.into(),
+            args: ArgBuilder::cmd(&["service", "inspect"]),
+        }
+    }
+
+    pub async fn run(mut self) -> DockerResult<DockerOutput> {
+        self.args.push(&self.name);
+        self.cli.execute(&self.args).await
+    }
+}
+
+crate::impl_builder_opts!(ServiceInspectBuilder);
+
+impl crate::utils::exec::script::IntoCommand for ServiceInspectBuilder<'_> {
+    fn build_str(&self) -> String {
+        let mut args = self.args.clone();
+        args.push(&self.name);
+        args.preview()
     }
 }
 

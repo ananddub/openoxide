@@ -300,7 +300,7 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
         Expr::Path(expr_path) => {
             if let Some(ident) = expr_path.path.get_ident() {
                 let name = ident.to_string();
-                if name != "os" {
+                if name != "os" && name != "docker" {
                     tracker.check(&name, ident.span())?;
                 }
             }
@@ -350,7 +350,10 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
                 }
             } else {
                 let is_os_receiver = match &*method_call.receiver {
-                    Expr::Path(p) => p.path.get_ident().map_or(false, |i| i == "os"),
+                    Expr::Path(p) => p
+                        .path
+                        .get_ident()
+                        .map_or(false, |i| i == "os" || i == "docker"),
                     _ => false,
                 };
                 if !is_os_receiver {
@@ -368,7 +371,11 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
                 .get_ident()
                 .map(|i| i.to_string())
                 .unwrap_or_default();
-            if macro_name == "rust" || macro_name == "ir" || macro_name == "dynamic" {
+            if macro_name == "rust"
+                || macro_name == "ir"
+                || macro_name == "dynamic"
+                || macro_name == "awk_for_fields"
+            {
                 return Ok(());
             }
             check_macro(&expr_macro.mac, tracker)?;

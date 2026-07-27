@@ -1,17 +1,32 @@
 use quote::quote;
 use syn::ExprMethodCall;
 
-fn is_os_receiver(expr: &syn::Expr) -> bool {
+fn is_command_receiver(expr: &syn::Expr) -> bool {
     match expr {
         syn::Expr::Path(expr_path) => expr_path
             .path
             .get_ident()
-            .map(|id| id == "os")
+            .map(|id| id == "os" || id == "docker")
             .unwrap_or(false),
-        syn::Expr::MethodCall(method_call) => is_os_receiver(&method_call.receiver),
-        syn::Expr::Field(expr_field) => is_os_receiver(&expr_field.base),
+        syn::Expr::MethodCall(method_call) => is_command_receiver(&method_call.receiver),
+        syn::Expr::Field(expr_field) => is_command_receiver(&expr_field.base),
         _ => false,
     }
+}
+
+fn is_special_method_name(name: &str) -> bool {
+    matches!(
+        name,
+        "stdout" | "stderr" | "sudo" | "success" | "failure" | "ok"
+    )
+}
+
+fn is_special_method_call(expr: &syn::Expr) -> bool {
+    matches!(
+        expr,
+        syn::Expr::MethodCall(method_call)
+            if is_special_method_name(&method_call.method.to_string())
+    )
 }
 
 /// Returns true if `name` was declared inside the current `sh!` block.
@@ -35,7 +50,7 @@ fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
                     syn::Expr::Path(ep) => {
                         if let Some(ident) = ep.path.get_ident() {
                             // Only substitute identifiers that are sh!-declared variables
-                            if ident != "os" && is_sh_var(&ident.to_string()) {
+                            if ident != "os" && ident != "docker" && is_sh_var(&ident.to_string()) {
                                 let shell_var = format!("${}", ident);
                                 return syn::Expr::Lit(syn::ExprLit {
                                     attrs: vec![],
@@ -83,15 +98,12 @@ pub fn convert_method_call(
 ) -> Result<proc_macro2::TokenStream, syn::Error> {
     let receiver = &*method_call.receiver;
     let method_name = method_call.method.to_string();
-    let is_special_method = method_name == "stdout"
-        || method_name == "stderr"
-        || method_name == "sudo"
-        || method_name == "success"
-        || method_name == "failure"
-        || method_name == "ok";
+    let is_special_method = is_special_method_name(&method_name);
 
     let receiver_tokens = if is_special_method {
-        if is_os_receiver(receiver) {
+        if is_special_method_call(receiver) {
+            crate::convert::convert_expr(receiver)?
+        } else if is_command_receiver(receiver) {
             let subst = substitute_sh_vars(receiver);
             quote! {
                 (crate::utils::exec::script::dsl::IntoShellIRGeneric::into_shell_ir(
@@ -102,7 +114,7 @@ pub fn convert_method_call(
             crate::convert::convert_expr(receiver)?
         }
     } else {
-        if is_os_receiver(receiver) {
+        if is_command_receiver(receiver) {
             let subst = substitute_sh_vars(receiver);
             quote! { #subst }
         } else {
@@ -185,8 +197,10 @@ pub fn convert_method_call(
     for arg in &method_call.args {
         if let syn::Expr::Path(expr_path) = arg {
             let ident = expr_path.path.get_ident();
-            let is_os = ident.map(|id| id == "os").unwrap_or(false);
-            if is_os {
+            let is_command_root = ident
+                .map(|id| id == "os" || id == "docker")
+                .unwrap_or(false);
+            if is_command_root {
                 args_tokens.push(quote! { #arg });
             } else if let Some(ident) = ident {
                 if is_sh_var(&ident.to_string()) {

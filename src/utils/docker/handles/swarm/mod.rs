@@ -1,4 +1,4 @@
-use crate::utils::docker::{DockerResult, client::DockerCli};
+use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
 
 pub use ca::SwarmCaBuilder;
 pub use init::SwarmInitBuilder;
@@ -50,6 +50,10 @@ impl<'a> SwarmHandle<'a> {
         SwarmCaBuilder::new(self.cli)
     }
 
+    pub fn active(&self) -> SwarmActiveBuilder<'a> {
+        SwarmActiveBuilder::new(self.cli)
+    }
+
     pub async fn inspect(&self) -> DockerResult<crate::utils::docker::SwarmInfo> {
         let output = self
             .cli
@@ -57,6 +61,29 @@ impl<'a> SwarmHandle<'a> {
             .await?;
         let json = serde_json::from_str(&output.stdout)?;
         Ok(json)
+    }
+}
+
+pub struct SwarmActiveBuilder<'a> {
+    cli: &'a DockerCli,
+    args: ArgBuilder,
+}
+
+impl<'a> SwarmActiveBuilder<'a> {
+    pub(crate) fn new(cli: &'a DockerCli) -> Self {
+        let mut args = ArgBuilder::cmd(&["info"]);
+        args.pair("--format", "{{.Swarm.LocalNodeState}}");
+        Self { cli, args }
+    }
+
+    pub async fn run(self) -> DockerResult<DockerOutput> {
+        self.cli.execute(&self.args).await
+    }
+}
+
+impl crate::utils::exec::script::IntoCommand for SwarmActiveBuilder<'_> {
+    fn build_str(&self) -> String {
+        format!("{} | grep -q '^active$'", self.args.preview())
     }
 }
 
