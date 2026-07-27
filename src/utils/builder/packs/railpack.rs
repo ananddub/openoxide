@@ -31,6 +31,7 @@ impl<'a> RailpackCli<'a> {
     pub async fn install(&self) -> ExecResult<ExecOutput> {
         OsCli::new(self.executor)
             .shell_installer("https://railpack.com/install.sh")
+            .shell("bash")
             .env("RAILPACK_VERSION", "0.15.4")
             .run()
             .await?;

@@ -28,6 +28,7 @@ impl<'a> NixpacksCli<'a> {
     pub async fn install(&self) -> ExecResult<ExecOutput> {
         OsCli::new(self.executor)
             .shell_installer("https://nixpacks.com/install.sh")
+            .shell("bash")
             .env("NIXPACKS_VERSION", "1.41.0")
             .run()
             .await?;

@@ -4,6 +4,7 @@ use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 pub struct ShellInstallerBuilder<'a> {
     executor: &'a CommandExecutor,
     url: String,
+    shell: String,
     environment: Vec<(String, String)>,
     arguments: Vec<String>,
 }
@@ -13,9 +14,15 @@ impl<'a> ShellInstallerBuilder<'a> {
         Self {
             executor,
             url: url.build_str(),
+            shell: "sh".to_owned(),
             environment: Vec::new(),
             arguments: Vec::new(),
         }
+    }
+
+    pub fn shell(mut self, shell: impl Into<String>) -> Self {
+        self.shell = shell.into();
+        self
     }
 
     pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
@@ -49,7 +56,8 @@ impl<'a> ShellInstallerBuilder<'a> {
                 .into_iter()
                 .map(|(key, value)| format!("{key}={value}"))
                 .collect::<Vec<_>>();
-            args.extend(["sh".to_owned(), temporary.clone()]);
+            args.push(self.shell);
+            args.push(temporary.clone());
             args.extend(self.arguments);
             self.executor.run("env", args).await?;
             Ok(())
@@ -69,7 +77,7 @@ impl IntoCommand for ShellInstallerBuilder<'_> {
             .map(|(key, value)| format!("{key}={value}"))
             .map(|value| shell_single_quote(&value))
             .collect::<Vec<_>>();
-        env_args.push("sh".to_owned());
+        env_args.push(shell_single_quote(&self.shell));
         env_args.push("\"$_rustploy_installer\"".to_owned());
         env_args.extend(self.arguments.iter().map(|arg| shell_single_quote(arg)));
 

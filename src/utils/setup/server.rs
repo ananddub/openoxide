@@ -79,6 +79,7 @@ impl ServerSetup {
             "unzip",
             "tar",
             "ca-certificates",
+            "bash",
         ]
         .into_iter()
         .enumerate()
@@ -117,6 +118,7 @@ impl ServerSetup {
         let os = OsCli::new(&self.executor);
         if os.has_command("rclone").run().await.is_err() {
             os.shell_installer("https://rclone.org/install.sh")
+                .shell("bash")
                 .run()
                 .await?;
         }
@@ -396,6 +398,7 @@ impl ServerSetup {
             "unzip",
             "tar",
             "ca-certificates",
+            "bash",
         ]
         .into_iter()
         .enumerate()
@@ -422,15 +425,18 @@ impl ServerSetup {
     fn append_build_tool_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         steps.extend(sh!(
             if !os.has_command("rclone") {
-                os.shell_installer("https://rclone.org/install.sh");
+                os.shell_installer("https://rclone.org/install.sh")
+                    .shell("bash");
             }
             if !os.has_command("nixpacks") {
                 os.shell_installer("https://nixpacks.com/install.sh")
+                    .shell("bash")
                     .env("NIXPACKS_VERSION", "1.41.0");
                 cmd("nixpacks", "--version");
             }
             if !os.has_command("railpack") {
                 os.shell_installer("https://railpack.com/install.sh")
+                    .shell("bash")
                     .env("RAILPACK_VERSION", "0.15.4");
                 cmd("railpack", "--version");
             }
@@ -639,8 +645,11 @@ mod tests {
 
         assert!(script.starts_with("set -e\n"));
         assert!(script.contains("apt-get 'install' '-y' 'jq'"));
+        assert!(script.contains("apt-get 'install' '-y' 'bash'"));
         assert!(script.contains("https://get.docker.com"));
+        assert!(script.contains("env 'bash' \"$_rustploy_installer\""));
         assert!(script.contains("https://nixpacks.com/install.sh"));
+        assert!(script.contains("'NIXPACKS_VERSION=1.41.0' 'bash' \"$_rustploy_installer\""));
         assert!(script.contains("_rustploy_pack_url="));
         assert!(
             script.contains("curl -4 -s --connect-timeout 5 -m 5 'https://ifconfig.io' || true")
