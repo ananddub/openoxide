@@ -6,11 +6,11 @@ import {$api} from '#/api/query';
 
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
-import {EnvironmentTab} from '#/components/projects/app/detail/environment-tab';
+import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {ComposeDomainsTab} from '#/components/projects/compose/detail/compose-domains-tab';
 import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compose-deployments-tab';
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
-import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
+import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
 import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
@@ -106,22 +106,47 @@ function ComposeDetailPage() {
 						<Button variant="outline" size="icon" onClick={() => refetch()} className="w-8 h-8 border-border rounded-lg">
 							<RefreshCw className="w-3.5 h-3.5" />
 						</Button>
-						<span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-semibold select-none ${
-							['done', 'success', 'running', 'deployed', 'active'].includes((compose?.compose_status || '').toLowerCase())
-								? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-								: (compose?.compose_status || '').toLowerCase() === 'error'
-								? 'bg-destructive/10 text-destructive border-destructive/30'
-								: 'bg-muted/20 text-muted-foreground border-border'
-						}`}>
-							<span className={`w-2 h-2 rounded-full ${
-								['done', 'success', 'running', 'deployed', 'active'].includes((compose?.compose_status || '').toLowerCase())
-									? 'bg-emerald-500 animate-pulse'
-									: (compose?.compose_status || '').toLowerCase() === 'error'
-									? 'bg-destructive'
-									: 'bg-muted-foreground'
-							}`} />
-							{compose?.compose_status || 'IDLE'}
-						</span>
+						{(() => {
+							const st = (compose?.compose_status || '').toUpperCase();
+							if (['QUEUED', 'STARTING', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-amber-500/10 text-amber-500 border-amber-500/30">
+										<span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+										{st === 'QUEUED' ? 'QUEUED' : 'STARTING...'}
+									</span>
+								);
+							}
+							if (['STOPPING', 'CANCELLING'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+										<span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+										STOPPING...
+									</span>
+								);
+							}
+							if (['RUNNING', 'DONE', 'SUCCESS', 'ACTIVE', 'OK'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+										<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+										RUNNING
+									</span>
+								);
+							}
+							if (st === 'ERROR') {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+										<span className="w-2 h-2 rounded-full bg-rose-500" />
+										ERROR
+									</span>
+								);
+							}
+							return (
+								<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+									<span className="w-2 h-2 rounded-full bg-rose-500" />
+									STOPPED
+								</span>
+							);
+						})()}
 						<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none">
 							<Layers2 className="w-3.5 h-3.5" /> Docker Compose
 						</span>
@@ -176,7 +201,7 @@ function ComposeDetailPage() {
 					<ComposeLogsTab compose={compose} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={compose} />
+					<MonitoringTab app={compose} appId={parsedComposeId} />
 				)}
 				{activeTab === 'Advanced' && (
 					<ComposeAdvancedTab compose={compose} />

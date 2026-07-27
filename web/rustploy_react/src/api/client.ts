@@ -4,6 +4,14 @@ import {useAuthStore} from '#/stores/auth-store';
 
 const AUTH_STORAGE_KEY = 'rustploy-auth-session';
 
+export const getApiBaseUrl = () => {
+	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+	if (typeof window !== 'undefined' && window.location.hostname) {
+		return `${window.location.protocol}//${window.location.hostname}:4000`;
+	}
+	return 'http://localhost:4000';
+};
+
 const authMiddleware: Middleware = {
 	async onRequest({request}) {
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -46,7 +54,7 @@ const authMiddleware: Middleware = {
 				return response;
 			}
 
-			const refreshRes = await fetch('http://das.tail25b5a0.ts.net:4000/auth/refresh', {
+			const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -87,7 +95,7 @@ const authMiddleware: Middleware = {
 };
 
 export const client = createFetchClient<paths>({
-	baseUrl: 'http://das.tail25b5a0.ts.net:4000',
+	baseUrl: getApiBaseUrl(),
 	headers: {
 		'Content-Type': 'application/json',
 		Accept: 'application/json',

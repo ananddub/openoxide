@@ -9,8 +9,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {Server} from 'lucide-react';
 
 interface CreateAppDialogProps {
 	isOpen: boolean;
@@ -27,14 +29,18 @@ export function CreateAppDialog({
 }: CreateAppDialogProps) {
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
+	const [serverId, setServerId] = useState<string>('local');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/applications');
+	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers') as any;
+	const serversList = Array.isArray(rawServers) ? rawServers : [];
 
 	useEffect(() => {
 		if (isOpen) {
 			setName('');
 			setDescription('');
+			setServerId('local');
 		}
 	}, [isOpen]);
 
@@ -54,6 +60,7 @@ export function CreateAppDialog({
 					environment_id: environmentId,
 					build_type: 'NIXPACKS',
 					source_type: 'GITHUB',
+					server_id: serverId && serverId !== 'local' ? Number(serverId) : undefined,
 				},
 			});
 			toast.success('Application created successfully');
@@ -78,8 +85,9 @@ export function CreateAppDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-5">
+				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-4">
+						{/* App Name */}
 						<div className="flex flex-col gap-1.5">
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
 								App Name <span className="text-destructive">*</span>
@@ -92,6 +100,26 @@ export function CreateAppDialog({
 								className="h-9 rounded-lg border border-border/80 bg-muted/20 px-3 text-xs shadow-inner focus:outline-none"
 							/>
 						</div>
+
+						{/* Target Server Selection */}
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+								<Server className="size-3 text-muted-foreground" /> Target Server
+							</label>
+							<Select value={serverId} onValueChange={val => setServerId(val ?? 'local')}>
+								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+								<SelectContent className="bg-card border-border">
+									<SelectItem value="local" className="text-xs">Local Docker Engine</SelectItem>
+									{serversList.map((srv: any) => (
+										<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
+											{srv.name || `Server #${srv.id}`}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Description */}
 						<div className="flex flex-col gap-1.5">
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
 								Description
@@ -101,7 +129,7 @@ export function CreateAppDialog({
 								placeholder="Optional details about this application..."
 								value={description}
 								onChange={e => setDescription(e.target.value)}
-								className="w-full rounded-lg border border-border/80 bg-muted/20 px-3 py-2 text-xs shadow-inner focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring leading-relaxed resize-none"
+								className="flex w-full rounded-lg border border-input bg-transparent dark:bg-input/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 outline-none resize-none leading-relaxed"
 							/>
 						</div>
 					</div>

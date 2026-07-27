@@ -11,6 +11,8 @@ export const Route = createFileRoute('/_app/docker')({
 });
 
 function DockerPage() {
+	const [selectedServerId, setSelectedServerId] = useState('local');
+
 	const [activeModal, setActiveModal] = useState<{
 		type: 'logs' | 'config' | 'mount' | 'network';
 		container: GlobalContainerItem;
@@ -18,14 +20,17 @@ function DockerPage() {
 
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
-	// Real API Query for system-wide Docker containers directly from Docker Socket / CLI
+	// Query remote servers
+	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers');
+
+	// Real API Query for system-wide Docker containers for selected server host
 	const {data: rawDockerContainers = [], isLoading: isDockerLoading, refetch, isRefetching} = $api.useQuery(
 		'get',
 		'/deployments/docker/containers',
 		{
 			params: {
 				query: {
-					server_id: undefined,
+					server_id: selectedServerId !== 'local' ? Number(selectedServerId) : undefined,
 				} as any,
 			},
 		}
@@ -125,6 +130,9 @@ function DockerPage() {
 				runningContainers={runningCount}
 				onRefresh={handleRefresh}
 				isRefreshing={isDockerLoading || isRefetching}
+				servers={Array.isArray(rawServers) ? rawServers : []}
+				selectedServerId={selectedServerId}
+				onSelectServer={(id) => setSelectedServerId(id)}
 			/>
 
 			{/* Containers Table Component (< 200 lines) */}

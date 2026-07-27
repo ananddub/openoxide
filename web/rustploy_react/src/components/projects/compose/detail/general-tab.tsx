@@ -4,7 +4,7 @@ import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
-import {TerminalModal} from '#/components/projects/app/detail/terminal-modal';
+import {TerminalModal} from '#/components/projects/common/terminal-modal';
 
 interface GeneralTabProps {
 	compose: any;

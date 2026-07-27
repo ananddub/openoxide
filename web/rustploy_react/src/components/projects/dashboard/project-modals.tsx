@@ -113,7 +113,18 @@ export function ProjectModals({
 					onClose={() => setShowCreateDatabase(false)}
 					environmentId={selectedEnvId}
 					servers={servers}
-					onCreated={handleRefresh}
+					onCreated={(db) => {
+						setShowCreateDatabase(false);
+						handleRefresh();
+						const targetDbId = db?.id || db?.data?.id;
+						const targetKind = db?.kind || db?.data?.kind || 'postgres';
+						if (targetDbId) {
+							navigate({
+								to: `/projects/${projectId}/database/${targetDbId}` as any,
+								search: {kind: targetKind} as any,
+							});
+						}
+					}}
 				/>
 			)}
 		</>

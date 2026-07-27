@@ -5,12 +5,12 @@ import {useAppDetail} from '#/hooks/projects/use-app-detail';
 
 // Tabs
 import {GeneralTab} from '#/components/projects/app/detail/general-tab';
-import {EnvironmentTab} from '#/components/projects/app/detail/environment-tab';
+import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {DomainsTab} from '#/components/projects/app/detail/domains-tab';
 import {DeploymentsTab} from '#/components/projects/app/detail/deployments-tab';
 import {PreviewDeploymentsTab} from '#/components/projects/app/detail/preview-deployments-tab';
 import {LogsTab} from '#/components/projects/app/detail/logs-tab';
-import {MonitoringTab} from '#/components/projects/app/detail/monitoring-tab';
+import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {SchedulesTab} from '#/components/projects/app/detail/schedules-tab';
 import {VolumeBackupsTab} from '#/components/projects/app/detail/volume-backups-tab';
 import {AdvancedTab} from '#/components/projects/app/detail/advanced-tab';
@@ -77,6 +77,47 @@ function AppDetailPage() {
 						<Button variant="outline" size="icon" onClick={() => refetch()} className="w-8 h-8 border-border rounded-lg">
 							<RefreshCw className="w-3.5 h-3.5" />
 						</Button>
+						{(() => {
+							const st = (app?.app_status || '').toUpperCase();
+							if (['QUEUED', 'STARTING', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-amber-500/10 text-amber-500 border-amber-500/30">
+										<span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+										{st === 'QUEUED' ? 'QUEUED' : 'STARTING...'}
+									</span>
+								);
+							}
+							if (['STOPPING', 'CANCELLING'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+										<span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+										STOPPING...
+									</span>
+								);
+							}
+							if (['RUNNING', 'DONE', 'SUCCESS', 'ACTIVE', 'OK'].includes(st)) {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+										<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+										RUNNING
+									</span>
+								);
+							}
+							if (st === 'ERROR') {
+								return (
+									<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+										<span className="w-2 h-2 rounded-full bg-rose-500" />
+										ERROR
+									</span>
+								);
+							}
+							return (
+								<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-rose-500/10 text-rose-500 border-rose-500/30">
+									<span className="w-2 h-2 rounded-full bg-rose-500" />
+									STOPPED
+								</span>
+							);
+						})()}
 						<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none">
 							<Box className="w-3.5 h-3.5" /> Rustploy App
 						</span>

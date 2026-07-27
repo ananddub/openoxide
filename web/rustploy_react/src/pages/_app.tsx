@@ -28,6 +28,15 @@ function AppNameBreadcrumb({ id }: { id: number }) {
 	return <>{app?.name || app?.app_name || 'Loading...'}</>;
 }
 
+function ComposeNameBreadcrumb({ id }: { id: number }) {
+	const { data: compose } = $api.useQuery(
+		'get',
+		'/compose/{id}',
+		{ params: { path: { id } } }
+	);
+	return <>{compose?.name || compose?.app_name || 'Loading...'}</>;
+}
+
 import {Construction} from 'lucide-react';
 
 function AppNotFoundPlaceholder() {
@@ -97,11 +106,14 @@ function AppLayout() {
 									const isLast = index === pathSegments.length - 1;
 									const isProjectParam = index > 0 && pathSegments[index - 1] === 'projects' && !isNaN(Number(segment));
 									const isAppParam = index > 0 && (pathSegments[index - 1] === 'app' || (index > 1 && pathSegments[index - 2] === 'app')) && !isNaN(Number(segment));
+									const isComposeParam = index > 0 && pathSegments[index - 1] === 'compose' && !isNaN(Number(segment));
 
 									const label = isProjectParam ? (
 										<ProjectNameBreadcrumb id={Number(segment)} />
 									) : isAppParam ? (
 										<AppNameBreadcrumb id={Number(segment)} />
+									) : isComposeParam ? (
+										<ComposeNameBreadcrumb id={Number(segment)} />
 									) : (
 										segment.charAt(0).toUpperCase() + segment.slice(1)
 									);

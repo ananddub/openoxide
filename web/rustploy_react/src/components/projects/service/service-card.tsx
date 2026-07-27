@@ -1,6 +1,14 @@
 import {Box, Layers2, Database as DbIcon} from 'lucide-react';
 import {useNavigate} from '@tanstack/react-router';
 import {cn} from '#/api/utils';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+	MongodbIcon,
+	RedisIcon,
+	LibsqlIcon,
+} from '#/components/icons/db-icons';
 
 interface ServiceCardProps {
 	projectId: number;
@@ -46,15 +54,15 @@ export function ServiceCard({
 		if (type === 'COMPOSE') {
 			return <Layers2 className="size-4.5 text-secondary-foreground" />;
 		}
-		const kindColor = (dbKind || '').toLowerCase();
-		let iconColor = 'text-muted-foreground';
-		if (kindColor.includes('postgres')) iconColor = 'text-blue-400';
-		else if (kindColor.includes('mysql') || kindColor.includes('mariadb')) iconColor = 'text-orange-400';
-		else if (kindColor.includes('mongo')) iconColor = 'text-green-500';
-		else if (kindColor.includes('redis')) iconColor = 'text-red-400';
-		else if (kindColor.includes('libsql')) iconColor = 'text-purple-400';
+		const kind = (dbKind || '').toLowerCase();
+		if (kind.includes('postgres')) return <PostgresqlIcon className="size-6 shrink-0" />;
+		if (kind.includes('mysql')) return <MysqlIcon className="size-6 shrink-0" />;
+		if (kind.includes('mariadb')) return <MariadbIcon className="size-6 shrink-0" />;
+		if (kind.includes('mongo')) return <MongodbIcon className="size-6 shrink-0" />;
+		if (kind.includes('redis')) return <RedisIcon className="size-6 shrink-0" />;
+		if (kind.includes('libsql')) return <LibsqlIcon className="size-6 shrink-0" />;
 
-		return <DbIcon className={cn('size-4.5', iconColor)} />;
+		return <DbIcon className="size-5 text-muted-foreground" />;
 	};
 
 	const getBg = () => {
@@ -68,7 +76,10 @@ export function ServiceCard({
 		} else if (type === 'COMPOSE') {
 			navigate({ to: `/projects/${projectId}/compose/${id}` as any });
 		} else if (type === 'DATABASE') {
-			navigate({ to: `/projects/${projectId}/database/${dbKind}/${id}` as any });
+			navigate({
+				to: `/projects/${projectId}/database/${id}` as any,
+				search: {kind: dbKind || 'postgres'} as any,
+			});
 		}
 	};
 

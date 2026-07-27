@@ -1,6 +1,6 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import {toast} from 'sonner';
-import {Database} from 'lucide-react';
+import {Server} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -11,6 +11,14 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+	MongodbIcon,
+	RedisIcon,
+	LibsqlIcon,
+} from '#/components/icons/db-icons';
 import {$api} from '#/api/query';
 import {formatApiError, cn} from '#/api/utils';
 
@@ -23,12 +31,12 @@ interface CreateDatabaseDialogProps {
 }
 
 const DB_KINDS = [
-	{ id: 'postgres',  label: 'PostgreSQL',  defaultImage: 'postgres:17', color: 'text-blue-400' },
-	{ id: 'mysql',     label: 'MySQL',        defaultImage: 'mysql:8',    color: 'text-orange-400' },
-	{ id: 'mariadb',   label: 'MariaDB',      defaultImage: 'mariadb:11', color: 'text-orange-400' },
-	{ id: 'mongo',     label: 'MongoDB',      defaultImage: 'mongo:7',    color: 'text-green-500' },
-	{ id: 'redis',     label: 'Redis',        defaultImage: 'redis:7',    color: 'text-red-400' },
-	{ id: 'libsql',    label: 'LibSQL/Turso', defaultImage: 'ghcr.io/tursodatabase/libsql-server:latest', color: 'text-purple-400' },
+	{ id: 'postgres', label: 'PostgreSQL', defaultImage: 'postgres:17', Icon: PostgresqlIcon },
+	{ id: 'mysql', label: 'MySQL', defaultImage: 'mysql:8', Icon: MysqlIcon },
+	{ id: 'mariadb', label: 'MariaDB', defaultImage: 'mariadb:11', Icon: MariadbIcon },
+	{ id: 'mongo', label: 'MongoDB', defaultImage: 'mongo:7', Icon: MongodbIcon },
+	{ id: 'redis', label: 'Redis', defaultImage: 'redis:7', Icon: RedisIcon },
+	{ id: 'libsql', label: 'LibSQL', defaultImage: 'ghcr.io/tursodatabase/libsql-server:latest', Icon: LibsqlIcon },
 ];
 
 export function CreateDatabaseDialog({
@@ -48,6 +56,13 @@ export function CreateDatabaseDialog({
 	const [externalPort, setExternalPort] = useState('');
 	const [serverId, setServerId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const submittingRef = useRef(false);
+
+	const availableServers = (servers || []).some(
+		s => String(s.name).toLowerCase().includes('local') || String(s.id) === 'local'
+	)
+		? servers
+		: [{ id: 'local', name: 'Local Server', ip_address: 'localhost' }, ...(servers || [])];
 
 	const createPostgres = $api.useMutation('post', '/postgres');
 	const createMysql = $api.useMutation('post', '/mysql');
@@ -66,7 +81,7 @@ export function CreateDatabaseDialog({
 			setExternalPort('');
 			setSelectedKind('postgres');
 			setDockerImage('postgres:17');
-			setServerId(servers[0]?.id ? String(servers[0].id) : '');
+			setServerId(availableServers[0]?.id ? String(availableServers[0].id) : 'local');
 		}
 	}, [isOpen, servers]);
 
@@ -78,20 +93,24 @@ export function CreateDatabaseDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submittingRef.current || isSubmitting) return;
+
 		if (!name.trim() || !serverId) {
 			toast.error('Please fill in database name and target server');
 			return;
 		}
 
+		submittingRef.current = true;
 		setIsSubmitting(true);
 		try {
+			const parsedServerId = serverId && serverId !== 'local' && !isNaN(Number(serverId)) ? Number(serverId) : undefined;
 			const body: any = {
 				name: name.trim(),
 				description: description.trim() || undefined,
-				environment_id: environmentId,
+				environment_id: Number(environmentId),
 				docker_image: dockerImage || undefined,
-				external_port: externalPort ? Number(externalPort) : undefined,
-				server_id: Number(serverId),
+				external_port: externalPort && !isNaN(Number(externalPort)) ? Number(externalPort) : undefined,
+				server_id: parsedServerId,
 			};
 
 			if (selectedKind !== 'redis' && selectedKind !== 'libsql') {
@@ -110,12 +129,23 @@ export function CreateDatabaseDialog({
 				case 'libsql': res = await createLibsql.mutateAsync({ body }); break;
 			}
 
+			if (res?.error) {
+				toast.error(formatApiError(res.error));
+				return;
+			}
+
+			const rawData = res?.data || res;
+			const dbObj = typeof rawData === 'object' && rawData !== null ? rawData : {};
+			const dbId = dbObj.id || dbObj.database_id || res?.id;
+			const finalDb = { ...dbObj, id: dbId, kind: selectedKind };
+
 			toast.success('Database created successfully');
-			onCreated({...res, kind: selectedKind});
 			onClose();
+			onCreated(finalDb);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
+			submittingRef.current = false;
 			setIsSubmitting(false);
 		}
 	};
@@ -131,94 +161,93 @@ export function CreateDatabaseDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 mt-2">
-					<div className="space-y-1.5">
-						<label className="text-xs font-semibold text-foreground">Database Engine *</label>
-						<div className="grid grid-cols-3 gap-2">
-							{DB_KINDS.map(k => (
-								<button
-									key={k.id}
-									type="button"
-									onClick={() => selectKind(k.id)}
-									className={cn(
-										'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold transition-all',
-										selectedKind === k.id
-											? 'border-primary bg-primary/10 text-primary'
-											: 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
-									)}>
-									<Database className={cn('size-3.5', k.color)} />
-									{k.label}
-								</button>
-							))}
+					{/* Database Engine Cards Grid */}
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground">Select a Database Engine *</label>
+						<div className="grid grid-cols-3 gap-2.5">
+							{DB_KINDS.map(k => {
+								const IconComponent = k.Icon;
+								const isSelected = selectedKind === k.id;
+								return (
+									<button
+										key={k.id}
+										type="button"
+										onClick={() => selectKind(k.id)}
+										className={cn(
+											'flex flex-col items-center justify-center p-2.5 h-20 rounded-xl border-2 transition-all cursor-pointer gap-1.5 hover:bg-accent/40',
+											isSelected
+												? 'border-primary bg-primary/5 text-foreground shadow-xs ring-1 ring-primary/20'
+												: 'border-border/70 bg-popover/40 text-muted-foreground hover:text-foreground hover:border-border'
+										)}>
+										<IconComponent className="size-7 shrink-0" />
+										<span className="text-[11px] font-semibold tracking-wide">{k.label}</span>
+									</button>
+								);
+							})}
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Service Name *</label>
-							<Input
-								placeholder="e.g. prod-db"
-								value={name}
-								onChange={e => setName(e.target.value)}
-								required
-								className="h-9"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Description</label>
-							<Input
-								placeholder="Brief description"
-								value={description}
-								onChange={e => setDescription(e.target.value)}
-								className="h-9"
-							/>
-						</div>
+					{/* Service Name (Full Width) */}
+					<div className="space-y-1">
+						<label className="text-xs font-semibold text-foreground">Service Name *</label>
+						<Input
+							placeholder="e.g. prod-db"
+							value={name}
+							onChange={e => setName(e.target.value)}
+							required
+							className="h-9 w-full"
+						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Docker Image</label>
-							<Input
-								value={dockerImage}
-								onChange={e => setDockerImage(e.target.value)}
-								className="h-9 font-mono text-xs"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-foreground">Target Server *</label>
-							<Select value={serverId} onValueChange={val => setServerId(val ?? '')}>
-								<SelectTrigger className="h-9"><SelectValue placeholder="Select server" /></SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									{servers.map(srv => (
-										<SelectItem key={srv.id} value={String(srv.id)}>
-											{srv.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					{/* Target Server (Full Width) */}
+					<div className="space-y-1">
+						<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+							<Server className="w-3.5 h-3.5 text-muted-foreground" /> Target Server *
+						</label>
+						<Select value={serverId} onValueChange={val => setServerId(val ?? '')}>
+							<SelectTrigger className="h-9 w-full"><SelectValue placeholder="Select server" /></SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								{availableServers.map(srv => (
+									<SelectItem key={srv.id} value={String(srv.id)}>
+										{srv.name} {srv.ip_address ? `(${srv.ip_address})` : ''}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 
+					{/* Description (Full Width) */}
+					<div className="space-y-1">
+						<label className="text-xs font-semibold text-foreground">Description</label>
+						<textarea
+							rows={3}
+							placeholder="Brief description..."
+							value={description}
+							onChange={e => setDescription(e.target.value)}
+							className="flex w-full rounded-lg border border-input bg-transparent dark:bg-input/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 outline-none resize-none leading-relaxed"
+						/>
+					</div>
+
+					{/* Database Credentials (if applicable) */}
 					{selectedKind !== 'redis' && selectedKind !== 'libsql' && (
 						<>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-1">
-									<label className="text-xs font-semibold text-foreground">Database Name</label>
-									<Input
-										placeholder={name || 'mydb'}
-										value={dbName}
-										onChange={e => setDbName(e.target.value)}
-										className="h-9"
-									/>
-								</div>
-								<div className="space-y-1">
-									<label className="text-xs font-semibold text-foreground">Username</label>
-									<Input
-										placeholder={name || 'admin'}
-										value={dbUser}
-										onChange={e => setDbUser(e.target.value)}
-										className="h-9"
-									/>
-								</div>
+							<div className="space-y-1">
+								<label className="text-xs font-semibold text-foreground">Database Name</label>
+								<Input
+									placeholder={name || 'mydb'}
+									value={dbName}
+									onChange={e => setDbName(e.target.value)}
+									className="h-9 w-full"
+								/>
+							</div>
+							<div className="space-y-1">
+								<label className="text-xs font-semibold text-foreground">Username</label>
+								<Input
+									placeholder={name || 'admin'}
+									value={dbUser}
+									onChange={e => setDbUser(e.target.value)}
+									className="h-9 w-full"
+								/>
 							</div>
 							<div className="space-y-1">
 								<label className="text-xs font-semibold text-foreground">Password</label>
@@ -227,12 +256,23 @@ export function CreateDatabaseDialog({
 									placeholder="••••••••"
 									value={dbPassword}
 									onChange={e => setDbPassword(e.target.value)}
-									className="h-9"
+									className="h-9 w-full"
 								/>
 							</div>
 						</>
 					)}
 
+					{/* Docker Image (Full Width) */}
+					<div className="space-y-1">
+						<label className="text-xs font-semibold text-foreground">Docker Image</label>
+						<Input
+							value={dockerImage}
+							onChange={e => setDockerImage(e.target.value)}
+							className="h-9 font-mono text-xs w-full"
+						/>
+					</div>
+
+					{/* External Port (Full Width) */}
 					<div className="space-y-1">
 						<label className="text-xs font-semibold text-foreground">External Port</label>
 						<Input
@@ -240,7 +280,7 @@ export function CreateDatabaseDialog({
 							placeholder="Leave empty to auto-assign"
 							value={externalPort}
 							onChange={e => setExternalPort(e.target.value)}
-							className="h-9"
+							className="h-9 w-full"
 						/>
 					</div>
 
@@ -256,7 +296,7 @@ export function CreateDatabaseDialog({
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4">
+							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4 font-semibold shadow-xs">
 							{isSubmitting ? 'Creating...' : 'Create Database'}
 						</Button>
 					</div>

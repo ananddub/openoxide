@@ -174,7 +174,7 @@ impl ScheduleRunner {
             let service = Arc::clone(&self.service);
             let in_flight = self.in_flight.clone();
             let key_clone = key.clone();
-            let job = Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
+            let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
                 let in_flight = in_flight.clone();
                 let key_str = key_clone.clone();
@@ -199,17 +199,19 @@ impl ScheduleRunner {
                         ),
                     }
                 })
-            })
-            .map_err(|error| {
-                format!(
-                    "invalid cron expression for schedule {schedule_id} ({cron_expression}): {error}"
-                )
-            })?;
+            }) {
+                Ok(j) => j,
+                Err(error) => {
+                    tracing::error!(schedule_id, cron_expression = %cron_expression, error = %error, "invalid cron expression for schedule, skipping");
+                    continue;
+                }
+            };
+
             let job_id = job.guid();
-            scheduler
-                .add(job)
-                .await
-                .map_err(|error| format!("could not register schedule {schedule_id}: {error}"))?;
+            if let Err(error) = scheduler.add(job).await {
+                tracing::error!(schedule_id, error = %error, "could not register schedule job");
+                continue;
+            }
             self.jobs.insert(
                 key,
                 RegisteredScheduleJob {
@@ -218,7 +220,7 @@ impl ScheduleRunner {
                     enabled: schedule.enabled,
                 },
             );
-            tracing::info!(schedule_id, "schedule job registered");
+            tracing::info!(schedule_id, "schedule job registered successfully");
         }
 
         for backup in db_backups {
@@ -241,7 +243,7 @@ impl ScheduleRunner {
             let service = Arc::clone(&self.service);
             let in_flight = self.in_flight.clone();
             let key_clone = key.clone();
-            let job = Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
+            let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
                 let in_flight = in_flight.clone();
                 let key_str = key_clone.clone();
@@ -264,16 +266,19 @@ impl ScheduleRunner {
                         ),
                     }
                 })
-            })
-            .map_err(|error| {
-                format!(
-                    "invalid cron expression for database backup {backup_id} ({cron_expression}): {error}"
-                )
-            })?;
+            }) {
+                Ok(j) => j,
+                Err(error) => {
+                    tracing::error!(backup_id, cron_expression = %cron_expression, error = %error, "invalid cron expression for database backup, skipping");
+                    continue;
+                }
+            };
+
             let job_id = job.guid();
-            scheduler.add(job).await.map_err(|error| {
-                format!("could not register database backup {backup_id}: {error}")
-            })?;
+            if let Err(error) = scheduler.add(job).await {
+                tracing::error!(backup_id, error = %error, "could not register database backup job");
+                continue;
+            }
             self.jobs.insert(
                 key,
                 RegisteredScheduleJob {
@@ -282,7 +287,7 @@ impl ScheduleRunner {
                     enabled: backup.enabled,
                 },
             );
-            tracing::info!(backup_id, "database backup job registered");
+            tracing::info!(backup_id, "database backup job registered successfully");
         }
 
         for backup in vol_backups {
@@ -305,7 +310,7 @@ impl ScheduleRunner {
             let service = Arc::clone(&self.service);
             let in_flight = self.in_flight.clone();
             let key_clone = key.clone();
-            let job = Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
+            let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
                 let in_flight = in_flight.clone();
                 let key_str = key_clone.clone();
@@ -328,16 +333,19 @@ impl ScheduleRunner {
                         ),
                     }
                 })
-            })
-            .map_err(|error| {
-                format!(
-                    "invalid cron expression for volume backup {backup_id} ({cron_expression}): {error}"
-                )
-            })?;
+            }) {
+                Ok(j) => j,
+                Err(error) => {
+                    tracing::error!(backup_id, cron_expression = %cron_expression, error = %error, "invalid cron expression for volume backup, skipping");
+                    continue;
+                }
+            };
+
             let job_id = job.guid();
-            scheduler.add(job).await.map_err(|error| {
-                format!("could not register volume backup {backup_id}: {error}")
-            })?;
+            if let Err(error) = scheduler.add(job).await {
+                tracing::error!(backup_id, error = %error, "could not register volume backup job");
+                continue;
+            }
             self.jobs.insert(
                 key,
                 RegisteredScheduleJob {
@@ -346,7 +354,7 @@ impl ScheduleRunner {
                     enabled: backup.enabled,
                 },
             );
-            tracing::info!(backup_id, "volume backup job registered");
+            tracing::info!(backup_id, "volume backup job registered successfully");
         }
 
         Ok(())

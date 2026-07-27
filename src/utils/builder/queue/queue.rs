@@ -55,7 +55,7 @@ impl BuilderQueue {
 
         let q = Arc::clone(self);
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(30 * 60));
+            let mut interval = tokio::time::interval(Duration::from_mins(30 ));
             interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
             loop {
                 interval.tick().await;
@@ -121,6 +121,25 @@ impl BuilderQueue {
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
         let ids = repo.get_queued_ids_for_compose(compose_id).await?;
         let cancelled = repo.cancel_queued_for_compose(compose_id).await?;
+
+        if cancelled {
+            for id in ids {
+                if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
+                    let _ = log
+                        .write_line("[CANCELLED] deployment cancelled before worker started")
+                        .await;
+                }
+            }
+        }
+        Ok(cancelled)
+    }
+
+    pub async fn cancel_queued_database(&self, database_id: i64) -> sqlx::Result<bool> {
+        let repo = auto_di::resolve::<crate::repository::DeploymentRepository>()
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let ids = repo.get_queued_ids_for_database(database_id).await?;
+        let cancelled = repo.cancel_queued_for_database(database_id).await?;
 
         if cancelled {
             for id in ids {

@@ -295,7 +295,7 @@ export function ScheduleDialog({
 							onChange={e => setCommand(e.target.value)}
 							required
 							rows={3}
-							className="flex w-full rounded-lg border border-border/80 bg-muted/20 px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+							className="flex w-full rounded-lg border border-input bg-transparent dark:bg-input/30 px-3 py-2 text-xs font-mono text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 outline-none resize-none leading-relaxed"
 						/>
 					</div>
 

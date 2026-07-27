@@ -1,4 +1,4 @@
-pub use types::{ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeType};
+pub use types::{ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeStatus, ComposeType};
 
 use std::sync::Arc;
 

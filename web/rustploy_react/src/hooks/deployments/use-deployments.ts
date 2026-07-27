@@ -8,6 +8,8 @@ import {useDeploymentLogs} from './use-deployment-logs';
 export type Deployment = components['schemas']['DeploymentResponseDto'];
 export type SortKey = 'created_at' | 'title' | 'status';
 
+const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
+
 export function useDeployments() {
 	const [refreshing, setRefreshing] = React.useState(false);
 
@@ -47,9 +49,21 @@ export function useDeployments() {
 			},
 		},
 		{
-			refetchInterval: 5000, // Auto refresh every 5s
+			refetchInterval: (query) => {
+				const data = query.state.data as Deployment[] | undefined;
+				const hasActive = data?.some(d => !FINAL_STATES.includes((d.status || '').toUpperCase()));
+				return hasActive ? 1000 : 4000;
+			},
 		},
 	);
+
+	const activeQueue = React.useMemo(() => {
+		if (!deployments) return [];
+		return deployments.filter(d => {
+			const s = (d.status || '').toUpperCase();
+			return !FINAL_STATES.includes(s);
+		});
+	}, [deployments]);
 
 	const handleRefresh = async () => {
 		setRefreshing(true);
@@ -158,6 +172,7 @@ export function useDeployments() {
 		setErrorDetailDeployment,
 		handleCancelDeployment,
 		filteredAndSorted,
+		activeQueue,
 		clearFilters,
 	};
 }

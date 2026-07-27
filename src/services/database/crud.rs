@@ -52,11 +52,11 @@ impl DatabaseService {
             .clone()
             .unwrap_or_else(random_secret);
 
-        match kind {
+        let id = match kind {
             DatabaseKind::Postgres => {
                 self.repo_postgres
                     .create(&input, &app_name, &image, &db_name, &db_user, &db_password)
-                    .await?;
+                    .await?
             }
             DatabaseKind::Mysql => {
                 self.repo_mysql
@@ -69,7 +69,7 @@ impl DatabaseService {
                         &db_password,
                         &root_password,
                     )
-                    .await?;
+                    .await?
             }
             DatabaseKind::Mariadb => {
                 self.repo_mariadb
@@ -82,28 +82,25 @@ impl DatabaseService {
                         &db_password,
                         &root_password,
                     )
-                    .await?;
+                    .await?
             }
             DatabaseKind::Mongo => {
                 self.repo_mongo
                     .create(&input, &app_name, &image, &db_user, &db_password)
-                    .await?;
+                    .await?
             }
             DatabaseKind::Redis => {
                 self.repo_redis
                     .create(&input, &app_name, &image, &db_password)
-                    .await?;
+                    .await?
             }
             DatabaseKind::Libsql => {
                 self.repo_libsql
                     .create(&input, &app_name, &image, &db_user, &db_password)
-                    .await?;
+                    .await?
             }
-        }
+        };
 
-        let id = sqlx::query_scalar!("SELECT last_insert_rowid() AS \"id!: i64\"")
-            .fetch_one(self.db.as_ref())
-            .await?;
         self.get_by_id(kind, id).await
     }
 

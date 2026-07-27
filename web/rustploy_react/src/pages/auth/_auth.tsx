@@ -32,7 +32,7 @@ export const Route = createFileRoute('/_auth')({
 			if (error && (error.isRedirect || 'to' in error || 'href' in error)) {
 				throw error;
 			}
-			console.error('Failed to verify auth setup status:', error);
+			// Silently fallback if backend server is unreachable
 		}
 	},
 	component: AuthLayout,

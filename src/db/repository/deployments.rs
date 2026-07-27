@@ -520,6 +520,19 @@ impl DeploymentRepository {
         Ok(res)
     }
 
+    pub async fn get_latest_database_deployment_id(
+        &self,
+        database_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
+        let res = sqlx::query_scalar!(
+            r#"SELECT id AS "id: i64" FROM deployments WHERE database_id = ? ORDER BY id DESC LIMIT 1"#,
+            database_id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await?;
+        Ok(res)
+    }
+
     pub async fn get_queued_count(&self) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar("SELECT COUNT(*) FROM deployments WHERE status = 'QUEUED'")
             .fetch_one(self.pool.as_ref())
@@ -581,6 +594,31 @@ impl DeploymentRepository {
         Ok(rows.rows_affected() > 0)
     }
 
+    pub async fn get_queued_ids_for_database(
+        &self,
+        database_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar("SELECT id FROM deployments WHERE database_id = ? AND status = 'QUEUED'")
+            .bind(database_id)
+            .fetch_all(self.pool.as_ref())
+            .await
+    }
+
+    pub async fn cancel_queued_for_database(&self, database_id: i64) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query(
+            "UPDATE deployments
+             SET status        = 'CANCELLED',
+                 state         = 'CANCELLED',
+                 finished_at   = strftime('%s', 'now'),
+                 last_state_at = strftime('%s', 'now')
+             WHERE database_id = ? AND status = 'QUEUED'",
+        )
+        .bind(database_id)
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(rows.rows_affected() > 0)
+    }
+
     pub async fn mark_running_as_recovered(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments
@@ -599,7 +637,7 @@ impl DeploymentRepository {
     pub async fn recover_stale_application_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE applications SET app_status = 'ERROR'
-             WHERE app_status = 'RUNNING'
+             WHERE app_status IN ('STARTING', 'BUILDING')
              AND id IN (
                  SELECT application_id FROM deployments
                  WHERE state = 'RECOVERED_AFTER_RESTART' AND application_id IS NOT NULL
@@ -613,7 +651,7 @@ impl DeploymentRepository {
     pub async fn recover_stale_compose_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE compose_projects SET compose_status = 'ERROR'
-             WHERE compose_status = 'RUNNING'
+             WHERE compose_status IN ('STARTING', 'BUILDING')
              AND id IN (
                  SELECT compose_id FROM deployments
                  WHERE state = 'RECOVERED_AFTER_RESTART' AND compose_id IS NOT NULL
@@ -634,7 +672,7 @@ impl DeploymentRepository {
             "libsql_dbs",
         ] {
             let query_str = format!(
-                "UPDATE {} SET app_status = 'ERROR' WHERE app_status = 'RUNNING' AND id IN (
+                "UPDATE {} SET app_status = 'ERROR' WHERE app_status IN ('STARTING', 'BUILDING') AND id IN (
                     SELECT database_id FROM deployments WHERE state = 'RECOVERED_AFTER_RESTART' AND database_id IS NOT NULL
                 )",
                 table

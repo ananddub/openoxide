@@ -7,7 +7,7 @@ use crate::utils::docker::DockerCli;
 use crate::utils::docker::query::filter::ServiceFilter;
 
 use super::{
-    ApplicationOperation, ApplicationOperationResult, ApplicationRecord, ApplicationService,
+    ApplicationOperation, ApplicationOperationResult, ApplicationService,
 };
 
 impl ApplicationService {
@@ -29,11 +29,8 @@ impl ApplicationService {
             .ensure_capacity()
             .await?;
 
-        let app_model = self
-            .repo_app
-            .update_status(id, operation.target_status())
-            .await?;
-        let app = ApplicationRecord::from(app_model);
+        let _ = self.repo_app.update_status(id, "STARTING").await;
+        let app = self.get_by_id(id).await?;
 
         let log_path = format!("pending-app-{}", id);
         let deployment_id = self
@@ -83,56 +80,37 @@ impl ApplicationService {
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
-        if queue.cancel_queued_application(id).await? {
-            self.repo_app.update_status(id, "IDLE").await?;
-            return Ok(true);
+        let _ = queue.cancel_queued_application(id).await?;
+
+        if let Ok(state) = resolve::<ApplicationState>().await {
+            state.cancel_by_id(IdType::AppId(id));
         }
 
-        let has_running_deployment = self.repo_deploy.has_running_status_deployment(id).await?;
+        let _ = self.repo_deploy.request_cancel_deployment(id).await;
 
-        if !has_running_deployment {
-            let cmd = app_new_cmd(self.db.clone(), id)
-                .await
-                .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        if let Ok(cmd) = app_new_cmd(self.db.clone(), id).await {
             let docker_cli = DockerCli::from_executor(cmd);
-            let services = docker_cli
+            if let Ok(services) = docker_cli
                 .services()
                 .list()
                 .filter(ServiceFilter::name(format!("{}_", app_user.app_name)))
                 .run_json()
                 .await
-                .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-            if services.is_empty() {
-                self.repo_app.update_status(id, "IDLE").await?;
-                return Ok(false);
-            }
-            let mut flag = false;
-            for s in services.iter() {
-                if &s.replicas != "0/0" {
-                    flag = true;
-                    docker_cli
-                        .services()
-                        .scale()
-                        .service(&s.name, 0)
-                        .run()
-                        .await
-                        .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+            {
+                for s in services.iter() {
+                    if &s.replicas != "0/0" {
+                        let _ = docker_cli
+                            .services()
+                            .scale()
+                            .service(&s.name, 0)
+                            .run()
+                            .await;
+                    }
                 }
             }
-            self.repo_app.update_status(id, "IDLE").await?;
-            return Ok(flag);
         }
 
-        let state = resolve::<ApplicationState>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        if !state.cancel_by_id(IdType::AppId(id)) {
-            self.repo_app.update_status(id, "IDLE").await?;
-            return Ok(false);
-        }
-
-        self.repo_deploy.request_cancel_deployment(id).await?;
-        self.repo_app.update_status(id, "IDLE").await?;
+        self.repo_app.update_status(id, "STOPPED").await?;
         Ok(true)
     }
 }

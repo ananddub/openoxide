@@ -22,12 +22,10 @@ const isBuildActive = (e: any) => {
 
 export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, onCancelBuild}: ComposeDeploymentsListProps) {
 	const getStatusBadge = (e: any) => {
-		const s = (e.status || '').toUpperCase();
-		const st = (e.state || '').toUpperCase();
-
-		if (s === 'DONE' || s === 'HEALTHY' || s === 'SUCCESS' || s === 'DEPLOYED' || st.includes('SUCCESS')) 
+		const s = (e.status || e.state || '').toUpperCase();
+		if (s === 'DONE' || s === 'HEALTHY' || s === 'SUCCESS' || s === 'DEPLOYED') 
 			return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED' || st.includes('FAIL')) 
+		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED') 
 			return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
 		if (isBuildActive(e)) 
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
@@ -43,7 +41,7 @@ export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, on
 	};
 
 	return (
-		<section className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+		<section className="bg-card border border-border rounded-xl overflow-hidden">
 			{isLoading && deployments.length === 0 ? (
 				<div className="flex justify-center py-12">
 					<RefreshCw className="w-6 h-6 animate-spin text-muted-foreground/45" />
@@ -61,11 +59,13 @@ export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, on
 							<div key={e.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
 								<div className="min-w-0 flex flex-col gap-0.5">
 									<span className="text-xs font-semibold text-foreground truncate">
-										{e.title || e.type || `Deployment #${e.id}`}
+										{e.title || `Deployment #${e.id}`}
 									</span>
-									<span className="text-[11px] text-muted-foreground truncate">
-										{e.description || e.message || 'Triggered via Compose Stack Manager'}
-									</span>
+									{(e.description || e.message) && (
+										<span className="text-[11px] text-muted-foreground truncate">
+											{e.description || e.message}
+										</span>
+									)}
 								</div>
 
 								<div className="flex items-center gap-3 shrink-0">

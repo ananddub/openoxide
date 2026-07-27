@@ -35,8 +35,8 @@ impl LibsqlRepository {
         image: &str,
         db_user: &str,
         db_password: &str,
-    ) -> sqlx::Result<()> {
-        sqlx::query!(
+    ) -> sqlx::Result<i64> {
+        let result = sqlx::query!(
             r#"INSERT INTO libsql_dbs
                (name, app_name, description, docker_image, database_user, database_password,
                 external_port, environment_id, server_id)
@@ -53,7 +53,7 @@ impl LibsqlRepository {
         )
         .execute(self.pool.as_ref())
         .await?;
-        Ok(())
+        Ok(result.last_insert_rowid())
     }
 
     pub async fn update(&self, id: i64, input: &PatchDatabaseDto) -> sqlx::Result<()> {

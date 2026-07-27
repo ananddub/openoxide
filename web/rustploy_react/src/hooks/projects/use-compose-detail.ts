@@ -10,10 +10,16 @@ export function useComposeDetail(composeId: number) {
 		data: compose,
 		isLoading,
 		refetch,
-	} = $api.useQuery('get', '/compose/{id}', {
-		params: {path: {id: composeId}},
-		refetchInterval: 3000,
-	});
+	} = $api.useQuery(
+		'get',
+		'/compose/{id}',
+		{
+			params: {path: {id: composeId}},
+		},
+		{
+			refetchInterval: 2000,
+		}
+	);
 
 	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy');
 	const redeployMutation = $api.useMutation('post', '/compose/{id}/redeploy');

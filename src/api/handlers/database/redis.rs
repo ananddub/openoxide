@@ -166,6 +166,18 @@ impl RedisController {
         .await
     }
 
+    #[post("/{id}/cancel")]
+    async fn cancel(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        match self.service.cancel_operation(DatabaseKind::Redis, id).await {
+            Ok(_) => Ok(StatusCode::OK),
+            Err(error) => Err(super::map_sqlx_error(error)),
+        }
+    }
+
     #[delete("/{id}")]
     async fn delete(
         &self,

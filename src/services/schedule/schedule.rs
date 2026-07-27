@@ -340,8 +340,8 @@ impl ScheduleService {
         if schedule.enabled == 0 {
             return Err(sqlx::Error::Protocol("schedule is disabled".into()));
         }
-        let v = ScheduleType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.shell_type))
+        let v = ScheduleType::try_from(schedule.schedule_type.as_str()).map_err(|_| {
+            sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.schedule_type))
         })?;
         match v {
             ScheduleType::Application => self.run_application_schedule(schedule).await,
@@ -414,11 +414,13 @@ impl ScheduleService {
         }
 
         let executor = if let Some(server_id) = schedule.server_id {
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), server_id)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?,
-            )
+            match remote_executor(self.db.as_ref(), server_id).await {
+                Ok(remote) => CommandExecutor::Remote(remote),
+                Err(err) => {
+                    tracing::warn!(server_id, error = %err, "remote SSH unavailable for server, falling back to local executor");
+                    CommandExecutor::Local(LocalExecutor::new())
+                }
+            }
         } else {
             CommandExecutor::Local(LocalExecutor::new())
         };
@@ -592,15 +594,12 @@ impl ScheduleService {
     }
 
     async fn docker_for_server(&self, server_id: Option<i64>) -> sqlx::Result<DockerCli> {
-        match server_id {
-            Some(server_id) => {
-                let executor = remote_executor(self.db.as_ref(), server_id)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?;
-                Ok(DockerCli::from_remote_executor(executor))
+        if let Some(server_id) = server_id {
+            if let Ok(executor) = remote_executor(self.db.as_ref(), server_id).await {
+                return Ok(DockerCli::from_remote_executor(executor));
             }
-            None => Ok(DockerCli::new_local()),
         }
+        Ok(DockerCli::new_local())
     }
 
     async fn resolve_volume_backup_server_id(

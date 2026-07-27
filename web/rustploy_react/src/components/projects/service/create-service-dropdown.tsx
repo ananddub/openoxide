@@ -47,7 +47,7 @@ export function CreateServiceDropdown({onSelect, disabled}: CreateServiceDropdow
 				<DropdownMenuItem
 					onClick={() => onSelect('database')}
 					className="flex items-center gap-2.5 cursor-pointer text-xs p-2 rounded-md">
-					<Database className="size-4 text-blue-400" />
+					<Database className="size-4 text-foreground" />
 					<div className="flex flex-col">
 						<span className="font-semibold text-foreground">Database</span>
 						<span className="text-[9px] text-muted-foreground">Deploy PostgreSQL, Redis, etc.</span>

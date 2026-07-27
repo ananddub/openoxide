@@ -9,6 +9,23 @@ string_enum! {
         }
 }
 
+string_enum! {
+       #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum ComposeStatus {
+                default = Idle;
+                Idle => "IDLE",
+                Queued => "QUEUED",
+                Starting => "STARTING",
+                Running => "RUNNING",
+                Stopping => "STOPPING",
+                Stopped => "STOPPED",
+                Cancelling => "CANCELLING",
+                Cancelled => "CANCELLED",
+                Done => "DONE",
+                Error => "ERROR"
+        }
+}
+
 // impl From<String> for ComposeType {
 //     fn from(value: String) -> Self {
 //         Self::from_str(&value).unwrap_or_else(|| {

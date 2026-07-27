@@ -10,12 +10,22 @@ use std::collections::BTreeMap;
 use tokio::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
+#[derive(Serialize, Clone, Default)]
+pub struct TopLevelVolume {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external: Option<bool>,
+}
+
 #[derive(Serialize)]
 pub struct StackFile {
     pub version: &'static str,
     pub services: BTreeMap<String, StackService>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub networks: BTreeMap<String, ExternalNetwork>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub volumes: BTreeMap<String, TopLevelVolume>,
 }
 
 #[derive(Serialize)]
@@ -25,8 +35,6 @@ pub struct StackService {
     pub environment: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub args: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<StackMount>,
     pub networks: Vec<String>,
@@ -117,7 +125,7 @@ pub struct ExternalNetwork {
     pub name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct StackMount {
     #[serde(rename = "type")]
     pub kind: &'static str,
@@ -269,14 +277,40 @@ impl DatabaseBuilder {
     }
 
     pub async fn stop(&self, app_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
-        let _ = self
+        let services = self
             .ctx
             .docker
-            .stacks()
-            .remove(app_name)
-            .cancel_with(cancel.clone())
-            .run()
+            .services()
+            .list()
+            .filter(crate::utils::docker::query::ServiceFilter::name(format!("{}_", app_name)))
+            .run_json()
             .await;
+        if let Ok(services) = services {
+            for s in services {
+                if &s.replicas != "0/0" {
+                    let _ = self
+                        .ctx
+                        .docker
+                        .services()
+                        .scale()
+                        .service(&s.name, 0)
+                        .cancel_with(cancel.clone())
+                        .run()
+                        .await;
+                }
+            }
+        } else {
+            let service_name = format!("{}_db", app_name);
+            let _ = self
+                .ctx
+                .docker
+                .services()
+                .scale()
+                .service(&service_name, 0)
+                .cancel_with(cancel.clone())
+                .run()
+                .await;
+        }
         Ok(())
     }
 
@@ -305,20 +339,17 @@ impl DatabaseBuilder {
                 }
                 Err(error) => return Err(error),
             };
-            if rows
-                .iter()
-                .any(|row| row.current_state.starts_with("Running"))
-            {
+            if rows.iter().any(|row| {
+                row.desired_state.eq_ignore_ascii_case("running") && row.current_state.starts_with("Running")
+            }) {
                 return Ok(());
             }
-            if let Some(error) = rows
-                .iter()
-                .map(|row| row.error.as_str())
-                .find(|e| !e.is_empty())
-            {
+            if let Some(failed_task) = rows.iter().find(|row| {
+                !row.error.is_empty() && row.desired_state.eq_ignore_ascii_case("running")
+            }) {
                 return Err(ExecError::CommandFailed {
                     code: None,
-                    stderr: error.into(),
+                    stderr: failed_task.error.clone(),
                 });
             }
             if Instant::now() >= deadline {

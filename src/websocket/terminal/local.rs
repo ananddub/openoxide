@@ -29,10 +29,20 @@ pub async fn spawn_docker_terminal(
     if let Ok(containers) = docker.containers().ps().list().await {
         if !containers.is_empty() {
             use_docker = true;
-            if let Some(matching) = containers.iter().find(|c| c.names.contains(&input.container)) {
+            let search = input.container.to_lowercase();
+            if let Some(matching) = containers.iter().find(|c| {
+                let n = c.names.to_lowercase();
+                n.contains(&search)
+                    || n.contains(&format!("{}_", search))
+                    || n.contains(&format!("{}.", search))
+            }) {
                 target_container = matching.names.trim_start_matches('/').to_string();
-            } else if let Some(first) = containers.first() {
-                target_container = first.names.trim_start_matches('/').to_string();
+            } else {
+                emit_error(
+                    &socket,
+                    format!("container for service '{}' is not currently running", input.container),
+                );
+                return;
             }
         }
     }

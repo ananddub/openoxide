@@ -61,7 +61,7 @@ CREATE TABLE compose_projects (
 	-- Constraints
 	CONSTRAINT compose_source_type_check CHECK (source_type IN ('GIT', 'GITHUB', 'GITLAB', 'BITBUCKET', 'GITEA', 'RAW')),
 	CONSTRAINT compose_type_check CHECK (compose_type IN ('DOCKER-COMPOSE', 'STACK')),
-	CONSTRAINT compose_status_check CHECK (compose_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR')),
+	CONSTRAINT compose_status_check CHECK (compose_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED')),
 	CONSTRAINT compose_trigger_type_check CHECK (trigger_type IN ('PUSH', 'TAG'))
 ) STRICT;
 

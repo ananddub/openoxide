@@ -74,8 +74,8 @@ export function DockerInspectModal({activeModal, onClose, logsStream}: DockerIns
 					{/* 1. Logs View */}
 					{activeModal.type === 'logs' && (
 						<DeploymentViewer
-							logs={logsStream}
-							isLoading={logsStream.length === 0}
+							logs={logsStream || []}
+							isLoading={(logsStream || []).length === 0}
 							isLive={true}
 							isDeployment={false}
 							heightClass="h-[400px]"
@@ -90,7 +90,7 @@ export function DockerInspectModal({activeModal, onClose, logsStream}: DockerIns
 							<div className="bg-muted/30 border border-border rounded-lg p-3 font-mono text-xs flex flex-col gap-2">
 								<span className="text-muted-foreground font-bold uppercase text-[10px]">Environment Variables</span>
 								<pre className="text-zinc-200 whitespace-pre-wrap break-all">
-									{JSON.stringify(activeModal.container.env, null, 2)}
+									{JSON.stringify(activeModal.container.env || {}, null, 2)}
 								</pre>
 							</div>
 
@@ -110,7 +110,7 @@ export function DockerInspectModal({activeModal, onClose, logsStream}: DockerIns
 					{activeModal.type === 'mount' && (
 						<div className="flex flex-col gap-3">
 							<p className="text-xs text-muted-foreground">Volume mounts and directory bind paths for this container</p>
-							{activeModal.container.mounts.map((m, idx) => (
+							{(activeModal.container.mounts || []).map((m, idx) => (
 								<div key={idx} className="bg-muted/30 border border-border rounded-lg p-3 flex flex-col gap-1.5 font-mono text-xs">
 									<div className="flex items-center justify-between">
 										<span className="text-primary font-bold">Host Source:</span>
@@ -130,7 +130,7 @@ export function DockerInspectModal({activeModal, onClose, logsStream}: DockerIns
 							<div className="bg-muted/30 border border-border rounded-lg p-3 flex flex-col gap-2">
 								<span className="text-xs font-bold text-foreground">Connected Docker Networks</span>
 								<div className="flex flex-wrap gap-2">
-									{activeModal.container.networks.map((net, i) => (
+									{(activeModal.container.networks || []).map((net, i) => (
 										<Badge key={i} variant="secondary" className="font-mono text-xs">
 											<Globe className="w-3 h-3 mr-1 text-emerald-400" /> {net}
 										</Badge>

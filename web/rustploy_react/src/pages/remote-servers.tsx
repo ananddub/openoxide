@@ -6,7 +6,7 @@ import {RemoteServersList} from '#/components/remote-servers/remote-servers-list
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
 import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
 import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
-import {TerminalModal} from '#/components/projects/app/detail/terminal-modal';
+import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 

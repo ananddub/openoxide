@@ -34,7 +34,7 @@ CREATE TABLE postgres_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT pg_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR'))
+	CONSTRAINT pg_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
 ) STRICT;
 
 -- MySQL managed instances
@@ -73,7 +73,7 @@ CREATE TABLE mysql_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mysql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR'))
+	CONSTRAINT mysql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
 ) STRICT;
 
 -- MariaDB managed instances
@@ -112,7 +112,7 @@ CREATE TABLE mariadb_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mariadb_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR'))
+	CONSTRAINT mariadb_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
 ) STRICT;
 
 -- MongoDB managed instances
@@ -150,7 +150,7 @@ CREATE TABLE mongo_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mongo_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR'))
+	CONSTRAINT mongo_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
 ) STRICT;
 
 -- Redis managed instances
@@ -186,7 +186,7 @@ CREATE TABLE redis_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT redis_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR'))
+	CONSTRAINT redis_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
 ) STRICT;
 
 -- LibSQL managed instances
@@ -229,7 +229,7 @@ CREATE TABLE libsql_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT libsql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR')),
+	CONSTRAINT libsql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED')),
 	CONSTRAINT libsql_node_check CHECK (sqld_node IN ('PRIMARY', 'REPLICA'))
 ) STRICT;
 

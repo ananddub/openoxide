@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 
 use super::{
-    ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, ComposeType,
+    ComposeOperation, ComposeOperationResult, ComposeService, ComposeStatus, ComposeType,
     auto_excuter::compose_new_db,
 };
 use crate::utils::builder::queue::BuilderQueue;
@@ -19,6 +19,14 @@ impl ComposeService {
     ) -> sqlx::Result<ComposeOperationResult> {
         let running_deployment = self.repo_deploy.has_running_compose_deployment(id).await?;
         if running_deployment {
+            if matches!(operation, ComposeOperation::Stop) {
+                self.cancel_operation(id).await?;
+                return Ok(ComposeOperationResult {
+                    compose: self.get_by_id(id).await?,
+                    deployment_id: None,
+                    operation: ComposeOperation::Stop,
+                });
+            }
             return Err(sqlx::Error::Protocol(
                 "compose deployment already queued or running".into(),
             ));
@@ -30,11 +38,7 @@ impl ComposeService {
             .ensure_capacity()
             .await?;
 
-        let compose_model = self
-            .repo_compose
-            .update_status(id, operation.target_status())
-            .await?;
-        let compose = ComposeRecord::from(compose_model);
+        let compose = self.get_by_id(id).await?;
 
         let log_path = format!("pending-compose-{}", id);
         let deployment_id = self
@@ -74,8 +78,15 @@ impl ComposeService {
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?
             .notify();
 
+        let status = match operation {
+            ComposeOperation::Stop => ComposeStatus::Stopping,
+            _ => ComposeStatus::Starting,
+        };
+
+        let compose = self.repo_compose.update_status(id, status.as_str()).await?;
+
         Ok(ComposeOperationResult {
-            compose,
+            compose: compose.into(),
             deployment_id: Some(deployment_id),
             operation,
         })
@@ -84,55 +95,21 @@ impl ComposeService {
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
 
-        let queue = resolve::<BuilderQueue>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-
-        if queue.cancel_queued_compose(id).await? {
-            self.repo_compose.update_status(id, "IDLE").await?;
-            return Ok(true);
+        if let Ok(queue) = resolve::<BuilderQueue>().await {
+            let _ = queue.cancel_queued_compose(id).await;
         }
 
-        let has_running_deployment = self
-            .repo_deploy
-            .has_running_status_compose_deployment(id)
-            .await?;
-
-        if !has_running_deployment {
-            let db = self.db.clone();
-            let app_name = compose.app_name.clone();
-            let compose_type = compose.compose_type;
-            let repo_compose = self.repo_compose.clone();
-            tokio::spawn(async move {
-                if let Err(e) = scale_down_compose(db.clone(), id, &app_name, compose_type).await {
-                    tracing::warn!(compose_id = id, error = %e, "could not scale down compose on cancel");
-                }
-                let _ = repo_compose.update_status(id, "IDLE").await
-                    .map_err(|e| tracing::error!(compose_id = id, error = %e, "could not update compose status to IDLE on cancel"));
-            });
-            return Ok(true);
+        if let Ok(state) = resolve::<ApplicationState>().await {
+            state.cancel_by_id(IdType::ComposeId(id));
         }
 
-        let state = resolve::<ApplicationState>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        state.cancel_by_id(IdType::ComposeId(id));
+        let _ = self.repo_deploy.request_cancel_compose_deployment(id).await;
 
-        self.repo_compose.update_status(id, "IDLE").await?;
+        if let Err(e) = scale_down_compose(self.db.clone(), id, &compose.app_name, compose.compose_type).await {
+            tracing::warn!(compose_id = id, error = %e, "could not scale down compose on cancel");
+        }
 
-        self.repo_deploy
-            .request_cancel_compose_deployment(id)
-            .await?;
-
-        let db = self.db.clone();
-        let app_name = compose.app_name.clone();
-        let compose_type = compose.compose_type;
-        tokio::spawn(async move {
-            if let Err(e) = scale_down_compose(db, id, &app_name, compose_type).await {
-                tracing::warn!(compose_id = id, error = %e, "could not scale down compose on cancel");
-            }
-        });
-
+        self.repo_compose.update_status(id, ComposeStatus::Stopped.as_str()).await?;
         Ok(true)
     }
 }

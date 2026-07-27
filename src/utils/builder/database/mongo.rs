@@ -27,13 +27,16 @@ pub async fn build_mongo_stack(
         })?;
 
     // Parse command and args
-    let command = db
-        .command
-        .map(|c| c.split_whitespace().map(String::from).collect::<Vec<_>>());
-    let args = db
-        .args
-        .map(|a| serde_json::from_str::<Vec<String>>(&a).unwrap_or_default())
-        .unwrap_or_default();
+    let mut command: Option<Vec<String>> = None;
+    if let Some(c) = &db.command {
+        let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
+        if let Some(a_str) = &db.args {
+            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
+                full.extend(parsed_args);
+            }
+        }
+        command = Some(full);
+    }
 
     // Parse environment variables
     let mut resolved_env = crate::utils::builder::env::generate_env_db(
@@ -89,8 +92,7 @@ pub async fn build_mongo_stack(
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
-        args,
-        volumes: stack_mounts,
+        volumes: stack_mounts.clone(),
         networks: vec![crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string()],
         deploy: DeploySpec {
             replicas: db.replicas as u32,
@@ -142,10 +144,24 @@ pub async fn build_mongo_stack(
         },
     );
 
+    let mut top_level_volumes = BTreeMap::new();
+    for m in &stack_mounts {
+        if m.kind == "volume" {
+            top_level_volumes.insert(
+                m.source.clone(),
+                crate::utils::builder::database::builder::TopLevelVolume {
+                    name: Some(m.source.clone()),
+                    external: None,
+                },
+            );
+        }
+    }
+
     let file = StackFile {
         version: "3.8",
         services,
         networks,
+        volumes: top_level_volumes,
     };
 
     let yaml = serde_yaml::to_string(&file).map_err(|e| ExecError::CommandFailed {

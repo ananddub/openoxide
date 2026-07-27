@@ -2,7 +2,7 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        application::ApplicationOperation, compose::ComposeOperation, database::DatabaseOperation,
+        application::ApplicationOperation, compose::ComposeOperation, compose::ComposeStatus, database::DatabaseOperation,
     },
     utils::builder::{
         custom_type::{DeployState, IdType},
@@ -80,10 +80,15 @@ impl BuilderQueue {
             tracing::error!(deployment_id, error = %e, "builder queue: could not persist final deployment status");
         }
 
+        let is_stop = operation.eq_ignore_ascii_case("stop");
         let target_status = if final_status == "DONE" {
-            "DONE"
+            if is_stop {
+                ComposeStatus::Stopped.as_str()
+            } else {
+                ComposeStatus::Running.as_str()
+            }
         } else {
-            "ERROR"
+            ComposeStatus::Error.as_str()
         };
 
         if let Some(app_id) = application_id {

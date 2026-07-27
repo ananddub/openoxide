@@ -328,6 +328,21 @@ impl DeploymentController {
         Ok(Sse::new(deployment_log_stream(receiver)))
     }
 
+    #[get("/database/{id}/logs", sse = DeploymentSseEventDto)]
+    async fn database_latest_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+    ) -> Result<DeploymentSse, ApiError> {
+        let receiver = self
+            .service
+            .stream_database_latest_log(id)
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Sse::new(deployment_log_stream(receiver)))
+    }
+
     async fn events(&self, id: IdType) -> Result<DeploymentSse, ApiError> {
         let Some(subscription) = self
             .service

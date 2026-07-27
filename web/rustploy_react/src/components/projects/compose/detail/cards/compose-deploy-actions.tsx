@@ -1,4 +1,4 @@
-import {Rocket, RefreshCw, Hammer, Play, Square, StopCircle, Terminal} from 'lucide-react';
+import {Rocket, RefreshCw, Hammer, Play, Ban, Terminal} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 
 type ActionType = 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel';
@@ -7,12 +7,8 @@ interface ComposeDeployActionsProps {
 	isProcessing: boolean;
 	isBuilding: boolean;
 	isRunning: boolean;
-	activeLoading: ActionType | null;
-	autoDeploy: boolean;
-	setAutoDeploy: (v: boolean) => void;
-	cleanCache: boolean;
-	setCleanCache: (v: boolean) => void;
-	setConfirmAction: (action: ActionType) => void;
+	activeLoading: any;
+	onAction: (action: ActionType) => void;
 	onOpenTerminal?: () => void;
 }
 
@@ -21,11 +17,7 @@ export function ComposeDeployActions({
 	isBuilding,
 	isRunning,
 	activeLoading,
-	autoDeploy,
-	setAutoDeploy,
-	cleanCache,
-	setCleanCache,
-	setConfirmAction,
+	onAction,
 	onOpenTerminal,
 }: ComposeDeployActionsProps) {
 	return (
@@ -33,10 +25,10 @@ export function ComposeDeployActions({
 			<div className="flex flex-wrap items-center gap-2">
 				{/* Deploy */}
 				<Button
-					onClick={() => setConfirmAction('deploy')}
+					onClick={() => onAction('deploy')}
 					disabled={isProcessing || isBuilding}
 					size="sm"
-					className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+					className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
 				>
 					{activeLoading === 'deploy' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
 					{activeLoading === 'deploy' ? 'Deploying...' : 'Deploy'}
@@ -44,11 +36,11 @@ export function ComposeDeployActions({
 
 				{/* Reload */}
 				<Button
-					onClick={() => setConfirmAction('reload')}
+					onClick={() => onAction('reload')}
 					disabled={isProcessing || isBuilding}
 					variant="outline"
 					size="sm"
-					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
 				>
 					{activeLoading === 'reload' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
 					{activeLoading === 'reload' ? 'Reloading...' : 'Reload'}
@@ -56,11 +48,11 @@ export function ComposeDeployActions({
 
 				{/* Rebuild */}
 				<Button
-					onClick={() => setConfirmAction('rebuild')}
+					onClick={() => onAction('rebuild')}
 					disabled={isProcessing || isBuilding}
 					variant="outline"
 					size="sm"
-					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
 				>
 					{activeLoading === 'rebuild' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}
 					{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
@@ -79,33 +71,33 @@ export function ComposeDeployActions({
 					</Button>
 				) : isBuilding ? (
 					<Button
-						onClick={() => setConfirmAction('cancel')}
-						disabled={isProcessing}
+						onClick={() => onAction('cancel')}
+						disabled={activeLoading === 'cancel'}
 						variant="outline"
 						size="sm"
-						className="border-border text-destructive hover:bg-destructive/10 font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+						className="border-destructive/50 text-destructive hover:bg-destructive/10 font-bold flex items-center gap-1.5 h-9 rounded-lg px-4 shadow-xs cursor-pointer"
 					>
-						{activeLoading === 'cancel' ? <RefreshCw className="w-4 h-4 animate-spin text-destructive" /> : <Square className="w-4 h-4" />}
+						<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
 						{activeLoading === 'cancel' ? 'Cancelling...' : 'Cancel'}
 					</Button>
 				) : isRunning ? (
 					<Button
-						onClick={() => setConfirmAction('stop')}
+						onClick={() => onAction('stop')}
 						disabled={isProcessing}
-						variant="outline"
+						variant="destructive"
 						size="sm"
-						className="border-border text-destructive hover:bg-destructive/10 font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+						className="h-9 px-4 text-xs font-semibold gap-1.5 rounded-lg flex items-center cursor-pointer"
 					>
-						<StopCircle className="w-4 h-4" />
-						Stop
+						{activeLoading === 'stop' ? <RefreshCw className="size-4 animate-spin" /> : <Ban className="size-4" />}
+						{activeLoading === 'stop' ? 'Stopping...' : 'Stop'}
 					</Button>
 				) : (
 					<Button
-						onClick={() => setConfirmAction('start')}
+						onClick={() => onAction('start')}
 						disabled={isProcessing}
 						variant="outline"
 						size="sm"
-						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
 					>
 						{activeLoading === 'start' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
 						{activeLoading === 'start' ? 'Starting...' : 'Start'}

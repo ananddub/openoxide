@@ -9,9 +9,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
-import {Select, SelectContent, SelectItem, SelectTrigger} from '#/components/ui/select';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {Server} from 'lucide-react';
 
 interface CreateComposeDialogProps {
 	isOpen: boolean;
@@ -29,15 +30,19 @@ export function CreateComposeDialog({
 	const [name, setName] = useState('');
 	const [composeType, setComposeType] = useState('DOCKER-COMPOSE');
 	const [description, setDescription] = useState('');
+	const [serverId, setServerId] = useState<string>('local');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/compose');
+	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers') as any;
+	const serversList = Array.isArray(rawServers) ? rawServers : [];
 
 	useEffect(() => {
 		if (isOpen) {
 			setName('');
 			setComposeType('DOCKER-COMPOSE');
 			setDescription('');
+			setServerId('local');
 		}
 	}, [isOpen]);
 
@@ -58,6 +63,7 @@ export function CreateComposeDialog({
 					compose_file: '',
 					compose_type: composeType,
 					source_type: 'RAW',
+					server_id: serverId && serverId !== 'local' ? Number(serverId) : undefined,
 				},
 			});
 			toast.success('Compose stack created successfully');
@@ -105,13 +111,29 @@ export function CreateComposeDialog({
 							</label>
 							<Select value={composeType} onValueChange={val => setComposeType(val ?? 'DOCKER-COMPOSE')}>
 								<SelectTrigger className="w-full h-9 text-xs rounded-lg border border-border/80 bg-muted/20 focus-visible:ring-0">
-									<span className="text-foreground text-left">
-										{composeType === 'DOCKER-COMPOSE' ? 'Docker Compose' : 'Stack (Docker Swarm)'}
-									</span>
+									<SelectValue placeholder="Select type" />
 								</SelectTrigger>
 								<SelectContent className="bg-card border-border">
 									<SelectItem value="DOCKER-COMPOSE" className="text-xs">Docker Compose</SelectItem>
 									<SelectItem value="STACK" className="text-xs">Stack (Docker Swarm)</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Target Server Selection */}
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+								<Server className="size-3 text-muted-foreground" /> Target Server
+							</label>
+							<Select value={serverId} onValueChange={val => setServerId(val ?? 'local')}>
+								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+								<SelectContent className="bg-card border-border">
+									<SelectItem value="local" className="text-xs">Local Docker Engine</SelectItem>
+									{serversList.map((srv: any) => (
+										<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
+											{srv.name || `Server #${srv.id}`}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
 						</div>
@@ -126,7 +148,7 @@ export function CreateComposeDialog({
 								placeholder="Optional brief details about this stack..."
 								value={description}
 								onChange={e => setDescription(e.target.value)}
-								className="w-full rounded-lg border border-border/80 bg-muted/20 px-3 py-2 text-xs shadow-inner focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring leading-relaxed resize-none"
+								className="flex w-full rounded-lg border border-input bg-transparent dark:bg-input/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 outline-none resize-none leading-relaxed"
 							/>
 						</div>
 					</div>

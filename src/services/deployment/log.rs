@@ -172,6 +172,19 @@ impl DeploymentService {
 
         self.stream_deployment_log(deployment_id).await
     }
+
+    pub async fn stream_database_latest_log(
+        &self,
+        database_id: i64,
+    ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
+        let deployment_id = self
+            .repo_deploy
+            .get_latest_database_deployment_id(database_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+
+        self.stream_deployment_log(deployment_id).await
+    }
 }
 
 async fn send_lines(buffer: &mut Vec<u8>, sender: &tokio::sync::mpsc::Sender<String>) {

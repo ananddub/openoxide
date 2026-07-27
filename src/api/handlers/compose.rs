@@ -239,8 +239,14 @@ impl ComposeController {
         &self,
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
-    ) -> Result<(StatusCode, Json<ComposeOperationResponseDto>), ApiError> {
-        self.operation(id, ComposeOperation::Stop).await
+    ) -> Result<Json<ComposeOperationResponseDto>, ApiError> {
+        self.service.cancel_operation(id).await.map_err(map_sqlx_error)?;
+        let compose = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        Ok(Json(ComposeOperationResponseDto {
+            compose: compose.into(),
+            deployment_id: None,
+            operation: ComposeOperation::Stop.as_str().to_string(),
+        }))
     }
 
     #[post("/{id}/cancel")]
@@ -248,15 +254,14 @@ impl ComposeController {
         &self,
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        match self.service.cancel_operation(id).await {
-            Ok(true) => Ok(StatusCode::ACCEPTED),
-            Ok(false) => Err((
-                StatusCode::CONFLICT,
-                "no running compose deployment to cancel".into(),
-            )),
-            Err(error) => Err(map_sqlx_error(error)),
-        }
+    ) -> Result<Json<ComposeOperationResponseDto>, ApiError> {
+        self.service.cancel_operation(id).await.map_err(map_sqlx_error)?;
+        let compose = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        Ok(Json(ComposeOperationResponseDto {
+            compose: compose.into(),
+            deployment_id: None,
+            operation: ComposeOperation::Stop.as_str().to_string(),
+        }))
     }
 
     #[delete("/{id}")]
