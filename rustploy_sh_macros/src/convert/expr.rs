@@ -238,17 +238,28 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
             let cond_tokens = convert_expr(&expr_if.cond)?;
             let mut then_stmts = Vec::new();
             for stmt in &expr_if.then_branch.stmts {
-                then_stmts.push(convert_stmt(stmt)?);
+                let stmt_tokens = convert_stmt(stmt)?;
+                then_stmts.push(quote! {
+                    crate::utils::exec::script::dsl::ShellIRWrapper(#stmt_tokens).into_shell_ir()
+                });
             }
             let else_tokens = if let Some((_, else_expr)) = &expr_if.else_branch {
                 let mut else_stmts = Vec::new();
                 match &**else_expr {
                     Expr::Block(block) => {
                         for stmt in &block.block.stmts {
-                            else_stmts.push(convert_stmt(stmt)?);
+                            let stmt_tokens = convert_stmt(stmt)?;
+                            else_stmts.push(quote! {
+                                crate::utils::exec::script::dsl::ShellIRWrapper(#stmt_tokens).into_shell_ir()
+                            });
                         }
                     }
-                    _ => else_stmts.push(convert_expr(else_expr)?),
+                    _ => {
+                        let expr_tokens = convert_expr(else_expr)?;
+                        else_stmts.push(quote! {
+                            crate::utils::exec::script::dsl::ShellIRWrapper(#expr_tokens).into_shell_ir()
+                        });
+                    }
                 }
                 quote! { Some(vec![ #( #else_stmts ),* ]) }
             } else {
@@ -275,7 +286,10 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
             let iter_tokens = convert_expr(&expr_for.expr)?;
             let mut body_stmts = Vec::new();
             for stmt in &expr_for.body.stmts {
-                body_stmts.push(convert_stmt(stmt)?);
+                let stmt_tokens = convert_stmt(stmt)?;
+                body_stmts.push(quote! {
+                    crate::utils::exec::script::dsl::ShellIRWrapper(#stmt_tokens).into_shell_ir()
+                });
             }
             Ok(quote! {
                 (crate::utils::exec::script::dsl::ShellIR::Loop {
@@ -289,7 +303,10 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
             let cond_tokens = convert_expr(&expr_while.cond)?;
             let mut body_stmts = Vec::new();
             for stmt in &expr_while.body.stmts {
-                body_stmts.push(convert_stmt(stmt)?);
+                let stmt_tokens = convert_stmt(stmt)?;
+                body_stmts.push(quote! {
+                    crate::utils::exec::script::dsl::ShellIRWrapper(#stmt_tokens).into_shell_ir()
+                });
             }
             Ok(quote! {
                 (crate::utils::exec::script::dsl::ShellIR::While {

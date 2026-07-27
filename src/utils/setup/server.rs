@@ -8,10 +8,7 @@ use crate::utils::{
     },
     exec::{
         CommandExecutor, ExecResult,
-        script::{
-            IntoCommand, ScriptPipeline,
-            dsl::{ArgToken, CaptureSource, Command, Expr, ShellIR, Statement},
-        },
+        script::{IntoCommand, ScriptPipeline, ShellIR, sh},
     },
     os::OsCli,
 };
@@ -313,19 +310,21 @@ impl ServerSetup {
     pub fn oneshot_script(&self, install_dependencies: bool) -> ScriptPipeline {
         let os = OsCli::new(&self.executor);
         let docker = DockerCli::from_executor(self.executor.clone());
-        let mut script = ScriptPipeline::new();
+        let mut steps = Vec::new();
 
         if install_dependencies {
-            script = self.append_dependency_steps(script, &os);
-            script = self.append_build_tool_steps(script, &os);
+            self.append_dependency_steps(&mut steps, &os);
+            self.append_build_tool_steps(&mut steps, &os);
         }
 
-        script = self.append_directory_steps(script, &os);
-        script = self.append_swarm_step(script, &docker);
-        script = self.append_network_step(script, &docker);
-        script = self.append_traefik_config_steps(script, &os);
-        script = self.append_traefik_step(script, &docker);
-        self.append_monitoring_step(script, &docker)
+        self.append_directory_steps(&mut steps, &os);
+        self.append_swarm_step(&mut steps, &docker);
+        self.append_network_step(&mut steps, &docker);
+        self.append_traefik_config_steps(&mut steps, &os);
+        self.append_traefik_step(&mut steps, &docker);
+        self.append_monitoring_step(&mut steps, &docker);
+
+        ScriptPipeline::new().cmd(steps)
     }
 
     pub fn compile_oneshot_script(&self, install_dependencies: bool) -> String {
@@ -343,11 +342,7 @@ impl ServerSetup {
         })
     }
 
-    fn append_dependency_steps(
-        &self,
-        mut script: ScriptPipeline,
-        os: &OsCli<'_>,
-    ) -> ScriptPipeline {
+    fn append_dependency_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         for (index, package) in [
             "curl",
             "wget",
@@ -362,164 +357,139 @@ impl ServerSetup {
         .into_iter()
         .enumerate()
         {
-            script = script.cmd(
+            steps.extend(sh!(
                 os.package(package)
                     .install()
                     .update(index == 0)
-                    .no_cache(true),
-            );
+                    .no_cache(true);
+            ));
         }
 
-        script = script.if_cmd_succeeds(
-            os.has_command("docker"),
-            ScriptPipeline::new(),
-            Some(ScriptPipeline::new().cmd(os.shell_installer("https://get.docker.com"))),
-        );
-        script.if_cmd_succeeds(
-            os.has_command("systemctl"),
-            ScriptPipeline::new()
-                .cmd(os.service("docker").enable())
-                .cmd(os.service("docker").start()),
-            None,
-        )
+        steps.extend(sh!(
+            if !os.has_command("docker") {
+                os.shell_installer("https://get.docker.com");
+            }
+            if os.has_command("systemctl") {
+                os.service("docker").enable();
+                os.service("docker").start();
+            }
+        ));
     }
 
-    fn append_build_tool_steps(&self, script: ScriptPipeline, os: &OsCli<'_>) -> ScriptPipeline {
-        script
-            .if_cmd_succeeds(
-                os.has_command("rclone"),
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new().cmd(os.shell_installer("https://rclone.org/install.sh")),
-                ),
-            )
-            .if_cmd_succeeds(
-                os.has_command("nixpacks"),
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new()
-                        .cmd(
-                            os.shell_installer("https://nixpacks.com/install.sh")
-                                .env("NIXPACKS_VERSION", "1.41.0"),
-                        )
-                        .cmd(command("nixpacks", ["--version"])),
-                ),
-            )
-            .if_cmd_succeeds(
-                os.has_command("railpack"),
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new()
-                        .cmd(
-                            os.shell_installer("https://railpack.com/install.sh")
-                                .env("RAILPACK_VERSION", "0.15.4"),
-                        )
-                        .cmd(command("railpack", ["--version"])),
-                ),
-            )
-            .if_cmd_succeeds(
-                os.has_command("pack"),
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new()
-                        .cmd(pack_url_detection())
-                        .cmd(
-                            os.tarball_installer("$_rustploy_pack_url", "/usr/local/bin")
-                                .member("pack"),
-                        )
-                        .cmd(command("pack", ["--version"])),
-                ),
-            )
+    fn append_build_tool_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
+        steps.extend(sh!(
+            if !os.has_command("rclone") {
+                os.shell_installer("https://rclone.org/install.sh");
+            }
+            if !os.has_command("nixpacks") {
+                os.shell_installer("https://nixpacks.com/install.sh")
+                    .env("NIXPACKS_VERSION", "1.41.0");
+                cmd("nixpacks", "--version");
+            }
+            if !os.has_command("railpack") {
+                os.shell_installer("https://railpack.com/install.sh")
+                    .env("RAILPACK_VERSION", "0.15.4");
+                cmd("railpack", "--version");
+            }
+            if !os.has_command("pack") {
+                os.pack_installer("0.39.1");
+                cmd("pack", "--version");
+            }
+        ));
     }
 
-    fn append_directory_steps(&self, mut script: ScriptPipeline, os: &OsCli<'_>) -> ScriptPipeline {
+    fn append_directory_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         for path in self.config.paths.all() {
-            script = script.cmd(os.dir(path).create().parents(true));
+            steps.extend(sh!(
+                os.dir(path).create().parents(true);
+            ));
         }
         let acme = format!("{}/acme.json", self.config.paths.traefik_dynamic);
-        script
-            .cmd(os.file(&self.config.paths.ssh).chmod("700"))
-            .if_file_exists(
-                &acme,
-                ScriptPipeline::new(),
-                Some(ScriptPipeline::new().cmd(os.file(&acme).write(""))),
-            )
-            .cmd(os.file(&acme).chmod("600"))
+        let ssh_path = self.config.paths.ssh.as_str();
+        steps.extend(sh!(
+            os.file(ssh_path).chmod("700");
+            if !os.file(acme.as_str()).exists() {
+                os.file(acme.as_str()).write("");
+            }
+            os.file(acme.as_str()).chmod("600");
+        ));
     }
 
-    fn append_swarm_step(&self, script: ScriptPipeline, docker: &DockerCli) -> ScriptPipeline {
-        let init = match &self.config.advertise_addr {
-            Some(value) => docker
+    fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        if let Some(advertise_addr) = &self.config.advertise_addr {
+            let swarm_init = docker
                 .swarm()
                 .init()
-                .advertise_addr(value)
-                .listen_addr("0.0.0.0:2377")
-                .build_str(),
-            None => swarm_init_with_detected_advertise(),
-        };
-
-        script.if_cmd_succeeds(
-            format!(
-                "{} | {}",
-                command("docker", ["info", "--format", "{{.Swarm.LocalNodeState}}"]),
-                command("grep", ["-q", "^active$"])
-            ),
-            ScriptPipeline::new(),
-            Some(ScriptPipeline::new().cmd(init)),
-        )
+                .advertise_addr(advertise_addr)
+                .listen_addr("0.0.0.0:2377");
+            steps.extend(sh!(if !pipe![
+                cmd("docker", "info", "--format", "{{.Swarm.LocalNodeState}}"),
+                grep!("-q", "^active$")
+            ] {
+                swarm_init;
+            }));
+        } else {
+            steps.extend(sh!(if !pipe![
+                cmd("docker", "info", "--format", "{{.Swarm.LocalNodeState}}"),
+                grep!("-q", "^active$")
+            ] {
+                let _rustploy_advertise_addr = capture_stdout! {
+                    pipe![
+                        cmd("hostname", "-I"),
+                        awk("{ for (i=1; i<=NF; i++) if ($i != \"127.0.0.1\") { print $i; exit } }")
+                    ];
+                }
+                .default("127.0.0.1");
+                cmd(
+                    "docker",
+                    "swarm",
+                    "init",
+                    "--advertise-addr",
+                    _rustploy_advertise_addr,
+                    "--listen-addr",
+                    "0.0.0.0:2377",
+                );
+            }));
+        }
     }
 
-    fn append_network_step(&self, script: ScriptPipeline, docker: &DockerCli) -> ScriptPipeline {
-        script.if_cmd_succeeds(
-            quiet(command(
-                "docker",
-                ["network", "inspect", self.config.network_name.as_str()],
-            )),
-            ScriptPipeline::new(),
-            Some(
-                ScriptPipeline::new().cmd(
-                    docker
-                        .networks()
-                        .create(&self.config.network_name)
-                        .driver(crate::utils::docker::NetworkDriver::Overlay)
-                        .attachable(),
-                ),
-            ),
-        )
+    fn append_network_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        let network_name = self.config.network_name.as_str();
+        let networks = docker.networks();
+        let network_create = networks
+            .create(network_name)
+            .driver(crate::utils::docker::NetworkDriver::Overlay)
+            .attachable();
+
+        steps.extend(sh!(
+            if !cmd("docker", "network", "inspect", rust!(network_name))
+                .stdout("/dev/null")
+                .stderr("/dev/null")
+            {
+                network_create;
+            }
+        ));
     }
 
-    fn append_traefik_config_steps(
-        &self,
-        script: ScriptPipeline,
-        os: &OsCli<'_>,
-    ) -> ScriptPipeline {
+    fn append_traefik_config_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         let static_path = format!("{}/traefik.yml", self.config.paths.traefik);
         let middleware_path = format!("{}/middlewares.yml", self.config.paths.traefik_dynamic);
         let static_config = super::traefik::static_config(&self.config);
         let middleware_config = super::traefik::default_middlewares();
 
-        script
-            .if_file_exists(
-                &static_path,
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new()
-                        .cmd(os.file(&static_path).write(static_config))
-                        .cmd(os.file(&static_path).chmod("600")),
-                ),
-            )
-            .if_file_exists(
-                &middleware_path,
-                ScriptPipeline::new(),
-                Some(
-                    ScriptPipeline::new()
-                        .cmd(os.file(&middleware_path).write(middleware_config))
-                        .cmd(os.file(&middleware_path).chmod("600")),
-                ),
-            )
+        steps.extend(sh!(
+            if !os.file(static_path.as_str()).exists() {
+                os.file(static_path.as_str()).write(static_config);
+                os.file(static_path.as_str()).chmod("600");
+            }
+            if !os.file(middleware_path.as_str()).exists() {
+                os.file(middleware_path.as_str()).write(middleware_config);
+                os.file(middleware_path.as_str()).chmod("600");
+            }
+        ));
     }
 
-    fn append_traefik_step(&self, script: ScriptPipeline, docker: &DockerCli) -> ScriptPipeline {
+    fn append_traefik_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = self.config.traefik_name.as_str();
         let image = format!("traefik:v{}", self.config.traefik_version);
         let static_mount = Mount::bind_ro(
@@ -546,23 +516,30 @@ impl ServerSetup {
             .publish(Port::udp(self.config.http3_port, self.config.http3_port))
             .publish(Port::tcp(self.config.dashboard_port, 8080));
 
-        script.if_cmd_succeeds(
-            quiet(command("docker", ["container", "inspect", name])),
-            ScriptPipeline::new().cmd(docker.containers().start(name)),
-            Some(
-                ScriptPipeline::new()
-                    .if_cmd_succeeds(
-                        quiet(command("docker", ["service", "inspect", name])),
-                        ScriptPipeline::new().cmd(docker.services().remove(name)),
-                        None,
-                    )
-                    .cmd(docker.images().pull(&image))
-                    .cmd(create),
-            ),
-        )
+        let start = containers.start(name);
+        let services = docker.services();
+        let service_remove = services.remove(name);
+        let images = docker.images();
+        let image_pull = images.pull(&image);
+
+        steps.extend(sh!(if cmd("docker", "container", "inspect", rust!(name))
+            .stdout("/dev/null")
+            .stderr("/dev/null")
+        {
+            start;
+        } else {
+            if cmd("docker", "service", "inspect", rust!(name))
+                .stdout("/dev/null")
+                .stderr("/dev/null")
+            {
+                service_remove;
+            }
+            image_pull;
+            create;
+        }));
     }
 
-    fn append_monitoring_step(&self, script: ScriptPipeline, docker: &DockerCli) -> ScriptPipeline {
+    fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = "rustploy-monitor";
         let image = "dubeyanand/rustploy-monitor:latest";
         let containers = docker.containers();
@@ -577,15 +554,19 @@ impl ServerSetup {
             ))
             .publish(Port::tcp(50051, 50051));
 
-        script.if_cmd_succeeds(
-            quiet(command("docker", ["container", "inspect", name])),
-            ScriptPipeline::new().cmd(docker.containers().start(name)),
-            Some(
-                ScriptPipeline::new()
-                    .cmd(docker.images().pull(image))
-                    .cmd(create),
-            ),
-        )
+        let start = containers.start(name);
+        let images = docker.images();
+        let image_pull = images.pull(image);
+
+        steps.extend(sh!(if cmd("docker", "container", "inspect", rust!(name))
+            .stdout("/dev/null")
+            .stderr("/dev/null")
+        {
+            start;
+        } else {
+            image_pull;
+            create;
+        }));
     }
 }
 
@@ -604,120 +585,6 @@ fn setup_steps(install_dependencies: bool) -> Vec<SetupStep> {
         SetupStep::Monitoring,
     ]);
     completed
-}
-
-fn command<const N: usize>(name: &str, args: [&str; N]) -> String {
-    ShellIR::Command(Command {
-        name: name.to_owned(),
-        args: args
-            .into_iter()
-            .map(|value| ArgToken::Literal(value.to_owned()))
-            .collect(),
-    })
-    .build_str()
-}
-
-fn quiet(cmd: String) -> String {
-    format!("{cmd} >/dev/null 2>&1")
-}
-
-fn pack_url_detection() -> String {
-    ShellIR::Sequence(vec![
-        ShellIR::Statement(Statement::VarAssign {
-            name: "_rustploy_pack_arch".to_owned(),
-            val: Box::new(ShellIR::Capture {
-                cmd: Box::new(ShellIR::Command(Command {
-                    name: "uname".to_owned(),
-                    args: vec![ArgToken::Literal("-m".to_owned())],
-                })),
-                source: CaptureSource::Stdout,
-            }),
-            default: None,
-        }),
-        ShellIR::If {
-            cond: Box::new(test_var_eq("_rustploy_pack_arch", "aarch64")),
-            then_branch: vec![var_literal("_rustploy_pack_suffix", "-arm64")],
-            else_branch: Some(vec![ShellIR::If {
-                cond: Box::new(test_var_eq("_rustploy_pack_arch", "arm64")),
-                then_branch: vec![var_literal("_rustploy_pack_suffix", "-arm64")],
-                else_branch: Some(vec![var_literal("_rustploy_pack_suffix", "")]),
-            }]),
-        },
-        ShellIR::Statement(Statement::VarAssign {
-            name: "_rustploy_pack_url".to_owned(),
-            val: Box::new(ShellIR::Expr(Expr::Word(vec![
-                Expr::Literal(
-                    "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux"
-                        .to_owned(),
-                ),
-                Expr::Variable("_rustploy_pack_suffix".to_owned()),
-                Expr::Literal(".tgz".to_owned()),
-            ]))),
-            default: None,
-        }),
-    ])
-    .build_str()
-}
-
-fn swarm_init_with_detected_advertise() -> String {
-    ShellIR::Sequence(vec![
-        ShellIR::Statement(Statement::VarAssign {
-            name: "_rustploy_advertise_addr".to_owned(),
-            val: Box::new(ShellIR::Capture {
-                cmd: Box::new(ShellIR::Pipeline(vec![
-                    Command {
-                        name: "hostname".to_owned(),
-                        args: vec![ArgToken::Literal("-I".to_owned())],
-                    },
-                    Command {
-                        name: "awk".to_owned(),
-                        args: vec![ArgToken::Literal(
-                            "{ for (i=1; i<=NF; i++) if ($i != \"127.0.0.1\") { print $i; exit } }"
-                                .to_owned(),
-                        )],
-                    },
-                ])),
-                source: CaptureSource::Stdout,
-            }),
-            default: None,
-        }),
-        ShellIR::If {
-            cond: Box::new(test_var_eq("_rustploy_advertise_addr", "")),
-            then_branch: vec![var_literal("_rustploy_advertise_addr", "127.0.0.1")],
-            else_branch: None,
-        },
-        ShellIR::Command(Command {
-            name: "docker".to_owned(),
-            args: vec![
-                ArgToken::Literal("swarm".to_owned()),
-                ArgToken::Literal("init".to_owned()),
-                ArgToken::Literal("--advertise-addr".to_owned()),
-                ArgToken::Variable("_rustploy_advertise_addr".to_owned()),
-                ArgToken::Literal("--listen-addr".to_owned()),
-                ArgToken::Literal("0.0.0.0:2377".to_owned()),
-            ],
-        }),
-    ])
-    .build_str()
-}
-
-fn test_var_eq(name: &str, value: &str) -> ShellIR {
-    ShellIR::Command(Command {
-        name: "test".to_owned(),
-        args: vec![
-            ArgToken::Variable(name.to_owned()),
-            ArgToken::Literal("=".to_owned()),
-            ArgToken::Literal(value.to_owned()),
-        ],
-    })
-}
-
-fn var_literal(name: &str, value: &str) -> ShellIR {
-    ShellIR::Statement(Statement::VarAssign {
-        name: name.to_owned(),
-        val: Box::new(ShellIR::Expr(Expr::Literal(value.to_owned()))),
-        default: None,
-    })
 }
 
 #[cfg(test)]

@@ -548,6 +548,26 @@ fn test_sh_macro_with_rust_builders() {
 }
 
 #[test]
+fn test_sh_macro_builder_inside_if_branch() {
+    use super::sh;
+    let cli = crate::utils::docker::DockerCli::new_local();
+    let containers = cli.containers();
+    let start = containers.start("web");
+
+    let script_ir = sh!(if cmd("test", "1", "=", "1") {
+        start;
+    });
+
+    let bash = script_ir
+        .iter()
+        .map(|s| s.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains("if test '1' '=' '1'; then"));
+    assert!(bash.contains("docker container start web"));
+}
+
+#[test]
 fn test_sh_macro_break_continue() {
     use super::sh;
     let script_ir = sh!(

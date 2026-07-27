@@ -1,5 +1,5 @@
-use crate::utils::exec::script::{IntoCommand, shell_single_quote};
-use crate::utils::exec::{CommandExecutor, ExecResult};
+use crate::utils::exec::script::{IntoCommand, ShellIR, sh, shell_single_quote};
+use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 pub struct ShellInstallerBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -95,6 +95,31 @@ pub struct TarballInstallerBuilder<'a> {
     members: Vec<String>,
 }
 
+pub struct PackInstallerBuilder<'a> {
+    executor: &'a CommandExecutor,
+    version: String,
+    destination: String,
+}
+
+impl<'a> PackInstallerBuilder<'a> {
+    pub(crate) fn new(executor: &'a CommandExecutor, version: impl Into<String>) -> Self {
+        Self {
+            executor,
+            version: version.into(),
+            destination: "/usr/local/bin".to_owned(),
+        }
+    }
+
+    pub fn destination(mut self, destination: impl Into<String>) -> Self {
+        self.destination = destination.into();
+        self
+    }
+
+    pub async fn run(self) -> ExecResult<ExecOutput> {
+        self.execute(self.executor).await
+    }
+}
+
 impl<'a> TarballInstallerBuilder<'a> {
     pub(crate) fn new(
         executor: &'a CommandExecutor,
@@ -167,6 +192,36 @@ fi",
             shell_word(&self.url),
             tar_args.join(" ")
         )
+    }
+}
+
+impl IntoCommand for PackInstallerBuilder<'_> {
+    fn build_str(&self) -> String {
+        let version = self.version.as_str();
+        let url_prefix = format!(
+            "https://github.com/buildpacks/pack/releases/download/v{version}/pack-v{version}-linux"
+        );
+        let tarball = TarballInstallerBuilder {
+            executor: self.executor,
+            url: "$_rustploy_pack_url".to_owned(),
+            destination: self.destination.clone(),
+            members: vec!["pack".to_owned()],
+        };
+
+        let mut steps = sh!(
+            let _rustploy_pack_arch = capture_stdout! {
+                cmd("uname", "-m");
+            };
+            let _rustploy_pack_suffix = "";
+            if cmd("test", _rustploy_pack_arch, "=", "aarch64") {
+                let _rustploy_pack_suffix = "-arm64";
+            } else if cmd("test", _rustploy_pack_arch, "=", "arm64") {
+                let _rustploy_pack_suffix = "-arm64";
+            }
+            let _rustploy_pack_url = word![rust!(url_prefix), _rustploy_pack_suffix, ".tgz"];
+        );
+        steps.push(ShellIR::Raw(tarball.build_str()));
+        steps.build_str()
     }
 }
 

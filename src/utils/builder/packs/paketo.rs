@@ -41,19 +41,7 @@ impl<'a> PackCli<'a> {
 
     pub async fn install(&self) -> ExecResult<ExecOutput> {
         let os = OsCli::new(self.executor);
-        let arch = os.system().arch().run().await?.stdout_trimmed().to_owned();
-        let suffix = if matches!(arch.as_str(), "aarch64" | "arm64") {
-            "-arm64"
-        } else {
-            ""
-        };
-        let url = format!(
-            "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux{suffix}.tgz"
-        );
-        os.tarball_installer(url, "/usr/local/bin")
-            .member("pack")
-            .run()
-            .await?;
+        os.pack_installer("0.39.1").run().await?;
         self.executor.run("pack", ["--version"]).await
     }
 

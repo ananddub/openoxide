@@ -144,6 +144,10 @@ impl<'a> OsCli<'a> {
         install::TarballInstallerBuilder::new(self.executor, url, destination)
     }
 
+    pub fn pack_installer(&self, version: impl Into<String>) -> install::PackInstallerBuilder<'a> {
+        install::PackInstallerBuilder::new(self.executor, version)
+    }
+
     pub fn capture_stdout(&self, cmd: impl IntoCommand) -> CaptureStdoutBuilder<'a> {
         CaptureStdoutBuilder {
             _executor: self.executor,
