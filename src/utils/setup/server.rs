@@ -398,6 +398,7 @@ impl ServerSetup {
     }
 
     fn append_dependency_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
+        steps.extend(sh!(info!("Installing base dependencies");));
         for (index, package) in [
             "curl",
             "wget",
@@ -422,10 +423,13 @@ impl ServerSetup {
         }
 
         steps.extend(sh!(
+            info!("Checking Docker installation");
             if !os.has_command("docker") {
+                info!("Installing Docker");
                 os.shell_installer("https://get.docker.com");
             }
             if os.has_command("systemctl") {
+                info!("Ensuring Docker service is enabled and running");
                 os.service("docker").enable();
                 os.service("docker").start();
             }
@@ -434,23 +438,28 @@ impl ServerSetup {
 
     fn append_build_tool_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         steps.extend(sh!(
+            info!("Checking build tools");
             if !os.has_command("rclone") {
+                info!("Installing rclone");
                 os.shell_installer("https://rclone.org/install.sh")
                     .shell("bash");
             }
             if !os.has_command("nixpacks") {
+                info!("Installing nixpacks");
                 os.shell_installer("https://nixpacks.com/install.sh")
                     .shell("bash")
                     .env("NIXPACKS_VERSION", "1.41.0");
                 cmd("nixpacks", "--version");
             }
             if !os.has_command("railpack") {
+                info!("Installing railpack");
                 os.shell_installer("https://railpack.com/install.sh")
                     .shell("bash")
                     .env("RAILPACK_VERSION", "0.15.4");
                 cmd("railpack", "--version");
             }
             if !os.has_command("pack") {
+                info!("Installing pack CLI");
                 os.pack_installer("0.39.1");
                 cmd("pack", "--version");
             }
@@ -458,6 +467,7 @@ impl ServerSetup {
     }
 
     fn append_directory_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
+        steps.extend(sh!(info!("Creating Rustploy directories");));
         for path in self.config.paths.all() {
             steps.extend(sh!(
                 os.dir(path).create().parents(true);
@@ -477,6 +487,7 @@ impl ServerSetup {
     fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         if let Some(advertise_addr) = &self.config.advertise_addr {
             steps.extend(sh!(if !docker.swarm().active() {
+                info!("Initializing Docker Swarm");
                 docker
                     .swarm()
                     .init()
@@ -484,45 +495,53 @@ impl ServerSetup {
                     .listen_addr("0.0.0.0:2377");
             }));
         } else {
-            steps.extend(sh!(if !docker.swarm().active() {
-                let _rustploy_advertise_addr = capture_stdout! {
-                    pipe![
-                        cmd("hostname", "-I"),
-                        awk! {
-                            for field in fields {
-                                if field != "127.0.0.1" {
-                                    print(field);
-                                    exit;
+            steps.extend(sh!(
+                info!("Checking Docker Swarm");
+                if !docker.swarm().active() {
+                    info!("Initializing Docker Swarm");
+                    let _rustploy_advertise_addr = capture_stdout! {
+                        pipe![
+                            cmd("hostname", "-I"),
+                            awk! {
+                                for field in fields {
+                                    if field != "127.0.0.1" {
+                                        print(field);
+                                        exit;
+                                    }
                                 }
                             }
-                        }
-                    ];
+                        ];
+                    }
+                    .default("127.0.0.1");
+                    docker
+                        .swarm()
+                        .init()
+                        .advertise_addr(_rustploy_advertise_addr)
+                        .listen_addr("0.0.0.0:2377");
                 }
-                .default("127.0.0.1");
-                docker
-                    .swarm()
-                    .init()
-                    .advertise_addr(_rustploy_advertise_addr)
-                    .listen_addr("0.0.0.0:2377");
-            }));
+            ));
         }
     }
 
     fn append_network_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let network_name = self.config.network_name.as_str();
 
-        steps.extend(sh!(if !docker
-            .networks()
-            .inspect_cmd(network_name)
-            .stdout("/dev/null")
-            .stderr("/dev/null")
-        {
-            docker
+        steps.extend(sh!(
+            info!("Checking Rustploy Docker network");
+            if !docker
                 .networks()
-                .create(network_name)
-                .driver(crate::utils::docker::NetworkDriver::Overlay)
-                .attachable();
-        }));
+                .inspect_cmd(network_name)
+                .stdout("/dev/null")
+                .stderr("/dev/null")
+            {
+                info!("Creating Rustploy Docker network");
+                docker
+                    .networks()
+                    .create(network_name)
+                    .driver(crate::utils::docker::NetworkDriver::Overlay)
+                    .attachable();
+            }
+        ));
     }
 
     fn append_traefik_config_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
@@ -532,6 +551,7 @@ impl ServerSetup {
         let middleware_config = super::traefik::default_middlewares();
 
         steps.extend(sh!(
+            info!("Writing Traefik configuration");
             if !os.file(static_path.as_str()).exists() {
                 os.file(static_path.as_str()).write(static_config);
                 os.file(static_path.as_str()).chmod("600");
@@ -555,76 +575,89 @@ impl ServerSetup {
             "/etc/rustploy/traefik/dynamic",
         );
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
-        steps.extend(sh!(if docker
-            .containers()
-            .inspect_cmd(name)
-            .stdout("/dev/null")
-            .stderr("/dev/null")
-        {
-            docker.containers().start(name);
-        } else {
+        steps.extend(sh!(
+            info!("Checking Traefik container");
             if docker
-                .services()
+                .containers()
                 .inspect_cmd(name)
                 .stdout("/dev/null")
                 .stderr("/dev/null")
             {
-                docker.services().remove(name);
+                info!("Starting existing Traefik container");
+                docker.containers().start(name);
+            } else {
+                if docker
+                    .services()
+                    .inspect_cmd(name)
+                    .stdout("/dev/null")
+                    .stderr("/dev/null")
+                {
+                    info!("Removing existing Traefik service");
+                    docker.services().remove(name);
+                }
+                info!("Pulling Traefik image");
+                docker.images().pull(image.as_str());
+                info!("Creating Traefik container");
+                docker
+                    .containers()
+                    .create(image.as_str())
+                    .detach()
+                    .name(name)
+                    .restart(RestartPolicy::Always)
+                    .network(self.config.network_name.as_str())
+                    .mount(static_mount)
+                    .mount(dynamic_mount)
+                    .mount(docker_socket_mount)
+                    .publish(Port::tcp(self.config.http_port, self.config.http_port))
+                    .publish(Port::tcp(self.config.https_port, self.config.https_port))
+                    .publish(Port::udp(self.config.http3_port, self.config.http3_port))
+                    .publish(Port::tcp(self.config.dashboard_port, 8080));
             }
-            docker.images().pull(image.as_str());
-            docker
-                .containers()
-                .create(image.as_str())
-                .detach()
-                .name(name)
-                .restart(RestartPolicy::Always)
-                .network(self.config.network_name.as_str())
-                .mount(static_mount)
-                .mount(dynamic_mount)
-                .mount(docker_socket_mount)
-                .publish(Port::tcp(self.config.http_port, self.config.http_port))
-                .publish(Port::tcp(self.config.https_port, self.config.https_port))
-                .publish(Port::udp(self.config.http3_port, self.config.http3_port))
-                .publish(Port::tcp(self.config.dashboard_port, 8080));
-        }));
+        ));
     }
 
     fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = "rustploy-monitor";
         let image = monitoring_image();
 
-        steps.extend(sh!(if docker
-            .containers()
-            .inspect_cmd(name)
-            .stdout("/dev/null")
-            .stderr("/dev/null")
-        {
-            docker.containers().start(name);
-        } else {
-            let _rustploy_arch = capture_stdout! {
-                cmd("uname", "-m");
-            };
-            if cmd("test", _rustploy_arch, "=", "aarch64") {
-                echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
-                    .stderr("/dev/stderr");
-            } else if cmd("test", _rustploy_arch, "=", "arm64") {
-                echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
-                    .stderr("/dev/stderr");
+        steps.extend(sh!(
+            info!("Checking Rustploy monitor container");
+            if docker
+                .containers()
+                .inspect_cmd(name)
+                .stdout("/dev/null")
+                .stderr("/dev/null")
+            {
+                info!("Starting existing Rustploy monitor container");
+                docker.containers().start(name);
             } else {
-                docker.images().pull(image);
-                docker
-                    .containers()
-                    .create(image)
-                    .detach()
-                    .name(name)
-                    .restart(RestartPolicy::Always)
-                    .mount(Mount::bind_ro(
-                        "/var/run/docker.sock",
-                        "/var/run/docker.sock",
-                    ))
-                    .publish(Port::tcp(50051, 50051));
+                let _rustploy_arch = capture_stdout! {
+                    cmd("uname", "-m");
+                };
+                if cmd("test", _rustploy_arch, "=", "aarch64") {
+                    echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                        .stderr("/dev/stderr");
+                } else if cmd("test", _rustploy_arch, "=", "arm64") {
+                    echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                        .stderr("/dev/stderr");
+                } else {
+                    info!("Pulling Rustploy monitor image");
+                    docker.images().pull(image);
+                    info!("Creating Rustploy monitor container");
+                    docker
+                        .containers()
+                        .create(image)
+                        .detach()
+                        .name(name)
+                        .restart(RestartPolicy::Always)
+                        .mount(Mount::bind_ro(
+                            "/var/run/docker.sock",
+                            "/var/run/docker.sock",
+                        ))
+                        .publish(Port::tcp(50051, 50051));
+                }
             }
-        }));
+        ));
     }
 }
 
@@ -665,6 +698,8 @@ mod tests {
         assert!(script.starts_with("set -e\n"));
         assert!(script.contains("apt-get 'install' '-y' 'jq'"));
         assert!(script.contains("apt-get 'install' '-y' 'bash'"));
+        assert!(script.contains("echo '[INFO] Checking Docker installation'"));
+        assert!(script.contains("echo '[INFO] Checking Traefik container'"));
         assert!(script.contains("https://get.docker.com"));
         assert!(script.contains("env 'bash' \"$_rustploy_installer\""));
         assert!(script.contains("https://nixpacks.com/install.sh"));
