@@ -1,6 +1,7 @@
 use crate::convert::dsl::convert_method_call;
 use crate::convert::{convert_macro, convert_stmt};
 use quote::quote;
+use syn::spanned::Spanned;
 use syn::{Expr, Pat};
 
 pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::Error> {
@@ -68,6 +69,14 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                         }
                     ))
                 });
+            }
+
+            if matches!(func_name.as_str(), "grep" | "jq" | "awk" | "sed") {
+                return crate::convert::macros::convert_text_tool(
+                    &func_name,
+                    expr_call.args.iter().cloned(),
+                    expr_call.span(),
+                );
             }
 
             if func_name == "temp_file" {

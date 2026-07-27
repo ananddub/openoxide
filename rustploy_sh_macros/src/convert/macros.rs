@@ -2,6 +2,75 @@ use crate::convert::{convert_expr, convert_sh_stmt, convert_stmt};
 use crate::parser::ShInput;
 use quote::quote;
 use syn::parse::Parse;
+use syn::spanned::Spanned;
+
+fn validate_text_tool_arity(
+    name: &str,
+    len: usize,
+    span: proc_macro2::Span,
+) -> Result<(), syn::Error> {
+    let valid = if name == "jq" {
+        (1..=2).contains(&len)
+    } else {
+        len >= 1
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(syn::Error::new(
+            span,
+            format!("{name}! expects at least one command argument"),
+        ))
+    }
+}
+
+pub(crate) fn convert_text_tool(
+    name: &str,
+    args: impl IntoIterator<Item = syn::Expr>,
+    span: proc_macro2::Span,
+) -> Result<proc_macro2::TokenStream, syn::Error> {
+    let args = args.into_iter().collect::<Vec<_>>();
+    validate_text_tool_arity(name, args.len(), span)?;
+
+    let mut converted_args = Vec::new();
+    if name == "jq" {
+        converted_args.push(quote! {
+            crate::utils::exec::script::dsl::ArgToken::Literal("-r".to_string())
+        });
+    }
+    for arg in &args {
+        let converted = convert_expr(arg)?;
+        converted_args.push(quote! {
+            match #converted {
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    crate::utils::exec::script::dsl::Expr::Literal(value)
+                ) => crate::utils::exec::script::dsl::ArgToken::Literal(value),
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    crate::utils::exec::script::dsl::Expr::Variable(value)
+                ) => crate::utils::exec::script::dsl::ArgToken::Variable(value),
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    crate::utils::exec::script::dsl::Expr::EnvVar(value)
+                ) => crate::utils::exec::script::dsl::ArgToken::EnvVar(value),
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    crate::utils::exec::script::dsl::Expr::Glob(value)
+                ) => crate::utils::exec::script::dsl::ArgToken::Glob(value),
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    value @ crate::utils::exec::script::dsl::Expr::Word(_)
+                ) => crate::utils::exec::script::dsl::ArgToken::Rendered(value.to_bash()),
+                _ => panic!("text tool arguments must be literals or shell variables"),
+            }
+        });
+    }
+
+    Ok(quote! {
+        crate::utils::exec::script::dsl::ShellIR::Command(
+            crate::utils::exec::script::dsl::Command {
+                name: #name.to_string(),
+                args: vec![#(#converted_args),*],
+            }
+        )
+    })
+}
 
 pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::Error> {
     let macro_name = mac
@@ -9,6 +78,20 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         .get_ident()
         .map(|i| i.to_string())
         .ok_or_else(|| syn::Error::new_spanned(mac, "Expected macro name"))?;
+
+    if matches!(macro_name.as_str(), "grep" | "awk" | "sed") {
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+        let args = mac.parse_body_with(parser)?;
+        return convert_text_tool(&macro_name, args, mac.path.span());
+    }
+
+    if macro_name == "jq" {
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+        let args = mac.parse_body_with(parser)?;
+        if args.len() == 1 {
+            return convert_text_tool(&macro_name, args, mac.path.span());
+        }
+    }
 
     if macro_name == "rust" {
         let parser = <syn::Expr as syn::parse::Parse>::parse;
@@ -378,20 +461,32 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         let query_tokens = convert_expr(&parsed.query)?;
 
         return Ok(quote! {
-            (crate::utils::exec::script::dsl::ShellIR::Raw(
-                format!("$(echo \"${}\" | jq -r {})",
-                    match #target_tokens {
-                        crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Variable(ref v)) => v,
-                        _ => panic!("jq! target must be a variable"),
+            crate::utils::exec::script::dsl::ShellIR::Capture {
+                cmd: Box::new(crate::utils::exec::script::dsl::ShellIR::Pipeline(vec![
+                    crate::utils::exec::script::dsl::Command {
+                        name: "echo".to_string(),
+                        args: vec![match #target_tokens {
+                            crate::utils::exec::script::dsl::ShellIR::Expr(
+                                crate::utils::exec::script::dsl::Expr::Variable(value)
+                            ) => crate::utils::exec::script::dsl::ArgToken::Variable(value),
+                            _ => panic!("jq! target must be a shell variable"),
+                        }],
                     },
-                    match #query_tokens {
-                        crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Literal(ref l)) => {
-                            crate::utils::exec::script::shell_single_quote(l)
-                        }
-                        _ => panic!("jq! query must be a string literal"),
-                    }
-                )
-            ))
+                    crate::utils::exec::script::dsl::Command {
+                        name: "jq".to_string(),
+                        args: vec![
+                            crate::utils::exec::script::dsl::ArgToken::Literal("-r".to_string()),
+                            match #query_tokens {
+                                crate::utils::exec::script::dsl::ShellIR::Expr(
+                                    crate::utils::exec::script::dsl::Expr::Literal(value)
+                                ) => crate::utils::exec::script::dsl::ArgToken::Literal(value),
+                                _ => panic!("jq! query must be a string literal"),
+                            },
+                        ],
+                    },
+                ])),
+                source: crate::utils::exec::script::dsl::CaptureSource::Stdout,
+            }
         });
     }
 

@@ -413,6 +413,29 @@ fn test_sh_macro_while_and_pipeline() {
 }
 
 #[test]
+fn test_sh_macro_validated_text_tools() {
+    use super::sh;
+
+    let filter = ".items[]";
+    let script = sh!(
+        pipe![cmd("cat", "data.json"), jq!(dynamic!(filter)), grep!("active")];
+        jq(".server.port", "config.json");
+        awk("{print $1}", "users.txt");
+        sed("s/foo/bar/g", "config.txt");
+    );
+
+    let bash = script
+        .iter()
+        .map(|step| step.to_bash())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(bash.contains("cat 'data.json' | jq '-r' '.items[]' | grep 'active'"));
+    assert!(bash.contains("jq '-r' '.server.port' 'config.json'"));
+    assert!(bash.contains("awk '{print $1}' 'users.txt'"));
+    assert!(bash.contains("sed 's/foo/bar/g' 'config.txt'"));
+}
+
+#[test]
 fn test_sh_macro_convenience_dsls() {
     use super::sh;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
@@ -905,7 +928,10 @@ fn test_sh_macro_new_features() {
         .join("\n");
     assert!(bash.contains("sed -i 's|old_ip|new_ip|g' 'config.txt'"));
     assert!(bash.contains("command '-v' 'nginx'"));
-    assert!(bash.contains("user=$(echo \"$info\" | jq -r '.user.name')"));
+    assert!(
+        bash.contains("user=$(echo \"$info\" | jq '-r' '.user.name')"),
+        "generated shell:\n{bash}"
+    );
     assert!(bash.contains("port=$(jq -r '.server.port' 'config.json')"));
 }
 

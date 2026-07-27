@@ -161,6 +161,10 @@ fn is_builtin_func(name: &str) -> bool {
             | "os_release"
             | "os_codename"
             | "os_version"
+            | "grep"
+            | "jq"
+            | "awk"
+            | "sed"
     )
 }
 
@@ -317,6 +321,18 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
                 tracker.check_fn(&func_name, expr_call.args.len(), expr_call.span())?;
             }
 
+            let invalid_text_tool = match func_name.as_str() {
+                "jq" => !(1..=2).contains(&expr_call.args.len()),
+                "grep" | "awk" | "sed" => expr_call.args.is_empty(),
+                _ => false,
+            };
+            if invalid_text_tool {
+                return Err(syn::Error::new_spanned(
+                    expr_call,
+                    format!("{func_name} expects at least one command argument"),
+                ));
+            }
+
             for arg in &expr_call.args {
                 check_expr(arg, tracker)?;
             }
@@ -419,6 +435,22 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
 fn check_macro(mac: &syn::Macro, tracker: &mut ScopeTracker) -> Result<(), syn::Error> {
     let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
     if let Ok(exprs) = mac.parse_body_with(parser) {
+        let macro_name = mac
+            .path
+            .get_ident()
+            .map(|ident| ident.to_string())
+            .unwrap_or_default();
+        let invalid_text_tool = match macro_name.as_str() {
+            "jq" => !(1..=2).contains(&exprs.len()),
+            "grep" | "awk" | "sed" => exprs.is_empty(),
+            _ => false,
+        };
+        if invalid_text_tool {
+            return Err(syn::Error::new_spanned(
+                mac,
+                format!("{macro_name}! expects at least one command argument"),
+            ));
+        }
         for expr in exprs {
             check_expr(&expr, tracker)?;
         }
@@ -487,6 +519,19 @@ mod tests {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Undefined function 'restrt_service'. Did you mean 'restart_service'?"
+        );
+    }
+
+    #[test]
+    fn test_text_tool_arity_validation() {
+        let stmts: Vec<Stmt> = parse_quote! {
+            grep();
+        };
+        let mut tracker = ScopeTracker::new();
+        let error = check_stmts(&stmts, &mut tracker).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "grep expects at least one command argument"
         );
     }
 }
