@@ -265,7 +265,17 @@ impl ServerSetup {
             return Ok(());
         }
 
-        let image = "dubeyanand/rustploy-monitor:latest";
+        let architecture = self
+            .executor
+            .run("uname", ["-m"])
+            .await
+            .map(|output| output.stdout_trimmed().to_owned())
+            .unwrap_or_default();
+        if monitoring_image_unsupported(&architecture) {
+            return Ok(());
+        }
+
+        let image = monitoring_image();
         docker.images().pull(image).pull().await?;
 
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
@@ -591,7 +601,7 @@ impl ServerSetup {
 
     fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = "rustploy-monitor";
-        let image = "dubeyanand/rustploy-monitor:latest";
+        let image = monitoring_image();
 
         steps.extend(sh!(if docker
             .containers()
@@ -601,20 +611,39 @@ impl ServerSetup {
         {
             docker.containers().start(name);
         } else {
-            docker.images().pull(image);
-            docker
-                .containers()
-                .create(image)
-                .detach()
-                .name(name)
-                .restart(RestartPolicy::Always)
-                .mount(Mount::bind_ro(
-                    "/var/run/docker.sock",
-                    "/var/run/docker.sock",
-                ))
-                .publish(Port::tcp(50051, 50051));
+            let _rustploy_arch = capture_stdout! {
+                cmd("uname", "-m");
+            };
+            if cmd("test", _rustploy_arch, "=", "aarch64") {
+                echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                    .stderr("/dev/stderr");
+            } else if cmd("test", _rustploy_arch, "=", "arm64") {
+                echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                    .stderr("/dev/stderr");
+            } else {
+                docker.images().pull(image);
+                docker
+                    .containers()
+                    .create(image)
+                    .detach()
+                    .name(name)
+                    .restart(RestartPolicy::Always)
+                    .mount(Mount::bind_ro(
+                        "/var/run/docker.sock",
+                        "/var/run/docker.sock",
+                    ))
+                    .publish(Port::tcp(50051, 50051));
+            }
         }));
     }
+}
+
+fn monitoring_image() -> &'static str {
+    "dubeyanand/rustploy-monitor:latest"
+}
+
+fn monitoring_image_unsupported(architecture: &str) -> bool {
+    matches!(architecture, "aarch64" | "arm64")
 }
 
 fn setup_steps(install_dependencies: bool) -> Vec<SetupStep> {
@@ -660,6 +689,15 @@ mod tests {
         assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
         assert!(script.contains("traefik:v"));
         assert!(script.contains("dubeyanand/rustploy-monitor:latest"));
+        assert!(script.contains("uname '-m'"));
+        assert!(script.contains("Skipping rustploy monitor on ARM64; image has no arm64 manifest"));
+    }
+
+    #[test]
+    fn monitoring_image_is_skipped_on_arm64() {
+        assert!(monitoring_image_unsupported("aarch64"));
+        assert!(monitoring_image_unsupported("arm64"));
+        assert!(!monitoring_image_unsupported("x86_64"));
     }
 
     #[test]
