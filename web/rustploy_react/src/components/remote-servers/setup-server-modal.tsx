@@ -11,6 +11,8 @@ import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Terminal, ShieldCheck, Cpu, RefreshCw, CheckCircle2, Plug} from 'lucide-react';
+import {LogViewer} from '#/components/shared/log-viewer';
+import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 
 interface SetupServerModalProps {
 	isOpen: boolean;
@@ -26,11 +28,11 @@ export function SetupServerModal({
 	const [testingConn, setTestingConn] = useState(false);
 	const [auditing, setAuditing] = useState(false);
 	const [settingUp, setSettingUp] = useState(false);
+	const [setupLogs, setSetupLogs] = useState<string[]>([]);
 	const [auditResult, setAuditResult] = useState<any | null>(null);
 
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 	const auditMutation = $api.useMutation('post', '/servers/{id}/audit');
-	const setupMutation = $api.useMutation('post', '/servers/{id}/setup');
 
 	const handleTestConnection = async () => {
 		if (!server?.id) return;
@@ -68,16 +70,71 @@ export function SetupServerModal({
 	const handleSetup = async () => {
 		if (!server?.id) return;
 		setSettingUp(true);
+		setSetupLogs([]);
 		try {
-			await setupMutation.mutateAsync({
-				params: {path: {id: server.id}},
-				body: {
+			const sessionRaw = localStorage.getItem('rustploy-auth-session');
+			let accessToken = '';
+			if (sessionRaw) {
+				try {
+					const session = JSON.parse(sessionRaw);
+					accessToken = session?.tokens?.access_token || '';
+				} catch {}
+			}
+
+			const response = await fetch(`/api/servers/${server.id}/setup/logs`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: accessToken ? `Bearer ${accessToken}` : '',
+				},
+				body: JSON.stringify({
 					host_key_fingerprint: '',
 					install_dependencies: true,
-				},
+				}),
 			});
+
+			if (!response.ok) {
+				throw new Error(await response.text());
+			}
+
+			const reader = response.body?.getReader();
+			if (!reader) {
+				throw new Error('Setup log stream is not readable');
+			}
+
+			const decoder = new TextDecoder();
+			let buffer = '';
+			let failedMessage = '';
+			while (true) {
+				const {done, value} = await reader.read();
+				if (done) break;
+
+				buffer += decoder.decode(value, {stream: true});
+				const rawLines = buffer.split('\n');
+				buffer = rawLines.pop() || '';
+
+				for (const rawLine of rawLines) {
+					const lines = extractLogLines(rawLine);
+					if (lines.length > 0) {
+						failedMessage ||= lines.find(line => line.includes('Setup Server failed')) || '';
+						setSetupLogs(prev => [...prev, ...lines]);
+					}
+				}
+			}
+
+			if (buffer.trim()) {
+				const lines = extractLogLines(buffer);
+				if (lines.length > 0) {
+					failedMessage ||= lines.find(line => line.includes('Setup Server failed')) || '';
+					setSetupLogs(prev => [...prev, ...lines]);
+				}
+			}
+
+			if (failedMessage) {
+				throw new Error(failedMessage);
+			}
+
 			toast.success(`Server ${server.name} setup completed successfully!`);
-			onClose();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -159,6 +216,17 @@ export function SetupServerModal({
 							{settingUp ? 'Setting up...' : 'Run Setup'}
 						</Button>
 					</div>
+
+					{(settingUp || setupLogs.length > 0) && (
+						<LogViewer
+							logs={setupLogs}
+							isLoading={settingUp}
+							loadingText="Running server setup..."
+							emptyText="Waiting for setup output..."
+							heightClass="h-[280px]"
+							isLive={settingUp}
+						/>
+					)}
 
 					{auditResult && (
 						<div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex flex-col gap-2 font-mono text-xs text-foreground">

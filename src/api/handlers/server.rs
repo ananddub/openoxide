@@ -1,4 +1,5 @@
 use crate::{
+    api::dto::deployment::DeploymentSseEventDto,
     api::dto::server::{
         ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
         SetupServerDto, TestDirectConnectionDto,
@@ -14,10 +15,21 @@ use crate::{
     },
 };
 use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
-use std::sync::Arc;
+use axum::{
+    Json,
+    extract::Path,
+    http::StatusCode,
+    response::sse::{Event, Sse},
+};
+use futures::Stream;
+use serde_json::json;
+use std::{convert::Infallible, pin::Pin, sync::Arc};
+use tokio::sync::mpsc;
+use tokio::time::{Duration, MissedTickBehavior};
 
 type ApiError = (StatusCode, String);
+type ServerSetupStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+type ServerSetupSse = Sse<ServerSetupStream>;
 
 pub struct ServerController {
     service: Arc<ServerService>,
@@ -177,6 +189,65 @@ impl ServerController {
         Ok(Json(outcome.into()))
     }
 
+    #[post("/{id}/setup/logs", sse = DeploymentSseEventDto)]
+    async fn setup_logs(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+        Json(body): Json<SetupServerDto>,
+    ) -> Result<ServerSetupSse, ApiError> {
+        let executor = self
+            .executor(
+                id,
+                &body.host_key_fingerprint,
+                body.sudo_password.as_deref(),
+                body.pool_size,
+                true,
+            )
+            .await?;
+
+        let mut config = SetupConfig::default();
+        config.advertise_addr = body.advertise_addr;
+        if let Some(email) = body.acme_email {
+            config.acme_email = email;
+        }
+
+        let install_dependencies = body.install_dependencies;
+        let service = Arc::clone(&self.service);
+        let (sender, receiver) = mpsc::channel::<String>(128);
+
+        tokio::spawn(async move {
+            let _ = sender.send("Starting server setup...".into()).await;
+            let result = ServerSetup::new_remote(executor, config)
+                .setup_all_oneshot_stream(install_dependencies, sender.clone())
+                .await;
+
+            match result {
+                Ok(_) => {
+                    if let Err(error) = service.set_status(id, "ACTIVE").await {
+                        let _ = sender
+                            .send(format!("Failed to mark server active: {error}"))
+                            .await;
+                    }
+                    if let Err(error) = service.touch_test_connection(id).await {
+                        let _ = sender
+                            .send(format!("Failed to update connection timestamp: {error}"))
+                            .await;
+                    }
+                    let _ = sender.send("Setup Server: ✅".into()).await;
+                }
+                Err(error) => {
+                    tracing::error!(error = %error, server_id = id, "streamed server setup failed");
+                    let _ = sender
+                        .send(format!("Setup Server failed: {error} ❌"))
+                        .await;
+                }
+            }
+        });
+
+        Ok(Sse::new(server_setup_log_stream(receiver)))
+    }
+
     #[get("/{id}/sessions")]
     async fn sessions(
         &self,
@@ -257,6 +328,43 @@ impl ServerController {
         };
         Ok(executor)
     }
+}
+
+fn server_setup_log_stream(receiver: mpsc::Receiver<String>) -> ServerSetupStream {
+    let mut keep_alive = tokio::time::interval(Duration::from_secs(15));
+    keep_alive.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+    Box::pin(futures::stream::unfold(
+        (receiver, keep_alive),
+        |(mut receiver, mut keep_alive)| async move {
+            loop {
+                tokio::select! {
+                    _ = keep_alive.tick() => {
+                        let event = Event::default().event("keep-alive").data(json_payload(json!({
+                            "type": "keep-alive",
+                        })));
+                        return Some((Ok(event), (receiver, keep_alive)));
+                    }
+                    received = receiver.recv() => {
+                        match received {
+                            Some(line) => {
+                                let event = Event::default().event("log").data(json_payload(json!({
+                                    "type": "log",
+                                    "line": line,
+                                })));
+                                return Some((Ok(event), (receiver, keep_alive)));
+                            }
+                            None => return None,
+                        }
+                    }
+                }
+            }
+        },
+    ))
+}
+
+fn json_payload(value: serde_json::Value) -> String {
+    serde_json::to_string(&value).unwrap_or_else(|_| "{}".into())
 }
 
 fn map_exec_error(error: ExecError) -> ApiError {

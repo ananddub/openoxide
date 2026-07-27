@@ -7,7 +7,7 @@ use crate::utils::{
         handles::containers::RestartPolicy,
     },
     exec::{
-        CommandExecutor, ExecResult,
+        CommandExecutor, ExecResult, ExecStreamEvent,
         script::{ScriptPipeline, ShellIR, sh},
     },
     os::OsCli,
@@ -335,6 +335,49 @@ impl ServerSetup {
         self.oneshot_script(install_dependencies)
             .execute(&self.executor)
             .await?;
+        let audit = self.audit().await?;
+        Ok(SetupOutcome {
+            completed: setup_steps(install_dependencies),
+            audit,
+        })
+    }
+
+    pub async fn setup_all_oneshot_stream(
+        &self,
+        install_dependencies: bool,
+        sender: tokio::sync::mpsc::Sender<String>,
+    ) -> ExecResult<SetupOutcome> {
+        let script = self.compile_oneshot_script(install_dependencies);
+        let (exec_tx, mut exec_rx) = tokio::sync::mpsc::channel::<ExecStreamEvent>(128);
+        let log_tx = sender.clone();
+        let forward_logs = tokio::spawn(async move {
+            let mut pending = String::new();
+            while let Some(event) = exec_rx.recv().await {
+                let bytes = match event {
+                    ExecStreamEvent::Stdout(bytes) | ExecStreamEvent::Stderr(bytes) => bytes,
+                };
+                pending.push_str(&String::from_utf8_lossy(&bytes));
+                while let Some(index) = pending.find('\n') {
+                    let line = pending[..index].trim_end_matches('\r').to_owned();
+                    pending.drain(..=index);
+                    if !line.is_empty() && log_tx.send(line).await.is_err() {
+                        return;
+                    }
+                }
+            }
+            let line = pending.trim_end_matches('\r').to_owned();
+            if !line.is_empty() {
+                let _ = log_tx.send(line).await;
+            }
+        });
+
+        let result = self
+            .executor
+            .run_stream("sh", ["-c".to_owned(), script], exec_tx)
+            .await;
+        let _ = forward_logs.await;
+        result?;
+
         let audit = self.audit().await?;
         Ok(SetupOutcome {
             completed: setup_steps(install_dependencies),
