@@ -303,16 +303,7 @@ impl ServerController {
                 "SSH port must be between 0 and 65535".into(),
             )
         })?;
-        let host_policy = match host_key {
-            Some(fingerprint) => SshHostKey::PinnedSha256(fingerprint.clone()),
-            None => {
-                tracing::warn!(
-                    server_id = id,
-                    "SSH host key verification disabled; provide host_key_fingerprint"
-                );
-                SshHostKey::InsecureAcceptAny
-            }
-        };
+        let host_policy = host_key_policy(id, host_key);
         let auth = SshAuth::key_pair(key.private_key, key.public_key);
         let is_root = server.username == "root";
         let mut executor =
@@ -327,6 +318,23 @@ impl ServerController {
             executor
         };
         Ok(executor)
+    }
+}
+
+fn host_key_policy(server_id: i64, host_key: &Option<String>) -> SshHostKey {
+    match host_key
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(fingerprint) => SshHostKey::PinnedSha256(fingerprint.to_owned()),
+        None => {
+            tracing::warn!(
+                server_id,
+                "SSH host key verification disabled; provide host_key_fingerprint"
+            );
+            SshHostKey::InsecureAcceptAny
+        }
     }
 }
 
@@ -386,6 +394,35 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "database operation failed".into(),
             )
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_host_key_fingerprint_disables_pinning() {
+        assert!(matches!(
+            host_key_policy(1, &None),
+            SshHostKey::InsecureAcceptAny
+        ));
+        assert!(matches!(
+            host_key_policy(1, &Some(String::new())),
+            SshHostKey::InsecureAcceptAny
+        ));
+        assert!(matches!(
+            host_key_policy(1, &Some("   ".to_owned())),
+            SshHostKey::InsecureAcceptAny
+        ));
+    }
+
+    #[test]
+    fn non_empty_host_key_fingerprint_is_trimmed_and_pinned() {
+        match host_key_policy(1, &Some(" SHA256:abc ".to_owned())) {
+            SshHostKey::PinnedSha256(value) => assert_eq!(value, "SHA256:abc"),
+            SshHostKey::InsecureAcceptAny => panic!("expected pinned host key"),
         }
     }
 }
