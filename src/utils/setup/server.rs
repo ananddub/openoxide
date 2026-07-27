@@ -201,6 +201,9 @@ impl ServerSetup {
         overwrite: bool,
     ) -> ExecResult<()> {
         let os = OsCli::new(&self.executor);
+        if os.dir(path).exists().run().await.is_ok() {
+            os.dir(path).delete().run().await?;
+        }
         if !overwrite && os.file(path).exists().run().await.is_ok() {
             return Ok(());
         }
@@ -552,9 +555,19 @@ impl ServerSetup {
 
         steps.extend(sh!(
             info!("Writing Traefik configuration");
+            if os.dir(static_path.as_str()).exists() {
+                echo("Removing directory created at Traefik config file path")
+                    .stderr("/dev/stderr");
+                os.dir(static_path.as_str()).delete();
+            }
             if !os.file(static_path.as_str()).exists() {
                 os.file(static_path.as_str()).write(static_config);
                 os.file(static_path.as_str()).chmod("600");
+            }
+            if os.dir(middleware_path.as_str()).exists() {
+                echo("Removing directory created at Traefik middleware file path")
+                    .stderr("/dev/stderr");
+                os.dir(middleware_path.as_str()).delete();
             }
             if !os.file(middleware_path.as_str()).exists() {
                 os.file(middleware_path.as_str()).write(middleware_config);
@@ -700,6 +713,7 @@ mod tests {
         assert!(script.contains("apt-get 'install' '-y' 'bash'"));
         assert!(script.contains("echo '[INFO] Checking Docker installation'"));
         assert!(script.contains("echo '[INFO] Checking Traefik container'"));
+        assert!(script.contains("Removing directory created at Traefik config file path"));
         assert!(script.contains("https://get.docker.com"));
         assert!(script.contains("env 'bash' \"$_rustploy_installer\""));
         assert!(script.contains("https://nixpacks.com/install.sh"));
