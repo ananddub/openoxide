@@ -1,4 +1,5 @@
 use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
+use crate::utils::os::OsCli;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
@@ -12,8 +13,9 @@ impl<'a> NixpacksCli<'a> {
     }
 
     pub async fn exists(&self) -> bool {
-        self.executor
-            .run("sh", &["-c", "command -v nixpacks"])
+        OsCli::new(self.executor)
+            .has_command("nixpacks")
+            .run()
             .await
             .map(|out| out.success())
             .unwrap_or(false)
@@ -24,9 +26,12 @@ impl<'a> NixpacksCli<'a> {
     }
 
     pub async fn install(&self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run("sh", &["-c", "NIXPACKS_VERSION=1.41.0 sh -c \"$(curl -fsSL https://nixpacks.com/install.sh)\""])
-            .await
+        OsCli::new(self.executor)
+            .shell_installer("https://nixpacks.com/install.sh")
+            .env("NIXPACKS_VERSION", "1.41.0")
+            .run()
+            .await?;
+        self.executor.run("nixpacks", ["--version"]).await
     }
 
     pub async fn if_not_exist_install(&self) -> ExecResult<()> {

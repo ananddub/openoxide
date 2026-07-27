@@ -2,6 +2,7 @@ use crate::utils::docker::DockerCli;
 use crate::utils::docker::handles::RestartPolicy;
 use crate::utils::docker::query::ContainerFilter;
 use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
+use crate::utils::os::OsCli;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
@@ -15,8 +16,9 @@ impl<'a> RailpackCli<'a> {
     }
 
     pub async fn exists(&self) -> bool {
-        self.executor
-            .run("sh", &["-c", "command -v railpack"])
+        OsCli::new(self.executor)
+            .has_command("railpack")
+            .run()
             .await
             .map(|out| out.success())
             .unwrap_or(false)
@@ -27,9 +29,12 @@ impl<'a> RailpackCli<'a> {
     }
 
     pub async fn install(&self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run("sh", &["-c", "RAILPACK_VERSION=0.15.4 sh -c \"$(curl -fsSL https://railpack.com/install.sh)\""])
-            .await
+        OsCli::new(self.executor)
+            .shell_installer("https://railpack.com/install.sh")
+            .env("RAILPACK_VERSION", "0.15.4")
+            .run()
+            .await?;
+        self.executor.run("railpack", ["--version"]).await
     }
 
     pub async fn if_not_exist_install(&self) -> ExecResult<()> {

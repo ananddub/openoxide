@@ -6,6 +6,7 @@ pub enum ShellIR {
     Expr(Expr),
     Statement(Statement),
     Pipeline(Vec<Command>),
+    Sequence(Vec<ShellIR>),
     Redirect {
         cmd: Box<ShellIR>,
         target: String,
@@ -25,6 +26,10 @@ pub enum ShellIR {
     Loop {
         var: String,
         iterator: Box<ShellIR>,
+        body: Vec<ShellIR>,
+    },
+    While {
+        cond: Box<ShellIR>,
         body: Vec<ShellIR>,
     },
     Function {
@@ -52,6 +57,7 @@ pub enum Expr {
     EnvVar(String),
     Glob(String),
     Array(Vec<Expr>),
+    Word(Vec<Expr>),
 }
 
 #[derive(Debug, Clone)]
@@ -76,6 +82,7 @@ pub enum ArgToken {
     Variable(String),
     EnvVar(String),
     Glob(String),
+    Rendered(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,6 +110,11 @@ impl ShellIR {
                 .map(|c| c.to_bash())
                 .collect::<Vec<_>>()
                 .join(" | "),
+            ShellIR::Sequence(commands) => commands
+                .iter()
+                .map(ShellIR::to_bash)
+                .collect::<Vec<_>>()
+                .join("\n"),
             ShellIR::Redirect {
                 cmd,
                 target,
@@ -169,6 +181,14 @@ impl ShellIR {
                     iter_str,
                     indent(&body_str)
                 )
+            }
+            ShellIR::While { cond, body } => {
+                let body = body
+                    .iter()
+                    .map(ShellIR::to_bash)
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                format!("while {}; do\n{}\ndone", cond.to_bash(), indent(&body))
             }
             ShellIR::Function { name, params, body } => {
                 let body_str = body
@@ -364,6 +384,23 @@ impl Expr {
                     .join(" ");
                 format!("({})", elements)
             }
+            Expr::Word(parts) => {
+                let content = parts
+                    .iter()
+                    .map(|part| match part {
+                        Expr::Literal(value) => value
+                            .replace('\\', "\\\\")
+                            .replace('"', "\\\"")
+                            .replace('$', "\\$")
+                            .replace('`', "\\`"),
+                        Expr::Variable(name) => format!("${{{name}}}"),
+                        Expr::EnvVar(name) => format!("${{{name}}}"),
+                        Expr::Glob(value) => value.clone(),
+                        Expr::Array(_) | Expr::Word(_) => part.to_bash(),
+                    })
+                    .collect::<String>();
+                format!("\"{content}\"")
+            }
         }
     }
 }
@@ -427,12 +464,27 @@ impl Command {
 }
 
 impl ArgToken {
+    pub fn dynamic(value: impl Into<String>) -> Self {
+        let value = value.into();
+        if let Some(name) = value.strip_prefix('$') {
+            let mut chars = name.chars();
+            let valid_start = chars
+                .next()
+                .is_some_and(|ch| ch == '_' || ch.is_ascii_alphabetic());
+            if valid_start && chars.all(|ch| ch == '_' || ch.is_ascii_alphanumeric()) {
+                return Self::Variable(name.to_owned());
+            }
+        }
+        Self::Literal(value)
+    }
+
     pub fn to_bash(&self) -> String {
         match self {
             ArgToken::Literal(lit) => shell_single_quote(lit),
             ArgToken::Variable(var) => format!("\"${}\"", var),
             ArgToken::EnvVar(env) => format!("\"${}\"", env),
             ArgToken::Glob(glob) => glob.clone(),
+            ArgToken::Rendered(value) => value.clone(),
         }
     }
 }

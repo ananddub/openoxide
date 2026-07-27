@@ -72,25 +72,25 @@ impl<'a> IntoCommand for PackageSearchBuilder<'a> {
         } else {
             let q = &self.query;
             let script = sh!(if cmd("command", "-v", "apt-cache").stdout("/dev/null") {
-                cmd("apt-cache", "search", rust!(q));
+                cmd("apt-cache", "search", dynamic!(q));
             } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                cmd("dnf", "search", rust!(q));
+                cmd("dnf", "search", dynamic!(q));
             } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                cmd("yum", "search", rust!(q));
+                cmd("yum", "search", dynamic!(q));
             } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                cmd("apk", "search", rust!(q));
+                cmd("apk", "search", dynamic!(q));
             } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                cmd("pacman", "-Ss", rust!(q));
+                cmd("pacman", "-Ss", dynamic!(q));
             } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                cmd("zypper", "search", rust!(q));
+                cmd("zypper", "search", dynamic!(q));
             } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
-                cmd("xbps-query", "-Rs", rust!(q));
+                cmd("xbps-query", "-Rs", dynamic!(q));
             } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
-                cmd("emerge", "--search", rust!(q));
+                cmd("emerge", "--search", dynamic!(q));
             } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                cmd("nix-env", "-qa", rust!(q));
+                cmd("nix-env", "-qa", dynamic!(q));
             } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                cmd("brew", "search", rust!(q));
+                cmd("brew", "search", dynamic!(q));
             } else {
                 echo("No supported package manager found").stderr("/dev/stderr");
                 cmd("exit", "1");

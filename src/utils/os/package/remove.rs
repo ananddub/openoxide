@@ -120,25 +120,25 @@ impl<'a> IntoCommand for PackageRemoveBuilder<'a> {
         } else {
             let pkg = &self.name;
             let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
-                cmd("apt-get", "remove", "-y", rust!(pkg));
+                cmd("apt-get", "remove", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                cmd("dnf", "remove", "-y", rust!(pkg));
+                cmd("dnf", "remove", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                cmd("yum", "remove", "-y", rust!(pkg));
+                cmd("yum", "remove", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                cmd("apk", "del", rust!(pkg));
+                cmd("apk", "del", dynamic!(pkg));
             } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                cmd("pacman", "-R", "--noconfirm", rust!(pkg));
+                cmd("pacman", "-R", "--noconfirm", dynamic!(pkg));
             } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                cmd("zypper", "--non-interactive", "remove", rust!(pkg));
+                cmd("zypper", "--non-interactive", "remove", dynamic!(pkg));
             } else if cmd("command", "-v", "xbps-remove").stdout("/dev/null") {
-                cmd("xbps-remove", "-y", rust!(pkg));
+                cmd("xbps-remove", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
-                cmd("emerge", "--unmerge", rust!(pkg));
+                cmd("emerge", "--unmerge", dynamic!(pkg));
             } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                cmd("nix-env", "-e", rust!(pkg));
+                cmd("nix-env", "-e", dynamic!(pkg));
             } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                cmd("brew", "uninstall", rust!(pkg));
+                cmd("brew", "uninstall", dynamic!(pkg));
             } else {
                 echo("No supported package manager found").stderr("/dev/stderr");
                 cmd("exit", "1");

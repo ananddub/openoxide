@@ -1,4 +1,5 @@
 use crate::utils::exec::CommandExecutor;
+use crate::utils::exec::script::dsl::{ArgToken, CaptureSource, Command, ShellIR};
 use crate::utils::exec::script::{IntoCommand, shell_single_quote};
 
 pub struct OsCli<'a> {
@@ -127,12 +128,20 @@ impl<'a> OsCli<'a> {
     pub fn symlink_ref(&self, link: impl IntoCommand) -> symlink::SymlinkBuilder<'a> {
         symlink::SymlinkBuilder::new(self.executor, None, link.build_str())
     }
-    pub fn has_command(&self, bin: impl IntoCommand) -> system::SystemCommandBuilder<'a> {
-        system::SystemCommandBuilder::new(
-            self.executor,
-            "command",
-            vec!["-v".to_string(), bin.build_str()],
-        )
+    pub fn has_command(&self, bin: impl IntoCommand) -> system::CommandExistsBuilder<'a> {
+        system::CommandExistsBuilder::new(self.executor, bin)
+    }
+
+    pub fn shell_installer(&self, url: impl IntoCommand) -> install::ShellInstallerBuilder<'a> {
+        install::ShellInstallerBuilder::new(self.executor, url)
+    }
+
+    pub fn tarball_installer(
+        &self,
+        url: impl IntoCommand,
+        destination: impl IntoCommand,
+    ) -> install::TarballInstallerBuilder<'a> {
+        install::TarballInstallerBuilder::new(self.executor, url, destination)
     }
 
     pub fn capture_stdout(&self, cmd: impl IntoCommand) -> CaptureStdoutBuilder<'a> {
@@ -210,9 +219,33 @@ pub struct CaptureStdoutBuilder<'a> {
     _executor: &'a CommandExecutor,
     cmd: String,
 }
+
+fn shell_arg(value: &str) -> ArgToken {
+    value
+        .strip_prefix('$')
+        .filter(|name| !name.is_empty())
+        .map(|name| ArgToken::Variable(name.to_owned()))
+        .unwrap_or_else(|| ArgToken::Literal(value.to_owned()))
+}
+
+fn shell_command(name: &str, args: impl IntoIterator<Item = ArgToken>) -> ShellIR {
+    ShellIR::Command(Command {
+        name: name.to_owned(),
+        args: args.into_iter().collect(),
+    })
+}
+
+fn capture_stdout(command: ShellIR) -> String {
+    ShellIR::Capture {
+        cmd: Box::new(command),
+        source: CaptureSource::Stdout,
+    }
+    .to_bash()
+}
+
 impl<'a> IntoCommand for CaptureStdoutBuilder<'a> {
     fn build_str(&self) -> String {
-        format!("$({})", self.cmd)
+        capture_stdout(ShellIR::Raw(self.cmd.clone()))
     }
 }
 
@@ -222,7 +255,11 @@ pub struct CaptureStatusBuilder<'a> {
 }
 impl<'a> IntoCommand for CaptureStatusBuilder<'a> {
     fn build_str(&self) -> String {
-        format!("$(if {}; then echo true; else echo false; fi)", self.cmd)
+        ShellIR::Capture {
+            cmd: Box::new(ShellIR::Raw(self.cmd.clone())),
+            source: CaptureSource::Status,
+        }
+        .to_bash()
     }
 }
 
@@ -233,11 +270,16 @@ pub struct JqBuilder<'a> {
 }
 impl<'a> IntoCommand for JqBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "$(echo {} | jq -r {})",
-            escape_arg(&self.var),
-            escape_arg(&self.query)
-        )
+        capture_stdout(ShellIR::Pipeline(vec![
+            match shell_command("echo", [shell_arg(&self.var)]) {
+                ShellIR::Command(command) => command,
+                _ => unreachable!(),
+            },
+            match shell_command("jq", [shell_arg("-r"), shell_arg(&self.query)]) {
+                ShellIR::Command(command) => command,
+                _ => unreachable!(),
+            },
+        ]))
     }
 }
 
@@ -248,11 +290,14 @@ pub struct JqFileBuilder<'a> {
 }
 impl<'a> IntoCommand for JqFileBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "$(jq -r {} {})",
-            escape_arg(&self.query),
-            escape_arg(&self.file)
-        )
+        capture_stdout(shell_command(
+            "jq",
+            [
+                shell_arg("-r"),
+                shell_arg(&self.query),
+                shell_arg(&self.file),
+            ],
+        ))
     }
 }
 
@@ -266,11 +311,16 @@ impl<'a> IntoCommand for AwkBuilder<'a> {
         if self.target.starts_with('$')
             || (!self.target.contains(' ') && !self.target.contains('|'))
         {
-            format!(
-                "$(echo {} | awk {})",
-                escape_arg(&self.target),
-                escape_arg(&self.expr)
-            )
+            capture_stdout(ShellIR::Pipeline(vec![
+                match shell_command("echo", [shell_arg(&self.target)]) {
+                    ShellIR::Command(command) => command,
+                    _ => unreachable!(),
+                },
+                match shell_command("awk", [shell_arg(&self.expr)]) {
+                    ShellIR::Command(command) => command,
+                    _ => unreachable!(),
+                },
+            ]))
         } else {
             format!("$({} | awk {})", self.target, escape_arg(&self.expr))
         }
@@ -302,11 +352,16 @@ impl<'a> IntoCommand for GrepBuilder<'a> {
         if self.target.starts_with('$')
             || (!self.target.contains(' ') && !self.target.contains('|'))
         {
-            format!(
-                "$(echo {} | grep {})",
-                escape_arg(&self.target),
-                escape_arg(&self.pattern)
-            )
+            capture_stdout(ShellIR::Pipeline(vec![
+                match shell_command("echo", [shell_arg(&self.target)]) {
+                    ShellIR::Command(command) => command,
+                    _ => unreachable!(),
+                },
+                match shell_command("grep", [shell_arg(&self.pattern)]) {
+                    ShellIR::Command(command) => command,
+                    _ => unreachable!(),
+                },
+            ]))
         } else {
             format!("$({} | grep {})", self.target, escape_arg(&self.pattern))
         }
@@ -320,11 +375,10 @@ pub struct GrepFileBuilder<'a> {
 }
 impl<'a> IntoCommand for GrepFileBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "$(grep {} {})",
-            escape_arg(&self.pattern),
-            escape_arg(&self.file)
-        )
+        capture_stdout(shell_command(
+            "grep",
+            [shell_arg(&self.pattern), shell_arg(&self.file)],
+        ))
     }
 }
 
@@ -344,6 +398,7 @@ pub mod env;
 pub mod file;
 pub mod firewall;
 pub mod http;
+pub mod install;
 pub mod lock;
 pub mod mount;
 pub mod network;

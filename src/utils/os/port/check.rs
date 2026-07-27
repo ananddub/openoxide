@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct PortCheckBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -15,20 +14,20 @@ impl<'a> PortCheckBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run(
-                "sh",
-                &["-c", "ss -tuln | grep -q \":$1 \"", "dummy", &self.port],
-            )
-            .await
+        self.script().execute(self.executor).await
+    }
+
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let port = self.port.as_str();
+        sh!(pipe![
+            cmd("ss", "-tuln"),
+            cmd("grep", "-q", word![":", dynamic!(port), " "])
+        ];)
     }
 }
 
 impl<'a> IntoCommand for PortCheckBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "sh -c 'ss -tuln | grep -q \":$1 \"' dummy {}",
-            escape_arg(&self.port)
-        )
+        self.script().build_str()
     }
 }

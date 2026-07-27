@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct EnvUnsetBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -15,14 +14,16 @@ impl<'a> EnvUnsetBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run("sh", &["-c", &format!("unset {}", self.key)])
-            .await
+        self.script().execute(self.executor).await
+    }
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let key = self.key.as_str();
+        sh!(cmd("unset", dynamic!(key));)
     }
 }
 
 impl<'a> IntoCommand for EnvUnsetBuilder<'a> {
     fn build_str(&self) -> String {
-        format!("unset {}", escape_arg(&self.key))
+        self.script().build_str()
     }
 }

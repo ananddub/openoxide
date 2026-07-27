@@ -46,20 +46,16 @@ impl<'a> ProcessCli<'a> {
         ProcessCommandBuilder::new(self.executor, "pidof", vec![name.build_str()])
     }
     pub fn running(&self, name: impl IntoCommand) -> ProcessCommandBuilder<'a> {
-        ProcessCommandBuilder::new_shell(
-            self.executor,
-            "sh -c 'pgrep -x \"$1\" > /dev/null' dummy",
-            vec![name.build_str()],
-        )
+        ProcessCommandBuilder::new(self.executor, "pgrep", vec!["-x".into(), name.build_str()])
     }
     pub fn wait(&self, pid: impl IntoCommand) -> ProcessCommandBuilder<'a> {
         ProcessCommandBuilder::new(self.executor, "wait", vec![pid.build_str()])
     }
     pub fn priority_pid(&self, pid: impl IntoCommand) -> ProcessCommandBuilder<'a> {
-        ProcessCommandBuilder::new_shell(
+        ProcessCommandBuilder::new(
             self.executor,
-            "sh -c 'ps -o ni -p \"$1\" | tail -n 1' dummy",
-            vec![pid.build_str()],
+            "ps",
+            vec!["-o".into(), "ni=".into(), "-p".into(), pid.build_str()],
         )
     }
     pub fn children(&self, pid: impl IntoCommand) -> ProcessCommandBuilder<'a> {

@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, shell_single_quote};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct FileReadBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -18,25 +17,27 @@ impl<'a> FileReadBuilder<'a> {
             squeeze_blank: false,
         }
     }
+
     pub fn number(mut self, val: bool) -> Self {
         self.number = val;
         self
     }
+
     pub fn squeeze_blank(mut self, val: bool) -> Self {
         self.squeeze_blank = val;
         self
     }
 
-    pub async fn run(self) -> ExecResult<ExecOutput> {
+    pub async fn execute(self) -> ExecResult<ExecOutput> {
         let mut args = Vec::new();
         if self.number {
-            args.push("-n".to_string());
+            args.push("-n".to_owned());
         }
         if self.squeeze_blank {
-            args.push("-s".to_string());
+            args.push("-s".to_owned());
         }
         args.push(self.path);
-        self.executor.run("cat", &args).await
+        self.executor.run("cat", args).await
     }
 }
 
@@ -49,7 +50,7 @@ impl<'a> IntoCommand for FileReadBuilder<'a> {
         if self.squeeze_blank {
             parts.push("-s".to_string());
         }
-        parts.push(escape_arg(&self.path));
+        parts.push(shell_single_quote(&self.path));
         parts.join(" ")
     }
 }

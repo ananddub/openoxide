@@ -2,8 +2,10 @@ use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
 
 pub mod command;
+pub mod exists;
 
 pub use command::SystemCommandBuilder;
+pub use exists::CommandExistsBuilder;
 
 pub struct SystemCli<'a> {
     pub(crate) executor: &'a CommandExecutor,
@@ -32,17 +34,13 @@ impl<'a> SystemCli<'a> {
         SystemCommandBuilder::new(self.executor, "uptime", vec!["-p".to_string()])
     }
     pub fn shell(&self) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new_shell(self.executor, "echo \"$SHELL\"", vec![])
+        SystemCommandBuilder::new(self.executor, "printenv", vec!["SHELL".into()])
     }
     pub fn which(&self, bin: impl IntoCommand) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "which", vec![bin.build_str()])
     }
-    pub fn has_command(&self, bin: impl IntoCommand) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new(
-            self.executor,
-            "command",
-            vec!["-v".to_string(), bin.build_str()],
-        )
+    pub fn has_command(&self, bin: impl IntoCommand) -> CommandExistsBuilder<'a> {
+        CommandExistsBuilder::new(self.executor, bin)
     }
     pub fn timezone(&self) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(
@@ -72,9 +70,23 @@ impl<'a> SystemCli<'a> {
         SystemCommandBuilder::new(self.executor, "nproc", vec![])
     }
     pub fn total_memory(&self) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new_shell(self.executor, "free -b | awk '/^Mem:/{print $2}'", vec![])
+        SystemCommandBuilder::new(
+            self.executor,
+            "awk",
+            vec![
+                "/MemTotal:/ { print $2 * 1024 }".into(),
+                "/proc/meminfo".into(),
+            ],
+        )
     }
     pub fn free_memory(&self) -> SystemCommandBuilder<'a> {
-        SystemCommandBuilder::new_shell(self.executor, "free -b | awk '/^Mem:/{print $4}'", vec![])
+        SystemCommandBuilder::new(
+            self.executor,
+            "awk",
+            vec![
+                "/MemAvailable:/ { print $2 * 1024 }".into(),
+                "/proc/meminfo".into(),
+            ],
+        )
     }
 }

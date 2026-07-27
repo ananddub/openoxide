@@ -39,10 +39,15 @@ impl<'a> ProcessBuilder<'a> {
         )
     }
     pub fn priority(self) -> ProcessActionBuilder<'a> {
-        ProcessActionBuilder::new_shell(
+        ProcessActionBuilder::new(
             self.executor,
-            "sh -c 'ps -o ni -p \"$1\" | tail -n 1' dummy",
-            vec![self.pid_or_name],
+            vec![
+                "ps".into(),
+                "-o".into(),
+                "ni=".into(),
+                "-p".into(),
+                self.pid_or_name,
+            ],
         )
     }
     pub fn set_priority(self, val: impl IntoCommand) -> ProcessActionBuilder<'a> {

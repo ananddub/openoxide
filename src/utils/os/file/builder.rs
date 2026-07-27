@@ -1,6 +1,6 @@
 use super::{
-    FileChmodBuilder, FileChownBuilder, FileDeleteBuilder, FileExistsBuilder, FileReadBuilder,
-    FileReplaceBuilder, FileWriteBuilder,
+    FileChmodBuilder, FileChownBuilder, FileCopyBuilder, FileDeleteBuilder, FileExistsBuilder,
+    FileMoveBuilder, FileReadBuilder, FileReplaceBuilder, FileWriteBuilder,
 };
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
@@ -28,6 +28,15 @@ impl<'a> FileBuilder<'a> {
     }
     pub fn exists(self) -> FileExistsBuilder<'a> {
         FileExistsBuilder::new(self.executor, self.path)
+    }
+    pub fn copy(self, target: impl IntoCommand) -> FileCopyBuilder<'a> {
+        FileCopyBuilder::new(self.executor, self.path, target)
+    }
+    pub fn move_to(self, target: impl IntoCommand) -> FileMoveBuilder<'a> {
+        FileMoveBuilder::new(self.executor, self.path, target)
+    }
+    pub fn rename(self, target: impl IntoCommand) -> FileMoveBuilder<'a> {
+        FileMoveBuilder::new(self.executor, self.path, target)
     }
     pub fn delete(self) -> FileDeleteBuilder<'a> {
         FileDeleteBuilder::new(self.executor, self.path)

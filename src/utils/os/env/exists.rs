@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct EnvExistsBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -15,17 +14,16 @@ impl<'a> EnvExistsBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run("sh", &["-c", "[ -n \"${1+x}\" ]", "dummy", &self.key])
-            .await
+        self.script().execute(self.executor).await
+    }
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let key = self.key.as_str();
+        sh!(cmd("printenv", dynamic!(key)).stdout("/dev/null");)
     }
 }
 
 impl<'a> IntoCommand for EnvExistsBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "sh -c '[ -n \"${{1+x}}\" ]' dummy {}",
-            escape_arg(&self.key)
-        )
+        self.script().build_str()
     }
 }

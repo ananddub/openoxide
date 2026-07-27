@@ -29,60 +29,122 @@ pub struct ServerAudit {
     pub ports: Vec<PortAvailability>,
 }
 
+fn parse_os_id(os_release: &str) -> String {
+    os_release
+        .lines()
+        .find_map(|line| line.strip_prefix("ID="))
+        .unwrap_or_default()
+        .trim_matches('"')
+        .to_owned()
+}
+
+fn port_is_listening(ss_output: &str, port: u16) -> bool {
+    let suffix = format!(":{port}");
+    ss_output.lines().any(|line| {
+        line.split_whitespace()
+            .any(|field| field.ends_with(&suffix))
+    })
+}
+
 pub(crate) async fn audit(
     executor: &CommandExecutor,
     base: &str,
     network: &str,
     ports: &[u16],
 ) -> ExecResult<ServerAudit> {
-    let script = "tool(){ if command -v \"$1\" >/dev/null 2>&1; then printf 'true\\t'; \"$1\" --version 2>/dev/null | head -n1; else printf 'false\\t\\n'; fi; }\nprintf '%s\\n' \"$(. /etc/os-release; printf '%s' \"$ID\")\" \"$(uname -m)\"\ntool docker; tool git; tool rclone; tool nixpacks; tool railpack; tool pack\ndocker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || true\ngroups 2>/dev/null | tr ' ' '\\n' | grep -qx docker && echo true || echo false";
-    let mut lines = executor
-        .run("sh", ["-c", script])
-        .await?
-        .stdout
-        .lines()
-        .map(str::to_owned)
-        .collect::<Vec<_>>();
-    while lines.len() < 10 {
-        lines.push(String::new());
-    }
-    let parse_tool = |line: &str| {
-        let mut parts = line.splitn(2, '\t');
-        ToolState {
-            installed: parts.next() == Some("true"),
-            version: parts
-                .next()
-                .filter(|v| !v.trim().is_empty())
-                .map(|v| v.trim().to_owned()),
+    async fn tool(executor: &CommandExecutor, binary: &str) -> ToolState {
+        match executor.run(binary, ["--version"]).await {
+            Ok(output) => ToolState {
+                installed: true,
+                version: output
+                    .combined_output()
+                    .lines()
+                    .next()
+                    .map(str::trim)
+                    .filter(|line| !line.is_empty())
+                    .map(str::to_owned),
+            },
+            Err(_) => ToolState::default(),
         }
-    };
+    }
+
+    let os_release = executor.run("cat", ["/etc/os-release"]).await?.stdout;
+    let os_id = parse_os_id(&os_release);
+    let architecture = executor
+        .run("uname", ["-m"])
+        .await?
+        .stdout_trimmed()
+        .to_owned();
+    let docker_state = tool(executor, "docker").await;
+    let git = tool(executor, "git").await;
+    let rclone = tool(executor, "rclone").await;
+    let nixpacks = tool(executor, "nixpacks").await;
+    let railpack = tool(executor, "railpack").await;
+    let buildpacks = tool(executor, "pack").await;
+    let swarm_active = executor
+        .run("docker", ["info", "--format", "{{.Swarm.LocalNodeState}}"])
+        .await
+        .map(|output| output.stdout_trimmed() == "active")
+        .unwrap_or(false);
+    let docker_group_member = executor
+        .run("groups", std::iter::empty::<&str>())
+        .await
+        .map(|output| {
+            output
+                .stdout
+                .split_whitespace()
+                .any(|group| group == "docker")
+        })
+        .unwrap_or(false);
     let docker = crate::utils::docker::DockerCli::from_executor(executor.clone());
     let network_exists = docker.networks().inspect(network).await.is_ok();
     let base_directory_exists = executor.run("test", ["-d", base]).await.is_ok();
+    let listening = executor
+        .run("ss", ["-H", "-ltnu"])
+        .await
+        .map(|output| output.stdout)
+        .unwrap_or_default();
     let mut checked_ports = Vec::new();
     for port in ports {
-        let expression = format!("! ss -H -ltnu 'sport = :{port}' 2>/dev/null | grep -q .");
+        let in_use = port_is_listening(&listening, *port);
         checked_ports.push(PortAvailability {
             port: *port,
-            available: executor
-                .run("sh", ["-c", expression.as_str()])
-                .await
-                .is_ok(),
+            available: !in_use,
         });
     }
     Ok(ServerAudit {
-        os_id: lines[0].clone(),
-        architecture: lines[1].clone(),
-        docker: parse_tool(&lines[2]),
-        git: parse_tool(&lines[3]),
-        rclone: parse_tool(&lines[4]),
-        nixpacks: parse_tool(&lines[5]),
-        railpack: parse_tool(&lines[6]),
-        buildpacks: parse_tool(&lines[7]),
-        swarm_active: lines[8].trim() == "active",
-        docker_group_member: lines[9].trim() == "true",
+        os_id,
+        architecture,
+        docker: docker_state,
+        git,
+        rclone,
+        nixpacks,
+        railpack,
+        buildpacks,
+        swarm_active,
+        docker_group_member,
         network_exists,
         base_directory_exists,
         ports: checked_ports,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_quoted_and_unquoted_os_ids() {
+        assert_eq!(parse_os_id("NAME=Ubuntu\nID=ubuntu\n"), "ubuntu");
+        assert_eq!(parse_os_id("NAME=Alpine\nID=\"alpine\"\n"), "alpine");
+    }
+
+    #[test]
+    fn detects_exact_listening_port_without_prefix_collisions() {
+        let output = "tcp LISTEN 0 4096 0.0.0.0:8080 0.0.0.0:*\n\
+                      tcp LISTEN 0 4096 [::]:443 [::]:*\n";
+        assert!(port_is_listening(output, 8080));
+        assert!(port_is_listening(output, 443));
+        assert!(!port_is_listening(output, 80));
+    }
 }

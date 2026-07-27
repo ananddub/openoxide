@@ -1,4 +1,4 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 pub struct EnvSetBuilder<'a> {
@@ -20,14 +20,17 @@ impl<'a> EnvSetBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor
-            .run("sh", &["-c", &format!("export {}={}", self.key, self.val)])
-            .await
+        self.script().execute(self.executor).await
+    }
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let key = self.key.as_str();
+        let val = self.val.as_str();
+        sh!(cmd("export", word![dynamic!(key), "=", dynamic!(val)]);)
     }
 }
 
 impl<'a> IntoCommand for EnvSetBuilder<'a> {
     fn build_str(&self) -> String {
-        format!("export {}={}", self.key, self.val)
+        self.script().build_str()
     }
 }

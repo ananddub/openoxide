@@ -395,6 +395,24 @@ fn test_sh_macro_advanced_features() {
 }
 
 #[test]
+fn test_sh_macro_while_and_pipeline() {
+    use super::sh;
+
+    let script = sh!(while cmd("test", "1", "-eq", "1") {
+        let needle = "ready";
+        pipe![
+            cmd("printf", "ready"),
+            cmd("grep", "-q", word!["^", needle, "$"])
+        ];
+        break;
+    });
+    let bash = script.build_str();
+    assert!(bash.contains("while test '1' '-eq' '1'; do"));
+    assert!(bash.contains("printf 'ready' | grep '-q' \"^${needle}\\$\""));
+    assert!(bash.contains("break"));
+}
+
+#[test]
 fn test_sh_macro_convenience_dsls() {
     use super::sh;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
@@ -454,7 +472,7 @@ fn test_sh_macro_convenience_dsls() {
     assert!(bash.contains("arch=$(uname '-m')"));
 
     // 2. File DSL
-    assert!(bash.contains("sh -c 'echo \"$1\" > \"$2\"' dummy 'hello' \"$tmp\""));
+    assert!(bash.contains("printf '%s' 'hello' > \"$tmp\""));
     assert!(bash.contains("cat '/etc/passwd'"));
     assert!(bash.contains("test -f \"$tmp\""));
     assert!(bash.contains("rm -f \"$tmp\""));
@@ -472,7 +490,7 @@ fn test_sh_macro_convenience_dsls() {
     assert!(bash.contains("'kill' '-9' 'nginx'"));
 
     // 5. Package Managers DSL
-    assert!(bash.contains("apt-get install -y"));
+    assert!(bash.contains("apt-get 'install' '-y'"));
 
     // 6. Retry DSL
     assert!(bash.contains("for i in $(seq 1 '5'); do"));
@@ -590,7 +608,7 @@ fn test_sh_macro_generic_unix_dsl() {
     assert!(bash.contains("command '-v' 'apt-get'"));
     assert!(bash.contains("pwd"));
     assert!(bash.contains("ping '-c' '4' '1.1.1.1'"));
-    assert!(bash.contains("sh -c 'eval echo \"\\$$1\"' dummy 'USER'"));
+    assert!(bash.contains("printenv 'USER'"));
     assert!(bash.contains("sleep '5'"));
 }
 
@@ -620,13 +638,11 @@ fn test_sh_macro_mvp_deploy_dsl() {
         .map(|s| s.to_bash())
         .collect::<Vec<_>>()
         .join("\n");
-    assert!(bash.contains(
-        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
-    ));
-    assert!(bash.contains("ss -tuln | grep -q \":$1 \""));
-    assert!(bash.contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done"));
-    assert!(bash.contains("rmdir '/tmp/rustploy_lock_deploy'"));
-    assert!(bash.contains("timeout=$1; start_time=$(date +%s);"));
+    assert!(bash.contains("while ss '-tuln' | grep '-q' \":${port} \"; do"));
+    assert!(bash.contains("ss '-tuln' | grep '-q' \":8080 \""));
+    assert!(bash.contains("while ! mkdir \"/tmp/rustploy_lock_deploy\" 2> /dev/null; do"));
+    assert!(bash.contains("rmdir \"/tmp/rustploy_lock_deploy\""));
+    assert!(bash.contains("start=$(date '+%s')"));
     assert!(bash.contains("ln -sf 'v2' 'current'"));
     assert!(bash.contains("mount '--bind' 'src' 'tgt'"));
     assert!(bash.contains("umount 'tgt'"));
@@ -661,10 +677,8 @@ fn test_pipeline_and_sh_unification() {
     );
 
     let compiled = p.compile();
-    assert!(compiled.contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done"));
-    assert!(compiled.contains(
-        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
-    ));
+    assert!(compiled.contains("while ! mkdir \"/tmp/rustploy_lock_my_deploy_lock\""));
+    assert!(compiled.contains("while ss '-tuln' | grep '-q' \":${port} \"; do"));
     assert!(compiled.contains("echo 'deploying now'"));
 }
 
@@ -705,25 +719,23 @@ fn test_rust_dsl_api_usage() {
     let config = os.file("config.json").write("production");
 
     // 2. Verify their generated bash command output
-    assert!(p_free.build_str().contains(
-        "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port"
-    ));
-    assert!(p_check.build_str().contains("ss -tuln | grep -q \":$1 \""));
+    assert!(p_free.build_str().contains("while ss '-tuln' | grep '-q'"));
+    assert!(
+        p_check
+            .build_str()
+            .contains("ss '-tuln' | grep '-q' \":8080 \"")
+    );
     assert!(
         lock_acq
             .build_str()
-            .contains("while ! mkdir \"$1\" 2>/dev/null; do sleep 0.5; done")
+            .contains("while ! mkdir \"/tmp/rustploy_lock_deploy\" 2> /dev/null; do")
     );
-    assert!(
-        health
-            .build_str()
-            .contains("timeout=$1; start_time=$(date +%s);")
-    );
+    assert!(health.build_str().contains("start=$(date '+%s')"));
     assert!(sym.build_str().contains("ln -sf 'v2' 'current'"));
     assert!(
         config
             .build_str()
-            .contains("sh -c 'echo \"$1\" > \"$2\"' dummy 'production' 'config.json'")
+            .contains("printf '%s' 'production' > 'config.json'")
     );
 }
 
@@ -739,7 +751,7 @@ fn test_package_builders_and_macro_dsl() {
     // Test direct builder string generation
     let pkg_install = os.package("curl").install();
     let pkg_install_bash = pkg_install.build_str();
-    assert!(pkg_install_bash.contains("apt-get install -y"));
+    assert!(pkg_install_bash.contains("apt-get 'install' '-y'"));
     assert!(pkg_install_bash.contains("xbps-install '-Sy'"));
     assert!(pkg_install_bash.contains("nix-env '-i'"));
     assert!(pkg_install_bash.contains("brew 'install'"));
@@ -756,7 +768,7 @@ fn test_package_builders_and_macro_dsl() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(macro_bash.contains("emerge 'nginx'"));
-    assert!(macro_bash.contains("nix-env -i 'git'"));
+    assert!(macro_bash.contains("nix-env '-i' 'git'"));
     assert!(macro_bash.contains("command '-v' 'apt-get'"));
     assert!(macro_bash.contains("command '-v' 'xbps-install'"));
     assert!(macro_bash.contains("command '-v' 'nix-env'"));
@@ -952,8 +964,8 @@ fn test_sh_macro_os_api_utilities() {
     assert!(
         bash.contains("status=$(if systemctl is-active sshd; then echo true; else echo false; fi)")
     );
-    assert!(bash.contains("user=$(echo \"$text\" | jq -r '.user.name')"));
-    assert!(bash.contains("port=$(jq -r '.server.port' 'config.json')"));
+    assert!(bash.contains("user=$(echo \"$text\" | jq '-r' '.user.name')"));
+    assert!(bash.contains("port=$(jq '-r' '.server.port' 'config.json')"));
     assert!(bash.contains("col=$(echo \"$text\" | awk '{print $2}')"));
     assert!(bash.contains("cmd_col=$(ps -ef | awk '{print $2}')"));
     assert!(bash.contains("grep_res=$(echo \"$text\" | grep 'error')"));

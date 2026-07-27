@@ -23,29 +23,29 @@ impl<'a> FileWriteBuilder<'a> {
             append,
         }
     }
+
     pub fn append(mut self, val: bool) -> Self {
         self.append = val;
         self
     }
 
-    pub async fn run(self) -> ExecResult<ExecOutput> {
-        let op = if self.append { ">>" } else { ">" };
-        let cmd = format!("echo \"$1\" {} \"$2\"", op);
+    pub async fn execute(self) -> ExecResult<ExecOutput> {
+        let mut args = Vec::new();
+        if self.append {
+            args.push("-a".to_owned());
+        }
+        args.push(self.path);
         self.executor
-            .run("sh", &["-c", &cmd, "dummy", &self.content, &self.path])
+            .run_with_stdin("tee", args, self.content.as_bytes())
             .await
     }
 }
 
 impl<'a> IntoCommand for FileWriteBuilder<'a> {
     fn build_str(&self) -> String {
+        let safe_path = escape_arg(&self.path);
+        let safe_content = escape_arg(&self.content);
         let op = if self.append { ">>" } else { ">" };
-        let cmd = format!("echo \"$1\" {} \"$2\"", op);
-        format!(
-            "sh -c '{}' dummy {} {}",
-            cmd,
-            escape_arg(&self.content),
-            escape_arg(&self.path)
-        )
+        format!("printf '%s' {} {} {}", safe_content, op, safe_path)
     }
 }

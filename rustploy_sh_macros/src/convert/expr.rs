@@ -49,6 +49,9 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                             crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Glob(g)) => {
                                 crate::utils::exec::script::dsl::ArgToken::Glob(g)
                             }
+                            crate::utils::exec::script::dsl::ShellIR::Expr(word @ crate::utils::exec::script::dsl::Expr::Word(_)) => {
+                                crate::utils::exec::script::dsl::ArgToken::Rendered(word.to_bash())
+                            }
                             _ => panic!("Unsupported argument type in cmd call"),
                         }
                     });
@@ -269,6 +272,19 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 (crate::utils::exec::script::dsl::ShellIR::Loop {
                     var: #var_name.to_string(),
                     iterator: Box::new(#iter_tokens),
+                    body: vec![ #( #body_stmts ),* ],
+                })
+            })
+        }
+        Expr::While(expr_while) => {
+            let cond_tokens = convert_expr(&expr_while.cond)?;
+            let mut body_stmts = Vec::new();
+            for stmt in &expr_while.body.stmts {
+                body_stmts.push(convert_stmt(stmt)?);
+            }
+            Ok(quote! {
+                (crate::utils::exec::script::dsl::ShellIR::While {
+                    cond: Box::new(#cond_tokens),
                     body: vec![ #( #body_stmts ),* ],
                 })
             })

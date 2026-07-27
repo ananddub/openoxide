@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct LockReleaseBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -22,14 +21,18 @@ impl<'a> LockReleaseBuilder<'a> {
     }
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        let lock_path = format!("{}/rustploy_lock_{}", self.lock_dir, self.name);
-        self.executor.run("rmdir", &[lock_path]).await
+        self.script().execute(self.executor).await
+    }
+
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let lock_dir = self.lock_dir.as_str();
+        let name = self.name.as_str();
+        sh!(cmd("rmdir", word![dynamic!(lock_dir), "/rustploy_lock_", dynamic!(name)]);)
     }
 }
 
 impl<'a> IntoCommand for LockReleaseBuilder<'a> {
     fn build_str(&self) -> String {
-        let lock_path = format!("{}/rustploy_lock_{}", self.lock_dir, self.name);
-        format!("rmdir {}", escape_arg(&lock_path))
+        self.script().build_str()
     }
 }

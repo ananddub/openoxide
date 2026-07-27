@@ -41,10 +41,7 @@ impl<'a> PackageCheckInstalledBuilder<'a> {
             PackageManager::Zypper => self.executor.run("rpm", &["-q", &self.name]).await,
             PackageManager::Xbps => self.executor.run("xbps-query", &["-S", &self.name]).await,
             PackageManager::Emerge => self.executor.run("qlist", &["-I", "-e", &self.name]).await,
-            PackageManager::Nix => {
-                let cmd_str = format!("nix-env -q | grep -q '^{}-'", self.name);
-                self.executor.run("sh", &["-c", &cmd_str]).await
-            }
+            PackageManager::Nix => self.executor.run("nix-env", &["-q", &self.name]).await,
             PackageManager::Brew => self.executor.run("brew", &["list", &self.name]).await,
         }
     }
@@ -62,33 +59,27 @@ impl<'a> IntoCommand for PackageCheckInstalledBuilder<'a> {
                 PackageManager::Zypper => format!("rpm -q {}", escape_arg(&self.name)),
                 PackageManager::Xbps => format!("xbps-query -S {}", escape_arg(&self.name)),
                 PackageManager::Emerge => format!("qlist -I -e {}", escape_arg(&self.name)),
-                PackageManager::Nix => {
-                    format!("nix-env -q | grep -q '^{}-'", escape_arg(&self.name))
-                }
+                PackageManager::Nix => format!("nix-env -q {}", escape_arg(&self.name)),
                 PackageManager::Brew => format!("brew list {}", escape_arg(&self.name)),
             }
         } else {
             let pkg = &self.name;
             let script = sh!(if cmd("command", "-v", "dpkg").stdout("/dev/null") {
-                cmd("dpkg", "-s", rust!(pkg));
+                cmd("dpkg", "-s", dynamic!(pkg));
             } else if cmd("command", "-v", "rpm").stdout("/dev/null") {
-                cmd("rpm", "-q", rust!(pkg));
+                cmd("rpm", "-q", dynamic!(pkg));
             } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                cmd("apk", "info", "-e", rust!(pkg));
+                cmd("apk", "info", "-e", dynamic!(pkg));
             } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                cmd("pacman", "-Q", rust!(pkg));
+                cmd("pacman", "-Q", dynamic!(pkg));
             } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
-                cmd("xbps-query", "-S", rust!(pkg));
+                cmd("xbps-query", "-S", dynamic!(pkg));
             } else if cmd("command", "-v", "qlist").stdout("/dev/null") {
-                cmd("qlist", "-I", "-e", rust!(pkg));
+                cmd("qlist", "-I", "-e", dynamic!(pkg));
             } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                cmd(
-                    "sh",
-                    "-c",
-                    rust!(format!("nix-env -q | grep -q '^{}-'", pkg)),
-                );
+                cmd("nix-env", "-q", dynamic!(pkg));
             } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                cmd("brew", "list", rust!(pkg));
+                cmd("brew", "list", dynamic!(pkg));
             } else {
                 echo("No supported package manager found").stderr("/dev/stderr");
                 cmd("exit", "1");

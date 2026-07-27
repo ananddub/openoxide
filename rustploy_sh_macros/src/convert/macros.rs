@@ -20,6 +20,39 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         });
     }
 
+    if macro_name == "ir" {
+        let parser = <syn::Expr as syn::parse::Parse>::parse;
+        let expression = mac.parse_body_with(parser)?;
+        return Ok(quote! { (#expression) });
+    }
+
+    if macro_name == "dynamic" {
+        let parser = <syn::Expr as syn::parse::Parse>::parse;
+        let expression = mac.parse_body_with(parser)?;
+        return Ok(quote! {{
+            let value = (#expression).build_str();
+            if let Some(name) = value.strip_prefix('$') {
+                let mut chars = name.chars();
+                let valid_start = chars
+                    .next()
+                    .is_some_and(|ch| ch == '_' || ch.is_ascii_alphabetic());
+                if valid_start && chars.all(|ch| ch == '_' || ch.is_ascii_alphanumeric()) {
+                    crate::utils::exec::script::dsl::ShellIR::Expr(
+                        crate::utils::exec::script::dsl::Expr::Variable(name.to_owned())
+                    )
+                } else {
+                    crate::utils::exec::script::dsl::ShellIR::Expr(
+                        crate::utils::exec::script::dsl::Expr::Literal(value)
+                    )
+                }
+            } else {
+                crate::utils::exec::script::dsl::ShellIR::Expr(
+                    crate::utils::exec::script::dsl::Expr::Literal(value)
+                )
+            }
+        }});
+    }
+
     if macro_name == "json" {
         let parsed = mac.parse_body_with(JsonMacroInput::parse)?;
         let mut parts = Vec::new();
@@ -87,6 +120,46 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
                     name: vec![ #( #cmd_bash_strings ),* ].join(" || "),
                     args: vec![],
                 }
+            ))
+        });
+    }
+
+    if macro_name == "pipe" {
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+        let exprs = mac.parse_body_with(parser)?;
+        let mut commands = Vec::new();
+        for expr in exprs {
+            let converted = convert_expr(&expr)?;
+            commands.push(quote! {
+                match #converted {
+                    crate::utils::exec::script::dsl::ShellIR::Command(command) => command,
+                    _ => panic!("pipe! accepts command expressions only"),
+                }
+            });
+        }
+        return Ok(quote! {
+            (crate::utils::exec::script::dsl::ShellIR::Pipeline(
+                vec![ #( #commands ),* ]
+            ))
+        });
+    }
+
+    if macro_name == "word" {
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+        let exprs = mac.parse_body_with(parser)?;
+        let mut parts = Vec::new();
+        for expr in exprs {
+            let converted = convert_expr(&expr)?;
+            parts.push(quote! {
+                match #converted {
+                    crate::utils::exec::script::dsl::ShellIR::Expr(value) => value,
+                    _ => panic!("word! accepts literals and variables only"),
+                }
+            });
+        }
+        return Ok(quote! {
+            (crate::utils::exec::script::dsl::ShellIR::Expr(
+                crate::utils::exec::script::dsl::Expr::Word(vec![ #( #parts ),* ])
             ))
         });
     }
@@ -380,6 +453,9 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
                 }
                 crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Glob(g)) => {
                     crate::utils::exec::script::dsl::ArgToken::Glob(g)
+                }
+                crate::utils::exec::script::dsl::ShellIR::Expr(word @ crate::utils::exec::script::dsl::Expr::Word(_)) => {
+                    crate::utils::exec::script::dsl::ArgToken::Rendered(word.to_bash())
                 }
                 _ => panic!("Unsupported argument type in command macro"),
             }

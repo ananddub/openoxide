@@ -1,6 +1,5 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct PortFreeBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -15,15 +14,26 @@ impl<'a> PortFreeBuilder<'a> {
         }
     }
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        self.executor.run("sh", &["-c", "port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port", "dummy", &self.start]).await
+        self.script().execute(self.executor).await
+    }
+
+    fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
+        let start = self.start.as_str();
+        sh!(
+            let port = dynamic!(start);
+            while pipe![
+                cmd("ss", "-tuln"),
+                cmd("grep", "-q", word![":", port, " "])
+            ] {
+                let port = capture_stdout! { cmd("expr", port, "+", "1"); };
+            }
+            echo(port);
+        )
     }
 }
 
 impl<'a> IntoCommand for PortFreeBuilder<'a> {
     fn build_str(&self) -> String {
-        format!(
-            "sh -c 'port=$1; while ss -tuln | grep -q \":$port \"; do port=$((port+1)); done; echo $port' dummy {}",
-            escape_arg(&self.start)
-        )
+        self.script().build_str()
     }
 }

@@ -1,5 +1,6 @@
 use crate::string_enum;
 use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
+use crate::utils::os::OsCli;
 use tokio_util::sync::CancellationToken;
 
 string_enum! {
@@ -24,20 +25,30 @@ impl<'a> HerokuCli<'a> {
     }
 
     pub async fn is_exists(&self) -> bool {
-        self.executor
-            .run("sh", &["-c", "command -v pack"])
+        OsCli::new(self.executor)
+            .has_command("pack")
+            .run()
             .await
             .map(|out| out.success())
             .unwrap_or(false)
     }
 
     pub async fn install(&self) -> ExecResult<ExecOutput> {
-        let script = r#"set -eu
-ARCH=$(uname -m)
-SUFFIX=""; case "$ARCH" in aarch64|arm64) SUFFIX="-arm64";; esac
-curl -fsSL "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux${SUFFIX}.tgz" | tar -C /usr/local/bin --no-same-owner -xz pack
-"#;
-        self.executor.run("sh", &["-c", script]).await
+        let os = OsCli::new(self.executor);
+        let arch = os.system().arch().run().await?.stdout_trimmed().to_owned();
+        let suffix = if matches!(arch.as_str(), "aarch64" | "arm64") {
+            "-arm64"
+        } else {
+            ""
+        };
+        let url = format!(
+            "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux{suffix}.tgz"
+        );
+        os.tarball_installer(url, "/usr/local/bin")
+            .member("pack")
+            .run()
+            .await?;
+        self.executor.run("pack", ["--version"]).await
     }
 
     pub async fn if_not_exist_install(&self) -> ExecResult<()> {

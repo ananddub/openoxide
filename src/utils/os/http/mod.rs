@@ -1,8 +1,10 @@
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
 
+pub mod get;
 pub mod wait_healthy;
 
+pub use get::HttpGetBuilder;
 pub use wait_healthy::HttpWaitHealthyBuilder;
 
 pub struct HttpCli<'a> {
@@ -10,6 +12,10 @@ pub struct HttpCli<'a> {
 }
 
 impl<'a> HttpCli<'a> {
+    pub fn get(&self, url: impl IntoCommand) -> HttpGetBuilder<'a> {
+        HttpGetBuilder::new(self.executor, url)
+    }
+
     pub fn wait_healthy(
         &self,
         url: impl IntoCommand,

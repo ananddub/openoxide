@@ -36,75 +36,26 @@ pub enum PackageManager {
 }
 
 pub(crate) async fn detect_manager(executor: &CommandExecutor) -> PackageManager {
-    if executor
-        .run("sh", &["-c", "command -v apt-get"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    let os = crate::utils::os::OsCli::new(executor);
+    if os.has_command("apt-get").run().await.is_ok() {
         PackageManager::Apt
-    } else if executor
-        .run("sh", &["-c", "command -v dnf"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("dnf").run().await.is_ok() {
         PackageManager::Dnf
-    } else if executor
-        .run("sh", &["-c", "command -v yum"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("yum").run().await.is_ok() {
         PackageManager::Yum
-    } else if executor
-        .run("sh", &["-c", "command -v apk"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("apk").run().await.is_ok() {
         PackageManager::Apk
-    } else if executor
-        .run("sh", &["-c", "command -v pacman"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("pacman").run().await.is_ok() {
         PackageManager::Pacman
-    } else if executor
-        .run("sh", &["-c", "command -v zypper"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("zypper").run().await.is_ok() {
         PackageManager::Zypper
-    } else if executor
-        .run("sh", &["-c", "command -v xbps-install"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("xbps-install").run().await.is_ok() {
         PackageManager::Xbps
-    } else if executor
-        .run("sh", &["-c", "command -v emerge"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("emerge").run().await.is_ok() {
         PackageManager::Emerge
-    } else if executor
-        .run("sh", &["-c", "command -v nix-env"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("nix-env").run().await.is_ok() {
         PackageManager::Nix
-    } else if executor
-        .run("sh", &["-c", "command -v brew"])
-        .await
-        .map(|o| o.success())
-        .unwrap_or(false)
-    {
+    } else if os.has_command("brew").run().await.is_ok() {
         PackageManager::Brew
     } else {
         PackageManager::Apt // Default fallback

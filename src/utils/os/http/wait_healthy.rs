@@ -1,6 +1,6 @@
-use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::dsl::{ArgToken, Command, ShellIR};
+use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 pub struct HttpWaitHealthyBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -45,62 +45,60 @@ impl<'a> HttpWaitHealthyBuilder<'a> {
         self
     }
 
-    fn curl_args(&self) -> String {
-        let mut parts = vec![
-            "-s".to_string(),
-            "-o".to_string(),
-            "/dev/null".to_string(),
-            "-w".to_string(),
-            "%{http_code}".to_string(),
+    fn curl_command(&self) -> ShellIR {
+        let mut args = vec![
+            ArgToken::Literal("-s".into()),
+            ArgToken::Literal("-o".into()),
+            ArgToken::Literal("/dev/null".into()),
+            ArgToken::Literal("-w".into()),
+            ArgToken::Literal("%{http_code}".into()),
         ];
         if self.insecure {
-            parts.push("-k".to_string());
+            args.push(ArgToken::Literal("-k".into()));
         }
         if self.method != "GET" {
-            parts.push("-X".to_string());
-            parts.push(self.method.clone());
+            args.push(ArgToken::Literal("-X".into()));
+            args.push(ArgToken::Literal(self.method.clone()));
         }
         for (k, v) in &self.headers {
-            parts.push("-H".to_string());
-            parts.push(format!("{}: {}", k, v));
+            args.push(ArgToken::Literal("-H".into()));
+            args.push(ArgToken::Literal(format!("{k}: {v}")));
         }
-        parts.push(self.url.clone());
-
-        // Escape all parts for safe execution/stringifying
-        parts
-            .iter()
-            .map(|p| escape_arg(p))
-            .collect::<Vec<_>>()
-            .join(" ")
+        args.push(ArgToken::dynamic(self.url.clone()));
+        ShellIR::Command(Command {
+            name: "curl".into(),
+            args,
+        })
     }
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
-        let curl_cmd = self.curl_args();
-        let cmd = format!(
-            "timeout=$1; start_time=$(date +%s); while true; do if curl {} | grep -qE \"$2\"; then exit 0; fi; current_time=$(date +%s); elapsed=$((current_time - start_time)); if [ $elapsed -ge $timeout ]; then echo \"Timeout waiting for healthy response\" >&2; exit 1; fi; sleep 1; done",
-            curl_cmd
-        );
-        self.executor
-            .run(
-                "sh",
-                &["-c", &cmd, "dummy", &self.timeout, &self.status_pattern],
-            )
-            .await
+        self.script().execute(self.executor).await
+    }
+
+    fn script(&self) -> Vec<ShellIR> {
+        let curl = self.curl_command();
+        let timeout = self.timeout.as_str();
+        let pattern = self.status_pattern.as_str();
+        sh!(
+            let start = capture_stdout! { cmd("date", "+%s"); };
+            while cmd("true") {
+                if pipe![ir!(curl.clone()), cmd("grep", "-qE", dynamic!(pattern))] {
+                    exit(0);
+                }
+                let current = capture_stdout! { cmd("date", "+%s"); };
+                let elapsed = capture_stdout! { cmd("expr", current, "-", start); };
+                if cmd("test", elapsed, "-ge", dynamic!(timeout)) {
+                    echo("Timeout waiting for healthy response").stderr("/dev/stderr");
+                    exit(1);
+                }
+                sleep(1);
+            }
+        )
     }
 }
 
 impl<'a> IntoCommand for HttpWaitHealthyBuilder<'a> {
     fn build_str(&self) -> String {
-        let curl_cmd = self.curl_args();
-        let cmd = format!(
-            "timeout=$1; start_time=$(date +%s); while true; do if curl {} | grep -qE \"$2\"; then exit 0; fi; current_time=$(date +%s); elapsed=$((current_time - start_time)); if [ $elapsed -ge $timeout ]; then echo \"Timeout waiting for healthy response\" >&2; exit 1; fi; sleep 1; done",
-            curl_cmd
-        );
-        format!(
-            "sh -c '{}' dummy {} {}",
-            cmd,
-            escape_arg(&self.timeout),
-            escape_arg(&self.status_pattern)
-        )
+        self.script().build_str()
     }
 }

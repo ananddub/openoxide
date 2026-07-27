@@ -1,7 +1,7 @@
 use super::{PackageManager, detect_manager};
+use crate::utils::exec::script::dsl::{ArgToken, Command, ShellIR};
 use crate::utils::exec::script::{IntoCommand, sh};
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::utils::os::escape_arg;
 
 #[allow(unused_macros)]
 macro_rules! rust {
@@ -122,70 +122,105 @@ impl<'a> PackageInstallBuilder<'a> {
 
 impl<'a> IntoCommand for PackageInstallBuilder<'a> {
     fn build_str(&self) -> String {
+        let command = |name: &str, args: Vec<String>| {
+            ShellIR::Command(Command {
+                name: name.to_owned(),
+                args: args.into_iter().map(ArgToken::Literal).collect(),
+            })
+        };
         if let Some(mgr) = self.manager {
-            match mgr {
+            let install = match mgr {
                 PackageManager::Apt => {
-                    let mut cmd = String::new();
+                    let mut commands = Vec::new();
                     if self.update {
-                        cmd.push_str("apt-get update -y && ");
+                        commands.push(command("apt-get", vec!["update".into(), "-y".into()]));
                     }
-                    cmd.push_str(&format!("apt-get install -y {}", escape_arg(&self.name)));
-                    cmd
+                    commands.push(command(
+                        "apt-get",
+                        vec!["install".into(), "-y".into(), self.name.clone()],
+                    ));
+                    ShellIR::Sequence(commands)
                 }
-                PackageManager::Dnf => format!("dnf install -y {}", escape_arg(&self.name)),
-                PackageManager::Yum => format!("yum install -y {}", escape_arg(&self.name)),
-                PackageManager::Apk => {
-                    let flag = if self.no_cache { " --no-cache" } else { "" };
-                    format!("apk add{flag} {}", escape_arg(&self.name))
-                }
-                PackageManager::Pacman => {
-                    format!("pacman -S --noconfirm {}", escape_arg(&self.name))
-                }
-                PackageManager::Zypper => format!(
-                    "zypper --non-interactive install {}",
-                    escape_arg(&self.name)
+                PackageManager::Dnf => command(
+                    "dnf",
+                    vec!["install".into(), "-y".into(), self.name.clone()],
                 ),
-                PackageManager::Xbps => format!("xbps-install -Sy {}", escape_arg(&self.name)),
-                PackageManager::Emerge => format!("emerge {}", escape_arg(&self.name)),
-                PackageManager::Nix => format!("nix-env -i {}", escape_arg(&self.name)),
-                PackageManager::Brew => format!("brew install {}", escape_arg(&self.name)),
-            }
+                PackageManager::Yum => command(
+                    "yum",
+                    vec!["install".into(), "-y".into(), self.name.clone()],
+                ),
+                PackageManager::Apk => {
+                    let mut args = vec!["add".into()];
+                    if self.no_cache {
+                        args.push("--no-cache".into());
+                    }
+                    args.push(self.name.clone());
+                    command("apk", args)
+                }
+                PackageManager::Pacman => command(
+                    "pacman",
+                    vec!["-S".into(), "--noconfirm".into(), self.name.clone()],
+                ),
+                PackageManager::Zypper => command(
+                    "zypper",
+                    vec![
+                        "--non-interactive".into(),
+                        "install".into(),
+                        self.name.clone(),
+                    ],
+                ),
+                PackageManager::Xbps => {
+                    command("xbps-install", vec!["-Sy".into(), self.name.clone()])
+                }
+                PackageManager::Emerge => command("emerge", vec![self.name.clone()]),
+                PackageManager::Nix => command("nix-env", vec!["-i".into(), self.name.clone()]),
+                PackageManager::Brew => command("brew", vec!["install".into(), self.name.clone()]),
+            };
+            install.build_str()
         } else {
             let pkg = &self.name;
-            let apt_cmd = if self.update {
-                format!(
-                    "apt-get update -y && apt-get install -y {}",
-                    escape_arg(pkg)
-                )
-            } else {
-                format!("apt-get install -y {}", escape_arg(pkg))
+            let command = |name: &str, args: Vec<&str>| {
+                ShellIR::Command(Command {
+                    name: name.to_owned(),
+                    args: args
+                        .into_iter()
+                        .map(|value| ArgToken::Literal(value.to_owned()))
+                        .collect(),
+                })
             };
-            let apk_cmd = if self.no_cache {
-                format!("apk add --no-cache {}", escape_arg(pkg))
-            } else {
-                format!("apk add {}", escape_arg(pkg))
-            };
+            let mut apt = Vec::new();
+            if self.update {
+                apt.push(command("apt-get", vec!["update", "-y"]));
+            }
+            apt.push(command("apt-get", vec!["install", "-y", pkg]));
+            let apt = ShellIR::Sequence(apt);
+            let mut apk_args = vec!["add"];
+            if self.no_cache {
+                apk_args.push("--no-cache");
+            }
+            apk_args.push(pkg);
+            let apk = command("apk", apk_args);
 
             let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
-                cmd("sh", "-c", rust!(apt_cmd));
+                ir!(apt.clone());
             } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
-                cmd("dnf", "install", "-y", rust!(pkg));
+                cmd("dnf", "install", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "yum").stdout("/dev/null") {
-                cmd("yum", "install", "-y", rust!(pkg));
+                cmd("yum", "install", "-y", dynamic!(pkg));
             } else if cmd("command", "-v", "apk").stdout("/dev/null") {
-                cmd("sh", "-c", rust!(apk_cmd));
+                ir!(apk.clone());
             } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
-                cmd("pacman", "-S", "--noconfirm", rust!(pkg));
+                cmd("pacman", "-S", "--noconfirm", dynamic!(pkg));
             } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
-                cmd("zypper", "--non-interactive", "install", rust!(pkg));
+                cmd("zypper", "--non-interactive", "install", dynamic!(pkg));
             } else if cmd("command", "-v", "xbps-install").stdout("/dev/null") {
-                cmd("xbps-install", "-Sy", rust!(pkg));
+                cmd("xbps-install", "-Sy", dynamic!(pkg));
             } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
-                cmd("emerge", rust!(pkg));
+                cmd("emerge", dynamic!(pkg));
             } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
-                cmd("nix-env", "-i", rust!(pkg));
+                cmd("nix-env", "-i", dynamic!(pkg));
             } else if cmd("command", "-v", "brew").stdout("/dev/null") {
-                cmd("brew", "install", rust!(pkg));
+                cmd("brew", "install", dynamic!(pkg));
             } else {
                 echo("No supported package manager found").stderr("/dev/stderr");
                 cmd("exit", "1");

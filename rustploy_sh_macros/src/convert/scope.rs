@@ -352,7 +352,7 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
                 .get_ident()
                 .map(|i| i.to_string())
                 .unwrap_or_default();
-            if macro_name == "rust" {
+            if macro_name == "rust" || macro_name == "ir" || macro_name == "dynamic" {
                 return Ok(());
             }
             check_macro(&expr_macro.mac, tracker)?;
@@ -392,6 +392,12 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
             };
             tracker.declare(var_name);
             check_stmts(&expr_for.body.stmts, tracker)?;
+            tracker.pop_scope();
+        }
+        Expr::While(expr_while) => {
+            check_expr(&expr_while.cond, tracker)?;
+            tracker.push_scope();
+            check_stmts(&expr_while.body.stmts, tracker)?;
             tracker.pop_scope();
         }
         Expr::Closure(closure) => {

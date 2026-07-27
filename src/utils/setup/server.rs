@@ -89,11 +89,7 @@ impl ServerSetup {
         }
 
         if os.has_command("docker").run().await.is_err() {
-            // Docker's installer is intentionally kept as one pipeline because the
-            // downloaded script must be passed to a privileged shell over SSH.
-            self.executor
-                .run("sh", ["-c", "curl -fsSL https://get.docker.com | sh"])
-                .await?;
+            os.shell_installer("https://get.docker.com").run().await?;
         }
         if os.has_command("systemctl").run().await.is_ok() {
             os.service("docker").enable().run().await?;
@@ -117,11 +113,8 @@ impl ServerSetup {
     pub async fn install_build_tools(&self) -> ExecResult<()> {
         let os = OsCli::new(&self.executor);
         if os.has_command("rclone").run().await.is_err() {
-            self.executor
-                .run(
-                    "sh",
-                    ["-c", "curl -fsSL https://rclone.org/install.sh | sh"],
-                )
+            os.shell_installer("https://rclone.org/install.sh")
+                .run()
                 .await?;
         }
 
@@ -206,10 +199,10 @@ impl ServerSetup {
         if !overwrite && os.file(path).exists().run().await.is_ok() {
             return Ok(());
         }
-        let script = "umask 077; cat > \"$1\"";
         self.executor
-            .run_with_stdin("sh", ["-c", script, "rustploy-write", path], contents)
+            .run_with_stdin("tee", [path], contents)
             .await?;
+        os.file(path).chmod("600").run().await?;
         Ok(())
     }
     pub async fn ensure_traefik(&self) -> ExecResult<()> {
