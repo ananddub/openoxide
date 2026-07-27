@@ -374,7 +374,7 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
             if macro_name == "rust"
                 || macro_name == "ir"
                 || macro_name == "dynamic"
-                || macro_name == "awk_for_fields"
+                || macro_name == "awk"
             {
                 return Ok(());
             }

@@ -429,12 +429,14 @@ impl ServerSetup {
                 let _rustploy_advertise_addr = capture_stdout! {
                     pipe![
                         cmd("hostname", "-I"),
-                        awk(awk_for_fields! {
+                        awk! {
+                            for field in fields {
                             if field != "127.0.0.1" {
                                 print(field);
                                 exit;
                             }
-                        })
+                            }
+                        }
                     ];
                 }
                 .default("127.0.0.1");

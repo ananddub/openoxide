@@ -591,18 +591,20 @@ fn test_sh_macro_docker_chain_inside_if_branch() {
 }
 
 #[test]
-fn test_sh_macro_awk_for_fields() {
+fn test_sh_macro_structured_awk() {
     use super::sh;
 
     let script_ir = sh!(
         pipe![
             cmd("hostname", "-I"),
-            awk(awk_for_fields! {
+            awk! {
+                for field in fields {
                 if field != "127.0.0.1" {
                     print(field);
                     exit;
                 }
-            })
+                }
+            }
         ];
     );
 

@@ -79,7 +79,27 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         .map(|i| i.to_string())
         .ok_or_else(|| syn::Error::new_spanned(mac, "Expected macro name"))?;
 
-    if matches!(macro_name.as_str(), "grep" | "awk" | "sed") {
+    if macro_name == "awk" {
+        if let Ok(parsed) = mac.parse_body_with(AwkInput::parse) {
+            let program = parsed.to_awk();
+            return Ok(quote! {
+                (crate::utils::exec::script::dsl::ShellIR::Command(
+                    crate::utils::exec::script::dsl::Command {
+                        name: "awk".to_string(),
+                        args: vec![
+                            crate::utils::exec::script::dsl::ArgToken::Literal(#program.to_string())
+                        ],
+                    }
+                ))
+            });
+        }
+
+        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+        let args = mac.parse_body_with(parser)?;
+        return convert_text_tool(&macro_name, args, mac.path.span());
+    }
+
+    if matches!(macro_name.as_str(), "grep" | "sed") {
         let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
         let args = mac.parse_body_with(parser)?;
         return convert_text_tool(&macro_name, args, mac.path.span());
@@ -134,16 +154,6 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
                 )
             }
         }});
-    }
-
-    if macro_name == "awk_for_fields" {
-        let parsed = mac.parse_body_with(AwkForFieldsInput::parse)?;
-        let program = parsed.to_awk();
-        return Ok(quote! {
-            (crate::utils::exec::script::dsl::ShellIR::Expr(
-                crate::utils::exec::script::dsl::Expr::Literal(#program.to_string())
-            ))
-        });
     }
 
     if macro_name == "json" {
@@ -1146,13 +1156,13 @@ enum AwkAction {
     Exit,
 }
 
-struct AwkForFieldsInput {
+struct AwkInput {
     comparison: AwkComparison,
     value: String,
     actions: Vec<AwkAction>,
 }
 
-impl AwkForFieldsInput {
+impl AwkInput {
     fn to_awk(&self) -> String {
         let op = match self.comparison {
             AwkComparison::Eq => "==",
@@ -1178,14 +1188,44 @@ impl AwkForFieldsInput {
     }
 }
 
-impl syn::parse::Parse for AwkForFieldsInput {
+impl syn::parse::Parse for AwkInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        input.parse::<syn::Token![for]>()?;
+        let field_var: syn::Ident = input.parse()?;
+        if field_var != "field" {
+            return Err(syn::Error::new_spanned(
+                field_var,
+                "awk! loop must use `for field in fields`",
+            ));
+        }
+        input.parse::<syn::Token![in]>()?;
+        let fields: syn::Ident = input.parse()?;
+        if fields != "fields" {
+            return Err(syn::Error::new_spanned(
+                fields,
+                "awk! loop must iterate over `fields`",
+            ));
+        }
+
+        let loop_body;
+        syn::braced!(loop_body in input);
+
+        if !input.is_empty() {
+            return Err(input.error("unexpected tokens after awk! loop"));
+        }
+
+        Self::parse_loop_body(&loop_body)
+    }
+}
+
+impl AwkInput {
+    fn parse_loop_body(input: syn::parse::ParseStream) -> syn::Result<Self> {
         input.parse::<syn::Token![if]>()?;
         let field: syn::Ident = input.parse()?;
         if field != "field" {
             return Err(syn::Error::new_spanned(
                 field,
-                "awk_for_fields! condition must compare `field`",
+                "awk! condition must compare `field`",
             ));
         }
 
@@ -1196,7 +1236,7 @@ impl syn::parse::Parse for AwkForFieldsInput {
             input.parse::<syn::Token![==]>()?;
             AwkComparison::Eq
         } else {
-            return Err(input.error("expected `!=` or `==` in awk_for_fields! condition"));
+            return Err(input.error("expected `!=` or `==` in awk! condition"));
         };
 
         let value: syn::LitStr = input.parse()?;
@@ -1215,7 +1255,7 @@ impl syn::parse::Parse for AwkForFieldsInput {
                         if target != "field" {
                             return Err(syn::Error::new_spanned(
                                 target,
-                                "awk_for_fields! only supports print(field) for field output",
+                                "awk! only supports print(field) for field output",
                             ));
                         }
                         actions.push(AwkAction::PrintField);
@@ -1228,7 +1268,7 @@ impl syn::parse::Parse for AwkForFieldsInput {
                 other => {
                     return Err(syn::Error::new_spanned(
                         ident,
-                        format!("unsupported awk_for_fields! action `{other}`"),
+                        format!("unsupported awk! action `{other}`"),
                     ));
                 }
             }
@@ -1238,7 +1278,7 @@ impl syn::parse::Parse for AwkForFieldsInput {
         }
 
         if actions.is_empty() {
-            return Err(input.error("awk_for_fields! requires at least one action"));
+            return Err(input.error("awk! requires at least one action"));
         }
 
         Ok(Self {
