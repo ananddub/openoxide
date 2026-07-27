@@ -17,7 +17,7 @@ fn is_command_receiver(expr: &syn::Expr) -> bool {
 fn is_special_method_name(name: &str) -> bool {
     matches!(
         name,
-        "stdout" | "stderr" | "sudo" | "success" | "failure" | "ok"
+        "stdout" | "stderr" | "sudo" | "success" | "failure" | "ok" | "empty" | "non_empty"
     )
 }
 
@@ -190,6 +190,14 @@ pub fn convert_method_call(
 
     if method_name == "ok" {
         return Ok(quote! { (#receiver_tokens).ok() });
+    }
+
+    if method_name == "empty" {
+        return Ok(quote! { (#receiver_tokens).empty() });
+    }
+
+    if method_name == "non_empty" {
+        return Ok(quote! { (#receiver_tokens).non_empty() });
     }
 
     // Non-special OS chain methods: substitute sh vars in args too

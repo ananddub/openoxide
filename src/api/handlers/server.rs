@@ -243,9 +243,12 @@ impl ServerController {
             }
         };
         let auth = SshAuth::key_pair(key.private_key, key.public_key);
+        let is_root = server.username == "root";
         let mut executor =
             RemoteExecutor::new(server.ip_address, port, server.username, auth, host_policy);
-        executor = if let Some(password) = sudo_password {
+        executor = if is_root {
+            executor
+        } else if let Some(password) = sudo_password {
             executor.with_sudo_password(password)
         } else if require_sudo {
             executor.with_sudo()

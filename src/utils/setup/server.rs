@@ -318,7 +318,7 @@ impl ServerSetup {
         }
 
         self.append_directory_steps(&mut steps, &os);
-        self.append_swarm_step(&mut steps, &docker);
+        self.append_swarm_step(&mut steps, &os, &docker);
         self.append_network_step(&mut steps, &docker);
         self.append_traefik_config_steps(&mut steps, &os);
         self.append_traefik_step(&mut steps, &docker);
@@ -415,7 +415,7 @@ impl ServerSetup {
         ));
     }
 
-    fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+    fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>, docker: &DockerCli) {
         if let Some(advertise_addr) = &self.config.advertise_addr {
             steps.extend(sh!(if !docker.swarm().active() {
                 docker
@@ -427,19 +427,29 @@ impl ServerSetup {
         } else {
             steps.extend(sh!(if !docker.swarm().active() {
                 let _rustploy_advertise_addr = capture_stdout! {
-                    pipe![
-                        cmd("hostname", "-I"),
-                        awk! {
-                            for field in fields {
-                            if field != "127.0.0.1" {
-                                print(field);
-                                exit;
+                    os.http()
+                        .get("https://ifconfig.io")
+                        .ipv4()
+                        .connect_timeout(5)
+                        .timeout(5)
+                        .fail_ok();
+                };
+                if _rustploy_advertise_addr.empty() {
+                    let _rustploy_advertise_addr = capture_stdout! {
+                        pipe![
+                            cmd("hostname", "-I"),
+                            awk! {
+                                for field in fields {
+                                    if field != "127.0.0.1" {
+                                        print(field);
+                                        exit;
+                                    }
+                                }
                             }
-                            }
-                        }
-                    ];
+                        ];
+                    }
+                    .default("127.0.0.1");
                 }
-                .default("127.0.0.1");
                 docker
                     .swarm()
                     .init()
@@ -589,6 +599,11 @@ mod tests {
         assert!(script.contains("https://get.docker.com"));
         assert!(script.contains("https://nixpacks.com/install.sh"));
         assert!(script.contains("_rustploy_pack_url="));
+        assert!(
+            script.contains("curl -4 -s --connect-timeout 5 -m 5 'https://ifconfig.io' || true")
+        );
+        assert!(script.contains("if [ -z \"${_rustploy_advertise_addr:-}\" ]; then"));
+        assert!(script.contains("hostname '-I' | awk"));
         assert!(script.contains("docker swarm init --advertise-addr $_rustploy_advertise_addr"));
         assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
         assert!(script.contains("traefik:v"));

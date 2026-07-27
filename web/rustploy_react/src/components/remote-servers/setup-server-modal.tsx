@@ -25,10 +25,12 @@ export function SetupServerModal({
 }: SetupServerModalProps) {
 	const [testingConn, setTestingConn] = useState(false);
 	const [auditing, setAuditing] = useState(false);
+	const [settingUp, setSettingUp] = useState(false);
 	const [auditResult, setAuditResult] = useState<any | null>(null);
 
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 	const auditMutation = $api.useMutation('post', '/servers/{id}/audit');
+	const setupMutation = $api.useMutation('post', '/servers/{id}/setup');
 
 	const handleTestConnection = async () => {
 		if (!server?.id) return;
@@ -60,6 +62,26 @@ export function SetupServerModal({
 			toast.error(formatApiError(err));
 		} finally {
 			setAuditing(false);
+		}
+	};
+
+	const handleSetup = async () => {
+		if (!server?.id) return;
+		setSettingUp(true);
+		try {
+			await setupMutation.mutateAsync({
+				params: {path: {id: server.id}},
+				body: {
+					host_key_fingerprint: '',
+					install_dependencies: true,
+				},
+			});
+			toast.success(`Server ${server.name} setup completed successfully!`);
+			onClose();
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		} finally {
+			setSettingUp(false);
 		}
 	};
 
@@ -116,6 +138,25 @@ export function SetupServerModal({
 						>
 							{auditing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Cpu className="w-3.5 h-3.5" />}
 							{auditing ? 'Auditing...' : 'Run Audit'}
+						</Button>
+					</div>
+
+					<div className="flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 rounded-xl">
+						<div className="flex items-center gap-2.5">
+							<Terminal className="w-5 h-5 text-primary" />
+							<div>
+								<h4 className="text-xs font-bold text-foreground">Setup Server</h4>
+								<p className="text-[11px] text-muted-foreground">Install dependencies, Docker, Swarm, Traefik, and monitoring</p>
+							</div>
+						</div>
+						<Button
+							size="sm"
+							onClick={handleSetup}
+							disabled={settingUp}
+							className="h-8 text-xs font-semibold gap-1.5"
+						>
+							{settingUp ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Terminal className="w-3.5 h-3.5" />}
+							{settingUp ? 'Setting up...' : 'Run Setup'}
 						</Button>
 					</div>
 

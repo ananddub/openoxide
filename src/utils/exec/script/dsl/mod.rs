@@ -367,6 +367,22 @@ impl ShellIR {
             }
         }
     }
+
+    pub fn empty(self) -> Self {
+        match self {
+            ShellIR::Expr(Expr::Variable(v)) => ShellIR::Raw(format!("[ -z \"${{{v}:-}}\" ]")),
+            ShellIR::Raw(s) => ShellIR::Raw(format!("[ -z \"{}\" ]", s)),
+            other => ShellIR::Raw(format!("[ -z \"{}\" ]", other.to_bash())),
+        }
+    }
+
+    pub fn non_empty(self) -> Self {
+        match self {
+            ShellIR::Expr(Expr::Variable(v)) => ShellIR::Raw(format!("[ -n \"${{{v}:-}}\" ]")),
+            ShellIR::Raw(s) => ShellIR::Raw(format!("[ -n \"{}\" ]", s)),
+            other => ShellIR::Raw(format!("[ -n \"{}\" ]", other.to_bash())),
+        }
+    }
 }
 
 impl Expr {
