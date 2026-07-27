@@ -6,6 +6,7 @@ use crate::utils::{
         handles::containers::RestartPolicy,
     },
     exec::{CommandExecutor, ExecResult},
+    os::OsCli,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -63,33 +64,53 @@ impl ServerSetup {
     }
 
     pub async fn install_dependencies(&self) -> ExecResult<()> {
-        let script = r#"set -eu
-. /etc/os-release
-case "$ID" in
-  ubuntu|debian|raspbian|pop|linuxmint|zorin) apt-get update -y; DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget git git-lfs jq openssl unzip tar ca-certificates ;;
-  fedora|centos|rhel|rocky|almalinux|amzn|ol) (dnf install -y curl wget git git-lfs jq openssl unzip tar || yum install -y curl wget git jq openssl unzip tar) ;;
-  arch|manjaro|manjaro-arm) pacman -Sy --noconfirm --needed curl wget git git-lfs jq openssl unzip tar ;;
-  alpine) apk update; apk add curl wget git git-lfs jq openssl sudo unzip tar ca-certificates ;;
-  sles|opensuse-leap|opensuse-tumbleweed) zypper refresh; zypper install -y curl wget git git-lfs jq openssl unzip tar ;;
-  *) echo "unsupported operating system: $ID" >&2; exit 2 ;;
-esac
-if ! command -v docker >/dev/null 2>&1; then curl -fsSL https://get.docker.com | sh; fi
-if command -v systemctl >/dev/null 2>&1; then systemctl enable --now docker; fi
-"#;
-        self.executor.run("sh", ["-c", script]).await?;
+        let os = OsCli::new(&self.executor);
+        for (index, package) in [
+            "curl",
+            "wget",
+            "git",
+            "git-lfs",
+            "jq",
+            "openssl",
+            "unzip",
+            "tar",
+            "ca-certificates",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            os.package(package)
+                .install()
+                .update(index == 0)
+                .no_cache(true)
+                .run()
+                .await?;
+        }
+
+        if os.has_command("docker").run().await.is_err() {
+            // Docker's installer is intentionally kept as one pipeline because the
+            // downloaded script must be passed to a privileged shell over SSH.
+            self.executor
+                .run("sh", ["-c", "curl -fsSL https://get.docker.com | sh"])
+                .await?;
+        }
+        if os.has_command("systemctl").run().await.is_ok() {
+            os.service("docker").enable().run().await?;
+            os.service("docker").start().run().await?;
+        }
         Ok(())
     }
     pub async fn setup_directories(&self) -> ExecResult<()> {
-        let paths = self.config.paths.all();
-        self.executor
-            .run("mkdir", std::iter::once("-p").chain(paths))
-            .await?;
-        self.executor
-            .run("chmod", ["700", self.config.paths.ssh.as_str()])
-            .await?;
+        let os = OsCli::new(&self.executor);
+        for path in self.config.paths.all() {
+            os.dir(path).create().parents(true).run().await?;
+        }
+        os.file(&self.config.paths.ssh).chmod("700").run().await?;
         let acme = format!("{}/acme.json", self.config.paths.traefik_dynamic);
-        self.executor.run("touch", [acme.as_str()]).await?;
-        self.executor.run("chmod", ["600", acme.as_str()]).await?;
+        if os.file(&acme).exists().run().await.is_err() {
+            self.executor.run("touch", [acme.as_str()]).await?;
+        }
+        os.file(&acme).chmod("600").run().await?;
         Ok(())
     }
     pub async fn install_build_tools(&self) -> ExecResult<()> {
@@ -174,7 +195,8 @@ fi
         contents: &[u8],
         overwrite: bool,
     ) -> ExecResult<()> {
-        if !overwrite && self.executor.run("test", ["-f", path]).await.is_ok() {
+        let os = OsCli::new(&self.executor);
+        if !overwrite && os.file(path).exists().run().await.is_ok() {
             return Ok(());
         }
         let script = "umask 077; cat > \"$1\"";
