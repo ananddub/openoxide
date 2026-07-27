@@ -178,14 +178,6 @@ impl<'a> OsCli<'a> {
         }
     }
 
-    pub fn awk(&self, target: impl IntoCommand, expr: impl IntoCommand) -> AwkBuilder<'a> {
-        AwkBuilder {
-            _executor: self.executor,
-            target: target.build_str(),
-            expr: expr.build_str(),
-        }
-    }
-
     pub fn sed_file(
         &self,
         file: impl IntoCommand,
@@ -302,32 +294,6 @@ impl<'a> IntoCommand for JqFileBuilder<'a> {
                 shell_arg(&self.file),
             ],
         ))
-    }
-}
-
-pub struct AwkBuilder<'a> {
-    _executor: &'a CommandExecutor,
-    target: String,
-    expr: String,
-}
-impl<'a> IntoCommand for AwkBuilder<'a> {
-    fn build_str(&self) -> String {
-        if self.target.starts_with('$')
-            || (!self.target.contains(' ') && !self.target.contains('|'))
-        {
-            capture_stdout(ShellIR::Pipeline(vec![
-                match shell_command("echo", [shell_arg(&self.target)]) {
-                    ShellIR::Command(command) => command,
-                    _ => unreachable!(),
-                },
-                match shell_command("awk", [shell_arg(&self.expr)]) {
-                    ShellIR::Command(command) => command,
-                    _ => unreachable!(),
-                },
-            ]))
-        } else {
-            format!("$({} | awk {})", self.target, escape_arg(&self.expr))
-        }
     }
 }
 

@@ -39,11 +39,6 @@ impl ScopeTracker {
         self.declared_functions.insert(name, arity);
     }
 
-    /// Returns true if `name` is declared in any currently-active scope
-    pub fn contains(&self, name: &str) -> bool {
-        self.scopes.iter().any(|s| s.contains(name))
-    }
-
     /// All variables ever declared in this sh! block (including those in
     /// already-popped scopes like loop variables).
     pub fn all_vars(&self) -> HashSet<String> {
@@ -163,7 +158,6 @@ fn is_builtin_func(name: &str) -> bool {
             | "os_version"
             | "grep"
             | "jq"
-            | "awk"
             | "sed"
     )
 }
@@ -270,7 +264,7 @@ pub fn check_stmts(stmts: &[Stmt], tracker: &mut ScopeTracker) -> Result<(), syn
                     .get_ident()
                     .map(|i| i.to_string())
                     .unwrap_or_default();
-                if macro_name != "rust" {
+                if macro_name != "rust" && macro_name != "awk" {
                     check_macro(&stmt_macro.mac, tracker)?;
                 }
             }
@@ -318,12 +312,18 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
             };
 
             if !func_name.is_empty() && !is_builtin_func(&func_name) && !func_name.contains("::") {
+                if func_name == "awk" {
+                    return Err(syn::Error::new_spanned(
+                        expr_call,
+                        "awk uses typed macro syntax: awk! { for field in fields { ... } }",
+                    ));
+                }
                 tracker.check_fn(&func_name, expr_call.args.len(), expr_call.span())?;
             }
 
             let invalid_text_tool = match func_name.as_str() {
                 "jq" => !(1..=2).contains(&expr_call.args.len()),
-                "grep" | "awk" | "sed" => expr_call.args.is_empty(),
+                "grep" | "sed" => expr_call.args.is_empty(),
                 _ => false,
             };
             if invalid_text_tool {
@@ -440,16 +440,20 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
 }
 
 fn check_macro(mac: &syn::Macro, tracker: &mut ScopeTracker) -> Result<(), syn::Error> {
+    let macro_name = mac
+        .path
+        .get_ident()
+        .map(|ident| ident.to_string())
+        .unwrap_or_default();
+    if macro_name == "awk" {
+        return Ok(());
+    }
+
     let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
     if let Ok(exprs) = mac.parse_body_with(parser) {
-        let macro_name = mac
-            .path
-            .get_ident()
-            .map(|ident| ident.to_string())
-            .unwrap_or_default();
         let invalid_text_tool = match macro_name.as_str() {
             "jq" => !(1..=2).contains(&exprs.len()),
-            "grep" | "awk" | "sed" => exprs.is_empty(),
+            "grep" | "sed" => exprs.is_empty(),
             _ => false,
         };
         if invalid_text_tool {

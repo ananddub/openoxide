@@ -420,7 +420,17 @@ fn test_sh_macro_validated_text_tools() {
     let script = sh!(
         pipe![cmd("cat", "data.json"), jq!(dynamic!(filter)), grep!("active")];
         jq(".server.port", "config.json");
-        awk("{print $1}", "users.txt");
+        pipe![
+            cmd("printf", "alpha beta"),
+            awk! {
+                for field in fields {
+                    if field != "" {
+                        print(field);
+                        exit;
+                    }
+                }
+            }
+        ];
         sed("s/foo/bar/g", "config.txt");
     );
 
@@ -431,7 +441,9 @@ fn test_sh_macro_validated_text_tools() {
         .join("\n");
     assert!(bash.contains("cat 'data.json' | jq '-r' '.items[]' | grep 'active'"));
     assert!(bash.contains("jq '-r' '.server.port' 'config.json'"));
-    assert!(bash.contains("awk '{print $1}' 'users.txt'"));
+    assert!(bash.contains(
+        "printf 'alpha beta' | awk '{ for (i=1; i<=NF; i++) if ($i != \"\") { print $i; exit } }'"
+    ));
     assert!(bash.contains("sed 's/foo/bar/g' 'config.txt'"));
 }
 
@@ -646,7 +658,14 @@ fn test_sh_macro_linux_commands_validation() {
     let script_ir = sh!(
         grep!("-i", "^hello", "file.txt");
         sed!("s/foo/bar/g", "file.txt");
-        awk!("-F", ":", "{ print $1 }", "file.txt");
+        awk! {
+            for field in fields {
+                if field != "" {
+                    print(field);
+                    exit;
+                }
+            }
+        };
         find!("/tmp", "-name", "*.txt", "-type", "f");
         xargs!("-0", "rm");
         tar!("-czf", "archive.tar.gz", "dir");
@@ -661,7 +680,7 @@ fn test_sh_macro_linux_commands_validation() {
         .join("\n");
     assert!(bash.contains("grep '-i' '^hello' 'file.txt'"));
     assert!(bash.contains("sed 's/foo/bar/g' 'file.txt'"));
-    assert!(bash.contains("awk '-F' ':' '{ print $1 }' 'file.txt'"));
+    assert!(bash.contains("awk '{ for (i=1; i<=NF; i++) if ($i != \"\") { print $i; exit } }'"));
     assert!(bash.contains("find '/tmp' '-name' '*.txt' '-type' 'f'"));
     assert!(bash.contains("xargs '-0' 'rm'"));
     assert!(bash.contains("tar '-czf' 'archive.tar.gz' 'dir'"));
@@ -1043,8 +1062,19 @@ fn test_sh_macro_os_api_utilities() {
         let status = os.capture_status("systemctl is-active sshd");
         let user = os.jq(text, ".user.name");
         let port = os.jq_file("config.json", ".server.port");
-        let col = os.awk(text, "{print $2}");
-        let cmd_col = os.awk("ps -ef", "{print $2}");
+        let col = capture_stdout! {
+            pipe![
+                cmd("printf", "a b"),
+                awk! {
+                    for field in fields {
+                        if field != "a" {
+                            print(field);
+                            exit;
+                        }
+                    }
+                }
+            ];
+        };
         let grep_res = os.grep(text, "error");
         let file_grep = os.grep_file("app.log", "failed");
         os.sed_file("config.json", "s/foo/bar/g");
@@ -1061,8 +1091,9 @@ fn test_sh_macro_os_api_utilities() {
     );
     assert!(bash.contains("user=$(echo \"$text\" | jq '-r' '.user.name')"));
     assert!(bash.contains("port=$(jq '-r' '.server.port' 'config.json')"));
-    assert!(bash.contains("col=$(echo \"$text\" | awk '{print $2}')"));
-    assert!(bash.contains("cmd_col=$(ps -ef | awk '{print $2}')"));
+    assert!(bash.contains(
+        "col=$(printf 'a b' | awk '{ for (i=1; i<=NF; i++) if ($i != \"a\") { print $i; exit } }')"
+    ));
     assert!(bash.contains("grep_res=$(echo \"$text\" | grep 'error')"));
     assert!(bash.contains("file_grep=$(grep 'failed' 'app.log')"));
     assert!(bash.contains("sed -i 's/foo/bar/g' 'config.json'"));

@@ -71,7 +71,14 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 });
             }
 
-            if matches!(func_name.as_str(), "grep" | "jq" | "awk" | "sed") {
+            if func_name == "awk" {
+                return Err(syn::Error::new_spanned(
+                    expr_call,
+                    "awk uses typed macro syntax: awk! { for field in fields { ... } }",
+                ));
+            }
+
+            if matches!(func_name.as_str(), "grep" | "jq" | "sed") {
                 return crate::convert::macros::convert_text_tool(
                     &func_name,
                     expr_call.args.iter().cloned(),

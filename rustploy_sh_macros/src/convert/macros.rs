@@ -80,23 +80,23 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
         .ok_or_else(|| syn::Error::new_spanned(mac, "Expected macro name"))?;
 
     if macro_name == "awk" {
-        if let Ok(parsed) = mac.parse_body_with(AwkInput::parse) {
-            let program = parsed.to_awk();
-            return Ok(quote! {
-                (crate::utils::exec::script::dsl::ShellIR::Command(
-                    crate::utils::exec::script::dsl::Command {
-                        name: "awk".to_string(),
-                        args: vec![
-                            crate::utils::exec::script::dsl::ArgToken::Literal(#program.to_string())
-                        ],
-                    }
-                ))
-            });
-        }
-
-        let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
-        let args = mac.parse_body_with(parser)?;
-        return convert_text_tool(&macro_name, args, mac.path.span());
+        let parsed = mac.parse_body_with(AwkInput::parse).map_err(|_| {
+            syn::Error::new(
+                mac.path.span(),
+                "awk! requires typed block syntax: awk! { for field in fields { ... } }",
+            )
+        })?;
+        let program = parsed.to_awk();
+        return Ok(quote! {
+            (crate::utils::exec::script::dsl::ShellIR::Command(
+                crate::utils::exec::script::dsl::Command {
+                    name: "awk".to_string(),
+                    args: vec![
+                        crate::utils::exec::script::dsl::ArgToken::Literal(#program.to_string())
+                    ],
+                }
+            ))
+        });
     }
 
     if matches!(macro_name.as_str(), "grep" | "sed") {
@@ -598,7 +598,6 @@ fn validate_command_args(
     match name {
         "grep" => validate_grep(exprs),
         "sed" => validate_sed(exprs),
-        "awk" => validate_awk(exprs),
         "find" => validate_find(exprs),
         "xargs" => validate_xargs(exprs),
         "tar" => validate_tar(exprs),
@@ -775,73 +774,6 @@ fn split_sed_script(s: &str, delim: char) -> Vec<String> {
     }
     parts.push(current);
     parts
-}
-
-fn validate_awk(
-    exprs: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
-) -> Result<(), syn::Error> {
-    let allowed_long = [
-        "--field-separator",
-        "--assign",
-        "--file",
-        "--help",
-        "--version",
-        "--posix",
-        "--traditional",
-    ];
-    let allowed_short = "FvW";
-
-    let mut script_validated = false;
-    for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    if val.starts_with("--") {
-                        let flag_name = val.split('=').next().unwrap();
-                        if !allowed_long.contains(&flag_name) {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!("Invalid awk flag: {}", val),
-                            ));
-                        }
-                    } else {
-                        for c in val.chars().skip(1) {
-                            if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(
-                                    lit_str,
-                                    format!("Invalid awk short flag '{}' in {}", c, val),
-                                ));
-                            }
-                        }
-                    }
-                } else if !script_validated {
-                    let mut brace_count = 0;
-                    for c in val.chars() {
-                        if c == '{' {
-                            brace_count += 1;
-                        } else if c == '}' {
-                            brace_count -= 1;
-                            if brace_count < 0 {
-                                return Err(syn::Error::new_spanned(
-                                    lit_str,
-                                    "Unmatched closing brace '}' in awk script",
-                                ));
-                            }
-                        }
-                    }
-                    if brace_count != 0 {
-                        return Err(syn::Error::new_spanned(
-                            lit_str,
-                            "Unclosed opening brace '{' in awk script",
-                        ));
-                    }
-                    script_validated = true;
-                }
-            }
-        }
-    }
-    Ok(())
 }
 
 fn validate_find(

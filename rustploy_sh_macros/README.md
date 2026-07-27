@@ -96,7 +96,7 @@ To keep the DSL syntax clean, common UNIX command-line utilities are unified und
 | **Command Check** | `os.has_command(bin)` | `command -v 'bin'` |
 | **JSON Parser** | `os.jq(var, query)` | `$(echo $var \| jq -r 'query')` |
 | **JSON File Parser** | `os.jq_file(file, query)` | `$(jq -r 'query' 'file')` |
-| **Column Processing** | `os.awk(target, expr)` | `$(echo $target \| awk 'expr')` or `$({cmd} \| awk 'expr')` |
+| **Column Processing** | `awk! { for field in fields { ... } }` inside `pipe![...]` | `awk '{ for (i=1; i<=NF; i++) ... }'` |
 | **In-place Replace** | `os.sed_file(file, pattern)` | `sed -i 'pattern' 'file'` |
 | **Text Filter** | `os.grep(target, pattern)` | `$(echo $target \| grep 'pattern')` or `$({cmd} \| grep 'pattern')` |
 | **File Filter** | `os.grep_file(file, pattern)` | `$(grep 'pattern' 'file')` |
@@ -110,8 +110,20 @@ let script = sh!(
 
     let user = os.jq(text, ".user.name");
     let port = os.jq_file("config.json", ".server.port");
-    
-    let pid = os.awk("ps -ef", "{print $2}");
+
+    let pid = capture_stdout! {
+        pipe![
+            cmd("ps", "-ef"),
+            awk! {
+                for field in fields {
+                    if field != "root" {
+                        print(field);
+                        exit;
+                    }
+                }
+            }
+        ];
+    };
     os.sed_file("app.conf", "s/80/8080/g");
     
     let errors = os.grep(text, "error");
