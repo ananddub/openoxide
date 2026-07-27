@@ -27,7 +27,10 @@ pub struct ServerController {
 #[controller("/servers")]
 impl ServerController {
     fn new(service: Arc<ServerService>, ssh_key_repo: Arc<SshKeyRepository>) -> Self {
-        Self { service, ssh_key_repo }
+        Self {
+            service,
+            ssh_key_repo,
+        }
     }
 
     #[post("/test-direct-connection")]
@@ -38,13 +41,21 @@ impl ServerController {
     ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
         let port = body.port.unwrap_or(22);
         let auth = if let Some(key_id) = body.ssh_key_id {
-            if let Some(key) = self.ssh_key_repo.get_by_id(key_id).await.map_err(map_sqlx_error)? {
+            if let Some(key) = self
+                .ssh_key_repo
+                .get_by_id(key_id)
+                .await
+                .map_err(map_sqlx_error)?
+            {
                 SshAuth::key_pair(key.private_key, key.public_key)
             } else {
                 return Err((StatusCode::BAD_REQUEST, "SSH Key not found".into()));
             }
         } else {
-            return Err((StatusCode::BAD_REQUEST, "SSH Key ID is required to test connection".into()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "SSH Key ID is required to test connection".into(),
+            ));
         };
 
         let executor = RemoteExecutor::new(
@@ -152,7 +163,7 @@ impl ServerController {
             config.acme_email = email;
         }
         let outcome = ServerSetup::new_remote(executor, config)
-            .setup_all(body.install_dependencies)
+            .setup_all_oneshot(body.install_dependencies)
             .await
             .map_err(map_exec_error)?;
         self.service

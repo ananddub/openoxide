@@ -67,3 +67,9 @@ impl<'a> NetworkCreate<'a> {
     }
 }
 crate::impl_builder_opts!(NetworkCreate);
+
+impl crate::utils::exec::script::IntoCommand for NetworkCreate<'_> {
+    fn build_str(&self) -> String {
+        self.print()
+    }
+}

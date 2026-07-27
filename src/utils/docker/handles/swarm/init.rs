@@ -48,3 +48,9 @@ impl<'a> SwarmInitBuilder<'a> {
     }
 }
 crate::impl_builder_opts!(SwarmInitBuilder);
+
+impl crate::utils::exec::script::IntoCommand for SwarmInitBuilder<'_> {
+    fn build_str(&self) -> String {
+        self.args.preview()
+    }
+}
