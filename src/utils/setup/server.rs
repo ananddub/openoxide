@@ -1,5 +1,6 @@
 use super::{ServerAudit, SetupConfig, validation};
 use crate::utils::{
+    builder::packs::{nixpacks::NixpacksCli, paketo::PackCli, railpack::RailpackCli},
     docker::{
         DockerCli,
         core::{Mount, Port},
@@ -114,17 +115,23 @@ impl ServerSetup {
         Ok(())
     }
     pub async fn install_build_tools(&self) -> ExecResult<()> {
-        let script = r#"set -eu
-ARCH=$(uname -m)
-if ! command -v rclone >/dev/null 2>&1; then curl -fsSL https://rclone.org/install.sh | sh; fi
-if ! command -v nixpacks >/dev/null 2>&1; then NIXPACKS_VERSION=1.41.0 sh -c "$(curl -fsSL https://nixpacks.com/install.sh)"; fi
-if ! command -v railpack >/dev/null 2>&1; then RAILPACK_VERSION=0.15.4 sh -c "$(curl -fsSL https://railpack.com/install.sh)"; fi
-if ! command -v pack >/dev/null 2>&1; then
-  SUFFIX=""; case "$ARCH" in aarch64|arm64) SUFFIX="-arm64";; esac
-  curl -fsSL "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux${SUFFIX}.tgz" | tar -C /usr/local/bin --no-same-owner -xz pack
-fi
-"#;
-        self.executor.run("sh", ["-c", script]).await?;
+        let os = OsCli::new(&self.executor);
+        if os.has_command("rclone").run().await.is_err() {
+            self.executor
+                .run(
+                    "sh",
+                    ["-c", "curl -fsSL https://rclone.org/install.sh | sh"],
+                )
+                .await?;
+        }
+
+        NixpacksCli::new(&self.executor)
+            .if_not_exist_install()
+            .await?;
+        RailpackCli::new(&self.executor)
+            .if_not_exist_install()
+            .await?;
+        PackCli::new(&self.executor).if_not_exist_install().await?;
         Ok(())
     }
     pub async fn ensure_swarm(&self) -> ExecResult<()> {
