@@ -26,6 +26,14 @@ pub fn build_traefik_labels(
     app_name: &str,
     domains: &[SharedDomain],
 ) -> HashMap<String, Vec<String>> {
+    build_traefik_labels_for_network(app_name, domains, TRAEFIK_NETWORK)
+}
+
+pub fn build_traefik_labels_for_network(
+    app_name: &str,
+    domains: &[SharedDomain],
+    network: &str,
+) -> HashMap<String, Vec<String>> {
     let mut builders: HashMap<String, TraefikBuilder> = HashMap::new();
 
     for domain in domains {
@@ -40,7 +48,7 @@ pub fn build_traefik_labels(
             _ => app_name.to_string(), // fallback to app_name for non-compose (Application)
         };
 
-        let mut traefik = TraefikBuilder::new().enable().network(TRAEFIK_NETWORK);
+        let mut traefik = TraefikBuilder::new().enable().network(network);
 
         let entrypoint = domain.entrypoint.clone().unwrap_or_else(|| {
             if domain.https {

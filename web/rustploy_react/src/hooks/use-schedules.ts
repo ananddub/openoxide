@@ -54,7 +54,7 @@ export function useSchedules() {
 			});
 			toast.success('Schedule deleted successfully');
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
@@ -74,7 +74,7 @@ export function useSchedules() {
 			});
 			toast.success(`Schedule ${schedule.enabled ? 'paused' : 'resumed'} successfully`);
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
@@ -90,7 +90,7 @@ export function useSchedules() {
 				},
 			});
 			toast.success(res?.message || 'Manual run completed successfully', {id: `run-${id}`});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err), {id: `run-${id}`});
 		}
 	};

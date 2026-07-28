@@ -3,8 +3,8 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 
 use super::{
-    ComposeOperation, ComposeOperationResult, ComposeService, ComposeStatus, ComposeType,
-    auto_excuter::compose_new_db,
+    ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, ComposeStatus,
+    ComposeType, auto_excuter::compose_new_db,
 };
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
@@ -84,9 +84,17 @@ impl ComposeService {
         };
 
         let compose = self.repo_compose.update_status(id, status.as_str()).await?;
+        let record: ComposeRecord = compose.into();
+
+        self.cache
+            .insert(
+                crate::core::cache::CacheKey::Compose(id),
+                crate::core::cache::CacheEnum::Compose(record.clone()),
+            )
+            .await;
 
         Ok(ComposeOperationResult {
-            compose: compose.into(),
+            compose: record,
             deployment_id: Some(deployment_id),
             operation,
         })
@@ -105,11 +113,18 @@ impl ComposeService {
 
         let _ = self.repo_deploy.request_cancel_compose_deployment(id).await;
 
-        if let Err(e) = scale_down_compose(self.db.clone(), id, &compose.app_name, compose.compose_type).await {
+        if let Err(e) =
+            scale_down_compose(self.db.clone(), id, &compose.app_name, compose.compose_type).await
+        {
             tracing::warn!(compose_id = id, error = %e, "could not scale down compose on cancel");
         }
 
-        self.repo_compose.update_status(id, ComposeStatus::Stopped.as_str()).await?;
+        self.repo_compose
+            .update_status(id, ComposeStatus::Stopped.as_str())
+            .await?;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Compose(id))
+            .await;
         Ok(true)
     }
 }
@@ -126,7 +141,12 @@ async fn scale_down_compose(
     let docker = DockerCli::from_executor(cmd);
 
     match compose_type {
-        ComposeType::DockerCompose => docker.compose().down().project(app_name).run().await
+        ComposeType::DockerCompose => docker
+            .compose()
+            .down()
+            .project(app_name)
+            .run()
+            .await
             .map(|_| ())
             .map_err(|e| format!("compose down failed: {e}")),
         ComposeType::Stack => {

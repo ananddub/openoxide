@@ -22,11 +22,13 @@ const PROVIDERS = [
 	{id: 'custom', name: 'Custom S3 Compatible'},
 ];
 
+import type {DestinationResponse} from '#/types/api-helpers';
+
 interface CreateDestinationModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSuccess: () => void;
-	editingDestination?: any | null;
+	editingDestination?: DestinationResponse | null;
 }
 
 export function CreateDestinationModal({
@@ -69,7 +71,7 @@ export function CreateDestinationModal({
 			setRegion(editingDestination.region || 'us-east-1');
 			setEndpoint(editingDestination.endpoint || '');
 			setAccessKey(editingDestination.access_key || '');
-			setSecretKey(editingDestination.secret_access_key || editingDestination.secret_key || '');
+			setSecretKey(editingDestination.secret_access_key || '');
 		} else {
 			setName('');
 			setProvider('aws');
@@ -116,7 +118,7 @@ export function CreateDestinationModal({
 			setTestStatus('success');
 			toast.success('S3 Storage Destination connection test passed!');
 			setTimeout(() => setTestStatus('idle'), 3000);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			setTestStatus('failed');
 			toast.error(formatApiError(err));
 			setTimeout(() => setTestStatus('idle'), 3000);
@@ -158,7 +160,7 @@ export function CreateDestinationModal({
 			}
 			onSuccess();
 			onClose();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSubmitting(false);

@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef, useMemo} from 'react';
+import {useState, useEffect, useMemo} from 'react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {ComposeLogsHeader} from './logs/compose-logs-header';
 

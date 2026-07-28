@@ -116,12 +116,14 @@ export function ProjectModals({
 					onCreated={(db) => {
 						setShowCreateDatabase(false);
 						handleRefresh();
-						const targetDbId = db?.id || db?.data?.id;
-						const targetKind = db?.kind || db?.data?.kind || 'postgres';
+						const rawDb = db as unknown as Record<string, unknown>;
+						const targetDbId = db?.id || (rawDb?.data as Record<string, unknown>)?.id || (rawDb?.database as Record<string, unknown>)?.id;
+						const targetKind = db?.kind || (rawDb?.data as Record<string, unknown>)?.kind || 'postgres';
 						if (targetDbId) {
 							navigate({
-								to: `/projects/${projectId}/database/${targetDbId}` as any,
-								search: {kind: targetKind} as any,
+								to: '/projects/$id/database/$dbId',
+								params: {id: String(projectId), dbId: String(targetDbId)},
+								search: {kind: String(targetKind)},
 							});
 						}
 					}}

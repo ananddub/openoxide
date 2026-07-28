@@ -89,7 +89,10 @@ impl SshKeyController {
     ) -> Result<Json<crate::api::dto::ssh_key::GeneratePairResponseDto>, ApiError> {
         let (private_key, public_key) = crate::utils::ssh::generate_keypair(&body.key_type)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Ok(Json(crate::api::dto::ssh_key::GeneratePairResponseDto { private_key, public_key }))
+        Ok(Json(crate::api::dto::ssh_key::GeneratePairResponseDto {
+            private_key,
+            public_key,
+        }))
     }
 
     #[patch("/{id}")]

@@ -13,6 +13,7 @@ pub struct ComposeRowWithRelations {
     pub compose: ComposeRow,
     pub domains: Vec<Domain>,
     pub mounts: Vec<Mount>,
+    pub service_networks: Vec<crate::utils::builder::compose::spec::ComposeServiceNetworkSpec>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -22,6 +23,7 @@ pub struct ComposeRow {
     pub compose_type: String,
     pub compose_file: String,
     pub env_var: Option<String>,
+    pub service_networks: String,
     pub repository: Option<String>,
     pub owner: Option<String>,
     pub branch: Option<String>,
@@ -54,6 +56,7 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
         let compose = data.compose;
         let domains = data.domains;
         let mounts = data.mounts;
+        let service_networks = data.service_networks;
         let paths = rustploy_paths();
         let app_dir = paths.compose_dir(&compose.app_name);
         Ok(ComposeSpec {
@@ -83,6 +86,7 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
                 .into_iter()
                 .map(domain)
                 .collect::<Result<Vec<_>, _>>()?,
+            service_networks,
         })
     }
 }

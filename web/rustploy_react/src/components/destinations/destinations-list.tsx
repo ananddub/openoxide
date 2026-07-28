@@ -12,10 +12,12 @@ import {
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 
+import type {DestinationResponse} from '#/types/api-helpers';
+
 interface DestinationsListProps {
-	destinations: any[];
+	destinations: DestinationResponse[];
 	isLoading: boolean;
-	onEdit: (item: any) => void;
+	onEdit: (item: DestinationResponse) => void;
 	onDelete: (id: string | number) => void;
 	onTest: (id: string | number) => Promise<void>;
 }
@@ -27,21 +29,22 @@ export function DestinationsList({
 	onDelete,
 	onTest,
 }: DestinationsListProps) {
-	const [testStatusMap, setTestStatusMap] = useState<Record<string | number, 'testing' | 'success' | 'failed'>>({});
+	const [testStatusMap, setTestStatusMap] = useState<Record<string, 'testing' | 'success' | 'failed' | undefined>>({});
 	const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
 	const handleTest = async (id: string | number) => {
-		setTestStatusMap(prev => ({...prev, [id]: 'testing'}));
+		const key = String(id);
+		setTestStatusMap(prev => ({...prev, [key]: 'testing'}));
 		try {
 			await onTest(id);
-			setTestStatusMap(prev => ({...prev, [id]: 'success'}));
+			setTestStatusMap(prev => ({...prev, [key]: 'success'}));
 			setTimeout(() => {
-				setTestStatusMap(prev => ({...prev, [id]: undefined as any}));
+				setTestStatusMap(prev => ({...prev, [key]: undefined}));
 			}, 3000);
 		} catch {
-			setTestStatusMap(prev => ({...prev, [id]: 'failed'}));
+			setTestStatusMap(prev => ({...prev, [key]: 'failed'}));
 			setTimeout(() => {
-				setTestStatusMap(prev => ({...prev, [id]: undefined as any}));
+				setTestStatusMap(prev => ({...prev, [key]: undefined}));
 			}, 3000);
 		}
 	};
@@ -78,8 +81,8 @@ export function DestinationsList({
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-			{destinations.map((d: any) => {
-				const status = testStatusMap[d.id];
+			{destinations.map((d: DestinationResponse) => {
+				const status = testStatusMap[String(d.id)];
 				const isTesting = status === 'testing';
 
 				return (

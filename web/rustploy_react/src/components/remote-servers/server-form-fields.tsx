@@ -7,6 +7,8 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 
+import type {SshKeyResponse} from '#/types/api-helpers';
+
 interface ServerFormFieldsProps {
 	name: string;
 	setName: (val: string) => void;
@@ -20,7 +22,7 @@ interface ServerFormFieldsProps {
 	setSshKeyId: (val: string) => void;
 	description: string;
 	setDescription: (val: string) => void;
-	sshKeys: any[];
+	sshKeys: SshKeyResponse[];
 }
 
 export function ServerFormFields({
@@ -85,7 +87,7 @@ export function ServerFormFields({
 				<Select value={sshKeyId} onValueChange={val => val && setSshKeyId(val)}>
 					<SelectTrigger className="!h-10 text-xs font-sans bg-background border-border rounded-md w-full px-3 flex items-center justify-between">
 						<SelectValue placeholder="Select SSH Key">
-							{sshKeys?.find((k: any) => Number(k.id) === Number(sshKeyId))?.name || 'Select SSH Key'}
+							{sshKeys?.find(k => Number(k.id) === Number(sshKeyId))?.name || 'Select SSH Key'}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>

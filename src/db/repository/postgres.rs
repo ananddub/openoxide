@@ -1,4 +1,4 @@
-use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
+use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto, serialize_json_string_vec};
 use crate::services::database::{DatabaseKind, DatabaseRecord};
 use auto_di::singleton;
 use sqlx::SqlitePool;
@@ -23,37 +23,37 @@ impl PostgresRepository {
             r#"SELECT 'postgres' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                database_name AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM postgres_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mysql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                database_name AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM mysql_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mariadb' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                database_name AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM mariadb_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mongo' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM mongo_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'redis' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                CAST(NULL AS TEXT) AS "database_name?", CAST(NULL AS TEXT) AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM redis_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'libsql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM libsql_dbs WHERE environment_id = ?
                ORDER BY created_at DESC, id DESC"#,
             environment_id,
@@ -73,7 +73,7 @@ impl PostgresRepository {
             r#"SELECT 'postgres' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                database_name AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM postgres_dbs WHERE id = ?"#,
             id
         )
@@ -90,11 +90,13 @@ impl PostgresRepository {
         db_user: &str,
         db_password: &str,
     ) -> sqlx::Result<i64> {
+        let args = serialize_json_string_vec(input.args.as_ref())?;
+        let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?;
         let result = sqlx::query!(
             r#"INSERT INTO postgres_dbs
                (name, app_name, description, docker_image, database_name, database_user,
-                database_password, external_port, environment_id, server_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                database_password, external_port, command, args, env_var, network_ids, detach_rustploy_network, environment_id, server_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, '[]'), COALESCE(?, 0), ?, ?)"#,
             input.name,
             app_name,
             input.description,
@@ -103,6 +105,11 @@ impl PostgresRepository {
             db_user,
             db_password,
             input.external_port,
+            input.command,
+            args,
+            input.env_var,
+            network_ids,
+            input.detach_rustploy_network,
             input.environment_id,
             input.server_id
         )
@@ -112,14 +119,16 @@ impl PostgresRepository {
     }
 
     pub async fn update(&self, id: i64, input: &PatchDatabaseDto) -> sqlx::Result<()> {
+        let args = serialize_json_string_vec(input.args.as_ref())?;
+        let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?;
         sqlx::query!(
-            "UPDATE postgres_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id) WHERE id = ?",
+            "UPDATE postgres_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id), network_ids = COALESCE(?, network_ids), detach_rustploy_network = COALESCE(?, detach_rustploy_network) WHERE id = ?",
             input.name,
             input.description,
             input.docker_image,
             input.external_port,
             input.command,
-            input.args,
+            args,
             input.env_var,
             input.memory_reservation,
             input.memory_limit,
@@ -127,6 +136,8 @@ impl PostgresRepository {
             input.cpu_limit,
             input.replicas,
             input.server_id,
+            network_ids,
+            input.detach_rustploy_network,
             id
         )
         .execute(self.pool.as_ref())
@@ -164,7 +175,7 @@ impl PostgresRepository {
             PostgresDbDetails,
             r#"SELECT name, app_name, docker_image, database_name, database_user, database_password,
                external_port, command, args, env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit,
-               replicas, environment_id
+               replicas, network_ids, detach_rustploy_network, environment_id
                FROM postgres_dbs WHERE id = ?"#,
             id
         )
@@ -189,5 +200,7 @@ pub struct PostgresDbDetails {
     pub cpu_reservation: Option<String>,
     pub cpu_limit: Option<String>,
     pub replicas: i64,
+    pub network_ids: String,
+    pub detach_rustploy_network: i64,
     pub environment_id: i64,
 }

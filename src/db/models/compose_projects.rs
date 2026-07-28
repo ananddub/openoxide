@@ -96,6 +96,8 @@ pub struct ComposeProject {
     pub isolated_deployments_volume: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub watch_paths: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'[]'")]
+    pub service_networks: String,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub environment_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]

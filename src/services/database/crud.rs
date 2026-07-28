@@ -4,6 +4,8 @@ use super::{
 };
 use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
 
+use crate::core::cache::{CacheEnum, CacheKey};
+
 impl DatabaseService {
     pub async fn list_by_environment(
         &self,
@@ -15,13 +17,27 @@ impl DatabaseService {
     }
 
     pub async fn get_by_id(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<DatabaseRecord> {
-        match kind {
-            DatabaseKind::Postgres => self.repo_postgres.get_by_id(id).await,
-            DatabaseKind::Mysql => self.repo_mysql.get_by_id(id).await,
-            DatabaseKind::Mariadb => self.repo_mariadb.get_by_id(id).await,
-            DatabaseKind::Mongo => self.repo_mongo.get_by_id(id).await,
-            DatabaseKind::Redis => self.repo_redis.get_by_id(id).await,
-            DatabaseKind::Libsql => self.repo_libsql.get_by_id(id).await,
+        let key = CacheKey::Database(id);
+        let res = self
+            .cache
+            .try_get_with(key, async {
+                let record = match kind {
+                    DatabaseKind::Postgres => self.repo_postgres.get_by_id(id).await?,
+                    DatabaseKind::Mysql => self.repo_mysql.get_by_id(id).await?,
+                    DatabaseKind::Mariadb => self.repo_mariadb.get_by_id(id).await?,
+                    DatabaseKind::Mongo => self.repo_mongo.get_by_id(id).await?,
+                    DatabaseKind::Redis => self.repo_redis.get_by_id(id).await?,
+                    DatabaseKind::Libsql => self.repo_libsql.get_by_id(id).await?,
+                };
+                Ok::<_, sqlx::Error>(CacheEnum::Database(record))
+            })
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+
+        if let CacheEnum::Database(record) = res {
+            Ok(record)
+        } else {
+            Err(sqlx::Error::RowNotFound)
         }
     }
 
@@ -132,6 +148,7 @@ impl DatabaseService {
             DatabaseKind::Redis => self.repo_redis.delete(id).await?,
             DatabaseKind::Libsql => self.repo_libsql.delete(id).await?,
         }
+        self.cache.invalidate(&CacheKey::Database(id)).await;
         Ok(())
     }
 }

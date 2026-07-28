@@ -16,7 +16,7 @@ pub(super) async fn write_labeled_compose(
     spec: &ComposeSpec,
     cancel: &CancellationToken,
 ) -> ExecResult<()> {
-    if spec.domains.is_empty() {
+    if spec.domains.is_empty() && spec.service_networks.is_empty() {
         return Ok(());
     }
 
@@ -46,8 +46,7 @@ pub fn inject_compose_yaml_labels(yaml_str: &str, spec: &ComposeSpec) -> Result<
     inject_domain_labels(&mut document, spec)
         .map_err(|e| format!("failed to inject domain labels: {e}"))?;
 
-    serde_yaml::to_string(&document)
-        .map_err(|e| format!("failed to serialize yaml: {e}"))
+    serde_yaml::to_string(&document).map_err(|e| format!("failed to serialize yaml: {e}"))
 }
 
 fn strip_traefik_labels_from_services(services: &mut Mapping) {
@@ -87,7 +86,9 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
         .ok_or_else(|| command_error("compose file has no services"))?;
     let services = mapping_mut(services, "compose services must be a yaml object")?;
 
-    strip_traefik_labels_from_services(services);
+    if !spec.domains.is_empty() {
+        strip_traefik_labels_from_services(services);
+    }
 
     for domain in &spec.domains {
         let service_name = domain.service_name.as_deref().ok_or_else(|| {
@@ -102,10 +103,31 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
                 ))
             })?;
         inject_labels_for_service(service, spec, domain)?;
-        add_network_to_service(service)?;
+        add_named_network_to_service(service, TRAEFIK_NETWORK)?;
     }
 
-    add_network_to_root(root);
+    for service_network in &spec.service_networks {
+        let service = services
+            .get_mut(Value::String(service_network.service_name.clone()))
+            .ok_or_else(|| {
+                command_error(format!(
+                    "network config points to missing compose service {}",
+                    service_network.service_name
+                ))
+            })?;
+        for network in &service_network.networks {
+            add_named_network_to_service(service, network)?;
+        }
+    }
+
+    if !spec.domains.is_empty() {
+        add_network_to_root(root, TRAEFIK_NETWORK);
+    }
+    for service_network in &spec.service_networks {
+        for network in &service_network.networks {
+            add_network_to_root(root, network);
+        }
+    }
     Ok(())
 }
 
@@ -160,18 +182,18 @@ fn create_domain_labels(spec: &ComposeSpec, domain: &DomainSpec) -> Vec<String> 
     map.into_values().next().unwrap_or_default()
 }
 
-fn add_network_to_service(service: &mut Value) -> ExecResult<()> {
+fn add_named_network_to_service(service: &mut Value, network_name: &str) -> ExecResult<()> {
     let service = mapping_mut(service, "compose service must be a yaml object")?;
     let networks = service
         .entry(Value::String("networks".into()))
         .or_insert_with(|| Value::Sequence(vec![]));
     match networks {
         Value::Sequence(items) => {
-            push_unique(items, Value::String(TRAEFIK_NETWORK.into()));
+            push_unique(items, Value::String(network_name.into()));
             Ok(())
         }
         Value::Mapping(map) => {
-            map.entry(Value::String(TRAEFIK_NETWORK.into()))
+            map.entry(Value::String(network_name.into()))
                 .or_insert(Value::Null);
             Ok(())
         }
@@ -179,7 +201,7 @@ fn add_network_to_service(service: &mut Value) -> ExecResult<()> {
     }
 }
 
-fn add_network_to_root(root: &mut Mapping) {
+fn add_network_to_root(root: &mut Mapping, network_name: &str) {
     let networks = root
         .entry(Value::String("networks".into()))
         .or_insert_with(|| Value::Mapping(Mapping::new()));
@@ -188,9 +210,9 @@ fn add_network_to_root(root: &mut Mapping) {
         network.insert(Value::String("external".into()), Value::Bool(true));
         network.insert(
             Value::String("name".into()),
-            Value::String(TRAEFIK_NETWORK.into()),
+            Value::String(network_name.into()),
         );
-        map.entry(Value::String(TRAEFIK_NETWORK.into()))
+        map.entry(Value::String(network_name.into()))
             .or_insert(Value::Mapping(network));
     }
 }
@@ -315,6 +337,32 @@ services:
         assert!(out.contains("traefik.http.services.site-1.loadbalancer.server.port=3000"));
     }
 
+    #[test]
+    fn injects_service_networks_without_domains() {
+        let mut spec = spec(ComposeRuntime::Compose);
+        spec.domains.clear();
+        spec.service_networks = vec![
+            crate::utils::builder::compose::spec::ComposeServiceNetworkSpec {
+                service_name: "web".into(),
+                networks: vec!["private-net".into()],
+            },
+        ];
+
+        let out = inject_compose_yaml_labels(
+            r#"
+services:
+  web:
+    image: nginx
+"#,
+            &spec,
+        )
+        .unwrap();
+
+        assert!(out.contains("private-net"));
+        assert!(out.contains("external: true"));
+        assert!(!out.contains("traefik.enable=true"));
+    }
+
     fn spec(runtime: ComposeRuntime) -> ComposeSpec {
         ComposeSpec {
             app_name: "site".into(),
@@ -343,6 +391,7 @@ services:
                 custom_cert_resolver: None,
                 middlewares: vec![],
             }],
+            service_networks: vec![],
         }
     }
 }

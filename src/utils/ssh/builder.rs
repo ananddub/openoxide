@@ -1,4 +1,4 @@
-use crate::utils::exec::script::{shell_single_quote, IntoCommand};
+use crate::utils::exec::script::{IntoCommand, shell_single_quote};
 use crate::utils::exec::{SshAuth, SshHostKey};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -271,11 +271,12 @@ impl SshBuilder {
                     let fp_str = fingerprint.as_str();
                     let sha256_fp = format!("SHA256:{}", fingerprint);
                     let sha256_str = sha256_fp.as_str();
-                    let check_script = rustploy_sh_macros::sh!(
-                        if cmd("[", "$2", "=", fp_str, "]") || cmd("[", "$2", "=", sha256_str, "]") {
-                            cmd("echo", "$1", "$3", "$4");
-                        }
-                    ).build_str();
+                    let check_script = rustploy_sh_macros::sh!(if cmd("[", "$2", "=", fp_str, "]")
+                        || cmd("[", "$2", "=", sha256_str, "]")
+                    {
+                        cmd("echo", "$1", "$3", "$4");
+                    })
+                    .build_str();
                     let cmd = format!(
                         "/bin/sh -c {} -- %H %f %t %K",
                         shell_single_quote(&check_script)
@@ -379,7 +380,11 @@ impl SshBuilder {
             SshAuth::KeyPair { private_key, .. } => {
                 Self::push_option(&mut args, "IdentitiesOnly", "yes");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
-                Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
+                Self::push_option(
+                    &mut args,
+                    "PreferredAuthentications",
+                    "publickey,keyboard-interactive,password",
+                );
                 let mut temp_file = tempfile::Builder::new()
                     .prefix("rustploy-ssh-key-")
                     .tempfile()?;
@@ -396,7 +401,11 @@ impl SshBuilder {
             SshAuth::KeyFile(path) => {
                 Self::push_option(&mut args, "IdentitiesOnly", "yes");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
-                Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
+                Self::push_option(
+                    &mut args,
+                    "PreferredAuthentications",
+                    "publickey,keyboard-interactive,password",
+                );
                 #[cfg(unix)]
                 {
                     let metadata = std::fs::metadata(path)?;
@@ -420,7 +429,11 @@ impl SshBuilder {
             SshAuth::AgentWithSocket(socket) => {
                 Self::push_option(&mut args, "IdentitiesOnly", "no");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
-                Self::push_option(&mut args, "PreferredAuthentications", "publickey,keyboard-interactive,password");
+                Self::push_option(
+                    &mut args,
+                    "PreferredAuthentications",
+                    "publickey,keyboard-interactive,password",
+                );
                 agent_socket_path = Some(socket.clone());
             }
             SshAuth::Password(password) => {

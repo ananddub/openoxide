@@ -39,7 +39,7 @@ export function GenerateKeyModal({
 	const [generatedKey, setGeneratedKey] = useState<{private_key: string; public_key: string} | null>(null);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
-	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair');
+	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair' as any);
 	const createMutation = $api.useMutation('post', '/ssh-keys');
 
 	const handleGenerate = async (e: React.FormEvent) => {
@@ -58,7 +58,7 @@ export function GenerateKeyModal({
 			});
 			setGeneratedKey(res as any);
 			toast.success('Key Pair generated in memory!');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setGenerating(false);
@@ -80,7 +80,7 @@ export function GenerateKeyModal({
 			toast.success(`SSH Key "${name}" saved to database!`);
 			onSuccess();
 			handleCloseModal();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSaving(false);
@@ -179,7 +179,7 @@ export function GenerateKeyModal({
 
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-semibold text-foreground">Algorithm Type</label>
-							<Select value={keyType} onValueChange={(val: any) => setKeyType(val)}>
+							<Select value={keyType} onValueChange={val => val && setKeyType(val as 'ed25519' | 'rsa')}>
 								<SelectTrigger className="h-9 text-xs bg-background border-border rounded-md px-3">
 									<SelectValue placeholder="Select Algorithm" />
 								</SelectTrigger>

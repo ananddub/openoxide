@@ -5,7 +5,9 @@ use socketioxide::extract::SocketRef;
 use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, socket_key, spawn_pty_reader};
-use super::types::{ServerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted};
+use super::types::{
+    ServerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
+};
 
 pub async fn spawn_remote_terminal(
     socket: SocketRef,
@@ -19,7 +21,10 @@ pub async fn spawn_remote_terminal(
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
         Err(error) => {
-            emit_error(&socket, format!("could not create remote executor: {error}"));
+            emit_error(
+                &socket,
+                format!("could not create remote executor: {error}"),
+            );
             return;
         }
     };
@@ -30,7 +35,10 @@ pub async fn spawn_remote_terminal(
             match crate::utils::ssh::SshAgentSession::start_and_add_key(private_key).await {
                 Ok(agent) => {
                     let socket_path = agent.socket_path.clone();
-                    (Some(agent), crate::utils::exec::SshAuth::AgentWithSocket(socket_path))
+                    (
+                        Some(agent),
+                        crate::utils::exec::SshAuth::AgentWithSocket(socket_path),
+                    )
                 }
                 Err(err) => {
                     tracing::warn!("ssh-agent fallback to KeyPair: {err}");
@@ -59,7 +67,8 @@ pub async fn spawn_remote_terminal(
             return;
         }
     };
-    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell}");
+    let remote_cmd =
+        format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell}");
     args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {

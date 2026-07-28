@@ -7,13 +7,15 @@ import {DestinationsHeader} from '#/components/destinations/destinations-header'
 import {DestinationsList} from '#/components/destinations/destinations-list';
 import {CreateDestinationModal} from '#/components/destinations/create-destination-modal';
 
+import type {DestinationResponse} from '#/types/api-helpers';
+
 export const Route = createFileRoute('/_app/destinations')({
 	component: DestinationsPage,
 });
 
 function DestinationsPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingDestination, setEditingDestination] = useState<any | null>(null);
+	const [editingDestination, setEditingDestination] = useState<DestinationResponse | null>(null);
 
 	// Query destinations with safe array fallback
 	const {data: rawDestinations = [], isLoading, refetch, isRefetching} = $api.useQuery('get', '/destinations');
@@ -28,7 +30,7 @@ function DestinationsPage() {
 			await deleteMutation.mutateAsync({params: {path: {id: String(id)}}});
 			toast.success('S3 Storage Destination deleted successfully');
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
@@ -37,12 +39,12 @@ function DestinationsPage() {
 		try {
 			await testMutation.mutateAsync({params: {path: {id: String(id)}}});
 			toast.success('S3 Storage Destination connection test passed!');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const handleEdit = (item: any) => {
+	const handleEdit = (item: DestinationResponse) => {
 		setEditingDestination(item);
 		setIsCreateOpen(true);
 	};

@@ -57,7 +57,7 @@ export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
 	// Real-time schedules query with safe array fallback
-	const {data: rawSchedules = [], isLoading, refetch} = $api.useQuery('get', '/schedules');
+	const {data: rawSchedules = [], isLoading, refetch} = $api.useQuery('get', '/schedules' as any, {});
 
 	// Safe array normalization and filtering for current compose stack
 	const composeSchedules = useMemo(() => {

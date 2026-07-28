@@ -1,11 +1,12 @@
-use std::env::temp_dir;
 use super::{ComposeRecord, ComposeService};
 use crate::api::dto::compose::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
-use upload::{TempFileGuard, sanitize_zip, save_multipart_to_file};
+use crate::core::cache::CacheKey;
 use crate::utils::paths::rustploy_paths;
+use std::env::temp_dir;
+use upload::{TempFileGuard, sanitize_zip, save_multipart_to_file};
 
 impl ComposeService {
     // ── Git provider sources ──────────────────────────────────────────────────
@@ -25,6 +26,7 @@ impl ComposeService {
                 input.auto_deploy.unwrap_or(1),
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -44,6 +46,7 @@ impl ComposeService {
                 input.gitlab_provider_id,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -61,6 +64,7 @@ impl ComposeService {
                 input.gitea_provider_id,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -79,6 +83,7 @@ impl ComposeService {
                 input.bitbucket_provider_id,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -95,6 +100,7 @@ impl ComposeService {
                 input.custom_git_ssh_key_id,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -108,6 +114,7 @@ impl ComposeService {
         self.repo_compose
             .set_raw_source(id, input.compose_file)
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
@@ -161,6 +168,7 @@ impl ComposeService {
             .await
             .map_err(|e| format!("Database error updating source: {e}"))?;
 
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id)
             .await
             .map_err(|e| format!("Database error fetching project: {e}"))

@@ -127,9 +127,17 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
         })
         .collect();
 
-    let traefik_map = crate::utils::builder::shared::traefik::build_traefik_labels(
+    let traefik_network = app
+        .networks
+        .iter()
+        .find(|network| network.as_str() == crate::utils::builder::swarm::RUSTPLOY_NETWORK)
+        .or_else(|| app.networks.first())
+        .map(String::as_str)
+        .unwrap_or(crate::utils::builder::swarm::RUSTPLOY_NETWORK);
+    let traefik_map = crate::utils::builder::shared::traefik::build_traefik_labels_for_network(
         &app.app_name,
         &shared_domains,
+        traefik_network,
     );
     let traefik_labels = traefik_map.into_values().flatten().collect::<Vec<_>>();
     let mut services = BTreeMap::new();
@@ -153,7 +161,7 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
                     read_only: mount.read_only || matches!(mount.kind, MountKind::File),
                 })
                 .collect(),
-            networks: vec![app.network.clone()],
+            networks: app.networks.clone(),
             deploy: DeploySpec {
                 replicas: app.replicas,
                 resources: DeployResources {
@@ -195,13 +203,15 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
     );
 
     let mut networks = BTreeMap::new();
-    networks.insert(
-        app.network.clone(),
-        ExternalNetwork {
-            external: true,
-            name: app.network.clone(),
-        },
-    );
+    for network in &app.networks {
+        networks.insert(
+            network.clone(),
+            ExternalNetwork {
+                external: true,
+                name: network.clone(),
+            },
+        );
+    }
 
     StackFile {
         version: "3.9",
@@ -236,7 +246,7 @@ pub(crate) mod tests {
             command: None,
             args: vec![],
             replicas: 2,
-            network: "rustploy-network".into(),
+            networks: vec!["rustploy-network".into()],
             mounts: vec![MountSpec {
                 kind: MountKind::Volume,
                 source: "api-data".into(),

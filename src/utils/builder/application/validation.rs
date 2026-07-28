@@ -9,7 +9,15 @@ use crate::utils::{
 pub(super) fn validate_spec(spec: &ApplicationSpec) -> ExecResult<()> {
     validate_name("application", &spec.app_name)?;
     validate_name("stack", &spec.stack_name)?;
-    validate_name("network", &spec.network)?;
+    if spec.networks.is_empty() {
+        return Err(ExecError::CommandFailed {
+            code: None,
+            stderr: "application must attach to at least one network".into(),
+        });
+    }
+    for network in &spec.networks {
+        validate_name("network", network)?;
+    }
 
     for domain in &spec.domains {
         validate_domain_host(&domain.host)?;

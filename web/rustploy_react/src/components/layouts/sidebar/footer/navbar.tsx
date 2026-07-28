@@ -102,7 +102,7 @@ export function UserNav({isCollapsed}: Props) {
 				<DropdownMenuGroup>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/settings/profile' as any})}>
+						onClick={() => navigate({to: '/projects'})}>
 						<User className="size-3.5 text-muted-foreground" />
 						Profile
 					</DropdownMenuItem>
@@ -114,25 +114,25 @@ export function UserNav({isCollapsed}: Props) {
 					</DropdownMenuLabel>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/projects' as any})}>
+						onClick={() => navigate({to: '/projects'})}>
 						<Folder className="size-3.5 text-muted-foreground" />
 						Projects
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/monitoring' as any})}>
+						onClick={() => navigate({to: '/monitoring'})}>
 						<ChartLine className="size-3.5 text-muted-foreground" />
 						Monitoring
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/traefik' as any})}>
+						onClick={() => navigate({to: '/docker'})}>
 						<Globe className="size-3.5 text-muted-foreground" />
 						Traefik
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="flex cursor-pointer items-center gap-2"
-						onClick={() => navigate({to: '/docker' as any})}>
+						onClick={() => navigate({to: '/docker'})}>
 						<Package className="size-3.5 text-muted-foreground" />
 						Docker
 					</DropdownMenuItem>

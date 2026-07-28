@@ -3,6 +3,14 @@ use validator::Validate;
 
 use crate::services::compose::{ComposeOperationResult, ComposeRecord};
 
+#[derive(Debug, Clone, Validate, Deserialize, Serialize, poem_openapi::Object)]
+pub struct ComposeServiceNetworkDto {
+    #[validate(length(min = 1, max = 255))]
+    pub service_name: String,
+    pub network_ids: Vec<String>,
+    pub detach_rustploy_network: i64,
+}
+
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateComposeDto {
     #[validate(length(min = 1, max = 255))]
@@ -37,6 +45,7 @@ pub struct PatchComposeDto {
     pub isolated_deployment: Option<i64>,
     pub isolated_deployments_volume: Option<i64>,
     pub watch_paths: Option<String>,
+    pub service_networks: Option<Vec<ComposeServiceNetworkDto>>,
     pub server_id: Option<i64>,
 }
 
@@ -130,6 +139,7 @@ pub struct ComposeResponseDto {
     pub custom_git_branch: Option<String>,
     pub command: String,
     pub compose_path: String,
+    pub service_networks: Vec<ComposeServiceNetworkDto>,
     pub environment_id: i64,
     pub server_id: Option<i64>,
     pub created_at: i64,
@@ -165,12 +175,26 @@ impl From<ComposeRecord> for ComposeResponseDto {
             custom_git_branch: value.custom_git_branch,
             command: value.command,
             compose_path: value.compose_path,
+            service_networks: parse_service_networks(&value.service_networks),
             environment_id: value.environment_id,
             server_id: value.server_id,
             created_at: value.created_at,
             updated_at: value.updated_at,
         }
     }
+}
+
+pub(crate) fn serialize_service_networks(
+    value: Option<&Vec<ComposeServiceNetworkDto>>,
+) -> sqlx::Result<Option<String>> {
+    value
+        .map(serde_json::to_string)
+        .transpose()
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+}
+
+pub(crate) fn parse_service_networks(value: &str) -> Vec<ComposeServiceNetworkDto> {
+    serde_json::from_str::<Vec<ComposeServiceNetworkDto>>(value).unwrap_or_default()
 }
 
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]

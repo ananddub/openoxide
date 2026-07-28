@@ -158,7 +158,11 @@ impl SwarmController {
         Json(body): Json<SwarmConnectionDto>,
     ) -> Result<StatusCode, ApiError> {
         let docker = self.docker(body.server_id).await?;
-        docker.swarm().leave().run().await.map_err(map_exec)?;
+        let mut leave = docker.swarm().leave();
+        if body.force.unwrap_or(false) {
+            leave = leave.force();
+        }
+        leave.run().await.map_err(map_exec)?;
         Ok(StatusCode::NO_CONTENT)
     }
 

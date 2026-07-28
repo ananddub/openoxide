@@ -13,10 +13,12 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Server, RefreshCw, CheckCircle2, XCircle, Plug} from 'lucide-react';
 
+import type {RemoteServerResponse, SshKeyResponse} from '#/types/api-helpers';
+
 interface CreateServerModalProps {
 	isOpen: boolean;
-	sshKeys: any[];
-	editingServer?: any | null;
+	sshKeys: SshKeyResponse[];
+	editingServer?: RemoteServerResponse | null;
 	onClose: () => void;
 	onSuccess: () => void;
 }
@@ -40,7 +42,7 @@ export function CreateServerModal({
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
-	const testDirectMutation = $api.useMutation('post', '/servers/test-direct-connection');
+	const testDirectMutation = $api.useMutation('post', '/servers/test-direct-connection' as any);
 
 	useEffect(() => {
 		setTestResult('idle');
@@ -79,7 +81,7 @@ export function CreateServerModal({
 			});
 			setTestResult('success');
 			toast.success(`SSH Connection to "${name || ipAddress}" verified!`);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			setTestResult('failed');
 			toast.error(formatApiError(err));
 		} finally {
@@ -117,7 +119,7 @@ export function CreateServerModal({
 			}
 			onSuccess();
 			onClose();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSubmitting(false);

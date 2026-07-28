@@ -489,7 +489,8 @@ impl ServerSetup {
 
     fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         if let Some(advertise_addr) = &self.config.advertise_addr {
-            steps.extend(sh!(if !docker.swarm().active() {
+            steps.extend(sh!(
+                if !docker.swarm().active() {
                 info!("Initializing Docker Swarm");
                 docker
                     .swarm()

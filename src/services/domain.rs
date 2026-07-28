@@ -391,13 +391,18 @@ impl DomainService {
                 );
 
                 if let Ok(raw_yaml) = tokio::fs::read_to_string(&compose_file_path).await {
-                    let adapter = crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
-                        self.repo_compose.clone(),
-                        self.repo_domain.clone(),
-                        Arc::new(crate::repository::MountRepository::new(self.db.clone())),
-                    );
+                    let adapter =
+                        crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
+                            self.repo_compose.clone(),
+                            self.repo_domain.clone(),
+                            Arc::new(crate::repository::MountRepository::new(self.db.clone())),
+                        );
                     if let Ok(spec) = adapter.load(compose_id).await {
-                        if let Ok(updated_yaml) = crate::utils::builder::compose::labels::inject_compose_yaml_labels(&raw_yaml, &spec) {
+                        if let Ok(updated_yaml) =
+                            crate::utils::builder::compose::labels::inject_compose_yaml_labels(
+                                &raw_yaml, &spec,
+                            )
+                        {
                             let _ = tokio::fs::write(&compose_file_path, updated_yaml).await;
                         }
                     }

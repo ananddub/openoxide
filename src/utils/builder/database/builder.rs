@@ -6,7 +6,7 @@ use crate::utils::builder::spec::BuilderEvent;
 use crate::utils::docker::query::filter::{TaskDesiredState, TaskFilter};
 use crate::utils::exec::{CommandExecutor, ExecError, ExecResult};
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use tokio::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
@@ -37,6 +37,7 @@ pub struct StackService {
     pub command: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<StackMount>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub networks: Vec<String>,
     pub deploy: DeploySpec,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -123,6 +124,56 @@ impl Placement {
 pub struct ExternalNetwork {
     pub external: bool,
     pub name: String,
+}
+
+pub async fn resolve_database_networks(
+    network_ids: Option<&str>,
+    detach_rustploy_network: i64,
+) -> ExecResult<(Vec<String>, BTreeMap<String, ExternalNetwork>)> {
+    let mut names = BTreeSet::new();
+    if detach_rustploy_network == 0 {
+        names.insert(super::super::swarm::RUSTPLOY_NETWORK.to_string());
+    }
+
+    if let Some(raw) = network_ids {
+        if let Ok(parsed) = serde_json::from_str::<Vec<String>>(raw) {
+            let repo = auto_di::resolve::<crate::repository::DatabaseNetworkRepository>()
+                .await
+                .map_err(|e| ExecError::CommandFailed {
+                    code: None,
+                    stderr: format!("Failed to resolve DatabaseNetworkRepository: {}", e),
+                })?;
+            let resolved =
+                repo.resolve_names(&parsed)
+                    .await
+                    .map_err(|e| ExecError::CommandFailed {
+                        code: None,
+                        stderr: format!("Failed to resolve database networks: {}", e),
+                    })?;
+            for name in resolved {
+                let name = name.trim();
+                if !name.is_empty() {
+                    names.insert(name.to_string());
+                }
+            }
+        }
+    }
+
+    let service_networks = names.iter().cloned().collect::<Vec<_>>();
+    let networks = names
+        .into_iter()
+        .map(|name| {
+            (
+                name.clone(),
+                ExternalNetwork {
+                    external: true,
+                    name,
+                },
+            )
+        })
+        .collect();
+
+    Ok((service_networks, networks))
 }
 
 #[derive(Serialize, Clone)]
@@ -282,7 +333,10 @@ impl DatabaseBuilder {
             .docker
             .services()
             .list()
-            .filter(crate::utils::docker::query::ServiceFilter::name(format!("{}_", app_name)))
+            .filter(crate::utils::docker::query::ServiceFilter::name(format!(
+                "{}_",
+                app_name
+            )))
             .run_json()
             .await;
         if let Ok(services) = services {
@@ -340,7 +394,8 @@ impl DatabaseBuilder {
                 Err(error) => return Err(error),
             };
             if rows.iter().any(|row| {
-                row.desired_state.eq_ignore_ascii_case("running") && row.current_state.starts_with("Running")
+                row.desired_state.eq_ignore_ascii_case("running")
+                    && row.current_state.starts_with("Running")
             }) {
                 return Ok(());
             }

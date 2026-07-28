@@ -71,6 +71,8 @@ string_enum! {
 
         ServerMonitor => "server:monitor",
         AppMonitor => "app:monitor",
+        TraefikRead => "traefik:read",
+        TraefikWrite => "traefik:write",
         AlertWrite => "alert:write",
     }
 }

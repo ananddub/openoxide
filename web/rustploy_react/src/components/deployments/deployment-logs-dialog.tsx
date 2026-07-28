@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {Terminal, Copy, Check, RefreshCw} from 'lucide-react';
+import {Terminal, Copy, Check} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Dialog,

@@ -28,6 +28,12 @@ impl ApplicationSpecAdapter {
 
     pub async fn load(&self, application_id: i64) -> sqlx::Result<ApplicationSpec> {
         let app = self.app_repo.get_spec_row(application_id).await?;
+        let (networks, _) = crate::utils::builder::database::builder::resolve_database_networks(
+            Some(&app.network_ids),
+            app.detach_rustploy_network,
+        )
+        .await
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         let domains = self
             .domain_repo
             .list_by_application_raw(application_id)
@@ -41,6 +47,7 @@ impl ApplicationSpecAdapter {
             app,
             domains,
             mounts,
+            networks,
         };
         ApplicationSpec::try_from(data).map_err(|e| sqlx::Error::Protocol(e.to_string()))
     }

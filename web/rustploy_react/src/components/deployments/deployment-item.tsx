@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
+import {TableRow, TableCell} from '#/components/ui/table';
 import type {Deployment} from '#/hooks/deployments/use-deployments';
 
 interface DeploymentItemProps {
@@ -34,15 +35,35 @@ export function DeploymentItem({
 
 	const getStatusBadge = () => {
 		if (status === 'DONE' || status === 'HEALTHY' || status === 'SUCCESS' || status === 'DEPLOYED') {
-			return <Badge variant="default" className="text-[10px] uppercase font-bold tracking-wider">SUCCESS</Badge>;
+			return (
+				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-emerald-500 border-emerald-500/30 bg-emerald-500/10 gap-1.5 py-0.5">
+					<span className="size-1.5 rounded-full bg-emerald-500" />
+					SUCCESS
+				</Badge>
+			);
 		}
 		if (status === 'ERROR' || status === 'FAILED' || status === 'CRASHED') {
-			return <Badge variant="destructive" className="text-[10px] uppercase font-bold tracking-wider">FAILED</Badge>;
+			return (
+				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-rose-500 border-rose-500/30 bg-rose-500/10 gap-1.5 py-0.5">
+					<span className="size-1.5 rounded-full bg-rose-500" />
+					FAILED
+				</Badge>
+			);
 		}
 		if (isRunningOrQueued) {
-			return <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-amber-500 border-amber-500/30 bg-amber-500/10 animate-pulse">{status}</Badge>;
+			return (
+				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-amber-500 border-amber-500/30 bg-amber-500/10 animate-pulse gap-1.5 py-0.5">
+					<span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
+					{status}
+				</Badge>
+			);
 		}
-		return <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider">{status}</Badge>;
+		return (
+			<Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider gap-1.5 py-0.5">
+				<span className="size-1.5 rounded-full bg-muted-foreground/50" />
+				{status}
+			</Badge>
+		);
 	};
 
 	const formatTimestamp = (raw: any) => {
@@ -54,76 +75,89 @@ export function DeploymentItem({
 	};
 
 	return (
-		<div className="p-4 hover:bg-muted/10 transition-colors flex items-center justify-between gap-4">
-			{/* Left Details */}
-			<div className="flex items-start gap-3 min-w-0">
-				<div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0 border border-border/50 mt-0.5">
-					{hasApp ? (
-						<Rocket className="w-4 h-4" />
-					) : hasCompose ? (
-						<Boxes className="w-4 h-4" />
-					) : (
-						<Database className="w-4 h-4" />
-					)}
-				</div>
+		<TableRow className="border-border/30 hover:bg-muted/30 transition-colors">
+			{/* ID */}
+			<TableCell className="font-mono text-xs font-semibold text-muted-foreground w-[80px]">
+				#{d.id}
+			</TableCell>
 
-				<div className="min-w-0 flex flex-col gap-0.5">
-					<div className="flex items-center gap-2 flex-wrap">
+			{/* Title & Info */}
+			<TableCell>
+				<div className="flex items-start gap-2.5 min-w-0">
+					<div className="w-7 h-7 rounded-md bg-muted/40 flex items-center justify-center shrink-0 border border-border/40 mt-0.5">
+						{hasApp ? (
+							<Rocket className="w-3.5 h-3.5 text-primary" />
+						) : hasCompose ? (
+							<Boxes className="w-3.5 h-3.5 text-amber-500" />
+						) : (
+							<Database className="w-3.5 h-3.5 text-emerald-500" />
+						)}
+					</div>
+					<div className="flex flex-col gap-0.5 min-w-0">
 						<span className="text-xs font-bold text-foreground truncate">
 							{d.title || `Deployment #${d.id}`}
 						</span>
-						<Badge variant="outline" className="text-[10px] font-mono font-medium">
-							#{d.id} • {type}
-						</Badge>
+						{d.description && (
+							<span className="text-[11px] text-muted-foreground truncate max-w-md">
+								{d.description}
+							</span>
+						)}
+						{d.error_message && (
+							<button
+								onClick={e => {
+									e.stopPropagation();
+									onViewError(d);
+								}}
+								className="text-[11px] text-destructive hover:underline font-medium flex items-center gap-1 text-left mt-0.5">
+								<AlertCircle className="w-3 h-3 shrink-0" />
+								<span className="truncate max-w-md">Error: {d.error_message}</span>
+							</button>
+						)}
 					</div>
-
-					{d.description && (
-						<span className="text-[11px] text-muted-foreground truncate">
-							{d.description}
-						</span>
-					)}
-
-					{d.error_message && (
-						<button
-							onClick={e => {
-								e.stopPropagation();
-								onViewError(d);
-							}}
-							className="text-[11px] text-destructive hover:underline font-medium flex items-center gap-1 text-left mt-0.5">
-							<AlertCircle className="w-3 h-3 shrink-0" />
-							<span className="truncate max-w-md">Error: {d.error_message}</span>
-						</button>
-					)}
 				</div>
-			</div>
+			</TableCell>
 
-			{/* Right Actions & Status */}
-			<div className="flex items-center gap-3 shrink-0">
+			{/* Type */}
+			<TableCell>
+				<Badge variant="outline" className="text-[10px] font-mono font-medium border-border/40 text-muted-foreground">
+					{type}
+				</Badge>
+			</TableCell>
+
+			{/* Status */}
+			<TableCell>
 				{getStatusBadge()}
+			</TableCell>
 
-				<span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-					<Clock className="w-3 h-3" />
+			{/* Date */}
+			<TableCell className="text-xs text-muted-foreground font-mono">
+				<span className="flex items-center gap-1">
+					<Clock className="w-3 h-3 text-muted-foreground/70" />
 					{formatTimestamp(d.created_at)}
 				</span>
+			</TableCell>
 
-				<Button
-					size="sm"
-					variant="outline"
-					onClick={() => onViewLogs(d)}
-					className="h-7 text-xs border-border text-foreground hover:bg-muted px-2 rounded-lg font-semibold flex items-center gap-1">
-					<Terminal className="w-3 h-3" /> Stream Logs
-				</Button>
-
-				{isRunningOrQueued && d.id !== undefined && (
+			{/* Actions */}
+			<TableCell className="text-right">
+				<div className="flex items-center justify-end gap-1.5">
 					<Button
 						size="sm"
-						variant="ghost"
-						onClick={() => onCancel(d.id!)}
-						className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
-						<XCircle className="w-3 h-3" /> Cancel
+						variant="outline"
+						onClick={() => onViewLogs(d)}
+						className="h-7 text-xs border-border/40 bg-muted/20 dark:bg-muted/15 text-foreground hover:bg-muted/40 px-2 rounded-lg font-semibold flex items-center gap-1 shadow-2xs">
+						<Terminal className="w-3 h-3 text-primary" /> Logs
 					</Button>
-				)}
-			</div>
-		</div>
+					{isRunningOrQueued && d.id !== undefined && (
+						<Button
+							size="sm"
+							variant="ghost"
+							onClick={() => onCancel(d.id!)}
+							className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
+							<XCircle className="w-3 h-3" /> Cancel
+						</Button>
+					)}
+				</div>
+			</TableCell>
+		</TableRow>
 	);
 }

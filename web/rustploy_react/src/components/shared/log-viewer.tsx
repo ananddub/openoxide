@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect} from 'react';
+import {useState, useMemo, useRef, useEffect} from 'react';
 import {Search, X, Terminal, Download, RefreshCw} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {Button} from '#/components/ui/button';

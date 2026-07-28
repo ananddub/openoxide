@@ -109,12 +109,24 @@ impl RemoteExecutor {
         self
     }
 
-    pub fn host(&self) -> &str { &self.host }
-    pub fn port(&self) -> u16 { self.port }
-    pub fn username(&self) -> &str { &self.username }
-    pub fn auth(&self) -> &SshAuth { &self.auth }
-    pub fn host_key(&self) -> &SshHostKey { &self.host_key }
-    pub fn connect_timeout(&self) -> Duration { self.connect_timeout }
+    pub fn host(&self) -> &str {
+        &self.host
+    }
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+    pub fn auth(&self) -> &SshAuth {
+        &self.auth
+    }
+    pub fn host_key(&self) -> &SshHostKey {
+        &self.host_key
+    }
+    pub fn connect_timeout(&self) -> Duration {
+        self.connect_timeout
+    }
 
     pub async fn open_terminal(
         &self,

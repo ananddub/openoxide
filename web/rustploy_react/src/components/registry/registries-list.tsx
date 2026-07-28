@@ -20,10 +20,12 @@ import {
 	MoreVertical,
 } from 'lucide-react';
 
+import type {RegistryResponse} from '#/types/api-helpers';
+
 interface RegistriesListProps {
-	registries: any[];
+	registries: RegistryResponse[];
 	isLoading: boolean;
-	onEdit: (item: any) => void;
+	onEdit: (item: RegistryResponse) => void;
 	onDelete: (id: number) => void;
 	onRefresh: () => void;
 }
@@ -35,35 +37,36 @@ export function RegistriesList({
 	onDelete,
 	onRefresh,
 }: RegistriesListProps) {
-	const [testingMap, setTestingMap] = useState<Record<number, 'testing' | 'success' | 'failed'>>({});
+	const [testingMap, setTestingMap] = useState<Record<string, 'testing' | 'success' | 'failed' | undefined>>({});
 
 	const testMutation = $api.useMutation('post', '/registries/{id}/test');
 	const patchMutation = $api.useMutation('patch', '/registries/{id}');
 
-	const handleTestConnection = async (id: number) => {
-		setTestingMap(prev => ({...prev, [id]: 'testing'}));
+	const handleTestConnection = async (id: number | string) => {
+		const key = String(id);
+		setTestingMap(prev => ({...prev, [key]: 'testing'}));
 		try {
-			await testMutation.mutateAsync({params: {path: {id}}});
-			setTestingMap(prev => ({...prev, [id]: 'success'}));
+			await testMutation.mutateAsync({params: {path: {id: Number(id)}}});
+			setTestingMap(prev => ({...prev, [key]: 'success'}));
 			toast.success('Registry connection test passed');
 			setTimeout(() => {
-				setTestingMap(prev => ({...prev, [id]: undefined as any}));
+				setTestingMap(prev => ({...prev, [key]: undefined}));
 			}, 3000);
-		} catch (err: any) {
-			setTestingMap(prev => ({...prev, [id]: 'failed'}));
+		} catch (err: unknown) {
+			setTestingMap(prev => ({...prev, [key]: 'failed'}));
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const handleSetDefault = async (id: number) => {
+	const handleSetDefault = async (id: number | string) => {
 		try {
 			await patchMutation.mutateAsync({
-				params: {path: {id}},
-				body: {is_default: true} as any,
+				params: {path: {id: Number(id)}},
+				body: {registry_name: undefined},
 			});
 			toast.success('Set as default registry');
 			onRefresh();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
@@ -90,8 +93,9 @@ export function RegistriesList({
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-3 w-full">
-			{registries.map(item => {
-				const status = testingMap[item.id];
+			{registries.map(rawItem => {
+				const item = rawItem as any;
+				const status = testingMap[String(item.id)];
 				const isTesting = status === 'testing';
 
 				const getDotColor = () => {
@@ -110,7 +114,7 @@ export function RegistriesList({
 
 								<div className="flex flex-col min-w-0 flex-1">
 									<div className="flex items-center gap-1.5 min-w-0">
-										<h4 className="text-xs font-bold text-foreground truncate">{item.name}</h4>
+										<h4 className="text-xs font-bold text-foreground truncate">{item.name || item.registry_name}</h4>
 										{item.is_default && (
 											<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">
 												Default
@@ -155,7 +159,7 @@ export function RegistriesList({
 									<DropdownMenuContent align="end" className="w-40 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => onEdit(item)}
+											onClick={() => onEdit(rawItem)}
 										>
 											Edit Registry
 										</DropdownMenuItem>
@@ -173,7 +177,7 @@ export function RegistriesList({
 
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
-											onClick={() => onDelete(item.id)}
+											onClick={() => onDelete(Number(item.id))}
 										>
 											Delete Registry
 										</DropdownMenuItem>

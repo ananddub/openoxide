@@ -21,15 +21,17 @@ import {
 	MoreVertical,
 } from 'lucide-react';
 
+import type {RemoteServerResponse, SshKeyResponse} from '#/types/api-helpers';
+
 interface RemoteServersListProps {
-	servers: any[];
-	sshKeys: any[];
+	servers: RemoteServerResponse[];
+	sshKeys: SshKeyResponse[];
 	isLoading: boolean;
-	onEditServer: (server: any) => void;
-	onDeleteServer: (server: any) => void;
-	onSetupServer: (server: any) => void;
-	onToggleStatus: (server: any) => void;
-	onOpenTerminal?: (server: any) => void;
+	onEditServer: (server: RemoteServerResponse) => void;
+	onDeleteServer: (server: RemoteServerResponse) => void;
+	onSetupServer: (server: RemoteServerResponse) => void;
+	onToggleStatus: (server: RemoteServerResponse) => void;
+	onOpenTerminal?: (server: RemoteServerResponse) => void;
 }
 
 export function RemoteServersList({
@@ -51,16 +53,16 @@ export function RemoteServersList({
 		return unsubscribe;
 	}, []);
 
-	const handleTestConnection = async (server: any) => {
+	const handleTestConnection = async (server: RemoteServerResponse) => {
 		globalServerConnStore.setStatus(server.id, 'testing');
 		try {
 			await testConnMutation.mutateAsync({
 				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''} as any,
+				body: {host_key_fingerprint: ''},
 			});
 			globalServerConnStore.setStatus(server.id, 'success');
 			toast.success(`SSH Connection verified for ${server.name}`);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			globalServerConnStore.setStatus(server.id, 'failed');
 			toast.error(formatApiError(err));
 		}

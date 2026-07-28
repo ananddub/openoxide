@@ -172,7 +172,11 @@ impl MariadbController {
         RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        match self.service.cancel_operation(DatabaseKind::Mariadb, id).await {
+        match self
+            .service
+            .cancel_operation(DatabaseKind::Mariadb, id)
+            .await
+        {
             Ok(_) => Ok(StatusCode::OK),
             Err(error) => Err(super::map_sqlx_error(error)),
         }

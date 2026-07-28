@@ -56,7 +56,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 	});
 
 	const rawStatus = (app?.app_status || app?.applicationStatus || app?.application_status || app?.status || '').toLowerCase();
-	const isIdle = !rawStatus || rawStatus === 'idle' || rawStatus === 'stopped';
+	const isRunning = ['running', 'done', 'healthy', 'deployed', 'success', 'up', 'active', 'ok'].includes(rawStatus);
 	const isBuilding = hasActiveDeployment || ['starting', 'building', 'queued', 'preparing'].includes(rawStatus) || activeLoading === 'deploy' || activeLoading === 'rebuild' || activeLoading === 'reload';
 
 	const executeAction = async (action: ActionType) => {
@@ -131,7 +131,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 						{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
 					</Button>
 
-					{/* 3-State Action Button: Cancel (Building), Start (Idle), Stop (Running) */}
+					{/* 3-State Action Button: Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
 					{isBuilding ? (
 						<Button
 							onClick={() => executeAction('cancel')}
@@ -143,18 +143,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
 							{activeLoading === 'cancel' ? 'Cancelling...' : 'Cancel'}
 						</Button>
-					) : isIdle ? (
-						<Button
-							onClick={() => executeAction('start')}
-							disabled={isProcessing}
-							variant="outline"
-							size="sm"
-							className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
-						>
-							{activeLoading === 'start' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-							{activeLoading === 'start' ? 'Starting...' : 'Start'}
-						</Button>
-					) : (
+					) : isRunning ? (
 						<Button
 							onClick={() => executeAction('stop')}
 							disabled={isProcessing}
@@ -164,6 +153,17 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 						>
 							{activeLoading === 'stop' ? <RefreshCw className="size-4 animate-spin" /> : <Ban className="size-4" />}
 							{activeLoading === 'stop' ? 'Stopping...' : 'Stop'}
+						</Button>
+					) : (
+						<Button
+							onClick={() => executeAction('start')}
+							disabled={isProcessing}
+							variant="outline"
+							size="sm"
+							className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
+						>
+							{activeLoading === 'start' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+							{activeLoading === 'start' ? 'Starting...' : 'Start'}
 						</Button>
 					)}
 					{/* Terminal Access Button */}

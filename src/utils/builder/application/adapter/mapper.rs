@@ -14,6 +14,7 @@ pub struct AppRowWithRelations {
     pub app: AppRow,
     pub domains: Vec<Domain>,
     pub mounts: Vec<Mount>,
+    pub networks: Vec<String>,
 }
 
 impl TryFrom<AppRowWithRelations> for ApplicationSpec {
@@ -23,6 +24,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
         let app = data.app;
         let domains = data.domains;
         let mounts = data.mounts;
+        let networks = data.networks;
         let source = source(&app)?;
         let build = build(&app)?;
         let environment = generate_env_app(
@@ -91,7 +93,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
                 .and_then(|v| serde_json::from_str(v).ok())
                 .unwrap_or_default(),
             replicas: u32::try_from(app.replicas.max(1)).unwrap_or(1),
-            network: "rustploy-network".into(),
+            networks,
             mounts: mount_specs,
             domains: domain_specs,
             resources: ResourceSpec {
@@ -124,6 +126,8 @@ pub struct AppRow {
     pub args: Option<String>,
     pub env_var: Option<String>,
     pub clean_cache: i64,
+    pub network_ids: String,
+    pub detach_rustploy_network: i64,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
     pub cpu_reservation: Option<String>,

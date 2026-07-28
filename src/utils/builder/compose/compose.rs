@@ -134,6 +134,11 @@ impl ComposeBuilder {
     async fn deploy_stack(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
         ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel).await?;
         ensure_overlay_network(&self.ctx.docker, RUSTPLOY_NETWORK, cancel).await?;
+        for service_network in &spec.service_networks {
+            for network in &service_network.networks {
+                ensure_overlay_network(&self.ctx.docker, network, cancel).await?;
+            }
+        }
         self.ctx
             .emit(BuilderEvent::Message(format!(
                 "building compose stack {} from {}",

@@ -2,7 +2,7 @@ import * as React from 'react';
 import {toast} from 'sonner';
 import type {Deployment} from './use-deployments';
 
-export function extractLogLines(rawData: any): string[] {
+export function extractLogLines(rawData: unknown): string[] {
 	if (!rawData) return [];
 	if (typeof rawData === 'string') {
 		const trimmed = rawData.trim();
@@ -30,9 +30,10 @@ export function extractLogLines(rawData: any): string[] {
 		return rawData.split('\n');
 	}
 
-	if (typeof rawData === 'object') {
-		if (rawData.type === 'keep-alive' || rawData.event === 'keep-alive') return [];
-		const candidate = rawData.line ?? rawData.message ?? rawData.data ?? rawData.log ?? rawData.text ?? rawData.content ?? rawData.output;
+	if (typeof rawData === 'object' && rawData !== null) {
+		const obj = rawData as Record<string, unknown>;
+		if (obj.type === 'keep-alive' || obj.event === 'keep-alive') return [];
+		const candidate = obj.line ?? obj.message ?? obj.data ?? obj.log ?? obj.text ?? obj.content ?? obj.output;
 		if (candidate !== undefined && candidate !== null) {
 			if (typeof candidate === 'object') {
 				return [JSON.stringify(candidate)];
@@ -67,9 +68,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 		setLogs('');
 		setIsLogsLoading(true);
 
+		const depWithLogs = selectedDeployment as Deployment & {log_content?: string};
+
 		// If deployment has stored log_content, initialize with it immediately
-		if (selectedDeployment.log_content) {
-			setLogs(selectedDeployment.log_content);
+		if (depWithLogs.log_content) {
+			setLogs(depWithLogs.log_content);
 		}
 
 		const readLogs = async () => {
@@ -94,19 +97,23 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 				);
 
 				if (!response.ok) {
-					if (isMounted && selectedDeployment.log_content) {
-						setLogs(selectedDeployment.log_content);
+					if (isMounted && depWithLogs.log_content) {
+						setLogs(depWithLogs.log_content);
 					}
 					setIsLogsLoading(false);
 					return;
 				}
 
-				setIsLogsLoading(false);
 				const reader = response.body?.getReader();
+				if (!reader) {
+					if (isMounted && depWithLogs.log_content) {
+						setLogs(depWithLogs.log_content);
+					}
+					setIsLogsLoading(false);
+					return;
+				}
+
 				const decoder = new TextDecoder();
-
-				if (!reader) return;
-
 				let buffer = '';
 				while (isMounted) {
 					const {done, value} = await reader.read();
@@ -131,10 +138,10 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 						}
 					}
 				}
-			} catch (err: any) {
-				if (err.name !== 'AbortError' && isMounted) {
-					if (selectedDeployment.log_content) {
-						setLogs(selectedDeployment.log_content);
+			} catch (err: unknown) {
+				if ((err as {name?: string})?.name !== 'AbortError' && isMounted) {
+					if (depWithLogs.log_content) {
+						setLogs(depWithLogs.log_content);
 					}
 					setIsLogsLoading(false);
 				}

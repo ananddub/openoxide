@@ -12,7 +12,7 @@ interface GeneralTabProps {
 	onUpdated: () => void;
 }
 
-export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProps) {
+export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 	const [provider, setProvider] = useState<string>(compose?.source_type || 'GITHUB');
 	const [composeFile, setComposeFile] = useState<string>(compose?.compose_file || '');
 	const [command, setCommand] = useState<string>(compose?.command || '');
@@ -58,7 +58,6 @@ export function ComposeGeneralTab({compose, onAction, onUpdated}: GeneralTabProp
 					params: {path: {id: compose.id}},
 					body: {
 						compose_file: composeFile,
-						command: command || undefined,
 					},
 				});
 			} else if (provider === 'GIT') {

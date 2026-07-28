@@ -37,31 +37,27 @@ function ComposeNameBreadcrumb({ id }: { id: number }) {
 	return <>{compose?.name || compose?.app_name || 'Loading...'}</>;
 }
 
-import {Construction} from 'lucide-react';
+function DatabaseNameBreadcrumb({ id }: { id: number }) {
+	const { data: postgresDb } = $api.useQuery(
+		'get',
+		'/postgres/{id}',
+		{ params: { path: { id } } }
+	);
+	return <>{postgresDb?.name || postgresDb?.database_name || postgresDb?.app_name || `Database #${id}`}</>;
+}
+
 
 function AppNotFoundPlaceholder() {
-	return (
-		<div className="flex h-[calc(100vh-10rem)] w-full flex-col items-center justify-center gap-4 text-center p-6 animate-in fade-in duration-200">
-			<div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
-				<Construction className="size-7" />
-			</div>
-			<div className="max-w-md space-y-1.5">
-				<h2 className="text-lg font-bold tracking-tight text-foreground">
-					Page Under Construction
-				</h2>
-				<p className="text-xs text-muted-foreground leading-relaxed">
-					This feature is currently being crafted. Your sidebar remains fully active for seamless navigation across all platform tools.
-				</p>
-			</div>
-			<div className="flex items-center gap-3 pt-2">
-				<Link
-					to="/"
-					className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
-					Return to Dashboard
-				</Link>
-			</div>
-		</div>
-	);
+	const location = useLocation();
+	const pathSegments = location.pathname.split('/').filter(Boolean);
+	const projectIndex = pathSegments.indexOf('projects');
+	const projectId = projectIndex !== -1 && pathSegments[projectIndex + 1] && !isNaN(Number(pathSegments[projectIndex + 1])) ? pathSegments[projectIndex + 1] : null;
+
+	if (projectId) {
+		return <Navigate to="/projects/$id" params={{id: projectId}} replace />;
+	}
+
+	return <Navigate to="/projects" replace />;
 }
 
 export const Route = createFileRoute('/_app')({
@@ -95,18 +91,21 @@ function AppLayout() {
 							<Separator orientation="vertical" className="mx-2 h-4" />
 							<div className="flex items-center gap-2 text-xs font-semibold">
 								<Link
-									to="/"
+									to="/projects"
 									className="text-muted-foreground hover:text-foreground transition-colors">
 									Dashboard
 								</Link>
 								{pathSegments.map((segment, index) => {
-									if (segment === 'app') return null;
-
-									const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
+									let path = `/${pathSegments.slice(0, index + 1).join('/')}`;
 									const isLast = index === pathSegments.length - 1;
 									const isProjectParam = index > 0 && pathSegments[index - 1] === 'projects' && !isNaN(Number(segment));
-									const isAppParam = index > 0 && (pathSegments[index - 1] === 'app' || (index > 1 && pathSegments[index - 2] === 'app')) && !isNaN(Number(segment));
+									const isAppParam = index > 0 && pathSegments[index - 1] === 'app' && !isNaN(Number(segment));
 									const isComposeParam = index > 0 && pathSegments[index - 1] === 'compose' && !isNaN(Number(segment));
+									const isDatabaseParam = index > 0 && pathSegments[index - 1] === 'database' && !isNaN(Number(segment));
+
+									if ((segment === 'app' || segment === 'database' || segment === 'compose') && index > 0 && !isNaN(Number(pathSegments[index - 1]))) {
+										path = `/projects/${pathSegments[index - 1]}`;
+									}
 
 									const label = isProjectParam ? (
 										<ProjectNameBreadcrumb id={Number(segment)} />
@@ -114,18 +113,22 @@ function AppLayout() {
 										<AppNameBreadcrumb id={Number(segment)} />
 									) : isComposeParam ? (
 										<ComposeNameBreadcrumb id={Number(segment)} />
+									) : isDatabaseParam ? (
+										<DatabaseNameBreadcrumb id={Number(segment)} />
+									) : segment === 'app' ? (
+										'Application'
 									) : (
 										segment.charAt(0).toUpperCase() + segment.slice(1)
 									);
 
 									return (
-										<React.Fragment key={path}>
+										<React.Fragment key={`${path}-${index}`}>
 											<span className="text-muted-foreground/30 font-normal">/</span>
 											{isLast ? (
 												<span className="text-foreground font-bold">{label}</span>
 											) : (
 												<Link
-													to={path as any}
+													to={path as unknown as '.'}
 													className="text-muted-foreground hover:text-foreground transition-colors">
 													{label}
 												</Link>

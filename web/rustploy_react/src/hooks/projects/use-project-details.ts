@@ -40,7 +40,7 @@ export function useProjectDetails(projectId: number) {
 	const {data: libsqlDbs = [], refetch: refetchLibsql} = $api.useQuery('get', '/libsql/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
 
 	const databases = useMemo(() => {
-		const list: any[] = [];
+		const list: Record<string, unknown>[] = [];
 		if (pgDbs) list.push(...pgDbs.map(d => ({...d, kind: 'postgres'})));
 		if (myDbs) list.push(...myDbs.map(d => ({...d, kind: 'mysql'})));
 		if (mariaDbs) list.push(...mariaDbs.map(d => ({...d, kind: 'mariadb'})));
@@ -125,12 +125,12 @@ export function useProjectDetails(projectId: number) {
 
 		// Apply Search
 		if (sQuery) {
-			list = list.filter(item => item.name.toLowerCase().includes(sQuery));
+			list = list.filter((item: any) => String(item.name || '').toLowerCase().includes(sQuery));
 		}
 
 		// Apply Type Filter
 		if (typeFilter !== 'all') {
-			list = list.filter(item => {
+			list = list.filter((item: any) => {
 				if (typeFilter === 'app') return item.type === 'APP';
 				if (typeFilter === 'compose') return item.type === 'COMPOSE';
 				if (typeFilter === 'database') return item.type === 'DATABASE';
@@ -140,12 +140,13 @@ export function useProjectDetails(projectId: number) {
 
 		// Apply Status Filter
 		if (statusFilter !== 'all') {
-			list = list.filter(item => {
+			list = list.filter((item: any) => {
+				const st = String(item.status || '').toLowerCase();
 				const isRunning =
-					item.status.toLowerCase().includes('running') ||
-					item.status.toLowerCase().includes('active') ||
-					item.status.toLowerCase().includes('healthy') ||
-					item.status.toLowerCase().includes('up');
+					st.includes('running') ||
+					st.includes('active') ||
+					st.includes('healthy') ||
+					st.includes('up');
 
 				return statusFilter === 'running' ? isRunning : !isRunning;
 			});

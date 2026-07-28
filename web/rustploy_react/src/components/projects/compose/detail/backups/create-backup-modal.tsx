@@ -81,7 +81,7 @@ export function CreateBackupModal({isOpen, onClose, servicesList, onCreate}: Cre
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
 							<Label className="text-xs font-semibold">Target Service *</Label>
-							<Select value={serviceName} onValueChange={setServiceName}>
+							<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
 								<SelectTrigger className="h-9 text-xs">
 									<SelectValue placeholder="Select service" />
 								</SelectTrigger>

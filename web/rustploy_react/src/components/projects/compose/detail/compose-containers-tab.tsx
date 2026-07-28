@@ -48,7 +48,7 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 
 	const {data: rawContainers = [], refetch: refetchContainers, isFetching} = $api.useQuery(
 		'get',
-		'/docker/containers',
+		'/docker/containers' as any,
 		{
 			params: {query: {server_id: compose?.destination_id}},
 			refetchInterval: 3000,
@@ -66,7 +66,7 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 			(compose?.compose_status || compose?.status || '').toLowerCase()
 		);
 
-		const matched = (rawContainers || []).filter((c: any) => {
+		const matched = (Array.isArray(rawContainers) ? rawContainers : []).filter((c: any) => {
 			const n = (c.names || '').toLowerCase();
 			const l = (c.labels || '').toLowerCase();
 			const cleanApp = appName.toLowerCase().replace(/[^a-z0-9]/g, '');

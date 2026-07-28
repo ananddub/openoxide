@@ -68,7 +68,9 @@ impl ApplicationBuilder {
 
         self.prepare_file_mounts(spec, cancel).await?;
         ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel).await?;
-        ensure_overlay_network(&self.ctx.docker, spec.network.as_str(), cancel).await?;
+        for network in &spec.networks {
+            ensure_overlay_network(&self.ctx.docker, network.as_str(), cancel).await?;
+        }
 
         let stack_file = format!("{app_dir}/stack.yml");
         let stack_yaml = serde_yaml::to_string(&stack_spec(spec)).map_err(|e| {

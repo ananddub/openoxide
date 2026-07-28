@@ -1,8 +1,8 @@
 use crate::db::models::mounts::Mount;
 use crate::repository::MysqlRepository;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, ExternalNetwork, Limits, RestartPolicy, StackFile, StackMount,
-    StackService, UpdateConfig,
+    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
+    UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
@@ -47,8 +47,10 @@ pub async fn build_mysql_stack(
     .unwrap_or_default();
 
     resolved_env.insert("MYSQL_DATABASE".to_string(), db.database_name.clone());
-    resolved_env.insert("MYSQL_USER".to_string(), db.database_user.clone());
-    resolved_env.insert("MYSQL_PASSWORD".to_string(), db.database_password.clone());
+    if db.database_user != "root" {
+        resolved_env.insert("MYSQL_USER".to_string(), db.database_user.clone());
+        resolved_env.insert("MYSQL_PASSWORD".to_string(), db.database_password.clone());
+    }
     resolved_env.insert(
         "MYSQL_ROOT_PASSWORD".to_string(),
         db.database_root_password.clone(),
@@ -86,13 +88,19 @@ pub async fn build_mysql_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:3306", port));
     }
+    let (service_networks, networks) =
+        crate::utils::builder::database::builder::resolve_database_networks(
+            Some(&db.network_ids),
+            db.detach_rustploy_network,
+        )
+        .await?;
 
     let service = StackService {
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
-        networks: vec![crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string()],
+        networks: service_networks,
         deploy: DeploySpec {
             replicas: db.replicas as u32,
             resources: DeployResources {
@@ -133,15 +141,6 @@ pub async fn build_mysql_stack(
 
     let mut services = BTreeMap::new();
     services.insert("db".to_string(), service);
-
-    let mut networks = BTreeMap::new();
-    networks.insert(
-        crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        ExternalNetwork {
-            external: true,
-            name: crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        },
-    );
 
     let mut top_level_volumes = BTreeMap::new();
     for m in &stack_mounts {

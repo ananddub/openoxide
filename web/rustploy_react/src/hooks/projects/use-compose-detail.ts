@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import type {ComposeResponse} from '#/types/api-helpers';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
@@ -52,13 +53,13 @@ export function useComposeDetail(composeId: number) {
 				toast.success('Compose action cancelled');
 			}
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
 	return {
-		compose,
+		compose: (compose as ComposeResponse | undefined) || null,
 		isLoading,
 		refetch,
 		activeTab,

@@ -10,10 +10,11 @@ import {Button} from '#/components/ui/button';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {Copy, Check, Eye, EyeOff, Key, Terminal} from 'lucide-react';
+import type {SshKeyResponse} from '#/types/api-helpers';
 
 interface ViewKeyModalProps {
 	isOpen: boolean;
-	sshKey: any | null;
+	sshKey: SshKeyResponse | null;
 	onClose: () => void;
 }
 

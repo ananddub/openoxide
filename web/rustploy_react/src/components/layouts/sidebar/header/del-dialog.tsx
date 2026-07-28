@@ -33,7 +33,7 @@ export function DeleteOrganization({organizationId, onDelete, disabled}: Props) 
 		if (disabled) return;
 		setIsPending(true);
 		try {
-			const {error} = await deleteMutation.mutateAsync({
+			await deleteMutation.mutateAsync({
 				params: {
 					path: {
 						id: Number(organizationId),
@@ -41,15 +41,10 @@ export function DeleteOrganization({organizationId, onDelete, disabled}: Props) 
 				},
 			});
 
-			if (error) {
-				const errBody = error as any;
-				toast.error(errBody?.message || 'Failed to delete organization');
-			} else {
-				toast.success('Organization deleted successfully');
-				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
-				onDelete();
-				setOpen(false);
-			}
+			toast.success('Organization deleted successfully');
+			queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+			onDelete();
+			setOpen(false);
 		} catch {
 			toast.error('An unexpected error occurred');
 		} finally {

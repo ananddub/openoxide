@@ -33,6 +33,8 @@ CREATE TABLE applications (
 	watch_paths TEXT, -- JSON array of paths to watch for auto-deploy
 	refresh_token TEXT,
 	icon TEXT,
+	network_ids TEXT NOT NULL DEFAULT '[]',
+	detach_rustploy_network INTEGER NOT NULL DEFAULT 0,
 	-- Resource limits
 	memory_reservation TEXT,
 	memory_limit TEXT,

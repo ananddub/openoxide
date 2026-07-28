@@ -21,9 +21,11 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
 
+import type {RegistryResponse, RemoteServerResponse} from '#/types/api-helpers';
+
 interface CreateRegistryModalProps {
 	isOpen: boolean;
-	initialData?: any | null;
+	initialData?: RegistryResponse | null;
 	onClose: () => void;
 	onSuccess: () => void;
 }
@@ -42,7 +44,7 @@ export function CreateRegistryModal({
 	const [isTesting, setIsTesting] = useState(false);
 
 	const {data: serversData} = $api.useQuery('get', '/remote-servers');
-	const servers = Array.isArray(serversData) ? serversData : [];
+	const servers = (Array.isArray(serversData) ? serversData : []) as RemoteServerResponse[];
 
 	const createMutation = $api.useMutation('post', '/registries');
 	const patchMutation = $api.useMutation('patch', '/registries/{id}');
@@ -51,11 +53,12 @@ export function CreateRegistryModal({
 
 	useEffect(() => {
 		if (initialData) {
-			setName(initialData.name || '');
-			setRegistryUrl(initialData.registry_url || '');
-			setUsername(initialData.username || '');
+			const d = initialData as any;
+			setName(d.name || d.registry_name || '');
+			setRegistryUrl(d.registry_url || '');
+			setUsername(d.username || '');
 			setPassword('');
-			setServerId(initialData.server_id ? String(initialData.server_id) : 'local');
+			setServerId(d.server_id ? String(d.server_id) : 'local');
 		} else {
 			setName('');
 			setRegistryUrl('');
@@ -73,7 +76,7 @@ export function CreateRegistryModal({
 		setIsTesting(true);
 		try {
 			if (initialData?.id && !password) {
-				await testMutation.mutateAsync({params: {path: {id: initialData.id}}});
+				await testMutation.mutateAsync({params: {path: {id: Number(initialData.id)}}});
 			} else {
 				if (!password) {
 					toast.error('Password is required to test connection');
@@ -89,7 +92,7 @@ export function CreateRegistryModal({
 				});
 			}
 			toast.success('Registry authentication test passed!');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setIsTesting(false);
@@ -108,7 +111,7 @@ export function CreateRegistryModal({
 
 			if (initialData?.id) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: initialData.id}},
+					params: {path: {id: Number(initialData.id)}},
 					body: {
 						name,
 						registry_url: registryUrl,
@@ -136,7 +139,7 @@ export function CreateRegistryModal({
 			}
 			onSuccess();
 			onClose();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
@@ -216,14 +219,14 @@ export function CreateRegistryModal({
 									{serverId === 'local'
 										? 'Local Server (Default)'
 										: (() => {
-												const srv = servers.find((s: any) => String(s.id) === String(serverId));
+												const srv = servers.find((s: RemoteServerResponse) => String(s.id) === String(serverId));
 												return srv ? srv.name : 'Select server';
 											})()}
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent className="bg-card border-border text-xs z-50">
 								<SelectItem value="local">Local Server (Default)</SelectItem>
-								{servers.map((srv: any) => (
+								{servers.map((srv: RemoteServerResponse) => (
 									<SelectItem key={srv.id} value={String(srv.id)}>
 										{srv.name}
 									</SelectItem>

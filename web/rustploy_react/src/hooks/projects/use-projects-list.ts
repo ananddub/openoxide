@@ -122,7 +122,7 @@ export function useProjectsList() {
 					{params: {path: {organization_id: activeOrg.id}}},
 				],
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setIsSubmitting(false);
@@ -150,7 +150,7 @@ export function useProjectsList() {
 					{params: {path: {organization_id: activeOrg.id}}},
 				],
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};

@@ -1,7 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
-import {FileText, RefreshCw, Download, Play, Square} from 'lucide-react';
+import {RefreshCw, Download, Play, Square} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {LogLine} from '#/components/shared/log-line';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 
 interface LogsTabProps {
@@ -157,22 +156,7 @@ export function LogsTab({app}: LogsTabProps) {
 		URL.revokeObjectURL(url);
 	};
 
-	const renderLogLine = (line: string, i: number) => {
-		const l = line.toLowerCase();
-		let colorClass = 'text-zinc-300';
-		if (l.includes('error') || l.includes('failed') || l.includes('err!')) {
-			colorClass = 'text-rose-400 font-medium';
-		} else if (l.includes('warn') || l.includes('warning')) {
-			colorClass = 'text-amber-400';
-		} else if (l.includes('success') || l.includes('done') || l.includes('started')) {
-			colorClass = 'text-emerald-400';
-		}
-		return (
-			<div key={i} className={`whitespace-pre-wrap break-all leading-relaxed ${colorClass}`}>
-				{line}
-			</div>
-		);
-	};
+
 
 	return (
 		<div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">

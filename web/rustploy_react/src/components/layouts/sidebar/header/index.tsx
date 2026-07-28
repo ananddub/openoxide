@@ -58,7 +58,7 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 		}
 	}, [orgs, setOrganizations]);
 
-	const handleSetDefault = (orgId: number, e: React.MouseEvent) => {
+	const handleSetDefault = (_orgId: number, e: React.MouseEvent) => {
 		e.stopPropagation();
 		toast.success('Default organization updated');
 	};

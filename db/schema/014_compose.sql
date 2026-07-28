@@ -48,6 +48,7 @@ CREATE TABLE compose_projects (
 	isolated_deployment INTEGER NOT NULL DEFAULT 0,
 	isolated_deployments_volume INTEGER NOT NULL DEFAULT 0,
 	watch_paths TEXT, -- JSON array of strings
+	service_networks TEXT NOT NULL DEFAULT '[]', -- JSON array of per-service network configs
 	-- Foreign keys
 	environment_id INTEGER NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,

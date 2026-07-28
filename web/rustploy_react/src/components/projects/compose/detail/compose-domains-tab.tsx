@@ -63,7 +63,7 @@ export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
 	// Real-time domains query with safe array fallback
-	const {data: rawDomains = [], isLoading, refetch} = $api.useQuery('get', '/domains', {
+	const {data: rawDomains = [], isLoading, refetch} = $api.useQuery('get', '/domains' as any, {
 		params: {query: {compose_id: composeId}},
 	});
 

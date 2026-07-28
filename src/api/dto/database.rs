@@ -17,10 +17,17 @@ pub struct CreateDatabaseDto {
     pub database_password: Option<String>,
     pub database_root_password: Option<String>,
     pub external_port: Option<i64>,
+    pub external_grpc_port: Option<i64>,
+    pub external_admin_port: Option<i64>,
+    pub command: Option<String>,
+    pub args: Option<Vec<String>>,
+    pub env_var: Option<String>,
     pub replica_sets: Option<i64>,
     pub sqld_node: Option<String>,
     pub sqld_primary_url: Option<String>,
     pub enable_namespaces: Option<i64>,
+    pub network_ids: Option<Vec<String>>,
+    pub detach_rustploy_network: Option<i64>,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -31,8 +38,10 @@ pub struct PatchDatabaseDto {
     pub description: Option<String>,
     pub docker_image: Option<String>,
     pub external_port: Option<i64>,
+    pub external_grpc_port: Option<i64>,
+    pub external_admin_port: Option<i64>,
     pub command: Option<String>,
-    pub args: Option<String>,
+    pub args: Option<Vec<String>>,
     pub env_var: Option<String>,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
@@ -40,6 +49,8 @@ pub struct PatchDatabaseDto {
     pub cpu_limit: Option<String>,
     pub replicas: Option<i64>,
     pub server_id: Option<i64>,
+    pub network_ids: Option<Vec<String>>,
+    pub detach_rustploy_network: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
@@ -59,6 +70,8 @@ pub struct DatabaseResponseDto {
     pub cpu_reservation: Option<String>,
     pub cpu_limit: Option<String>,
     pub replicas: i64,
+    pub network_ids: Vec<String>,
+    pub detach_rustploy_network: i64,
     pub app_status: String,
     pub environment_id: i64,
     pub server_id: Option<i64>,
@@ -84,6 +97,8 @@ impl From<DatabaseRecord> for DatabaseResponseDto {
             cpu_reservation: value.cpu_reservation,
             cpu_limit: value.cpu_limit,
             replicas: value.replicas,
+            network_ids: parse_json_string_vec(&value.network_ids),
+            detach_rustploy_network: value.detach_rustploy_network,
             app_status: value.app_status,
             environment_id: value.environment_id,
             server_id: value.server_id,
@@ -91,6 +106,19 @@ impl From<DatabaseRecord> for DatabaseResponseDto {
             updated_at: value.updated_at,
         }
     }
+}
+
+pub(crate) fn serialize_json_string_vec(
+    value: Option<&Vec<String>>,
+) -> sqlx::Result<Option<String>> {
+    value
+        .map(serde_json::to_string)
+        .transpose()
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+}
+
+pub(crate) fn parse_json_string_vec(value: &str) -> Vec<String> {
+    serde_json::from_str::<Vec<String>>(value).unwrap_or_default()
 }
 
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]

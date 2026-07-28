@@ -7,21 +7,24 @@ import {RegistryHeader} from '#/components/registry/registry-header';
 import {RegistriesList} from '#/components/registry/registries-list';
 import {CreateRegistryModal} from '#/components/registry/create-registry-modal';
 
+import type {RegistryResponse} from '#/types/api-helpers';
+
 export const Route = createFileRoute('/_app/registry')({
-	component: RegistrySettingsPage,
+	component: RegistryPage,
 });
 
-function RegistrySettingsPage() {
+function RegistryPage() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [editingRegistry, setEditingRegistry] = useState<any | null>(null);
+	const [editingRegistry, setEditingRegistry] = useState<RegistryResponse | null>(null);
 
 	const {
-		data: registries = [],
+		data: rawRegistries = [],
 		isLoading,
 		refetch,
 		isRefetching,
 	} = $api.useQuery('get', '/registries');
 
+	const registries = Array.isArray(rawRegistries) ? (rawRegistries as RegistryResponse[]) : [];
 	const deleteMutation = $api.useMutation('delete', '/registries/{id}');
 
 	const handleOpenAdd = () => {
@@ -29,7 +32,7 @@ function RegistrySettingsPage() {
 		setIsModalOpen(true);
 	};
 
-	const handleOpenEdit = (item: any) => {
+	const handleOpenEdit = (item: RegistryResponse) => {
 		setEditingRegistry(item);
 		setIsModalOpen(true);
 	};
@@ -40,7 +43,7 @@ function RegistrySettingsPage() {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Registry deleted successfully');
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};

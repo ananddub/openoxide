@@ -86,7 +86,7 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 		}
 	};
 
-	const handleCancel = async (id: number) => {
+	const handleCancel = async (_id: number) => {
 		if (!confirm('Are you sure you want to cancel this compose deployment?')) return;
 		setIsTriggering(true);
 		try {
@@ -107,7 +107,7 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 		let isMounted = true;
 		let controller = new AbortController();
 
-		const initialFallback = selectedEvent?.log_content || selectedEvent?.message || selectedEvent?.description;
+		const initialFallback = (selectedEvent as any)?.log_content || (selectedEvent as any)?.message || selectedEvent?.description;
 		if (initialFallback) {
 			setLiveLogs(initialFallback.split('\n'));
 		} else {

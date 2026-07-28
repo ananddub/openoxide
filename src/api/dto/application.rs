@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+use crate::api::dto::database::parse_json_string_vec;
 use crate::services::application::ApplicationRecord;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -30,6 +31,8 @@ pub struct PatchApplicationDto {
     pub server_id: Option<i64>,
     pub build_server_id: Option<i64>,
     pub registry_id: Option<i64>,
+    pub network_ids: Option<Vec<String>>,
+    pub detach_rustploy_network: Option<i64>,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -151,6 +154,8 @@ pub struct ApplicationResponseDto {
     pub server_id: Option<i64>,
     pub build_server_id: Option<i64>,
     pub registry_id: Option<i64>,
+    pub network_ids: Vec<String>,
+    pub detach_rustploy_network: i64,
     pub env_var: Option<String>,
     pub icon: Option<String>,
     pub repository: Option<String>,
@@ -193,6 +198,8 @@ impl From<ApplicationRecord> for ApplicationResponseDto {
             server_id: value.server_id,
             build_server_id: value.build_server_id,
             registry_id: value.registry_id,
+            network_ids: parse_json_string_vec(&value.network_ids),
+            detach_rustploy_network: value.detach_rustploy_network,
             env_var: value.env_var,
             icon: value.icon,
             repository: value.repository,

@@ -1,9 +1,9 @@
 pub use crate::utils::exec::SshAuth;
 pub use client::{DockerCli, RemoteDockerConfig, RemoteHostKey};
+pub use core::types::inspect::*;
 pub use error::{DockerError, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent};
 pub use query::DockerQuery;
 pub use types::*;
-pub use core::types::inspect::*;
 
 #[macro_use]
 

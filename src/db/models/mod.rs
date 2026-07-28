@@ -12,6 +12,7 @@ pub mod bitbucket_providers;
 pub mod certificates;
 pub mod compose_projects;
 pub mod container_metrics;
+pub mod database_networks;
 pub mod deployments;
 pub mod destinations;
 pub mod domains;

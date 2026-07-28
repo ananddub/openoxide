@@ -60,6 +60,10 @@ pub struct PostgresDb {
     pub labels_swarm: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub network_swarm: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'[]'")]
+    pub network_ids: String,
+    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    pub detach_rustploy_network: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub endpoint_spec_swarm: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]

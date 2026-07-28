@@ -1,15 +1,29 @@
 use crate::api::dto::compose::{CreateComposeDto, PatchComposeDto};
+use crate::core::cache::{CacheEnum, CacheKey};
 
 use super::{ComposeRecord, ComposeService, queries::generate_app_name};
 
 impl ComposeService {
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ComposeRecord> {
-        let project = self
-            .repo_compose
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
-        Ok(ComposeRecord::from(project))
+        let key = CacheKey::Compose(id);
+        let res = self
+            .cache
+            .try_get_with(key, async {
+                let project = self
+                    .repo_compose
+                    .get_by_id(id)
+                    .await?
+                    .ok_or(sqlx::Error::RowNotFound)?;
+                Ok::<_, sqlx::Error>(CacheEnum::Compose(ComposeRecord::from(project)))
+            })
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+
+        if let CacheEnum::Compose(record) = res {
+            Ok(record)
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
     }
 
     pub async fn list_by_environment(
@@ -56,6 +70,9 @@ impl ComposeService {
         let command = input.command.unwrap_or(current.command);
         let compose_path = input.compose_path.unwrap_or(current.compose_path);
         let server_id = input.server_id.or(current.server_id);
+        let service_networks =
+            crate::api::dto::compose::serialize_service_networks(input.service_networks.as_ref())?
+                .unwrap_or(current.service_networks);
 
         self.repo_compose
             .patch(
@@ -74,15 +91,18 @@ impl ComposeService {
                 input.isolated_deployment,
                 input.isolated_deployments_volume,
                 input.watch_paths,
+                service_networks,
                 server_id,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
         self.repo_compose.delete(id).await?;
+        self.cache.invalidate(&CacheKey::Compose(id)).await;
         Ok(())
     }
 }

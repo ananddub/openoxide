@@ -19,7 +19,9 @@ use tokio::{io::AsyncWriteExt, process::Command};
 use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
 use remote::spawn_remote_terminal;
-pub use types::{DockerTerminalStart, ServerTerminalStart, TerminalInput, TerminalResize, TerminalSession};
+pub use types::{
+    DockerTerminalStart, ServerTerminalStart, TerminalInput, TerminalResize, TerminalSession,
+};
 
 #[derive(Debug)]
 pub struct TerminalSocket {
@@ -183,8 +185,16 @@ impl TerminalSocket {
             return;
         };
 
-        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16).unwrap_or(80);
-        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16).unwrap_or(24);
+        let cols = payload
+            .get("cols")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as u16)
+            .unwrap_or(80);
+        let rows = payload
+            .get("rows")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as u16)
+            .unwrap_or(24);
 
         match session {
             TerminalSession::Pty { writer, .. } => {
@@ -206,9 +216,8 @@ impl TerminalSocket {
     }
 }
 
-
 #[test]
-fn test_data(){
+fn test_data() {
     use zeroize::Zeroize;
 
     let mut s = String::from("secret");

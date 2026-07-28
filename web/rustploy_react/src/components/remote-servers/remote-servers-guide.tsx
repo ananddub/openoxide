@@ -1,5 +1,5 @@
 import {Card, CardContent} from '#/components/ui/card';
-import {HelpCircle, Server, Terminal, ShieldCheck, Cpu} from 'lucide-react';
+import {HelpCircle, Server, ShieldCheck, Cpu} from 'lucide-react';
 
 export function RemoteServersGuide() {
 	return (

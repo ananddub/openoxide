@@ -71,10 +71,18 @@ impl zeroize::Zeroize for SshAuth {
     fn zeroize(&mut self) {
         match self {
             SshAuth::Password(p) => p.zeroize(),
-            SshAuth::KeyPair { private_key, public_key, passphrase } => {
+            SshAuth::KeyPair {
+                private_key,
+                public_key,
+                passphrase,
+            } => {
                 private_key.zeroize();
-                if let Some(pk) = public_key { pk.zeroize(); }
-                if let Some(pp) = passphrase { pp.zeroize(); }
+                if let Some(pk) = public_key {
+                    pk.zeroize();
+                }
+                if let Some(pp) = passphrase {
+                    pp.zeroize();
+                }
             }
             _ => {}
         }

@@ -44,7 +44,7 @@ export function DeploymentsFilters({
 						placeholder="Search by title, description or logs..."
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-9.5 pr-9 bg-card/60 border-border/80 h-10 w-full text-xs rounded-lg focus-visible:ring-1 focus-visible:ring-primary shadow-sm"
+						className="pl-9.5 pr-9 bg-card border-border h-10 w-full text-xs rounded-lg focus-visible:ring-1 focus-visible:ring-primary shadow-2xs"
 					/>
 					{searchQuery && (
 						<button
@@ -59,10 +59,10 @@ export function DeploymentsFilters({
 				{/* Status Select */}
 				<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
 					<Select value={statusFilter} onValueChange={val => setStatusFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/60 border-border/80 !h-10 text-xs shadow-sm font-medium rounded-lg">
+						<SelectTrigger className="w-full sm:w-[150px] bg-card border-border !h-10 text-xs shadow-2xs font-medium rounded-lg">
 							<SelectValue placeholder="Status" />
 						</SelectTrigger>
-						<SelectContent className="bg-card border-border">
+						<SelectContent className="bg-popover border-border">
 							<SelectItem value="all" className="text-xs">All statuses</SelectItem>
 							<SelectItem value="running" className="text-xs">Running</SelectItem>
 							<SelectItem value="queued" className="text-xs">Queued</SelectItem>
@@ -75,10 +75,10 @@ export function DeploymentsFilters({
 				{/* Type Select */}
 				<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
 					<Select value={typeFilter} onValueChange={val => setTypeFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/60 border-border/80 !h-10 text-xs shadow-sm font-medium rounded-lg">
+						<SelectTrigger className="w-full sm:w-[150px] bg-card border-border !h-10 text-xs shadow-2xs font-medium rounded-lg">
 							<SelectValue placeholder="Type" />
 						</SelectTrigger>
-						<SelectContent className="bg-card border-border">
+						<SelectContent className="bg-popover border-border">
 							<SelectItem value="all" className="text-xs">All types</SelectItem>
 							<SelectItem value="application" className="text-xs">Application</SelectItem>
 							<SelectItem value="compose" className="text-xs">Compose</SelectItem>
@@ -98,10 +98,10 @@ export function DeploymentsFilters({
 								setSortDir(dir as 'asc' | 'desc');
 							}
 						}}>
-						<SelectTrigger className="w-full sm:w-[160px] bg-card/60 border-border/80 !h-10 text-xs shadow-sm font-medium rounded-lg">
+						<SelectTrigger className="w-full sm:w-[160px] bg-card border-border !h-10 text-xs shadow-2xs font-medium rounded-lg">
 							<SelectValue placeholder="Sort by" />
 						</SelectTrigger>
-						<SelectContent className="bg-card border-border">
+						<SelectContent className="bg-popover border-border">
 							<SelectItem value="created_at-desc" className="text-xs">Newest First</SelectItem>
 							<SelectItem value="created_at-asc" className="text-xs">Oldest First</SelectItem>
 							<SelectItem value="title-asc" className="text-xs">Title (A-Z)</SelectItem>

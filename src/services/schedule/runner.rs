@@ -180,7 +180,10 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 Box::pin(async move {
                     if !in_flight.insert(key_str.clone()) {
-                        tracing::warn!(key_str, "schedule skipped because previous run is still active");
+                        tracing::warn!(
+                            key_str,
+                            "schedule skipped because previous run is still active"
+                        );
                         return;
                     }
                     let result = service.run_now(schedule_id).await;
@@ -249,16 +252,18 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 Box::pin(async move {
                     if !in_flight.insert(key_str.clone()) {
-                        tracing::warn!(key_str, "database backup skipped because previous run is still active");
+                        tracing::warn!(
+                            key_str,
+                            "database backup skipped because previous run is still active"
+                        );
                         return;
                     }
                     let result = service.run_database_backup(backup_id).await;
                     in_flight.remove(&key_str);
                     match result {
-                        Ok(()) => tracing::info!(
-                            backup_id,
-                            "database backup executed successfully"
-                        ),
+                        Ok(()) => {
+                            tracing::info!(backup_id, "database backup executed successfully")
+                        }
                         Err(error) => tracing::error!(
                             backup_id,
                             error = %error,
@@ -316,16 +321,16 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 Box::pin(async move {
                     if !in_flight.insert(key_str.clone()) {
-                        tracing::warn!(key_str, "volume backup skipped because previous run is still active");
+                        tracing::warn!(
+                            key_str,
+                            "volume backup skipped because previous run is still active"
+                        );
                         return;
                     }
                     let result = service.run_volume_backup(backup_id).await;
                     in_flight.remove(&key_str);
                     match result {
-                        Ok(()) => tracing::info!(
-                            backup_id,
-                            "volume backup executed successfully"
-                        ),
+                        Ok(()) => tracing::info!(backup_id, "volume backup executed successfully"),
                         Err(error) => tracing::error!(
                             backup_id,
                             error = %error,

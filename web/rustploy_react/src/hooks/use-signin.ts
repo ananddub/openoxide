@@ -16,10 +16,10 @@ export function useSignin(onErrorCallback?: (msg: string) => void) {
 			});
 		},
 		onSuccess: ({data: res, error: err}) => {
-			const errorBody = err as any;
+			const errorBody = err as unknown as Record<string, unknown> | null;
 			if (errorBody != null) {
 				let message =
-					errorBody.message ||
+					(errorBody.message as string) ||
 					'Invalid email or password. Please try again.';
 				if (errorBody.code === 'INVALID_CREDENTIALS') {
 					message = 'Invalid email or password. Please try again.';

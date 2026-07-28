@@ -17,7 +17,7 @@ export const Route = createFileRoute('/_auth')({
 				{},
 			) as Promise<{
 				data?: {isOwnerPresent: boolean};
-				error?: any;
+				error?: unknown;
 			}>);
 			const isOwnerPresent = res?.isOwnerPresent ?? true;
 			// Owner not present & user is not on signup
@@ -27,9 +27,10 @@ export const Route = createFileRoute('/_auth')({
 					replace: true,
 				});
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Rethrow router redirect objects
-			if (error && (error.isRedirect || 'to' in error || 'href' in error)) {
+			const err = error as Record<string, unknown> | null;
+			if (err && (err.isRedirect || 'to' in err || 'href' in err)) {
 				throw error;
 			}
 			// Silently fallback if backend server is unreachable

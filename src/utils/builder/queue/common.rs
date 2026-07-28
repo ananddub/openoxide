@@ -2,7 +2,8 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        application::ApplicationOperation, compose::ComposeOperation, compose::ComposeStatus, database::DatabaseOperation,
+        application::ApplicationOperation, compose::ComposeOperation, compose::ComposeStatus,
+        database::DatabaseOperation,
     },
     utils::builder::{
         custom_type::{DeployState, IdType},
@@ -95,6 +96,9 @@ impl BuilderQueue {
             if let Err(e) = repo.set_application_status(app_id, target_status).await {
                 tracing::error!(deployment_id, app_id, error = %e, "builder queue: could not persist application status");
             }
+            self.cache
+                .invalidate(&crate::core::cache::CacheKey::Application(app_id))
+                .await;
             self.application_state.remove_state(IdType::AppId(app_id));
         }
 
@@ -102,6 +106,9 @@ impl BuilderQueue {
             if let Err(e) = repo.set_compose_status(cmp_id, target_status).await {
                 tracing::error!(deployment_id, cmp_id, error = %e, "builder queue: could not persist compose status");
             }
+            self.cache
+                .invalidate(&crate::core::cache::CacheKey::Compose(cmp_id))
+                .await;
             self.application_state
                 .remove_state(IdType::ComposeId(cmp_id));
         }
@@ -113,6 +120,9 @@ impl BuilderQueue {
             {
                 tracing::error!(deployment_id, db_id, db_kind, error = %e, "builder queue: could not persist database status");
             }
+            self.cache
+                .invalidate(&crate::core::cache::CacheKey::Database(db_id))
+                .await;
             self.application_state
                 .remove_state(IdType::DatabaseId(db_id));
         }

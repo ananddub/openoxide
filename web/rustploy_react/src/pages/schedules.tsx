@@ -34,13 +34,13 @@ function SchedulesPage() {
 	return (
 		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
 			{/* Page Header */}
-			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
+			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/30 pb-5">
 				<div>
-					<h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/75 bg-clip-text">
+					<h1 className="text-3xl font-extrabold tracking-tight text-foreground">
 						Schedules
 					</h1>
-					<p className="text-muted-foreground mt-1.5 text-sm">
-						Manage automated tasks, cron jobs, database backups, and server maintenance scripts.
+					<p className="text-muted-foreground mt-1 text-xs font-medium">
+						Manage automated tasks, cron jobs, database backups, and server maintenance scripts
 					</p>
 				</div>
 
@@ -48,7 +48,7 @@ function SchedulesPage() {
 					<Button
 						onClick={handleOpenCreate}
 						disabled={!activeOrg}
-						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold h-10 px-4 rounded-lg flex items-center gap-2">
+						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold h-10 px-4 rounded-lg flex items-center gap-2 shadow-2xs">
 						<Plus className="size-4.5" />
 						Create Schedule
 					</Button>
@@ -58,18 +58,18 @@ function SchedulesPage() {
 			{/* Filters Bar */}
 			<div className="flex flex-col sm:flex-row items-center gap-3">
 				<div className="relative w-full sm:grow">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60" />
+					<Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60" />
 					<Input
 						placeholder="Search by schedule name, description, or command..."
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-9 bg-card/45 border-border/80 h-10 w-full"
+						className="pl-9.5 bg-card border-border h-10 w-full text-xs rounded-lg shadow-2xs"
 					/>
 				</div>
 				<Button
 					variant="outline"
 					onClick={() => refetch()}
-					className="border-border bg-card/40 hover:bg-card/70 font-semibold h-10 px-4 rounded-lg shrink-0 flex items-center gap-2">
+					className="border-border bg-card hover:bg-muted/50 font-semibold h-10 px-4 text-xs rounded-lg shrink-0 flex items-center gap-2 shadow-2xs">
 					<RefreshCw className="size-4" />
 					Refresh
 				</Button>
@@ -84,7 +84,7 @@ function SchedulesPage() {
 					</p>
 				</div>
 			) : !activeOrg ? (
-				<div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-2xl py-24 text-center bg-card/10 backdrop-blur-[2px]">
+				<div className="flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl py-24 text-center bg-muted/10">
 					<CalendarDays className="size-12 opacity-20 text-muted-foreground" />
 					<h3 className="text-md font-bold text-foreground mt-3">No Organization Selected</h3>
 					<p className="text-muted-foreground mt-1 text-xs max-w-sm">
@@ -92,7 +92,7 @@ function SchedulesPage() {
 					</p>
 				</div>
 			) : schedules.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
 					{schedules.map(s => (
 						<ScheduleCard
 							key={s.id}
@@ -106,7 +106,7 @@ function SchedulesPage() {
 					))}
 				</div>
 			) : (
-				<div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-2xl py-24 text-center bg-card/10 backdrop-blur-[2px]">
+				<div className="flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl py-24 text-center bg-muted/10">
 					<CalendarDays className="size-12 opacity-20 text-muted-foreground" />
 					<h3 className="text-md font-bold text-foreground mt-3">No Schedules Found</h3>
 					<p className="text-muted-foreground mt-1 text-xs max-w-sm font-medium">

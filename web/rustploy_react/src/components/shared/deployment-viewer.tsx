@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useEffect} from 'react';
+import {useMemo, useRef, useEffect} from 'react';
 import {Terminal, Download, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {LogLine} from '#/components/shared/log-line';

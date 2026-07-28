@@ -27,7 +27,10 @@ impl<'a> SecretsHandle<'a> {
         SecretListBuilder::new(self.cli)
     }
 
-    pub async fn inspect(&self, name: impl AsRef<str>) -> DockerResult<crate::utils::docker::SecretInspect> {
+    pub async fn inspect(
+        &self,
+        name: impl AsRef<str>,
+    ) -> DockerResult<crate::utils::docker::SecretInspect> {
         let out = self.cli.run(["secret", "inspect", name.as_ref()]).await?;
         let mut json: Vec<crate::utils::docker::SecretInspect> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())

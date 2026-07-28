@@ -1,4 +1,4 @@
-use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
+use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto, serialize_json_string_vec};
 use crate::services::database::{DatabaseKind, DatabaseRecord};
 use auto_di::singleton;
 use sqlx::SqlitePool;
@@ -20,7 +20,7 @@ impl MysqlRepository {
             r#"SELECT 'mysql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
                database_name AS "database_name?", database_user AS "database_user?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM mysql_dbs WHERE id = ?"#,
             id
         )
@@ -38,11 +38,13 @@ impl MysqlRepository {
         db_password: &str,
         root_password: &str,
     ) -> sqlx::Result<i64> {
+        let args = serialize_json_string_vec(input.args.as_ref())?;
+        let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?;
         let result = sqlx::query!(
             r#"INSERT INTO mysql_dbs
                (name, app_name, description, docker_image, database_name, database_user,
-                database_password, database_root_password, external_port, environment_id, server_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                database_password, database_root_password, external_port, command, args, env_var, network_ids, detach_rustploy_network, environment_id, server_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, '[]'), COALESCE(?, 0), ?, ?)"#,
             input.name,
             app_name,
             input.description,
@@ -52,6 +54,11 @@ impl MysqlRepository {
             db_password,
             root_password,
             input.external_port,
+            input.command,
+            args,
+            input.env_var,
+            network_ids,
+            input.detach_rustploy_network,
             input.environment_id,
             input.server_id
         )
@@ -61,14 +68,16 @@ impl MysqlRepository {
     }
 
     pub async fn update(&self, id: i64, input: &PatchDatabaseDto) -> sqlx::Result<()> {
+        let args = serialize_json_string_vec(input.args.as_ref())?;
+        let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?;
         sqlx::query!(
-            "UPDATE mysql_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id) WHERE id = ?",
+            "UPDATE mysql_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id), network_ids = COALESCE(?, network_ids), detach_rustploy_network = COALESCE(?, detach_rustploy_network) WHERE id = ?",
             input.name,
             input.description,
             input.docker_image,
             input.external_port,
             input.command,
-            input.args,
+            args,
             input.env_var,
             input.memory_reservation,
             input.memory_limit,
@@ -76,6 +85,8 @@ impl MysqlRepository {
             input.cpu_limit,
             input.replicas,
             input.server_id,
+            network_ids,
+            input.detach_rustploy_network,
             id
         )
         .execute(self.pool.as_ref())
@@ -113,7 +124,7 @@ impl MysqlRepository {
             MysqlDbDetails,
             r#"SELECT name, app_name, docker_image, database_name, database_user, database_password, database_root_password,
                external_port, command, args, env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit,
-               replicas, environment_id
+               replicas, network_ids, detach_rustploy_network, environment_id
                FROM mysql_dbs WHERE id = ?"#,
             id
         )
@@ -139,5 +150,7 @@ pub struct MysqlDbDetails {
     pub cpu_reservation: Option<String>,
     pub cpu_limit: Option<String>,
     pub replicas: i64,
+    pub network_ids: String,
+    pub detach_rustploy_network: i64,
     pub environment_id: i64,
 }

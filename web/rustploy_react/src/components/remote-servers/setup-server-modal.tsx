@@ -14,9 +14,11 @@ import {Terminal, ShieldCheck, Cpu, RefreshCw, CheckCircle2, Plug} from 'lucide-
 import {LogViewer} from '#/components/shared/log-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 
+import type {RemoteServerResponse} from '#/types/api-helpers';
+
 interface SetupServerModalProps {
 	isOpen: boolean;
-	server: any | null;
+	server: RemoteServerResponse | null;
 	onClose: () => void;
 }
 
@@ -29,7 +31,7 @@ export function SetupServerModal({
 	const [auditing, setAuditing] = useState(false);
 	const [settingUp, setSettingUp] = useState(false);
 	const [setupLogs, setSetupLogs] = useState<string[]>([]);
-	const [auditResult, setAuditResult] = useState<any | null>(null);
+	const [auditResult, setAuditResult] = useState<Record<string, unknown> | null>(null);
 
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 	const auditMutation = $api.useMutation('post', '/servers/{id}/audit');
@@ -40,10 +42,10 @@ export function SetupServerModal({
 		try {
 			await testConnMutation.mutateAsync({
 				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''} as any,
+				body: {host_key_fingerprint: ''},
 			});
 			toast.success(`SSH Connection to ${server.name} verified successfully!`);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConn(false);
@@ -56,11 +58,11 @@ export function SetupServerModal({
 		try {
 			const res = await auditMutation.mutateAsync({
 				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''} as any,
+				body: {host_key_fingerprint: ''},
 			});
-			setAuditResult(res);
+			setAuditResult(res as Record<string, unknown>);
 			toast.success('Server audit completed!');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setAuditing(false);
@@ -235,9 +237,9 @@ export function SetupServerModal({
 							</div>
 							<div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
 								<span>Docker: {auditResult.docker_installed ? 'Installed' : 'Missing'}</span>
-								<span>Arch: {auditResult.arch || 'x86_64'}</span>
-								<span>OS: {auditResult.os || 'Linux'}</span>
-								<span>CPU Cores: {auditResult.cpus || 1}</span>
+								<span>Arch: {String(auditResult.arch || 'x86_64')}</span>
+								<span>OS: {String(auditResult.os || 'Linux')}</span>
+								<span>CPU Cores: {String(auditResult.cpus || 1)}</span>
 							</div>
 						</div>
 					)}

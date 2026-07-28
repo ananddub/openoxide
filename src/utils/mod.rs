@@ -16,9 +16,8 @@ pub mod zip;
 // pub mod k8s;
 pub mod os;
 
-
 #[tokio::test]
-async fn test_docker(){
+async fn test_docker() {
     use crate::utils::docker::DockerCli;
     let docker = DockerCli::new_local();
     let data = docker.containers().inspect("b671b4542569").await.unwrap();

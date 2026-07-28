@@ -58,7 +58,9 @@ impl DestinationService {
         let item = Destination {
             id: None,
             name: input.name,
-            provider: DestinationsProviderEnum::from_preset(&input.provider).as_db_str().to_string(),
+            provider: DestinationsProviderEnum::from_preset(&input.provider)
+                .as_db_str()
+                .to_string(),
             access_key: input.access_key,
             secret_access_key: input.secret_access_key,
             bucket: input.bucket,
@@ -84,7 +86,9 @@ impl DestinationService {
             current.name = v;
         }
         if let Some(v) = input.provider {
-            current.provider = DestinationsProviderEnum::from_preset(&v).as_db_str().to_string();
+            current.provider = DestinationsProviderEnum::from_preset(&v)
+                .as_db_str()
+                .to_string();
         }
         if let Some(v) = input.access_key {
             current.access_key = v;

@@ -2,13 +2,14 @@ import {Package, RefreshCw, Server} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import type {RemoteServerResponse} from '#/types/api-helpers';
 
 interface DockerHeaderProps {
 	totalContainers: number;
 	runningContainers: number;
 	onRefresh: () => void;
 	isRefreshing: boolean;
-	servers?: any[];
+	servers?: RemoteServerResponse[];
 	selectedServerId: string;
 	onSelectServer: (id: string) => void;
 }
@@ -22,55 +23,63 @@ export function DockerHeader({
 	selectedServerId,
 	onSelectServer,
 }: DockerHeaderProps) {
-	const SelectComponent = Select as any;
 	const availableServers = [
-		{ id: 'local', name: 'Local Server', ip_address: '127.0.0.1' },
-		...(servers || []).filter((s: any) => String(s.id) !== 'local' && !String(s.name).toLowerCase().includes('local')),
+		{id: 'local', name: 'Local Server', ip_address: '127.0.0.1'},
+		...(servers || []).filter(
+			(s: RemoteServerResponse) =>
+				String(s.id) !== 'local' && !String(s.name).toLowerCase().includes('local')
+		),
 	];
 
-	const selectedServer = availableServers.find((s: any) => String(s.id) === String(selectedServerId));
+	const selectedServer = availableServers.find((s) => String(s.id) === String(selectedServerId));
 
 	return (
-		<section className="bg-card border border-border/80 rounded-2xl p-5 flex items-center justify-between flex-wrap gap-4 shadow-sm">
-			<div>
-				<h3 className="text-sm font-bold text-foreground flex items-center gap-2 tracking-tight">
-					<Package className="w-4 h-4 text-primary" /> Docker Engine Containers
-				</h3>
-				<p className="text-xs text-muted-foreground mt-0.5">Manage and inspect system-wide Docker containers running on the selected host server</p>
-			</div>
+		<div className="pb-4 border-b border-border/40 shrink-0">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+				{/* Title Section */}
+				<div className="flex items-center gap-3">
+					<Package className="size-6 text-muted-foreground self-center shrink-0" />
+					<div>
+						<h1 className="text-base font-bold text-foreground tracking-tight">Docker Containers</h1>
+						<p className="text-xs text-muted-foreground mt-0.5">
+							Manage and inspect system-wide Docker containers running on the selected host
+						</p>
+					</div>
+				</div>
 
-			<div className="flex items-center gap-3 flex-wrap">
-				{/* Server Switcher Dropdown */}
-				<div className="flex items-center gap-2">
-					<Server className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-					<SelectComponent value={selectedServerId} onValueChange={onSelectServer}>
-						<SelectTrigger className="w-[180px] h-8 text-xs font-semibold bg-card border-border shadow-xs">
+				{/* Action Toolbar */}
+				<div className="flex items-center gap-2.5 flex-wrap">
+					{/* Running Count Badge */}
+					<Badge variant="secondary" className="h-9 px-3.5 text-xs font-mono border border-border/40 font-semibold">
+						Running: <span className="text-emerald-500 font-bold ml-1">{runningContainers}</span> / {totalContainers}
+					</Badge>
+
+					{/* Refresh Button */}
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onRefresh}
+						disabled={isRefreshing}
+						className="h-9 text-xs font-medium border-border/60 gap-2 cursor-pointer shadow-2xs">
+						<RefreshCw className={`size-3.5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
+					</Button>
+
+					{/* Server Selector Dropdown */}
+					<Select value={selectedServerId} onValueChange={(v) => v && onSelectServer(v)}>
+						<SelectTrigger className="w-[170px] h-9 text-xs font-medium bg-card border-border/60 gap-2 shrink-0 shadow-2xs">
+							<Server className="size-3.5 text-muted-foreground shrink-0" />
 							<SelectValue>{selectedServer?.name || 'Local Server'}</SelectValue>
 						</SelectTrigger>
-						<SelectContent className="bg-card border-border">
-							{availableServers.map((s: any) => (
-								<SelectItem key={String(s.id)} value={String(s.id)} className="text-xs font-semibold">
-									{s.name} <span className="text-[10px] text-muted-foreground font-mono ml-1">({s.ip_address || 'local'})</span>
+						<SelectContent className="bg-card border-border text-xs w-[190px] p-1 shadow-md">
+							{availableServers.map((s) => (
+								<SelectItem key={String(s.id)} value={String(s.id)} className="text-xs font-medium cursor-pointer">
+									{s.name} <span className="text-[10px] text-muted-foreground font-mono">({(s as Record<string, unknown>).ip_address as string || 'local'})</span>
 								</SelectItem>
 							))}
 						</SelectContent>
-					</SelectComponent>
+					</Select>
 				</div>
-
-				<Badge variant="outline" className="text-xs font-mono px-3 py-1 h-8 flex items-center gap-1 border-border">
-					Running: <span className="text-emerald-400 font-bold ml-1">{runningContainers}</span> / {totalContainers}
-				</Badge>
-
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={onRefresh}
-					disabled={isRefreshing}
-					className="h-8 text-xs font-semibold flex items-center gap-1.5 border-border"
-				>
-					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-				</Button>
 			</div>
-		</section>
+		</div>
 	);
 }

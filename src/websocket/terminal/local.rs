@@ -6,7 +6,9 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, socket_key, spawn_output_task, spawn_pty_reader};
-use super::types::{DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted};
+use super::types::{
+    DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
+};
 
 pub async fn spawn_docker_terminal(
     socket: SocketRef,
@@ -40,7 +42,10 @@ pub async fn spawn_docker_terminal(
             } else {
                 emit_error(
                     &socket,
-                    format!("container for service '{}' is not currently running", input.container),
+                    format!(
+                        "container for service '{}' is not currently running",
+                        input.container
+                    ),
                 );
                 return;
             }

@@ -96,17 +96,17 @@ function ProjectDetailPage() {
 				</div>
 			) : (
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-in fade-in duration-200">
-					{filteredServices.map(srv => (
+					{filteredServices.map((srv: any) => (
 						<ServiceCard
 							key={srv.key}
 							projectId={srv.projectId}
 							type={srv.type}
-							id={srv.id}
-							name={srv.name}
-							subtitle={srv.subtitle}
-							status={srv.status}
-							createdAt={srv.createdAt}
-							dbKind={'dbKind' in srv ? srv.dbKind : undefined}
+							id={Number(srv.id)}
+							name={String(srv.name || '')}
+							subtitle={String(srv.subtitle || '')}
+							status={String(srv.status || 'stopped')}
+							createdAt={Number(srv.createdAt || Date.now())}
+							dbKind={srv.dbKind ? String(srv.dbKind) : undefined}
 						/>
 					))}
 				</div>

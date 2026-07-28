@@ -5,10 +5,9 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export function formatApiError(error: any): string {
+export function formatApiError(error: unknown): string {
 	if (!error) return 'An unexpected error occurred';
 	if (typeof error === 'string') {
-		// Clean up common database errors for friendly user presentation
 		if (error.includes('UNIQUE constraint failed: projects.name')) {
 			return 'A project with this name already exists.';
 		}
@@ -17,17 +16,18 @@ export function formatApiError(error: any): string {
 		}
 		return error;
 	}
-	if (typeof error === 'object') {
-		if (error.error) {
-			if (error.details) {
-				const details = Object.entries(error.details)
-					.map(([field, errs]) => `${field}: ${(errs as string[]).join(', ')}`)
+	if (typeof error === 'object' && error !== null) {
+		const errObj = error as Record<string, unknown>;
+		if (typeof errObj.error === 'string') {
+			if (typeof errObj.details === 'object' && errObj.details !== null) {
+				const details = Object.entries(errObj.details as Record<string, string[]>)
+					.map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
 					.join('; ');
-				return `${error.error} (${details})`;
+				return `${errObj.error} (${details})`;
 			}
-			return error.error;
+			return errObj.error;
 		}
-		if (error.message) return error.message;
+		if (typeof errObj.message === 'string') return errObj.message;
 	}
 	return 'An unexpected error occurred';
 }

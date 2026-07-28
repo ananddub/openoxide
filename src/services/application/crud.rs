@@ -1,15 +1,29 @@
 use crate::api::dto::application::{CreateApplicationDto, PatchApplicationDto};
+use crate::core::cache::{CacheEnum, CacheKey};
 
 use super::{ApplicationRecord, ApplicationService, queries::generate_app_name};
 
 impl ApplicationService {
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ApplicationRecord> {
-        let app = self
-            .repo_app
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
-        Ok(ApplicationRecord::from(app))
+        let key = CacheKey::Application(id);
+        let res = self
+            .cache
+            .try_get_with(key, async {
+                let app = self
+                    .repo_app
+                    .get_by_id(id)
+                    .await?
+                    .ok_or(sqlx::Error::RowNotFound)?;
+                Ok::<_, sqlx::Error>(CacheEnum::Application(ApplicationRecord::from(app)))
+            })
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+
+        if let CacheEnum::Application(record) = res {
+            Ok(record)
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
     }
 
     pub async fn list_by_environment(
@@ -52,6 +66,12 @@ impl ApplicationService {
         let server_id = input.server_id.or(current.server_id);
         let build_server_id = input.build_server_id.or(current.build_server_id);
         let registry_id = input.registry_id.or(current.registry_id);
+        let network_ids =
+            crate::api::dto::database::serialize_json_string_vec(input.network_ids.as_ref())?
+                .unwrap_or(current.network_ids);
+        let detach_rustploy_network = input
+            .detach_rustploy_network
+            .unwrap_or(current.detach_rustploy_network);
 
         let app = self
             .repo_app
@@ -66,14 +86,24 @@ impl ApplicationService {
                 server_id,
                 build_server_id,
                 registry_id,
+                network_ids,
+                detach_rustploy_network,
             )
             .await?;
-        Ok(ApplicationRecord::from(app))
+        let record = ApplicationRecord::from(app);
+        self.cache
+            .insert(
+                CacheKey::Application(id),
+                CacheEnum::Application(record.clone()),
+            )
+            .await;
+        Ok(record)
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
         self.repo_app.delete(id).await?;
+        self.cache.invalidate(&CacheKey::Application(id)).await;
         Ok(())
     }
 }

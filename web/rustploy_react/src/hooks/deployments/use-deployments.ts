@@ -89,7 +89,7 @@ export function useDeployments() {
 			});
 			toast.success('Deployment cancellation requested');
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};

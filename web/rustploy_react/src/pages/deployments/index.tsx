@@ -102,21 +102,35 @@ function DeploymentsPage() {
 							</p>
 						</div>
 					) : filteredAndSorted.length > 0 ? (
-						<section className="bg-card border border-border rounded-xl overflow-hidden animate-in fade-in duration-200">
-							<div className="divide-y divide-border/60">
-								{filteredAndSorted.map(d => (
-									<DeploymentItem
-										key={d.id}
-										deployment={d}
-										onViewLogs={setSelectedDeployment}
-										onViewError={setErrorDetailDeployment}
-										onCancel={handleCancelDeployment}
-									/>
-								))}
+						<section className="bg-card border border-border rounded-xl overflow-hidden shadow-2xs animate-in fade-in duration-200 flex flex-col">
+							<div className="max-h-[calc(100vh-320px)] min-h-[320px] overflow-y-auto">
+								<Table>
+									<TableHeader className="sticky top-0 z-20">
+										<TableRow className="border-border hover:bg-transparent">
+											<TableHead className="w-[80px] h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">ID</TableHead>
+											<TableHead className="h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">Deployment Title</TableHead>
+											<TableHead className="h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">Type</TableHead>
+											<TableHead className="h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">Status</TableHead>
+											<TableHead className="h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">Date</TableHead>
+											<TableHead className="text-right h-10 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0 z-20 border-b border-border">Actions</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{filteredAndSorted.map(d => (
+											<DeploymentItem
+												key={d.id}
+												deployment={d}
+												onViewLogs={setSelectedDeployment}
+												onViewError={setErrorDetailDeployment}
+												onCancel={handleCancelDeployment}
+											/>
+										))}
+									</TableBody>
+								</Table>
 							</div>
 						</section>
 					) : (
-						<div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-2xl py-20 text-center bg-card/10 backdrop-blur-[2px]">
+						<div className="flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl py-20 text-center bg-muted/10">
 							<FileText className="size-12 opacity-20 text-muted-foreground" />
 							<h3 className="text-md font-bold text-foreground mt-3">No deployment logs found</h3>
 							<p className="text-muted-foreground mt-1 text-xs max-w-sm">
@@ -148,10 +162,10 @@ function DeploymentsPage() {
 					</div>
 
 					{activeQueue.length > 0 ? (
-						<div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm animate-in fade-in duration-200">
+						<div className="bg-muted/20 dark:bg-muted/15 border border-border/40 rounded-xl overflow-hidden shadow-2xs animate-in fade-in duration-200">
 							<Table>
 								<TableHeader className="bg-muted/40">
-									<TableRow className="border-border">
+									<TableRow className="border-border/40">
 										<TableHead className="w-[80px] text-xs font-bold">ID</TableHead>
 										<TableHead className="text-xs font-bold">Deployment Title</TableHead>
 										<TableHead className="text-xs font-bold">Type</TableHead>

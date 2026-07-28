@@ -106,7 +106,7 @@ export function AddOrganization({
 				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
 				onOpenChange(false);
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setIsPending(false);

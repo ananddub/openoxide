@@ -67,7 +67,11 @@ pub struct SshKeyResponseDto {
 impl From<SshKey> for SshKeyResponseDto {
     fn from(value: SshKey) -> Self {
         let has_priv = !value.private_key.is_empty();
-        let priv_key = if has_priv { Some(value.private_key) } else { None };
+        let priv_key = if has_priv {
+            Some(value.private_key)
+        } else {
+            None
+        };
         Self {
             id: value.id.expect("persisted ssh key must have an id"),
             name: value.name,

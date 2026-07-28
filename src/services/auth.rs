@@ -11,8 +11,8 @@ use crate::{
     api::dto::auth::{AuthResponseDto, LoginDto, SignupDto},
     db::models::users::User,
     repository::{
-        GroupRepository, JwtTokenRepository, OrganizationMemberRepository,
-        OrganizationRepository, UserRepository,
+        GroupRepository, JwtTokenRepository, OrganizationMemberRepository, OrganizationRepository,
+        UserRepository,
     },
     utils::jwt::{
         claim::{Claims, JwtSubject},
@@ -110,7 +110,10 @@ impl AuthService {
             .await?;
 
         let user_id = user.id.ok_or_else(|| AuthError::Internal)?;
-        let first_name = user.first_name.clone().unwrap_or_else(|| "Default".to_string());
+        let first_name = user
+            .first_name
+            .clone()
+            .unwrap_or_else(|| "Default".to_string());
         let org_name = format!("{}'s Organization", first_name);
         let org_slug = format!("{}-organization", first_name.to_lowercase());
 
@@ -296,13 +299,13 @@ mod tests {
     //
     //     let db = Arc::new(pool);
 
-        // AuthService {
-        //     db: db.clone(),
-        //     jwt: Arc::new(JwtService::new(Arc::new(JwtConfig::default()))),
-        //     repo_user: Arc::new(UserRepository::new(db.clone())),
-        //     repo_token: Arc::new(JwtTokenRepository::new(db.clone())),
-        //     repo_group: Arc::new(GroupRepository::new(db.clone())),
-        // }
+    // AuthService {
+    //     db: db.clone(),
+    //     jwt: Arc::new(JwtService::new(Arc::new(JwtConfig::default()))),
+    //     repo_user: Arc::new(UserRepository::new(db.clone())),
+    //     repo_token: Arc::new(JwtTokenRepository::new(db.clone())),
+    //     repo_group: Arc::new(GroupRepository::new(db.clone())),
+    // }
     // }
 
     // #[tokio::test]

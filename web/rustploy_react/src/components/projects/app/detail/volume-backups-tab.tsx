@@ -43,7 +43,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 	const handleRestoreBackup = async (id: number) => {
 		setActiveActionId({id, action: 'restore'});
 		try {
-			await restoreMutation.mutateAsync({params: {path: {id}}});
+			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
 			toast.success('Volume restore process initiated successfully');
 			refetch();
 		} catch (err: any) {

@@ -10,16 +10,18 @@ import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
+import type {RemoteServerResponse} from '#/types/api-helpers';
+
 export const Route = createFileRoute('/_app/remote-servers')({
 	component: RemoteServersPage,
 });
 
 function RemoteServersPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingServer, setEditingServer] = useState<any | null>(null);
-	const [setupServer, setSetupServer] = useState<any | null>(null);
-	const [deletingServer, setDeletingServer] = useState<any | null>(null);
-	const [terminalServer, setTerminalServer] = useState<any | null>(null);
+	const [editingServer, setEditingServer] = useState<RemoteServerResponse | null>(null);
+	const [deletingServer, setDeletingServer] = useState<RemoteServerResponse | null>(null);
+	const [setupServer, setSetupServer] = useState<RemoteServerResponse | null>(null);
+	const [terminalServer, setTerminalServer] = useState<RemoteServerResponse | null>(null);
 
 	const {
 		data: rawServers = [],
@@ -30,13 +32,13 @@ function RemoteServersPage() {
 
 	const {data: rawSshKeys = []} = $api.useQuery('get', '/ssh-keys');
 
-	const servers = Array.isArray(rawServers) ? rawServers : [];
+	const servers = Array.isArray(rawServers) ? (rawServers as RemoteServerResponse[]) : [];
 	const sshKeys = Array.isArray(rawSshKeys) ? rawSshKeys : [];
 
 	const activateMutation = $api.useMutation('post', '/remote-servers/{id}/activate');
 	const deactivateMutation = $api.useMutation('post', '/remote-servers/{id}/deactivate');
 
-	const handleToggleStatus = async (server: any) => {
+	const handleToggleStatus = async (server: RemoteServerResponse) => {
 		const isActive = (server.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 		try {
 			if (isActive) {
@@ -47,7 +49,7 @@ function RemoteServersPage() {
 				toast.success(`Server "${server.name}" activated`);
 			}
 			refetch();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};

@@ -16,10 +16,10 @@ export function useSignup(onErrorCallback?: (msg: string) => void) {
 			});
 		},
 		onSuccess: ({data: res, error: err}) => {
-			const errorBody = err as any;
+			const errorBody = err as unknown as Record<string, unknown> | null;
 			if (errorBody != null) {
 				onErrorCallback?.(
-					errorBody.message ||
+					(errorBody.message as string) ||
 						'An unexpected error occurred. Please try again.',
 				);
 			} else if (res?.user) {

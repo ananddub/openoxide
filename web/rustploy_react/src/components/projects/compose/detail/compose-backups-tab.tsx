@@ -113,7 +113,7 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 
 	const handleRestore = async (id: number) => {
 		try {
-			await restoreMutation.mutateAsync({params: {path: {id}}});
+			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
 			toast.success('Volume snapshot restore initiated');
 			refetch();
 		} catch (err: any) {

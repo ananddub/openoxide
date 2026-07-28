@@ -1,8 +1,8 @@
 use crate::db::models::mounts::Mount;
 use crate::repository::RedisRepository;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, ExternalNetwork, Limits, RestartPolicy, StackFile, StackMount,
-    StackService, UpdateConfig,
+    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
+    UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
@@ -40,17 +40,21 @@ pub async fn build_redis_stack(
         command = Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
-            format!("redis-server --requirepass {}", db.database_password),
+            format!(
+                "redis-server --requirepass {}",
+                shell_single_quote(&db.database_password)
+            ),
         ]);
     }
 
     // Parse environment variables
-    let resolved_env = crate::utils::builder::env::generate_env_db(
+    let mut resolved_env = crate::utils::builder::env::generate_env_db(
         db.environment_id,
         db.env_var.as_deref().unwrap_or(""),
     )
     .await
     .unwrap_or_default();
+    resolved_env.insert("REDIS_PASSWORD".to_string(), db.database_password.clone());
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();
@@ -84,13 +88,19 @@ pub async fn build_redis_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:6379", port));
     }
+    let (service_networks, networks) =
+        crate::utils::builder::database::builder::resolve_database_networks(
+            Some(&db.network_ids),
+            db.detach_rustploy_network,
+        )
+        .await?;
 
     let service = StackService {
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
-        networks: vec![crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string()],
+        networks: service_networks,
         deploy: DeploySpec {
             replicas: db.replicas as u32,
             resources: DeployResources {
@@ -132,15 +142,6 @@ pub async fn build_redis_stack(
     let mut services = BTreeMap::new();
     services.insert("db".to_string(), service);
 
-    let mut networks = BTreeMap::new();
-    networks.insert(
-        crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        ExternalNetwork {
-            external: true,
-            name: crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        },
-    );
-
     let mut top_level_volumes = BTreeMap::new();
     for m in &stack_mounts {
         if m.kind == "volume" {
@@ -167,4 +168,8 @@ pub async fn build_redis_stack(
     })?;
 
     Ok((db.app_name, db.docker_image, yaml))
+}
+
+fn shell_single_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
 }

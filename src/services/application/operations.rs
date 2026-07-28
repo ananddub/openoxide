@@ -6,9 +6,7 @@ use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
 use crate::utils::docker::DockerCli;
 use crate::utils::docker::query::filter::ServiceFilter;
 
-use super::{
-    ApplicationOperation, ApplicationOperationResult, ApplicationService,
-};
+use super::{ApplicationOperation, ApplicationOperationResult, ApplicationService};
 
 impl ApplicationService {
     pub async fn run_operation(
@@ -30,6 +28,9 @@ impl ApplicationService {
             .await?;
 
         let _ = self.repo_app.update_status(id, "STARTING").await;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Application(id))
+            .await;
         let app = self.get_by_id(id).await?;
 
         let log_path = format!("pending-app-{}", id);
@@ -111,6 +112,9 @@ impl ApplicationService {
         }
 
         self.repo_app.update_status(id, "STOPPED").await?;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Application(id))
+            .await;
         Ok(true)
     }
 }

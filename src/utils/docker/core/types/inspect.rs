@@ -48,7 +48,11 @@ pub struct ContainerInspect {
     pub mount_label: String,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub process_label: String,
-    #[serde(rename = "ExecIDs", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "ExecIDs",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub exec_ids: Vec<String>,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub host_config: serde_json::Value,
@@ -71,7 +75,11 @@ pub struct ContainerInspectState {
     pub paused: bool,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub restarting: bool,
-    #[serde(rename = "OOMKilled", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "OOMKilled",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub oom_killed: bool,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub dead: bool,
@@ -124,13 +132,29 @@ pub struct ContainerInspectConfig {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct ContainerInspectNetworkSettings {
-    #[serde(rename = "IPAddress", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "IPAddress",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub ip_address: String,
-    #[serde(rename = "IPPrefixLen", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "IPPrefixLen",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub ip_prefix_len: u32,
-    #[serde(rename = "Gateway", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "Gateway",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub gateway: String,
-    #[serde(rename = "MacAddress", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "MacAddress",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub mac_address: String,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub ports: HashMap<String, Option<Vec<ContainerInspectPortBinding>>>,
@@ -141,16 +165,28 @@ pub struct ContainerInspectNetworkSettings {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct ContainerInspectPortBinding {
-    #[serde(rename = "HostIp", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "HostIp",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub host_ip: String,
-    #[serde(rename = "HostPort", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "HostPort",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub host_port: String,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct ContainerInspectMount {
-    #[serde(rename = "Type", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "Type",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub mount_type: String,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub name: String,
@@ -228,7 +264,11 @@ pub struct NetworkInspect {
     pub scope: String,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub driver: String,
-    #[serde(rename = "EnableIPv6", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "EnableIPv6",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub enable_ipv6: bool,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub internal: bool,
@@ -236,7 +276,11 @@ pub struct NetworkInspect {
     pub attachable: bool,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub ingress: bool,
-    #[serde(rename = "IPAM", default, deserialize_with = "deserialize_null_default")]
+    #[serde(
+        rename = "IPAM",
+        default,
+        deserialize_with = "deserialize_null_default"
+    )]
     pub ipam: serde_json::Value,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub containers: HashMap<String, serde_json::Value>,

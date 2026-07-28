@@ -20,7 +20,7 @@ export function CreateVolumeBackupModal({open, onOpenChange, app, onSuccess}: Cr
 	const [volumeName, setVolumeName] = useState('');
 	const [cronExpr, setCronExpr] = useState('0 0 * * *');
 	const [prefix, setPrefix] = useState('volume-backups/');
-	const [destinationId, setDestinationId] = useState(1);
+	const [destinationId] = useState(1);
 	const [turnOff, setTurnOff] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 

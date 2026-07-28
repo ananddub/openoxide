@@ -43,7 +43,10 @@ impl DatabaseService {
         };
 
         let target_status = match operation {
-            DatabaseOperation::Start | DatabaseOperation::Deploy | DatabaseOperation::Redeploy | DatabaseOperation::Reload => "STARTING",
+            DatabaseOperation::Start
+            | DatabaseOperation::Deploy
+            | DatabaseOperation::Redeploy
+            | DatabaseOperation::Reload => "STARTING",
             DatabaseOperation::Stop => "STOPPING",
         };
 
@@ -55,6 +58,9 @@ impl DatabaseService {
             DatabaseKind::Redis => self.repo_redis.update_status(id, target_status).await?,
             DatabaseKind::Libsql => self.repo_libsql.update_status(id, target_status).await?,
         };
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Database(id))
+            .await;
 
         let log_path = format!("pending-db-{}", id);
         let deployment_id = self
@@ -112,23 +118,41 @@ impl DatabaseService {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
         }
 
-        if let Ok(app_name) = self.repo_deploy.get_database_app_name(id, kind.as_str()).await {
-            let docker_cli = crate::utils::docker::DockerCli::new_local();
+        if let (Ok(app_name), Ok((server_id, _))) = (
+            self.repo_deploy
+                .get_database_app_name(id, kind.as_str())
+                .await,
+            self.database_server_id_and_name(kind, id).await,
+        ) {
+            let docker_cli = self.database_docker(server_id).await?;
             if let Ok(services) = docker_cli
                 .services()
                 .list()
-                .filter(crate::utils::docker::query::ServiceFilter::name(format!("{}_", app_name)))
+                .filter(crate::utils::docker::query::ServiceFilter::name(format!(
+                    "{}_",
+                    app_name
+                )))
                 .run_json()
                 .await
             {
                 for s in services {
                     if &s.replicas != "0/0" {
-                        let _ = docker_cli.services().scale().service(&s.name, 0).run().await;
+                        let _ = docker_cli
+                            .services()
+                            .scale()
+                            .service(&s.name, 0)
+                            .run()
+                            .await;
                     }
                 }
             } else {
                 let service_name = format!("{}_db", app_name);
-                let _ = docker_cli.services().scale().service(&service_name, 0).run().await;
+                let _ = docker_cli
+                    .services()
+                    .scale()
+                    .service(&service_name, 0)
+                    .run()
+                    .await;
             }
         }
 
@@ -140,7 +164,43 @@ impl DatabaseService {
             DatabaseKind::Redis => self.repo_redis.update_status(id, "STOPPED").await?,
             DatabaseKind::Libsql => self.repo_libsql.update_status(id, "STOPPED").await?,
         };
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Database(id))
+            .await;
 
         Ok(true)
+    }
+
+    async fn database_server_id_and_name(
+        &self,
+        kind: DatabaseKind,
+        id: i64,
+    ) -> sqlx::Result<(Option<i64>, String)> {
+        match kind {
+            DatabaseKind::Postgres => self.repo_postgres.get_server_id_and_name(id).await,
+            DatabaseKind::Mysql => self.repo_mysql.get_server_id_and_name(id).await,
+            DatabaseKind::Mariadb => self.repo_mariadb.get_server_id_and_name(id).await,
+            DatabaseKind::Mongo => self.repo_mongo.get_server_id_and_name(id).await,
+            DatabaseKind::Redis => self.repo_redis.get_server_id_and_name(id).await,
+            DatabaseKind::Libsql => self.repo_libsql.get_server_id_and_name(id).await,
+        }
+    }
+
+    async fn database_docker(
+        &self,
+        server_id: Option<i64>,
+    ) -> sqlx::Result<crate::utils::docker::DockerCli> {
+        match server_id {
+            Some(server_id) => {
+                let executor =
+                    crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
+                        .await
+                        .map_err(sqlx::Error::Protocol)?;
+                Ok(crate::utils::docker::DockerCli::from_remote_executor(
+                    executor,
+                ))
+            }
+            None => Ok(crate::utils::docker::DockerCli::new_local()),
+        }
     }
 }

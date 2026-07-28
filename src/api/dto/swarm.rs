@@ -11,6 +11,12 @@ use crate::utils::docker::types::NodeSummary;
 pub struct SwarmConnectionDto {
     /// Server DB id — used to resolve SSH credentials.
     pub server_id: Option<i64>,
+    /// Force the operation when Docker requires explicit confirmation.
+    ///
+    /// Used by swarm leave for manager nodes. Keep this false for normal
+    /// leave actions; set true only when intentionally resetting a node so it
+    /// can join another cluster.
+    pub force: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, poem_openapi::Object)]

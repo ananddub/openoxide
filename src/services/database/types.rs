@@ -34,7 +34,7 @@ impl DatabaseKind {
             Self::Mariadb => "mariadb:13",
             Self::Mongo => "mongo:8",
             Self::Redis => "redis:8",
-            Self::Libsql => "ghcr.io/tursodatabase/libsql-server:latest",
+            Self::Libsql => "ghcr.io/tursodatabase/libsql-server:v0.24.32",
         }
     }
 }
@@ -72,6 +72,8 @@ pub struct DatabaseRecord {
     pub cpu_reservation: Option<String>,
     pub cpu_limit: Option<String>,
     pub replicas: i64,
+    pub network_ids: String,
+    pub detach_rustploy_network: i64,
     pub app_status: String,
     pub environment_id: i64,
     pub server_id: Option<i64>,

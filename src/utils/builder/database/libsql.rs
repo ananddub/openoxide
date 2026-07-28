@@ -1,8 +1,8 @@
 use crate::db::models::mounts::Mount;
 use crate::repository::LibsqlRepository;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, ExternalNetwork, Limits, RestartPolicy, StackFile, StackMount,
-    StackService, UpdateConfig,
+    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
+    UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
@@ -27,7 +27,7 @@ pub async fn build_libsql_stack(
         })?;
 
     // Parse command and args
-    let mut command: Option<Vec<String>> = None;
+    let command: Option<Vec<String>>;
     if let Some(c) = &db.command {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
@@ -36,6 +36,12 @@ pub async fn build_libsql_stack(
             }
         }
         command = Some(full);
+    } else {
+        let mut final_command = "sqld --db-path iku.db --http-listen-addr 0.0.0.0:8080 --grpc-listen-addr 0.0.0.0:5001 --admin-listen-addr 0.0.0.0:5000".to_string();
+        if db.enable_namespaces != 0 {
+            final_command.push_str(" --enable-namespaces");
+        }
+        command = Some(vec!["/bin/sh".to_string(), "-c".to_string(), final_command]);
     }
 
     // Parse environment variables
@@ -46,8 +52,16 @@ pub async fn build_libsql_stack(
     .await
     .unwrap_or_default();
 
-    resolved_env.insert("SQLD_NODE".to_string(), db.sqld_node.clone());
-    if db.sqld_node == "REPLICA" {
+    let sqld_node = db.sqld_node.to_ascii_lowercase();
+    resolved_env.insert("SQLD_NODE".to_string(), sqld_node.clone());
+    resolved_env.insert(
+        "SQLD_HTTP_AUTH".to_string(),
+        format!(
+            "basic:{}",
+            base64_encode(format!("{}:{}", db.database_user, db.database_password).as_bytes())
+        ),
+    );
+    if sqld_node == "replica" {
         if let Some(url) = &db.sqld_primary_url {
             resolved_env.insert("SQLD_PRIMARY_URL".to_string(), url.clone());
         }
@@ -89,13 +103,25 @@ pub async fn build_libsql_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:8080", port));
     }
+    if let Some(port) = db.external_grpc_port {
+        ports.push(format!("{}:5001", port));
+    }
+    if let Some(port) = db.external_admin_port {
+        ports.push(format!("{}:5000", port));
+    }
+    let (service_networks, networks) =
+        crate::utils::builder::database::builder::resolve_database_networks(
+            Some(&db.network_ids),
+            db.detach_rustploy_network,
+        )
+        .await?;
 
     let service = StackService {
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
-        networks: vec![crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string()],
+        networks: service_networks,
         deploy: DeploySpec {
             replicas: db.replicas as u32,
             resources: DeployResources {
@@ -137,15 +163,6 @@ pub async fn build_libsql_stack(
     let mut services = BTreeMap::new();
     services.insert("db".to_string(), service);
 
-    let mut networks = BTreeMap::new();
-    networks.insert(
-        crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        ExternalNetwork {
-            external: true,
-            name: crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        },
-    );
-
     let mut top_level_volumes = BTreeMap::new();
     for m in &stack_mounts {
         if m.kind == "volume" {
@@ -172,4 +189,30 @@ pub async fn build_libsql_stack(
     })?;
 
     Ok((db.app_name, db.docker_image, yaml))
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut result = String::with_capacity((data.len() + 2) / 3 * 4);
+    for chunk in data.chunks(3) {
+        let n = match chunk.len() {
+            3 => ((chunk[0] as u32) << 16) | ((chunk[1] as u32) << 8) | (chunk[2] as u32),
+            2 => ((chunk[0] as u32) << 16) | ((chunk[1] as u32) << 8),
+            1 => (chunk[0] as u32) << 16,
+            _ => unreachable!(),
+        };
+        result.push(ALPHABET[((n >> 18) & 0x3F) as usize] as char);
+        result.push(ALPHABET[((n >> 12) & 0x3F) as usize] as char);
+        result.push(if chunk.len() > 1 {
+            ALPHABET[((n >> 6) & 0x3F) as usize] as char
+        } else {
+            '='
+        });
+        result.push(if chunk.len() > 2 {
+            ALPHABET[(n & 0x3F) as usize] as char
+        } else {
+            '='
+        });
+    }
+    result
 }

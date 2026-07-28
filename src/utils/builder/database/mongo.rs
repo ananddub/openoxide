@@ -1,8 +1,8 @@
 use crate::db::models::mounts::Mount;
 use crate::repository::MongoRepository;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, ExternalNetwork, Limits, RestartPolicy, StackFile, StackMount,
-    StackService, UpdateConfig,
+    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
+    UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
@@ -28,7 +28,13 @@ pub async fn build_mongo_stack(
 
     // Parse command and args
     let mut command: Option<Vec<String>> = None;
-    if let Some(c) = &db.command {
+    if replica_sets_enabled(db.replica_sets) {
+        command = Some(vec![
+            "/bin/bash".to_string(),
+            "-c".to_string(),
+            mongo_replica_startup_script(&db.app_name, &db.database_user, &db.database_password),
+        ]);
+    } else if let Some(c) = &db.command {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
             if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
@@ -54,6 +60,9 @@ pub async fn build_mongo_stack(
         "MONGO_INITDB_ROOT_PASSWORD".to_string(),
         db.database_password.clone(),
     );
+    if replica_sets_enabled(db.replica_sets) {
+        resolved_env.insert("MONGO_INITDB_DATABASE".to_string(), "admin".to_string());
+    }
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();
@@ -87,13 +96,19 @@ pub async fn build_mongo_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:27017", port));
     }
+    let (service_networks, networks) =
+        crate::utils::builder::database::builder::resolve_database_networks(
+            Some(&db.network_ids),
+            db.detach_rustploy_network,
+        )
+        .await?;
 
     let service = StackService {
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
-        networks: vec![crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string()],
+        networks: service_networks,
         deploy: DeploySpec {
             replicas: db.replicas as u32,
             resources: DeployResources {
@@ -135,15 +150,6 @@ pub async fn build_mongo_stack(
     let mut services = BTreeMap::new();
     services.insert("db".to_string(), service);
 
-    let mut networks = BTreeMap::new();
-    networks.insert(
-        crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        ExternalNetwork {
-            external: true,
-            name: crate::utils::builder::swarm::RUSTPLOY_NETWORK.to_string(),
-        },
-    );
-
     let mut top_level_volumes = BTreeMap::new();
     for m in &stack_mounts {
         if m.kind == "volume" {
@@ -170,4 +176,47 @@ pub async fn build_mongo_stack(
     })?;
 
     Ok((db.app_name, db.docker_image, yaml))
+}
+
+fn mongo_replica_startup_script(app_name: &str, user: &str, password: &str) -> String {
+    format!(
+        r#"mongod --port 27017 --replSet rs0 --bind_ip_all &
+MONGOD_PID=$!
+until mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+  sleep 2
+done
+REPLICA_STATUS=$(mongosh --quiet --eval "rs.status().ok || 0")
+if [ "$REPLICA_STATUS" != "1" ]; then
+  echo "Initializing MongoDB replica set..."
+  mongosh --eval {init}
+else
+  echo "MongoDB replica set already initialized."
+fi
+wait "$MONGOD_PID"
+"#,
+        init = shell_single_quote(&format!(
+            r#"rs.initiate({{ _id: "rs0", members: [{{ _id: 0, host: "{app_name}:27017", priority: 1 }}] }});
+while (!rs.isMaster().ismaster) {{ sleep(1000); }}
+db.getSiblingDB("admin").createUser({{ user: "{user}", pwd: "{password}", roles: ["root"] }});"#,
+            app_name = js_string_escape(app_name),
+            user = js_string_escape(user),
+            password = js_string_escape(password),
+        )),
+    )
+}
+
+fn replica_sets_enabled(value: i64) -> bool {
+    value != 0
+}
+
+fn shell_single_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
+}
+
+fn js_string_escape(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
 }

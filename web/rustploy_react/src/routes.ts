@@ -23,6 +23,8 @@ export const routes = rootRoute('_root.tsx', [
 		route('remote-servers', 'remote-servers.tsx'),
 		route('swarm', 'swarm.tsx'),
 		route('registry', 'registry.tsx'),
+		route('traefik', 'traefik.tsx'),
+		route('requests', 'requests.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [

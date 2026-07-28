@@ -9,6 +9,8 @@ use crate::repository::{
     PostgresRepository, RedisRepository,
 };
 
+use crate::core::cache::AppStateCache;
+
 pub struct DatabaseService {
     pub(super) db: Arc<SqlitePool>,
     pub(super) repo_postgres: Arc<PostgresRepository>,
@@ -18,6 +20,7 @@ pub struct DatabaseService {
     pub(super) repo_redis: Arc<RedisRepository>,
     pub(super) repo_libsql: Arc<LibsqlRepository>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,
+    pub(super) cache: Arc<AppStateCache>,
 }
 
 #[singleton]
@@ -31,6 +34,7 @@ impl DatabaseService {
         repo_redis: Arc<RedisRepository>,
         repo_libsql: Arc<LibsqlRepository>,
         repo_deploy: Arc<DeploymentRepository>,
+        cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
             db,
@@ -41,6 +45,7 @@ impl DatabaseService {
             repo_redis,
             repo_libsql,
             repo_deploy,
+            cache,
         }
     }
 }

@@ -1,3 +1,4 @@
+use crate::core::cache::{AppStateCache, CacheKey};
 use crate::utils::builder::hash_state::ApplicationState;
 use auto_di::singleton;
 use dashmap::DashMap;
@@ -12,6 +13,7 @@ type ServerKey = Option<i64>;
 pub struct BuilderQueue {
     pub(super) db: Arc<SqlitePool>,
     pub(super) application_state: Arc<ApplicationState>,
+    pub(super) cache: Arc<AppStateCache>,
     slots: DashMap<ServerKey, Arc<Semaphore>>,
     per_server_limit: usize,
     notify: Notify,
@@ -20,7 +22,11 @@ pub struct BuilderQueue {
 
 #[singleton]
 impl BuilderQueue {
-    pub fn new(db: Arc<SqlitePool>, application_state: Arc<ApplicationState>) -> Self {
+    pub fn new(
+        db: Arc<SqlitePool>,
+        application_state: Arc<ApplicationState>,
+        cache: Arc<AppStateCache>,
+    ) -> Self {
         let per_server_limit = std::env::var("DEPLOYMENT_PER_SERVER_CONCURRENCY")
             .ok()
             .and_then(|v| v.parse().ok())
@@ -30,6 +36,7 @@ impl BuilderQueue {
         Self {
             db,
             application_state,
+            cache,
             slots: DashMap::new(),
             per_server_limit,
             notify: Notify::new(),
@@ -55,7 +62,7 @@ impl BuilderQueue {
 
         let q = Arc::clone(self);
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_mins(30 ));
+            let mut interval = tokio::time::interval(Duration::from_mins(30));
             interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
             loop {
                 interval.tick().await;
@@ -104,6 +111,9 @@ impl BuilderQueue {
         let cancelled = repo.cancel_queued_for_application(application_id).await?;
 
         if cancelled {
+            self.cache
+                .invalidate(&CacheKey::Application(application_id))
+                .await;
             for id in ids {
                 if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
                     let _ = log
@@ -123,6 +133,7 @@ impl BuilderQueue {
         let cancelled = repo.cancel_queued_for_compose(compose_id).await?;
 
         if cancelled {
+            self.cache.invalidate(&CacheKey::Compose(compose_id)).await;
             for id in ids {
                 if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
                     let _ = log
@@ -142,6 +153,9 @@ impl BuilderQueue {
         let cancelled = repo.cancel_queued_for_database(database_id).await?;
 
         if cancelled {
+            self.cache
+                .invalidate(&CacheKey::Database(database_id))
+                .await;
             for id in ids {
                 if let Ok(mut log) = super::deployment_log::DeploymentLog::open(id).await {
                     let _ = log

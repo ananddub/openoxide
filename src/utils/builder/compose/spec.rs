@@ -23,6 +23,12 @@ pub enum ComposeRuntime {
 }
 
 #[derive(Clone, Debug)]
+pub struct ComposeServiceNetworkSpec {
+    pub service_name: String,
+    pub networks: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
 pub struct ComposeSpec {
     pub app_name: String,
     pub stack_name: String,
@@ -35,6 +41,7 @@ pub struct ComposeSpec {
     pub environment: BTreeMap<String, String>,
     pub mounts: Vec<MountSpec>,
     pub domains: Vec<DomainSpec>,
+    pub service_networks: Vec<ComposeServiceNetworkSpec>,
 }
 
 impl ComposeSpec {

@@ -19,5 +19,20 @@ pub(super) fn validate_spec(spec: &ComposeSpec) -> ExecResult<()> {
     for domain in &spec.domains {
         validate_domain_host(&domain.host)?;
     }
+    for service_network in &spec.service_networks {
+        validate_name("compose service", &service_network.service_name)?;
+        if service_network.networks.is_empty() {
+            return Err(ExecError::CommandFailed {
+                code: None,
+                stderr: format!(
+                    "compose service {} must attach to at least one network",
+                    service_network.service_name
+                ),
+            });
+        }
+        for network in &service_network.networks {
+            validate_name("network", network)?;
+        }
+    }
     Ok(())
 }

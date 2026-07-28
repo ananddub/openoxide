@@ -10,12 +10,13 @@ import {
 } from '#/components/ui/dropdown';
 import {Key, Copy, Check, FileKey2, MoreVertical} from 'lucide-react';
 import {toast} from 'sonner';
+import type {SshKeyResponse} from '#/types/api-helpers';
 
 interface SshKeysListProps {
-	keys: any[];
+	keys: SshKeyResponse[];
 	isLoading: boolean;
-	onViewKey: (key: any) => void;
-	onDeleteKey: (key: any) => void;
+	onViewKey: (key: SshKeyResponse) => void;
+	onDeleteKey: (key: SshKeyResponse) => void;
 }
 
 export function SshKeysList({
@@ -65,7 +66,7 @@ export function SshKeysList({
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 py-3 w-full">
-			{keysList.map((item: any) => {
+			{keysList.map((item: SshKeyResponse) => {
 				const isCopied = copiedId === item.id;
 
 				return (

@@ -1,5 +1,5 @@
 import {Card, CardContent} from '#/components/ui/card';
-import {HelpCircle, Terminal, CheckCircle2, Shield} from 'lucide-react';
+import {HelpCircle, Terminal} from 'lucide-react';
 
 export function SshKeysGuide() {
 	return (

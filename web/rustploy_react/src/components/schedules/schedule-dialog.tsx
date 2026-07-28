@@ -9,6 +9,7 @@ import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
 import {$api} from '#/api/query';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleDialogProps {
 	isOpen: boolean;
@@ -41,8 +42,21 @@ export function ScheduleDialog({
 	const [targetId, setTargetId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	// Fetch projects to list application names dynamically
-	const {data: projectsList} = $api.useQuery('get', '/projects') as any;
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {data: projectsList} = $api.useQuery(
+		'get',
+		'/projects/organization/{organization_id}',
+		{
+			params: {
+				path: {
+					organization_id: activeOrg?.id || 0,
+				},
+			},
+		},
+		{
+			enabled: activeOrg !== null,
+		},
+	);
 
 	const allApplications = useMemo(() => {
 		if (!Array.isArray(projectsList)) return [];

@@ -42,7 +42,9 @@ impl DeploymentService {
         if let Ok(containers) = docker
             .containers()
             .ps()
-            .filter(crate::utils::docker::query::ContainerFilter::Name(target.clone()))
+            .filter(crate::utils::docker::query::ContainerFilter::Name(
+                target.clone(),
+            ))
             .list()
             .await
         {
@@ -150,7 +152,10 @@ impl DeploymentService {
         if all {
             query = query.all();
         }
-        query.list().await.map_err(|error| sqlx::Error::Protocol(error.to_string()))
+        query
+            .list()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))
     }
 
     pub async fn stream_docker_service_logs(
@@ -166,7 +171,9 @@ impl DeploymentService {
         if let Ok(containers) = docker
             .containers()
             .ps()
-            .filter(crate::utils::docker::query::ContainerFilter::Name(target.clone()))
+            .filter(crate::utils::docker::query::ContainerFilter::Name(
+                target.clone(),
+            ))
             .list()
             .await
         {

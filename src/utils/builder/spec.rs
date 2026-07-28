@@ -157,7 +157,7 @@ pub struct ApplicationSpec {
     pub command: Option<Vec<String>>,
     pub args: Vec<String>,
     pub replicas: u32,
-    pub network: String,
+    pub networks: Vec<String>,
     pub mounts: Vec<MountSpec>,
     pub domains: Vec<DomainSpec>,
     pub resources: ResourceSpec,

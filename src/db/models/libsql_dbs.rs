@@ -18,7 +18,7 @@ pub struct LibsqlDb {
     pub description: Option<String>,
     #[sqlx_gen(
         sql_type = "TEXT",
-        column_default = "'ghcr.io/tursodatabase/libsql-server:latest'"
+        column_default = "'ghcr.io/tursodatabase/libsql-server:v0.24.32'"
     )]
     pub docker_image: String,
     #[sqlx_gen(sql_type = "TEXT")]
@@ -71,6 +71,10 @@ pub struct LibsqlDb {
     pub labels_swarm: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub network_swarm: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'[]'")]
+    pub network_ids: String,
+    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    pub detach_rustploy_network: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub endpoint_spec_swarm: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]

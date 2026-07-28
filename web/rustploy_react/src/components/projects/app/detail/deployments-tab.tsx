@@ -194,22 +194,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 		return 'text-muted-foreground bg-muted border-border';
 	};
 
-	const renderLogLine = (line: string, i: number) => {
-		const l = line.toLowerCase();
-		let colorClass = 'text-zinc-300';
-		if (l.includes('error') || l.includes('failed') || l.includes('err!')) {
-			colorClass = 'text-rose-400 font-semibold';
-		} else if (l.includes('warn') || l.includes('warning')) {
-			colorClass = 'text-amber-400';
-		} else if (l.includes('success') || l.includes('done') || l.includes('finished')) {
-			colorClass = 'text-emerald-400';
-		}
-		return (
-			<div key={i} className={`whitespace-pre-wrap break-all leading-relaxed ${colorClass}`}>
-				{line}
-			</div>
-		);
-	};
+
 
 	const isActionPending = isTriggering || deployMutation.isPending || redeployMutation.isPending || cancelMutation.isPending;
 

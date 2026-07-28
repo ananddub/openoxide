@@ -6,10 +6,7 @@ use axum::{
 use serde_json::json;
 use std::marker::PhantomData;
 
-use crate::{
-    services::permission::PolicyAction,
-    utils::jwt::claim::Claims,
-};
+use crate::{services::permission::PolicyAction, utils::jwt::claim::Claims};
 
 pub trait ActionPermission: Send + Sync + 'static {
     const ACTION: PolicyAction;
@@ -157,6 +154,16 @@ impl ActionPermission for ServerMonitorPermission {
 pub struct AppMonitorPermission;
 impl ActionPermission for AppMonitorPermission {
     const ACTION: PolicyAction = PolicyAction::AppMonitor;
+}
+
+pub struct TraefikReadPermission;
+impl ActionPermission for TraefikReadPermission {
+    const ACTION: PolicyAction = PolicyAction::TraefikRead;
+}
+
+pub struct TraefikWritePermission;
+impl ActionPermission for TraefikWritePermission {
+    const ACTION: PolicyAction = PolicyAction::TraefikWrite;
 }
 
 pub struct AlertWritePermission;

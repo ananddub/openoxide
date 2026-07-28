@@ -190,50 +190,45 @@ certificatesResolvers:
 	let skipYaml       = $state(false);
 	let yamlError      = $state('');
 
-	onMount(async () => {
-		const loaderModule = await import('@monaco-editor/loader');
-		const loader = loaderModule.default;
-		// Point loader at CDN so it doesn't try to bundle workers through Vite
-		loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } });
-		monacoInst = await loader.init();
+	// API State & Handlers
+	let remoteFiles = $state<Array<{ name: string; relative_path: string; size: number; is_readonly: boolean }>>([]);
+	let loadingFiles = $state(false);
 
-		editor = monacoInst.editor.create(editorEl, {
-			value: '',
-			language: 'yaml',
-			theme: 'vs-dark',
-			readOnly: true,
-			fontSize: 13,
-			fontFamily: '"Fira Code", "JetBrains Mono", monospace',
-			minimap: { enabled: false },
-			scrollBeyondLastLine: false,
-			lineNumbers: 'on',
-			wordWrap: 'on',
-			automaticLayout: true,
-			padding: { top: 16, bottom: 16 },
-			renderLineHighlight: 'line',
-			smoothScrolling: true,
-			stickyScroll: { enabled: false },
-		});
+	async function fetchTraefikFiles() {
+		loadingFiles = true;
+		try {
+			const res = await fetch('/api/traefik/files');
+			if (res.ok) {
+				remoteFiles = await res.json();
+			}
+		} catch (e) {
+			console.error('Failed to fetch Traefik files:', e);
+		} finally {
+			loadingFiles = false;
+		}
+	}
 
-		monacoReady = true;
-
-		// If a file was already selected before editor loaded, load it now
-		if (selectedFile) loadFileInEditor(selectedFile);
-
-		return () => editor?.dispose();
-	});
-
-	function loadFileInEditor(path: string) {
+	async function loadFileInEditor(path: string) {
 		if (!editor || !monacoInst) return;
-		const content = savedContents[path] ?? '';
-		// Create a new model so monaco re-applies YAML highlighting
-		const oldModel = editor.getModel();
-		const newModel = monacoInst.editor.createModel(content, 'yaml');
-		editor.setModel(newModel);
-		oldModel?.dispose();
-		editor.updateOptions({ readOnly: true });
-		locked = true;
-		yamlError = '';
+		try {
+			const res = await fetch(`/api/traefik/files/content?path=${encodeURIComponent(path)}`);
+			if (res.ok) {
+				const data = await res.json();
+				const content = data.content ?? '';
+				const isReadOnly = Boolean(data.is_readonly);
+				const oldModel = editor.getModel();
+				const newModel = monacoInst.editor.createModel(content, 'yaml');
+				editor.setModel(newModel);
+				oldModel?.dispose();
+				editor.updateOptions({ readOnly: isReadOnly || locked });
+				locked = isReadOnly || locked;
+				yamlError = '';
+			} else {
+				toastError('Failed to read file content');
+			}
+		} catch (e) {
+			toastError('Network error while reading file');
+		}
 	}
 
 	function selectFile(path: string) {
@@ -266,15 +261,69 @@ certificatesResolvers:
 		yamlError = '';
 		saving = true;
 		try {
-			await new Promise(r => setTimeout(r, 500));
-			savedContents[selectedFile] = content;
-			toastSuccess('Traefik config saved');
+			const res = await fetch('/api/traefik/files/content', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					path: selectedFile,
+					content: content
+				})
+			});
+
+			if (res.ok) {
+				toastSuccess('Traefik configuration saved & applied!');
+				// Query Traefik health status
+				const healthRes = await fetch('/api/traefik/health');
+				if (healthRes.ok) {
+					const health = await healthRes.json();
+					if (!health.is_healthy && health.configuration_errors?.length) {
+						toastError(`Traefik warning: ${health.configuration_errors[0]}`);
+					}
+				}
+			} else {
+				const errText = await res.text();
+				toastError(`Save error: ${errText || 'Failed to save configuration'}`);
+			}
 		} catch {
-			toastError('Failed to save');
+			toastError('Failed to save file');
 		} finally {
 			saving = false;
 		}
 	}
+
+	onMount(async () => {
+		const loaderModule = await import('@monaco-editor/loader');
+		const loader = loaderModule.default;
+		loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } });
+		monacoInst = await loader.init();
+
+		editor = monacoInst.editor.create(editorEl, {
+			value: '',
+			language: 'yaml',
+			theme: 'vs-dark',
+			readOnly: true,
+			fontSize: 13,
+			fontFamily: '"Fira Code", "JetBrains Mono", monospace',
+			minimap: { enabled: false },
+			scrollBeyondLastLine: false,
+			lineNumbers: 'on',
+			wordWrap: 'on',
+			automaticLayout: true,
+			padding: { top: 16, bottom: 16 },
+			renderLineHighlight: 'line',
+			smoothScrolling: true,
+			stickyScroll: { enabled: false },
+		});
+
+		monacoReady = true;
+
+		await fetchTraefikFiles();
+		if (remoteFiles.length > 0) {
+			selectFile(remoteFiles[0].relative_path);
+		}
+
+		return () => editor?.dispose();
+	});
 </script>
 
 <PageLayout>

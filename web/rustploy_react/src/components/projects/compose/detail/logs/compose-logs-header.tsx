@@ -80,7 +80,7 @@ export function ComposeLogsHeader({
 			<div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-border/40">
 				<div className="flex items-center gap-3 flex-wrap">
 					{logMode === 'container' && (
-						<Select value={activeService} onValueChange={v => setSelectedContainer(v)}>
+						<Select value={activeService} onValueChange={v => v && setSelectedContainer(v)}>
 							<SelectTrigger className="h-8 text-xs font-semibold w-44 bg-muted/30 border-border">
 								<Box className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
 								<SelectValue placeholder="Select Container" />
@@ -116,7 +116,7 @@ export function ComposeLogsHeader({
 					</label>
 
 					{logMode === 'container' && (
-						<Select value={lines} onValueChange={setLines}>
+						<Select value={lines} onValueChange={v => v && setLines(v)}>
 							<SelectTrigger className="h-8 text-xs font-semibold w-28 border-border">
 								<SelectValue placeholder="Lines" />
 							</SelectTrigger>

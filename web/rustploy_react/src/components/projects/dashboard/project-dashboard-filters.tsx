@@ -44,7 +44,7 @@ export function ProjectDashboardFilters({
 						placeholder="Search projects by name or description..."
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-9 bg-card/45 border-border/80 h-10 w-full"
+						className="pl-9 bg-card border-border h-10 w-full text-xs shadow-2xs rounded-lg"
 					/>
 				</div>
 
@@ -54,7 +54,7 @@ export function ProjectDashboardFilters({
 						Sort by:
 					</span>
 					<Select value={sortBy} onValueChange={val => setSortBy(val ?? 'newest')}>
-						<SelectTrigger className="w-full sm:w-[160px] bg-card/45 border-border/80 !h-10 shadow-sm font-medium">
+						<SelectTrigger className="w-full sm:w-[160px] bg-card border-border !h-10 text-xs shadow-2xs font-medium rounded-lg">
 							<SelectValue placeholder="Sort" />
 						</SelectTrigger>
 						<SelectContent className="bg-card border-border">

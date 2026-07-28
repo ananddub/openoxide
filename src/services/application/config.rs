@@ -1,6 +1,6 @@
-use crate::api::dto::application::{PatchBuildConfigDto, PatchResourceConfigDto};
-
 use super::{ApplicationRecord, ApplicationService};
+use crate::api::dto::application::{PatchBuildConfigDto, PatchResourceConfigDto};
+use crate::core::cache::CacheKey;
 
 impl ApplicationService {
     pub async fn patch_build_config(
@@ -29,6 +29,7 @@ impl ApplicationService {
                 input.watch_paths,
             )
             .await?;
+        self.cache.invalidate(&CacheKey::Application(id)).await;
         self.get_by_id(id).await
     }
 
@@ -48,6 +49,7 @@ impl ApplicationService {
             )
             .await?;
 
+        self.cache.invalidate(&CacheKey::Application(id)).await;
         let updated = self.get_by_id(id).await?;
         let app_name = updated.app_name.clone();
         let server_id = updated.server_id;
@@ -59,7 +61,10 @@ impl ApplicationService {
         tokio::spawn(async move {
             let docker = match server_id {
                 Some(sid) => {
-                    if let Ok(exec) = crate::services::compose::remote::remote_executor(db_pool.as_ref(), sid).await {
+                    if let Ok(exec) =
+                        crate::services::compose::remote::remote_executor(db_pool.as_ref(), sid)
+                            .await
+                    {
                         crate::utils::docker::DockerCli::from_remote_executor(exec)
                     } else {
                         crate::utils::docker::DockerCli::new_local()
@@ -73,7 +78,9 @@ impl ApplicationService {
             if let Ok(containers) = docker
                 .containers()
                 .ps()
-                .filter(crate::utils::docker::query::ContainerFilter::Name(app_name.clone()))
+                .filter(crate::utils::docker::query::ContainerFilter::Name(
+                    app_name.clone(),
+                ))
                 .list()
                 .await
             {
@@ -103,8 +110,18 @@ impl ApplicationService {
             if let Some(reps) = target_replicas {
                 if reps > 0 {
                     let swarm_service_name = format!("{}_{}", app_name, app_name);
-                    let _ = docker.services().scale().service(&swarm_service_name, reps as u32).run().await;
-                    let _ = docker.services().scale().service(&app_name, reps as u32).run().await;
+                    let _ = docker
+                        .services()
+                        .scale()
+                        .service(&swarm_service_name, reps as u32)
+                        .run()
+                        .await;
+                    let _ = docker
+                        .services()
+                        .scale()
+                        .service(&app_name, reps as u32)
+                        .run()
+                        .await;
                 }
             }
         });
