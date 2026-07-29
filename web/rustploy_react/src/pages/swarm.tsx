@@ -196,7 +196,7 @@ function SwarmPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
+		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
 			<SwarmHeader
 				servers={servers}
 				selectedServerId={selectedServerId}

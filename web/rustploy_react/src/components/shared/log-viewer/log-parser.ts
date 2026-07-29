@@ -126,15 +126,19 @@ export function parseLogEntry(raw: string, index: number, stage?: string): Parse
 	}
 
 	if (!isJson) {
-		const lowerRaw = raw.toLowerCase();
-		// Only set STDERR if the raw line explicitly mentions stderr — NOT based on level
-		if (lowerRaw.includes('stderr')) {
+		if (clean.startsWith('[STDERR]')) {
 			stream = 'STDERR';
+			clean = clean.replace(/^\[STDERR\]\s*/, '');
+		} else {
+			const lowerRaw = raw.toLowerCase();
+			if (lowerRaw.includes('stderr')) {
+				stream = 'STDERR';
+			}
 		}
 
 		// Extract timestamp e.g. [2026-07-29T19:50:00Z] or 2026-07-29T19:50:00.123Z
 		const tsMatch = clean.match(
-			/^(\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\]|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?|\d{2}:\d{2}:\d{2})\s*(.*)/
+			/^(\[\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?\]|\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s*(.*)/i
 		);
 		if (tsMatch) {
 			timestamp = tsMatch[1].replace(/^\[|\]$/g, '');

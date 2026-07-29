@@ -366,23 +366,42 @@ impl ServerSetup {
         let (exec_tx, mut exec_rx) = tokio::sync::mpsc::channel::<ExecStreamEvent>(128);
         let log_tx = sender.clone();
         let forward_logs = tokio::spawn(async move {
-            let mut pending = String::new();
+            let mut pending_stdout = String::new();
+            let mut pending_stderr = String::new();
             while let Some(event) = exec_rx.recv().await {
-                let bytes = match event {
-                    ExecStreamEvent::Stdout(bytes) | ExecStreamEvent::Stderr(bytes) => bytes,
-                };
-                pending.push_str(&String::from_utf8_lossy(&bytes));
-                while let Some(index) = pending.find('\n') {
-                    let line = pending[..index].trim_end_matches('\r').to_owned();
-                    pending.drain(..=index);
-                    if !line.is_empty() && log_tx.send(line).await.is_err() {
-                        return;
+                match event {
+                    ExecStreamEvent::Stdout(bytes) => {
+                        pending_stdout.push_str(&String::from_utf8_lossy(&bytes));
+                        while let Some(index) = pending_stdout.find('\n') {
+                            let line = pending_stdout[..index].trim_end_matches('\r').to_owned();
+                            pending_stdout.drain(..=index);
+                            if !line.is_empty() && log_tx.send(line).await.is_err() {
+                                return;
+                            }
+                        }
+                    }
+                    ExecStreamEvent::Stderr(bytes) => {
+                        pending_stderr.push_str(&String::from_utf8_lossy(&bytes));
+                        while let Some(index) = pending_stderr.find('\n') {
+                            let line = pending_stderr[..index].trim_end_matches('\r').to_owned();
+                            pending_stderr.drain(..=index);
+                            if !line.is_empty() {
+                                let formatted_line = format!("[STDERR] {line}");
+                                if log_tx.send(formatted_line).await.is_err() {
+                                    return;
+                                }
+                            }
+                        }
                     }
                 }
             }
-            let line = pending.trim_end_matches('\r').to_owned();
-            if !line.is_empty() {
-                let _ = log_tx.send(line).await;
+            let line_out = pending_stdout.trim_end_matches('\r').to_owned();
+            if !line_out.is_empty() {
+                let _ = log_tx.send(line_out).await;
+            }
+            let line_err = pending_stderr.trim_end_matches('\r').to_owned();
+            if !line_err.is_empty() {
+                let _ = log_tx.send(format!("[STDERR] {line_err}")).await;
             }
         });
 

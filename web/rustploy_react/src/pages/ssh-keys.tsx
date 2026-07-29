@@ -47,6 +47,7 @@ function SshKeysPage() {
 				onOpenAdd={handleOpenAdd}
 				onRefresh={refetch}
 				isRefetching={isRefetching}
+				keys={sshKeys}
 			/>
 
 			<SshKeysList

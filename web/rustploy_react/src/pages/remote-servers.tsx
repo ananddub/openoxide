@@ -63,6 +63,7 @@ function RemoteServersPage() {
 				}}
 				onRefresh={refetch}
 				isRefetching={isRefetching}
+				servers={servers}
 			/>
 
 			<RemoteServersList

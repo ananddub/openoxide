@@ -239,7 +239,7 @@ impl ServerController {
                 Err(error) => {
                     tracing::error!(error = %error, server_id = id, "streamed server setup failed");
                     let _ = sender
-                        .send(format!("Setup Server failed: {error} ❌"))
+                        .send(format!("[STDERR] Setup Server failed: {error} ❌"))
                         .await;
                 }
             }

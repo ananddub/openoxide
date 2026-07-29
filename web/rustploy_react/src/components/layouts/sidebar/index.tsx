@@ -43,7 +43,19 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 					return (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton
-								render={<Link to={item.to as any} />}
+								render={
+									<Link
+										to={item.to as any}
+										resetScroll={false}
+										onClick={e => {
+											// Prevent browser focus scrollJump inside sidebar container
+											const target = e.currentTarget;
+											if (target && 'blur' in target) {
+												(target as HTMLElement).blur();
+											}
+										}}
+									/>
+								}
 								isActive={isActive}
 								tooltip={item.title}
 								className={`h-8.5 text-xs font-medium rounded-lg transition-colors px-2.5 group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:justify-center! ${

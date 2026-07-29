@@ -5,43 +5,31 @@ interface SshKeysHeaderProps {
 	onOpenAdd: () => void;
 	onRefresh: () => void;
 	isRefetching: boolean;
+	keys?: unknown[];
 }
 
-export function SshKeysHeader({
-	onOpenAdd,
-	onRefresh,
-	isRefetching,
-}: SshKeysHeaderProps) {
+export function SshKeysHeader({onOpenAdd, onRefresh, isRefetching}: SshKeysHeaderProps) {
 	return (
-		<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border/40">
-			<div>
-				<h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-					<KeyRound className="w-6 h-6 text-primary" />
-					<span>SSH Keys</span>
-				</h1>
-				<p className="text-xs text-muted-foreground mt-1">
-					Manage SSH key pairs for authenticating with remote server nodes and private Git repositories.
-				</p>
+		<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+			<div className="flex items-center gap-3">
+				<div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+					<KeyRound className="w-4 h-4 text-primary" />
+				</div>
+				<div>
+					<h1 className="text-base font-semibold text-foreground leading-none">SSH Keys</h1>
+					<p className="text-xs text-muted-foreground mt-1">
+						Manage key pairs for remote servers &amp; Git repos
+					</p>
+				</div>
 			</div>
 
-			<div className="flex items-center gap-2">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={onRefresh}
-					disabled={isRefetching}
-					className="h-9 text-xs font-semibold gap-1.5"
-				>
+			<div className="flex items-center gap-2 sm:ml-auto">
+				<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefetching} className="h-8 text-xs gap-1.5 cursor-pointer">
 					<RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
-					Reload
+					Refresh
 				</Button>
-
-				<Button
-					size="sm"
-					onClick={onOpenAdd}
-					className="h-9 text-xs font-semibold gap-1.5 px-4 shadow-sm"
-				>
-					<Plus className="w-4 h-4" />
+				<Button size="sm" onClick={onOpenAdd} className="h-8 text-xs gap-1.5 cursor-pointer">
+					<Plus className="w-3.5 h-3.5" />
 					Add SSH Key
 				</Button>
 			</div>

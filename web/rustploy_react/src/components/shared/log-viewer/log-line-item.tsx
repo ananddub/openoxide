@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import type {ParsedLogEntry} from './types';
 import {LogActionsMenu} from './log-actions-menu';
 import {LogStd} from './log-std';
-import {LogDate} from './log-date';
+
 import {LogLevelBar} from './log-level-bar';
 import {ContainerTag} from './container-tag';
 import {renderAnsiText} from './ansi';
@@ -49,7 +49,8 @@ export const LogLineItem = React.memo(({
 		// Plain-text error keywords
 		const lower = t.toLowerCase();
 		if (
-			/no suitable node|task failed|failed to|container failed|error:|panic:|fatal:|oom killed|exec format error/.test(lower)
+			t.startsWith('[STDERR]') ||
+			/no suitable node|task failed|failed to|setup server failed|command failed|container failed|error:|panic:|fatal:|oom killed|exec format error/.test(lower)
 		) {
 			return 'STDERR';
 		}
@@ -86,8 +87,7 @@ export const LogLineItem = React.memo(({
 			{/* 3. Dozzle ContainerTag (if multicontainer / container tag exists) */}
 			{entry.containerName && <ContainerTag name={entry.containerName} />}
 
-			{/* 4. Dozzle LogDate (Timestamp Pill Tag in Blue text) */}
-			{entry.timestamp && <LogDate timestamp={entry.timestamp} />}
+			{/* 4. Dozzle LogDate (Timestamp Pill Tag - Hidden for cleaner stream) */}
 
 			{/* 5. Dozzle LogLevel (Green/Red dot for single line, expands to vertical line for multiline) */}
 			<LogLevelBar level={entry.level} isMultiLine={isMultiLine} />
