@@ -158,6 +158,22 @@ impl DeploymentController {
         Ok(Sse::new(docker_stats_stream(receiver)))
     }
 
+    #[get("/database/{id}/stats", sse = DeploymentSseEventDto)]
+    async fn database_stats(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+        Query(query): Query<DockerStatsQuery>,
+    ) -> Result<DeploymentSse, ApiError> {
+        let receiver = self
+            .service
+            .stream_database_stats(id, query.stream.unwrap_or(true))
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Sse::new(docker_stats_stream(receiver)))
+    }
+
     #[get("/docker/container/{target}/logs", sse = DeploymentSseEventDto)]
     async fn docker_container_logs(
         &self,

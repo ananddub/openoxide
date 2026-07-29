@@ -2,6 +2,37 @@ use crate::services::deployment::DeploymentService;
 use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use tokio::sync::mpsc;
 
+fn find_best_matching_container<'a>(
+    containers: &'a [crate::utils::docker::ContainerSummary],
+    target: &str,
+) -> Option<&'a crate::utils::docker::ContainerSummary> {
+    let target_lower = target.to_lowercase();
+    containers
+        .iter()
+        .find(|c| {
+            let name = c.names.trim_start_matches('/').to_lowercase();
+            name == target_lower
+                || name.ends_with(&format!("-{target_lower}-1"))
+                || name.ends_with(&format!("_{target_lower}_1"))
+                || name.ends_with(&format!("-{target_lower}"))
+                || name.ends_with(&format!("_{target_lower}"))
+        })
+        .or_else(|| {
+            containers.iter().find(|c| {
+                let name = c.names.trim_start_matches('/').to_lowercase();
+                name.contains(&format!("-{target_lower}-"))
+                    || name.contains(&format!("_{target_lower}_"))
+            })
+        })
+        .or_else(|| {
+            containers.iter().find(|c| {
+                let name = c.names.trim_start_matches('/').to_lowercase();
+                name.contains(&target_lower)
+            })
+        })
+        .or_else(|| containers.first())
+}
+
 impl DeploymentService {
     pub async fn stream_docker_container_logs(
         &self,
@@ -10,8 +41,22 @@ impl DeploymentService {
         options: Vec<String>,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
+        let mut resolved_target = target.clone();
+
+        if let Ok(containers) = docker
+            .containers()
+            .ps()
+            .all()
+            .list()
+            .await
+        {
+            if let Some(matched) = find_best_matching_container(&containers, &target) {
+                resolved_target = matched.names.trim_start_matches('/').to_string();
+            }
+        }
+
         let handle = docker.containers();
-        let mut builder = handle.logs(target).kind("container");
+        let mut builder = handle.logs(resolved_target).kind("container");
         if options.iter().any(|o| o == "--follow" || o == "-f") {
             builder = builder.follow();
         }
@@ -42,14 +87,12 @@ impl DeploymentService {
         if let Ok(containers) = docker
             .containers()
             .ps()
-            .filter(crate::utils::docker::query::ContainerFilter::Name(
-                target.clone(),
-            ))
+            .all()
             .list()
             .await
         {
-            if let Some(first) = containers.first() {
-                resolved_target = first.names.trim_start_matches('/').to_string();
+            if let Some(matched) = find_best_matching_container(&containers, &target) {
+                resolved_target = matched.names.trim_start_matches('/').to_string();
             }
         }
 
@@ -77,23 +120,42 @@ impl DeploymentService {
         let server_id = app.server_id;
 
         let docker = self.docker_for_server(server_id).await?;
+
+        // Try Swarm service label first
         let service_name = format!("{app_name}_{app_name}");
-        let filter = crate::utils::docker::query::filter::ContainerFilter::Label(
+        let swarm_filter = crate::utils::docker::query::filter::ContainerFilter::Label(
             "com.docker.swarm.service.name".to_string(),
             service_name,
         );
-        let containers = docker
+        let swarm_containers = docker
             .containers()
             .ps()
-            .filter(filter)
+            .filter(swarm_filter)
             .list()
             .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        let targets = containers
-            .into_iter()
-            .map(|container| container.id)
-            .filter(|id| !id.trim().is_empty())
-            .collect::<Vec<_>>();
+            .unwrap_or_default();
+
+        let targets = if !swarm_containers.is_empty() {
+            // Swarm mode: use container IDs from label filter
+            swarm_containers
+                .into_iter()
+                .map(|c| c.id)
+                .filter(|id| !id.trim().is_empty())
+                .collect::<Vec<_>>()
+        } else {
+            // Standalone mode: find container by name matching
+            let all_containers = docker
+                .containers()
+                .ps()
+                .list()
+                .await
+                .unwrap_or_default();
+            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
+                vec![matched.id.clone()]
+            } else {
+                Vec::new()
+            }
+        };
 
         Ok(spawn_stats_stream(docker, targets, stream))
     }
@@ -114,20 +176,89 @@ impl DeploymentService {
         let docker = self.docker_for_server(server_id).await?;
         let filter = crate::utils::docker::query::filter::ContainerFilter::Label(
             "com.docker.compose.project".to_string(),
-            app_name,
+            app_name.clone(),
         );
-        let containers = docker
+        let compose_containers = docker
             .containers()
             .ps()
             .filter(filter)
             .list()
             .await
+            .unwrap_or_default();
+
+        let targets = if !compose_containers.is_empty() {
+            compose_containers
+                .into_iter()
+                .map(|c| c.id)
+                .filter(|id| !id.trim().is_empty())
+                .collect::<Vec<_>>()
+        } else {
+            // Fallback: name-based match
+            let all_containers = docker
+                .containers()
+                .ps()
+                .list()
+                .await
+                .unwrap_or_default();
+            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
+                vec![matched.id.clone()]
+            } else {
+                Vec::new()
+            }
+        };
+
+        Ok(spawn_stats_stream(docker, targets, stream))
+    }
+
+    pub async fn stream_database_stats(
+        &self,
+        database_id: i64,
+        stream: bool,
+    ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
+        let db = self
+            .repo_postgres
+            .get_by_id(database_id)
+            .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        let targets = containers
-            .into_iter()
-            .map(|container| container.id)
-            .filter(|id| !id.trim().is_empty())
-            .collect::<Vec<_>>();
+        let app_name = db.app_name;
+        let server_id = db.server_id;
+
+        let docker = self.docker_for_server(server_id).await?;
+
+        // Databases run in Swarm as: {app_name}_db service
+        let swarm_service = format!("{app_name}_db");
+        let swarm_filter = crate::utils::docker::query::filter::ContainerFilter::Label(
+            "com.docker.swarm.service.name".to_string(),
+            swarm_service,
+        );
+        let swarm_containers = docker
+            .containers()
+            .ps()
+            .filter(swarm_filter)
+            .list()
+            .await
+            .unwrap_or_default();
+
+        let targets = if !swarm_containers.is_empty() {
+            swarm_containers
+                .into_iter()
+                .map(|c| c.id)
+                .filter(|id| !id.trim().is_empty())
+                .collect::<Vec<_>>()
+        } else {
+            // Fallback: name-based match (standalone / non-Swarm)
+            let all_containers = docker
+                .containers()
+                .ps()
+                .list()
+                .await
+                .unwrap_or_default();
+            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
+                vec![matched.id.clone()]
+            } else {
+                Vec::new()
+            }
+        };
 
         Ok(spawn_stats_stream(docker, targets, stream))
     }
@@ -165,21 +296,18 @@ impl DeploymentService {
         options: Vec<String>,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
-        let mut logs_subcommand = "service";
+        let logs_subcommand = "container";
         let mut resolved_target = target.clone();
 
         if let Ok(containers) = docker
             .containers()
             .ps()
-            .filter(crate::utils::docker::query::ContainerFilter::Name(
-                target.clone(),
-            ))
+            .all()
             .list()
             .await
         {
-            if let Some(first) = containers.first() {
-                resolved_target = first.names.trim_start_matches('/').to_string();
-                logs_subcommand = "container";
+            if let Some(matched) = find_best_matching_container(&containers, &target) {
+                resolved_target = matched.names.trim_start_matches('/').to_string();
             }
         }
 

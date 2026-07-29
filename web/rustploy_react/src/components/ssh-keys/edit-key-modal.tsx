@@ -50,15 +50,17 @@ export function EditKeyModal({
 		}
 	);
 
+	const active = fullDetails || sshKey;
+	const activeId = active?.id;
+
 	useEffect(() => {
-		const active = fullDetails || sshKey;
-		if (active) {
+		if (isOpen && active) {
 			setName(active.name || '');
 			setDescription(active.description || '');
 			setPublicKey(active.public_key || '');
 			setPrivateKey(active.private_key || '');
 		}
-	}, [fullDetails, sshKey, isOpen]);
+	}, [activeId, isOpen, fullDetails]);
 
 	const patchMutation = $api.useMutation('patch', '/ssh-keys/{id}', {
 		onSuccess: () => {

@@ -117,7 +117,7 @@ function DatabaseDetailPage() {
 					<DatabaseLogsTab database={database} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={database} appId={parsedDbId} />
+					<MonitoringTab app={database} appId={parsedDbId} entityType="database" />
 				)}
 				{activeTab === 'Advanced' && (
 					<DatabaseAdvancedTab database={database} onUpdated={refetch} />

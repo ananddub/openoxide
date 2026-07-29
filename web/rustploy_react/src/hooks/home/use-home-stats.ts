@@ -5,7 +5,7 @@ import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
 
 export function useHomeStats() {
-	const {user} = useAuthStore();
+	const user = useAuthStore(state => state.user);
 	const activeOrg = useOrganizationStore((state) => state.activeOrg);
 	const firstName = user?.firstName || (user?.email ? user.email.split('@')[0] : undefined);
 

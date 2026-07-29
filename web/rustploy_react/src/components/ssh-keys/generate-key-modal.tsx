@@ -110,7 +110,7 @@ export function GenerateKeyModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && handleCloseModal()}>
-			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
+			<DialogContent className="sm:max-w-lg w-full bg-card border-border p-6 shadow-xl rounded-xl min-w-0">
 				<DialogHeader className="pb-3 border-b border-border/40">
 					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
 						<Sparkles className="w-4 h-4 text-primary shrink-0" />

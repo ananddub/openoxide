@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useCallback} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
 import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
@@ -29,10 +29,22 @@ function SshKeysPage() {
 
 	const sshKeys = Array.isArray(rawSshKeys) ? (rawSshKeys as SshKeyResponse[]) : [];
 
+	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
+	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);
+
+	const handleViewKey = useCallback((key: SshKeyResponse) => setSelectedKeyForView(key), []);
+	const handleCloseView = useCallback(() => setSelectedKeyForView(null), []);
+
+	const handleEditKey = useCallback((key: SshKeyResponse) => setSelectedKeyForEdit(key), []);
+	const handleCloseEdit = useCallback(() => setSelectedKeyForEdit(null), []);
+
+	const handleDeleteKey = useCallback((key: SshKeyResponse) => setSelectedKeyForDelete(key), []);
+	const handleCloseDelete = useCallback(() => setSelectedKeyForDelete(null), []);
+
 	return (
 		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
 			<SshKeysHeader
-				onOpenAdd={() => setIsAddOpen(true)}
+				onOpenAdd={handleOpenAdd}
 				onRefresh={refetch}
 				isRefetching={isRefetching}
 			/>
@@ -40,36 +52,44 @@ function SshKeysPage() {
 			<SshKeysList
 				keys={sshKeys}
 				isLoading={isLoading}
-				onViewKey={key => setSelectedKeyForView(key)}
-				onEditKey={key => setSelectedKeyForEdit(key)}
-				onDeleteKey={key => setSelectedKeyForDelete(key)}
+				onViewKey={handleViewKey}
+				onEditKey={handleEditKey}
+				onDeleteKey={handleDeleteKey}
 			/>
 
-			<CreateKeyModal
-				isOpen={isAddOpen}
-				onClose={() => setIsAddOpen(false)}
-				onSuccess={refetch}
-			/>
+			{isAddOpen && (
+				<CreateKeyModal
+					isOpen={isAddOpen}
+					onClose={handleCloseAdd}
+					onSuccess={refetch}
+				/>
+			)}
 
-			<ViewKeyModal
-				isOpen={!!selectedKeyForView}
-				sshKey={selectedKeyForView}
-				onClose={() => setSelectedKeyForView(null)}
-			/>
+			{selectedKeyForView && (
+				<ViewKeyModal
+					isOpen={!!selectedKeyForView}
+					sshKey={selectedKeyForView}
+					onClose={handleCloseView}
+				/>
+			)}
 
-			<EditKeyModal
-				isOpen={!!selectedKeyForEdit}
-				sshKey={selectedKeyForEdit}
-				onClose={() => setSelectedKeyForEdit(null)}
-				onSuccess={refetch}
-			/>
+			{selectedKeyForEdit && (
+				<EditKeyModal
+					isOpen={!!selectedKeyForEdit}
+					sshKey={selectedKeyForEdit}
+					onClose={handleCloseEdit}
+					onSuccess={refetch}
+				/>
+			)}
 
-			<DeleteKeyModal
-				isOpen={!!selectedKeyForDelete}
-				sshKey={selectedKeyForDelete}
-				onClose={() => setSelectedKeyForDelete(null)}
-				onSuccess={refetch}
-			/>
+			{selectedKeyForDelete && (
+				<DeleteKeyModal
+					isOpen={!!selectedKeyForDelete}
+					sshKey={selectedKeyForDelete}
+					onClose={handleCloseDelete}
+					onSuccess={refetch}
+				/>
+			)}
 		</div>
 	);
 }

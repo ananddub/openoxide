@@ -115,7 +115,7 @@ function ComposeDetailPage() {
 					<ComposeLogsTab compose={compose} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={compose} appId={parsedComposeId} />
+					<MonitoringTab app={compose} appId={parsedComposeId} entityType="compose" />
 				)}
 				{activeTab === 'Advanced' && (
 					<ComposeAdvancedTab compose={compose} />

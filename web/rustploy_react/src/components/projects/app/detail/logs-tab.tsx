@@ -1,25 +1,47 @@
-import {useState, useEffect, useRef} from 'react';
-import {RefreshCw, Download, Play, Square} from 'lucide-react';
+import {useState, useEffect, useRef, useMemo} from 'react';
+import {RefreshCw, Download, Play, Square, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 
 interface LogsTabProps {
 	app: any;
 }
 
 export function LogsTab({app}: LogsTabProps) {
-	const [lines, setLines] = useState('100');
+	const [lines, setLines] = useState('500');
 	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
 	const [isLoading, setIsLoading] = useState(true);
 	const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
 	const [refetchTrigger, setRefetchTrigger] = useState(0);
+	const [selectedTarget, setSelectedTarget] = useState('');
 	const scrollRef = useRef<HTMLDivElement>(null);
+
+	const availableTargets = useMemo(() => {
+		const list: string[] = [];
+		const baseName = app?.app_name || app?.name;
+		if (baseName) list.push(baseName);
+		if (app?.containers && Array.isArray(app.containers)) {
+			app.containers.forEach((c: any) => {
+				const name = c?.name || c?.container_name;
+				if (name && !list.includes(name)) list.push(name);
+			});
+		}
+		return list.length > 0 ? list : ['app'];
+	}, [app]);
+
+	const activeTarget = selectedTarget || availableTargets[0] || app?.app_name || app?.name || 'app';
 
 	// Connect to backend Server-Sent Events (SSE) docker service log stream
 	useEffect(() => {
-		const targetName = app?.app_name || app?.name;
-		if (!targetName) return;
+		if (!activeTarget) return;
 
 		let isMounted = true;
 		const controller = new AbortController();
@@ -44,7 +66,7 @@ export function LogsTab({app}: LogsTabProps) {
 				});
 
 				const response = await fetch(
-					`/api/deployments/docker/service/${encodeURIComponent(targetName)}/logs?${params.toString()}`,
+					`/api/deployments/docker/service/${encodeURIComponent(activeTarget)}/logs?${params.toString()}`,
 					{
 						headers: {
 							Authorization: accessToken ? `Bearer ${accessToken}` : '',
@@ -55,7 +77,7 @@ export function LogsTab({app}: LogsTabProps) {
 
 				if (!response.ok) {
 					if (isMounted) {
-						setStreamedLogs([`Log stream notice: Container service '${targetName}' is not active or has no logs.`]);
+						setStreamedLogs([`Log stream notice: Container service '${activeTarget}' is not active or has no logs.`]);
 						setIsLoading(false);
 					}
 					return;
@@ -138,7 +160,7 @@ export function LogsTab({app}: LogsTabProps) {
 			isMounted = false;
 			controller.abort();
 		};
-	}, [app?.app_name, app?.name, lines, timestamps, isLive, refetchTrigger]);
+	}, [activeTarget, lines, timestamps, isLive, refetchTrigger]);
 
 	useEffect(() => {
 		if (isLive && scrollRef.current) {
@@ -151,22 +173,46 @@ export function LogsTab({app}: LogsTabProps) {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${app?.app_name || app?.name || 'logs'}.txt`;
+		a.download = `${activeTarget || 'logs'}.txt`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
 
-
-
 	return (
 		<div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
 			<div className="flex items-center justify-between gap-4 flex-wrap">
-				<div>
-					<h3 className="text-sm font-bold text-foreground">Container Logs</h3>
-					<p className="text-xs text-muted-foreground mt-1">Real-time terminal output stream from the running container</p>
+				<div className="flex items-center gap-3 flex-wrap">
+					<div>
+						<h3 className="text-sm font-bold text-foreground">Container Logs</h3>
+						<p className="text-xs text-muted-foreground mt-1">Real-time terminal output stream from the running container</p>
+					</div>
+
+					{availableTargets.length > 0 && (
+						<Select
+							value={activeTarget}
+							onValueChange={(val) => {
+								if (val) setSelectedTarget(val);
+							}}
+						>
+							<SelectTrigger className="h-9 text-xs font-mono font-bold bg-muted/30 border-border/80 hover:bg-muted/60 min-w-[170px] shadow-2xs ml-2">
+								<Box className="size-3.5 text-primary shrink-0 mr-1" />
+								<SelectValue placeholder="Select Container" />
+							</SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								<div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 mb-1">
+									App Containers
+								</div>
+								{availableTargets.map((target) => (
+									<SelectItem key={target} value={target} className="text-xs font-mono font-semibold">
+										Target: {target}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					)}
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
 					<Button
 						variant={isLive ? 'default' : 'outline'}
 						size="sm"
@@ -187,17 +233,18 @@ export function LogsTab({app}: LogsTabProps) {
 						Timestamps
 					</label>
 
-					<select
-						value={lines}
-						onChange={e => setLines(e.target.value)}
-						className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-					>
-						<option value="50">50 lines</option>
-						<option value="100">100 lines</option>
-						<option value="200">200 lines</option>
-						<option value="500">500 lines</option>
-						<option value="1000">1000 lines</option>
-					</select>
+					<Select value={lines} onValueChange={(val) => val && setLines(val)}>
+						<SelectTrigger className="h-8 text-xs font-semibold bg-muted/30 border border-border/60 w-[110px]">
+							<SelectValue placeholder="Lines" />
+						</SelectTrigger>
+						<SelectContent className="bg-card border-border">
+							<SelectItem value="50" className="text-xs">50 lines</SelectItem>
+							<SelectItem value="100" className="text-xs">100 lines</SelectItem>
+							<SelectItem value="200" className="text-xs">200 lines</SelectItem>
+							<SelectItem value="500" className="text-xs">500 lines</SelectItem>
+							<SelectItem value="1000" className="text-xs">1000 lines</SelectItem>
+						</SelectContent>
+					</Select>
 
 					<Button
 						variant="outline"
@@ -225,8 +272,8 @@ export function LogsTab({app}: LogsTabProps) {
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}
-				loadingText="Connecting to real-time container log stream..."
-				emptyText="No container log entries found. The application container may be stopped or initializing."
+				loadingText={`Connecting to real-time container log stream for '${activeTarget}'...`}
+				emptyText={`No container log entries found for '${activeTarget}'. The application container may be stopped or initializing.`}
 				onDownload={handleDownload}
 				onReload={() => setRefetchTrigger(prev => prev + 1)}
 			/>

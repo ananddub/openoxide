@@ -15,11 +15,24 @@ export const useOrganizationStore = create<OrganizationState>((set, get) => ({
 	activeOrg: null,
 	setOrganizations: orgs => {
 		const currentActive = get().activeOrg;
-		// Keep current active if it still exists in the new list, otherwise fallback to first
-		let nextActive = null;
-		if (orgs.length > 0) {
-			nextActive = orgs.find(o => o.id === currentActive?.id) || orgs[0];
+		const currentOrgs = get().organizations;
+
+		// If orgs array length and IDs match current, avoid re-setting
+		if (
+			currentOrgs.length === orgs.length &&
+			currentOrgs.every((org, index) => org.id === orgs[index]?.id && org.name === orgs[index]?.name)
+		) {
+			return;
 		}
+
+		let nextActive = currentActive;
+		if (orgs.length > 0) {
+			const found = orgs.find(o => o.id === currentActive?.id);
+			nextActive = found || orgs[0];
+		} else {
+			nextActive = null;
+		}
+
 		set({organizations: orgs, activeOrg: nextActive});
 	},
 	setActiveOrg: org => set({activeOrg: org}),

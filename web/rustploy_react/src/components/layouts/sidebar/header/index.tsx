@@ -45,12 +45,10 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 
 	// Fetch Organizations from backend
 	const {data: orgs, isLoading} = $api.useQuery('get', '/organizations');
-	const {
-		organizations: orgList,
-		activeOrg,
-		setOrganizations,
-		setActiveOrg,
-	} = useOrganizationStore();
+	const orgList = useOrganizationStore(state => state.organizations);
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const setOrganizations = useOrganizationStore(state => state.setOrganizations);
+	const setActiveOrg = useOrganizationStore(state => state.setActiveOrg);
 
 	React.useEffect(() => {
 		if (orgs) {

@@ -4,6 +4,7 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use crate::db::models::deployments::Deployment;
+use crate::db::repository::PostgresRepository;
 use crate::repository::{ApplicationRepository, ComposeProjectRepository, DeploymentRepository};
 use crate::utils::builder::custom_type::IdType;
 
@@ -32,6 +33,7 @@ pub struct DeploymentService {
     pub(super) repo_deploy: Arc<DeploymentRepository>,
     pub(super) repo_app: Arc<ApplicationRepository>,
     pub(super) repo_compose: Arc<ComposeProjectRepository>,
+    pub(super) repo_postgres: Arc<PostgresRepository>,
 }
 
 #[singleton]
@@ -41,12 +43,14 @@ impl DeploymentService {
         repo_deploy: Arc<DeploymentRepository>,
         repo_app: Arc<ApplicationRepository>,
         repo_compose: Arc<ComposeProjectRepository>,
+        repo_postgres: Arc<PostgresRepository>,
     ) -> Self {
         Self {
             db,
             repo_deploy,
             repo_app,
             repo_compose,
+            repo_postgres,
         }
     }
 

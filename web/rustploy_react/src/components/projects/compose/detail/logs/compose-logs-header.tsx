@@ -42,11 +42,38 @@ export function ComposeLogsHeader({
 	return (
 		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
 			<div className="flex items-center justify-between gap-4 flex-wrap">
-				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Terminal className="w-4 h-4 text-primary" /> Compose Logs Console
-					</h3>
-					<p className="text-xs text-muted-foreground mt-1">Real-time terminal stream output for build assembly and container execution</p>
+				<div className="flex items-center gap-3 flex-wrap">
+					<div>
+						<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+							<Terminal className="w-4 h-4 text-primary" /> Compose Logs Console
+						</h3>
+						<p className="text-xs text-muted-foreground mt-1">Real-time terminal stream output for build assembly and container execution</p>
+					</div>
+
+					{/* Premium Shadcn Service Select Dropdown */}
+					{logMode === 'container' && (
+						<Select
+							value={activeService}
+							onValueChange={(val) => {
+								if (val) setSelectedContainer(val);
+							}}
+						>
+							<SelectTrigger className="h-9 text-xs font-mono font-bold bg-muted/30 border-border/80 hover:bg-muted/60 min-w-[170px] shadow-2xs">
+								<Box className="size-3.5 text-primary shrink-0 mr-1" />
+								<SelectValue placeholder="Select Service" />
+							</SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								<div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 mb-1">
+									Compose Services
+								</div>
+								{availableServices.map((srv) => (
+									<SelectItem key={srv} value={srv} className="text-xs font-mono font-semibold">
+										Service: {srv}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					)}
 				</div>
 
 				{/* Dual Log Mode Segmented Switch */}
@@ -79,22 +106,6 @@ export function ComposeLogsHeader({
 			{/* Filter Controls Action Bar */}
 			<div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-border/40">
 				<div className="flex items-center gap-3 flex-wrap">
-					{logMode === 'container' && (
-						<Select value={activeService} onValueChange={v => v && setSelectedContainer(v)}>
-							<SelectTrigger className="h-8 text-xs font-semibold w-44 bg-muted/30 border-border">
-								<Box className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
-								<SelectValue placeholder="Select Container" />
-							</SelectTrigger>
-							<SelectContent>
-								{availableServices.map((srv) => (
-									<SelectItem key={srv} value={srv} className="text-xs font-mono">
-										Service: {srv}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}
-
 					<Button
 						variant={isLive ? 'default' : 'outline'}
 						size="sm"
@@ -116,15 +127,16 @@ export function ComposeLogsHeader({
 					</label>
 
 					{logMode === 'container' && (
-						<Select value={lines} onValueChange={v => v && setLines(v)}>
-							<SelectTrigger className="h-8 text-xs font-semibold w-28 border-border">
+						<Select value={lines} onValueChange={(val) => val && setLines(val)}>
+							<SelectTrigger className="h-8 text-xs font-semibold bg-muted/30 border border-border/60 w-[120px]">
 								<SelectValue placeholder="Lines" />
 							</SelectTrigger>
-							<SelectContent>
+							<SelectContent className="bg-card border-border">
 								<SelectItem value="100" className="text-xs">100 Lines</SelectItem>
 								<SelectItem value="300" className="text-xs">300 Lines</SelectItem>
 								<SelectItem value="500" className="text-xs">500 Lines</SelectItem>
 								<SelectItem value="1000" className="text-xs">1000 Lines</SelectItem>
+								<SelectItem value="all" className="text-xs">All Lines</SelectItem>
 							</SelectContent>
 						</Select>
 					)}

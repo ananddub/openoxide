@@ -6,45 +6,52 @@ interface ComposeLogsTabProps {
 	compose: any;
 }
 
-// Extract service names defined under 'services:' in docker-compose.yml content
+// Robust service name extractor from docker-compose.yml YAML string
 const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	if (!yamlStr) return [];
-	const lines = yamlStr.split('\n');
 	const services: string[] = [];
-	let inServicesBlock = false;
-	let servicesIndent = 0;
+	const lines = yamlStr.split('\n');
+	let inServices = false;
 
 	for (const line of lines) {
 		const trimmed = line.trimEnd();
 		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
 
-		const indent = line.search(/\S/);
 		const text = trimmed.trim();
 
-		if (text === 'services:' || text.startsWith('services:')) {
-			inServicesBlock = true;
-			servicesIndent = indent;
+		if (/^services\s*:/i.test(text)) {
+			inServices = true;
 			continue;
 		}
 
-		if (inServicesBlock) {
-			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServicesBlock = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
-				const serviceName = text.slice(0, -1).trim();
-				if (serviceName && !services.includes(serviceName)) {
-					services.push(serviceName);
+		if (inServices) {
+			if (/^(version|volumes|networks|configs|secrets)\s*:/i.test(text)) {
+				inServices = false;
+				continue;
+			}
+
+			const match = line.match(/^(\s{2,4}|\t)?([a-zA-Z0-9_\-]+)\s*:\s*$/);
+			if (match) {
+				const srv = match[2];
+				if (
+					srv &&
+					!['version', 'services', 'volumes', 'networks', 'configs', 'secrets', 'environment', 'ports', 'build', 'image'].includes(srv.toLowerCase())
+				) {
+					if (!services.includes(srv)) {
+						services.push(srv);
+					}
 				}
 			}
 		}
 	}
+
 	return services;
 };
 
 export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 	const [logMode, setLogMode] = useState<'container' | 'build'>('container');
 	const [selectedContainer, setSelectedContainer] = useState('');
-	const [lines, setLines] = useState('100');
+	const [lines, setLines] = useState('500');
 	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
 	const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +62,11 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		return extractServicesFromYaml(compose?.compose_file);
 	}, [compose?.compose_file]);
 
-	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
+	const servicesList = useMemo(() => {
+		if (availableServices.length > 0) return availableServices;
+		return ['app'];
+	}, [availableServices]);
+
 	const activeService = selectedContainer.trim() || servicesList[0] || 'app';
 
 	// Connect to backend Server-Sent Events (SSE) log stream
@@ -77,9 +88,10 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 					} catch {}
 				}
 
+				const tailParam = lines === 'all' ? '5000' : lines;
 				const streamUrl = logMode === 'build'
 					? `/api/deployments/compose/${compose?.id}/logs`
-					: `/api/deployments/docker/service/${activeService}/logs?tail=${lines}&timestamps=${timestamps}&follow=${isLive}`;
+					: `/api/deployments/docker/service/${activeService}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}`;
 
 				const response = await fetch(streamUrl, {
 					headers: {
@@ -126,11 +138,17 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 								const jsonStr = line.slice(5).trim();
 								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
 								const data = JSON.parse(jsonStr);
-								const text = data.line !== undefined ? data.line : (data.message || jsonStr);
-								if (text && isMounted) setStreamedLogs(prev => [...prev, text]);
+
+								if (data && typeof data === 'object') {
+									if (isMounted) setStreamedLogs(prev => [...prev, JSON.stringify(data)]);
+								} else if (data && isMounted) {
+									setStreamedLogs(prev => [...prev, String(data)]);
+								}
 							} catch {
 								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted) setStreamedLogs(prev => [...prev, raw]);
+								if (raw && !raw.includes('keep-alive') && isMounted) {
+									setStreamedLogs(prev => [...prev, raw]);
+								}
 							}
 						} else if (line.trim() && isMounted) {
 							setStreamedLogs(prev => [...prev, line]);

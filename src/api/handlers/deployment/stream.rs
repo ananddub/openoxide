@@ -182,12 +182,48 @@ fn docker_log_event(stream: &str, bytes: Vec<u8>) -> Event {
     })))
 }
 
+fn strip_ansi(s: &str) -> String {
+    // Remove VT100/ANSI escape sequences like \x1B[H \x1B[K \x1B[J
+    // Docker uses these in live streaming mode to refresh terminal output
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            match chars.peek() {
+                Some(&'[') => {
+                    chars.next(); // consume '['
+                    // skip digits, semicolons, then one letter
+                    for next in chars.by_ref() {
+                        if next.is_ascii_alphabetic() {
+                            break;
+                        }
+                    }
+                }
+                _ => {
+                    // other ESC sequences — skip next char
+                    chars.next();
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 fn docker_stats_event(bytes: Vec<u8>) -> Event {
-    let line = String::from_utf8_lossy(&bytes);
-    let value = serde_json::from_str::<serde_json::Value>(line.trim()).unwrap_or_else(|_| {
-        json!({
-            "raw": line,
-        })
+    let raw = String::from_utf8_lossy(&bytes);
+    let clean = strip_ansi(raw.trim());
+
+    // Find the JSON object boundaries after stripping ANSI codes
+    let json_str = if let (Some(start), Some(end)) = (clean.find('{'), clean.rfind('}')) {
+        &clean[start..=end]
+    } else {
+        clean.trim()
+    };
+
+    let value = serde_json::from_str::<serde_json::Value>(json_str).unwrap_or_else(|_| {
+        json!({ "raw": raw })
     });
 
     Event::default().event("stats").data(json_payload(json!({

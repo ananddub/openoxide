@@ -1,10 +1,15 @@
 import {useState, useEffect} from 'react';
-import {Cpu, HardDrive, Database, Disc, Network, Layers, RefreshCw} from 'lucide-react';
+import {Cpu, HardDrive, Database, Disc, Network, Layers} from 'lucide-react';
 import {Card, CardContent, CardHeader, CardTitle} from '#/components/ui/card';
 import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
 
-// Helper to convert Docker memory strings (e.g. "34.4MiB", "78.46GiB", "352kB") into bytes
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function stripAnsi(str: string): string {
+	return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[^[]/g, '');
+}
+
 function parseBytes(str?: string): number {
 	if (!str || typeof str !== 'string') return 0;
 	const val = parseFloat(str) || 0;
@@ -16,7 +21,6 @@ function parseBytes(str?: string): number {
 	return val;
 }
 
-// Helper to format bytes into readable strings
 function formatBytes(bytes: number): string {
 	if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
 	if (bytes < 1024) return `${bytes.toFixed(0)} B`;
@@ -25,188 +29,167 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-// Helper to parse Docker stats payload
-function parseDockerStatsPayload(payload: unknown): Record<string, unknown>[] {
+type DockerStat = Record<string, unknown>;
+
+/** Extract one or more Docker stat objects from an SSE stats payload */
+function extractDockerStats(payload: unknown): DockerStat[] {
 	if (!payload) return [];
-	if (Array.isArray(payload)) return payload as Record<string, unknown>[];
-	const obj = payload as Record<string, unknown>;
-	if (obj.CPUPerc || obj.MemUsage) return [obj];
-	if (typeof payload === 'object') {
-		const rawContent = String(obj.raw || obj.line || obj.data || (typeof payload === 'string' ? payload : JSON.stringify(payload)));
-		if (typeof rawContent === 'string') {
-			const lines = rawContent.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
-			const result: Record<string, unknown>[] = [];
-			for (const line of lines) {
-				try {
-					const obj = JSON.parse(line);
-					if (obj && (obj.CPUPerc || obj.MemUsage || obj.Container || obj.ID || obj.Name)) {
-						result.push(obj);
-					}
-				} catch {}
-			}
-			if (result.length > 0) return result;
-		}
+
+	// Already a clean array of stat objects
+	if (Array.isArray(payload)) {
+		return (payload as DockerStat[]).filter(x => x.CPUPerc || x.MemUsage);
 	}
+
+	const obj = payload as DockerStat;
+
+	// Already a clean stat object
+	if (obj.CPUPerc || obj.MemUsage) return [obj];
+
+	// Raw ANSI-wrapped string → strip + find JSON lines
+	const rawStr = typeof obj.raw === 'string' ? obj.raw : '';
+	if (rawStr) {
+		const stripped = stripAnsi(rawStr);
+		const results: DockerStat[] = [];
+		// Each docker stat is one JSON object per line
+		for (const chunk of stripped.split('\n')) {
+			const trimmed = chunk.trim();
+			const start = trimmed.indexOf('{');
+			const end = trimmed.lastIndexOf('}');
+			if (start === -1 || end === -1) continue;
+			try {
+				const parsed = JSON.parse(trimmed.slice(start, end + 1)) as DockerStat;
+				if (parsed.CPUPerc || parsed.MemUsage || parsed.Container) {
+					results.push(parsed);
+				}
+			} catch {}
+		}
+		if (results.length > 0) return results;
+	}
+
 	return [];
 }
 
-export function GlobalMonitoringCards() {
-	// Query real backend API for Docker containers list using $api client
-	const { data: rawDockerContainers = [], isLoading: isDockerLoading, refetch: refetchContainers } = $api.useQuery(
-		'get',
-		'/deployments/docker/containers',
-		{
-			params: {
-				query: {
-					server_id: undefined,
-				} as any,
-			},
-		},
-		{
-			refetchInterval: 5000,
-		}
-	);
+function getAccessToken(): string {
+	try {
+		const session = JSON.parse(localStorage.getItem('rustploy-auth-session') || '{}');
+		return session?.tokens?.access_token || '';
+	} catch {
+		return '';
+	}
+}
 
-	// Query running deployments
-	const { data: rawRunning = [] } = $api.useQuery(
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function GlobalMonitoringCards() {
+	const {data: rawDockerContainers = []} =
+		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}}, {refetchInterval: 5000});
+
+	const {data: rawRunning = []} = $api.useQuery(
 		'get',
 		'/deployments/running',
-		{
-			params: {
-				query: {
-					query: {
-						limit: 50,
-					},
-				},
-			},
-		},
-		{
-			refetchInterval: 5000,
-		}
+		{params: {query: {query: {limit: 50}} as any}},
+		{refetchInterval: 5000},
 	);
 
-	const [containersList, setContainersList] = useState<Record<string, unknown>[]>([]);
+	const [containersList, setContainersList] = useState<DockerStat[]>([]);
 
-	// Direct REST snapshot fetch helper
-	const fetchSnapshot = async () => {
-		try {
-			const sessionRaw = localStorage.getItem('rustploy-auth-session');
-			let accessToken = '';
-			if (sessionRaw && sessionRaw !== 'undefined') {
-				try {
-					const session = JSON.parse(sessionRaw);
-					accessToken = session?.tokens?.access_token || '';
-				} catch {}
-			}
-
-			const res = await fetch(`/api/deployments/docker/stats?stream=false${accessToken ? `&token=${encodeURIComponent(accessToken)}` : ''}`, {
-				headers: {
-					Authorization: accessToken ? `Bearer ${accessToken}` : '',
-				},
-			});
-
-			if (res.ok) {
-				const text = await res.text();
-				let rawData = text;
-				const dataLines = text.split('\n').filter(l => l.trim().startsWith('data:'));
-				if (dataLines.length > 0) {
-					rawData = dataLines.map(l => l.trim().slice(5).trim()).join('\n');
-				}
-
-				try {
-					const parsed = JSON.parse(rawData);
-					const payload = parsed.stats || parsed;
-					const containers = parseDockerStatsPayload(payload);
-					if (containers.length > 0) {
-						setContainersList(containers);
-					}
-				} catch {
-					const containers = parseDockerStatsPayload({ raw: rawData });
-					if (containers.length > 0) {
-						setContainersList(containers);
-					}
-				}
-			}
-		} catch {}
-	};
-
+	// SSE live stream — always on
 	useEffect(() => {
-		fetchSnapshot();
-		const interval = setInterval(fetchSnapshot, 3000);
-		return () => clearInterval(interval);
+		const token = getAccessToken();
+		let isMounted = true;
+		const controller = new AbortController();
+
+		const run = async () => {
+			try {
+				const res = await fetch('/api/deployments/docker/stats?stream=true', {
+					headers: {Authorization: token ? `Bearer ${token}` : ''},
+					signal: controller.signal,
+				});
+				if (!res.ok || !res.body) return;
+
+				const reader = res.body.getReader();
+				const dec = new TextDecoder();
+				let buf = '';
+
+				while (isMounted) {
+					const {done, value} = await reader.read();
+					if (done) break;
+					buf += dec.decode(value, {stream: true});
+					const lines = buf.split('\n');
+					buf = lines.pop() || '';
+					for (const line of lines) {
+						if (!line.startsWith('data:')) continue;
+						try {
+							const evt = JSON.parse(line.slice(5).trim());
+							if (evt.type === 'stats' && evt.stats) {
+								const stats = extractDockerStats(evt.stats);
+								if (stats.length > 0 && isMounted) setContainersList(stats);
+							}
+						} catch {}
+					}
+				}
+			} catch {}
+		};
+
+		run();
+		return () => {
+			isMounted = false;
+			controller.abort();
+		};
 	}, []);
 
-	// Active containers count from real API
+	// ─── Aggregate metrics ────────────────────────────────────────────────────
 	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
 	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
 	const activeContainersCount = Math.max(dockerContainersArray.length, runningArray.length, containersList.length);
 
-	// Aggregate metrics across running Docker containers
-	let totalCpu = 0;
-	let totalMemUsedBytes = 0;
-	let totalMemLimitBytes = 0;
-	let totalPids = 0;
-	let totalBlockReadBytes = 0;
-	let totalBlockWriteBytes = 0;
-	let totalNetRxBytes = 0;
-	let totalNetTxBytes = 0;
+	let totalCpu = 0, totalMemUsed = 0, totalMemLimit = 0, totalPids = 0;
+	let totalBlockR = 0, totalBlockW = 0, totalNetRx = 0, totalNetTx = 0;
 
 	for (const c of containersList) {
-		const cpuVal = parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
-		totalCpu += cpuVal;
+		totalCpu += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
 
-		const memUsageStr = String(c.MemUsage || '');
-		if (memUsageStr.includes('/')) {
-			const [uStr, lStr] = memUsageStr.split('/').map(s => s.trim());
-			totalMemUsedBytes += parseBytes(uStr);
-			if (totalMemLimitBytes === 0) {
-				totalMemLimitBytes = parseBytes(lStr);
-			}
+		const mem = String(c.MemUsage || '');
+		if (mem.includes('/')) {
+			const [u, l] = mem.split('/').map(s => s.trim());
+			totalMemUsed += parseBytes(u);
+			if (!totalMemLimit) totalMemLimit = parseBytes(l);
 		}
 
-		const pidsVal = parseInt(String(c.PIDs || '0'), 10) || 0;
-		totalPids += pidsVal;
+		totalPids += parseInt(String(c.PIDs || '0'), 10) || 0;
 
-		const blockStr = String(c.BlockIO || '');
-		if (blockStr.includes('/')) {
-			const [rStr, wStr] = blockStr.split('/').map(s => s.trim());
-			totalBlockReadBytes += parseBytes(rStr);
-			totalBlockWriteBytes += parseBytes(wStr);
+		const blk = String(c.BlockIO || '');
+		if (blk.includes('/')) {
+			const [r, w] = blk.split('/').map(s => s.trim());
+			totalBlockR += parseBytes(r);
+			totalBlockW += parseBytes(w);
 		}
 
-		const netStr = String(c.NetIO || '');
-		if (netStr.includes('/')) {
-			const [rxStr, txStr] = netStr.split('/').map(s => s.trim());
-			totalNetRxBytes += parseBytes(rxStr);
-			totalNetTxBytes += parseBytes(txStr);
+		const net = String(c.NetIO || '');
+		if (net.includes('/')) {
+			const [rx, tx] = net.split('/').map(s => s.trim());
+			totalNetRx += parseBytes(rx);
+			totalNetTx += parseBytes(tx);
 		}
 	}
 
-	const memPercent = totalMemLimitBytes > 0 ? (totalMemUsedBytes / totalMemLimitBytes) * 100 : 0;
+	const memPercent = totalMemLimit > 0 ? (totalMemUsed / totalMemLimit) * 100 : 0;
 
 	return (
 		<div className="flex flex-col gap-5">
-			{/* Connection Indicator Bar */}
-			<div className="flex items-center justify-between bg-card border border-border rounded-xl p-4 shadow-xs">
-				<div className="flex items-center gap-2.5">
-					<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
-					<span className="text-xs font-semibold text-foreground flex items-center gap-2">
-						Docker Telemetry Engine ({activeContainersCount} Active System Containers)
-					</span>
-				</div>
-				<button
-					onClick={() => {
-						refetchContainers();
-						fetchSnapshot();
-					}}
-					className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-border bg-muted/30 hover:bg-muted text-foreground transition-colors flex items-center gap-1.5 shadow-xs">
-					<RefreshCw className={`size-3.5 ${isDockerLoading ? 'animate-spin' : ''}`} /> Refresh Telemetry
-				</button>
-			</div>
+			{/* Header bar */}
+		<div className="flex items-center gap-2.5 bg-card border border-border rounded-xl p-4 shadow-xs">
+			<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+			<span className="text-xs font-semibold text-foreground">
+				Docker Telemetry Engine
+			</span>
+			<span className="text-xs text-muted-foreground">
+				— {activeContainersCount} Active System Containers
+			</span>
+		</div>
 
-			{/* Telemetry Cards Grid */}
+			{/* Cards */}
 			<div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-				{/* 1. CPU Usage */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -224,7 +207,6 @@ export function GlobalMonitoringCards() {
 					</CardContent>
 				</Card>
 
-				{/* 2. RAM Memory */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -234,15 +216,14 @@ export function GlobalMonitoringCards() {
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<span>Used: {formatBytes(totalMemUsedBytes)}</span>
-							<span>Total: {formatBytes(totalMemLimitBytes || 84244240793)}</span>
+							<span>Used: {formatBytes(totalMemUsed)}</span>
+							<span>Total: {formatBytes(totalMemLimit)}</span>
 						</div>
 						<Progress value={Math.min(100, memPercent)} className="h-2 w-full bg-secondary" />
 						<p className="text-[11px] text-muted-foreground">RAM memory utilization from Docker daemon</p>
 					</CardContent>
 				</Card>
 
-				{/* 3. Active PIDs */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -260,53 +241,50 @@ export function GlobalMonitoringCards() {
 					</CardContent>
 				</Card>
 
-				{/* 4. Block I/O */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
 							<Layers className="size-4 text-rose-500" /> Block I/O
 						</CardTitle>
 						<span className="text-xs font-mono font-bold text-rose-400">
-							Total: {formatBytes(totalBlockReadBytes + totalBlockWriteBytes)}
+							{formatBytes(totalBlockR + totalBlockW)}
 						</span>
 					</CardHeader>
 					<CardContent className="space-y-2">
 						<div className="flex items-center justify-between text-xs font-mono">
 							<span className="text-muted-foreground">Disk Read:</span>
-							<span className="font-bold text-emerald-400">{formatBytes(totalBlockReadBytes)}</span>
+							<span className="font-bold text-emerald-400">{formatBytes(totalBlockR)}</span>
 						</div>
 						<div className="flex items-center justify-between text-xs font-mono">
 							<span className="text-muted-foreground">Disk Write:</span>
-							<span className="font-bold text-rose-400">{formatBytes(totalBlockWriteBytes)}</span>
+							<span className="font-bold text-rose-400">{formatBytes(totalBlockW)}</span>
 						</div>
 						<p className="text-[11px] text-muted-foreground pt-1">Disk read/write throughput from Docker</p>
 					</CardContent>
 				</Card>
 
-				{/* 5. Network I/O */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
 							<Network className="size-4 text-blue-500" /> Network I/O
 						</CardTitle>
 						<span className="text-xs font-mono font-bold text-blue-400">
-							Total: {formatBytes(totalNetRxBytes + totalNetTxBytes)}
+							{formatBytes(totalNetRx + totalNetTx)}
 						</span>
 					</CardHeader>
 					<CardContent className="space-y-2">
 						<div className="flex items-center justify-between text-xs font-mono">
 							<span className="text-muted-foreground">Input (RX):</span>
-							<span className="font-bold text-blue-400">{formatBytes(totalNetRxBytes)}</span>
+							<span className="font-bold text-blue-400">{formatBytes(totalNetRx)}</span>
 						</div>
 						<div className="flex items-center justify-between text-xs font-mono">
 							<span className="text-muted-foreground">Output (TX):</span>
-							<span className="font-bold text-indigo-400">{formatBytes(totalNetTxBytes)}</span>
+							<span className="font-bold text-indigo-400">{formatBytes(totalNetTx)}</span>
 						</div>
 						<p className="text-[11px] text-muted-foreground pt-1">Network traffic from Docker</p>
 					</CardContent>
 				</Card>
 
-				{/* 6. Docker Containers Count */}
 				<Card className="bg-card border-border shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -323,7 +301,7 @@ export function GlobalMonitoringCards() {
 							<span className="text-muted-foreground">Engine Status:</span>
 							<span className="font-bold text-emerald-400">Online</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground pt-1">Docker daemon status & active containers</p>
+						<p className="text-[11px] text-muted-foreground pt-1">Docker daemon status &amp; active containers</p>
 					</CardContent>
 				</Card>
 			</div>
