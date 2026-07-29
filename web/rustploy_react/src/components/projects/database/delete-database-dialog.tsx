@@ -92,19 +92,11 @@ export function DeleteDatabaseDialog({
 						/>
 					</div>
 
-					<div className="flex items-center justify-end gap-2 pt-3 border-t border-border/30">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onClose}
-							disabled={isSubmitting}
-							className="h-9 text-xs font-semibold border-border">
-							Cancel
-						</Button>
+					<div className="flex items-center justify-end pt-3 border-t border-border/30">
 						<Button
 							type="submit"
 							disabled={isSubmitting || (confirmText.trim() !== dbName.trim() && confirmText.trim() !== 'delete')}
-							className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs h-9 px-4 font-semibold shadow-md gap-1.5">
+							className="w-full sm:w-auto bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs h-9 px-6 font-semibold shadow-md gap-1.5">
 							<Trash2 className="size-3.5" />
 							{isSubmitting ? 'Deleting...' : 'Delete Database'}
 						</Button>

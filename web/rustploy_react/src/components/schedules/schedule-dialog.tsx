@@ -199,66 +199,66 @@ export function ScheduleDialog({
 						<Input placeholder="Optional task details..." value={description} onChange={e => setDescription(e.target.value)} className="h-9 text-xs w-full" />
 					</div>
 
-					{/* Target Type & Target Item - 2 Equal Columns (Full Width) */}
-					<div className="grid grid-cols-2 gap-3 w-full">
-						<div className="space-y-1.5 w-full">
-							<Label className="text-xs font-semibold">Target Type *</Label>
-							<Select value={targetType} onValueChange={val => {
-								const newType = val as 'SERVER' | 'APPLICATION';
-								setTargetType(newType);
-								if (newType === 'SERVER') {
-									setTargetId(servers[0]?.id ? String(servers[0].id) : '');
-								} else {
-									setTargetId(allApplications[0]?.id ? String(allApplications[0].id) : '');
-								}
-							}}>
-								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+					{/* Target Type - Full Width List */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold">Target Type *</Label>
+						<Select value={targetType} onValueChange={val => {
+							const newType = val as 'SERVER' | 'APPLICATION';
+							setTargetType(newType);
+							if (newType === 'SERVER') {
+								setTargetId(servers[0]?.id ? String(servers[0].id) : '');
+							} else {
+								setTargetId(allApplications[0]?.id ? String(allApplications[0].id) : '');
+							}
+						}}>
+							<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								<SelectItem value="SERVER" className="text-xs">Server</SelectItem>
+								<SelectItem value="APPLICATION" className="text-xs">Application</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+
+					{/* Target Item - Full Width List */}
+					<div className="space-y-1.5 w-full">
+						<Label className="text-xs font-semibold">Target Item *</Label>
+						{targetType === 'SERVER' ? (
+							<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
+								<SelectTrigger className="!h-9 text-xs w-full">
+									<SelectValue placeholder="Select server">
+										{selectedServerName || 'Select server'}
+									</SelectValue>
+								</SelectTrigger>
 								<SelectContent className="bg-card border-border">
-									<SelectItem value="SERVER" className="text-xs">Server</SelectItem>
-									<SelectItem value="APPLICATION" className="text-xs">Application</SelectItem>
+									{servers.map(srv => (
+										<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
+											{srv.name}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
-						</div>
-						<div className="space-y-1.5 w-full">
-							<Label className="text-xs font-semibold">Target Item *</Label>
-							{targetType === 'SERVER' ? (
-								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="!h-9 text-xs w-full">
-										<SelectValue placeholder="Select server">
-											{selectedServerName || 'Select server'}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent className="bg-card border-border">
-										{servers.map(srv => (
-											<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
-												{srv.name}
+						) : (
+							<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
+								<SelectTrigger className="!h-9 text-xs w-full">
+									<SelectValue placeholder="Select application">
+										{selectedAppName || 'Select application'}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent className="bg-card border-border">
+									{allApplications.length > 0 ? (
+										allApplications.map(app => (
+											<SelectItem key={app.id} value={String(app.id)} className="text-xs">
+												{app.name}
 											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							) : (
-								<Select value={targetId} onValueChange={val => setTargetId(val ?? '')}>
-									<SelectTrigger className="!h-9 text-xs w-full">
-										<SelectValue placeholder="Select application">
-											{selectedAppName || 'Select application'}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent className="bg-card border-border">
-										{allApplications.length > 0 ? (
-											allApplications.map(app => (
-												<SelectItem key={app.id} value={String(app.id)} className="text-xs">
-													{app.name}
-												</SelectItem>
-											))
-										) : (
-											<SelectItem value={targetId || '1'} className="text-xs">
-												{targetId ? `Application #${targetId}` : 'No applications found'}
-											</SelectItem>
-										)}
-									</SelectContent>
-								</Select>
-							)}
-						</div>
+										))
+									) : (
+										<SelectItem value={targetId || '1'} className="text-xs">
+											{targetId ? `Application #${targetId}` : 'No applications found'}
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
+						)}
 					</div>
 
 					{/* Cron Expression - Full Width */}
@@ -267,18 +267,16 @@ export function ScheduleDialog({
 							<Label className="text-xs font-semibold">Cron Expression *</Label>
 							<div className="flex items-center gap-1">
 								{CRON_PRESETS.map(preset => (
-									<button
+									<Button
 										key={preset.value}
 										type="button"
+										variant={cronExpression === preset.value ? 'default' : 'ghost'}
+										size="xs"
 										onClick={() => setCronExpression(preset.value)}
-										className={`text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors border ${
-											cronExpression === preset.value
-												? 'bg-primary text-primary-foreground border-primary'
-												: 'bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground hover:bg-muted'
-										}`}
+										className="text-[10px] font-mono"
 									>
 										{preset.label}
-									</button>
+									</Button>
 								))}
 							</div>
 						</div>

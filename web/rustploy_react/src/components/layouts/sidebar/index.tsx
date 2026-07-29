@@ -46,14 +46,14 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 								render={<Link to={item.to as any} />}
 								isActive={isActive}
 								tooltip={item.title}
-								className={`h-8.5 text-xs font-medium rounded-lg transition-colors px-2.5 ${
+								className={`h-8.5 text-xs font-medium rounded-lg transition-colors px-2.5 group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:justify-center! ${
 									isActive
 										? 'bg-primary/15 text-primary font-semibold'
 										: 'text-foreground/90 hover:text-foreground hover:bg-accent/60'
 								}`}
 							>
 								<item.icon className={`size-4 shrink-0 ${isActive ? 'text-primary' : 'text-foreground/80'}`} />
-								<span>{item.title}</span>
+								<span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					);
@@ -86,7 +86,7 @@ export function AppSidebar() {
 				</SidebarHeader>
 
 				{/* Navigation Content */}
-				<SidebarContent className="gap-1 px-1.5 py-2">
+				<SidebarContent className="gap-1 px-1.5 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
 					{/* Platform Group */}
 					<NavMenuGroup
 						label="Platform"

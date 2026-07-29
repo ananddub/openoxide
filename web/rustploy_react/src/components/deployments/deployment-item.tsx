@@ -103,15 +103,17 @@ export function DeploymentItem({
 							</span>
 						)}
 						{d.error_message && (
-							<button
+							<Button
+								variant="link"
+								size="xs"
 								onClick={e => {
 									e.stopPropagation();
 									onViewError(d);
 								}}
-								className="text-[11px] text-destructive hover:underline font-medium flex items-center gap-1 text-left mt-0.5">
+								className="text-[11px] text-destructive hover:underline font-medium p-0 h-auto justify-start flex items-center gap-1 text-left mt-0.5">
 								<AlertCircle className="w-3 h-3 shrink-0" />
 								<span className="truncate max-w-md">Error: {d.error_message}</span>
-							</button>
+							</Button>
 						)}
 					</div>
 				</div>

@@ -121,14 +121,16 @@ export function RemoteServersList({
 						<CardContent className="p-3 flex items-center justify-between gap-2">
 							{/* Left: Global Reactive Status Dot, Server Name & Host IP */}
 							<div className="flex items-center gap-2 min-w-0 flex-1">
-								<button
+								<Button
 									type="button"
+									variant="ghost"
+									size="icon-xs"
 									onClick={() => onToggleStatus(item)}
 									title={getStatusTooltip()}
-									className="shrink-0"
+									className="shrink-0 p-0 h-4 w-4 rounded-full"
 								>
 									<span className={`block w-2.5 h-2.5 rounded-full transition-all ${getDotColor()}`} />
-								</button>
+								</Button>
 
 								<div className="flex flex-col min-w-0 flex-1">
 									<h3 className="text-xs font-bold text-foreground truncate">{item.name}</h3>

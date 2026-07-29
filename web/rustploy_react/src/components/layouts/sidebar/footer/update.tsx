@@ -108,16 +108,10 @@ export function UpdateServerButton({isCollapsed}: Props) {
 						</div>
 					)}
 
-					<DialogFooter className="mt-2 flex justify-end gap-2">
-						<Button
-							variant="outline"
-							disabled={isUpdating}
-							onClick={() => setIsOpen(false)}>
-							Cancel
-						</Button>
+					<DialogFooter className="mt-2 flex justify-end">
 						<Button
 							variant="default"
-							className="cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600"
+							className="w-full sm:w-auto h-9 px-6 cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-xs shadow-md"
 							disabled={isUpdating}
 							onClick={handleUpdate}>
 							{isUpdating ? 'Updating...' : 'Begin Update'}

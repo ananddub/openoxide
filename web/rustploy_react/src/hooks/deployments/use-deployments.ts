@@ -78,7 +78,6 @@ export function useDeployments() {
 	};
 
 	const handleCancelDeployment = async (id: number) => {
-		if (!confirm('Are you sure you want to cancel this deployment?')) return;
 		try {
 			await cancelMutation.mutateAsync({
 				params: {

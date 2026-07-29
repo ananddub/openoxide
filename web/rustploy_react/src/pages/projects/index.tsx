@@ -1,5 +1,6 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {Plus} from 'lucide-react';
+import {useState} from 'react';
 
 import {Button} from '#/components/ui/button';
 import {Card} from '#/components/ui/card';
@@ -8,12 +9,24 @@ import {EmptyState} from '#/components/projects/dashboard/empty-state';
 import {CreateProjectDialog} from '#/components/projects/dashboard/create-project-dialog';
 import {ProjectDashboardFilters} from '#/components/projects/dashboard/project-dashboard-filters';
 import {useProjectsList} from '#/hooks/projects/use-projects-list';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '#/components/ui/alert-dialog';
 
 export const Route = createFileRoute('/_app/projects')({
 	component: ProjectsPage,
 });
 
 function ProjectsPage() {
+	const [deletingId, setDeletingId] = useState<number | null>(null);
+
 	const {
 		projects,
 		isLoadingProjects,
@@ -34,35 +47,32 @@ function ProjectsPage() {
 		handleDeleteProject,
 	} = useProjectsList();
 
+	const confirmDelete = async () => {
+		if (deletingId !== null) {
+			await handleDeleteProject(deletingId);
+			setDeletingId(null);
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-6 w-full">
 			{/* Page Header */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
 				<div>
-					<h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/75 bg-clip-text">
-						Projects
-					</h1>
-					<p className="text-muted-foreground mt-1.5 text-sm">
-						Organize, manage and deploy applications inside{' '}
-						<span className="font-semibold text-foreground">
-							{activeOrg?.name || 'your environment'}
-						</span>
-						.
+					<h1 className="text-2xl font-bold tracking-tight text-foreground">Projects</h1>
+					<p className="text-muted-foreground text-xs font-medium mt-1">
+						Manage your deployment environments, applications, and infrastructure stacks
 					</p>
 				</div>
-
-				<div className="flex items-center gap-3">
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						disabled={!activeOrg}
-						className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold h-10 px-4 rounded-lg flex items-center gap-2 shadow-lg shadow-primary/10">
-						<Plus className="size-4" />
-						Create Project
-					</Button>
-				</div>
+				<Button
+					onClick={() => setIsCreateOpen(true)}
+					disabled={!activeOrg}
+					className="h-10 text-xs font-semibold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all active:scale-95 cursor-pointer">
+					<Plus className="size-4" />
+					<span>New Project</span>
+				</Button>
 			</div>
 
-			{/* Filters & Sorting Control Bar */}
 			<ProjectDashboardFilters
 				projects={projects}
 				searchQuery={searchQuery}
@@ -75,23 +85,20 @@ function ProjectsPage() {
 				setSelectedTags={setSelectedTags}
 			/>
 
-			{/* Main Grid View */}
+			{/* Content Area */}
 			{isLoadingProjects ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-					{[1, 2, 3, 4].map(i => (
-						<Card
-							key={i}
-							className="h-[160px] border-border bg-card/45 animate-pulse"
-						/>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+					{[1, 2, 3].map(i => (
+						<Card key={i} className="h-44 animate-pulse bg-muted/40 border-border/40" />
 					))}
 				</div>
 			) : filteredAndSortedProjects.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in duration-200">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 					{filteredAndSortedProjects.map(project => (
 						<ProjectCard
 							key={project.id}
 							project={project}
-							onDelete={handleDeleteProject}
+							onDelete={id => setDeletingId(id)}
 						/>
 					))}
 				</div>
@@ -126,6 +133,27 @@ function ProjectsPage() {
 				onSubmit={handleCreateProjectSubmit}
 				isSubmitting={isSubmitting}
 			/>
+
+			{/* Delete Confirmation Alert Dialog */}
+			<AlertDialog open={deletingId !== null} onOpenChange={open => !open && setDeletingId(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Project</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this project? All associated applications, databases, and environments will be permanently removed.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={confirmDelete}
+						>
+							Delete Project
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

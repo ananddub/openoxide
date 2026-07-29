@@ -107,33 +107,31 @@ export function ComposeDomainModal({
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Target Compose Service *</Label>
-							<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
-								<SelectTrigger className="h-9 text-xs">
-									<SelectValue placeholder="Select service" />
-								</SelectTrigger>
-								<SelectContent>
-									{servicesList.map((srv) => (
-										<SelectItem key={srv} value={srv} className="text-xs">
-											{srv}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div className="flex flex-col gap-1.5 w-full">
+						<Label className="text-xs font-semibold">Target Compose Service *</Label>
+						<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
+							<SelectTrigger className="h-9 text-xs w-full">
+								<SelectValue placeholder="Select service" />
+							</SelectTrigger>
+							<SelectContent>
+								{servicesList.map((srv) => (
+									<SelectItem key={srv} value={srv} className="text-xs">
+										{srv}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Container Port *</Label>
-							<Input
-								type="number"
-								value={containerPort}
-								onChange={e => setContainerPort(e.target.value)}
-								placeholder="3000"
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5 w-full">
+						<Label className="text-xs font-semibold">Container Port *</Label>
+						<Input
+							type="number"
+							value={containerPort}
+							onChange={e => setContainerPort(e.target.value)}
+							placeholder="3000"
+							className="h-9 text-xs font-mono w-full"
+						/>
 					</div>
 
 					<div className="flex flex-col gap-1.5">
@@ -154,11 +152,8 @@ export function ComposeDomainModal({
 						<Switch checked={https} onCheckedChange={setHttps} />
 					</div>
 
-					<div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
-						<Button type="button" variant="outline" onClick={onClose} className="h-8 text-xs font-semibold">
-							Cancel
-						</Button>
-						<Button type="submit" disabled={saving} className="h-8 text-xs font-semibold">
+					<div className="pt-2 flex items-center justify-end border-t border-border">
+						<Button type="submit" disabled={saving} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 							{saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
 							{editingDomain ? 'Update Domain' : 'Add Domain'}
 						</Button>

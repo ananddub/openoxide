@@ -85,34 +85,30 @@ export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: C
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Target Service *</Label>
-							<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
-								<SelectTrigger className="!h-9 text-xs">
-									<SelectValue placeholder="Select service" />
-								</SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									{servicesList.map((srv) => (
-										<SelectItem key={srv} value={srv} className="text-xs">
-											{srv}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div className="flex flex-col gap-1.5 w-full">
+						<Label className="text-xs font-semibold">Target Service *</Label>
+						<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
+							<SelectTrigger className="!h-9 text-xs w-full">
+								<SelectValue placeholder="Select service" />
+							</SelectTrigger>
+							<SelectContent className="bg-card border-border">
+								{servicesList.map((srv) => (
+									<SelectItem key={srv} value={srv} className="text-xs">
+										{srv}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 
-						<div className="flex flex-col gap-1.5">
-							<div className="flex items-center justify-between">
-								<Label className="text-xs font-semibold">Cron Schedule *</Label>
-							</div>
-							<Input
-								value={cronExpr}
-								onChange={e => setCronExpr(e.target.value)}
-								placeholder="0 * * * *"
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5 w-full">
+						<Label className="text-xs font-semibold">Cron Schedule *</Label>
+						<Input
+							value={cronExpr}
+							onChange={e => setCronExpr(e.target.value)}
+							placeholder="0 * * * *"
+							className="h-9 text-xs font-mono w-full"
+						/>
 					</div>
 
 					{/* Quick Cron Presets */}

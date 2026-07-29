@@ -5,6 +5,7 @@ import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
 import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
+import {EditKeyModal} from '#/components/ssh-keys/edit-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
 import type {SshKeyResponse} from '#/types/api-helpers';
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/_app/ssh-keys')({
 function SshKeysPage() {
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [selectedKeyForView, setSelectedKeyForView] = useState<SshKeyResponse | null>(null);
+	const [selectedKeyForEdit, setSelectedKeyForEdit] = useState<SshKeyResponse | null>(null);
 	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<SshKeyResponse | null>(null);
 
 	const {
@@ -39,6 +41,7 @@ function SshKeysPage() {
 				keys={sshKeys}
 				isLoading={isLoading}
 				onViewKey={key => setSelectedKeyForView(key)}
+				onEditKey={key => setSelectedKeyForEdit(key)}
 				onDeleteKey={key => setSelectedKeyForDelete(key)}
 			/>
 
@@ -52,6 +55,13 @@ function SshKeysPage() {
 				isOpen={!!selectedKeyForView}
 				sshKey={selectedKeyForView}
 				onClose={() => setSelectedKeyForView(null)}
+			/>
+
+			<EditKeyModal
+				isOpen={!!selectedKeyForEdit}
+				sshKey={selectedKeyForEdit}
+				onClose={() => setSelectedKeyForEdit(null)}
+				onSuccess={refetch}
 			/>
 
 			<DeleteKeyModal

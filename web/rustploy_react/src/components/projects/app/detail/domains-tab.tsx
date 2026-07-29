@@ -249,11 +249,8 @@ export function DomainsTab({app}: DomainsTabProps) {
 								</div>
 							)}
 
-							<div className="flex justify-end gap-2 border-t border-border/60 pt-4 mt-2">
-								<Button type="button" variant="outline" onClick={() => setShowAdd(false)} className="h-8 text-xs font-semibold">
-									Cancel
-								</Button>
-								<Button type="submit" disabled={adding} className="h-8 text-xs font-semibold">
+							<div className="flex justify-end border-t border-border/60 pt-4 mt-2">
+								<Button type="submit" disabled={adding} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 									{adding ? 'Adding...' : 'Add Domain'}
 								</Button>
 							</div>
@@ -275,19 +272,16 @@ export function DomainsTab({app}: DomainsTabProps) {
 						<p className="text-xs text-muted-foreground leading-relaxed">
 							Are you sure you want to delete this domain?
 						</p>
-						<div className="flex justify-end gap-2 border-t border-border/60 pt-3">
-							<Button variant="outline" size="sm" onClick={() => setDeleteId(null)} className="h-8 text-xs font-semibold">
-								Cancel
-							</Button>
+						<div className="flex justify-end border-t border-border/60 pt-3">
 							<Button
 								size="sm"
 								variant="destructive"
 								disabled={deleting}
 								onClick={confirmDelete}
-								className="h-8 text-xs font-semibold"
+								className="w-full sm:w-auto h-9 px-6 font-bold text-xs shadow-md"
 							>
 								{deleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-								{deleting ? 'Deleting...' : 'Delete'}
+								{deleting ? 'Deleting...' : 'Delete Domain'}
 							</Button>
 						</div>
 					</div>

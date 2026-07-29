@@ -130,7 +130,6 @@ export function useProjectsList() {
 	};
 
 	const handleDeleteProject = async (projectId: number) => {
-		if (!confirm('Are you sure you want to delete this project?')) return;
 		if (!activeOrg) return;
 
 		try {

@@ -266,8 +266,8 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 							</Select>
 						)}
 						<div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
-							<button type="button" onClick={() => setShell('sh')} className={`px-2.5 py-1 text-xs font-semibold rounded-md ${shell === 'sh' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>/bin/sh</button>
-							<button type="button" onClick={() => setShell('bash')} className={`px-2.5 py-1 text-xs font-semibold rounded-md ${shell === 'bash' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>bash</button>
+							<Button variant={shell === 'sh' ? 'secondary' : 'ghost'} size="xs" onClick={() => setShell('sh')}>/bin/sh</Button>
+							<Button variant={shell === 'bash' ? 'secondary' : 'ghost'} size="xs" onClick={() => setShell('bash')}>bash</Button>
 						</div>
 						<Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></Button>
 					</div>

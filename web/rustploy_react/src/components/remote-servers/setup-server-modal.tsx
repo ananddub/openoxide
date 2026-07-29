@@ -225,8 +225,9 @@ export function SetupServerModal({
 							isLoading={settingUp}
 							loadingText="Running server setup..."
 							emptyText="Waiting for setup output..."
-							heightClass="h-[280px]"
+							heightClass="h-[220px]"
 							isLive={settingUp}
+							showFilter={false}
 						/>
 					)}
 

@@ -17,6 +17,17 @@ import {DeploymentsFilters} from '#/components/deployments/deployments-filters';
 import {DeploymentItem} from '#/components/deployments/deployment-item';
 import {DeploymentLogsDialog} from '#/components/deployments/deployment-logs-dialog';
 import {DeploymentErrorDialog} from '#/components/deployments/deployment-error-dialog';
+import {useState} from 'react';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '#/components/ui/alert-dialog';
 
 export const Route = createFileRoute('/_app/Deployments')({
 	component: DeploymentsPage,
@@ -50,6 +61,8 @@ function DeploymentsPage() {
 		activeQueue,
 		clearFilters,
 	} = useDeployments();
+
+	const [cancelingId, setCancelingId] = useState<number | null>(null);
 
 	return (
 		<div className="flex flex-col gap-6 w-full pb-10">
@@ -226,7 +239,7 @@ function DeploymentsPage() {
 															<Button
 																size="sm"
 																variant="outline"
-																onClick={() => handleCancelDeployment(d.id!)}
+																onClick={() => setCancelingId(d.id!)}
 																className="h-7 text-xs text-destructive border-destructive/20 hover:bg-destructive/10 px-2.5 rounded-lg font-semibold flex items-center gap-1">
 																<XCircle className="w-3.5 h-3.5" /> Cancel Build
 															</Button>
@@ -264,6 +277,32 @@ function DeploymentsPage() {
 				errorDetailDeployment={errorDetailDeployment}
 				onClose={() => setErrorDetailDeployment(null)}
 			/>
+
+			{/* Cancel Confirmation Alert Dialog */}
+			<AlertDialog open={cancelingId !== null} onOpenChange={open => !open && setCancelingId(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancel Deployment</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to cancel this deployment build? This action will terminate the build task.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setCancelingId(null)}>Keep Running</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={async () => {
+								if (cancelingId) {
+									await handleCancelDeployment(cancelingId);
+									setCancelingId(null);
+								}
+							}}
+						>
+							Yes, Cancel Build
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

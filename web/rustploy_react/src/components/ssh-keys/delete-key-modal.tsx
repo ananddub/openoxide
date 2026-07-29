@@ -49,28 +49,16 @@ export function DeleteKeyModal({
 						<p>Any remote servers or deployments relying on this SSH key will lose automated deployment access until updated.</p>
 					</div>
 
-					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={onClose} disabled={deleting}>
-							Cancel
-						</Button>
+					<div className="flex justify-end pt-2">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={handleDelete}
 							disabled={deleting}
-							className="gap-1.5"
+							className="w-full sm:w-auto h-9 px-6 font-bold text-xs"
 						>
-							{deleting ? (
-								<>
-									<RefreshCw className="w-3.5 h-3.5 animate-spin" />
-									Deleting...
-								</>
-							) : (
-								<>
-									<Trash2 className="w-3.5 h-3.5" />
-									Delete Key
-								</>
-							)}
+							{deleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+							{deleting ? 'Deleting...' : 'Delete Key'}
 						</Button>
 					</div>
 				</div>

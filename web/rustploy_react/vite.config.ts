@@ -1,7 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import {devtools} from '@tanstack/devtools-vite';
 import {tanstackRouter} from '@tanstack/router-plugin/vite';
-import viteReact from '@vitejs/plugin-react';
+import viteReact, {reactCompilerPreset} from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 import {defineConfig} from 'vite';
 import {routes} from './src/routes';
 
@@ -17,6 +18,7 @@ const config = defineConfig({
 			virtualRouteConfig: routes,
 		}),
 		viteReact(),
+		babel({presets: [reactCompilerPreset()]}),
 	],
 	server: {
 		host: '0.0.0.0',

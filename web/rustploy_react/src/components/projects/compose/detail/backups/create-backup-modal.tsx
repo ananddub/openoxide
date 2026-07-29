@@ -78,54 +78,50 @@ export function CreateBackupModal({isOpen, onClose, servicesList, onCreate}: Cre
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Target Service *</Label>
-							<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
-								<SelectTrigger className="h-9 text-xs">
-									<SelectValue placeholder="Select service" />
-								</SelectTrigger>
-								<SelectContent>
-									{servicesList.map((srv) => (
-										<SelectItem key={srv} value={srv} className="text-xs">
-											{srv}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Volume Name / Path *</Label>
-							<Input
-								value={volumeName}
-								onChange={e => setVolumeName(e.target.value)}
-								placeholder="e.g., postgres_data"
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">Target Service *</Label>
+						<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
+							<SelectTrigger className="h-9 text-xs w-full">
+								<SelectValue placeholder="Select service" />
+							</SelectTrigger>
+							<SelectContent>
+								{servicesList.map((srv) => (
+									<SelectItem key={srv} value={srv} className="text-xs">
+										{srv}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">Cron Schedule *</Label>
-							<Input
-								value={cronExpr}
-								onChange={e => setCronExpr(e.target.value)}
-								placeholder="0 0 * * *"
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">Volume Name / Path *</Label>
+						<Input
+							value={volumeName}
+							onChange={e => setVolumeName(e.target.value)}
+							placeholder="e.g., postgres_data"
+							className="h-9 text-xs font-mono"
+						/>
+					</div>
 
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold">S3 Prefix</Label>
-							<Input
-								value={prefix}
-								onChange={e => setPrefix(e.target.value)}
-								placeholder="volume-backups/"
-								className="h-9 text-xs font-mono"
-							/>
-						</div>
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">Cron Schedule *</Label>
+						<Input
+							value={cronExpr}
+							onChange={e => setCronExpr(e.target.value)}
+							placeholder="0 0 * * *"
+							className="h-9 text-xs font-mono"
+						/>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">S3 Prefix</Label>
+						<Input
+							value={prefix}
+							onChange={e => setPrefix(e.target.value)}
+							placeholder="volume-backups/"
+							className="h-9 text-xs font-mono"
+						/>
 					</div>
 
 					<div className="flex items-center justify-between border border-border/60 rounded-lg p-3 bg-muted/20">
@@ -136,11 +132,8 @@ export function CreateBackupModal({isOpen, onClose, servicesList, onCreate}: Cre
 						<Switch checked={turnOff} onCheckedChange={setTurnOff} />
 					</div>
 
-					<div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
-						<Button type="button" variant="outline" onClick={onClose} className="h-8 text-xs font-semibold">
-							Cancel
-						</Button>
-						<Button type="submit" disabled={creating} className="h-8 text-xs font-semibold">
+					<div className="pt-2 flex items-center justify-end border-t border-border">
+						<Button type="submit" disabled={creating} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 							{creating ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
 							Create Backup Rule
 						</Button>

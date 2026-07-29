@@ -14,6 +14,9 @@ export function formatApiError(error: unknown): string {
 		if (error.includes('UNIQUE constraint failed: organization.name')) {
 			return 'An organization with this name already exists.';
 		}
+		if (error.toLowerCase().includes('invalid json') || error.toLowerCase().includes('unexpected end')) {
+			return 'Server returned an invalid or empty response.';
+		}
 		return error;
 	}
 	if (typeof error === 'object' && error !== null) {
@@ -27,7 +30,12 @@ export function formatApiError(error: unknown): string {
 			}
 			return errObj.error;
 		}
-		if (typeof errObj.message === 'string') return errObj.message;
+		if (typeof errObj.message === 'string') {
+			if (errObj.message.toLowerCase().includes('invalid json') || errObj.message.toLowerCase().includes('unexpected end')) {
+				return 'Server returned an invalid or empty response.';
+			}
+			return errObj.message;
+		}
 	}
 	return 'An unexpected error occurred';
 }

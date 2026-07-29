@@ -43,7 +43,6 @@ export function useSchedules() {
 	const runMutation = $api.useMutation('post', '/schedules/{id}/run');
 
 	const handleDelete = async (id: number) => {
-		if (!confirm('Are you sure you want to delete this schedule?')) return;
 		try {
 			await deleteMutation.mutateAsync({
 				params: {

@@ -14,18 +14,17 @@ export function useCreateSshKey(onClose: () => void, onSuccess?: () => void) {
 	const [generatingType, setGeneratingType] = useState<'ed25519' | 'rsa' | null>(null);
 
 	const createMutation = $api.useMutation('post', '/ssh-keys');
-	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate');
+	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair');
 
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGeneratingType(type);
 		try {
 			const res = await generatePairMutation.mutateAsync({
-				body: {key_type: type, name: 'auto-generated'},
+				body: {key_type: type},
 			});
-			const keyPair = res as unknown as Record<string, string>;
-			setPublicKey(keyPair.public_key || '');
-			setPrivateKey(keyPair.private_key || '');
-			toast.success(`Auto-generated ${type.toUpperCase()} SSH key pair!`);
+			setPublicKey(res.public_key || '');
+			setPrivateKey(res.private_key || '');
+			toast.success(`Generated ${type.toUpperCase()} key pair! Fill in details and click Save.`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {

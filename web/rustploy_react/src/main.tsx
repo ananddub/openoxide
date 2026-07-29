@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import {routeTree} from './routeTree.gen';
 import {NotFound} from './components/not-found';
@@ -20,5 +21,9 @@ const rootElement = document.getElementById('app');
 
 if (rootElement && !rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
-	root.render(<RouterProvider router={router} />);
+	root.render(
+		<StrictMode>
+			<RouterProvider router={router} />
+		</StrictMode>
+	);
 }

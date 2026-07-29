@@ -146,11 +146,8 @@ export function GenerateKeyModal({
 							</div>
 						)}
 
-						<div className="flex items-center justify-between pt-3 border-t border-border/40">
-							<Button variant="ghost" onClick={handleCloseModal} className="h-8 text-xs px-3">
-								Cancel
-							</Button>
-							<Button onClick={handleSaveKey} disabled={saving} className="h-8 text-xs font-semibold px-5">
+						<div className="flex items-center justify-end pt-3 border-t border-border/40">
+							<Button onClick={handleSaveKey} disabled={saving} className="w-full sm:w-auto h-9 text-xs font-bold px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 								{saving ? 'Saving...' : 'Save Key Pair'}
 							</Button>
 						</div>
@@ -190,11 +187,8 @@ export function GenerateKeyModal({
 							</Select>
 						</div>
 
-						<div className="flex items-center justify-end gap-2 pt-3 border-t border-border/50">
-							<Button type="button" variant="ghost" onClick={handleCloseModal} className="h-8 text-xs px-3">
-								Cancel
-							</Button>
-							<Button type="submit" disabled={generating} className="h-8 text-xs font-medium gap-1.5 px-4">
+						<div className="flex items-center justify-end pt-3 border-t border-border/50">
+							<Button type="submit" disabled={generating} className="w-full sm:w-auto h-9 text-xs font-bold gap-1.5 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 								{generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
 								{generating ? 'Generating...' : 'Generate Key Pair'}
 							</Button>

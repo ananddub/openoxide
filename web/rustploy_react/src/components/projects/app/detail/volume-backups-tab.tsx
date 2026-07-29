@@ -182,10 +182,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className="pt-2">
-						<Button variant="outline" onClick={() => setDeleteTargetId(null)}>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={handleDelete}>
+						<Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto h-9 px-6 font-bold text-xs">
 							Delete Backup Rule
 						</Button>
 					</DialogFooter>

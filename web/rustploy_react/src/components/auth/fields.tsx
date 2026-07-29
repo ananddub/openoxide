@@ -6,6 +6,7 @@ import type {
 import {Input} from '#/components/ui/input';
 import {Lock, Eye, EyeOff} from 'lucide-react';
 import {Field, FieldLabel, FieldError} from '#/components/ui/field';
+import {Button} from '#/components/ui/button';
 
 type AuthInputProps = React.ComponentPropsWithoutRef<typeof Input> & {
 	label: string;
@@ -91,17 +92,19 @@ export const AuthPasswordInput: React.FC<AuthPasswordInputProps> = ({
 					{...registration}
 					{...props}
 				/>
-				<button
+				<Button
 					type="button"
+					variant="ghost"
+					size="icon-sm"
 					onClick={() => setShowPassword(!showPassword)}
-					className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+					className="absolute right-1 text-muted-foreground transition-colors hover:text-foreground"
 					tabIndex={-1}>
 					{showPassword ? (
 						<EyeOff className="size-4" />
 					) : (
 						<Eye className="size-4" />
 					)}
-				</button>
+				</Button>
 			</div>
 			<FieldError errors={[error]} />
 		</Field>

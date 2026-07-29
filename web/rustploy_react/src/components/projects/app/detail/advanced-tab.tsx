@@ -125,11 +125,8 @@ export function AdvancedTab({app, onUpdated}: AdvancedTabProps) {
 					<div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 flex flex-col gap-3">
 						<p className="text-xs text-foreground font-semibold">Are you sure? This action is absolutely irreversible.</p>
 						<div className="flex items-center gap-2">
-							<Button onClick={handleDeleteApp} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold text-xs h-8">
+							<Button onClick={handleDeleteApp} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold text-xs h-9 px-6 shadow-md">
 								{deleting ? 'Deleting...' : 'Yes, Delete application'}
-							</Button>
-							<Button variant="outline" onClick={() => setConfirmDelete(false)} className="border-border text-foreground hover:bg-muted font-semibold text-xs h-8">
-								Cancel
 							</Button>
 						</div>
 					</div>

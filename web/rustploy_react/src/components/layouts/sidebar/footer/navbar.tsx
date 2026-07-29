@@ -52,10 +52,10 @@ export function UserNav({isCollapsed}: Props) {
 				render={
 					<SidebarMenuButton
 						size="lg"
-						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:mx-auto!"
 					/>
 				}>
-				<div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted text-xs font-semibold text-muted-foreground select-none">
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted text-xs font-semibold text-muted-foreground select-none group-data-[collapsible=icon]:mx-auto">
 					{getInitials()}
 				</div>
 				<div className="grid flex-1 text-left text-sm leading-tight select-none group-data-[collapsible=icon]:hidden">

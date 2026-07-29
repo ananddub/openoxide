@@ -9,8 +9,9 @@ import {
 import {Button} from '#/components/ui/button';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
-import {Copy, Check, Eye, EyeOff, Key, Terminal} from 'lucide-react';
+import {Copy, Check, Eye, EyeOff, Key, Terminal, Download} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
+import {downloadKeyFile} from '#/utils/ssh-key-utils';
 
 interface ViewKeyModalProps {
 	isOpen: boolean;
@@ -95,9 +96,11 @@ export function ViewKeyModal({
 
 	if (!activeKey) return null;
 
+	const formattedFileName = activeKey.name.trim().toLowerCase().replace(/\s+/g, '_') || 'id_rsa';
+
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full bg-card border-border p-6 shadow-xl rounded-xl">
+			<DialogContent className="sm:max-w-xl md:max-w-2xl w-full max-h-[90vh] overflow-y-auto bg-card border-border p-6 shadow-xl rounded-xl">
 				<DialogHeader className="pb-3 border-b border-border/50">
 					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
 						<Key className="w-4 h-4 text-primary shrink-0" />
@@ -118,7 +121,7 @@ export function ViewKeyModal({
 								{copiedPublic ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<div className="h-20 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 resize-none break-all overflow-y-auto leading-relaxed text-zinc-100">
+						<div className="max-h-28 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-zinc-100">
 							{renderHighlightedPublicKey(activeKey.public_key || '')}
 						</div>
 					</div>
@@ -127,7 +130,7 @@ export function ViewKeyModal({
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between">
 							<label className="text-xs font-semibold text-foreground">Private Key</label>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1.5">
 								<Button
 									variant="ghost"
 									size="sm"
@@ -147,7 +150,7 @@ export function ViewKeyModal({
 						</div>
 
 						{showPrivate ? (
-							<div className="h-28 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-emerald-400 whitespace-pre-wrap">
+							<div className="max-h-36 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-emerald-400 whitespace-pre-wrap">
 								{activeKey.private_key || 'No private key stored for this SSH key.'}
 							</div>
 						) : (
@@ -175,12 +178,34 @@ export function ViewKeyModal({
 							</div>
 						</div>
 					)}
-				</div>
 
-				<div className="flex justify-end pt-2 border-t border-border/50">
-					<Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs px-4">
-						Close
-					</Button>
+					{/* Bottom Footer Download Row */}
+					<div className="flex items-center gap-2 pt-3 border-t border-border/50">
+						{activeKey.public_key && (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => downloadKeyFile(`${formattedFileName}.pub`, activeKey.public_key || '')}
+								className="h-8 text-xs font-medium gap-1.5 border-border"
+							>
+								<Download className="w-3.5 h-3.5" />
+								Download Pub
+							</Button>
+						)}
+						{activeKey.private_key && (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => downloadKeyFile(`${formattedFileName}.pem`, activeKey.private_key || '')}
+								className="h-8 text-xs font-medium gap-1.5 border-border"
+							>
+								<Download className="w-3.5 h-3.5 text-amber-500" />
+								Download Private
+							</Button>
+						)}
+					</div>
 				</div>
 			</DialogContent>
 		</Dialog>

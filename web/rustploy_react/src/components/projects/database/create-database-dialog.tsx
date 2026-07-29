@@ -289,19 +289,11 @@ export function CreateDatabaseDialog({
 						/>
 					</div>
 
-					<div className="flex justify-end gap-3 pt-3 border-t border-border/20">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onClose}
-							disabled={isSubmitting}
-							className="h-9 text-xs">
-							Cancel
-						</Button>
+					<div className="flex justify-end pt-3 border-t border-border/20">
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4 font-semibold shadow-xs">
+							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-6 font-semibold shadow-xs w-full sm:w-auto">
 							{isSubmitting ? 'Creating...' : 'Create Database'}
 						</Button>
 					</div>

@@ -7,6 +7,16 @@ import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '#/components/ui/alert-dialog';
 
 interface ComposeDeploymentsTabProps {
 	composeId: number;
@@ -86,8 +96,9 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 		}
 	};
 
-	const handleCancel = async (_id: number) => {
-		if (!confirm('Are you sure you want to cancel this compose deployment?')) return;
+	const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
+
+	const handleCancel = async () => {
 		setIsTriggering(true);
 		try {
 			await (cancelMutation as any).mutateAsync({params: {path: {id: composeId}}});
@@ -97,6 +108,7 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 			toast.error(formatApiError(err));
 		} finally {
 			setIsTriggering(false);
+			setIsConfirmCancelOpen(false);
 		}
 	};
 
@@ -213,7 +225,7 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 							<RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing...
 						</Button>
 					) : activeDeployment ? (
-						<Button onClick={() => activeDeployment.id && handleCancel(activeDeployment.id)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
+						<Button onClick={() => setIsConfirmCancelOpen(true)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
 							<XCircle className="w-3.5 h-3.5" /> Cancel Build
 						</Button>
 					) : (
@@ -229,8 +241,29 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 				deployments={deployments}
 				isLoading={isLoading}
 				onOpenStream={setActiveLogId}
-				onCancelBuild={handleCancel}
+				onCancelBuild={() => setIsConfirmCancelOpen(true)}
 			/>
+
+			{/* Cancel Confirmation Dialog */}
+			<AlertDialog open={isConfirmCancelOpen} onOpenChange={setIsConfirmCancelOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancel Compose Deployment</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to cancel this compose deployment? This action will stop the running build process.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setIsConfirmCancelOpen(false)}>No, Keep Running</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={handleCancel}
+						>
+							Yes, Cancel Deployment
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			{/* Realtime Stream Logs Modal */}
 			{activeLogId && (

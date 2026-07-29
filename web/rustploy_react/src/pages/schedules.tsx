@@ -5,6 +5,17 @@ import {Input} from '#/components/ui/input';
 import {useSchedules} from '#/hooks/use-schedules';
 import {ScheduleCard} from '#/components/schedules/schedule-card';
 import {ScheduleDialog} from '#/components/schedules/schedule-dialog';
+import {useState} from 'react';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '#/components/ui/alert-dialog';
 
 export const Route = createFileRoute('/_app/schedules')({
 	component: SchedulesPage,
@@ -30,6 +41,8 @@ function SchedulesPage() {
 		createMutation,
 		patchMutation,
 	} = useSchedules();
+
+	const [deletingId, setDeletingId] = useState<number | null>(null);
 
 	return (
 		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
@@ -98,7 +111,7 @@ function SchedulesPage() {
 							key={s.id}
 							schedule={s}
 							onEdit={handleOpenEdit}
-							onDelete={handleDelete}
+							onDelete={id => setDeletingId(id)}
 							onToggle={handleToggleEnabled}
 							onRun={handleRunManual}
 							servers={servers}
@@ -135,6 +148,32 @@ function SchedulesPage() {
 				createMutation={createMutation}
 				patchMutation={patchMutation}
 			/>
+
+			{/* Delete Confirmation Alert Dialog */}
+			<AlertDialog open={deletingId !== null} onOpenChange={open => !open && setDeletingId(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Automated Schedule</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this schedule? This action will stop all future automated cron executions.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={async () => {
+								if (deletingId) {
+									await handleDelete(deletingId);
+									setDeletingId(null);
+								}
+							}}
+						>
+							Delete Schedule
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

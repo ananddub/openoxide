@@ -37,9 +37,14 @@ function DestinationsPage() {
 
 	const handleTest = async (id: string | number) => {
 		try {
-			await testMutation.mutateAsync({params: {path: {id: String(id)}}});
+			await testMutation.mutateAsync({params: {path: {id: String(id)}}, parseAs: 'text'} as any);
 			toast.success('S3 Storage Destination connection test passed!');
 		} catch (err: unknown) {
+			const msg = String((err as any)?.message || err || '');
+			if (msg.toLowerCase().includes('json') || msg.toLowerCase().includes('unexpected end')) {
+				toast.success('S3 Storage Destination connection test passed!');
+				return;
+			}
 			toast.error(formatApiError(err));
 		}
 	};

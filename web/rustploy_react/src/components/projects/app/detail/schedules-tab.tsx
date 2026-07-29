@@ -211,11 +211,8 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 							</div>
 						</div>
 
-						<div className="flex justify-end gap-2 border-t border-border/60 pt-3">
-							<Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)} className="h-8 text-xs font-semibold">
-								Cancel
-							</Button>
-							<Button type="submit" size="sm" disabled={creating} className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 text-xs font-semibold">
+						<div className="flex justify-end border-t border-border/60 pt-3">
+							<Button type="submit" size="sm" disabled={creating} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-6 text-xs font-bold shadow-md">
 								{creating ? 'Creating...' : 'Create Job'}
 							</Button>
 						</div>
@@ -236,19 +233,16 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 						<p className="text-xs text-muted-foreground leading-relaxed">
 							Are you sure you want to delete this schedule?
 						</p>
-						<div className="flex justify-end gap-2 border-t border-border/60 pt-3">
-							<Button variant="outline" size="sm" onClick={() => setDeleteId(null)} className="h-8 text-xs font-semibold">
-								Cancel
-							</Button>
+						<div className="flex justify-end border-t border-border/60 pt-3">
 							<Button
 								size="sm"
 								variant="destructive"
 								disabled={deleting}
 								onClick={confirmDelete}
-								className="h-8 text-xs font-semibold"
+								className="w-full sm:w-auto h-9 px-6 text-xs font-bold shadow-md"
 							>
 								{deleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-								{deleting ? 'Deleting...' : 'Delete'}
+								{deleting ? 'Deleting...' : 'Delete Schedule'}
 							</Button>
 						</div>
 					</div>

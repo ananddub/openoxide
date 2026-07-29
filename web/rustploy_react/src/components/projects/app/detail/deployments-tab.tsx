@@ -5,6 +5,16 @@ import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '#/components/ui/alert-dialog';
 
 interface DeploymentsTabProps {
 	appId: number;
@@ -169,17 +179,20 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 		}
 	};
 
-	const handleCancel = async (id: number) => {
-		if (!confirm('Are you sure you want to cancel this deployment?')) return;
+	const [cancelingId, setCancelingId] = useState<number | null>(null);
+
+	const confirmCancel = async () => {
+		if (!cancelingId) return;
 		setIsTriggering(true);
 		try {
-			await cancelMutation.mutateAsync({params: {path: {id}}});
+			await cancelMutation.mutateAsync({params: {path: {id: cancelingId}}});
 			toast.success('Deployment cancellation requested');
 			await refetch();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
 			setIsTriggering(false);
+			setCancelingId(null);
 		}
 	};
 
@@ -226,7 +239,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 							<RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing...
 						</Button>
 					) : activeDeployment ? (
-						<Button onClick={() => activeDeployment.id && handleCancel(activeDeployment.id)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
+						<Button onClick={() => activeDeployment.id && setCancelingId(activeDeployment.id)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
 							<XCircle className="w-3.5 h-3.5" /> Cancel Build
 						</Button>
 					) : (
@@ -271,7 +284,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 										</Button>
 
 										{isActive && (
-											<Button size="sm" variant="ghost" onClick={() => handleCancel(e.id)} className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
+											<Button size="sm" variant="ghost" onClick={() => setCancelingId(e.id)} className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
 												<XCircle className="w-3 h-3" /> Cancel
 											</Button>
 										)}
@@ -282,6 +295,27 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 					</div>
 				)}
 			</section>
+
+			{/* Cancel Confirmation Dialog */}
+			<AlertDialog open={cancelingId !== null} onOpenChange={open => !open && setCancelingId(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancel Deployment</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to cancel this deployment? This action will stop the running build process.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setCancelingId(null)}>Keep Running</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={confirmCancel}
+						>
+							Yes, Cancel Deployment
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			{/* Realtime Stream Logs Modal — Rich Dokploy-Grade LogViewer! */}
 			{activeLogId && (

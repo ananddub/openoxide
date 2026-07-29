@@ -8,7 +8,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Key, Copy, Check, FileKey2, MoreVertical} from 'lucide-react';
+import {Key, Copy, Check, FileKey2, Eye, Pencil, Trash2, MoreVertical} from 'lucide-react';
 import {toast} from 'sonner';
 import type {SshKeyResponse} from '#/types/api-helpers';
 
@@ -16,6 +16,7 @@ interface SshKeysListProps {
 	keys: SshKeyResponse[];
 	isLoading: boolean;
 	onViewKey: (key: SshKeyResponse) => void;
+	onEditKey?: (key: SshKeyResponse) => void;
 	onDeleteKey: (key: SshKeyResponse) => void;
 }
 
@@ -23,6 +24,7 @@ export function SshKeysList({
 	keys,
 	isLoading,
 	onViewKey,
+	onEditKey,
 	onDeleteKey,
 }: SshKeysListProps) {
 	const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -83,52 +85,51 @@ export function SshKeysList({
 								</div>
 							</div>
 
-							{/* Right: Quick Copy Button & 3-Dots Dropdown Menu */}
-							<div className="flex items-center gap-1 shrink-0">
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => handleCopyPublicKey(item.id, item.public_key, item.name)}
-									title="Copy Public Key"
-									className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+							{/* Right: Clean 3-Dots Dropdown Menu */}
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0" />
+									}
 								>
-									{isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-								</Button>
-
-								<DropdownMenu>
-									<DropdownMenuTrigger
-										render={
-											<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0" />
-										}
+									<MoreVertical className="w-4 h-4" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="w-44 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => onViewKey(item)}
 									>
-										<MoreVertical className="w-4 h-4" />
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-40 bg-card border-border shadow-xl rounded-xl p-1 text-xs z-50">
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => onViewKey(item)}
-										>
-											View Details
-										</DropdownMenuItem>
+										<Eye className="w-3.5 h-3.5 text-muted-foreground" />
+										<span>View Details</span>
+									</DropdownMenuItem>
 
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
-											onClick={() => handleCopyPublicKey(item.id, item.public_key, item.name)}
-										>
-											Copy Public Key
-										</DropdownMenuItem>
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => (onEditKey ? onEditKey(item) : onViewKey(item))}
+									>
+										<Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+										<span>Edit Key</span>
+									</DropdownMenuItem>
 
-										<DropdownMenuSeparator className="my-1 border-border/50" />
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted text-xs font-medium"
+										onClick={() => handleCopyPublicKey(item.id, item.public_key, item.name)}
+									>
+										{isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
+										<span>{isCopied ? 'Copied Key' : 'Copy Public Key'}</span>
+									</DropdownMenuItem>
 
-										<DropdownMenuItem
-											className="flex cursor-pointer items-center px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
-											onClick={() => onDeleteKey(item)}
-										>
-											Delete Key
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
+									<DropdownMenuSeparator className="my-1 border-border/50" />
+
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-muted/80 text-rose-500 text-xs font-medium"
+										onClick={() => onDeleteKey(item)}
+									>
+										<Trash2 className="w-3.5 h-3.5 text-rose-500" />
+										<span>Delete Key</span>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</CardContent>
 					</Card>
 				);

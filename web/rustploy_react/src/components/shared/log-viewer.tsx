@@ -13,6 +13,7 @@ interface LogViewerProps {
 	onDownload?: () => void;
 	onReload?: () => void;
 	isLive?: boolean;
+	showFilter?: boolean;
 }
 
 export function LogViewer({
@@ -24,6 +25,7 @@ export function LogViewer({
 	onDownload,
 	onReload,
 	isLive = true,
+	showFilter = true,
 }: LogViewerProps) {
 	const [searchQuery, setSearchQuery] = useState('');
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -32,10 +34,10 @@ export function LogViewer({
 
 	// Filter logs based on search query
 	const filteredLogs = useMemo(() => {
-		if (!searchQuery.trim()) return safeLogs;
+		if (!showFilter || !searchQuery.trim()) return safeLogs;
 		const query = searchQuery.toLowerCase();
 		return safeLogs.filter(line => (line || '').toLowerCase().includes(query));
-	}, [safeLogs, searchQuery]);
+	}, [safeLogs, searchQuery, showFilter]);
 
 	// Auto-scroll when live
 	useEffect(() => {
@@ -64,24 +66,26 @@ export function LogViewer({
 
 				{/* Search & Actions */}
 				<div className="flex items-center gap-2">
-					<div className="relative w-48">
-						<Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-						<Input
-							type="text"
-							placeholder="Filter logs..."
-							value={searchQuery}
-							onChange={e => setSearchQuery(e.target.value)}
-							className="h-7 text-xs font-mono pl-8 pr-7 bg-muted/30 border-border focus:bg-card"
-						/>
-						{searchQuery && (
-							<button
-								onClick={() => setSearchQuery('')}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-							>
-								<X className="w-3 h-3" />
-							</button>
-						)}
-					</div>
+					{showFilter && (
+						<div className="relative w-48">
+							<Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								type="text"
+								placeholder="Filter logs..."
+								value={searchQuery}
+								onChange={e => setSearchQuery(e.target.value)}
+								className="h-7 text-xs font-mono pl-8 pr-7 bg-muted/30 border-border focus:bg-card"
+							/>
+							{searchQuery && (
+								<button
+									onClick={() => setSearchQuery('')}
+									className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									<X className="w-3 h-3" />
+								</button>
+							)}
+						</div>
+					)}
 
 					{onReload && (
 						<Button

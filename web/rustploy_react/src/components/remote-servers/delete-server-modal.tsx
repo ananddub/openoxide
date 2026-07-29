@@ -49,16 +49,13 @@ export function DeleteServerModal({
 						<p>Any applications, compose stacks, or databases deployed on this remote server will lose automated management until reassigned.</p>
 					</div>
 
-					<div className="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="outline" onClick={onClose} disabled={deleting}>
-							Cancel
-						</Button>
+					<div className="flex justify-end pt-2">
 						<Button
 							type="button"
 							variant="destructive"
 							onClick={handleDelete}
 							disabled={deleting}
-							className="gap-1.5"
+							className="w-full sm:w-auto h-9 px-6 font-bold text-xs gap-1.5"
 						>
 							{deleting ? (
 								<>

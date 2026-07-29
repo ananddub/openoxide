@@ -90,26 +90,27 @@ export function CreateVolumeBackupModal({open, onOpenChange, app, onSuccess}: Cr
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3">
-						<div className="space-y-1.5">
-							<Label htmlFor="vol-cron">Cron Schedule</Label>
-							<Input
-								id="vol-cron"
-								placeholder="0 0 * * *"
-								value={cronExpr}
-								onChange={e => setCronExpr(e.target.value)}
-								required
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="vol-prefix">S3 Prefix Path</Label>
-							<Input
-								id="vol-prefix"
-								placeholder="backups/"
-								value={prefix}
-								onChange={e => setPrefix(e.target.value)}
-							/>
-						</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="vol-cron" className="text-xs font-semibold">Cron Schedule *</Label>
+						<Input
+							id="vol-cron"
+							placeholder="0 0 * * *"
+							value={cronExpr}
+							onChange={e => setCronExpr(e.target.value)}
+							required
+							className="font-mono text-xs h-9"
+						/>
+					</div>
+
+					<div className="space-y-1.5">
+						<Label htmlFor="vol-prefix" className="text-xs font-semibold">S3 Prefix Path</Label>
+						<Input
+							id="vol-prefix"
+							placeholder="volume-backups/"
+							value={prefix}
+							onChange={e => setPrefix(e.target.value)}
+							className="font-mono text-xs h-9"
+						/>
 					</div>
 
 					<div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
@@ -121,10 +122,7 @@ export function CreateVolumeBackupModal({open, onOpenChange, app, onSuccess}: Cr
 					</div>
 
 					<DialogFooter className="pt-3">
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
 							{isSubmitting ? 'Creating...' : 'Create Backup Rule'}
 						</Button>
 					</DialogFooter>
