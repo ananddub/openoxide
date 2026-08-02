@@ -1,5 +1,5 @@
-pub mod docker;
+pub mod cgroup;
 pub mod system;
 
-pub use docker::collect_container_metrics;
+pub use cgroup::CgroupCollector;
 pub use system::SystemCollector;

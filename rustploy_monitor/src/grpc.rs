@@ -4,6 +4,7 @@ use tokio_stream::Stream;
 use tonic::{Request, Response, Status};
 use tracing::debug;
 
+use crate::docker::api::DockerApi;
 use crate::logs::tail_container_logs;
 use crate::store::Store;
 
@@ -32,11 +33,16 @@ pub struct MonitoringGrpc {
     /// the store holds only this host's metrics, so answering anyway would
     /// hand back the wrong host's data under the caller's label.
     server_id: i64,
+    docker: DockerApi,
 }
 
 impl MonitoringGrpc {
-    pub fn new(store: Arc<Store>, server_id: i64) -> Self {
-        Self { store, server_id }
+    pub fn new(store: Arc<Store>, server_id: i64, docker: DockerApi) -> Self {
+        Self {
+            store,
+            server_id,
+            docker,
+        }
     }
 
     fn check_server_id(&self, requested: i64) -> Result<(), Status> {
@@ -176,10 +182,11 @@ impl MonitoringService for MonitoringGrpc {
 
         let (tx, rx) = tokio::sync::mpsc::channel(100);
         let container_id = req.container_id;
+        let docker = self.docker.clone();
 
         tokio::spawn(async move {
             let timestamp = chrono::Utc::now().timestamp();
-            for line in tail_container_logs(&container_id, tail_lines).await {
+            for line in tail_container_logs(&docker, &container_id, tail_lines).await {
                 let chunk = LogChunk {
                     container_id: container_id.clone(),
                     log_line: line,
@@ -220,7 +227,11 @@ mod tests {
     /// Async because sqlx needs a Tokio context even to build a lazy pool.
     fn service_for(server_id: i64) -> MonitoringGrpc {
         let pool = sqlx::SqlitePool::connect_lazy("sqlite::memory:").expect("lazy pool");
-        MonitoringGrpc::new(Arc::new(Store { pool }), server_id)
+        MonitoringGrpc::new(
+            Arc::new(Store { pool }),
+            server_id,
+            DockerApi::new("/var/run/docker.sock"),
+        )
     }
 
     #[tokio::test]

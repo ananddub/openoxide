@@ -3231,10 +3231,14 @@ dependencies = [
 
 [[package]]
 name = "rustploy_monitor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
+ "bytes",
  "chrono",
  "dotenvy",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
  "prost",
  "prost-build",
  "protoc-bin-vendored",

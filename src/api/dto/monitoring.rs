@@ -38,6 +38,15 @@ pub struct IngestContainerMetricDto {
     pub timestamp: i64,
 }
 
+/// A batch of container metrics from one agent poll.
+///
+/// Agents stream stats per second per container; sending each as its own
+/// request would mean N requests a second, so they are flushed together.
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct IngestContainerMetricBatchDto {
+    pub metrics: Vec<IngestContainerMetricDto>,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, Object)]
 pub struct ServerMetricResponseDto {
     pub timestamp: Option<i64>,

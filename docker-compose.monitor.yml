@@ -5,24 +5,24 @@
 
 services:
   rustploy-monitor:
+    # Pulls the published image by default. Use `--build` to run local changes.
     build:
       context: .
       dockerfile: Dockerfile.monitor
-    image: rustploy-monitor:latest
+    image: dubeyanand/rustploy-monitor:${MONITOR_TAG:-latest}
     container_name: rustploy_monitor
     restart: unless-stopped
     ports:
       # gRPC query API the panel reads metrics from.
       - "50051:50051"
     volumes:
-      # Read-only: the agent only runs `docker stats` and `docker logs`.
+      # The agent reads stats and logs via the socket. Read-only: it never
+      # drives the daemon, only queries it.
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # cgroup mode reads container metrics from here. Without this mount the
+      # agent falls back to the streaming collector.
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - monitor_data:/app/data
-    # The socket is group-owned by docker on the host; the container runs as a
-    # non-root user, so it needs that group to read it. Check your host's gid
-    # with `getent group docker` and adjust if it isn't 999.
-    group_add:
-      - "999"
     environment:
       SERVER_ID: "1"
       MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
@@ -32,7 +32,20 @@ services:
       RUSTPLOY_SERVER_URL: "http://host.docker.internal:4000"
       METRICS_TOKEN: "change_me"
       RUST_LOG: "rustploy_monitor=info"
+      # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
+      # of containers. Set to "stream" for per-second freshness and network I/O
+      # on hosts with only a handful of containers.
+      COLLECTION_MODE: "auto"
+      # Narrow what gets collected on a busy host. Patterns are exact unless
+      # they use *, so "*buildkit*" is needed to match "rustploy_buildkit".
+      # INCLUDE_CONTAINERS: "prod-*"
+      # EXCLUDE_CONTAINERS: "*buildkit*"
+      # Samples per stored row. 1 stores everything; raise it on dense hosts to
+      # store only an average + peak per window (300 = 5 min at a 60s cadence).
+      ROLLUP_SAMPLES: "1"
     extra_hosts:
+      # Lets the agent reach the panel running on the host when both are in
+      # docker. Not needed on Linux hosts where the agent runs directly.
       - "host.docker.internal:host-gateway"
 
 volumes:

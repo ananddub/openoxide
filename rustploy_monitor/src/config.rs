@@ -22,6 +22,19 @@ pub struct Config {
     pub panel_url: String,
     /// Shared secret sent with pushes so the panel can identify this agent.
     pub metrics_token: String,
+    /// Unix socket of the docker daemon the agent talks to.
+    pub docker_socket: String,
+    /// Comma-separated container name patterns to monitor. Empty means all
+    /// not excluded. `*` is the wildcard.
+    pub include_containers: Vec<String>,
+    /// Comma-separated container name patterns to never monitor.
+    pub exclude_containers: Vec<String>,
+    /// How container metrics are collected: `auto`, `cgroup` or `stream`.
+    pub collection_mode: String,
+    /// Samples per rollup window. High-density hosts set this to shrink what
+    /// reaches storage: 300 samples at a 60 s cadence is a 5-minute window,
+    /// collapsed to an average + peak pair.
+    pub rollup_samples: u32,
 }
 
 /// Reads an env var as `T`, falling back to `default` when unset. A value that
@@ -50,6 +63,18 @@ impl Config {
             panel_url: env::var("RUSTPLOY_SERVER_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:4000".to_string()),
             metrics_token: env::var("METRICS_TOKEN").unwrap_or_default(),
+            docker_socket: env::var("DOCKER_SOCKET")
+                .unwrap_or_else(|_| "/var/run/docker.sock".to_string()),
+            include_containers: crate::filter::parse_patterns(
+                &env::var("INCLUDE_CONTAINERS").unwrap_or_default(),
+            ),
+            exclude_containers: crate::filter::parse_patterns(
+                &env::var("EXCLUDE_CONTAINERS").unwrap_or_default(),
+            ),
+            collection_mode: env::var("COLLECTION_MODE")
+                .unwrap_or_else(|_| "auto".to_string())
+                .to_ascii_lowercase(),
+            rollup_samples: parse_var("ROLLUP_SAMPLES", 1u32)?,
         };
 
         config.validate()?;
@@ -89,14 +114,29 @@ impl Config {
             ));
         }
 
+        if !matches!(self.collection_mode.as_str(), "auto" | "cgroup" | "stream") {
+            return Err(format!(
+                "COLLECTION_MODE must be auto, cgroup or stream, got {:?}",
+                self.collection_mode
+            ));
+        }
+
         Ok(())
     }
 
-    /// Panel endpoint that receives container metric pushes.
+    /// Panel endpoint that receives batched container metric pushes.
     pub fn container_metrics_endpoint(&self) -> String {
         format!(
-            "{}/api/monitoring/containers",
+            "{}/api/monitoring/containers/batch",
             self.panel_url.trim_end_matches('/')
+        )
+    }
+
+    /// Filter describing which containers this agent collects.
+    pub fn container_filter(&self) -> crate::filter::ContainerFilter {
+        crate::filter::ContainerFilter::new(
+            self.include_containers.clone(),
+            self.exclude_containers.clone(),
         )
     }
 }
@@ -114,6 +154,11 @@ mod tests {
             retention_days: 7,
             panel_url: "http://127.0.0.1:4000".into(),
             metrics_token: String::new(),
+            docker_socket: "/var/run/docker.sock".into(),
+            include_containers: Vec::new(),
+            exclude_containers: Vec::new(),
+            collection_mode: "auto".into(),
+            rollup_samples: 1,
         }
     }
 
@@ -149,7 +194,7 @@ mod tests {
         cfg.panel_url = "http://panel:4000/".into();
         assert_eq!(
             cfg.container_metrics_endpoint(),
-            "http://panel:4000/api/monitoring/containers"
+            "http://panel:4000/api/monitoring/containers/batch"
         );
     }
 }

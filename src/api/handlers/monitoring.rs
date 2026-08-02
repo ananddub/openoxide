@@ -1,7 +1,8 @@
 use crate::{
     api::dto::monitoring::{
-        ContainerLogSseEventDto, ContainerMetricSseEventDto, IngestContainerMetricDto,
-        IngestSystemMetricDto, MetricIngestResponseDto, MonitoringStatusResponseDto,
+        ContainerLogSseEventDto, ContainerMetricSseEventDto, IngestContainerMetricBatchDto,
+        IngestContainerMetricDto, IngestSystemMetricDto, MetricIngestResponseDto,
+        MonitoringStatusResponseDto,
     },
     db::models::server_metrics::ServerMetric,
     services::monitoring::{
@@ -149,6 +150,41 @@ impl MonitoringController {
         Ok(Json(MetricIngestResponseDto {
             success: true,
             message: "Container metric published to real-time SSE stream".to_string(),
+        }))
+    }
+
+    /// Accepts a batch of container metrics and publishes each to the SSE bus.
+    ///
+    /// Agents stream stats continuously and flush them in batches, so this is
+    /// the endpoint they use; the single-metric variant above is kept for
+    /// anything posting one reading at a time.
+    #[post("/containers/batch")]
+    async fn ingest_container_metrics_batch(
+        &self,
+        Json(body): Json<IngestContainerMetricBatchDto>,
+    ) -> Result<Json<MetricIngestResponseDto>, ApiError> {
+        let count = body.metrics.len();
+
+        for metric in body.metrics {
+            self.sse_bus
+                .publish_container_metric(ContainerMetricSseEvent {
+                    server_id: metric.server_id,
+                    application_id: metric.application_id,
+                    compose_id: metric.compose_id,
+                    container_id: metric.container_id,
+                    container_name: metric.container_name,
+                    cpu_percent: metric.cpu_percent,
+                    memory_used_mb: metric.memory_used_mb,
+                    memory_limit_mb: metric.memory_limit_mb,
+                    net_rx_kbps: metric.net_rx_kbps,
+                    net_tx_kbps: metric.net_tx_kbps,
+                    timestamp: metric.timestamp,
+                });
+        }
+
+        Ok(Json(MetricIngestResponseDto {
+            success: true,
+            message: format!("{count} container metrics published to real-time SSE stream"),
         }))
     }
 

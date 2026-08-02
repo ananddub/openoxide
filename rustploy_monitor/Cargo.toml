@@ -1,6 +1,6 @@
 [package]
 name = "rustploy_monitor"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 
 [dependencies]
@@ -13,11 +13,25 @@ chrono = { version = "0.4.45", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 sysinfo = "0.33.1"
-reqwest = { version = "0.13.4", features = ["json"] }
+# rustls instead of the default native-tls: OpenSSL would force a dynamic link
+# against libssl/libcrypto (~5.6 MB in the image) and rule out a scratch base.
+reqwest = { version = "0.13.4", default-features = false, features = [
+    "json",
+    "rustls",
+    "http2",
+    "charset",
+] }
 dotenvy = "0.15.7"
 tonic = "0.12.3"
 prost = "0.13.5"
 tokio-util = "0.7"
+
+# Talking to the Docker daemon over its unix socket. reqwest has no unix-socket
+# transport, so the daemon client is built directly on hyper.
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "tokio"] }
+http-body-util = "0.1"
+bytes = "1"
 
 [build-dependencies]
 tonic-build = "0.12.3"
