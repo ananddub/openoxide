@@ -122,6 +122,7 @@ db-gen:
 run:
     cargo run
 dev:
+    sudo pkill rustploy || true
     cargo watch -x check -x run
 # Build standalone rustploy_monitor binary
 build-monitor:
@@ -131,6 +132,22 @@ build-monitor:
 run-monitor:
     cargo run -p rustploy_monitor
 
+# Run the monitoring agent's test suite
+test-monitor:
+    cargo test -p rustploy_monitor
+
 # Build standalone rustploy_monitor Docker image
 docker-build-monitor:
     docker build -f Dockerfile.monitor -t rustploy-monitor:latest .
+
+# Start the monitoring agent as a container
+up-monitor:
+    docker compose -f docker-compose.monitor.yml up -d --build
+
+# Stop the monitoring agent container
+down-monitor:
+    docker compose -f docker-compose.monitor.yml down
+
+# Tail the monitoring agent's logs
+logs-monitor:
+    docker compose -f docker-compose.monitor.yml logs -f

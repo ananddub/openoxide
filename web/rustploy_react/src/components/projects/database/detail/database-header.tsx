@@ -12,6 +12,8 @@ import {
 	LibsqlIcon,
 } from '#/components/icons/db-icons';
 
+import { toast } from 'sonner';
+
 interface DatabaseHeaderProps {
 	id: string;
 	database: DatabaseResponse | null;
@@ -79,7 +81,7 @@ export function DatabaseHeader({
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={refetch} className="w-8 h-8 border-border rounded-lg" title="Refresh">
+					<Button variant="outline" size="icon" onClick={() => { refetch(); toast.success('Database status refreshed'); }} className="w-8 h-8 border-border rounded-lg" title="Refresh">
 						<RefreshCw className="w-3.5 h-3.5" />
 					</Button>
 					<Button

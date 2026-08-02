@@ -1,8 +1,8 @@
 use auto_di::resolve;
 use axum::Router;
 use rustploy::{
-    core::config::Config, core::logs::init_logs, services::schedule::ScheduleRunner,
-    utils::builder::queue::BuilderQueue,
+    core::config::Config, core::logs::init_logs, services::monitoring::alert_service::AlertService,
+    services::schedule::ScheduleRunner, utils::builder::queue::BuilderQueue,
 };
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -38,6 +38,10 @@ async fn main() {
         .start()
         .await
         .expect("failed to start builder queue");
+    resolve::<AlertService>()
+        .await
+        .expect("failed to resolve alert service")
+        .start();
     let port = resolve::<Config>().await.unwrap().port.clone();
     let host = resolve::<Config>().await.unwrap().host.clone();
 

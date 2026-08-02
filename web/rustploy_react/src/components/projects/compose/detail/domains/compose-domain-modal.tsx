@@ -1,4 +1,5 @@
 import {useState, useEffect} from 'react';
+import {createPortal} from 'react-dom';
 import {Globe, RefreshCw, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
@@ -43,9 +44,9 @@ export function ComposeDomainModal({
 
 	useEffect(() => {
 		if (editingDomain) {
-			setDomain(editingDomain.domain || '');
+			setDomain(editingDomain.host || editingDomain.domain || '');
 			setServiceName(editingDomain.service_name || servicesList[0] || 'app');
-			setContainerPort(String(editingDomain.container_port || 3000));
+			setContainerPort(String(editingDomain.port ?? editingDomain.container_port ?? 3000));
 			setHttps(editingDomain.https !== false);
 			setPath(editingDomain.path || '/');
 		} else {
@@ -57,7 +58,7 @@ export function ComposeDomainModal({
 		}
 	}, [editingDomain, servicesList]);
 
-	if (!isOpen) return null;
+	if (!isOpen || typeof document === 'undefined') return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -71,7 +72,7 @@ export function ComposeDomainModal({
 			await onSave({
 				domain: domain.trim(),
 				serviceName,
-				containerPort: Number(containerPort) || 3000,
+				containerPort: parseInt(containerPort, 10) || 80,
 				https,
 				path,
 			});
@@ -81,9 +82,9 @@ export function ComposeDomainModal({
 		}
 	};
 
-	return (
-		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in duration-150">
+	const modalJSX = (
+		<div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in duration-150">
 				<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
 					<div className="flex items-center gap-2">
 						<Globe className="w-4 h-4 text-primary" />
@@ -162,4 +163,6 @@ export function ComposeDomainModal({
 			</div>
 		</div>
 	);
+
+	return createPortal(modalJSX, document.body);
 }

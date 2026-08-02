@@ -49,6 +49,22 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 		}
 	}, [compose]);
 
+	useEffect(() => {
+		if (provider === 'GITHUB' && repoOwner && repoName && !composeFile) {
+			const branch = gitBranch || 'main';
+			const path = gitBuildPath || 'docker-compose.yml';
+			const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${path}`;
+			fetch(rawUrl)
+				.then(res => (res.ok ? res.text() : null))
+				.then(text => {
+					if (text && (text.includes('services:') || text.includes('version:'))) {
+						setComposeFile(text);
+					}
+				})
+				.catch(() => {});
+		}
+	}, [provider, repoOwner, repoName, gitBranch, gitBuildPath, composeFile]);
+
 	const handleSaveSource = async () => {
 		setSavingSource(true);
 		try {
@@ -121,14 +137,14 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 
 	return (
 		<div className="flex flex-col gap-6">
-			{/* Deploy Settings Card Component (< 200 lines) */}
+			{/* Deploy Settings Card Component */}
 			<ComposeDeployCard
 				compose={compose}
 				onUpdated={onUpdated}
 				onOpenTerminal={() => setShowTerminal(true)}
 			/>
 
-			{/* Source Settings Card Component (< 200 lines) */}
+			{/* Source Settings Card Component */}
 			<ComposeSourceCard
 				provider={provider}
 				setProvider={setProvider}

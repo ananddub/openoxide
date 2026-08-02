@@ -6,6 +6,7 @@ import {AppHeader} from '#/components/projects/app/detail/app-header';
 
 // Tabs
 import {GeneralTab} from '#/components/projects/app/detail/general-tab';
+import {AppArchitectureTab} from '#/components/projects/app/detail/app-architecture-tab';
 import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {DomainsTab} from '#/components/projects/app/detail/domains-tab';
 import {DeploymentsTab} from '#/components/projects/app/detail/deployments-tab';
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/_app/projects/$id/app/$appId')({
 
 const TABS = [
 	'General',
+	'Architecture',
 	'Environment',
 	'Domains',
 	'Deployments',
@@ -39,8 +41,13 @@ function AppDetailPage() {
 
 	const {
 		app,
+		domains,
+		schedules,
+		backups,
+		deployments,
+		monitoring,
 		isLoading,
-		refetch,
+		refetchAll,
 		activeTab,
 		setActiveTab,
 		handleAction,
@@ -74,41 +81,44 @@ function AppDetailPage() {
 				app={app}
 				activeTab={activeTab}
 				setActiveTab={setActiveTab}
-				refetch={refetch}
+				refetch={refetchAll}
 				tabs={TABS}
 			/>
 
 			{/* Tab Views */}
 			<div className="w-full">
 				{activeTab === 'General' && (
-					<GeneralTab app={app} handleAction={handleAction} onUpdated={refetch} />
+					<GeneralTab app={app} handleAction={handleAction} onUpdated={refetchAll} />
+				)}
+				{activeTab === 'Architecture' && (
+					<AppArchitectureTab app={app} domains={domains} schedules={schedules} backups={backups} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={app} handleUpdate={handleUpdate} />
 				)}
 				{activeTab === 'Domains' && (
-					<DomainsTab app={app} />
+					<DomainsTab app={app} domains={domains} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Deployments' && (
-					<DeploymentsTab appId={parsedAppId} />
+					<DeploymentsTab appId={parsedAppId} deployments={deployments} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Preview Deployments' && (
 					<PreviewDeploymentsTab app={app} />
 				)}
 				{activeTab === 'Schedules' && (
-					<SchedulesTab app={app} />
+					<SchedulesTab app={app} schedules={schedules} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Volume Backups' && (
-					<VolumeBackupsTab app={app} />
+					<VolumeBackupsTab app={app} backups={backups} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Logs' && (
 					<LogsTab app={app} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={app} appId={parsedAppId} />
+					<MonitoringTab app={app} appId={parsedAppId} entityType="application" monitoring={monitoring} />
 				)}
 				{activeTab === 'Advanced' && (
-					<AdvancedTab app={app} onUpdated={refetch} />
+					<AdvancedTab app={app} onUpdated={refetchAll} />
 				)}
 			</div>
 		</div>

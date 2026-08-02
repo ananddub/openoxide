@@ -7,6 +7,7 @@ use crate::{
     api::dto::destination::{
         CreateDestinationDto, DestinationResponseDto, PatchDestinationDto, TestDestinationDto,
     },
+    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
         permission::{
             DatabaseCreatePermission, DatabaseDeletePermission, DatabaseReadPermission,
@@ -21,12 +22,13 @@ type ApiError = (StatusCode, String);
 
 pub struct DestinationController {
     service: Arc<DestinationService>,
+    cache: Arc<AppStateCache>,
 }
 
 #[controller("/destinations")]
 impl DestinationController {
-    fn new(service: Arc<DestinationService>) -> Self {
-        Self { service }
+    fn new(service: Arc<DestinationService>, cache: Arc<AppStateCache>) -> Self {
+        Self { service, cache }
     }
 
     #[get]
@@ -34,17 +36,26 @@ impl DestinationController {
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
     ) -> Result<Json<Vec<DestinationResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| {
-                items
+        if let Some(CacheEnum::DestinationsList(cached)) = self.cache.get(&CacheKey::DestinationsList).await {
+            return Ok(Json(
+                cached
                     .into_iter()
                     .map(DestinationResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
+                    .collect(),
+            ));
+        }
+
+        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        self.cache
+            .insert(CacheKey::DestinationsList, CacheEnum::DestinationsList(items.clone()))
+            .await;
+
+        Ok(Json(
+            items
+                .into_iter()
+                .map(DestinationResponseDto::from)
+                .collect(),
+        ))
     }
 
     #[get("/{id}")]
@@ -67,12 +78,15 @@ impl DestinationController {
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateDestinationDto>,
     ) -> Result<(StatusCode, Json<DestinationResponseDto>), ApiError> {
-        self.service
+        let created = self.service
             .create(body)
             .await
             .map(DestinationResponseDto::from)
             .map(|dest| (StatusCode::CREATED, Json(dest)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        Ok(created)
     }
 
     #[patch("/{id}")]
@@ -82,12 +96,15 @@ impl DestinationController {
         Path(id): Path<String>,
         ValidatedJson(body): ValidatedJson<PatchDestinationDto>,
     ) -> Result<Json<DestinationResponseDto>, ApiError> {
-        self.service
+        let updated = self.service
             .patch(&id, body)
             .await
             .map(DestinationResponseDto::from)
             .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        Ok(updated)
     }
 
     #[delete("/{id}")]
@@ -99,25 +116,14 @@ impl DestinationController {
         self.service
             .delete(&id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        Ok(StatusCode::NO_CONTENT)
     }
 
-    #[post("/{id}/test")]
-    async fn test_connection(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
-        Path(id): Path<String>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .test_connection(&id)
-            .await
-            .map(|()| StatusCode::OK)
-            .map_err(|err| (StatusCode::BAD_REQUEST, err))
-    }
-
-    #[post("/test-raw")]
-    async fn test_connection_raw(
+    #[post("/test")]
+    async fn test_destination(
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(body): ValidatedJson<TestDestinationDto>,
@@ -133,8 +139,8 @@ impl DestinationController {
                 body.additional_flags.as_deref(),
             )
             .await
-            .map(|()| StatusCode::OK)
-            .map_err(|err| (StatusCode::BAD_REQUEST, err))
+            .map(|_| StatusCode::OK)
+            .map_err(|e| (StatusCode::BAD_REQUEST, e))
     }
 }
 

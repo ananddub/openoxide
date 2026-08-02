@@ -5,6 +5,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::domain::{CreateDomainDto, DomainResponseDto, PatchDomainDto},
+    core::cache::{AppStateCache, CacheKey},
     core::middleware::{
         permission::{
             AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
@@ -18,12 +19,13 @@ type ApiError = (StatusCode, String);
 
 pub struct DomainController {
     service: Arc<DomainService>,
+    cache: Arc<AppStateCache>,
 }
 
 #[controller("/domains")]
 impl DomainController {
-    fn new(service: Arc<DomainService>) -> Self {
-        Self { service }
+    fn new(service: Arc<DomainService>, cache: Arc<AppStateCache>) -> Self {
+        Self { service, cache }
     }
 
     #[get("/{id}")]
@@ -46,12 +48,12 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
-        self.service
+        let items = self.service
             .list_by_application(application_id)
             .await
-            .map(|items| items.into_iter().map(DomainResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+            
+        Ok(Json(items.into_iter().map(DomainResponseDto::from).collect()))
     }
 
     #[get("/compose/{compose_id}")]
@@ -60,12 +62,12 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
-        self.service
+        let items = self.service
             .list_by_compose(compose_id)
             .await
-            .map(|items| items.into_iter().map(DomainResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+            
+        Ok(Json(items.into_iter().map(DomainResponseDto::from).collect()))
     }
 
     #[post]
@@ -74,12 +76,24 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateDomainDto>,
     ) -> Result<(StatusCode, Json<DomainResponseDto>), ApiError> {
-        self.service
+        let app_id = body.application_id;
+        let comp_id = body.compose_id;
+
+        let created = self.service
             .create(body)
             .await
             .map(DomainResponseDto::from)
             .map(|domain| (StatusCode::CREATED, Json(domain)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        if let Some(id) = app_id {
+            self.cache.invalidate(&CacheKey::DomainsApp(id)).await;
+        }
+        if let Some(id) = comp_id {
+            self.cache.invalidate(&CacheKey::DomainsCompose(id)).await;
+        }
+
+        Ok(created)
     }
 
     #[patch("/{id}")]
@@ -89,12 +103,15 @@ impl DomainController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchDomainDto>,
     ) -> Result<Json<DomainResponseDto>, ApiError> {
-        self.service
+        let updated = self.service
             .patch(id, body)
             .await
             .map(DomainResponseDto::from)
             .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate_all().await;
+        Ok(updated)
     }
 
     #[delete("/{id}")]
@@ -106,28 +123,24 @@ impl DomainController {
         self.service
             .delete(id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate_all().await;
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {
     match error {
         sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "domain not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (StatusCode::NOT_FOUND, "related resource not found".into())
-        }
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
-        }
-        sqlx::Error::Database(ref database_error) if database_error.is_check_violation() => {
-            (StatusCode::BAD_REQUEST, database_error.message().into())
         }
         other => {
             tracing::error!(error = %other, "domain database operation failed");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "domain operation failed".into(),
+                "database operation failed".into(),
             )
         }
     }

@@ -1,4 +1,5 @@
 import {useState, useMemo} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -10,6 +11,8 @@ import {ComposeBackupsTable} from './backups/compose-backups-table';
 
 interface ComposeBackupsTabProps {
 	compose: any;
+	backups?: any[];
+	isLoading?: boolean;
 }
 
 // Extract service names defined under 'services:' in docker-compose.yml content
@@ -47,7 +50,8 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return services;
 };
 
-export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
+export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: passedIsLoading}: ComposeBackupsTabProps) {
+	const queryClient = useQueryClient();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const availableServices = useMemo(() => {
@@ -56,16 +60,20 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time volume backups query with safe array fallback
-	const {data: rawBackups = [], isLoading, refetch} = $api.useQuery('get', '/backups/volume');
+	// Real-time volume backups query (fallback if not passed from parent)
+	const {data: rawBackups = [], isLoading: innerIsLoading} = $api.useQuery('get', '/backups/volume', {
+		enabled: !passedBackups,
+	});
 
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
+		if (passedBackups) return passedBackups;
 		const list = Array.isArray(rawBackups) ? rawBackups : [];
 		return list.filter(
 			(b: any) => b.compose_id === compose?.id || b.app_name === compose?.app_name
 		);
-	}, [rawBackups, compose]);
+	}, [passedBackups, rawBackups, compose]);
+	const isLoading = passedIsLoading ?? innerIsLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/backups/volume');
@@ -91,11 +99,14 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 					volume_name: data.volumeName,
 					cron_expression: data.cronExpr,
 					prefix: data.prefix,
-					turn_off: data.turnOff,
+					turn_off: data.turnOff ? 1 : 0,
+					destination_id: 0,
+					organization_id: 1,
+					service_type: 'COMPOSE',
 				} as any,
 			});
 			toast.success('Compose volume backup rule created successfully');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -105,7 +116,7 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume snapshot triggered successfully');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -115,7 +126,7 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 		try {
 			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
 			toast.success('Volume snapshot restore initiated');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -125,7 +136,7 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume backup rule deleted');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -165,6 +176,9 @@ export function ComposeBackupsTab({compose}: ComposeBackupsTabProps) {
 				isOpen={isCreateOpen}
 				onClose={() => setIsCreateOpen(false)}
 				servicesList={servicesList}
+				defaultServiceName={compose?.name || compose?.app_name || 'database'}
+				defaultVolumeName={compose?.volume_name || `${compose?.kind || 'db'}_data`}
+				hideServiceAndVolumeSelect={!!compose?.kind || servicesList.length <= 1}
 				onCreate={handleCreate}
 			/>
 		</div>

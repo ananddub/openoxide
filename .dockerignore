@@ -7,3 +7,14 @@ web/rustploy/node_modules/
 web/rustploy/.svelte-kit/
 web/rustploy/dist/
 web/rustploy/build/
+web/rustploy_react/node_modules/
+web/rustploy_react/dist/
+
+# Never bake runtime state or secrets into an image
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+data/
+.env
+.envrc

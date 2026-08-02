@@ -75,7 +75,7 @@ export function CreateAppDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 flex flex-col gap-5 rounded-2xl">
+			<DialogContent className="sm:max-w-xl bg-card border border-border shadow-2xl p-6 flex flex-col gap-5 rounded-2xl">
 				<DialogHeader className="space-y-1">
 					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
 						Create Application

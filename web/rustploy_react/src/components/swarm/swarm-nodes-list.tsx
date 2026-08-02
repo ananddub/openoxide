@@ -26,23 +26,44 @@ import {
 	Search,
 	Globe,
 	ShieldCheck,
+	ShieldAlert,
 	Trash2,
 	ArrowUpRight,
 	ArrowDownRight,
 } from 'lucide-react';
 import {toast} from 'sonner';
 
+import type {SwarmNode} from '#/types/api-helpers';
+
+export type TaggedSwarmNode = SwarmNode & {
+	_serverId?: number;
+	_serverName?: string;
+};
+
 interface SwarmNodesListProps {
-	nodes: Record<string, unknown>[];
+	nodes: TaggedSwarmNode[];
 	isLoading: boolean;
-	onPromote: (nodeId: string, node?: Record<string, unknown>) => void;
-	onDemote: (nodeId: string, node?: Record<string, unknown>) => void;
-	onSetAvailability: (nodeId: string, availability: string, node?: Record<string, unknown>) => void;
-	onRemoveNode: (nodeId: string, node?: Record<string, unknown>) => void;
+	onPromote: (nodeId: string, node?: TaggedSwarmNode) => void;
+	onDemote: (nodeId: string, node?: TaggedSwarmNode) => void;
+	onSetAvailability: (nodeId: string, availability: string, node?: TaggedSwarmNode) => void;
+	onRemoveNode: (nodeId: string, node?: TaggedSwarmNode) => void;
 }
 
 const ROLE_FILTERS = ['All', 'Managers', 'Workers'] as const;
 type RoleFilter = (typeof ROLE_FILTERS)[number];
+
+/**
+ * `role`/`is_leader`/`reachability` come from `docker node inspect`'s
+ * `Spec.Role` and `ManagerStatus` — the authoritative config values, not a
+ * string derived from reachability. A manager stays "manager" even when
+ * Docker can't currently reach it (reachability: "unreachable").
+ */
+function nodeRole(node: SwarmNode) {
+	const isManager = node.role === 'manager';
+	const isLeader = node.is_leader;
+	const isUnreachable = isManager && (node.reachability || '').toLowerCase() === 'unreachable';
+	return {isManager, isLeader, isUnreachable};
+}
 
 export function SwarmNodesList({
 	nodes,
@@ -64,31 +85,15 @@ export function SwarmNodesList({
 	};
 
 	const filtered = useMemo(() => {
-		return nodes.filter((node: any) => {
-			const hostname = String(
-				node.hostname || node.Hostname || node.Description?.Hostname || node.description?.hostname || node.name || node.Name || '',
-			);
-			const nodeId = String(node.id || node.ID || '');
-			const ipAddr = String(node.ip || node.address || node.Addr || node.Status?.Addr || node.ManagerStatus?.Addr || node.ip_address || '');
+		return nodes.filter(node => {
+			const hostname = node.hostname || '';
+			const nodeId = node.id || '';
 
 			const matchSearch =
 				hostname.toLowerCase().includes(search.toLowerCase()) ||
-				nodeId.toLowerCase().includes(search.toLowerCase()) ||
-				ipAddr.toLowerCase().includes(search.toLowerCase());
+				nodeId.toLowerCase().includes(search.toLowerCase());
 
-			const roleStr = String(node.role || node.Role || node.Spec?.Role || node.spec?.role || '').toLowerCase();
-			const managerStatusVal = node.ManagerStatus || node.manager_status || node.managerStatus;
-			let isLeaderObj = false;
-			let managerStatusStr = '';
-			if (typeof managerStatusVal === 'object' && managerStatusVal !== null) {
-				isLeaderObj = !!(managerStatusVal.Leader || managerStatusVal.leader);
-				managerStatusStr = isLeaderObj ? 'leader' : 'reachable';
-			} else {
-				managerStatusStr = String(managerStatusVal || '').toLowerCase();
-			}
-			const isLeader = isLeaderObj || managerStatusStr.includes('leader') || !!node.is_leader || !!node.leader || !!node.Leader;
-			const isManager = roleStr === 'manager' || isLeader || managerStatusStr === 'reachable' || managerStatusStr === 'manager' || !!node.is_manager || !!node.manager;
-
+			const {isManager} = nodeRole(node);
 			const matchRole =
 				roleFilter === 'All' ||
 				(roleFilter === 'Managers' && isManager) ||
@@ -97,6 +102,20 @@ export function SwarmNodesList({
 			return matchSearch && matchRole;
 		});
 	}, [nodes, search, roleFilter]);
+
+	// Docker refuses to demote a swarm's last manager (it would leave the
+	// cluster without anyone to run Raft consensus). Count managers per
+	// cluster so we can disable that action up front instead of surfacing a
+	// raw Docker RPC error after the click.
+	const managersPerCluster = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const n of nodes) {
+			if (!nodeRole(n).isManager) continue;
+			const key = String(n._serverId ?? 'local');
+			counts.set(key, (counts.get(key) ?? 0) + 1);
+		}
+		return counts;
+	}, [nodes]);
 
 	const hasFilters = search !== '' || roleFilter !== 'All';
 
@@ -125,7 +144,7 @@ export function SwarmNodesList({
 				<div className="relative flex-1">
 					<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
 					<Input
-						placeholder="Search by hostname, node ID or IP…"
+						placeholder="Search by hostname or node ID…"
 						value={search}
 						onChange={e => setSearch(e.target.value)}
 						className="pl-8 h-8 text-xs"
@@ -167,30 +186,17 @@ export function SwarmNodesList({
 			) : (
 				/* ── List ── */
 				<div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
-					{filtered.map((node: any) => {
-						const roleStr = String(node.role || node.Role || node.Spec?.Role || node.spec?.role || '').toLowerCase();
-						const managerStatusVal = node.ManagerStatus || node.manager_status || node.managerStatus;
+					{filtered.map(node => {
+						const {isManager, isLeader, isUnreachable} = nodeRole(node);
 
-						let managerStatusStr = '';
-						let isLeaderObj = false;
-						if (typeof managerStatusVal === 'object' && managerStatusVal !== null) {
-							isLeaderObj = !!(managerStatusVal.Leader || managerStatusVal.leader);
-							managerStatusStr = isLeaderObj ? 'leader' : 'reachable';
-						} else {
-							managerStatusStr = String(managerStatusVal || '').toLowerCase();
-						}
+						const isReady = (node.status || '').toLowerCase() === 'ready';
+						const availability = (node.availability || 'active').toLowerCase();
 
-						const isLeader = isLeaderObj || managerStatusStr.includes('leader') || !!node.is_leader || !!node.leader || !!node.Leader;
-						const isManager = roleStr === 'manager' || isLeader || managerStatusStr === 'reachable' || managerStatusStr === 'manager' || !!node.is_manager || !!node.manager;
-
-						const statusStr = String(node.status?.state || node.Status?.State || node.status || node.Status || node.state || node.State || 'ready').toLowerCase();
-						const isReady = statusStr === 'ready';
-						const availability = String(node.availability || node.Availability || node.Spec?.Availability || node.spec?.availability || 'active').toLowerCase();
-
-						const hostname = node.hostname || node.Hostname || node.Description?.Hostname || node.description?.hostname || node.name || node.Name || 'Swarm Node';
-						const nodeId = String(node.id || node.ID || '');
-						const ipAddr = node.ip || node.address || node.Addr || node.Status?.Addr || node.ManagerStatus?.Addr || node.ip_address || null;
-						const serverLabel = node._serverName ? String(node._serverName) : null;
+						const hostname = node.hostname || 'Swarm Node';
+						const nodeId = node.id || '';
+						const serverLabel = node._serverName || null;
+						const clusterKey = String(node._serverId ?? 'local');
+						const isLastManager = isManager && (managersPerCluster.get(clusterKey) ?? 0) <= 1;
 
 						const dotCls = isReady ? 'bg-emerald-500' : 'bg-rose-500';
 
@@ -216,9 +222,20 @@ export function SwarmNodesList({
 									<div className="flex items-center gap-2 mb-0.5">
 										<span className="text-sm font-medium text-foreground truncate">{hostname}</span>
 										{isManager ? (
-											<Badge variant="outline" className="shrink-0 text-[10px] uppercase font-bold text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1 px-1.5 py-0">
-												<Crown className="w-2.5 h-2.5 fill-amber-500/20" />
-												{isLeader ? 'Leader' : 'Manager'}
+											<Badge
+												variant="outline"
+												className={`shrink-0 text-[10px] uppercase font-bold gap-1 px-1.5 py-0 ${
+													isUnreachable
+														? 'text-rose-500 border-rose-500/30 bg-rose-500/10'
+														: 'text-amber-500 border-amber-500/30 bg-amber-500/10'
+												}`}
+											>
+												{isUnreachable ? (
+													<ShieldAlert className="w-2.5 h-2.5" />
+												) : (
+													<Crown className="w-2.5 h-2.5 fill-amber-500/20" />
+												)}
+												{isLeader ? 'Leader' : isUnreachable ? 'Manager (Unreachable)' : 'Manager'}
 											</Badge>
 										) : (
 											<Badge variant="secondary" className="shrink-0 text-[10px] uppercase font-mono py-0">
@@ -236,9 +253,9 @@ export function SwarmNodesList({
 									</div>
 									<div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground truncate">
 										<span className="truncate">{nodeId ? nodeId.slice(0, 14) : 'No ID'}</span>
-										{ipAddr && (
+										{node.ip_address && (
 											<span className="flex items-center gap-1 shrink-0">
-												· <Globe className="w-3 h-3" /> {ipAddr}
+												· <Globe className="w-3 h-3" /> {node.ip_address}
 											</span>
 										)}
 									</div>
@@ -266,8 +283,14 @@ export function SwarmNodesList({
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-44">
 										{isManager ? (
-											<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onDemote(nodeId, node)}>
-												<ArrowDownRight className="w-3.5 h-3.5" /> Demote to Worker
+											<DropdownMenuItem
+												disabled={isLastManager}
+												title={isLastManager ? "Can't demote the last manager of a swarm" : undefined}
+												className="gap-2 cursor-pointer"
+												onClick={() => onDemote(nodeId, node)}
+											>
+												<ArrowDownRight className="w-3.5 h-3.5" />
+												{isLastManager ? 'Demote to Worker (last manager)' : 'Demote to Worker'}
 											</DropdownMenuItem>
 										) : (
 											<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onPromote(nodeId, node)}>

@@ -65,6 +65,22 @@ impl SshKeyRepository {
         Ok(())
     }
 
+    pub async fn is_in_use(&self, id: i64) -> Result<bool, sqlx::Error> {
+        let count = sqlx::query_scalar!(
+            r#"SELECT 
+                (SELECT COUNT(*) FROM servers WHERE ssh_key_id = ?) +
+                (SELECT COUNT(*) FROM applications WHERE custom_git_ssh_key_id = ?) +
+                (SELECT COUNT(*) FROM compose_projects WHERE custom_git_ssh_key_id = ?) AS "total!: i64""#,
+            id,
+            id,
+            id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+
+        Ok(count > 0)
+    }
+
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
         sqlx::query!(r#"DELETE FROM ssh_keys WHERE id = ?"#, id)
             .execute(self.pool.as_ref())

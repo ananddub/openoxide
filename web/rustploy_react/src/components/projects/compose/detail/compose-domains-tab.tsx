@@ -1,4 +1,5 @@
 import {useState, useMemo} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {Globe, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -10,6 +11,9 @@ import {ComposeDomainsTable} from './domains/compose-domains-table';
 
 interface ComposeDomainsTabProps {
 	composeId: number;
+	compose?: any;
+	domains?: any[];
+	isLoading?: boolean;
 }
 
 // Extract service names defined under 'services:' in docker-compose.yml content
@@ -47,14 +51,17 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return services;
 };
 
-export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
+export function ComposeDomainsTab({composeId, compose: passedCompose, domains: passedDomains, isLoading: passedIsLoading}: ComposeDomainsTabProps) {
+	const queryClient = useQueryClient();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingDomain, setEditingDomain] = useState<any | null>(null);
 
-	// Fetch compose details query
-	const {data: compose} = $api.useQuery('get', '/compose/{id}', {
+	// Fetch compose details if not passed
+	const {data: rawCompose} = $api.useQuery('get', '/compose/{id}', {
 		params: {path: {id: composeId}},
+		enabled: !passedCompose,
 	});
+	const compose = passedCompose || rawCompose;
 
 	const availableServices = useMemo(() => {
 		return extractServicesFromYaml(compose?.compose_file);
@@ -62,12 +69,14 @@ export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time domains query with safe array fallback
-	const {data: rawDomains = [], isLoading, refetch} = $api.useQuery('get', '/domains' as any, {
-		params: {query: {compose_id: composeId}},
+	// Real-time domains query for compose stack (fallback if not passed from parent)
+	const {data: rawDomains = [], isLoading: innerIsLoading} = $api.useQuery('get', '/domains/compose/{compose_id}', {
+		params: {path: {compose_id: composeId}},
+		enabled: !passedDomains && !!composeId,
 	});
 
-	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
+	const domains = passedDomains ?? (Array.isArray(rawDomains) ? rawDomains : []);
+	const isLoading = passedIsLoading ?? innerIsLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
@@ -86,9 +95,9 @@ export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
 				await patchMutation.mutateAsync({
 					params: {path: {id: editingDomain.id}},
 					body: {
-						domain: data.domain,
+						host: data.domain,
 						service_name: data.serviceName,
-						container_port: data.containerPort,
+						port: data.containerPort,
 						https: data.https,
 						path: data.path,
 					} as any,
@@ -97,17 +106,17 @@ export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
 			} else {
 				await createMutation.mutateAsync({
 					body: {
-						domain: data.domain,
+						host: data.domain,
 						compose_id: composeId,
 						service_name: data.serviceName,
-						container_port: data.containerPort,
+						port: data.containerPort,
 						https: data.https,
 						path: data.path,
 					} as any,
 				});
 				toast.success('Compose domain route added');
 			}
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -117,7 +126,7 @@ export function ComposeDomainsTab({composeId}: ComposeDomainsTabProps) {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Compose domain route deleted');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}

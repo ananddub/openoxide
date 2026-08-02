@@ -5,7 +5,7 @@ use axum::{Json, http::StatusCode};
 use serde_json::{Value, json};
 
 use crate::{
-    api::dto::auth::{AuthResponseDto, LoginDto, RefreshTokenDto, SignupDto},
+    api::dto::auth::{AuthResponseDto, LoginDto, RefreshTokenDto, SignupDto, UpdateUserDto},
     core::middleware::validator::ValidatedJson,
     services::auth::{AuthError, AuthService},
     utils::jwt::claim::{Claims, JwtSubject},
@@ -79,6 +79,19 @@ impl AuthController {
             .is_owner_present()
             .await
             .map(|present| Json(json!({ "isOwnerPresent": present })))
+            .map_err(map_auth_error)
+    }
+
+    #[patch("/user")]
+    async fn update_user(
+        &self,
+        claims: Claims,
+        ValidatedJson(body): ValidatedJson<UpdateUserDto>,
+    ) -> Result<Json<JwtSubject>, ApiError> {
+        self.service
+            .update_user(claims.user.user_id, body)
+            .await
+            .map(Json)
             .map_err(map_auth_error)
     }
 }

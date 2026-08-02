@@ -9,15 +9,16 @@ import {CreateVolumeBackupModal} from './create-volume-backup-modal';
 
 interface VolumeBackupsTabProps {
 	app: any;
+	backups?: any[];
+	onRefresh?: () => void;
 }
 
-export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
+export function VolumeBackupsTab({app, backups: passedBackups, onRefresh}: VolumeBackupsTabProps) {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 	const [activeActionId, setActiveActionId] = useState<{id: number; action: 'run' | 'restore'} | null>(null);
 
-	// Queries
-	const {data: backups = [], isLoading, refetch} = $api.useQuery('get', '/backups/volume');
+	const backups = Array.isArray(passedBackups) ? passedBackups : [];
 
 	// Filter backups for current application
 	const appBackups = backups.filter(b => b.application_id === app?.id || b.app_name === app?.app_name);
@@ -32,7 +33,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume backup execution started successfully');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -45,7 +46,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 		try {
 			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
 			toast.success('Volume restore process initiated successfully');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -58,7 +59,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id: deleteTargetId}}});
 			toast.success('Volume backup configuration deleted');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -85,11 +86,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 
 			{/* Backups List */}
 			<section className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-				{isLoading ? (
-					<div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
-						<RefreshCw className="w-4 h-4 animate-spin text-primary" /> Loading volume backup configurations...
-					</div>
-				) : appBackups.length === 0 ? (
+				{appBackups.length === 0 ? (
 					<div className="p-12 text-center text-muted-foreground">
 						<HardDrive className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
 						<p className="text-sm font-semibold text-foreground">No volume backups configured</p>
@@ -169,7 +166,7 @@ export function VolumeBackupsTab({app}: VolumeBackupsTabProps) {
 				open={showCreateModal}
 				onOpenChange={setShowCreateModal}
 				app={app}
-				onSuccess={refetch}
+				onSuccess={() => onRefresh?.()}
 			/>
 
 			{/* Custom Shadcn Delete Confirmation Modal */}

@@ -1,4 +1,4 @@
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect} from 'react';
 import {Zap, RefreshCw, Terminal, X, XCircle, Activity} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
@@ -20,6 +20,8 @@ import {
 
 interface ComposeDeploymentsTabProps {
 	composeId: number;
+	deployments?: any[];
+	isLoading?: boolean;
 }
 
 const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
@@ -34,13 +36,13 @@ const isBuildActive = (e: any) => {
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
-export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
+export function ComposeDeploymentsTab({composeId, deployments: passedDeployments, isLoading: passedIsLoading}: ComposeDeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
 
-	// Fetch deployments query with polling
-	const {data: rawDeployments = [], isLoading, refetch} = $api.useQuery(
+	// Fetch deployments query with polling (fallback if not passed from parent)
+	const {data: rawDeployments = [], isLoading: innerIsLoading, refetch} = $api.useQuery(
 		'get',
 		'/deployments',
 		{
@@ -52,7 +54,7 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 			},
 		},
 		{
-			enabled: !!composeId,
+			enabled: !passedDeployments && !!composeId,
 			refetchInterval: (query) => {
 				const data = query.state.data as any[] | undefined;
 				const hasActive = data?.some(isBuildActive);
@@ -61,9 +63,12 @@ export function ComposeDeploymentsTab({composeId}: ComposeDeploymentsTabProps) {
 		}
 	);
 
-	const deployments = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
+	const deployments = passedDeployments ?? (Array.isArray(rawDeployments) ? rawDeployments : []);
+	const isLoading = passedIsLoading ?? innerIsLoading;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
+
+	// Initial state for activeLogId is null so modal never opens automatically on tab load
 
 	// Mutations
 	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy') as any;

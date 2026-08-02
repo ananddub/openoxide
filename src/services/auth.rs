@@ -8,7 +8,7 @@ use auto_di::singleton;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 
 use crate::{
-    api::dto::auth::{AuthResponseDto, LoginDto, SignupDto},
+    api::dto::auth::{AuthResponseDto, LoginDto, SignupDto, UpdateUserDto},
     db::models::users::User,
     repository::{
         GroupRepository, JwtTokenRepository, OrganizationMemberRepository, OrganizationRepository,
@@ -238,6 +238,42 @@ impl AuthService {
             .get_by_id(id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)
+    }
+
+    pub async fn update_user(
+        &self,
+        user_id: i64,
+        input: UpdateUserDto,
+    ) -> Result<JwtSubject, AuthError> {
+        let mut user = self
+            .repo_user
+            .get_by_id(user_id)
+            .await?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if let Some(email) = input.email {
+            if !email.trim().is_empty() {
+                user.email = Some(email.trim().to_lowercase());
+            }
+        }
+        if let Some(first_name) = input.first_name {
+            user.first_name = Some(first_name);
+        }
+        if let Some(last_name) = input.last_name {
+            user.last_name = Some(last_name);
+        }
+        if let Some(avatar) = input.avatar {
+            user.avatar = avatar;
+        }
+        if let Some(password) = input.password {
+            if !password.trim().is_empty() {
+                user.password = hash_password(password).await?;
+            }
+        }
+
+        user.updated_at = chrono::Utc::now().timestamp();
+        self.repo_user.update(user_id, &user).await?;
+        subject_from_user(&user)
     }
 }
 

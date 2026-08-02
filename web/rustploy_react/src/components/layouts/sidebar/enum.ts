@@ -80,7 +80,7 @@ export const MENU: Menu = {
 		{title: 'Audit Logs', icon: ClipboardList, to: '/settings/audit-logs'},
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
 		{title: 'Organization', icon: Settings, to: '/settings'},
-		{title: 'Tags', icon: Tags, to: '/settings/tags'},
+		{title: 'Tags', icon: Tags, to: '/tags'},
 		{
 			title: 'Git Providers',
 			icon: GitBranch,

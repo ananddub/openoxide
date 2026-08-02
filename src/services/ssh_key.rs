@@ -79,6 +79,11 @@ impl SshKeyService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        if self.repo_ssh.is_in_use(id).await? {
+            return Err(sqlx::Error::Protocol(
+                "Cannot delete SSH Key: It is currently in use by an active server, application, or compose stack.".into(),
+            ));
+        }
         self.repo_ssh.delete(id).await
     }
 }

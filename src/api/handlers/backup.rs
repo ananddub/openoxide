@@ -9,6 +9,7 @@ use crate::{
         BackupResponseDto, CreateBackupDto, CreateVolumeBackupDto, PatchBackupDto,
         PatchVolumeBackupDto, VolumeBackupResponseDto,
     },
+    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
         permission::{
             AppDeployPermission, DatabaseCreatePermission, DatabaseDeletePermission,
@@ -16,17 +17,24 @@ use crate::{
         },
         validator::ValidatedJson,
     },
-    db::models::{backups::Backup, volume_backups::VolumeBackup},
-    repository::{backups::BackupRepository, volume_backups::VolumeBackupRepository},
+    db::models::{backups::Backup, destinations::Destination, volume_backups::VolumeBackup},
+    repository::{
+        backups::BackupRepository, destinations::DestinationRepository,
+        organization::OrganizationRepository, volume_backups::VolumeBackupRepository,
+    },
     services::schedule::ScheduleService,
 };
 
 type ApiError = (StatusCode, String);
 
 pub struct BackupController {
+    db: Arc<sqlx::SqlitePool>,
     service: Arc<ScheduleService>,
     repo_backup: Arc<BackupRepository>,
     repo_volume: Arc<VolumeBackupRepository>,
+    repo_dest: Arc<DestinationRepository>,
+    repo_org: Arc<OrganizationRepository>,
+    cache: Arc<AppStateCache>,
 }
 
 #[derive(Deserialize, poem_openapi::Object)]
@@ -37,14 +45,22 @@ pub struct RestoreBackupDto {
 #[controller("/backups")]
 impl BackupController {
     fn new(
+        db: Arc<sqlx::SqlitePool>,
         service: Arc<ScheduleService>,
         repo_backup: Arc<BackupRepository>,
         repo_volume: Arc<VolumeBackupRepository>,
+        repo_dest: Arc<DestinationRepository>,
+        repo_org: Arc<OrganizationRepository>,
+        cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
+            db,
             service,
             repo_backup,
             repo_volume,
+            repo_dest,
+            repo_org,
+            cache,
         }
     }
 
@@ -77,12 +93,105 @@ impl BackupController {
             .map_err(map_sqlx_error)
     }
 
+    async fn resolve_organization_id(&self, requested_id: Option<i64>) -> i64 {
+        if let Some(id) = requested_id {
+            if id > 0 {
+                if let Ok(Some(_)) = self.repo_org.get_by_id(id).await {
+                    return id;
+                }
+            }
+        }
+
+        if let Ok(orgs) = self.repo_org.get_all().await {
+            if let Some(first) = orgs.first() {
+                if let Some(id) = first.id {
+                    return id;
+                }
+            }
+        }
+
+        1
+    }
+
+    async fn resolve_destination_id(&self, requested_id: Option<i64>) -> i64 {
+        if let Some(id) = requested_id {
+            if id > 0 {
+                if let Ok(Some(_)) = self.repo_dest.get_by_id(id).await {
+                    return id;
+                }
+            }
+        }
+
+        if let Ok(dests) = self.repo_dest.get_all().await {
+            if let Some(first) = dests.first() {
+                if let Some(id_str) = &first.id {
+                    if let Ok(parsed) = id_str.parse::<i64>() {
+                        return parsed;
+                    }
+                }
+            }
+        }
+
+        let org_id = self.resolve_organization_id(None).await;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        let default_dest = Destination {
+            id: None,
+            name: "Local Storage".to_string(),
+            provider: "LOCAL".to_string(),
+            access_key: "".to_string(),
+            secret_access_key: "".to_string(),
+            bucket: "backups".to_string(),
+            region: "local".to_string(),
+            endpoint: "".to_string(),
+            additional_flags: None,
+            organization_id: org_id,
+            created_at: now,
+            updated_at: now,
+        };
+
+        if let Ok(new_id) = self.repo_dest.create(&default_dest).await {
+            return new_id;
+        }
+
+        1
+    }
+
+    async fn verify_fk_exists(&self, table: &str, id: Option<i64>) -> Option<i64> {
+        let target_id = match id {
+            Some(v) if v > 0 => v,
+            _ => return None,
+        };
+
+        let res: Result<Option<i64>, _> = match table {
+            "applications" => sqlx::query_scalar!(r#"SELECT id FROM applications WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "postgres" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM postgres_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "mysql" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mysql_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "mariadb" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mariadb_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "mongo" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mongo_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "redis" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM redis_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "libsql" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM libsql_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "compose" => sqlx::query_scalar!(r#"SELECT id FROM compose_projects WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            _ => Ok(None),
+        };
+
+        match res {
+            Ok(Some(_)) => Some(target_id),
+            _ => None,
+        }
+    }
+
     #[post("/database")]
     async fn create_database_backup(
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(dto): ValidatedJson<CreateBackupDto>,
     ) -> Result<(StatusCode, Json<BackupResponseDto>), ApiError> {
+        let org_id = self.resolve_organization_id(Some(dto.organization_id)).await;
+        let dest_id = self.resolve_destination_id(Some(dto.destination_id)).await;
         let item = Backup {
             id: None,
             app_name: dto.app_name,
@@ -95,15 +204,15 @@ impl BackupController {
             backup_type: dto.backup_type,
             database_type: dto.database_type,
             metadata: dto.metadata,
-            compose_id: dto.compose_id,
-            postgres_id: dto.postgres_id,
-            mysql_id: dto.mysql_id,
-            mariadb_id: dto.mariadb_id,
-            mongo_id: dto.mongo_id,
-            redis_id: dto.redis_id,
-            libsql_id: dto.libsql_id,
-            destination_id: dto.destination_id,
-            organization_id: dto.organization_id,
+            compose_id: self.verify_fk_exists("compose", dto.compose_id).await,
+            postgres_id: self.verify_fk_exists("postgres", dto.postgres_id).await,
+            mysql_id: self.verify_fk_exists("mysql", dto.mysql_id).await,
+            mariadb_id: self.verify_fk_exists("mariadb", dto.mariadb_id).await,
+            mongo_id: self.verify_fk_exists("mongo", dto.mongo_id).await,
+            redis_id: self.verify_fk_exists("redis", dto.redis_id).await,
+            libsql_id: self.verify_fk_exists("libsql", dto.libsql_id).await,
+            destination_id: dest_id,
+            organization_id: org_id,
             created_at: 0,
             updated_at: 0,
         };
@@ -213,17 +322,26 @@ impl BackupController {
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
     ) -> Result<Json<Vec<VolumeBackupResponseDto>>, ApiError> {
-        self.repo_volume
-            .get_all()
-            .await
-            .map(|items| {
-                items
+        if let Some(CacheEnum::VolumeBackups(cached_items)) = self.cache.get(&CacheKey::VolumeBackups).await {
+            return Ok(Json(
+                cached_items
                     .into_iter()
                     .map(VolumeBackupResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
+                    .collect(),
+            ));
+        }
+
+        let items = self.repo_volume.get_all().await.map_err(map_sqlx_error)?;
+        self.cache
+            .insert(CacheKey::VolumeBackups, CacheEnum::VolumeBackups(items.clone()))
+            .await;
+
+        Ok(Json(
+            items
+                .into_iter()
+                .map(VolumeBackupResponseDto::from)
+                .collect(),
+        ))
     }
 
     #[get("/volume/{id}")]
@@ -248,7 +366,10 @@ impl BackupController {
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(dto): ValidatedJson<CreateVolumeBackupDto>,
     ) -> Result<(StatusCode, Json<VolumeBackupResponseDto>), ApiError> {
-        let item = VolumeBackup {
+        let org_id = self.resolve_organization_id(dto.organization_id).await;
+        let dest_id = self.resolve_destination_id(dto.destination_id).await;
+
+        let mut item = VolumeBackup {
             id: None,
             name: dto.name,
             volume_name: dto.volume_name,
@@ -260,32 +381,53 @@ impl BackupController {
             cron_expression: dto.cron_expression,
             keep_latest_count: dto.keep_latest_count,
             enabled: 1,
-            destination_id: dto.destination_id,
-            organization_id: dto.organization_id,
-            application_id: dto.application_id,
-            postgres_id: dto.postgres_id,
-            mysql_id: dto.mysql_id,
-            mariadb_id: dto.mariadb_id,
-            mongo_id: dto.mongo_id,
-            redis_id: dto.redis_id,
-            libsql_id: dto.libsql_id,
-            compose_id: dto.compose_id,
+            destination_id: dest_id,
+            organization_id: org_id,
+            application_id: self.verify_fk_exists("applications", dto.application_id).await,
+            postgres_id: self.verify_fk_exists("postgres", dto.postgres_id).await,
+            mysql_id: self.verify_fk_exists("mysql", dto.mysql_id).await,
+            mariadb_id: self.verify_fk_exists("mariadb", dto.mariadb_id).await,
+            mongo_id: self.verify_fk_exists("mongo", dto.mongo_id).await,
+            redis_id: self.verify_fk_exists("redis", dto.redis_id).await,
+            libsql_id: self.verify_fk_exists("libsql", dto.libsql_id).await,
+            compose_id: self.verify_fk_exists("compose", dto.compose_id).await,
             created_at: 0,
             updated_at: 0,
         };
+
+        if item.compose_id.is_some() {
+            item.service_type = "COMPOSE".to_string();
+        } else if item.application_id.is_some() {
+            item.service_type = "APPLICATION".to_string();
+        } else if item.postgres_id.is_some() {
+            item.service_type = "POSTGRES".to_string();
+        } else if item.mysql_id.is_some() {
+            item.service_type = "MYSQL".to_string();
+        } else if item.mariadb_id.is_some() {
+            item.service_type = "MARIADB".to_string();
+        } else if item.mongo_id.is_some() {
+            item.service_type = "MONGO".to_string();
+        } else if item.redis_id.is_some() {
+            item.service_type = "REDIS".to_string();
+        } else if item.libsql_id.is_some() {
+            item.service_type = "LIBSQL".to_string();
+        }
         let id = self
             .repo_volume
             .create(&item)
             .await
             .map_err(map_sqlx_error)?;
-        self.repo_volume
+        let created = self.repo_volume
             .get_by_id(id)
             .await
             .map_err(map_sqlx_error)?
             .ok_or(sqlx::Error::RowNotFound)
             .map(VolumeBackupResponseDto::from)
             .map(|b| (StatusCode::CREATED, Json(b)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::VolumeBackups).await;
+        Ok(created)
     }
 
     #[patch("/volume/{id}")]
@@ -341,6 +483,8 @@ impl BackupController {
             .await
             .map_err(map_sqlx_error)?;
 
+        self.cache.invalidate(&CacheKey::VolumeBackups).await;
+
         self.repo_volume
             .get_by_id(id)
             .await
@@ -358,6 +502,7 @@ impl BackupController {
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.repo_volume.delete(id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::VolumeBackups).await;
         Ok(StatusCode::NO_CONTENT)
     }
 

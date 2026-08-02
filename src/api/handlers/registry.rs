@@ -7,6 +7,7 @@ use crate::{
     api::dto::registry::{
         CreateRegistryDto, PatchRegistryDto, RegistryResponseDto, TestRegistryDto,
     },
+    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
         permission::{
             AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
@@ -20,12 +21,13 @@ type ApiError = (StatusCode, String);
 
 pub struct RegistryController {
     service: Arc<RegistryService>,
+    cache: Arc<AppStateCache>,
 }
 
 #[controller("/registries")]
 impl RegistryController {
-    fn new(service: Arc<RegistryService>) -> Self {
-        Self { service }
+    fn new(service: Arc<RegistryService>, cache: Arc<AppStateCache>) -> Self {
+        Self { service, cache }
     }
 
     #[get]
@@ -33,12 +35,16 @@ impl RegistryController {
         &self,
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
     ) -> Result<Json<Vec<RegistryResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| items.into_iter().map(RegistryResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+        if let Some(CacheEnum::RegistriesList(cached)) = self.cache.get(&CacheKey::RegistriesList).await {
+            return Ok(Json(cached.into_iter().map(RegistryResponseDto::from).collect()));
+        }
+
+        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        self.cache
+            .insert(CacheKey::RegistriesList, CacheEnum::RegistriesList(items.clone()))
+            .await;
+
+        Ok(Json(items.into_iter().map(RegistryResponseDto::from).collect()))
     }
 
     #[get("/{id}")]
@@ -61,12 +67,15 @@ impl RegistryController {
         RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateRegistryDto>,
     ) -> Result<(StatusCode, Json<RegistryResponseDto>), ApiError> {
-        self.service
+        let created = self.service
             .create(body)
             .await
             .map(RegistryResponseDto::from)
-            .map(|reg| (StatusCode::CREATED, Json(reg)))
-            .map_err(map_sqlx_error)
+            .map(|registry| (StatusCode::CREATED, Json(registry)))
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        Ok(created)
     }
 
     #[patch("/{id}")]
@@ -76,12 +85,15 @@ impl RegistryController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchRegistryDto>,
     ) -> Result<Json<RegistryResponseDto>, ApiError> {
-        self.service
+        let updated = self.service
             .patch(id, body)
             .await
             .map(RegistryResponseDto::from)
             .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        Ok(updated)
     }
 
     #[delete("/{id}")]
@@ -93,25 +105,14 @@ impl RegistryController {
         self.service
             .delete(id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        Ok(StatusCode::NO_CONTENT)
     }
 
-    #[post("/{id}/test")]
-    async fn test_connection(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .test_connection(id)
-            .await
-            .map(|()| StatusCode::OK)
-            .map_err(|err| (StatusCode::BAD_REQUEST, err))
-    }
-
-    #[post("/test-raw")]
-    async fn test_connection_raw(
+    #[post("/test")]
+    async fn test_registry(
         &self,
         RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
         ValidatedJson(body): ValidatedJson<TestRegistryDto>,
@@ -119,8 +120,8 @@ impl RegistryController {
         self.service
             .test_connection_raw(&body.registry_url, &body.username, &body.password)
             .await
-            .map(|()| StatusCode::OK)
-            .map_err(|err| (StatusCode::BAD_REQUEST, err))
+            .map(|_| StatusCode::OK)
+            .map_err(|e| (StatusCode::BAD_REQUEST, e))
     }
 }
 

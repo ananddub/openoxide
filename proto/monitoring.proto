@@ -2,59 +2,23 @@ syntax = "proto3";
 
 package monitoring;
 
-// Dedicated Real-time gRPC Streaming Monitoring Service
+// Query API the panel uses to read metrics collected by an agent.
+//
+// Metric *ingestion* deliberately does not live here: agents push container
+// metrics to the panel over HTTP (POST /api/monitoring/containers) and persist
+// host metrics to their own local store. Earlier revisions declared bi-di
+// streaming RPCs for ingestion, but their handlers only logged and dropped
+// every message, so they were removed rather than left as a working-looking
+// API that silently discarded data.
 service MonitoringService {
-  // Bi-directional real-time hardware system metrics stream
-  rpc StreamSystemMetrics (stream SystemMetricsRequest) returns (stream MetricsAck);
-
-  // Bi-directional real-time Docker container metrics stream
-  rpc StreamContainerMetrics (stream ContainerMetricsRequest) returns (stream MetricsAck);
-
-  // Server-side real-time container log streaming
-  rpc StreamLogs (LogStreamRequest) returns (stream LogChunk);
-
-  // Bi-directional real-time health probe status stream
-  rpc StreamHealth (stream HealthReportRequest) returns (stream HealthAck);
-
   // Query historical server metrics
   rpc GetServerMetrics (GetMetricsRequest) returns (ServerMetricsResponse);
 
   // Query historical container metrics
   rpc GetContainerMetrics (GetContainerMetricsRequest) returns (ContainerMetricsResponse);
-}
 
-message SystemMetricsRequest {
-  int64 server_id = 1;
-  double cpu_usage = 2;
-  double memory_used_mb = 3;
-  double memory_total_mb = 4;
-  double memory_percent = 5;
-  double disk_used_gb = 6;
-  double disk_total_gb = 7;
-  double disk_percent = 8;
-  double net_rx_kbps = 9;
-  double net_tx_kbps = 10;
-  int64 timestamp = 11;
-}
-
-message ContainerMetricsRequest {
-  int64 server_id = 1;
-  int64 application_id = 2;
-  int64 compose_id = 3;
-  string container_id = 4;
-  string container_name = 5;
-  double cpu_percent = 6;
-  double memory_used_mb = 7;
-  double memory_limit_mb = 8;
-  double net_rx_kbps = 9;
-  double net_tx_kbps = 10;
-  int64 timestamp = 11;
-}
-
-message MetricsAck {
-  bool success = 1;
-  int64 received_timestamp = 2;
-  string message = 3;
+  // Tail a container's recent logs
+  rpc StreamLogs (LogStreamRequest) returns (stream LogChunk);
 }
 
 message LogStreamRequest {
@@ -69,20 +33,6 @@ message LogChunk {
   string log_line = 2;
   int64 timestamp = 3;
   bool is_stderr = 4;
-}
-
-message HealthReportRequest {
-  int64 target_id = 1;
-  string target_type = 2; // "APPLICATION", "DATABASE", "SERVER"
-  string status = 3;      // "HEALTHY", "UNHEALTHY", "DEGRADED"
-  int32 response_time_ms = 4;
-  string error_message = 5;
-  int64 timestamp = 6;
-}
-
-message HealthAck {
-  bool acknowledged = 1;
-  int64 timestamp = 2;
 }
 
 message ServerMetricPoint {

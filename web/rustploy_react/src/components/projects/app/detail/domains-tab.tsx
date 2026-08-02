@@ -10,9 +10,11 @@ import {formatApiError} from '#/api/utils';
 
 interface DomainsTabProps {
 	app: any;
+	domains?: any[];
+	onRefresh?: () => void;
 }
 
-export function DomainsTab({app}: DomainsTabProps) {
+export function DomainsTab({app, domains: passedDomains, onRefresh}: DomainsTabProps) {
 	const [showAdd, setShowAdd] = useState(false);
 	const [host, setHost] = useState('');
 	const [port, setPort] = useState('3000');
@@ -24,14 +26,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 	const [deleteId, setDeleteId] = useState<number | null>(null);
 	const [deleting, setDeleting] = useState(false);
 
-	// Fetch Domains
-	const {data: domains = [], isLoading: isLoadingDomains, refetch} = $api.useQuery(
-		'get',
-		'/domains/application/{application_id}',
-		{
-			params: {path: {application_id: app.id}},
-		}
-	);
+	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 
 	// Mutations
 	const createDomain = $api.useMutation('post', '/domains');
@@ -64,7 +59,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 			setPath('/');
 			setHttps(false);
 			setCertType('none');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -79,7 +74,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 			await deleteDomain.mutateAsync({params: {path: {id: deleteId}}});
 			toast.success('Domain deleted successfully');
 			setDeleteId(null);
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -99,7 +94,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 					</div>
 
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 text-xs font-semibold">
+						<Button variant="outline" size="sm" onClick={() => onRefresh?.()} className="h-8 text-xs font-semibold">
 							<RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Refresh
 						</Button>
 						<Button size="sm" onClick={() => setShowAdd(true)} className="h-8 text-xs font-semibold">
@@ -109,12 +104,7 @@ export function DomainsTab({app}: DomainsTabProps) {
 				</CardHeader>
 
 				<CardContent>
-					{isLoadingDomains ? (
-						<div className="flex w-full flex-row gap-2 min-h-[30vh] justify-center items-center">
-							<RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
-							<span className="text-sm text-muted-foreground font-medium">Loading domains...</span>
-						</div>
-					) : domains.length === 0 ? (
+					{domains.length === 0 ? (
 						<div className="flex w-full flex-col items-center justify-center gap-3 min-h-[35vh]">
 							<Globe className="w-8 h-8 text-muted-foreground/40" />
 							<span className="text-sm font-medium text-muted-foreground">

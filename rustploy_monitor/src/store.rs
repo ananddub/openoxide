@@ -42,11 +42,12 @@ pub struct ContainerMetricRow {
     pub block_write_mb: f64,
 }
 
-pub struct Db {
+/// The agent's local metric store.
+pub struct Store {
     pub pool: SqlitePool,
 }
 
-impl Db {
+impl Store {
     pub async fn init(db_url: &str) -> Result<Self, sqlx::Error> {
         if let Some(path_str) = db_url.strip_prefix("sqlite://") {
             if path_str != ":memory:" {
@@ -111,10 +112,7 @@ impl Db {
         .execute(&pool)
         .await?;
 
-        info!(
-            "Independent Dokploy-compatible Monitor SQLite DB initialized: {}",
-            db_url
-        );
+        info!(url = db_url, "metric store initialized");
         Ok(Self { pool })
     }
 

@@ -4,6 +4,8 @@ import { Button } from '#/components/ui/button';
 import { StatusBadge } from '#/components/shared/status-badge';
 import type { ComposeResponse } from '#/types/api-helpers';
 
+import {toast} from 'sonner';
+
 interface ComposeHeaderProps {
 	id: string;
 	compose: ComposeResponse | null;
@@ -46,7 +48,7 @@ export function ComposeHeader({
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={refetch} className="w-8 h-8 border-border rounded-lg">
+					<Button variant="outline" size="icon" onClick={() => { refetch(); toast.success('Compose stack refreshed'); }} className="w-8 h-8 border-border rounded-lg">
 						<RefreshCw className="w-3.5 h-3.5" />
 					</Button>
 					<StatusBadge status={compose?.compose_status || ''} />

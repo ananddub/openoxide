@@ -5,6 +5,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::ssh_key::{CreateSshKeyDto, GenerateSshKeyDto, PatchSshKeyDto, SshKeyResponseDto},
+    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
         permission::{
             RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
@@ -18,12 +19,13 @@ type ApiError = (StatusCode, String);
 
 pub struct SshKeyController {
     service: Arc<SshKeyService>,
+    cache: Arc<AppStateCache>,
 }
 
 #[controller("/ssh-keys")]
 impl SshKeyController {
-    fn new(service: Arc<SshKeyService>) -> Self {
-        Self { service }
+    fn new(service: Arc<SshKeyService>, cache: Arc<AppStateCache>) -> Self {
+        Self { service, cache }
     }
 
     #[get]
@@ -31,12 +33,16 @@ impl SshKeyController {
         &self,
         RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
     ) -> Result<Json<Vec<SshKeyResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| items.into_iter().map(SshKeyResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+        if let Some(CacheEnum::SshKeysList(cached)) = self.cache.get(&CacheKey::SshKeysList).await {
+            return Ok(Json(cached.into_iter().map(SshKeyResponseDto::from).collect()));
+        }
+
+        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        self.cache
+            .insert(CacheKey::SshKeysList, CacheEnum::SshKeysList(items.clone()))
+            .await;
+
+        Ok(Json(items.into_iter().map(SshKeyResponseDto::from).collect()))
     }
 
     #[get("/{id}")]
@@ -59,12 +65,15 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        self.service
+        let created = self.service
             .create(body)
             .await
             .map(SshKeyResponseDto::from)
             .map(|key| (StatusCode::CREATED, Json(key)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::SshKeysList).await;
+        Ok(created)
     }
 
     #[post("/generate")]
@@ -73,12 +82,15 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
         ValidatedJson(body): ValidatedJson<GenerateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        self.service
+        let generated = self.service
             .generate(body.name, body.description, &body.key_type)
             .await
             .map(SshKeyResponseDto::from)
             .map(|key| (StatusCode::CREATED, Json(key)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::SshKeysList).await;
+        Ok(generated)
     }
 
     #[post("/generate-pair")]
@@ -102,12 +114,15 @@ impl SshKeyController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchSshKeyDto>,
     ) -> Result<Json<SshKeyResponseDto>, ApiError> {
-        self.service
+        let updated = self.service
             .patch(id, body)
             .await
             .map(SshKeyResponseDto::from)
             .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::SshKeysList).await;
+        Ok(updated)
     }
 
     #[post("/{id}/mark-used")]
@@ -133,14 +148,17 @@ impl SshKeyController {
         self.service
             .delete(id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::SshKeysList).await;
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {
     match error {
         sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "ssh key not found".into()),
+        sqlx::Error::Protocol(msg) => (StatusCode::BAD_REQUEST, msg),
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }

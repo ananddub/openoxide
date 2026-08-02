@@ -14,6 +14,7 @@ export interface DeploymentViewerProps {
 	onReload?: () => void;
 	isLive?: boolean;
 	isDeployment?: boolean;
+	borderless?: boolean;
 }
 
 export function DeploymentViewer({
@@ -26,6 +27,7 @@ export function DeploymentViewer({
 	onReload,
 	isLive = true,
 	isDeployment = true,
+	borderless = false,
 }: DeploymentViewerProps) {
 	const {
 		scrollRef,
@@ -48,7 +50,7 @@ export function DeploymentViewer({
 	} = useLogViewer({logs, isLive, showFilter: true, isDeployment});
 
 	return (
-		<div className="flex flex-col gap-2 w-full font-mono">
+		<div className="flex flex-col gap-2 w-full font-mono flex-1 min-h-0">
 			{/* Dozzle-Style Toolbar */}
 			<LogViewerToolbar
 				totalLines={parsedEntries.length}
@@ -70,10 +72,14 @@ export function DeploymentViewer({
 				onDownload={onDownload}
 			/>
 
-			{/* Terminal Window Container using Shadcn UI bg-card & border-border */}
+			{/* Terminal Window Container */}
 			<div
 				ref={scrollRef}
-				className={`bg-card text-card-foreground border border-border rounded-xl p-3 text-xs ${heightClass} overflow-y-auto shadow-sm flex flex-col gap-0.5 w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full`}
+				className={`${
+					borderless
+						? 'bg-transparent text-foreground p-1 border-0 shadow-none'
+						: 'bg-card text-card-foreground border border-border rounded-xl p-3 shadow-sm'
+				} text-xs ${heightClass} flex-1 overflow-y-auto flex flex-col gap-0.5 w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full`}
 				style={{
 					fontFamily: `'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, monospace`,
 				}}

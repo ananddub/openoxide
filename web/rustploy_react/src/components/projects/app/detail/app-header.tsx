@@ -4,6 +4,8 @@ import { Button } from '#/components/ui/button';
 import { StatusBadge } from '#/components/shared/status-badge';
 import type { ApplicationResponse } from '#/types/api-helpers';
 
+import {toast} from 'sonner';
+
 interface AppHeaderProps {
 	id: string;
 	app: ApplicationResponse | null;
@@ -49,7 +51,7 @@ export function AppHeader({
 					<Button
 						variant="outline"
 						size="icon"
-						onClick={refetch}
+						onClick={() => { refetch(); toast.success('Application status refreshed'); }}
 						className="w-8 h-8 border-border/40 bg-muted/20 dark:bg-muted/15 hover:bg-muted/30 rounded-lg shadow-2xs">
 						<RefreshCw className="w-3.5 h-3.5" />
 					</Button>

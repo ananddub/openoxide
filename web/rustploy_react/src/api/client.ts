@@ -13,6 +13,63 @@ export const getApiBaseUrl = () => {
 	return 'http://127.0.0.1:4000';
 };
 
+let refreshPromise: Promise<string | null> | null = null;
+
+async function performTokenRefresh(): Promise<string | null> {
+	if (refreshPromise) return refreshPromise;
+
+	refreshPromise = (async () => {
+		try {
+			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+			if (!sessionRaw || sessionRaw === 'undefined') {
+				useAuthStore.getState().logout();
+				return null;
+			}
+
+			const session = JSON.parse(sessionRaw);
+			const refreshToken = session?.tokens?.refresh_token;
+			if (!refreshToken) {
+				useAuthStore.getState().logout();
+				return null;
+			}
+
+			const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({refresh_token: refreshToken}),
+			});
+
+			if (!refreshRes.ok) {
+				useAuthStore.getState().logout();
+				return null;
+			}
+
+			const newSession = await refreshRes.json();
+			localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+
+			if (newSession?.user) {
+				useAuthStore.getState().setAuth({
+					id: newSession.user.user_id,
+					email: newSession.user.email || '',
+					firstName: newSession.user.first_name,
+					lastName: newSession.user.last_name,
+				});
+			}
+
+			return newSession?.tokens?.access_token || null;
+		} catch {
+			useAuthStore.getState().logout();
+			return null;
+		} finally {
+			refreshPromise = null;
+		}
+	})();
+
+	return refreshPromise;
+}
+
 const authMiddleware: Middleware = {
 	async onRequest({request}) {
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -40,58 +97,16 @@ const authMiddleware: Middleware = {
 			return response;
 		}
 
-		// Attempt token refresh
-		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
-		if (!sessionRaw || sessionRaw === 'undefined') {
-			useAuthStore.getState().logout();
+		// Use single refresh promise mutex so parallel 401s don't bombard backend
+		const newAccessToken = await performTokenRefresh();
+		if (!newAccessToken) {
 			return response;
 		}
 
-		try {
-			const session = JSON.parse(sessionRaw);
-			const refreshToken = session?.tokens?.refresh_token;
-			if (!refreshToken) {
-				useAuthStore.getState().logout();
-				return response;
-			}
-
-			const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({refresh_token: refreshToken}),
-			});
-
-			if (!refreshRes.ok) {
-				useAuthStore.getState().logout();
-				return response;
-			}
-
-			const newSession = await refreshRes.json();
-			localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
-
-			// Update auth store with user
-			if (newSession?.user) {
-				useAuthStore.getState().setAuth({
-					id: newSession.user.user_id,
-					email: newSession.user.email || '',
-					firstName: newSession.user.first_name,
-					lastName: newSession.user.last_name,
-				});
-			}
-
-			// Retry the original request with the new access token
-			const newRequest = request.clone();
-			newRequest.headers.set(
-				'Authorization',
-				`Bearer ${newSession?.tokens?.access_token}`,
-			);
-			return fetch(newRequest);
-		} catch {
-			useAuthStore.getState().logout();
-			return response;
-		}
+		// Retry the original request with the new access token
+		const newRequest = request.clone();
+		newRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
+		return fetch(newRequest);
 	},
 };
 

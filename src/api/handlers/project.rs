@@ -5,6 +5,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::project::{CreateProjectDto, PatchProjectDto, ProjectResponseDto},
+    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
         permission::{
             ProjectCreatePermission, ProjectDeletePermission, ProjectReadPermission,
@@ -19,12 +20,13 @@ type ApiError = (StatusCode, String);
 
 pub struct ProjectController {
     service: Arc<ProjectService>,
+    cache: Arc<AppStateCache>,
 }
 
 #[controller("/projects")]
 impl ProjectController {
-    fn new(service: Arc<ProjectService>) -> Self {
-        Self { service }
+    fn new(service: Arc<ProjectService>, cache: Arc<AppStateCache>) -> Self {
+        Self { service, cache }
     }
 
     #[get("/{id}")]
@@ -47,12 +49,20 @@ impl ProjectController {
         RequirePermission(_claims, _): RequirePermission<ProjectReadPermission>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<ProjectResponseDto>>, ApiError> {
-        self.service
+        if let Some(CacheEnum::ProjectsList(cached)) = self.cache.get(&CacheKey::ProjectsList(organization_id)).await {
+            return Ok(Json(cached.into_iter().map(ProjectResponseDto::from).collect()));
+        }
+
+        let items = self.service
             .list_by_organization(organization_id)
             .await
-            .map(|items| items.into_iter().map(ProjectResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache
+            .insert(CacheKey::ProjectsList(organization_id), CacheEnum::ProjectsList(items.clone()))
+            .await;
+
+        Ok(Json(items.into_iter().map(ProjectResponseDto::from).collect()))
     }
 
     #[post]
@@ -61,12 +71,16 @@ impl ProjectController {
         RequirePermission(_claims, _): RequirePermission<ProjectCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateProjectDto>,
     ) -> Result<(StatusCode, Json<ProjectResponseDto>), ApiError> {
-        self.service
+        let org_id = body.organization_id;
+        let created = self.service
             .create(body)
             .await
             .map(ProjectResponseDto::from)
             .map(|project| (StatusCode::CREATED, Json(project)))
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate(&CacheKey::ProjectsList(org_id)).await;
+        Ok(created)
     }
 
     #[patch("/{id}")]
@@ -76,12 +90,15 @@ impl ProjectController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchProjectDto>,
     ) -> Result<Json<ProjectResponseDto>, ApiError> {
-        self.service
+        let updated = self.service
             .update(id, body)
             .await
             .map(ProjectResponseDto::from)
             .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate_all().await;
+        Ok(updated)
     }
 
     #[delete("/{id}")]
@@ -93,17 +110,16 @@ impl ProjectController {
         self.service
             .delete(id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_sqlx_error)?;
+
+        self.cache.invalidate_all().await;
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {
     match error {
         sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "project not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (StatusCode::NOT_FOUND, "organization not found".into())
-        }
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }

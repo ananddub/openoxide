@@ -12,45 +12,25 @@ interface ComposeContainersTabProps {
 	onUpdated?: () => void;
 }
 
-const extractServicesFromYaml = (yamlStr?: string): string[] => {
-	if (!yamlStr) return [];
-	const lines = yamlStr.split('\n');
-	const services: string[] = [];
-	let inServices = false;
-	let servicesIndent = 0;
-
-	for (const line of lines) {
-		const trimmed = line.trimEnd();
-		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-		const indent = line.search(/\S/);
-		const text = trimmed.trim();
-
-		if (text.startsWith('services:')) {
-			inServices = true;
-			servicesIndent = indent;
-			continue;
-		}
-		if (inServices) {
-			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServices = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ')) {
-				const srv = text.slice(0, -1).trim();
-				if (srv && !services.includes(srv)) services.push(srv);
-			}
-		}
-	}
-	return services;
-};
+import {extractServicesFromYaml} from '#/components/projects/common/terminal-modal';
 
 export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabProps) {
 	const [activeModal, setActiveModal] = useState<{type: 'logs' | 'config' | 'mount' | 'network'; container: ContainerItem} | null>(null);
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
+	const serverId = compose?.destination_id || compose?.server_id;
+
 	const {data: rawContainers = [], refetch: refetchContainers, isFetching} = $api.useQuery(
 		'get',
-		'/docker/containers' as any,
+		'/deployments/docker/containers',
 		{
-			params: {query: {server_id: compose?.destination_id}},
+			params: {
+				query: {
+					query: {
+						server_id: serverId ? Number(serverId) : undefined,
+					},
+				},
+			},
 			refetchInterval: 3000,
 		},
 	);
@@ -61,51 +41,85 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 	}, [compose?.compose_file]);
 
 	const containersList: ContainerItem[] = useMemo(() => {
-		const appName = compose?.app_name || compose?.name || 'compose';
-		const isStackRunning = ['running', 'deployed', 'done', 'success', 'active', 'ok'].includes(
-			(compose?.compose_status || compose?.status || '').toLowerCase()
-		);
+		const appName = compose?.app_name || compose?.name || '';
+		const rawApp = appName.toLowerCase().trim();
+		const cleanApp = rawApp.replace(/[^a-z0-9]/g, '');
 
-		const matched = (Array.isArray(rawContainers) ? rawContainers : []).filter((c: any) => {
-			const n = (c.names || '').toLowerCase();
-			const l = (c.labels || '').toLowerCase();
-			const cleanApp = appName.toLowerCase().replace(/[^a-z0-9]/g, '');
-			return n.includes(cleanApp) || l.includes(cleanApp) || serviceNames.some(s => n.includes(s.toLowerCase()));
+		const allContainers = Array.isArray(rawContainers) ? rawContainers : [];
+
+		let matched = allContainers.filter((c: any) => {
+			if (!rawApp) return false;
+			const n = String(c.names || c.Names || c.name || c.Name || '').toLowerCase().replace(/^\//, '');
+			const l = String(c.labels || c.Labels || '').toLowerCase();
+			const cleanN = n.replace(/[^a-z0-9]/g, '');
+
+			// Match strictly by compose project prefix or docker compose label
+			const isNameMatch = n.startsWith(`${rawApp}-`) || n.startsWith(`${rawApp}_`) || n.includes(`-${rawApp}-`) || cleanN.startsWith(cleanApp);
+			const isLabelMatch = l.includes(`com.docker.compose.project=${rawApp}`) || l.includes(`compose.project=${rawApp}`) || l.includes(rawApp);
+
+			return isNameMatch || isLabelMatch;
 		});
 
+		// Helper to check if container is actively running
+		const isContainerRunning = (c: any) => {
+			const state = String(c.state || c.State || '').toLowerCase();
+			const status = String(c.status || c.Status || '').toLowerCase();
+			if (state.includes('exited') || state.includes('dead') || state.includes('stopped')) return false;
+			if (status.includes('exited') || status.includes('dead')) return false;
+			return state.includes('running') || state.includes('up') || status.includes('up') || status.includes('running');
+		};
+
 		if (matched.length > 0) {
-			return matched.map((c: any) => {
-				const st = (c.state || c.status || '').toLowerCase();
-				const isRunning = st.includes('up') || st.includes('running');
-				const cleanName = (c.names || c.id || 'container').replace(/^\//, '');
+			const runningContainers = matched.filter(isContainerRunning);
+			// Only show running containers if any running container exists
+			const activeMatched = runningContainers.length > 0 ? runningContainers : matched;
+
+			// Deduplicate by clean container name
+			const uniqueMap = new Map<string, any>();
+			activeMatched.forEach((c: any) => {
+				const rawName = String(c.names || c.Names || c.name || c.Name || c.id || c.ID || 'container').replace(/^\//, '');
+				if (!uniqueMap.has(rawName)) {
+					uniqueMap.set(rawName, c);
+				}
+			});
+
+			return Array.from(uniqueMap.values()).map((c: any) => {
+				const isRunning = isContainerRunning(c);
+				const rawName = String(c.names || c.Names || c.name || c.Name || c.id || c.ID || 'container').replace(/^\//, '');
+				const cleanName = rawName.split(',')[0].trim();
+
+				let serviceName = serviceNames.find(s => cleanName.toLowerCase().includes(`-${s.toLowerCase()}-`) || cleanName.toLowerCase().endsWith(`-${s.toLowerCase()}`));
+				if (!serviceName) {
+					const parts = cleanName.split(/[-_]/);
+					if (parts.length >= 2 && !isNaN(Number(parts[parts.length - 1]))) {
+						serviceName = parts[parts.length - 2];
+					} else {
+						serviceName = parts.pop() || 'service';
+					}
+				}
+
+				const containerId = String(c.id || c.ID || 'id').slice(0, 12);
+				const containerImage = c.image || c.Image || `${appName}:latest`;
+				const containerStatusText = c.status || c.Status || (isRunning ? 'Up (healthy)' : 'Exited');
+				const containerPorts = c.ports || c.Ports || 'N/A';
+				const containerNetworks = c.networks || c.Networks ? [c.networks || c.Networks] : [`${appName}_default`];
 
 				return {
-					id: (c.id || 'id').slice(0, 12),
+					id: containerId,
 					name: cleanName,
-					service: cleanName.split(/[-_]/).pop() || 'service',
-					image: c.image || `${appName}:latest`,
+					service: serviceName || 'service',
+					image: containerImage,
 					status: isRunning ? 'running' : 'stopped',
-					statusText: c.status || (isRunning ? 'Up (healthy)' : 'Exited'),
-					ports: c.ports || 'N/A',
-					networks: c.networks ? [c.networks] : [`${appName}_default`],
-					mounts: c.mounts ? [{source: c.mounts, destination: '/app', mode: 'rw'}] : [],
-					env: {COMPOSE_PROJECT: appName, CONTAINER_ID: c.id},
+					statusText: containerStatusText,
+					ports: containerPorts,
+					networks: containerNetworks,
+					mounts: c.mounts || c.Mounts ? [{source: c.mounts || c.Mounts, destination: '/app', mode: 'rw'}] : [],
+					env: {COMPOSE_PROJECT: appName, CONTAINER_ID: containerId},
 				};
 			});
 		}
 
-		return serviceNames.map((srv, idx) => ({
-			id: `${appName}_${srv}_${idx + 1}`.slice(0, 12),
-			name: `${appName}-${srv}-1`,
-			service: srv,
-			image: `${appName}-${srv}:latest`,
-			status: isStackRunning ? 'running' : 'stopped',
-			statusText: isStackRunning ? 'Running' : 'Stopped / Not Deployed',
-			ports: 'N/A',
-			networks: [`${appName}_default`],
-			mounts: [],
-			env: {COMPOSE_PROJECT: appName, SERVICE_NAME: srv},
-		}));
+		return [];
 	}, [compose, rawContainers, serviceNames]);
 
 	const postAction = $api.useMutation('post', '/compose/{id}/start');

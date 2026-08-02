@@ -8,9 +8,11 @@ import {formatApiError} from '#/api/utils';
 
 interface SchedulesTabProps {
 	app: any;
+	schedules?: any[];
+	onRefresh?: () => void;
 }
 
-export function SchedulesTab({app}: SchedulesTabProps) {
+export function SchedulesTab({app, schedules: passedSchedules, onRefresh}: SchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [name, setName] = useState('');
 	const [cronExpression, setCronExpression] = useState('0 2 * * *');
@@ -20,19 +22,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 	const [deleteId, setDeleteId] = useState<number | null>(null);
 	const [deleting, setDeleting] = useState(false);
 
-	// Real-time server query
-	const {data: schedules = [], isLoading, refetch} = $api.useQuery(
-		'get',
-		'/schedules/application/{application_id}',
-		{
-			params: {
-				path: {application_id: app?.id},
-			},
-		},
-		{
-			enabled: !!app?.id,
-		}
-	);
+	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -65,7 +55,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 			toast.success('Schedule created successfully');
 			setIsCreateOpen(false);
 			setName('');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -77,7 +67,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule triggered manually');
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -91,7 +81,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 				body: {enabled: newStatus} as any,
 			});
 			toast.success(`Schedule ${newStatus ? 'enabled' : 'paused'}`);
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -102,9 +92,9 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 		setDeleting(true);
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id: deleteId}}});
-			toast.success('Schedule deleted');
+			toast.success('Schedule deleted successfully');
 			setDeleteId(null);
-			refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -121,7 +111,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 					<p className="text-xs text-muted-foreground mt-1">Configure automated cron jobs and recurring trigger workers for this service</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" onClick={() => refetch()} className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5">
+					<Button variant="outline" size="sm" onClick={() => onRefresh?.()} className="border-border text-foreground hover:bg-muted font-semibold h-8 text-xs flex items-center gap-1.5">
 						<RefreshCw className="w-3.5 h-3.5" /> Refresh
 					</Button>
 					<Button size="sm" onClick={() => setIsCreateOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-8 text-xs">
@@ -132,9 +122,7 @@ export function SchedulesTab({app}: SchedulesTabProps) {
 
 			{/* Jobs Table List */}
 			<section className="bg-card border border-border rounded-xl overflow-hidden">
-				{isLoading ? (
-					<div className="flex justify-center py-12"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground/45" /></div>
-				) : schedules.length === 0 ? (
+				{schedules.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
 						<Calendar className="w-10 h-10 opacity-30 mb-3" />
 						<p className="text-xs font-semibold">No cron jobs configured yet</p>

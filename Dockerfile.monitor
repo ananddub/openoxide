@@ -1,42 +1,57 @@
-# Multi-stage Dockerfile for Minimal rustploy_monitor
+# Build the standalone monitoring agent.
+#
+# Only the workspace manifests, the agent crate and the shared proto are copied
+# — the panel's own src/ and db/ are irrelevant here and copying them would
+# invalidate the layer cache on every unrelated panel change.
 FROM rust:alpine AS builder
 
-RUN apk add --no-cache musl-dev gcc make build-base ca-certificates binutils
+RUN apk add --no-cache musl-dev gcc build-base ca-certificates
 
 WORKDIR /usr/src/rustploy
 
-# Copy workspace manifests and member crates
+# Workspace manifests. Every member must be present for cargo to resolve the
+# workspace, so the other members' manifests are copied and their sources
+# stubbed — the panel depends on them by version, so the real manifests are
+# needed for resolution even though none of their code is compiled here.
 COPY Cargo.toml Cargo.lock ./
-COPY auto_route ./auto_route
-COPY auto_route_macros ./auto_route_macros
-COPY auto_socket ./auto_socket
-COPY auto_socket_macros ./auto_socket_macros
-COPY rustploy_sh_macros ./rustploy_sh_macros
-COPY db ./db
-COPY src ./src
-COPY proto ./proto
 COPY rustploy_monitor ./rustploy_monitor
+COPY proto ./proto
+COPY auto_route/Cargo.toml ./auto_route/
+COPY auto_route_macros/Cargo.toml ./auto_route_macros/
+COPY auto_socket/Cargo.toml ./auto_socket/
+COPY auto_socket_macros/Cargo.toml ./auto_socket_macros/
+COPY rustploy_sh_macros/Cargo.toml ./rustploy_sh_macros/
 
-# Build optimized static release binary & strip symbols
+# Stub the panel binary and the other members' sources. Only rustploy_monitor
+# is actually built, so empty lib roots are enough to satisfy cargo.
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs && : > src/lib.rs && \
+    for member in auto_route auto_route_macros auto_socket auto_socket_macros rustploy_sh_macros; do \
+        mkdir -p "$member/src" && : > "$member/src/lib.rs"; \
+    done
+
 RUN cargo build --release -p rustploy_monitor && \
-    strip /usr/src/rustploy/target/release/rustploy_monitor
+    strip target/release/rustploy_monitor
 
-# Minimal Alpine Runner Image with docker-cli dependency
 FROM alpine:latest
 
-# Install CA certificates and Docker CLI
-RUN apk add --no-cache ca-certificates docker-cli
+# docker-cli is required: the agent shells out to `docker stats` and
+# `docker logs`. ca-certificates is needed to push metrics over HTTPS.
+RUN apk add --no-cache ca-certificates docker-cli && \
+    adduser -D -u 10001 monitor
 
-# Copy stripped static Rust binary
-COPY --from=builder /usr/src/rustploy/target/release/rustploy_monitor /rustploy_monitor
+COPY --from=builder /usr/src/rustploy/target/release/rustploy_monitor /usr/local/bin/rustploy_monitor
 
-# Default environment variables
-ENV GRPC_PORT=50051
-ENV MONITOR_DATABASE_URL="sqlite:///app/data/monitor.db"
-ENV REFRESH_RATE=60
-ENV RETENTION_DAYS=7
+# The agent needs read access to the docker socket, which is owned by the
+# docker group on the host; the compose file grants that via group_add.
+USER monitor
+WORKDIR /app
+
+ENV MONITOR_DATABASE_URL="sqlite:///app/data/monitor.db" \
+    GRPC_PORT=50051 \
+    REFRESH_RATE=60 \
+    RETENTION_DAYS=7 \
+    RUST_LOG=rustploy_monitor=info
 
 EXPOSE 50051
 
-# Run binary directly
-ENTRYPOINT ["/rustploy_monitor"]
+ENTRYPOINT ["/usr/local/bin/rustploy_monitor"]

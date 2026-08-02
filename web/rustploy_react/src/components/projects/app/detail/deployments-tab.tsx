@@ -18,6 +18,8 @@ import {
 
 interface DeploymentsTabProps {
 	appId: number;
+	deployments?: any[];
+	onRefresh?: () => void;
 }
 
 const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
@@ -32,32 +34,13 @@ const isBuildActive = (e: any) => {
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
-export function DeploymentsTab({appId}: DeploymentsTabProps) {
+export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh}: DeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const logContainerRef = useRef<HTMLDivElement>(null);
 
-	// Fetch Application deployment events with auto refetch when active
-	const {data: events = [], isLoading, refetch} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					application_id: appId,
-					limit: 100,
-				} as any,
-			},
-		},
-		{
-			refetchInterval: (query) => {
-				const data = query.state.data as any[] | undefined;
-				const hasActive = data?.some(isBuildActive);
-				return hasActive ? 1000 : 3000;
-			},
-		}
-	);
 
+	const events = Array.isArray(passedDeployments) ? passedDeployments : [];
 	const activeDeployment = events.find(isBuildActive);
 
 	// Mutations
@@ -158,7 +141,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 		try {
 			await deployMutation.mutateAsync({params: {path: {id: appId}}});
 			toast.success('Deployment triggered successfully');
-			await refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -171,7 +154,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 		try {
 			await redeployMutation.mutateAsync({params: {path: {id: appId}}});
 			toast.success('Redeploy triggered successfully');
-			await refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -187,7 +170,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 		try {
 			await cancelMutation.mutateAsync({params: {path: {id: cancelingId}}});
 			toast.success('Deployment cancellation requested');
-			await refetch();
+			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -228,7 +211,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" onClick={() => refetch()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
+					<Button variant="outline" size="sm" onClick={() => onRefresh?.()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
 						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
 					</Button>
 					<Button variant="outline" size="sm" onClick={handleRedeploy} disabled={!!activeDeployment || isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs disabled:opacity-50">
@@ -252,9 +235,7 @@ export function DeploymentsTab({appId}: DeploymentsTabProps) {
 
 			{/* List Section */}
 			<section className="bg-card border border-border rounded-xl overflow-hidden">
-				{isLoading ? (
-					<div className="flex justify-center py-12"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground/45" /></div>
-				) : events.length === 0 ? (
+				{events.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
 						<Zap className="w-10 h-10 opacity-30 mb-3" />
 						<p className="text-xs font-semibold">No deployments registered yet</p>

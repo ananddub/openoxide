@@ -1,0 +1,469 @@
+import {useState, useEffect, useRef} from 'react';
+import {
+	User,
+	KeyRound,
+	Plus,
+	Copy,
+	Check,
+	Trash2,
+	Loader2,
+	CheckCircle2,
+	Palette,
+	Upload,
+	Lock,
+} from 'lucide-react';
+import {$api} from '#/api/query';
+import {Button} from '#/components/ui/button';
+import {Input} from '#/components/ui/input';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '#/components/ui/card';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '#/components/ui/dialog';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '#/components/ui/table';
+import {useQueryClient} from '@tanstack/react-query';
+import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
+import {toast} from 'sonner';
+
+export interface ApiKeyItem {
+	id: string;
+	name: string;
+	key: string;
+	createdAt: string;
+}
+
+const PRESET_AVATARS = [
+	'https://api.dicebear.com/7.x/bottts/svg?seed=Rustploy1',
+	'https://api.dicebear.com/7.x/bottts/svg?seed=Rustploy2',
+	'https://api.dicebear.com/7.x/bottts/svg?seed=Rustploy3',
+	'https://api.dicebear.com/7.x/bottts/svg?seed=Rustploy4',
+	'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+	'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+	'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
+	'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena',
+	'https://api.dicebear.com/7.x/shapes/svg?seed=Shape1',
+	'https://api.dicebear.com/7.x/shapes/svg?seed=Shape2',
+];
+
+export function ProfilePage() {
+	const queryClient = useQueryClient();
+	const {data: whoamiData, isLoading} = $api.useQuery('get', '/auth/whoami');
+	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
+		onSuccess: () => {
+			queryClient.invalidateQueries({queryKey: ['get', '/auth/whoami']});
+			toast.success('Profile Updated');
+		},
+		onError: () => {
+			toast.error('Error updating the profile');
+		},
+	});
+
+	const [firstName, setFirstName] = useState('');
+	const [lastName, setLastName] = useState('');
+	const [email, setEmail] = useState('');
+	const [avatarValue, setAvatarValue] = useState<string>(PRESET_AVATARS[0]);
+
+	const colorInputRef = useRef<HTMLInputElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// API Keys State
+	const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
+	const [isCreateKeyOpen, setIsCreateKeyOpen] = useState(false);
+	const [keyName, setKeyName] = useState('');
+	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+	const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (whoamiData) {
+			if (whoamiData.email) setEmail(whoamiData.email);
+			if (whoamiData.first_name) setFirstName(whoamiData.first_name);
+			if (whoamiData.last_name) setLastName(whoamiData.last_name);
+			if (whoamiData.avatar) setAvatarValue(whoamiData.avatar);
+		}
+	}, [whoamiData]);
+
+	const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error('Image size must be less than 2MB');
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = event => {
+			const result = event.target?.result as string;
+			setAvatarValue(result);
+			toast.success('Avatar image loaded');
+		};
+		reader.readAsDataURL(file);
+	};
+
+	const handleSubmitProfile = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			await updateUserMutation.mutateAsync({
+				body: {
+					avatar: avatarValue || undefined,
+				},
+			});
+		} catch {
+			// handled by mutation onError
+		}
+	};
+
+	const handleCreateApiKey = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!keyName.trim()) {
+			toast.error('Please enter a key name');
+			return;
+		}
+
+		const generatedToken = `rp_live_${Array.from({length: 32}, () => Math.floor(Math.random() * 36).toString(36)).join('')}`;
+		const newKeyItem: ApiKeyItem = {
+			id: String(Date.now()),
+			name: keyName.trim(),
+			key: generatedToken,
+			createdAt: new Date().toISOString(),
+		};
+
+		setApiKeys(prev => [newKeyItem, ...prev]);
+		setNewlyCreatedKey(generatedToken);
+		setKeyName('');
+		toast.success('API Key Created');
+	};
+
+	const handleDeleteApiKey = (id: string) => {
+		setApiKeys(prev => prev.filter(k => k.id !== id));
+		toast.success('API Key Deleted');
+	};
+
+	const handleCopyKey = (key: string, id: string) => {
+		navigator.clipboard.writeText(key);
+		setCopiedKeyId(id);
+		toast.success('Copied to clipboard');
+		setTimeout(() => setCopiedKeyId(null), 2000);
+	};
+
+	const userInitials = getAvatarInitials(`${firstName} ${lastName}`.trim() || email);
+
+	return (
+		<div className="w-full max-w-5xl mx-auto flex flex-col gap-6 pb-12 animate-in fade-in duration-150">
+			{/* Account Card */}
+			<Card className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden">
+				<CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-4">
+					<div>
+						<CardTitle className="text-xl flex flex-row items-center gap-2 font-bold">
+							<User className="size-5 text-muted-foreground" />
+							<span>Account</span>
+						</CardTitle>
+						<CardDescription className="text-xs text-muted-foreground mt-0.5">
+							Manage your avatar and view profile details.
+						</CardDescription>
+					</div>
+				</CardHeader>
+
+				<CardContent className="space-y-6 pt-4 border-t border-border/60">
+					{isLoading ? (
+						<div className="flex flex-row gap-2 items-center justify-center text-sm text-muted-foreground min-h-[25vh]">
+							<Loader2 className="animate-spin size-4 text-primary" />
+							<span>Loading account profile...</span>
+						</div>
+					) : (
+						<form onSubmit={handleSubmitProfile} className="flex flex-col gap-6">
+							{/* Locked Account Info Grid */}
+							<div className="flex flex-col gap-3 p-4 bg-muted/20 border border-border/60 rounded-xl">
+								<div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+									<Lock className="size-3.5" />
+									<span>Account Information (Read-Only)</span>
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+									<div className="flex flex-col gap-1.5">
+										<label className="text-[11px] font-semibold text-muted-foreground">First Name</label>
+										<Input
+											value={firstName}
+											disabled
+											readOnly
+											className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed"
+										/>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<label className="text-[11px] font-semibold text-muted-foreground">Last Name</label>
+										<Input
+											value={lastName}
+											disabled
+											readOnly
+											className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed"
+										/>
+									</div>
+								</div>
+
+								<div className="flex flex-col gap-1.5">
+									<label className="text-[11px] font-semibold text-muted-foreground">Email Address</label>
+									<Input
+										type="email"
+										value={email}
+										disabled
+										readOnly
+										className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed font-mono"
+									/>
+								</div>
+							</div>
+
+							{/* Dokploy 1:1 Avatar Selection */}
+							<div className="flex flex-col gap-2 pt-2">
+								<label className="text-xs font-semibold text-foreground">Avatar Selection</label>
+
+								<div className="flex flex-row flex-wrap items-center gap-3">
+									{/* Default Initials Avatar */}
+									<div
+										onClick={() => setAvatarValue('')}
+										className={`h-12 w-12 rounded-full border flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${
+											!avatarValue ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border hover:border-primary'
+										}`}
+									>
+										{userInitials}
+									</div>
+
+									{/* Custom Uploaded Avatar */}
+									<div
+										onClick={() => fileInputRef.current?.click()}
+										className={`h-12 w-12 rounded-full border border-dashed hover:border-primary transition-all flex items-center justify-center bg-muted/40 cursor-pointer overflow-hidden relative ${
+											avatarValue.startsWith('data:') ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border'
+										}`}
+									>
+										{avatarValue.startsWith('data:') ? (
+											<img src={avatarValue} alt="Custom avatar" className="h-full w-full object-cover rounded-full" />
+										) : (
+											<Upload className="h-4 w-4 text-muted-foreground" />
+										)}
+									</div>
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept="image/*"
+										className="hidden"
+										onChange={handleImageFileUpload}
+									/>
+
+									{/* Color Picker Avatar */}
+									<div
+										onClick={() => colorInputRef.current?.click()}
+										className={`h-12 w-12 rounded-full border hover:border-primary transition-all flex items-center justify-center cursor-pointer overflow-hidden relative ${
+											isSolidColorAvatar(avatarValue) ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary' : 'border-border'
+										}`}
+										style={{
+											backgroundColor: isSolidColorAvatar(avatarValue) ? avatarValue : undefined,
+										}}
+									>
+										{!isSolidColorAvatar(avatarValue) && <Palette className="h-4 w-4 text-muted-foreground" />}
+									</div>
+									<input
+										ref={colorInputRef}
+										type="color"
+										className="absolute opacity-0 pointer-events-none w-12 h-12"
+										value={isSolidColorAvatar(avatarValue) ? avatarValue : '#3b82f6'}
+										onChange={e => setAvatarValue(e.target.value)}
+									/>
+
+									{/* Dokploy Preset Avatar Images */}
+									{PRESET_AVATARS.map((imgUrl, idx) => (
+										<div
+											key={idx}
+											onClick={() => setAvatarValue(imgUrl)}
+											className={`h-12 w-12 rounded-full border overflow-hidden cursor-pointer transition-all hover:scale-105 ${
+												avatarValue === imgUrl ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary' : 'border-border hover:border-primary'
+											}`}
+										>
+											<img src={imgUrl} alt={`Preset avatar ${idx}`} className="h-full w-full object-cover rounded-full" />
+										</div>
+									))}
+								</div>
+							</div>
+
+							<div className="flex justify-end pt-2 border-t border-border/40">
+								<Button
+									type="submit"
+									disabled={updateUserMutation.isPending}
+									className="h-9 text-xs font-bold px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+								>
+									{updateUserMutation.isPending ? 'Saving...' : 'Save'}
+								</Button>
+							</div>
+						</form>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Dokploy 1:1 API Keys Card */}
+			<Card className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden">
+				<CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-4">
+					<div>
+						<CardTitle className="text-xl flex flex-row items-center gap-2 font-bold">
+							<KeyRound className="size-5 text-muted-foreground" />
+							<span>API Keys</span>
+						</CardTitle>
+						<CardDescription className="text-xs text-muted-foreground mt-0.5">
+							Manage your API keys for authenticating with the Rustploy API.
+						</CardDescription>
+					</div>
+
+					<Button
+						size="sm"
+						onClick={() => {
+							setNewlyCreatedKey(null);
+							setIsCreateKeyOpen(true);
+						}}
+						className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+					>
+						<Plus className="size-3.5" />
+						<span>Create API Key</span>
+					</Button>
+				</CardHeader>
+
+				<CardContent className="space-y-4 pt-4 border-t border-border/60">
+					{apiKeys.length === 0 ? (
+						<div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-border rounded-xl bg-muted/10 gap-2">
+							<KeyRound className="size-8 text-muted-foreground/40" />
+							<span className="text-sm font-semibold text-foreground">No API keys created</span>
+							<span className="text-xs text-muted-foreground max-w-sm">
+								Create an API key to access Rustploy programmatically from scripts or external tools.
+							</span>
+						</div>
+					) : (
+						<Table>
+							<TableHeader className="bg-muted/40 border-b border-border/60">
+								<TableRow className="hover:bg-transparent border-border/60">
+									<TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Name</TableHead>
+									<TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Key Prefix</TableHead>
+									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Created At</TableHead>
+									<TableHead className="text-right px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{apiKeys.map(keyItem => (
+									<TableRow key={keyItem.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
+										<TableCell className="px-4 py-3.5 font-semibold text-xs text-foreground">
+											{keyItem.name}
+										</TableCell>
+										<TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
+											{keyItem.key.substring(0, 12)}...
+										</TableCell>
+										<TableCell className="text-center px-4 py-3.5 text-xs text-muted-foreground font-mono">
+											{new Date(keyItem.createdAt).toLocaleDateString()}
+										</TableCell>
+										<TableCell className="text-right px-4 py-3.5">
+											<div className="flex items-center justify-end gap-1">
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleCopyKey(keyItem.key, keyItem.id)}
+													className="size-8 text-muted-foreground hover:text-foreground"
+												>
+													{copiedKeyId === keyItem.id ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleDeleteApiKey(keyItem.id)}
+													className="size-8 text-muted-foreground hover:text-rose-500"
+												>
+													<Trash2 className="size-3.5" />
+												</Button>
+											</div>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Create API Key Dialog */}
+			<Dialog open={isCreateKeyOpen} onOpenChange={open => !open && setIsCreateKeyOpen(false)}>
+				<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 flex flex-col gap-4 rounded-2xl">
+					<DialogHeader className="space-y-1">
+						<DialogTitle className="text-base font-bold text-foreground">Create API Key</DialogTitle>
+						<DialogDescription className="text-xs text-muted-foreground">
+							Enter a descriptive name for your API key.
+						</DialogDescription>
+					</DialogHeader>
+
+					{newlyCreatedKey ? (
+						<div className="flex flex-col gap-3 py-2">
+							<div className="p-3 bg-muted/40 border border-border rounded-xl space-y-1.5">
+								<span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+									<CheckCircle2 className="size-3.5" /> Save your API key now
+								</span>
+								<div className="flex items-center gap-2">
+									<code className="text-xs font-mono bg-background p-2 rounded border border-border flex-1 truncate select-all">
+										{newlyCreatedKey}
+									</code>
+									<Button
+										size="sm"
+										onClick={() => handleCopyKey(newlyCreatedKey, 'modal')}
+										className="h-8 text-xs px-3"
+									>
+										Copy
+									</Button>
+								</div>
+							</div>
+							<div className="flex justify-end pt-2">
+								<Button size="sm" onClick={() => setIsCreateKeyOpen(false)} className="h-8 text-xs px-4">
+									Done
+								</Button>
+							</div>
+						</div>
+					) : (
+						<form onSubmit={handleCreateApiKey} className="flex flex-col gap-4">
+							<div className="flex flex-col gap-1.5">
+								<label className="text-xs font-semibold text-foreground">Name</label>
+								<Input
+									placeholder="e.g. CI/CD Deployment Token"
+									value={keyName}
+									onChange={e => setKeyName(e.target.value)}
+									className="h-9 text-xs bg-muted/20 border-border/60"
+									autoFocus
+								/>
+							</div>
+
+							<div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+								<Button
+									type="button"
+									variant="ghost"
+									onClick={() => setIsCreateKeyOpen(false)}
+									className="h-8 text-xs font-semibold"
+								>
+									Cancel
+								</Button>
+								<Button type="submit" className="h-8 text-xs font-bold px-4">
+									Create
+								</Button>
+							</div>
+						</form>
+					)}
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+}

@@ -9,6 +9,7 @@ pub mod destination;
 pub mod domain;
 pub mod environment;
 pub mod monitoring;
+pub mod notification;
 pub mod organization;
 pub mod permission;
 pub mod project;
@@ -20,3 +21,5 @@ pub mod ssh_key;
 pub mod swarm;
 pub mod traefik;
 pub mod user;
+pub mod tag;
+

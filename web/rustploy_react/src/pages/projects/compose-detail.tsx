@@ -7,6 +7,7 @@ import {ComposeHeader} from '#/components/projects/compose/detail/compose-header
 
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
+import {ComposeArchitectureTab} from '#/components/projects/compose/detail/compose-architecture-tab';
 import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {ComposeDomainsTab} from '#/components/projects/compose/detail/compose-domains-tab';
 import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compose-deployments-tab';
@@ -17,12 +18,14 @@ import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-ba
 import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
 import {ComposeAdvancedTab} from '#/components/projects/compose/detail/compose-advanced-tab';
 
+
 export const Route = createFileRoute('/_app/projects/$id/compose/$composeId')({
 	component: ComposeDetailPage,
 });
 
 const TABS = [
 	'General',
+	'Architecture',
 	'Environment',
 	'Containers',
 	'Domains',
@@ -40,8 +43,13 @@ function ComposeDetailPage() {
 
 	const {
 		compose,
+		domains,
+		schedules,
+		backups,
+		deployments,
+		monitoring,
 		isLoading,
-		refetch,
+		refetchAll,
 		activeTab,
 		setActiveTab,
 		handleAction,
@@ -54,7 +62,7 @@ function ComposeDetailPage() {
 			params: {path: {id: parsedComposeId}},
 			body,
 		});
-		refetch();
+		refetchAll();
 	};
 
 	if (isLoading) {
@@ -84,38 +92,48 @@ function ComposeDetailPage() {
 				compose={compose}
 				activeTab={activeTab}
 				setActiveTab={setActiveTab}
-				refetch={refetch}
+				refetch={refetchAll}
 				tabs={TABS}
 			/>
 
 			{/* Tab Views */}
 			<div className="w-full">
 				{activeTab === 'General' && (
-					<ComposeGeneralTab compose={compose} onAction={handleAction} onUpdated={refetch} />
+					<ComposeGeneralTab compose={compose} onAction={handleAction} onUpdated={refetchAll} />
+				)}
+				{activeTab === 'Architecture' && (
+					<ComposeArchitectureTab
+						compose={compose}
+						domains={domains}
+						schedules={schedules}
+						backups={backups}
+						onNavigateTab={setActiveTab}
+						onRefresh={refetchAll}
+					/>
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
 				)}
 				{activeTab === 'Containers' && (
-					<ComposeContainersTab compose={compose} onUpdated={refetch} />
+					<ComposeContainersTab compose={compose} onUpdated={refetchAll} />
 				)}
 				{activeTab === 'Domains' && (
-					<ComposeDomainsTab composeId={parsedComposeId} />
+					<ComposeDomainsTab composeId={parsedComposeId} compose={compose} domains={domains} />
 				)}
 				{activeTab === 'Deployments' && (
-					<ComposeDeploymentsTab composeId={parsedComposeId} />
+					<ComposeDeploymentsTab composeId={parsedComposeId} deployments={deployments} />
 				)}
 				{activeTab === 'Schedules' && (
-					<ComposeSchedulesTab compose={compose} />
+					<ComposeSchedulesTab compose={compose} schedules={schedules} />
 				)}
 				{activeTab === 'Backups' && (
-					<ComposeBackupsTab compose={compose} />
+					<ComposeBackupsTab compose={compose} backups={backups} />
 				)}
 				{activeTab === 'Logs' && (
 					<ComposeLogsTab compose={compose} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={compose} appId={parsedComposeId} entityType="compose" />
+					<MonitoringTab app={compose} appId={parsedComposeId} entityType="compose" monitoring={monitoring} />
 				)}
 				{activeTab === 'Advanced' && (
 					<ComposeAdvancedTab compose={compose} />

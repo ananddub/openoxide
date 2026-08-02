@@ -10,3 +10,9 @@ errors.txt
 errors2.txt
 errors3.txt
 /src/utils/tmp
+
+# SQLite databases — runtime state, never committed
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3

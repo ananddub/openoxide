@@ -484,6 +484,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateUserDto"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JwtSubject"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/auth/whoami": {
         parameters: {
             query?: never;
@@ -1116,6 +1154,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DeploymentController::database_latest_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/database/{id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentController::database_stats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2901,6 +2955,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/swarm/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Joins `target_server_id` into `manager_server_id`'s cluster in one */
+        post: operations["SwarmController::join"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/swarm/leave": {
         parameters: {
             query?: never;
@@ -3950,9 +4021,19 @@ export interface components {
             engine_version: string;
             hostname: string;
             id: string;
-            manager_status: string;
+            ip_address: string;
+            is_leader: boolean;
+            /** @description "reachable" | "unreachable" | "" (empty for workers). */
+            reachability: string;
+            /**
+             * @description From `Spec.Role`, the authoritative config value. Doesn't flip based
+             *     on reachability, unlike `docker node ls`'s ManagerStatus column.
+             */
+            role: components["schemas"]["NodeRole"] & unknown;
             status: string;
         };
+        /** @enum {string} */
+        NodeRole: "worker" | "manager";
         /** OrganizationResponseDto */
         OrganizationResponseDto: {
             /** Format: int64 */
@@ -4511,6 +4592,14 @@ export interface components {
             last_name?: string;
             password: string;
         };
+        /** UpdateUserDto */
+        UpdateUserDto: {
+            avatar?: string;
+            email?: string;
+            first_name?: string;
+            last_name?: string;
+            password?: string;
+        };
         /** SshKeyResponseDto */
         SshKeyResponseDto: {
             /** Format: int64 */
@@ -4533,6 +4622,14 @@ export interface components {
          */
         SwarmConnectionDto: {
             /**
+             * @description Force the operation when Docker requires explicit confirmation.
+             *
+             *     Used by swarm leave for manager nodes. Keep this false for normal
+             *     leave actions; set true only when intentionally resetting a node so it
+             *     can join another cluster.
+             */
+            force?: boolean;
+            /**
              * Format: int64
              * @description Server DB id — used to resolve SSH credentials.
              */
@@ -4549,6 +4646,28 @@ export interface components {
             /** Format: int64 */
             nodes: number;
         };
+        /**
+         * SwarmJoinDto
+         * @description Joins one server into another server's existing Swarm cluster, in one
+         *     shot: force-leaves any standalone swarm the target is already part of,
+         *     then joins it to the manager's cluster with a VPN-aware advertise
+         *     address.
+         */
+        SwarmJoinDto: {
+            /**
+             * Format: int64
+             * @description Server id whose cluster to join. None = local engine's cluster.
+             */
+            manager_server_id?: number;
+            role: components["schemas"]["SwarmRole"];
+            /**
+             * Format: int64
+             * @description Server id of the node that should join the cluster.
+             */
+            target_server_id: number;
+        };
+        /** @enum {string} */
+        SwarmRole: "worker" | "manager";
         /** SwarmTokensDto */
         SwarmTokensDto: {
             manager: string;
@@ -6679,6 +6798,30 @@ export interface operations {
     "DeploymentController::database_latest_logs": {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["DeploymentSseEventDto"];
+                };
+            };
+        };
+    };
+    "DeploymentController::database_stats": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerStatsQuery"];
+            };
             header?: never;
             path: {
                 id: number;
@@ -9989,6 +10132,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SwarmInfoDto"];
                 };
+            };
+        };
+    };
+    "SwarmController::join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwarmJoinDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

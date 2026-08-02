@@ -8,15 +8,10 @@ import {
 	LogOut,
 } from 'lucide-react';
 
+import type {SwarmInfo} from '#/types/api-helpers';
+
 interface SwarmInfoCardProps {
-	info?: {
-		node_id?: string;
-		node_addr?: string;
-		local_node_state?: string;
-		control_available?: boolean;
-		nodes?: number;
-		managers?: number;
-	} | null;
+	info?: SwarmInfo | null;
 	isLoading: boolean;
 	onLeaveSwarm: () => void;
 }

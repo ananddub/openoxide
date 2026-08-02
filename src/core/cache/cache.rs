@@ -1,6 +1,7 @@
 use crate::core::cache::enum_state::{CacheEnum, CacheKey};
 use auto_di::singleton;
 use moka::future::Cache;
+use std::future::Future;
 use std::hash::Hash;
 use std::time::Duration;
 
@@ -47,7 +48,7 @@ where
     /// Retrieve a cached value or atomically execute the async init closure (coalesces concurrent requests to prevent Cache Stampede).
     pub async fn try_get_with<F, E>(&self, key: K, init: F) -> Result<V, std::sync::Arc<E>>
     where
-        F: std::future::Future<Output = Result<V, E>>,
+        F: Future<Output = Result<V, E>>,
         E: Send + Sync + 'static,
     {
         self.inner.try_get_with(key, init).await

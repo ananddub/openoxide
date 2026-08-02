@@ -188,6 +188,36 @@ export function ComposeSourceCard({
 						<label className="text-xs font-semibold text-foreground">Compose File Path *</label>
 						<Input value={gitBuildPath} onChange={e => setGitBuildPath(e.target.value)} placeholder="docker-compose.yml" className="h-9 text-xs font-mono" />
 					</div>
+
+					{/* Collapsible / Optional YAML Code editor for previewing graph */}
+					<div className="md:col-span-4 flex flex-col gap-2 pt-2 border-t border-border/40">
+						<details className="group">
+							<summary className="text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 select-none py-1">
+								<Code2 className="size-3.5 text-primary" />
+								<span>Compose YAML Content (Paste code here to preview Dependency Graph without building)</span>
+							</summary>
+							<div className="pt-3 flex flex-col gap-2">
+								<div className="border border-border/80 rounded-xl overflow-hidden shadow-inner bg-zinc-950">
+									<Editor
+										height="240px"
+										defaultLanguage="yaml"
+										theme="vs-dark"
+										value={composeFile}
+										onChange={val => setComposeFile(val || '')}
+										options={{
+											minimap: {enabled: false},
+											fontSize: 12,
+											scrollBeyondLastLine: false,
+											lineNumbers: 'on',
+										}}
+									/>
+								</div>
+								<p className="text-[11px] text-muted-foreground italic">
+									Pasting your docker-compose.yml content here instantly renders the service graph below.
+								</p>
+							</div>
+						</details>
+					</div>
 				</div>
 			)}
 		</section>

@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState, useMemo} from 'react';
+import {createPortal} from 'react-dom';
 import {Terminal as TerminalIcon, X, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
@@ -13,11 +14,26 @@ interface TerminalModalProps {
 	onClose: () => void;
 }
 
-const extractServicesFromYaml = (yamlStr?: string): string[] => {
-	if (!yamlStr) return [];
+import { load as yamlLoad } from 'js-yaml';
+
+export const extractServicesFromYaml = (yamlStr?: string): string[] => {
+	if (!yamlStr || !yamlStr.trim()) return [];
+	try {
+		let cleanYaml = yamlStr.trim();
+		if (cleanYaml.startsWith('```')) {
+			cleanYaml = cleanYaml.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+		}
+		const doc: any = yamlLoad(cleanYaml);
+		if (doc && typeof doc === 'object' && doc.services && typeof doc.services === 'object' && !Array.isArray(doc.services)) {
+			return Object.keys(doc.services);
+		}
+	} catch (e) {
+		console.warn('[extractServicesFromYaml] Error parsing YAML:', e);
+	}
+
 	const services: string[] = [];
 	let inServices = false;
-	let indentLevel = 0;
+	let baseIndent = -1;
 
 	for (const line of yamlStr.split('\n')) {
 		const trimmed = line.trimEnd();
@@ -27,14 +43,23 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 
 		if (text.startsWith('services:')) {
 			inServices = true;
-			indentLevel = indent;
+			baseIndent = -1;
 			continue;
 		}
+
 		if (inServices) {
-			if (indent <= indentLevel && text.endsWith(':') && !text.startsWith('-')) inServices = false;
-			else if (indent > indentLevel && text.endsWith(':') && !text.includes(' ')) {
-				const srv = text.slice(0, -1).trim();
-				if (srv && !services.includes(srv)) services.push(srv);
+			if (indent <= 0 && baseIndent >= 0) {
+				break;
+			}
+			if (text.endsWith(':') && !text.includes(' ') && !text.startsWith('-')) {
+				if (baseIndent === -1) {
+					baseIndent = indent;
+					const srv = text.slice(0, -1).trim();
+					if (srv && !services.includes(srv)) services.push(srv);
+				} else if (indent === baseIndent) {
+					const srv = text.slice(0, -1).trim();
+					if (srv && !services.includes(srv)) services.push(srv);
+				}
 			}
 		}
 	}
@@ -236,9 +261,9 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		if (helper) helper.focus();
 	};
 
-	return (
-		<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] h-[550px] flex flex-col overflow-hidden animate-in fade-in duration-150">
+	const modalJSX = (
+		<div className="fixed inset-0 z-[999999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-5xl max-h-[85vh] h-[580px] flex flex-col overflow-hidden animate-in fade-in duration-150">
 				<div className="flex items-center justify-between border-b border-border p-4 bg-card shrink-0">
 					<div className="flex items-center gap-3">
 						<TerminalIcon className="w-5 h-5 text-primary" />
@@ -279,4 +304,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			</div>
 		</div>
 	);
+
+	if (!open || typeof document === 'undefined') return null;
+	return createPortal(modalJSX, document.body);
 }

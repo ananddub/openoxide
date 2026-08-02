@@ -12,6 +12,9 @@ export type ScheduleResponse = components['schemas']['ScheduleResponseDto'];
 export type DomainResponse = components['schemas']['DomainResponseDto'];
 export type DestinationResponse = components['schemas']['DestinationResponseDto'];
 export type RegistryResponse = components['schemas']['RegistryResponseDto'];
+export type SwarmNode = components['schemas']['NodeDto'];
+export type SwarmInfo = components['schemas']['SwarmInfoDto'];
+export type SwarmTokens = components['schemas']['SwarmTokensDto'];
 
 export type PatchApplication = components['schemas']['PatchApplicationDto'];
 export type PatchCompose = components['schemas']['PatchComposeDto'];

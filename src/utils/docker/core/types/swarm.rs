@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,10 +47,18 @@ impl TryFrom<&str> for NodeAvailability {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "lowercase")]
+#[oai(rename_all = "lowercase")]
 pub enum NodeRole {
     Worker,
     Manager,
+}
+
+impl Default for NodeRole {
+    fn default() -> Self {
+        Self::Worker
+    }
 }
 
 impl fmt::Display for NodeRole {
@@ -72,7 +81,9 @@ impl TryFrom<&str> for NodeRole {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "lowercase")]
+#[oai(rename_all = "lowercase")]
 pub enum SwarmRole {
     Worker,
     Manager,

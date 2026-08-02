@@ -1,3 +1,4 @@
+use crate::utils::docker::core::types::NodeRole;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -360,7 +361,39 @@ pub struct NodeInspect {
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub spec: NodeSpec,
     #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub description: NodeDescription,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub status: NodeStatus,
+    /// Only present for manager nodes — absent entirely for workers.
+    #[serde(default)]
+    pub manager_status: Option<NodeManagerStatus>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct NodeDescription {
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub hostname: String,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub engine: NodeEngine,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct NodeEngine {
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub engine_version: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct NodeManagerStatus {
+    #[serde(default)]
+    pub leader: bool,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub reachability: String,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub addr: String,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -371,7 +404,7 @@ pub struct NodeSpec {
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub labels: HashMap<String, String>,
     #[serde(default, deserialize_with = "deserialize_null_default")]
-    pub role: String,
+    pub role: NodeRole,
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub availability: String,
 }

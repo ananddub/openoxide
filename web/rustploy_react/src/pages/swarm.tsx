@@ -1,162 +1,224 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
+import {client} from '#/api/client';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {SwarmHeader} from '#/components/swarm/swarm-header';
 import {SwarmInfoCard} from '#/components/swarm/swarm-info-card';
 import {SwarmNodesList} from '#/components/swarm/swarm-nodes-list';
+import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
 import {JoinTokensModal} from '#/components/swarm/join-tokens-modal';
-import type {RemoteServerResponse} from '#/types/api-helpers';
+import type {RemoteServerResponse, SwarmInfo, SwarmTokens} from '#/types/api-helpers';
 
 export const Route = createFileRoute('/_app/swarm')({
 	component: SwarmPage,
 });
 
+interface ServerSwarmResult {
+	info: SwarmInfo | null;
+	nodes: TaggedSwarmNode[];
+}
+
+// Backend SSH connect timeout is 15s per server — fine for one server, but
+// "All Clusters" awaits every server together, so one unreachable box (bad
+// key, dead host) drags the whole page down to its worst case. Bound each
+// server's contribution so a single broken one can't block the rest.
+const PER_SERVER_TIMEOUT_MS = 4000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+	return new Promise<T>(resolve => {
+		const timer = setTimeout(() => resolve(fallback), ms);
+		promise.then(
+			value => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			() => {
+				clearTimeout(timer);
+				resolve(fallback);
+			},
+		);
+	});
+}
+
+interface SwarmOverview {
+	info: SwarmInfo | null;
+	nodes: TaggedSwarmNode[];
+	activeServerId: number | undefined;
+}
+
+async function fetchServerSwarm(serverId: number | undefined, serverLabel: string): Promise<ServerSwarmResult> {
+	const body = {server_id: serverId};
+	try {
+		const {data: info} = await client.POST('/swarm/info', {body});
+		if (!info || String(info.local_node_state || '').toLowerCase() !== 'active') {
+			return {info: null, nodes: []};
+		}
+		// Worker nodes are "active" too but Docker refuses `node ls`/`join-token`
+		// on them (managers-only commands) — asking would just log a failed
+		// SSH round trip for nothing.
+		if (!info.control_available) {
+			return {info, nodes: []};
+		}
+		const {data: rawNodes} = await client.POST('/swarm/nodes', {body});
+		const nodes: TaggedSwarmNode[] = (rawNodes || []).map(n => ({
+			...n,
+			_serverId: serverId,
+			_serverName: serverLabel,
+		}));
+		return {info, nodes};
+	} catch {
+		// A single unreachable server shouldn't fail the whole "All Clusters" view.
+		return {info: null, nodes: []};
+	}
+}
+
 function SwarmPage() {
 	const [selectedServerId, setSelectedServerId] = useState<string>('all');
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
-	const [info, setInfo] = useState<Record<string, unknown> | null>(null);
-	const [tokens, setTokens] = useState<Record<string, unknown> | null>(null);
-	const [nodes, setNodes] = useState<Record<string, unknown>[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+	const queryClient = useQueryClient();
 
 	const {data: serversData} = $api.useQuery('get', '/remote-servers');
 	const servers = Array.isArray(serversData) ? (serversData as RemoteServerResponse[]) : [];
+	const serverIdsKey = servers.map(s => s.id).join(',');
 
-	const infoMutation = $api.useMutation('post', '/swarm/info');
-	const tokensMutation = $api.useMutation('post', '/swarm/tokens');
-	const nodesMutation = $api.useMutation('post', '/swarm/nodes');
 	const promoteMutation = $api.useMutation('post', '/swarm/nodes/promote');
 	const demoteMutation = $api.useMutation('post', '/swarm/nodes/demote');
 	const availabilityMutation = $api.useMutation('post', '/swarm/nodes/availability');
 	const removeNodeMutation = $api.useMutation('post', '/swarm/nodes/remove');
 	const leaveMutation = $api.useMutation('post', '/swarm/leave');
+	const joinMutation = $api.useMutation('post', '/swarm/join');
 
-	const fetchServerNodes = async (serverId?: number, serverLabel: string = 'Local Server') => {
-		const payload = {server_id: serverId};
-		try {
-			const infoRes = await infoMutation.mutateAsync({body: payload as unknown as {server_id?: number}}).catch(() => null);
-			if (infoRes && String((infoRes as any).local_node_state || '').toLowerCase() === 'active') {
-				const [nodesRes, tokensRes] = await Promise.all([
-					nodesMutation.mutateAsync({body: payload as unknown as {server_id?: number}}).catch(() => []),
-					tokensMutation.mutateAsync({body: payload as unknown as {server_id?: number}}).catch(() => null),
-				]);
-				const rawNodes = Array.isArray(nodesRes) ? (nodesRes as Record<string, unknown>[]) : [];
-				const taggedNodes = rawNodes.map(n => ({
-					...n,
-					_serverId: serverId,
-					_serverName: serverLabel,
-				}));
-				return {info: infoRes as Record<string, unknown>, nodes: taggedNodes, tokens: tokensRes as Record<string, unknown>};
-			}
-		} catch {
-			// ignore single server error in multi fetch
-		}
-		return {info: null, nodes: [], tokens: null};
-	};
-
-	const loadSwarmData = useCallback(async () => {
-		setIsLoading(true);
-		try {
+	// Cached for 15s so revisiting the page (or switching tabs back) shows the
+	// last-known cluster state instantly instead of re-running an SSH round
+	// trip per server before anything paints.
+	const swarmQuery = useQuery({
+		queryKey: ['swarm-overview', selectedServerId, serverIdsKey],
+		queryFn: async (): Promise<SwarmOverview> => {
 			if (selectedServerId === 'all') {
-				const targets = [
+				const targets: {id: number | undefined; label: string}[] = [
 					{id: undefined, label: 'Local Server'},
 					...servers.map(s => ({id: s.id, label: s.name})),
 				];
+				const results = await Promise.all(
+					targets.map(t =>
+						withTimeout(fetchServerSwarm(t.id, t.label), PER_SERVER_TIMEOUT_MS, {info: null, nodes: []}),
+					),
+				);
+				// Prefer an actual manager as the cluster reference — only managers
+				// can issue join tokens or list nodes, so picking a worker here would
+				// make every later action fail the same way `/swarm/nodes` just did.
+				const managerIdx = results.findIndex(r => r.info?.control_available);
+				const activeIdx = managerIdx >= 0 ? managerIdx : results.findIndex(r => r.info !== null);
 
-				const results = await Promise.all(targets.map(t => fetchServerNodes(t.id, t.label)));
+				const allNodesMap = new Map<string, TaggedSwarmNode>();
+				for (const r of results) {
+					for (const n of r.nodes) {
+						if (n.id && !allNodesMap.has(n.id)) allNodesMap.set(n.id, n);
+					}
+				}
 
-				const activeResult = results.find(r => r.info !== null);
-				setInfo(activeResult?.info || results[0]?.info || null);
-				setTokens(activeResult?.tokens || null);
-
-				// Deduplicate nodes by node ID across cluster queries
-				const allNodesMap = new Map<string, Record<string, unknown>>();
-				results.forEach(r => {
-					r.nodes.forEach(n => {
-						const nodeId = String((n as any).id || (n as any).ID || Math.random());
-						if (!allNodesMap.has(nodeId)) {
-							allNodesMap.set(nodeId, n);
-						}
-					});
-				});
-
-				setNodes(Array.from(allNodesMap.values()));
-			} else {
-				const sId = selectedServerId === 'local' ? undefined : parseInt(selectedServerId);
-				const sName = selectedServerId === 'local' ? 'Local Server' : servers.find(s => String(s.id) === selectedServerId)?.name || 'Server';
-				const res = await fetchServerNodes(sId, sName);
-				setInfo(res.info);
-				setNodes(res.nodes);
-				setTokens(res.tokens);
+				return {
+					info: activeIdx >= 0 ? results[activeIdx].info : (results[0]?.info ?? null),
+					nodes: Array.from(allNodesMap.values()),
+					activeServerId: activeIdx >= 0 ? targets[activeIdx].id : undefined,
+				};
 			}
-		} catch (err: unknown) {
-			setInfo(null);
-			setNodes([]);
-			setTokens(null);
-			toast.error(formatApiError(err));
-		} finally {
-			setIsLoading(false);
-		}
-	}, [selectedServerId, servers]);
 
-	useEffect(() => {
-		loadSwarmData();
-	}, [loadSwarmData]);
+			const sId = selectedServerId === 'local' ? undefined : parseInt(selectedServerId, 10);
+			const sName =
+				selectedServerId === 'local'
+					? 'Local Server'
+					: servers.find(s => String(s.id) === selectedServerId)?.name || 'Server';
+			const res = await fetchServerSwarm(sId, sName);
+			return {info: res.info, nodes: res.nodes, activeServerId: res.info ? sId : undefined};
+		},
+		staleTime: 15_000,
+		refetchOnWindowFocus: false,
+	});
 
-	const getServerIdNumber = (node?: Record<string, unknown>) => {
-		if (node && node._serverId !== undefined) return node._serverId as number | undefined;
-		return selectedServerId === 'local' || selectedServerId === 'all' ? undefined : parseInt(selectedServerId);
+	const info = swarmQuery.data?.info ?? null;
+	const nodes = swarmQuery.data?.nodes ?? [];
+	const activeServerId = swarmQuery.data?.activeServerId;
+	const isLoading = swarmQuery.isLoading;
+	const isRefreshing = swarmQuery.isFetching;
+
+	// Tokens are only needed once the "Add Node" modal is opened — fetching
+	// them on every page load was one of three parallel SSH round trips per
+	// server that nobody was looking at yet.
+	const tokensQuery = useQuery({
+		queryKey: ['swarm-tokens', activeServerId],
+		queryFn: async (): Promise<SwarmTokens | null> => {
+			const {data} = await client.POST('/swarm/tokens', {body: {server_id: activeServerId}});
+			return data ?? null;
+		},
+		enabled: isTokensOpen && !!info?.control_available,
+		staleTime: 60_000,
+	});
+
+	const refreshAll = () => {
+		queryClient.invalidateQueries({queryKey: ['swarm-overview']});
+		queryClient.invalidateQueries({queryKey: ['swarm-tokens']});
+		queryClient.invalidateQueries({queryKey: ['swarm-node-identity']});
 	};
 
-	const handlePromote = async (nodeId: string, node?: Record<string, unknown>) => {
+	const getServerIdNumber = (node?: TaggedSwarmNode): number | undefined => {
+		if (node && node._serverId !== undefined) return node._serverId;
+		if (selectedServerId === 'all') return activeServerId;
+		if (selectedServerId === 'local') return undefined;
+		return parseInt(selectedServerId, 10);
+	};
+
+	const handlePromote = async (nodeId: string, node?: TaggedSwarmNode) => {
 		try {
 			await promoteMutation.mutateAsync({
-				body: {server_id: getServerIdNumber(node), node_id: nodeId} as unknown as {node_id: string; server_id?: number},
+				body: {server_id: getServerIdNumber(node), node_id: nodeId},
 			});
 			toast.success('Node promoted to Manager');
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const handleDemote = async (nodeId: string, node?: Record<string, unknown>) => {
+	const handleDemote = async (nodeId: string, node?: TaggedSwarmNode) => {
 		try {
 			await demoteMutation.mutateAsync({
-				body: {server_id: getServerIdNumber(node), node_id: nodeId} as unknown as {node_id: string; server_id?: number},
+				body: {server_id: getServerIdNumber(node), node_id: nodeId},
 			});
 			toast.success('Node demoted to Worker');
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
-			toast.error(formatApiError(err));
+			const rawErr = formatApiError(err);
+			if (rawErr.toLowerCase().includes('last manager')) {
+				toast.error('Promote another node to Manager first — a swarm always needs at least one.');
+			} else {
+				toast.error(rawErr);
+			}
 		}
 	};
 
-	const handleSetAvailability = async (nodeId: string, availability: string, node?: Record<string, unknown>) => {
+	const handleSetAvailability = async (nodeId: string, availability: string, node?: TaggedSwarmNode) => {
 		try {
 			await availabilityMutation.mutateAsync({
-				body: {
-					server_id: getServerIdNumber(node),
-					node_id: nodeId,
-					availability,
-				} as unknown as {availability: string; node_id: string; server_id?: number},
+				body: {server_id: getServerIdNumber(node), node_id: nodeId, availability},
 			});
 			toast.success(`Node availability set to ${availability}`);
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const handleRemoveNode = async (nodeId: string, node?: Record<string, unknown>) => {
+	const handleRemoveNode = async (nodeId: string, node?: TaggedSwarmNode) => {
 		try {
 			await removeNodeMutation.mutateAsync({
-				body: {server_id: getServerIdNumber(node), node_id: nodeId} as unknown as {node_id: string; server_id?: number},
+				body: {server_id: getServerIdNumber(node), node_id: nodeId},
 			});
 			toast.success('Node removed from Swarm cluster');
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -165,10 +227,10 @@ function SwarmPage() {
 	const handleLeaveSwarm = async () => {
 		try {
 			await leaveMutation.mutateAsync({
-				body: {server_id: getServerIdNumber()} as unknown as {server_id?: number},
+				body: {server_id: getServerIdNumber()},
 			});
 			toast.success('Left Swarm cluster successfully');
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -179,19 +241,33 @@ function SwarmPage() {
 	const handleLeaveRemoteSwarm = async (serverId: number) => {
 		try {
 			await leaveMutation.mutateAsync({
-				body: {server_id: serverId, force: true} as unknown as {server_id?: number; force?: boolean},
+				body: {server_id: serverId, force: true},
 			});
 			toast.success('Force disconnected Swarm on target server');
-			loadSwarmData();
+			refreshAll();
 		} catch (err: unknown) {
 			const srvName = servers.find(s => s.id === serverId)?.name || 'target server';
 			const rawErr = formatApiError(err);
 			if (rawErr.toLowerCase().includes('not part of a swarm')) {
 				toast.success(`Server "${srvName}" is not in any Swarm and is ready to join!`);
-				loadSwarmData();
+				refreshAll();
 				return;
 			}
 			toast.error(`Server "${srvName}" error: ${rawErr}`);
+		}
+	};
+
+	const handleJoinServer = async (serverId: number, role: 'worker' | 'manager') => {
+		try {
+			await joinMutation.mutateAsync({
+				body: {target_server_id: serverId, manager_server_id: activeServerId, role},
+			});
+			const srvName = servers.find(s => s.id === serverId)?.name || 'Server';
+			toast.success(`"${srvName}" joined the cluster as ${role === 'manager' ? 'a Manager' : 'a Worker'}!`);
+			refreshAll();
+		} catch (err: unknown) {
+			const srvName = servers.find(s => s.id === serverId)?.name || 'target server';
+			toast.error(`Failed to join "${srvName}": ${formatApiError(err)}`);
 		}
 	};
 
@@ -201,14 +277,14 @@ function SwarmPage() {
 				servers={servers}
 				selectedServerId={selectedServerId}
 				onSelectServer={setSelectedServerId}
-				onRefresh={loadSwarmData}
+				onRefresh={refreshAll}
 				onOpenTokens={() => setIsTokensOpen(true)}
-				isRefreshing={isLoading}
+				isRefreshing={isRefreshing}
 				isSwarmActive={isSwarmActive}
 			/>
 
 			<SwarmInfoCard
-				info={info as any}
+				info={info}
 				isLoading={isLoading}
 				onLeaveSwarm={handleLeaveSwarm}
 			/>
@@ -222,15 +298,16 @@ function SwarmPage() {
 				onRemoveNode={(id, n) => handleRemoveNode(id, n)}
 			/>
 
-			{tokens && (
+			{isTokensOpen && (
 				<JoinTokensModal
 					isOpen={isTokensOpen}
 					onClose={() => setIsTokensOpen(false)}
-					tokens={tokens as any}
-					isLoading={isLoading}
+					tokens={tokensQuery.data ?? null}
+					isLoading={tokensQuery.isLoading}
 					servers={servers}
 					nodes={nodes}
 					onLeaveRemoteSwarm={handleLeaveRemoteSwarm}
+					onJoinServer={handleJoinServer}
 				/>
 			)}
 		</div>

@@ -7,7 +7,7 @@ use crate::utils::{
         handles::containers::RestartPolicy,
     },
     exec::{
-        CommandExecutor, ExecResult, ExecStreamEvent,
+        CommandExecutor, ExecResult, ExecStreamEvent, detect_advertise_addr,
         script::{ScriptPipeline, ShellIR, sh},
     },
     os::OsCli,
@@ -139,15 +139,7 @@ impl ServerSetup {
         }
         let advertise = match &self.config.advertise_addr {
             Some(value) => value.clone(),
-            None => self
-                .executor
-                .run("hostname", ["-I"])
-                .await?
-                .stdout
-                .split_whitespace()
-                .find(|ip| *ip != "127.0.0.1")
-                .unwrap_or("127.0.0.1")
-                .to_owned(),
+            None => detect_advertise_addr(&self.executor).await,
         };
         docker
             .swarm()
@@ -522,25 +514,59 @@ impl ServerSetup {
                 info!("Checking Docker Swarm");
                 if !docker.swarm().active() {
                     info!("Initializing Docker Swarm");
-                    let _rustploy_advertise_addr = capture_stdout! {
+                    let _rustploy_vpn_addr = capture_stdout! {
                         pipe![
-                            cmd("hostname", "-I"),
-                            awk! {
-                                for field in fields {
-                                    if field != "127.0.0.1" {
-                                        print(field);
-                                        exit;
-                                    }
-                                }
-                            }
+                            cmd("ip", "-4", "-o", "addr", "show"),
+                            grep!("-E", "^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)"),
+                            grep!("-oE", "([0-9]+\\.){3}[0-9]+"),
+                            head!("-n", "1")
                         ];
+                    };
+                    if cmd("test", "-n", _rustploy_vpn_addr) {
+                        info!("Using VPN/overlay interface for swarm advertise address");
+                        docker
+                            .swarm()
+                            .init()
+                            .advertise_addr(_rustploy_vpn_addr)
+                            .listen_addr("0.0.0.0:2377");
+                    } else {
+                        let _rustploy_cgnat_addr = capture_stdout! {
+                            pipe![
+                                cmd("ip", "-4", "-o", "addr", "show"),
+                                grep!("-oE", "([0-9]+\\.){3}[0-9]+"),
+                                grep!("-E", "^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\."),
+                                head!("-n", "1")
+                            ];
+                        };
+                        if cmd("test", "-n", _rustploy_cgnat_addr) {
+                            info!("Using CGNAT-range VPN address for swarm advertise address");
+                            docker
+                                .swarm()
+                                .init()
+                                .advertise_addr(_rustploy_cgnat_addr)
+                                .listen_addr("0.0.0.0:2377");
+                        } else {
+                            let _rustploy_advertise_addr = capture_stdout! {
+                                pipe![
+                                    cmd("hostname", "-I"),
+                                    awk! {
+                                        for field in fields {
+                                            if field != "127.0.0.1" {
+                                                print(field);
+                                                exit;
+                                            }
+                                        }
+                                    }
+                                ];
+                            }
+                            .default("127.0.0.1");
+                            docker
+                                .swarm()
+                                .init()
+                                .advertise_addr(_rustploy_advertise_addr)
+                                .listen_addr("0.0.0.0:2377");
+                        }
                     }
-                    .default("127.0.0.1");
-                    docker
-                        .swarm()
-                        .init()
-                        .advertise_addr(_rustploy_advertise_addr)
-                        .listen_addr("0.0.0.0:2377");
                 }
             ));
         }
@@ -739,6 +765,14 @@ mod tests {
         assert!(script.contains("https://nixpacks.com/install.sh"));
         assert!(script.contains("'NIXPACKS_VERSION=1.41.0' 'bash' \"$_rustploy_installer\""));
         assert!(script.contains("_rustploy_pack_url="));
+        assert!(script.contains(
+            "_rustploy_vpn_addr=$(ip '-4' '-o' 'addr' 'show' | grep '-E' '^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)' | grep '-oE' '([0-9]+\\.){3}[0-9]+' | head '-n' '1')"
+        ));
+        assert!(script.contains("test '-n' \"$_rustploy_vpn_addr\""));
+        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_vpn_addr"));
+        assert!(script.contains("test '-n' \"$_rustploy_cgnat_addr\""));
+        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_cgnat_addr"));
+        assert!(script.contains("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\."));
         assert!(script.contains("hostname '-I' | awk"));
         assert!(
             script.contains("[ -z \"$_rustploy_advertise_addr\" ] && _rustploy_advertise_addr=")

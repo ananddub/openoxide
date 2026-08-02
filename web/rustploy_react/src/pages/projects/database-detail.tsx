@@ -8,6 +8,7 @@ import {DatabaseHeader} from '#/components/projects/database/detail/database-hea
 
 // Tabs
 import {DatabaseGeneralTab} from '#/components/projects/database/detail/database-general-tab';
+import {DatabaseArchitectureTab} from '#/components/projects/database/detail/database-architecture-tab';
 import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {DatabaseLogsTab} from '#/components/projects/database/detail/database-logs-tab';
 import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
 
 const TABS = [
 	'General',
+	'Architecture',
 	'Environment',
 	'Backups',
 	'Logs',
@@ -41,11 +43,14 @@ function DatabaseDetailPage() {
 
 	const {
 		database,
+		schedules,
+		backups,
+		monitoring,
 		isLoading,
 		actionLoading,
 		isBuilding,
 		detectedKind,
-		refetch,
+		refetchAll,
 		activeTab,
 		setActiveTab,
 		handleAction,
@@ -58,7 +63,7 @@ function DatabaseDetailPage() {
 			params: {path: {id: parsedDbId}},
 			body,
 		});
-		refetch();
+		refetchAll();
 	};
 
 	if (isLoading) {
@@ -91,7 +96,7 @@ function DatabaseDetailPage() {
 				isBuilding={isBuilding}
 				activeTab={activeTab}
 				setActiveTab={setActiveTab}
-				refetch={refetch}
+				refetch={refetchAll}
 				onOpenDeleteDialog={() => setIsDeleteDialogOpen(true)}
 				tabs={TABS}
 			/>
@@ -104,8 +109,11 @@ function DatabaseDetailPage() {
 						actionLoading={actionLoading}
 						isBuilding={isBuilding}
 						onAction={handleAction}
-						onUpdated={refetch}
+						onUpdated={refetchAll}
 					/>
+				)}
+				{activeTab === 'Architecture' && (
+					<DatabaseArchitectureTab database={database} schedules={schedules} backups={backups} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={database} handleUpdate={handleUpdateEnv} />
@@ -117,10 +125,10 @@ function DatabaseDetailPage() {
 					<DatabaseLogsTab database={database} />
 				)}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={database} appId={parsedDbId} entityType="database" />
+					<MonitoringTab app={database} appId={parsedDbId} entityType="database" monitoring={monitoring} />
 				)}
 				{activeTab === 'Advanced' && (
-					<DatabaseAdvancedTab database={database} onUpdated={refetch} />
+					<DatabaseAdvancedTab database={database} onUpdated={refetchAll} />
 				)}
 			</div>
 

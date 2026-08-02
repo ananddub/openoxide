@@ -1,4 +1,5 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
+import {createPortal} from 'react-dom';
 import {RefreshCw, X, Clock} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
@@ -16,6 +17,7 @@ interface CreateScheduleModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	servicesList: string[];
+	editingSchedule?: any;
 	onCreate: (data: {
 		name: string;
 		serviceName: string;
@@ -31,14 +33,28 @@ const CRON_PRESETS = [
 	{label: 'Daily', value: '0 0 * * *'},
 ];
 
-export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: CreateScheduleModalProps) {
+export function CreateScheduleModal({isOpen, onClose, servicesList, editingSchedule, onCreate}: CreateScheduleModalProps) {
 	const [name, setName] = useState('');
 	const [serviceName, setServiceName] = useState(servicesList[0] || 'app');
 	const [command, setCommand] = useState('');
 	const [cronExpr, setCronExpr] = useState('0 * * * *');
 	const [creating, setCreating] = useState(false);
 
-	if (!isOpen) return null;
+	useEffect(() => {
+		if (editingSchedule) {
+			setName(editingSchedule.name || '');
+			setServiceName(editingSchedule.service_name || editingSchedule.target || editingSchedule.app_name || servicesList[0] || 'app');
+			setCommand(editingSchedule.command || '');
+			setCronExpr(editingSchedule.cron_expression || editingSchedule.cronExpr || '0 * * * *');
+		} else {
+			setName('');
+			setServiceName(servicesList[0] || 'app');
+			setCommand('');
+			setCronExpr('0 * * * *');
+		}
+	}, [editingSchedule, servicesList]);
+
+	if (!isOpen || typeof document === 'undefined') return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -56,16 +72,18 @@ export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: C
 		}
 	};
 
-	return (
-		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in duration-150">
+	const modalJSX = (
+		<div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in duration-150">
 				<div className="p-4 border-b border-border/40 flex items-center justify-between bg-muted/20">
 					<div className="flex items-center gap-2.5">
 						<div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
 							<Clock className="w-4 h-4" />
 						</div>
 						<div>
-							<h3 className="text-sm font-bold text-foreground">Create Compose Schedule Task</h3>
+							<h3 className="text-sm font-bold text-foreground">
+								{editingSchedule ? 'Edit Schedule / Cron Task' : 'Create Compose Schedule Task'}
+							</h3>
 							<p className="text-[11px] text-muted-foreground">Automate commands on container services</p>
 						</div>
 					</div>
@@ -101,53 +119,57 @@ export function CreateScheduleModal({isOpen, onClose, servicesList, onCreate}: C
 						</Select>
 					</div>
 
-					<div className="flex flex-col gap-1.5 w-full">
-						<Label className="text-xs font-semibold">Cron Schedule *</Label>
-						<Input
-							value={cronExpr}
-							onChange={e => setCronExpr(e.target.value)}
-							placeholder="0 * * * *"
-							className="h-9 text-xs font-mono w-full"
-						/>
-					</div>
-
-					{/* Quick Cron Presets */}
-					<div className="flex items-center gap-1.5">
-						<span className="text-[11px] text-muted-foreground font-medium">Quick Presets:</span>
-						{CRON_PRESETS.map(preset => (
-							<button
-								key={preset.value}
-								type="button"
-								onClick={() => setCronExpr(preset.value)}
-								className={`text-[10px] px-2 py-0.5 rounded font-mono transition-colors border ${
-									cronExpr === preset.value
-										? 'bg-primary text-primary-foreground border-primary'
-										: 'bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground hover:bg-muted'
-								}`}
-							>
-								{preset.label}
-							</button>
-						))}
-					</div>
-
 					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Command to Execute *</Label>
+						<Label className="text-xs font-semibold">Command to Run *</Label>
 						<Input
 							value={command}
 							onChange={e => setCommand(e.target.value)}
-							placeholder="e.g., npm run cron:clean"
+							placeholder="e.g., php artisan schedule:run"
 							className="h-9 text-xs font-mono"
 						/>
 					</div>
 
-					<div className="pt-3 flex items-center justify-end border-t border-border/30">
-						<Button type="submit" disabled={creating} className="h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/95 px-5 shadow-sm w-full sm:w-auto">
-							{creating ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-							Create Schedule
+					<div className="flex flex-col gap-2">
+						<Label className="text-xs font-semibold">Cron Expression *</Label>
+						<Input
+							value={cronExpr}
+							onChange={e => setCronExpr(e.target.value)}
+							placeholder="0 * * * *"
+							className="h-9 text-xs font-mono"
+						/>
+						<div className="flex items-center gap-1.5 pt-1">
+							<span className="text-[11px] text-muted-foreground mr-1">Presets:</span>
+							{CRON_PRESETS.map(p => (
+								<button
+									key={p.value}
+									type="button"
+									onClick={() => setCronExpr(p.value)}
+									className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+										cronExpr === p.value
+											? 'bg-primary/10 border-primary/30 text-primary font-bold'
+											: 'bg-muted/40 border-border/40 text-muted-foreground hover:bg-muted'
+									}`}
+								>
+									{p.label}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div className="pt-2 flex items-center justify-end border-t border-border/40">
+						<Button
+							type="submit"
+							disabled={creating}
+							className="h-9 px-5 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+						>
+							{creating ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+							{editingSchedule ? 'Update Schedule' : 'Create Schedule'}
 						</Button>
 					</div>
 				</form>
 			</div>
 		</div>
 	);
+
+	return createPortal(modalJSX, document.body);
 }

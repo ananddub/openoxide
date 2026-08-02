@@ -7,30 +7,51 @@ fn find_best_matching_container<'a>(
     target: &str,
 ) -> Option<&'a crate::utils::docker::ContainerSummary> {
     let target_lower = target.to_lowercase();
+    let target_hyphen = target_lower.replace('_', "-");
+    let target_underscore = target_lower.replace('-', "_");
+
     containers
         .iter()
         .find(|c| {
             let name = c.names.trim_start_matches('/').to_lowercase();
             name == target_lower
+                || name == target_hyphen
+                || name == target_underscore
+                || name.starts_with(&format!("{target_lower}_db"))
+                || name.starts_with(&format!("{target_hyphen}_db"))
+                || name.starts_with(&format!("{target_lower}-db"))
+                || name.starts_with(&format!("{target_hyphen}-db"))
+                || name.starts_with(&format!("{target_lower}_"))
+                || name.starts_with(&format!("{target_hyphen}_"))
+                || name.starts_with(&format!("{target_lower}-"))
+                || name.starts_with(&format!("{target_hyphen}-"))
                 || name.ends_with(&format!("-{target_lower}-1"))
                 || name.ends_with(&format!("_{target_lower}_1"))
                 || name.ends_with(&format!("-{target_lower}"))
                 || name.ends_with(&format!("_{target_lower}"))
+                || name.ends_with(&format!("{target_lower}_db"))
+                || name.ends_with(&format!("{target_lower}_db_1"))
+                || name.ends_with(&format!("{target_lower}-db"))
+                || name.ends_with(&format!("{target_lower}-db-1"))
         })
         .or_else(|| {
             containers.iter().find(|c| {
                 let name = c.names.trim_start_matches('/').to_lowercase();
-                name.contains(&format!("-{target_lower}-"))
+                name.contains(&format!("{target_lower}_db"))
+                    || name.contains(&format!("{target_hyphen}_db"))
+                    || name.contains(&format!("{target_lower}-db"))
+                    || name.contains(&format!("{target_hyphen}-db"))
+                    || name.contains(&format!("-{target_lower}-"))
+                    || name.contains(&format!("-{target_hyphen}-"))
                     || name.contains(&format!("_{target_lower}_"))
             })
         })
         .or_else(|| {
             containers.iter().find(|c| {
                 let name = c.names.trim_start_matches('/').to_lowercase();
-                name.contains(&target_lower)
+                name.contains(&target_lower) || name.contains(&target_hyphen)
             })
         })
-        .or_else(|| containers.first())
 }
 
 impl DeploymentService {
@@ -43,12 +64,7 @@ impl DeploymentService {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
 
-        if let Ok(containers) = docker
-            .containers()
-            .ps()
-            .all()
-            .list()
-            .await
+        if let Ok(containers) = docker.containers().ps().all().list().await
         {
             if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
@@ -215,13 +231,31 @@ impl DeploymentService {
         database_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let db = self
-            .repo_postgres
-            .get_by_id(database_id)
+        let (app_name, server_id): (String, Option<i64>) = if let Ok(db) = self.repo_postgres.get_by_id(database_id).await {
+            (db.app_name, db.server_id)
+        } else {
+            let row: Option<(String, Option<i64>)> = sqlx::query_as(
+                "SELECT app_name, server_id FROM mysql_dbs WHERE id = ? \
+                 UNION ALL SELECT app_name, server_id FROM mariadb_dbs WHERE id = ? \
+                 UNION ALL SELECT app_name, server_id FROM mongo_dbs WHERE id = ? \
+                 UNION ALL SELECT app_name, server_id FROM redis_dbs WHERE id = ? \
+                 UNION ALL SELECT app_name, server_id FROM libsql_dbs WHERE id = ?"
+            )
+            .bind(database_id)
+            .bind(database_id)
+            .bind(database_id)
+            .bind(database_id)
+            .bind(database_id)
+            .fetch_optional(self.db.as_ref())
             .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        let app_name = db.app_name;
-        let server_id = db.server_id;
+            .unwrap_or(None);
+
+            if let Some(r) = row {
+                r
+            } else {
+                return Err(sqlx::Error::RowNotFound);
+            }
+        };
 
         let docker = self.docker_for_server(server_id).await?;
 
@@ -299,6 +333,27 @@ impl DeploymentService {
         let logs_subcommand = "container";
         let mut resolved_target = target.clone();
 
+        // Database App Name Resolver: resolve database 'name' or 'app_name' to actual DB app_name if target is a database name
+        let resolved_name_opt: Option<(String,)> = sqlx::query_as(
+            "SELECT app_name FROM postgres_dbs WHERE name = ? OR app_name = ? \
+             UNION ALL SELECT app_name FROM mysql_dbs WHERE name = ? OR app_name = ? \
+             UNION ALL SELECT app_name FROM mariadb_dbs WHERE name = ? OR app_name = ? \
+             UNION ALL SELECT app_name FROM mongo_dbs WHERE name = ? OR app_name = ? \
+             UNION ALL SELECT app_name FROM redis_dbs WHERE name = ? OR app_name = ? \
+             UNION ALL SELECT app_name FROM libsql_dbs WHERE name = ? OR app_name = ?"
+        )
+        .bind(&target).bind(&target)
+        .bind(&target).bind(&target)
+        .bind(&target).bind(&target)
+        .bind(&target).bind(&target)
+        .bind(&target).bind(&target)
+        .bind(&target).bind(&target)
+        .fetch_optional(self.db.as_ref())
+        .await
+        .unwrap_or(None);
+
+        let search_target = resolved_name_opt.map(|r| r.0).unwrap_or_else(|| target.clone());
+
         if let Ok(containers) = docker
             .containers()
             .ps()
@@ -306,7 +361,9 @@ impl DeploymentService {
             .list()
             .await
         {
-            if let Some(matched) = find_best_matching_container(&containers, &target) {
+            if let Some(matched) = find_best_matching_container(&containers, &search_target) {
+                resolved_target = matched.names.trim_start_matches('/').to_string();
+            } else if let Some(matched) = find_best_matching_container(&containers, &search_target.replace('_', "-")) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
             }
         }

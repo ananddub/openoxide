@@ -162,6 +162,15 @@ impl DockerCli {
     pub(crate) async fn json<T: DeserializeOwned>(&self, args: &[&str]) -> DockerResult<T> {
         Ok(serde_json::from_str(&self.run(args).await?.stdout)?)
     }
+    pub(crate) async fn json_cancelled<T: DeserializeOwned>(
+        &self,
+        args: &[&str],
+        cancel: &CancellationToken,
+    ) -> DockerResult<T> {
+        Ok(serde_json::from_str(
+            &self.run_cancelled(args, cancel).await?.stdout,
+        )?)
+    }
     pub(crate) async fn json_lines<T: DeserializeOwned>(
         &self,
         args: &[&str],

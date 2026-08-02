@@ -114,8 +114,7 @@ impl ProjectRepository {
     ) -> Result<Project, sqlx::Error> {
         sqlx::query_as!(
             Project,
-            r#"UPDATE projects SET name = ?, description = ?, env_var = ? WHERE id = ?
-               RETURNING id AS "id?", name, description, env_var, organization_id, created_at, updated_at"#,
+            r#"UPDATE projects SET name = ?, description = ?, env_var = ? WHERE id = ? RETURNING id AS "id?", name, description, env_var, organization_id, created_at, updated_at"#,
             name,
             description,
             env_var,

@@ -1,4 +1,5 @@
 import {useState, useMemo} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {Calendar, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -10,6 +11,8 @@ import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
 
 interface ComposeSchedulesTabProps {
 	compose: any;
+	schedules?: any[];
+	isLoading?: boolean;
 }
 
 // Extract service names defined under 'services:' in docker-compose.yml content
@@ -47,7 +50,8 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return services;
 };
 
-export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
+export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoading: passedIsLoading}: ComposeSchedulesTabProps) {
+	const queryClient = useQueryClient();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const availableServices = useMemo(() => {
@@ -56,16 +60,20 @@ export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time schedules query with safe array fallback
-	const {data: rawSchedules = [], isLoading, refetch} = $api.useQuery('get', '/schedules' as any, {});
+	// Real-time compose schedules query (fallback if not passed from parent)
+	const composeId = compose?.id;
+	const {data: rawSchedules = [], isLoading: innerIsLoading} = $api.useQuery(
+		'get',
+		'/schedules/compose/{compose_id}',
+		{
+			params: {path: {compose_id: composeId || 0}},
+			enabled: !passedSchedules && !!composeId,
+		} as any
+	);
 
-	// Safe array normalization and filtering for current compose stack
-	const composeSchedules = useMemo(() => {
-		const list = Array.isArray(rawSchedules) ? rawSchedules : [];
-		return list.filter(
-			(s: any) => s.compose_id === compose?.id || s.app_name === compose?.app_name
-		);
-	}, [rawSchedules, compose]);
+	// Safe array normalization
+	const composeSchedules = passedSchedules ?? (Array.isArray(rawSchedules) ? rawSchedules : []);
+	const isLoading = passedIsLoading ?? innerIsLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -83,14 +91,15 @@ export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
 				body: {
 					name: data.name,
 					compose_id: compose?.id,
-					app_name: compose?.app_name,
 					service_name: data.serviceName,
 					command: data.command,
 					cron_expression: data.cronExpr,
+					schedule_type: 'COMPOSE',
+					schedule_action: 'EXEC',
 				} as any,
 			});
 			toast.success('Compose schedule task created successfully');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -100,7 +109,7 @@ export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task executed');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -110,7 +119,7 @@ export function ComposeSchedulesTab({compose}: ComposeSchedulesTabProps) {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task deleted');
-			refetch();
+			queryClient.invalidateQueries();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}

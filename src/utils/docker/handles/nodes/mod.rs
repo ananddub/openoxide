@@ -54,6 +54,22 @@ impl<'a> NodesHandle<'a> {
         let mut json: Vec<serde_json::Value> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
+
+    /// Inspects multiple nodes in a single `docker node inspect` call —
+    /// gives the authoritative `Spec.Role`/`ManagerStatus.Leader` fields
+    /// that `docker node ls` doesn't expose, without one round trip per node.
+    pub async fn inspect_all(
+        &self,
+        node_ids: &[String],
+    ) -> DockerResult<Vec<crate::utils::docker::NodeInspect>> {
+        if node_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut args = vec!["node".to_string(), "inspect".to_string()];
+        args.extend(node_ids.iter().cloned());
+        let out = self.cli.run(args).await?;
+        Ok(serde_json::from_str(&out.stdout)?)
+    }
 }
 
 pub mod lifecycle;

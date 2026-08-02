@@ -7,6 +7,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
+import {Input} from '#/components/ui/input';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -32,6 +33,7 @@ export function SetupServerModal({
 	const [settingUp, setSettingUp] = useState(false);
 	const [setupLogs, setSetupLogs] = useState<string[]>([]);
 	const [auditResult, setAuditResult] = useState<Record<string, unknown> | null>(null);
+	const [advertiseAddr, setAdvertiseAddr] = useState('');
 
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 	const auditMutation = $api.useMutation('post', '/servers/{id}/audit');
@@ -92,6 +94,7 @@ export function SetupServerModal({
 				body: JSON.stringify({
 					host_key_fingerprint: '',
 					install_dependencies: true,
+					...(advertiseAddr.trim() ? {advertise_addr: advertiseAddr.trim()} : {}),
 				}),
 			});
 
@@ -200,23 +203,39 @@ export function SetupServerModal({
 						</Button>
 					</div>
 
-					<div className="flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 rounded-xl">
-						<div className="flex items-center gap-2.5">
-							<Terminal className="w-5 h-5 text-primary" />
-							<div>
-								<h4 className="text-xs font-bold text-foreground">Setup Server</h4>
-								<p className="text-[11px] text-muted-foreground">Install dependencies, Docker, Swarm, Traefik, and monitoring</p>
+					<div className="flex flex-col gap-2.5 p-3.5 bg-primary/10 border border-primary/30 rounded-xl">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2.5">
+								<Terminal className="w-5 h-5 text-primary" />
+								<div>
+									<h4 className="text-xs font-bold text-foreground">Setup Server</h4>
+									<p className="text-[11px] text-muted-foreground">Install dependencies, Docker, Swarm, Traefik, and monitoring</p>
+								</div>
 							</div>
+							<Button
+								size="sm"
+								onClick={handleSetup}
+								disabled={settingUp}
+								className="h-8 text-xs font-semibold gap-1.5"
+							>
+								{settingUp ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Terminal className="w-3.5 h-3.5" />}
+								{settingUp ? 'Setting up...' : 'Run Setup'}
+							</Button>
 						</div>
-						<Button
-							size="sm"
-							onClick={handleSetup}
-							disabled={settingUp}
-							className="h-8 text-xs font-semibold gap-1.5"
-						>
-							{settingUp ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Terminal className="w-3.5 h-3.5" />}
-							{settingUp ? 'Setting up...' : 'Run Setup'}
-						</Button>
+						<div className="flex flex-col gap-1">
+							<label className="text-[11px] font-semibold text-foreground">Advertise Address (optional)</label>
+							<Input
+								value={advertiseAddr}
+								onChange={e => setAdvertiseAddr(e.target.value)}
+								disabled={settingUp}
+								placeholder="e.g. 100.x.x.x — Tailscale/Netbird/VPN IP"
+								className="h-8 text-xs bg-background border-border rounded-md px-3"
+							/>
+							<p className="text-[10px] text-muted-foreground">
+								Used by Docker Swarm to advertise this node. Leave blank to auto-detect (prefers Tailscale/WireGuard/VPN
+								interfaces); set this if nodes should talk over a specific VPN mesh.
+							</p>
+						</div>
 					</div>
 
 					{(settingUp || setupLogs.length > 0) && (

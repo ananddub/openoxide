@@ -1,4 +1,5 @@
 use crate::utils::docker::{DockerOutput, DockerResult, client::DockerCli, core::ArgBuilder};
+use tokio_util::sync::CancellationToken;
 
 pub use ca::SwarmCaBuilder;
 pub use init::SwarmInitBuilder;
@@ -55,12 +56,18 @@ impl<'a> SwarmHandle<'a> {
     }
 
     pub async fn inspect(&self) -> DockerResult<crate::utils::docker::SwarmInfo> {
-        let output = self
-            .cli
-            .run(["info", "--format", "{{json .Swarm}}"])
-            .await?;
-        let json = serde_json::from_str(&output.stdout)?;
-        Ok(json)
+        self.cli.json(&["info", "--format", "{{json .Swarm}}"]).await
+    }
+
+    /// Same as [`inspect`](Self::inspect), but abortable — use this inside
+    /// build/deploy pipelines that honor a [`CancellationToken`].
+    pub async fn inspect_cancelled(
+        &self,
+        cancel: &CancellationToken,
+    ) -> DockerResult<crate::utils::docker::SwarmInfo> {
+        self.cli
+            .json_cancelled(&["info", "--format", "{{json .Swarm}}"], cancel)
+            .await
     }
 }
 

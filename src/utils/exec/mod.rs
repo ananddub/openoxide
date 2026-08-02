@@ -1,3 +1,4 @@
+pub use advertise_addr::{detect_advertise_addr, detect_advertise_addr_cancelled};
 pub use arg_builder::ArgBuilder;
 pub use error::{ExecError, ExecResult};
 pub use exec_local::LocalExecutor;
@@ -11,6 +12,7 @@ pub mod pipeline {
     pub use super::script::{Condition, IfBuilder, IfThenBuilder, IntoCommand, ScriptPipeline};
 }
 
+pub mod advertise_addr;
 pub mod arg_builder;
 pub mod error;
 pub mod exec_local;

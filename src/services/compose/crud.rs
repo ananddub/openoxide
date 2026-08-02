@@ -14,7 +14,25 @@ impl ComposeService {
                     .get_by_id(id)
                     .await?
                     .ok_or(sqlx::Error::RowNotFound)?;
-                Ok::<_, sqlx::Error>(CacheEnum::Compose(ComposeRecord::from(project)))
+                let mut record = ComposeRecord::from(project);
+
+                if record.compose_file.trim().is_empty() {
+                    let paths = crate::utils::paths::RustployPaths::from_env();
+                    let clean_path = record.compose_path.trim_start_matches("./");
+                    let file_path_1 = format!("{}/{}", paths.compose_source(&record.app_name), clean_path);
+                    let file_path_2 = format!("{}/docker-compose.yml", paths.compose_source(&record.app_name));
+                    let file_path_3 = format!("{}/docker-compose.yml", paths.compose_files(&record.app_name));
+
+                    if let Ok(content) = tokio::fs::read_to_string(&file_path_1).await {
+                        record.compose_file = content;
+                    } else if let Ok(content) = tokio::fs::read_to_string(&file_path_2).await {
+                        record.compose_file = content;
+                    } else if let Ok(content) = tokio::fs::read_to_string(&file_path_3).await {
+                        record.compose_file = content;
+                    }
+                }
+
+                Ok::<_, sqlx::Error>(CacheEnum::Compose(record))
             })
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;

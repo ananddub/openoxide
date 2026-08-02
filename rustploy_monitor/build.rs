@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = prost_build::Config::new();
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
 
-    tonic_build::configure().compile_with_config(
+    tonic_build::configure().compile_protos_with_config(
         config,
         &[proto_path],
         &["../proto", "proto", "../", "."],

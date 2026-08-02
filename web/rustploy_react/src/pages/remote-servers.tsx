@@ -55,7 +55,7 @@ function RemoteServersPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12">
 			<RemoteServersHeader
 				onOpenCreate={() => {
 					setEditingServer(null);

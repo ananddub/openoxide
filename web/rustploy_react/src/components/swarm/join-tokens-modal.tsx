@@ -11,46 +11,68 @@ import {
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
+	SelectValue,
 } from '#/components/ui/select';
 import {Badge} from '#/components/ui/badge';
-import {Copy, Check, LogOut, RefreshCw, Server, ShieldCheck, Terminal, Crown, ArrowRight, Zap, CheckCircle2, AlertTriangle} from 'lucide-react';
+import {Tabs, TabsList, TabsTrigger, TabsContent} from '#/components/ui/tabs';
+import {Copy, Check, LogOut, RefreshCw, ShieldCheck, Zap, CheckCircle2} from 'lucide-react';
 import {useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
 import {toast} from 'sonner';
+import {client} from '#/api/client';
+
+import type {RemoteServerResponse, SwarmTokens} from '#/types/api-helpers';
+import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
 
 interface JoinTokensModalProps {
 	isOpen: boolean;
-	tokens: {worker?: string; manager?: string} | null;
+	tokens: SwarmTokens | null;
 	isLoading: boolean;
-	servers?: any[];
-	nodes?: any[];
+	servers?: RemoteServerResponse[];
+	nodes?: TaggedSwarmNode[];
 	onLeaveRemoteSwarm?: (serverId: number) => Promise<void>;
+	onJoinServer?: (serverId: number, role: 'worker' | 'manager') => Promise<void>;
 	onClose: () => void;
 }
 
-function HighlightedJoinCommand({command}: {command: string}) {
-	if (!command || command.startsWith('Loading') || command === 'N/A') {
-		return <span className="text-muted-foreground">{command}</span>;
-	}
+function CommandBlock({label, command, isLoading}: {label: string; command: string; isLoading: boolean}) {
+	const [copied, setCopied] = useState(false);
+	const disabled = isLoading || !command;
 
-	const tokenPrefix = 'docker swarm leave --force 2>/dev/null; docker swarm join --token ';
-	const rawTokenPrefix = 'docker swarm join --token ';
-
-	let tokenValue = command;
-	if (command.startsWith(tokenPrefix)) {
-		tokenValue = command.slice(tokenPrefix.length);
-	} else if (command.startsWith(rawTokenPrefix)) {
-		tokenValue = command.slice(rawTokenPrefix.length);
-	} else {
-		return <span className="font-mono text-[11px] text-foreground">{command}</span>;
-	}
+	const handleCopy = () => {
+		if (!command) return;
+		navigator.clipboard.writeText(command);
+		setCopied(true);
+		toast.success(`${label} join script copied — paste it on the target server.`);
+		setTimeout(() => setCopied(false), 2000);
+	};
 
 	return (
-		<span className="font-mono text-[11px] leading-relaxed">
-			<span className="text-amber-500 font-bold">docker swarm leave --force 2&gt;/dev/null;</span>{' '}
-			<span className="text-emerald-500 font-bold">docker swarm join</span>{' '}
-			<span className="text-amber-500 font-medium">--token</span>{' '}
-			<span className="text-foreground font-medium break-all">{tokenValue}</span>
-		</span>
+		<div className="rounded-lg border border-border/60 bg-muted/20 p-2.5 space-y-1.5 min-w-0 w-full">
+			<div className="flex items-center justify-between">
+				<span className="text-xs font-semibold text-foreground">{label}</span>
+				<Button
+					type="button"
+					variant="ghost"
+					size="xs"
+					disabled={disabled}
+					onClick={handleCopy}
+					className="h-6 text-[11px] gap-1 font-semibold text-primary hover:text-primary p-1"
+				>
+					{copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+					{copied ? 'Copied' : 'Copy'}
+				</Button>
+			</div>
+			<div className="p-2.5 rounded bg-zinc-950 font-mono text-[11px] break-all select-all border border-zinc-800/80 max-h-24 overflow-y-auto leading-relaxed min-w-0 w-full text-zinc-200">
+				{isLoading ? (
+					<span className="text-zinc-500">Loading token…</span>
+				) : command ? (
+					command
+				) : (
+					<span className="text-zinc-500">Token unavailable</span>
+				)}
+			</div>
+		</div>
 	);
 }
 
@@ -61,228 +83,191 @@ export function JoinTokensModal({
 	servers = [],
 	nodes = [],
 	onLeaveRemoteSwarm,
+	onJoinServer,
 	onClose,
 }: JoinTokensModalProps) {
-	const [copiedKey, setCopiedKey] = useState<string | null>(null);
 	const [selectedRemoteServerId, setSelectedRemoteServerId] = useState<string>('');
+	const [role, setRole] = useState<'worker' | 'manager'>('worker');
 	const [isLeaving, setIsLeaving] = useState(false);
+	const [isJoining, setIsJoining] = useState(false);
 
-	const selectedRemoteServer = servers.find((s: any) => String(s.id) === selectedRemoteServerId);
-	const selectedRemoteLabel = selectedRemoteServer
-		? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})`
-		: 'Select Remote Server';
+	const selectedRemoteServer = servers.find(s => String(s.id) === selectedRemoteServerId);
 
-	const isSelectedConnected = selectedRemoteServer
-		? nodes.some((n: any) =>
-				(n._serverId !== undefined && String(n._serverId) === selectedRemoteServerId) ||
-				(selectedRemoteServer.ip_address && (n.ip === selectedRemoteServer.ip_address || n.Addr === selectedRemoteServer.ip_address))
-		  )
-		: false;
+	// `_serverId` on `nodes` only records which query happened to discover a
+	// node, not which registered server it actually is — useless for "is
+	// server X part of this cluster". Ask server X directly for its own
+	// swarm node_id and check whether that id shows up in this cluster's
+	// member list; that's the only reliable identity link we have.
+	const selectedIdentityQuery = useQuery({
+		queryKey: ['swarm-node-identity', selectedRemoteServerId],
+		queryFn: async () => {
+			const {data} = await client.POST('/swarm/info', {
+				body: {server_id: parseInt(selectedRemoteServerId, 10)},
+			});
+			return data ?? null;
+		},
+		enabled: !!selectedRemoteServerId,
+		staleTime: 10_000,
+	});
 
-	const handleCopy = (type: 'worker' | 'manager', token?: string) => {
-		if (!token) {
-			toast.error('Token not available');
-			return;
-		}
-		const cmd = `docker swarm leave --force 2>/dev/null; docker swarm join --token ${token}`;
-		navigator.clipboard.writeText(cmd);
-		setCopiedKey(type);
-		toast.success(`Copied 1-Step Join Script for ${type}! Paste on target server.`);
-		setTimeout(() => setCopiedKey(null), 2000);
-	};
+	const isCheckingStatus = selectedIdentityQuery.isLoading;
+	const isSelectedConnected = !!(
+		selectedIdentityQuery.data?.node_id && nodes.some(n => n.id === selectedIdentityQuery.data?.node_id)
+	);
 
-	const handleResetServerSwarm = async () => {
-		if (!selectedRemoteServerId) {
-			toast.error('Select a remote server first');
-			return;
-		}
-		if (!onLeaveRemoteSwarm) return;
-
-		const srvId = parseInt(selectedRemoteServerId);
+	const handleDisconnect = async () => {
+		if (!selectedRemoteServerId || !onLeaveRemoteSwarm) return;
 		setIsLeaving(true);
 		try {
-			await onLeaveRemoteSwarm(srvId);
+			await onLeaveRemoteSwarm(parseInt(selectedRemoteServerId, 10));
 		} catch {
-			// handled gracefully in parent page
+			// handled by parent
 		} finally {
 			setIsLeaving(false);
 		}
 	};
 
-	const workerCmd = isLoading
-		? 'Loading worker token...'
-		: tokens?.worker
-			? `docker swarm leave --force 2>/dev/null; docker swarm join --token ${tokens.worker}`
-			: 'N/A';
+	const handleJoin = async () => {
+		if (!selectedRemoteServerId || !onJoinServer) return;
+		setIsJoining(true);
+		try {
+			await onJoinServer(parseInt(selectedRemoteServerId, 10), role);
+		} catch {
+			// handled by parent
+		} finally {
+			setIsJoining(false);
+		}
+	};
 
-	const managerCmd = isLoading
-		? 'Loading manager token...'
-		: tokens?.manager
-			? `docker swarm leave --force 2>/dev/null; docker swarm join --token ${tokens.manager}`
-			: 'N/A';
+	const workerCmd = tokens?.worker
+		? `docker swarm leave --force 2>/dev/null; docker swarm join --token ${tokens.worker}`
+		: '';
+	const managerCmd = tokens?.manager
+		? `docker swarm leave --force 2>/dev/null; docker swarm join --token ${tokens.manager}`
+		: '';
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-xl w-full bg-card border-border p-6 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader className="pb-3 border-b border-border/50">
+			<DialogContent className="sm:max-w-lg w-full bg-card border-border p-6 shadow-xl rounded-xl max-h-[85vh] overflow-y-auto">
+				<DialogHeader className="pb-3 border-b border-border/40">
 					<DialogTitle className="text-base font-bold text-foreground">
 						Add Node to Swarm Cluster
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Connect new servers (Workers or Managers) to your Main Swarm Leader Cluster
+						Connect a server as a Worker or Manager
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="flex flex-col gap-5 mt-2 text-xs">
-					{/* Target Leader Cluster Info Box */}
-					<div className="bg-primary/5 border border-primary/20 p-3 rounded-xl flex items-center justify-between gap-3">
-						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 shrink-0">
-								<Crown className="size-4" />
-							</div>
-							<div className="flex flex-col min-w-0">
-								<span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider">Target Leader Cluster</span>
-								<span className="font-bold text-foreground truncate">Primary Swarm Manager (Local Engine)</span>
-							</div>
-						</div>
+				<Tabs defaultValue="registered" className="w-full pt-1">
+					<TabsList className="w-full">
+						<TabsTrigger value="registered" className="text-xs font-semibold">
+							Registered Servers
+						</TabsTrigger>
+						<TabsTrigger value="manual" className="text-xs font-semibold">
+							Manual / External
+						</TabsTrigger>
+					</TabsList>
 
-						<div className="flex items-center gap-1 text-primary shrink-0 font-mono text-[10px] font-bold bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
-							<span>Active Target</span>
-							<ArrowRight className="size-3" />
-						</div>
-					</div>
-
-					{/* Section 1: Worker Join Command */}
-					<div className="flex flex-col gap-1.5">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-1.5 font-semibold text-foreground">
-								<Terminal className="size-3.5 text-emerald-500" />
-								<span>Worker 1-Step Join Script</span>
-								<Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0 font-mono">
-									Auto Reset + Join
-								</Badge>
-							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => handleCopy('worker', tokens?.worker)}
-								className="h-7 text-xs font-bold gap-1 px-2.5 cursor-pointer shadow-2xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20"
-							>
-								{copiedKey === 'worker' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-								{copiedKey === 'worker' ? 'Copied Script' : 'Copy 1-Step Script'}
-							</Button>
-						</div>
-						<div className="bg-zinc-950 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 shadow-inner overflow-x-auto select-all">
-							<HighlightedJoinCommand command={workerCmd} />
-						</div>
-					</div>
-
-					{/* Section 2: Manager Join Command */}
-					<div className="flex flex-col gap-1.5">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-1.5 font-semibold text-foreground">
-								<ShieldCheck className="size-3.5 text-amber-500" />
-								<span>Manager 1-Step Join Script</span>
-								<Badge variant="outline" className="text-[9px] uppercase px-1.5 py-0 font-mono text-amber-500 border-amber-500/30">
-									High Availability
-								</Badge>
-							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => handleCopy('manager', tokens?.manager)}
-								className="h-7 text-xs font-bold gap-1 px-2.5 cursor-pointer shadow-2xs bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20"
-							>
-								{copiedKey === 'manager' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-								{copiedKey === 'manager' ? 'Copied Script' : 'Copy 1-Step Script'}
-							</Button>
-						</div>
-						<div className="bg-zinc-950 dark:bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 shadow-inner overflow-x-auto select-all">
-							<HighlightedJoinCommand command={managerCmd} />
-						</div>
-					</div>
-
-					{/* Section 3: Smart Auto-Detected Remote Server Actions */}
-					{servers.length > 0 && onLeaveRemoteSwarm && (
-						<div className="flex flex-col gap-2.5 pt-4 border-t border-border/50">
-							<div className="flex items-center justify-between">
-								<span className="font-semibold text-foreground flex items-center gap-1.5">
-									<Server className="size-3.5 text-primary" />
-									1-Click Remote Swarm Disconnect & Auto-Reset
-								</span>
-							</div>
-							<p className="text-[11px] text-muted-foreground leading-normal">
-								Select a remote server below. Click the button to automatically force-disconnect its standalone Swarm over SSH/API.
+					{/* ── Registered servers: automated 1-click join ── */}
+					<TabsContent value="registered" className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
+						{servers.length === 0 ? (
+							<p className="text-xs text-muted-foreground py-6 text-center">
+								No registered remote servers yet. Add one first, or use the Manual tab for external machines.
 							</p>
-
-							<div className="flex flex-col gap-2 mt-1">
-								<Select value={selectedRemoteServerId} onValueChange={val => val && setSelectedRemoteServerId(val)}>
-									<SelectTrigger className="h-9 text-xs bg-card border-border/80 w-full px-3 flex items-center justify-between">
-										<span className="truncate font-semibold text-foreground">{selectedRemoteLabel}</span>
-									</SelectTrigger>
-									<SelectContent className="bg-card border-border text-xs z-50">
-										{servers.map((s: any) => {
-											const isConnected = nodes.some((n: any) =>
-												(n._serverId !== undefined && String(n._serverId) === String(s.id)) ||
-												(s.ip_address && (n.ip === s.ip_address || n.Addr === s.ip_address))
-											);
-											return (
+						) : (
+							<>
+								<div className="flex flex-col gap-1.5">
+									<label className="text-xs font-semibold text-foreground">Server</label>
+									<Select value={selectedRemoteServerId} onValueChange={val => val && setSelectedRemoteServerId(val)}>
+										<SelectTrigger className="h-9 text-xs bg-background border-border w-full">
+											<SelectValue placeholder="Select a server…">
+												{selectedRemoteServer ? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})` : 'Select a server…'}
+											</SelectValue>
+										</SelectTrigger>
+										<SelectContent>
+											{servers.map(s => (
 												<SelectItem key={s.id} value={String(s.id)}>
-													{s.name} ({s.ip_address}) {isConnected ? '✓ Connected' : '• Ready to Join'}
+													{s.name} ({s.ip_address})
 												</SelectItem>
-											);
-										})}
-									</SelectContent>
-								</Select>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
 
-								{/* Smart Auto-Detected Action Buttons */}
 								{selectedRemoteServer && (
-									<div className="flex items-center gap-2 flex-wrap mt-1 p-3 bg-muted/40 border border-border/60 rounded-xl">
-										<div className="flex items-center gap-2 w-full mb-1">
-											<span className="text-[11px] font-semibold text-foreground">Status:</span>
-											{isSelectedConnected ? (
-												<Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-[10px] gap-1 px-2">
-													<CheckCircle2 className="size-3" /> Connected to Main Cluster
+									<div className="flex flex-col gap-3 p-3 bg-muted/20 border border-border/50 rounded-lg">
+										<div className="flex items-center gap-2">
+											<span className="text-[11px] font-semibold text-muted-foreground">Status</span>
+											{isCheckingStatus ? (
+												<Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 text-muted-foreground">
+													<RefreshCw className="w-3 h-3 animate-spin" /> Checking…
+												</Badge>
+											) : isSelectedConnected ? (
+												<Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
+													<CheckCircle2 className="w-3 h-3 text-emerald-500" /> Already in this cluster
 												</Badge>
 											) : (
-												<Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10 text-[10px] gap-1 px-2">
-													<AlertTriangle className="size-3" /> Standalone Swarm / Ready to Join
+												<Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 text-muted-foreground">
+													Not in this cluster
 												</Badge>
 											)}
 										</div>
 
-										<div className="flex items-center gap-2 flex-wrap w-full">
+										{isCheckingStatus ? null : isSelectedConnected ? (
 											<Button
 												variant="outline"
 												size="sm"
 												disabled={isLeaving}
-												onClick={handleResetServerSwarm}
-												className="h-8 text-xs font-bold border-destructive/50 text-destructive hover:bg-destructive/10 gap-1.5 px-3 cursor-pointer shadow-2xs"
+												onClick={handleDisconnect}
+												className="h-8 text-xs font-semibold text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive gap-1.5 self-start"
 											>
-												{isLeaving ? <RefreshCw className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
-												{isLeaving ? 'Auto-Disconnecting...' : '1-Click Auto-Disconnect Swarm'}
+												{isLeaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+												{isLeaving ? 'Disconnecting…' : 'Disconnect from Cluster'}
 											</Button>
-
-											{!isSelectedConnected && (
+										) : (
+											<div className="flex items-end gap-2">
+												<div className="flex flex-col gap-1.5 w-32">
+													<label className="text-[11px] font-semibold text-foreground">Role</label>
+													<Select value={role} onValueChange={v => setRole(v as 'worker' | 'manager')}>
+														<SelectTrigger size="sm" className="h-8 text-xs bg-background border-border w-full">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="worker">Worker</SelectItem>
+															<SelectItem value="manager">Manager</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
 												<Button
-													variant="default"
 													size="sm"
-													onClick={() => {
-														handleCopy('worker', tokens?.worker);
-													}}
-													className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 px-3 ml-auto cursor-pointer shadow-2xs"
+													disabled={isJoining}
+													onClick={handleJoin}
+													className="h-8 text-xs font-semibold gap-1.5 flex-1"
 												>
-													<Zap className="size-3.5" />
-													<span>Copy 1-Step Join Script</span>
+													{isJoining ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+													{isJoining ? 'Joining…' : 'Join Cluster'}
 												</Button>
-											)}
-										</div>
+											</div>
+										)}
 									</div>
 								)}
-							</div>
-						</div>
-					)}
-				</div>
+							</>
+						)}
+					</TabsContent>
+
+					{/* ── Manual scripts, for machines not managed by Rustploy ── */}
+					<TabsContent value="manual" className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
+						<p className="text-[11px] text-muted-foreground">
+							Paste one of these on an external machine over SSH to join it into this cluster.
+						</p>
+						<CommandBlock label="Worker join script" command={workerCmd} isLoading={isLoading} />
+						<CommandBlock label="Manager join script" command={managerCmd} isLoading={isLoading} />
+						<p className="text-[10px] text-muted-foreground flex items-center gap-1">
+							<ShieldCheck className="w-3 h-3 shrink-0" />
+							Managers get full cluster control — only share this script with trusted machines.
+						</p>
+					</TabsContent>
+				</Tabs>
 			</DialogContent>
 		</Dialog>
 	);

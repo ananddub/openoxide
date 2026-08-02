@@ -34,8 +34,18 @@ export const Route = createRootRoute({
 	pendingComponent: RootPending,
 });
 
-// Create a client
-const queryClient = new QueryClient();
+// Create a client with 5-minute caching & mutation invalidation pattern
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60 * 5, // 5 Minutes Caching
+			gcTime: 1000 * 60 * 15,    // 15 Minutes Cache Retention
+			refetchOnWindowFocus: false,
+			refetchOnReconnect: false,
+			retry: 1,
+		},
+	},
+});
 
 function RootComponent() {
 	return (

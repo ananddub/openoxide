@@ -1,29 +1,39 @@
-version: '3.8'
+# Standalone monitoring agent. Runs one per host, independently of the panel.
+#
+# Set SERVER_ID to the panel's id for this host, and METRICS_TOKEN to the same
+# secret the panel expects, before starting.
 
 services:
   rustploy-monitor:
     build:
       context: .
       dockerfile: Dockerfile.monitor
+    image: rustploy-monitor:latest
     container_name: rustploy_monitor
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3001:3001"
+      # gRPC query API the panel reads metrics from.
+      - "50051:50051"
     volumes:
+      # Read-only: the agent only runs `docker stats` and `docker logs`.
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
       - monitor_data:/app/data
+    # The socket is group-owned by docker on the host; the container runs as a
+    # non-root user, so it needs that group to read it. Check your host's gid
+    # with `getent group docker` and adjust if it isn't 999.
+    group_add:
+      - "999"
     environment:
-      - PORT=3001
-      - MONITOR_DATABASE_URL=sqlite:///app/data/monitor.db
-      - METRICS_TOKEN=change_me_to_your_secure_token
-      - METRICS_URL_CALLBACK=http://your-rustploy-backend:3000/api/alerts
-      - MONITOR_GRPC_BACKEND_URL=http://your-rustploy-backend:50051
-      - CPU_THRESHOLD=85.0
-      - MEMORY_THRESHOLD=90.0
-      - REFRESH_RATE=10
-      - RETENTION_DAYS=7
+      SERVER_ID: "1"
+      MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
+      GRPC_PORT: "50051"
+      REFRESH_RATE: "60"
+      RETENTION_DAYS: "7"
+      RUSTPLOY_SERVER_URL: "http://host.docker.internal:4000"
+      METRICS_TOKEN: "change_me"
+      RUST_LOG: "rustploy_monitor=info"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   monitor_data:

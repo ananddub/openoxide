@@ -1,6 +1,13 @@
-h1:UOX29chHM+sfGY+vbwPuMQJHQdNJdL9kj5USgeXehW8=
+h1:dpxvRONln+sO8k9x4e0dzeIUCtqRrHgH4yPe55gGHTE=
 0001_initial.sql h1:F3W1L3w4LNfG1mRMavOXQsoYxu78Z3tIt1GEJeE+H30=
 0002_schedule_action.sql h1:EZ0IABextrgUejhihIHSqFv3rYAHRpE0JmmcU6znFUA=
 0003_deployment_queue.sql h1:P2KB/aCC3fIGylfjEIWd5VgunoTNeVMxb0+LcsSThpI=
 0004_server_build_limits.sql h1:AKW29jPEIFttI9OrqK1g1/1+OQfUbMavvuO3XI8U7YU=
 0005_deployment_database.sql h1:yctHeBvu/Q9WjP04fPaYsLteqAGIcUKuBRIv+11oXS4=
+0006_rbac_schema.sql h1:IGw6MlmhMa4qvcByB2CoAkbDMVJZzIJs7tFlHrftjtg=
+0007_monitoring_grpc_schema.sql h1:3r9PrNMcXZ3psvzauSCw0XqYzs6E43SCH8lajb/15qU=
+0008_upgrade_status_constraints.sql h1:lrpo4rV8hRa4NRU584XoPc5rmnT/v+b5tSbghr2Cjqc=
+0009_libsql_external_ports.sql h1:gqSYa6/6M4/hVMY14slbhfgrkHGVlgHEhXmtdPX/6cE=
+0010_database_networks_mongo_cleanup.sql h1:CJyQiGUovp33Smd9Rtxi+ydDc4o3rWwjhH+7dt5IBjk=
+0011_database_network_registry.sql h1:e4qfNwbSgfOA7DvtZ9m0CzeSGu17Ay4QZuuc1PKCA1I=
+0012_application_compose_networks.sql h1:FF+ksGTP9jj8EYPnfZhm/bkfp5jMbS1eH7gpFhv+pGA=

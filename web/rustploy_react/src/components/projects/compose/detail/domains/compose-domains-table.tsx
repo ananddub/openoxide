@@ -37,7 +37,10 @@ export function ComposeDomainsTable({domains, isLoading, onEdit, onDelete}: Comp
 			) : (
 				<div className="flex flex-col gap-3">
 					{safeDomains.map((d: any) => {
-						const url = `${d.https ? 'https' : 'http'}://${d.domain}${d.path && d.path !== '/' ? d.path : ''}`;
+						const domainHost = d.host || d.domain || '';
+						const containerPort = d.port || d.container_port || 80;
+						const serviceName = d.service_name || 'app';
+						const url = `${d.https ? 'https' : 'http'}://${domainHost}${d.path && d.path !== '/' ? d.path : ''}`;
 						return (
 							<div
 								key={d.id}
@@ -55,7 +58,7 @@ export function ComposeDomainsTable({domains, isLoading, onEdit, onDelete}: Comp
 												rel="noreferrer"
 												className="text-xs font-bold text-foreground hover:underline flex items-center gap-1"
 											>
-												{d.domain} <ExternalLink className="w-3 h-3 text-muted-foreground" />
+												{domainHost} <ExternalLink className="w-3 h-3 text-muted-foreground" />
 											</a>
 											{d.https && (
 												<Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/20 bg-emerald-500/10">
@@ -63,11 +66,11 @@ export function ComposeDomainsTable({domains, isLoading, onEdit, onDelete}: Comp
 												</Badge>
 											)}
 											<Badge variant="secondary" className="text-[10px] font-mono">
-												<Box className="w-3 h-3 mr-1 text-primary" /> Service: {d.service_name || 'app'}
+												<Box className="w-3 h-3 mr-1 text-primary" /> Service: {serviceName}
 											</Badge>
 										</div>
 										<span className="text-xs text-muted-foreground font-mono">
-											Port: {d.container_port || 3000} ➔ Path: {d.path || '/'}
+											Port: {containerPort} ➔ Path: {d.path || '/'}
 										</span>
 									</div>
 								</div>

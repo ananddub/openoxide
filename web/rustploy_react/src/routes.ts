@@ -11,6 +11,7 @@ export const routes = rootRoute('_root.tsx', [
 		index('index.tsx'),
 		route('projects', 'projects/index.tsx'),
 		route('projects/$id', 'projects/detail.tsx'),
+		route('projects/$id/stack', 'projects/stack.tsx'),
 		route('projects/$id/app/$appId', 'projects/app-detail.tsx'),
 		route('projects/$id/compose/$composeId', 'projects/compose-detail.tsx'),
 		route('projects/$id/database/$dbId', 'projects/database-detail.tsx'),
@@ -25,6 +26,11 @@ export const routes = rootRoute('_root.tsx', [
 		route('registry', 'registry.tsx'),
 		route('traefik', 'traefik.tsx'),
 		route('requests', 'requests.tsx'),
+		route('tags', 'tags.tsx'),
+		route('users', 'users.tsx'),
+		route('settings/users', 'settings/users.tsx'),
+		route('profile', 'profile.tsx'),
+		route('settings/profile', 'settings/profile.tsx'),
 	]),
 	// Auth Pages
 	layout('auth/_auth.tsx', [

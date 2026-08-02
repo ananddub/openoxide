@@ -7,10 +7,14 @@ interface MonitoringTabProps {
 	app: any;
 	appId?: number;
 	entityType?: MonitoringEntityType;
+	monitoring?: ReturnType<typeof useContainerMonitoring>;
 }
 
-export function MonitoringTab({app, appId, entityType = 'application'}: MonitoringTabProps) {
-	const resolvedAppId = appId || app?.id || app?.application_id || app?.compose_id || 0;
+export function MonitoringTab({app, appId, entityType = 'application', monitoring: passedMonitoring}: MonitoringTabProps) {
+	const resolvedAppId = passedMonitoring ? 0 : (appId || app?.id || app?.application_id || app?.compose_id || 0);
+	const fallbackMonitoring = useContainerMonitoring(resolvedAppId, entityType);
+	const activeMonitoring = passedMonitoring || fallbackMonitoring;
+
 	const {
 		isLive,
 		setIsLive,
@@ -18,7 +22,7 @@ export function MonitoringTab({app, appId, entityType = 'application'}: Monitori
 		metrics,
 		hasError,
 		triggerRefresh,
-	} = useContainerMonitoring(resolvedAppId, entityType);
+	} = activeMonitoring;
 
 	return (
 		<div className="flex flex-col gap-6">

@@ -11,7 +11,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {Key, Copy, Check, FileKey2, Eye, Pencil, Trash2, MoreVertical, ShieldCheck, Search, X} from 'lucide-react';
+import {Key, Copy, Check, FileKey2, Eye, Trash2, MoreVertical, ShieldCheck, Search, X} from 'lucide-react';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {toast} from 'sonner';
 import type {SshKeyResponse} from '#/types/api-helpers';
@@ -20,7 +20,6 @@ interface SshKeysListProps {
 	keys: SshKeyResponse[];
 	isLoading: boolean;
 	onViewKey: (key: SshKeyResponse) => void;
-	onEditKey?: (key: SshKeyResponse) => void;
 	onDeleteKey: (key: SshKeyResponse) => void;
 }
 
@@ -52,7 +51,7 @@ function getFingerprint(pubKey: string): string {
 const KEY_TYPES = ['All', 'RSA', 'Ed25519'] as const;
 type KeyTypeFilter = (typeof KEY_TYPES)[number];
 
-export function SshKeysList({keys, isLoading, onViewKey, onEditKey, onDeleteKey}: SshKeysListProps) {
+export function SshKeysList({keys, isLoading, onViewKey, onDeleteKey}: SshKeysListProps) {
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 	const [search, setSearch] = useState('');
 	const [typeFilter, setTypeFilter] = useState<KeyTypeFilter>('All');
@@ -209,9 +208,6 @@ export function SshKeysList({keys, isLoading, onViewKey, onEditKey, onDeleteKey}
 									<DropdownMenuContent align="end" className="w-44">
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onViewKey(item)}>
 											<Eye className="w-3.5 h-3.5" /> View Details
-										</DropdownMenuItem>
-										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => (onEditKey ? onEditKey(item) : onViewKey(item))}>
-											<Pencil className="w-3.5 h-3.5" /> Edit Key
 										</DropdownMenuItem>
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleCopy(item.id, item.public_key, item.name)}>
 											{isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}

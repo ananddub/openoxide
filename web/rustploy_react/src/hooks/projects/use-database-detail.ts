@@ -3,6 +3,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
@@ -161,17 +162,63 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		}
 	};
 
+	// Centralized Schedules Query
+	const {data: rawSchedules = [], isLoading: isLoadingSchedules, refetch: refetchSchedules} = $api.useQuery(
+		'get',
+		'/schedules/database/{database_id}' as any,
+		{
+			params: {path: {database_id: dbId}},
+			enabled: !!dbId,
+		} as any
+	);
+
+	// Centralized Backups Query
+	const {data: rawBackups = [], isLoading: isLoadingBackups, refetch: refetchBackups} = $api.useQuery(
+		'get',
+		'/backups/volume',
+		{
+			params: {query: {database_id: dbId}},
+			enabled: !!dbId,
+		} as any
+	);
+
+	const schedules = Array.isArray(rawSchedules) ? rawSchedules : [];
+	const backups = (Array.isArray(rawBackups) ? rawBackups : []).filter((b: any) =>
+		b.database_id === dbId ||
+		b.postgres_id === dbId || b.mysql_id === dbId || b.mariadb_id === dbId ||
+		b.mongo_id === dbId || b.redis_id === dbId || b.libsql_id === dbId ||
+		b.app_name === (database as any)?.app_name || b.app_name === (database as any)?.name
+	);
+
+	// Centralized Container Monitoring Stream
+	const monitoring = useContainerMonitoring(dbId, 'database');
+
+	const refetchAll = () => {
+		refetch();
+		refetchSchedules();
+		refetchBackups();
+		monitoring.triggerRefresh();
+	};
+
 	const allQueries = [postgresQ, mysqlQ, mariadbQ, mongoQ, redisQ, libsqlQ];
 	const isPendingOrFetching = allQueries.some(q => q.status === 'pending' || q.isFetching || q.isLoading);
 	const isLoading = !database && isPendingOrFetching;
 
 	return {
 		database,
+		schedules,
+		backups,
+		monitoring,
 		isLoading,
+		isLoadingSchedules,
+		isLoadingBackups,
 		actionLoading,
 		isBuilding,
 		detectedKind: currentKind,
 		refetch,
+		refetchSchedules,
+		refetchBackups,
+		refetchAll,
 		activeTab,
 		setActiveTab,
 		handleAction,

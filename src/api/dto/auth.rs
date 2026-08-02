@@ -36,3 +36,14 @@ pub struct AuthResponseDto {
     pub user: JwtSubject,
     pub tokens: TokenPair,
 }
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct UpdateUserDto {
+    #[validate(email, length(max = 320))]
+    pub email: Option<String>,
+    pub password: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub avatar: Option<String>,
+}
+

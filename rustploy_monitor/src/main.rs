@@ -1,16 +1,24 @@
-mod containers;
-mod db;
-mod grpc_client;
-mod grpc_server;
-mod monitoring;
+mod collector;
+mod config;
+mod grpc;
+mod logs;
+mod store;
 
-use db::Db;
-use grpc_server::{MonitoringGrpcServer, MonitoringServiceServer};
-use monitoring::ServerMetricsMonitor;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tracing::{error, info};
+use std::time::Duration;
+
+use tokio_util::sync::CancellationToken;
+use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
+
+use collector::{SystemCollector, collect_container_metrics};
+use config::Config;
+use grpc::{MonitoringGrpc, MonitoringServiceServer};
+use store::Store;
+
+/// How often the retention sweep runs.
+const CLEANUP_INTERVAL: Duration = Duration::from_secs(86_400);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,141 +26,280 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::from_default_env().add_directive("rustploy_monitor=info".parse()?),
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("rustploy_monitor=info")),
         )
         .init();
 
-    info!("Starting Rustploy Dedicated gRPC Monitoring Service...");
-
-    let db_url =
-        std::env::var("MONITOR_DATABASE_URL").unwrap_or_else(|_| "sqlite://monitor.db".to_string());
-
-    let grpc_port = std::env::var("GRPC_PORT")
-        .ok()
-        .and_then(|p| p.parse::<u16>().ok())
-        .unwrap_or(50051);
-
-    let server_token = std::env::var("METRICS_TOKEN").unwrap_or_default();
-    let callback_url = std::env::var("METRICS_URL_CALLBACK").unwrap_or_default();
-    let cpu_threshold = std::env::var("CPU_THRESHOLD")
-        .ok()
-        .and_then(|v| v.parse::<f64>().ok())
-        .unwrap_or(0.0);
-    let mem_threshold = std::env::var("MEMORY_THRESHOLD")
-        .ok()
-        .and_then(|v| v.parse::<f64>().ok())
-        .unwrap_or(0.0);
-    let refresh_rate = std::env::var("REFRESH_RATE")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(60);
-
-    let db = Arc::new(Db::init(&db_url).await?);
-    let server_monitor = Arc::new(ServerMetricsMonitor::new());
-
-    // 1. gRPC Server on 0.0.0.0:50051
-    let grpc_db = db.clone();
-    let grpc_addr: SocketAddr = format!("0.0.0.0:{}", grpc_port).parse()?;
-
-    let grpc_server_handle = tokio::spawn(async move {
-        info!(
-            "Starting gRPC Telemetry Server listening on gRPC://{}",
-            grpc_addr
-        );
-        let grpc_service = MonitoringGrpcServer::new(grpc_db);
-        if let Err(err) = tonic::transport::Server::builder()
-            .add_service(MonitoringServiceServer::new(grpc_service))
-            .serve(grpc_addr)
-            .await
-        {
-            error!("gRPC Telemetry Server failed: {:?}", err);
+    // Config problems are fatal: running half-configured produces metrics that
+    // silently go nowhere, which is worse than not starting.
+    let config = match Config::from_env() {
+        Ok(config) => Arc::new(config),
+        Err(error) => {
+            error!(%error, "invalid configuration");
+            std::process::exit(1);
         }
-    });
+    };
 
-    // 2. Background loop for Server Metrics collection & Alert threshold checks
-    let db_clone = db.clone();
-    let monitor_clone = server_monitor.clone();
-    let cb_url = callback_url.clone();
-    let token = server_token.clone();
-    tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(refresh_rate));
-        loop {
-            interval.tick().await;
-            let metric = monitor_clone.get_server_metrics();
-            if let Err(err) = db_clone.save_server_metric(&metric).await {
-                error!("Error saving server metrics to SQLite: {:?}", err);
+    info!(
+        server_id = config.server_id,
+        refresh_rate = config.refresh_rate,
+        grpc_port = config.grpc_port,
+        panel = %config.panel_url,
+        "starting rustploy monitor agent"
+    );
+
+    if config.metrics_token.is_empty() {
+        warn!("METRICS_TOKEN is unset — the panel cannot authenticate pushes from this agent");
+    }
+
+    let store = Arc::new(Store::init(&config.database_url).await?);
+
+    // One token shuts every task down together on SIGINT/SIGTERM.
+    let shutdown = CancellationToken::new();
+
+    let mut tasks = tokio::task::JoinSet::new();
+    tasks.spawn(serve_grpc(
+        Arc::clone(&config),
+        Arc::clone(&store),
+        shutdown.clone(),
+    ));
+    tasks.spawn(collect_host_metrics(
+        Arc::clone(&config),
+        Arc::clone(&store),
+        shutdown.clone(),
+    ));
+    tasks.spawn(collect_and_push_containers(
+        Arc::clone(&config),
+        Arc::clone(&store),
+        shutdown.clone(),
+    ));
+    tasks.spawn(prune_old_metrics(
+        Arc::clone(&config),
+        Arc::clone(&store),
+        shutdown.clone(),
+    ));
+
+    wait_for_shutdown_signal().await;
+    info!("shutdown signal received, stopping tasks");
+    shutdown.cancel();
+
+    // Give tasks a moment to unwind; abort whatever is still running so a stuck
+    // docker call can't hold the process open.
+    match tokio::time::timeout(Duration::from_secs(5), async {
+        while tasks.join_next().await.is_some() {}
+    })
+    .await
+    {
+        Ok(()) => info!("all tasks stopped cleanly"),
+        Err(_) => {
+            warn!("tasks did not stop within 5s, aborting");
+            tasks.abort_all();
+        }
+    }
+
+    Ok(())
+}
+
+async fn wait_for_shutdown_signal() {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{SignalKind, signal};
+
+        let mut sigterm = match signal(SignalKind::terminate()) {
+            Ok(sig) => sig,
+            Err(error) => {
+                error!(%error, "could not listen for SIGTERM, falling back to ctrl-c only");
+                let _ = tokio::signal::ctrl_c().await;
+                return;
             }
-            monitor_clone
-                .check_thresholds(
-                    &metric,
-                    cpu_threshold,
-                    mem_threshold,
-                    &cb_url,
-                    &token,
-                    "DOKPLOY",
-                )
-                .await;
+        };
+
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {}
+            _ = sigterm.recv() => {}
         }
-    });
+    }
 
-    // 3. Background loop for Docker Container Metrics collection & real-time SSE stream forwarding
-    let db_clone2 = db.clone();
-    let rustploy_url = std::env::var("RUSTPLOY_SERVER_URL")
-        .unwrap_or_else(|_| "http://127.0.0.1:4000".to_string());
-    let req_client = reqwest::Client::new();
-    tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(refresh_rate));
-        loop {
-            interval.tick().await;
-            let container_metrics = containers::collect_docker_container_metrics();
-            for c_metric in container_metrics {
-                if let Err(err) = db_clone2.save_container_metric(&c_metric).await {
-                    error!("Error saving container metric: {:?}", err);
-                }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
+}
 
-                let payload = serde_json::json!({
-                    "server_id": 1,
-                    "application_id": 0,
-                    "compose_id": 0,
-                    "container_id": c_metric.container_id,
-                    "container_name": c_metric.name,
-                    "cpu_percent": c_metric.cpu_perc,
-                    "memory_used_mb": c_metric.mem_used_mb,
-                    "memory_limit_mb": c_metric.mem_total_mb,
-                    "net_rx_kbps": c_metric.net_in_mb * 1024.0,
-                    "net_tx_kbps": c_metric.net_out_mb * 1024.0,
-                    "timestamp": chrono::Utc::now().timestamp(),
-                });
+/// Serves the panel's metric queries.
+async fn serve_grpc(config: Arc<Config>, store: Arc<Store>, shutdown: CancellationToken) {
+    let addr: SocketAddr = match format!("0.0.0.0:{}", config.grpc_port).parse() {
+        Ok(addr) => addr,
+        Err(error) => {
+            error!(%error, port = config.grpc_port, "invalid gRPC bind address");
+            return;
+        }
+    };
 
-                let _ = req_client
-                    .post(format!("{}/api/monitoring/containers", rustploy_url))
-                    .json(&payload)
-                    .send()
-                    .await;
+    info!(%addr, "gRPC query server listening");
+
+    let service = MonitoringGrpc::new(store, config.server_id);
+    let result = tonic::transport::Server::builder()
+        .add_service(MonitoringServiceServer::new(service))
+        .serve_with_shutdown(addr, shutdown.cancelled_owned())
+        .await;
+
+    if let Err(error) = result {
+        error!(%error, "gRPC server stopped unexpectedly");
+    }
+}
+
+/// Samples host CPU/memory/disk/network and persists each reading.
+async fn collect_host_metrics(config: Arc<Config>, store: Arc<Store>, shutdown: CancellationToken) {
+    let mut collector = SystemCollector::new();
+    let interval = SystemCollector::interval_after_sample(config.refresh_rate);
+
+    loop {
+        let metric = collector.sample().await;
+
+        if let Err(error) = store.save_server_metric(&metric).await {
+            error!(%error, "could not persist host metric");
+        }
+
+        tokio::select! {
+            _ = shutdown.cancelled() => {
+                info!("host metric collector stopped");
+                return;
+            }
+            _ = tokio::time::sleep(interval) => {}
+        }
+    }
+}
+
+/// Samples per-container stats, persists them, and forwards them to the panel
+/// so it can fan them out over SSE.
+async fn collect_and_push_containers(
+    config: Arc<Config>,
+    store: Arc<Store>,
+    shutdown: CancellationToken,
+) {
+    let client = match reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+    {
+        Ok(client) => client,
+        Err(error) => {
+            error!(%error, "could not build HTTP client, container push disabled");
+            return;
+        }
+    };
+
+    let endpoint = config.container_metrics_endpoint();
+    let mut ticker = tokio::time::interval(Duration::from_secs(config.refresh_rate));
+
+    loop {
+        tokio::select! {
+            _ = shutdown.cancelled() => {
+                info!("container metric collector stopped");
+                return;
+            }
+            _ = ticker.tick() => {}
+        }
+
+        let metrics = collect_container_metrics().await;
+        if metrics.is_empty() {
+            continue;
+        }
+
+        for metric in &metrics {
+            if let Err(error) = store.save_container_metric(metric).await {
+                error!(%error, container = %metric.name, "could not persist container metric");
             }
         }
-    });
 
-    // 4. Background metrics cleanup task (Runs every 24h)
-    let db_clone3 = db.clone();
-    let retention_days = std::env::var("RETENTION_DAYS")
-        .ok()
-        .and_then(|v| v.parse::<i64>().ok())
-        .unwrap_or(7);
-    tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(86400));
-        loop {
-            interval.tick().await;
-            if let Ok(affected) = db_clone3.cleanup_old_metrics(retention_days).await {
-                info!(
-                    "Cleaned up {} old metrics records older than {} days",
-                    affected, retention_days
+        push_container_metrics(&client, &config, &endpoint, &metrics).await;
+    }
+}
+
+/// Forwards a batch of container metrics to the panel's ingest endpoint.
+async fn push_container_metrics(
+    client: &reqwest::Client,
+    config: &Config,
+    endpoint: &str,
+    metrics: &[store::ContainerMetricRow],
+) {
+    let timestamp = chrono::Utc::now().timestamp();
+    let mut failures = 0usize;
+
+    for metric in metrics {
+        // application_id / compose_id are zero because the agent only sees
+        // container names; the panel resolves them to owning resources.
+        let payload = serde_json::json!({
+            "server_id": config.server_id,
+            "application_id": 0,
+            "compose_id": 0,
+            "container_id": metric.container_id,
+            "container_name": metric.name,
+            "cpu_percent": metric.cpu_perc,
+            "memory_used_mb": metric.mem_used_mb,
+            "memory_limit_mb": metric.mem_total_mb,
+            // Cumulative totals since container start, converted to KB — not a
+            // per-second rate, despite the field name the panel expects.
+            "net_rx_kbps": metric.net_in_mb * 1024.0,
+            "net_tx_kbps": metric.net_out_mb * 1024.0,
+            "timestamp": timestamp,
+        });
+
+        let mut request = client.post(endpoint).json(&payload);
+        if !config.metrics_token.is_empty() {
+            request = request.header("X-Metrics-Token", &config.metrics_token);
+        }
+
+        match request.send().await {
+            Ok(response) if response.status().is_success() => {}
+            Ok(response) => {
+                failures += 1;
+                warn!(
+                    status = response.status().as_u16(),
+                    container = %metric.name,
+                    "panel rejected container metric"
                 );
             }
+            Err(error) => {
+                failures += 1;
+                warn!(%error, container = %metric.name, "could not reach panel");
+            }
         }
-    });
+    }
 
-    // Wait for gRPC server to finish (runs forever)
-    let _ = grpc_server_handle.await;
-    Ok(())
+    if failures == 0 {
+        info!(count = metrics.len(), "pushed container metrics to panel");
+    } else {
+        warn!(
+            failed = failures,
+            total = metrics.len(),
+            "some container metrics could not be pushed"
+        );
+    }
+}
+
+/// Deletes metrics older than the configured retention window.
+async fn prune_old_metrics(config: Arc<Config>, store: Arc<Store>, shutdown: CancellationToken) {
+    let mut ticker = tokio::time::interval(CLEANUP_INTERVAL);
+
+    loop {
+        tokio::select! {
+            _ = shutdown.cancelled() => {
+                info!("retention sweeper stopped");
+                return;
+            }
+            _ = ticker.tick() => {}
+        }
+
+        match store.cleanup_old_metrics(config.retention_days).await {
+            Ok(0) => {}
+            Ok(deleted) => info!(
+                deleted,
+                retention_days = config.retention_days,
+                "pruned old metrics"
+            ),
+            Err(error) => error!(%error, "retention sweep failed"),
+        }
+    }
 }
