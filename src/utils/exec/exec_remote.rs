@@ -147,10 +147,11 @@ impl RemoteExecutor {
 
         let ssh_cmd = builder
             .build_command("sh", &[])
+            .await
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
-        let temp_key = ssh_cmd.temp_key_file;
+        let _agent_session = ssh_cmd.agent_session;
         let temp_askpass = ssh_cmd.temp_askpass_file;
 
         tokio_command
@@ -181,7 +182,9 @@ impl RemoteExecutor {
         let task_cancel = cancel.clone();
 
         let task = tokio::spawn(async move {
-            let _keep_alive_key = temp_key;
+            // Held for the life of the session: dropping the agent kills it and
+            // the connection loses its key.
+            let _keep_alive_agent = _agent_session;
             let _keep_alive_askpass = temp_askpass;
             let mut stdout_buf = [0u8; 4096];
             let mut stderr_buf = [0u8; 4096];
@@ -348,10 +351,11 @@ impl RemoteExecutor {
 
         let ssh_cmd = builder
             .build_command("sh", &["-c".to_string(), command])
+            .await
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
-        let _temp_key_file = ssh_cmd.temp_key_file;
+        let _agent_session = ssh_cmd.agent_session;
         let _temp_askpass_file = ssh_cmd.temp_askpass_file;
 
         tokio_command
@@ -565,10 +569,11 @@ impl RemoteExecutor {
 
         let ssh_cmd = builder
             .build_command("sh", &["-c".to_string(), command])
+            .await
             .map_err(|e| ExecError::Ssh(e.to_string()))?;
 
         let mut tokio_command = ssh_cmd.command;
-        let _temp_key_file = ssh_cmd.temp_key_file;
+        let _agent_session = ssh_cmd.agent_session;
 
         tokio_command
             .stdin(std::process::Stdio::piped())

@@ -29,38 +29,20 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Load key directly into RAM-based ssh-agent via stdin (zero disk writes!)
-    let (agent_session, auth) = match executor.auth() {
-        crate::utils::exec::SshAuth::KeyPair { private_key, .. } => {
-            match crate::utils::ssh::SshAgentSession::start_and_add_key(private_key).await {
-                Ok(agent) => {
-                    let socket_path = agent.socket_path.clone();
-                    (
-                        Some(agent),
-                        crate::utils::exec::SshAuth::AgentWithSocket(socket_path),
-                    )
-                }
-                Err(err) => {
-                    tracing::warn!("ssh-agent fallback to KeyPair: {err}");
-                    (None, executor.auth().clone())
-                }
-            }
-        }
-        _ => (None, executor.auth().clone()),
-    };
-
     let shell = input.shell.unwrap_or_else(|| "sh".into());
     let builder = crate::utils::ssh::SshBuilder::new(
         executor.host().to_string(),
         executor.username().to_string(),
-        auth,
+        executor.auth().clone(),
         executor.host_key().clone(),
     )
     .port(executor.port())
     .disable_multiplexing()
     .tty(crate::utils::ssh::TtyMode::ForceTty);
 
-    let (mut args, temp_key, temp_askpass, agent_socket) = match builder.build_args() {
+    // The builder loads a KeyPair into a private ssh-agent itself, so the key
+    // never reaches disk. The session must outlive the command.
+    let (mut args, agent_session, temp_askpass, agent_socket) = match builder.build_args().await {
         Ok(res) => res,
         Err(error) => {
             emit_error(&socket, format!("could not build SSH args: {error}"));
@@ -123,7 +105,6 @@ pub async fn spawn_remote_terminal(
     let socket_clone = socket.clone();
     tokio::spawn(async move {
         let _keep_alive_agent = agent_session;
-        let _keep_alive_key = temp_key;
         let _keep_alive_askpass = temp_askpass;
         let status = child.wait().await;
         sessions_clone.remove(&key);

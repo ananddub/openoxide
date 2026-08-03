@@ -15,6 +15,7 @@
       <sourceFolder url="file://$MODULE_DIR$/auto_socket/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rustploy_sh_macros/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rustploy_monitor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route/target" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route_inventory/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

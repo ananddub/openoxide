@@ -1,5 +1,6 @@
 use crate::utils::exec::script::{IntoCommand, shell_single_quote};
 use crate::utils::exec::{SshAuth, SshHostKey};
+use crate::utils::ssh::agent::SshAgentSession;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io::Write;
@@ -25,7 +26,12 @@ pub enum StrictHostKeyChecking {
 
 pub struct SshCommand {
     pub command: Command,
-    pub temp_key_file: Option<TempPath>,
+    /// Kept alive for as long as the command runs.
+    ///
+    /// A `KeyPair` auth holds a private ssh-agent here; the key lives only in
+    /// that agent's memory and the agent is killed when this drops. Other auth
+    /// modes leave it `None`.
+    pub agent_session: Option<SshAgentSession>,
     pub temp_askpass_file: Option<TempPath>,
 }
 
@@ -67,6 +73,52 @@ fn quote(value: &str) -> String {
         return "''".into();
     }
     format!("'{}'", value.replace('\'', "'\\''"))
+}
+
+/// Directories tried, in order, when writing a secret `ssh` has to read from a
+/// path. The first two are tmpfs on Linux, so the bytes stay in RAM and never
+/// reach persistent storage; `None` falls back to the OS temp dir.
+///
+/// `ssh` cannot take a key on stdin or an inherited fd — it re-opens the path
+/// and sanitises inherited descriptors at startup, so an anonymous `memfd`
+/// passed as `/proc/self/fd/N` is unreadable by the time it parses `-i`. A
+/// RAM-backed file is therefore the closest we can get to never touching disk.
+const RAM_DIRS: [Option<&str>; 3] = [Some("/dev/shm"), Some("/run/user"), None];
+
+/// Writes `contents` to a short-lived file, preferring RAM-backed storage.
+///
+/// The file is created with `mode` from the outset rather than being chmod'ed
+/// afterwards, so there is no window where it is world-readable.
+fn write_secret(prefix: &str, contents: &[u8], mode: u32) -> Result<TempPath, std::io::Error> {
+    let mut last_error = None;
+
+    for dir in RAM_DIRS {
+        let mut builder = tempfile::Builder::new();
+        builder.prefix(prefix).permissions(
+            <std::fs::Permissions as PermissionsExt>::from_mode(mode),
+        );
+
+        let attempt = match dir {
+            Some(dir) if std::path::Path::new(dir).is_dir() => builder.tempfile_in(dir),
+            Some(_) => continue,
+            None => builder.tempfile(),
+        };
+
+        match attempt {
+            Ok(mut file) => {
+                file.write_all(contents)?;
+                file.as_file().sync_all()?;
+                return Ok(file.into_temp_path());
+            }
+            // A read-only or missing RAM dir is expected on some hosts; try the
+            // next candidate rather than failing the connection.
+            Err(error) => last_error = Some(error),
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| {
+        std::io::Error::other("no writable directory available for ssh secret")
+    }))
 }
 
 impl SshBuilder {
@@ -213,12 +265,17 @@ impl SshBuilder {
         args.push(format!("{}={}", key, value));
     }
 
-    pub fn build_args(
+    /// Builds the ssh argument list.
+    ///
+    /// Async because a `KeyPair` auth starts a private ssh-agent and loads the
+    /// key into it. The returned session must be held for as long as the
+    /// command runs — dropping it kills the agent.
+    pub async fn build_args(
         &self,
     ) -> Result<
         (
             Vec<String>,
-            Option<TempPath>,
+            Option<SshAgentSession>,
             Option<TempPath>,
             Option<PathBuf>,
         ),
@@ -232,7 +289,7 @@ impl SshBuilder {
         }
 
         let mut args = Vec::new();
-        let mut temp_key_file = None;
+        let mut agent_session = None;
         let mut temp_askpass_file = None;
         let mut agent_socket_path = None;
 
@@ -378,25 +435,25 @@ impl SshBuilder {
 
         match &self.auth {
             SshAuth::KeyPair { private_key, .. } => {
-                Self::push_option(&mut args, "IdentitiesOnly", "yes");
+                // The key goes into a private ssh-agent rather than a file on
+                // disk: it is piped to ssh-add over stdin, mlocked so it cannot
+                // be swapped out, and zeroized afterwards. Nothing is written
+                // to any filesystem, RAM-backed or not.
+                let session = SshAgentSession::start_and_add_key(private_key)
+                    .await
+                    .map_err(std::io::Error::other)?;
+
+                // IdentitiesOnly=no so ssh actually queries the agent.
+                Self::push_option(&mut args, "IdentitiesOnly", "no");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
                 Self::push_option(
                     &mut args,
                     "PreferredAuthentications",
                     "publickey,keyboard-interactive,password",
                 );
-                let mut temp_file = tempfile::Builder::new()
-                    .prefix("rustploy-ssh-key-")
-                    .tempfile()?;
-                temp_file.write_all(private_key.as_bytes())?;
 
-                let mut permissions = std::fs::metadata(temp_file.path())?.permissions();
-                permissions.set_mode(0o600);
-                std::fs::set_permissions(temp_file.path(), permissions)?;
-
-                args.push("-i".to_string());
-                args.push(temp_file.path().to_string_lossy().to_string());
-                temp_key_file = Some(temp_file.into_temp_path());
+                agent_socket_path = Some(session.socket_path.clone());
+                agent_session = Some(session);
             }
             SshAuth::KeyFile(path) => {
                 Self::push_option(&mut args, "IdentitiesOnly", "yes");
@@ -437,16 +494,13 @@ impl SshBuilder {
                 agent_socket_path = Some(socket.clone());
             }
             SshAuth::Password(password) => {
-                let mut temp_file = tempfile::Builder::new()
-                    .prefix("rustploy-ssh-askpass-")
-                    .tempfile()?;
-                temp_file.write_all(format!("#!/bin/sh\necho {}\n", quote(password)).as_bytes())?;
+                // The askpass script holds the password in plaintext, so it is
+                // written to RAM-backed storage for the same reason as the key.
+                let script = format!("#!/bin/sh\necho {}\n", quote(password));
+                let temp_file =
+                    write_secret("rustploy-ssh-askpass-", script.as_bytes(), 0o700)?;
 
-                let mut permissions = std::fs::metadata(temp_file.path())?.permissions();
-                permissions.set_mode(0o700);
-                std::fs::set_permissions(temp_file.path(), permissions)?;
-
-                temp_askpass_file = Some(temp_file.into_temp_path());
+                temp_askpass_file = Some(temp_file);
             }
         }
 
@@ -456,15 +510,15 @@ impl SshBuilder {
 
         args.push(format!("{}@{}", self.username, self.host));
 
-        Ok((args, temp_key_file, temp_askpass_file, agent_socket_path))
+        Ok((args, agent_session, temp_askpass_file, agent_socket_path))
     }
 
-    pub fn build_command(
+    pub async fn build_command(
         &self,
         program: &str,
         program_args: &[String],
     ) -> Result<SshCommand, std::io::Error> {
-        let (mut args, temp_file, temp_askpass, agent_socket) = self.build_args()?;
+        let (mut args, agent_session, temp_askpass, agent_socket) = self.build_args().await?;
 
         let quoted_cmd = std::iter::once(program.to_string())
             .chain(program_args.iter().cloned())
@@ -489,7 +543,7 @@ impl SshBuilder {
 
         Ok(SshCommand {
             command,
-            temp_key_file: temp_file,
+            agent_session,
             temp_askpass_file: temp_askpass,
         })
     }
@@ -601,8 +655,8 @@ mod tests {
         let _ = std::fs::remove_file(test_file_path);
     }
 
-    #[test]
-    fn test_ssh_builder_defaults() {
+    #[tokio::test]
+    async fn test_ssh_builder_defaults() {
         let key_file = create_dummy_key_file();
         let builder = SshBuilder::new(
             "1.2.3.4".to_string(),
@@ -611,7 +665,7 @@ mod tests {
             SshHostKey::InsecureAcceptAny,
         );
 
-        let (args, temp_key, temp_askpass, agent_socket) = builder.build_args().unwrap();
+        let (args, temp_key, temp_askpass, agent_socket) = builder.build_args().await.unwrap();
         assert!(temp_key.is_none());
         assert!(temp_askpass.is_none());
         assert!(agent_socket.is_none());
@@ -629,8 +683,8 @@ mod tests {
         assert!(args.contains(&"ControlPersist=10m".to_string()));
     }
 
-    #[test]
-    fn test_pinned_sha256_known_hosts_command() {
+    #[tokio::test]
+    async fn test_pinned_sha256_known_hosts_command() {
         let key_file = create_dummy_key_file();
         let fingerprint = "SHA256:uNiVv6W1nE1G5fHqJqF5fK4zL7/zN5lK3y/8K6=";
         let builder = SshBuilder::new(
@@ -640,7 +694,7 @@ mod tests {
             SshHostKey::PinnedSha256(fingerprint.to_string()),
         );
 
-        let (args, _, _, _) = builder.build_args().unwrap();
+        let (args, _, _, _) = builder.build_args().await.unwrap();
 
         // StrictHostKeyChecking=yes must be set to prevent fallback
         assert!(args.contains(&"StrictHostKeyChecking=yes".to_string()));
@@ -654,8 +708,8 @@ mod tests {
         assert!(kh_cmd.contains("SHA256:uNiVv6W1nE1G5fHqJqF5fK4zL7/zN5lK3y/8K6="));
     }
 
-    #[test]
-    fn test_agent_with_socket_isolation() {
+    #[tokio::test]
+    async fn test_agent_with_socket_isolation() {
         let socket_path = PathBuf::from("/run/user/1000/ssh-agent.sock");
         let builder = SshBuilder::new(
             "1.2.3.4".to_string(),
@@ -664,15 +718,15 @@ mod tests {
             SshHostKey::InsecureAcceptAny,
         );
 
-        let (args, _, _, agent_socket) = builder.build_args().unwrap();
+        let (args, _, _, agent_socket) = builder.build_args().await.unwrap();
         assert_eq!(agent_socket, Some(socket_path));
 
         // IdentitiesOnly=no must be set so that agent is queried
         assert!(args.contains(&"IdentitiesOnly=no".to_string()));
     }
 
-    #[test]
-    fn test_quiet_and_verbose_mutual_exclusivity() {
+    #[tokio::test]
+    async fn test_quiet_and_verbose_mutual_exclusivity() {
         let key_file = create_dummy_key_file();
         let builder = SshBuilder::new(
             "1.2.3.4".to_string(),
@@ -683,7 +737,7 @@ mod tests {
         .quiet(true)
         .verbose(2);
 
-        let res = builder.build_args();
+        let res = builder.build_args().await;
         assert!(res.is_err());
         assert_eq!(
             res.unwrap_err().to_string(),
@@ -691,8 +745,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_ip_version_flags() {
+    #[tokio::test]
+    async fn test_ip_version_flags() {
         let key_file = create_dummy_key_file();
         let builder = SshBuilder::new(
             "1.2.3.4".to_string(),
@@ -702,13 +756,13 @@ mod tests {
         )
         .ipv4_only();
 
-        let (args, _, _, _) = builder.build_args().unwrap();
+        let (args, _, _, _) = builder.build_args().await.unwrap();
         assert!(args.contains(&"-4".to_string()));
         assert!(!args.contains(&"-6".to_string()));
     }
 
-    #[test]
-    fn test_password_auth_askpass_generation() {
+    #[tokio::test]
+    async fn test_password_auth_askpass_generation() {
         let builder = SshBuilder::new(
             "1.2.3.4".to_string(),
             "deploy".to_string(),
@@ -716,7 +770,7 @@ mod tests {
             SshHostKey::InsecureAcceptAny,
         );
 
-        let (args, temp_key, temp_askpass, agent_socket) = builder.build_args().unwrap();
+        let (args, temp_key, temp_askpass, agent_socket) = builder.build_args().await.unwrap();
         assert!(temp_key.is_none());
         assert!(temp_askpass.is_some());
         assert!(agent_socket.is_none());
@@ -730,5 +784,74 @@ mod tests {
 
         let metadata = std::fs::metadata(&askpass_file).unwrap();
         assert_eq!(metadata.permissions().mode() & 0o777, 0o700);
+    }
+
+    /// The point of routing `KeyPair` through an agent: the private key must
+    /// never be written anywhere a process or a disk image could recover it.
+    /// A real ssh-agent is started here, so this also proves `ssh-add` accepts
+    /// what we feed it.
+    #[tokio::test]
+    async fn a_private_key_goes_into_an_agent_not_a_file() {
+        let key = crate::utils::ssh::generate_keypair("ed25519").unwrap().0;
+
+        let builder = SshBuilder::new(
+            "1.2.3.4".to_string(),
+            "deploy".to_string(),
+            SshAuth::KeyPair {
+                private_key: key,
+                public_key: None,
+                passphrase: None,
+            },
+            SshHostKey::InsecureAcceptAny,
+        );
+
+        let (args, agent, _, agent_socket) = builder.build_args().await.unwrap();
+        let agent = agent.expect("a keypair must start an agent");
+
+        // No identity file: nothing was written for ssh to read.
+        assert!(
+            !args.contains(&"-i".to_string()),
+            "the key must not be passed as a file"
+        );
+        // ssh has to be told to consult the agent.
+        assert!(args.contains(&"IdentitiesOnly=no".to_string()));
+        assert_eq!(
+            agent_socket.as_deref(),
+            Some(agent.socket_path.as_path()),
+            "the agent's socket must be handed to ssh"
+        );
+        assert!(
+            agent.socket_path.exists(),
+            "the agent socket should be live while the session is held"
+        );
+    }
+
+    /// A key file readable by anyone but its owner is rejected by ssh itself,
+    /// so the permissions must be right at creation — not set afterwards, which
+    /// would leave a window where the key is world-readable.
+    #[test]
+    fn secrets_are_created_with_restrictive_permissions() {
+        let key = write_secret("rustploy-test-key-", b"secret", 0o600).unwrap();
+        assert_eq!(
+            std::fs::metadata(&key).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+
+        let script = write_secret("rustploy-test-askpass-", b"#!/bin/sh\n", 0o700).unwrap();
+        assert_eq!(
+            std::fs::metadata(&script).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+    }
+
+    /// TempPath deletes on drop, so a finished connection leaves nothing behind.
+    #[test]
+    fn a_secret_is_removed_when_dropped() {
+        let path = {
+            let secret = write_secret("rustploy-test-drop-", b"x", 0o600).unwrap();
+            secret.to_path_buf()
+        };
+
+        assert!(!path.exists(), "the secret should be gone after drop");
     }
 }

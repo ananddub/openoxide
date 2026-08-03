@@ -3,47 +3,19 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use zeroize::Zeroize;
 
+#[derive(Debug)]
 pub struct SshAgentSession {
     pub socket_path: PathBuf,
     pub pid: u32,
 }
 
 impl SshAgentSession {
+    /// Starts a private ssh-agent and loads `private_key` into it.
+    ///
+    /// The key is piped to `ssh-add` over stdin and never written to disk; it
+    /// is mlocked while in memory so the OS cannot swap it out, then zeroized.
     pub async fn start_and_add_key(private_key: &str) -> Result<Self, String> {
-        let output = Command::new("ssh-agent")
-            .arg("-s")
-            .output()
-            .await
-            .map_err(|e| format!("failed to execute ssh-agent: {e}"))?;
-
-        if !output.status.success() {
-            return Err("ssh-agent failed to start".into());
-        }
-
-        let out_str = String::from_utf8_lossy(&output.stdout);
-        let mut socket_path: Option<PathBuf> = None;
-        let mut pid: Option<u32> = None;
-
-        for line in out_str.lines() {
-            if line.starts_with("SSH_AUTH_SOCK=") {
-                if let Some(val) = line.split(';').next() {
-                    let path_str = val.trim_start_matches("SSH_AUTH_SOCK=");
-                    socket_path = Some(PathBuf::from(path_str));
-                }
-            } else if line.starts_with("SSH_AGENT_PID=") {
-                if let Some(val) = line.split(';').next() {
-                    let pid_str = val.trim_start_matches("SSH_AGENT_PID=");
-                    if let Ok(parsed_pid) = pid_str.parse::<u32>() {
-                        pid = Some(parsed_pid);
-                    }
-                }
-            }
-        }
-
-        let socket_path = socket_path
-            .ok_or_else(|| "could not parse SSH_AUTH_SOCK from ssh-agent output".to_string())?;
-        let pid =
-            pid.ok_or_else(|| "could not parse SSH_AGENT_PID from ssh-agent output".to_string())?;
+        let session = Self::start().await?;
 
         let mut key_buf = private_key.to_string();
         if !key_buf.ends_with('\n') {
@@ -62,7 +34,7 @@ impl SshAgentSession {
 
         let mut add_cmd = Command::new("ssh-add");
         add_cmd.arg("-");
-        add_cmd.env("SSH_AUTH_SOCK", &socket_path);
+        add_cmd.env("SSH_AUTH_SOCK", &session.socket_path);
         add_cmd.stdin(std::process::Stdio::piped());
         add_cmd.stdout(std::process::Stdio::piped());
         add_cmd.stderr(std::process::Stdio::piped());
@@ -104,6 +76,46 @@ impl SshAgentSession {
                 err_msg.trim()
             ));
         }
+
+        Ok(session)
+    }
+
+    /// Starts a bare ssh-agent, returning its socket and pid.
+    async fn start() -> Result<Self, String> {
+        let output = Command::new("ssh-agent")
+            .arg("-s")
+            .output()
+            .await
+            .map_err(|e| format!("failed to execute ssh-agent: {e}"))?;
+
+        if !output.status.success() {
+            return Err("ssh-agent failed to start".into());
+        }
+
+        let out_str = String::from_utf8_lossy(&output.stdout);
+        let mut socket_path: Option<PathBuf> = None;
+        let mut pid: Option<u32> = None;
+
+        for line in out_str.lines() {
+            if line.starts_with("SSH_AUTH_SOCK=") {
+                if let Some(val) = line.split(';').next() {
+                    let path_str = val.trim_start_matches("SSH_AUTH_SOCK=");
+                    socket_path = Some(PathBuf::from(path_str));
+                }
+            } else if line.starts_with("SSH_AGENT_PID=") {
+                if let Some(val) = line.split(';').next() {
+                    let pid_str = val.trim_start_matches("SSH_AGENT_PID=");
+                    if let Ok(parsed_pid) = pid_str.parse::<u32>() {
+                        pid = Some(parsed_pid);
+                    }
+                }
+            }
+        }
+
+        let socket_path = socket_path
+            .ok_or_else(|| "could not parse SSH_AUTH_SOCK from ssh-agent output".to_string())?;
+        let pid =
+            pid.ok_or_else(|| "could not parse SSH_AGENT_PID from ssh-agent output".to_string())?;
 
         Ok(Self { socket_path, pid })
     }
