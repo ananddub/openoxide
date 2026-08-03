@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
+use crate::docker::types::ContainerId;
 use crate::store::ContainerMetricRow;
 
-/// One container's samples accumulated over a rollup window.
+pub const PEAK_SUFFIX: &str = " (peak)";
+
 #[derive(Debug, Default, Clone)]
 struct Accumulator {
     count: u32,
@@ -12,7 +14,6 @@ struct Accumulator {
     mem_max: f64,
     mem_perc_sum: f64,
     mem_perc_max: f64,
-    /// Counters are cumulative, so the last value is the one worth keeping.
     mem_total_mb: f64,
     net_in_mb: f64,
     net_out_mb: f64,
@@ -32,7 +33,6 @@ impl Accumulator {
         self.mem_perc_sum += row.mem_perc;
         self.mem_perc_max = self.mem_perc_max.max(row.mem_perc);
 
-        // Cumulative counters and identity: latest wins.
         self.mem_total_mb = row.mem_total_mb;
         self.net_in_mb = row.net_in_mb;
         self.net_out_mb = row.net_out_mb;
@@ -42,12 +42,6 @@ impl Accumulator {
         self.container_id = row.container_id.clone();
     }
 
-    /// Emits two rows: the average over the window, and the peak.
-    ///
-    /// Storing only the average would hide spikes — a container that pegs a
-    /// core for ten seconds inside a five minute window averages out to almost
-    /// nothing. Storing only the peak would misrepresent steady-state use. Both
-    /// together cost two rows instead of the ~300 they replace.
     fn finish(&self, timestamp: &str) -> Vec<ContainerMetricRow> {
         if self.count == 0 {
             return Vec::new();
@@ -73,8 +67,6 @@ impl Accumulator {
         let peak = ContainerMetricRow {
             id: None,
             timestamp: timestamp.to_string(),
-            // Suffix marks this row as the window's peak so a query can tell
-            // the two apart without a schema change.
             name: format!("{} {}", self.name, PEAK_SUFFIX.trim()),
             cpu_perc: self.cpu_max,
             mem_perc: self.mem_perc_max,
@@ -86,18 +78,8 @@ impl Accumulator {
     }
 }
 
-/// Appended to a container's name on the peak row of a rollup window.
-pub const PEAK_SUFFIX: &str = " (peak)";
-
-/// Collapses many samples per container into a small number of rows.
-///
-/// At 20k containers a 60 s cadence produces ~200M rows a week, which measured
-/// at 284 bytes each is ~57 GB — far past what SQLite handles comfortably.
-/// Sampling stays frequent so alerts still see spikes, but only an average and
-/// a peak per window reach storage.
 pub struct Rollup {
-    windows: HashMap<String, Accumulator>,
-    /// Samples per window. Emitting happens once this many have accumulated.
+    windows: HashMap<ContainerId, Accumulator>,
     window_size: u32,
 }
 
@@ -109,18 +91,14 @@ impl Rollup {
         }
     }
 
-    /// Adds a batch of samples. Returns rows to persist when a window closes,
-    /// which is empty on most calls.
     pub fn add(&mut self, rows: &[ContainerMetricRow]) -> Vec<ContainerMetricRow> {
         for row in rows {
             self.windows
-                .entry(row.container_id.clone())
+                .entry(ContainerId::new(&row.container_id))
                 .or_default()
                 .add(row);
         }
 
-        // Windows close together because every container is sampled on the same
-        // tick; checking any one of them is enough.
         let ready = self
             .windows
             .values()
@@ -133,7 +111,6 @@ impl Rollup {
         self.flush()
     }
 
-    /// Emits accumulated rows and starts fresh windows.
     pub fn flush(&mut self) -> Vec<ContainerMetricRow> {
         let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
@@ -147,8 +124,6 @@ impl Rollup {
         out
     }
 
-    /// Whether rollup is doing anything. A window of 1 passes samples straight
-    /// through, which is what small hosts want.
     pub fn is_passthrough(&self) -> bool {
         self.window_size <= 1
     }
@@ -183,7 +158,7 @@ mod tests {
         assert!(rollup.add(&[row("web", 20.0, 200.0)]).is_empty());
 
         let out = rollup.add(&[row("web", 30.0, 300.0)]);
-        assert_eq!(out.len(), 2, "one average row and one peak row");
+        assert_eq!(out.len(), 2);
     }
 
     #[test]
@@ -203,7 +178,6 @@ mod tests {
 
     #[test]
     fn a_spike_survives_averaging() {
-        // The reason peaks are stored: a brief spike would otherwise vanish.
         let mut rollup = Rollup::new(10);
         for _ in 0..9 {
             rollup.add(&[row("web", 1.0, 10.0)]);
@@ -213,8 +187,8 @@ mod tests {
         let avg = out.iter().find(|r| !r.name.ends_with(PEAK_SUFFIX)).unwrap();
         let peak = out.iter().find(|r| r.name.ends_with(PEAK_SUFFIX)).unwrap();
 
-        assert!(avg.cpu_perc < 11.0, "average hides the spike, as expected");
-        assert_eq!(peak.cpu_perc, 100.0, "peak preserves it");
+        assert!(avg.cpu_perc < 11.0);
+        assert_eq!(peak.cpu_perc, 100.0);
     }
 
     #[test]
@@ -223,7 +197,7 @@ mod tests {
         rollup.add(&[row("web", 10.0, 100.0), row("db", 50.0, 500.0)]);
         let out = rollup.add(&[row("web", 30.0, 100.0), row("db", 70.0, 500.0)]);
 
-        assert_eq!(out.len(), 4, "two containers, two rows each");
+        assert_eq!(out.len(), 4);
 
         let web = out
             .iter()
@@ -245,10 +219,7 @@ mod tests {
         let out = rollup.add(&[second]);
 
         let avg = out.iter().find(|r| !r.name.ends_with(PEAK_SUFFIX)).unwrap();
-        assert_eq!(
-            avg.block_read_mb, 150.0,
-            "counters are totals, not values to average"
-        );
+        assert_eq!(avg.block_read_mb, 150.0);
     }
 
     #[test]
@@ -270,7 +241,7 @@ mod tests {
     #[test]
     fn window_size_zero_is_clamped() {
         let rollup = Rollup::new(0);
-        assert!(rollup.is_passthrough(), "must not divide by zero");
+        assert!(rollup.is_passthrough());
     }
 
     #[test]
@@ -285,7 +256,6 @@ mod tests {
         rollup.add(&[row("web", 10.0, 100.0)]);
         rollup.add(&[row("web", 10.0, 100.0)]);
 
-        // Next window starts clean rather than carrying the old samples.
         assert!(rollup.add(&[row("web", 90.0, 100.0)]).is_empty());
         let out = rollup.add(&[row("web", 90.0, 100.0)]);
         let avg = out.iter().find(|r| !r.name.ends_with(PEAK_SUFFIX)).unwrap();

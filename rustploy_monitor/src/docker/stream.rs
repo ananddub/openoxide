@@ -9,41 +9,18 @@ use tracing::{debug, error, info, warn};
 
 use super::api::DockerApi;
 use super::json_lines::JsonAccumulator;
-use super::stats::ContainerStats;
+use super::types::{ContainerId, ContainerName, ContainerStats, ContainerSummary};
+pub use super::types::ContainerSample;
+use crate::error::DockerError;
 use crate::filter::ContainerFilter;
 
-/// A single container's latest stats, pushed to subscribers.
-#[derive(Clone, Debug)]
-pub struct ContainerSample {
-    pub container_id: String,
-    pub name: String,
-    pub stats: Arc<ContainerStats>,
-}
-
-/// How often the set of running containers is re-checked, so containers that
-/// start or stop are picked up within this window.
 const RECONCILE_INTERVAL: Duration = Duration::from_secs(30);
-/// If a stats stream produces nothing for this long, it is presumed dead and
-/// reconnected. The daemon pushes a frame per second, so this is generous.
 const STREAM_TIMEOUT: Duration = Duration::from_secs(300);
-/// Pause before retrying a stream after it dies. The daemon re-pushes the full
-/// connection state on reconnect, so no backfill is needed.
 const RECONNECT_DELAY: Duration = Duration::from_secs(3);
 
-/// Streams per-container stats from the docker daemon and fans them out over a
-/// broadcast channel.
-///
-/// Every running container gets a persistent `GET /containers/{id}/stats?stream=true`
-/// connection that pushes one JSON document per second. `run` reconciles the
-/// container set on an interval and the individual stream tasks handle their
-/// own reconnection and timeout, so a crash of the daemon or a network blip
-/// recovers without any coordination.
 pub struct ContainerStreamer {
     docker: DockerApi,
     broadcast: broadcast::Sender<ContainerSample>,
-    /// Narrows which containers get a stream. At density, opening a connection
-    /// per container is the cost that matters, so excluded containers must be
-    /// skipped before a stream is spawned rather than filtered downstream.
     filter: ContainerFilter,
 }
 
@@ -64,8 +41,7 @@ impl ContainerStreamer {
     }
 
     pub async fn run(&mut self, shutdown: CancellationToken) {
-        // container id -> token used to cancel its stream task.
-        let mut streams: HashMap<String, CancellationToken> = HashMap::new();
+        let mut streams: HashMap<ContainerId, CancellationToken> = HashMap::new();
 
         let mut reconcile = tokio::time::interval(RECONCILE_INTERVAL);
         reconcile.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -85,21 +61,19 @@ impl ContainerStreamer {
 
     async fn reconcile(
         &self,
-        streams: &mut HashMap<String, CancellationToken>,
+        streams: &mut HashMap<ContainerId, CancellationToken>,
         shutdown: &CancellationToken,
     ) {
-        let containers: Vec<(String, String)> = match self
+        let containers: Vec<(ContainerId, ContainerName)> = match self
             .docker
-            .get_json::<Vec<super::stats::ContainerSummary>>("/containers/json")
+            .get_json::<Vec<ContainerSummary>>("/containers/json")
             .await
         {
             Ok(list) => list
                 .into_iter()
                 .filter_map(|c| {
                     let name = c.display_name();
-                    // Skip before spawning: an unwanted stream costs a
-                    // connection and daemon work, not just a wasted row.
-                    if !self.filter.should_monitor(&name) {
+                    if !self.filter.should_monitor(name.as_str()) {
                         return None;
                     }
                     Some((c.id, name))
@@ -122,8 +96,7 @@ impl ContainerStreamer {
             }
         }
 
-        // Containers that stopped get their streams cancelled.
-        let gone: Vec<String> = streams
+        let gone: Vec<ContainerId> = streams
             .keys()
             .filter(|id| !seen.contains(*id))
             .cloned()
@@ -138,8 +111,8 @@ impl ContainerStreamer {
 
     fn spawn_stream(
         &self,
-        id: String,
-        name: String,
+        id: ContainerId,
+        name: ContainerName,
         cancel: CancellationToken,
         shutdown: CancellationToken,
     ) {
@@ -165,17 +138,12 @@ impl ContainerStreamer {
     }
 }
 
-/// Streams one container's stats until the connection ends or times out.
-///
-/// Returns Ok when the stream ended cleanly, Err when it failed with an error.
-/// Either way the caller reconnects; the daemon re-pushes the connection state
-/// on the new connection.
 async fn stream_one(
     docker: &DockerApi,
     broadcast: &broadcast::Sender<ContainerSample>,
-    id: &str,
-    name: &str,
-) -> Result<(), String> {
+    id: &ContainerId,
+    name: &ContainerName,
+) -> Result<(), DockerError> {
     let path = format!("/containers/{id}/stats?stream=true");
     let chunks = docker.get_stream(&path).await?;
 
@@ -186,22 +154,17 @@ async fn stream_one(
         while let Some(chunk) = chunks.next().await {
             let chunk = chunk?;
 
-            // A document cut short by a dropped connection can never complete,
-            // so anything still buffered when the stream breaks is discarded by
-            // the caller creating a fresh accumulator on reconnect.
             for stats in accumulator.push::<ContainerStats>(&chunk) {
                 let sample = ContainerSample {
-                    container_id: id.to_string(),
-                    name: name.to_string(),
+                    container_id: id.clone(),
+                    name: name.clone(),
                     stats: Arc::new(stats),
                 };
 
-                // A slow subscriber is dropped by the broadcast channel rather
-                // than stalling this stream.
                 let _ = broadcast.send(sample);
             }
         }
-        Ok::<_, String>(())
+        Ok::<_, DockerError>(())
     })
     .await;
 

@@ -12,9 +12,14 @@ services:
     image: dubeyanand/rustploy-monitor:${MONITOR_TAG:-latest}
     container_name: rustploy_monitor
     restart: unless-stopped
-    ports:
-      # gRPC query API the panel reads metrics from.
-      - "50051:50051"
+    # Host networking: the agent reports on the host, so sharing its network
+    # stack is the honest model — and it sidesteps host firewalls that block
+    # incoming traffic from docker bridges, which otherwise stops the agent
+    # from reaching the panel on the host at all.
+    #
+    # Consequences: GRPC_PORT binds directly on the host (no `ports:` mapping),
+    # and the panel is reachable at 127.0.0.1.
+    network_mode: host
     volumes:
       # The agent reads stats and logs via the socket. Read-only: it never
       # drives the daemon, only queries it.
@@ -29,7 +34,7 @@ services:
       GRPC_PORT: "50051"
       REFRESH_RATE: "60"
       RETENTION_DAYS: "7"
-      RUSTPLOY_SERVER_URL: "http://host.docker.internal:4000"
+      RUSTPLOY_SERVER_URL: "http://127.0.0.1:4000"
       METRICS_TOKEN: "change_me"
       RUST_LOG: "rustploy_monitor=info"
       # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
@@ -43,10 +48,6 @@ services:
       # Samples per stored row. 1 stores everything; raise it on dense hosts to
       # store only an average + peak per window (300 = 5 min at a 60s cadence).
       ROLLUP_SAMPLES: "1"
-    extra_hosts:
-      # Lets the agent reach the panel running on the host when both are in
-      # docker. Not needed on Linux hosts where the agent runs directly.
-      - "host.docker.internal:host-gateway"
 
 volumes:
   monitor_data:

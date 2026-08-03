@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
+use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::path::Path;
 use tracing::info;
+
+use crate::error::MonitorError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ServerMetric {
@@ -42,13 +44,12 @@ pub struct ContainerMetricRow {
     pub block_write_mb: f64,
 }
 
-/// The agent's local metric store.
 pub struct Store {
     pub pool: SqlitePool,
 }
 
 impl Store {
-    pub async fn init(db_url: &str) -> Result<Self, sqlx::Error> {
+    pub async fn init(db_url: &str) -> Result<Self, MonitorError> {
         if let Some(path_str) = db_url.strip_prefix("sqlite://") {
             if path_str != ":memory:" {
                 if let Some(parent) = Path::new(path_str).parent() {
@@ -116,7 +117,7 @@ impl Store {
         Ok(Self { pool })
     }
 
-    pub async fn save_server_metric(&self, m: &ServerMetric) -> Result<(), sqlx::Error> {
+    pub async fn save_server_metric(&self, m: &ServerMetric) -> Result<(), MonitorError> {
         sqlx::query(
             r#"
             INSERT INTO server_metrics (
@@ -152,16 +153,17 @@ impl Store {
     pub async fn get_last_n_server_metrics(
         &self,
         limit: i64,
-    ) -> Result<Vec<ServerMetric>, sqlx::Error> {
-        sqlx::query_as::<_, ServerMetric>(
+    ) -> Result<Vec<ServerMetric>, MonitorError> {
+        let rows = sqlx::query_as::<_, ServerMetric>(
             r#"SELECT id, timestamp, cpu, cpu_model, cpu_cores, cpu_physical_cores, cpu_speed, os, distro, kernel, arch, mem_used, mem_used_gb, mem_total, uptime, disk_used, total_disk, network_in, network_out FROM server_metrics ORDER BY id DESC LIMIT ?"#
         )
         .bind(limit)
         .fetch_all(&self.pool)
-        .await
+        .await?;
+        Ok(rows)
     }
 
-    pub async fn save_container_metric(&self, m: &ContainerMetricRow) -> Result<(), sqlx::Error> {
+    pub async fn save_container_metric(&self, m: &ContainerMetricRow) -> Result<(), MonitorError> {
         sqlx::query(
             r#"
             INSERT INTO container_metrics (
@@ -186,21 +188,58 @@ impl Store {
         Ok(())
     }
 
+    pub async fn save_container_metrics_batch(
+        &self,
+        metrics: &[ContainerMetricRow],
+    ) -> Result<(), MonitorError> {
+        if metrics.is_empty() {
+            return Ok(());
+        }
+
+        let mut tx = self.pool.begin().await?;
+        for m in metrics {
+            sqlx::query(
+                r#"
+                INSERT INTO container_metrics (
+                    timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb,
+                    mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#,
+            )
+            .bind(&m.timestamp)
+            .bind(&m.container_id)
+            .bind(&m.name)
+            .bind(m.cpu_perc)
+            .bind(m.mem_perc)
+            .bind(m.mem_used_mb)
+            .bind(m.mem_total_mb)
+            .bind(m.net_in_mb)
+            .bind(m.net_out_mb)
+            .bind(m.block_read_mb)
+            .bind(m.block_write_mb)
+            .execute(&mut *tx)
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
     pub async fn get_last_n_container_metrics(
         &self,
         app_name: &str,
         limit: i64,
-    ) -> Result<Vec<ContainerMetricRow>, sqlx::Error> {
-        sqlx::query_as::<_, ContainerMetricRow>(
+    ) -> Result<Vec<ContainerMetricRow>, MonitorError> {
+        let rows = sqlx::query_as::<_, ContainerMetricRow>(
             r#"SELECT id, timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb, mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb FROM container_metrics WHERE name LIKE ? ORDER BY id DESC LIMIT ?"#
         )
         .bind(format!("%{}%", app_name))
         .bind(limit)
         .fetch_all(&self.pool)
-        .await
+        .await?;
+        Ok(rows)
     }
 
-    pub async fn cleanup_old_metrics(&self, retention_days: i64) -> Result<u64, sqlx::Error> {
+    pub async fn cleanup_old_metrics(&self, retention_days: i64) -> Result<u64, MonitorError> {
         let cutoff = chrono::Utc::now() - chrono::Duration::days(retention_days);
         let cutoff_str = cutoff.format("%Y-%m-%dT%H:%M:%SZ").to_string();
 

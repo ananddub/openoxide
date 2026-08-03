@@ -3,41 +3,27 @@ use std::time::Instant;
 
 use tracing::{debug, info, warn};
 
+use super::bytes_to_mb;
 use crate::docker::api::DockerApi;
 use crate::docker::cgroup::{CgroupReader, CgroupSample};
-use crate::docker::stats::ContainerSummary;
+use crate::docker::types::{ContainerId, ContainerName, ContainerSummary};
+use crate::error::MonitorError;
 use crate::filter::ContainerFilter;
 use crate::store::ContainerMetricRow;
 
-/// Previous sample for one container, needed to turn cgroup's absolute
-/// counters into rates.
 struct Previous {
     sample: CgroupSample,
     at: Instant,
 }
 
-/// Polls every container's metrics straight from cgroup v2.
-///
-/// The docker API's stats endpoint needs one connection per container and makes
-/// dockerd do the work; at thousands of containers that is the bottleneck.
-/// Reading cgroup files costs ~35 µs per container and scales linearly, so this
-/// is the path that holds up at density.
-///
-/// The tradeoff versus the API: cgroup exposes no network counters (those live
-/// in the container's network namespace), so net I/O is reported as zero here.
-/// Containers that need it use the streaming API path instead.
 pub struct CgroupCollector {
     reader: CgroupReader,
     filter: ContainerFilter,
-    /// Last sample per container, for CPU rate calculation.
-    previous: HashMap<String, Previous>,
-    /// Container id -> display name, refreshed alongside the container list.
-    names: HashMap<String, String>,
+    previous: HashMap<ContainerId, Previous>,
+    names: HashMap<ContainerId, ContainerName>,
 }
 
 impl CgroupCollector {
-    /// Returns `None` when cgroup v2 is not mounted, in which case the caller
-    /// falls back to the API path.
     pub fn new(filter: ContainerFilter) -> Option<Self> {
         let reader = CgroupReader::discover()?;
         Some(Self {
@@ -48,12 +34,7 @@ impl CgroupCollector {
         })
     }
 
-    /// Refreshes the container list from the daemon.
-    ///
-    /// This is the only daemon call in the cgroup path, and it happens once per
-    /// cycle rather than once per container. Filtering is applied here so that
-    /// excluded containers are never read at all.
-    pub async fn refresh_containers(&mut self, docker: &DockerApi) -> Result<usize, String> {
+    pub async fn refresh_containers(&mut self, docker: &DockerApi) -> Result<usize, MonitorError> {
         let summaries: Vec<ContainerSummary> = docker.get_json("/containers/json").await?;
 
         let before = self.names.len();
@@ -61,14 +42,12 @@ impl CgroupCollector {
 
         for summary in summaries {
             let name = summary.display_name();
-            if !self.filter.should_monitor(&name) {
+            if !self.filter.should_monitor(name.as_str()) {
                 continue;
             }
             self.names.insert(summary.id, name);
         }
 
-        // Drop rate-tracking state for containers that are gone, so a long
-        // running agent does not accumulate dead entries.
         self.previous.retain(|id, _| self.names.contains_key(id));
 
         let now = self.names.len();
@@ -79,20 +58,19 @@ impl CgroupCollector {
         Ok(now)
     }
 
-    /// Samples every monitored container. Returns one row per container that
-    /// still has a live cgroup.
     pub fn sample(&mut self) -> Vec<ContainerMetricRow> {
         let now = Instant::now();
         let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
-        let ids: Vec<String> = self.names.keys().cloned().collect();
+        let ids: Vec<String> = self.names.keys().map(|id| id.as_str().to_string()).collect();
         let samples = self.reader.read_many(&ids);
 
         let mut rows = Vec::with_capacity(samples.len());
 
-        for (id, sample) in samples {
+        for (id_str, sample) in samples {
+            let id = ContainerId::new(&id_str);
             let name = match self.names.get(&id) {
-                Some(name) => name.clone(),
+                Some(name) => name.as_str().to_string(),
                 None => continue,
             };
 
@@ -112,17 +90,16 @@ impl CgroupCollector {
             rows.push(ContainerMetricRow {
                 id: None,
                 timestamp: timestamp.clone(),
-                container_id: id.get(..12).unwrap_or(&id).to_string(),
+                container_id: id.short().to_string(),
                 name,
                 cpu_perc,
                 mem_perc,
-                mem_used_mb: mem_used as f64 / 1_048_576.0,
-                mem_total_mb: sample.memory_limit as f64 / 1_048_576.0,
-                // cgroup has no network counters; the streaming path fills these.
+                mem_used_mb: bytes_to_mb(mem_used as f64),
+                mem_total_mb: bytes_to_mb(sample.memory_limit as f64),
                 net_in_mb: 0.0,
                 net_out_mb: 0.0,
-                block_read_mb: sample.io_read_bytes as f64 / 1_048_576.0,
-                block_write_mb: sample.io_write_bytes as f64 / 1_048_576.0,
+                block_read_mb: bytes_to_mb(sample.io_read_bytes as f64),
+                block_write_mb: bytes_to_mb(sample.io_write_bytes as f64),
             });
 
             self.previous.insert(id, Previous { sample, at: now });
@@ -136,11 +113,6 @@ impl CgroupCollector {
     }
 }
 
-/// CPU as a percentage of one core, from the delta between two cgroup samples.
-///
-/// cgroup reports cumulative microseconds of CPU time; dividing the delta by
-/// wall-clock elapsed gives utilisation. 100% means one core saturated, which
-/// matches what `docker stats` reports.
 fn cpu_percent(prev: &Previous, current: &CgroupSample, now: Instant) -> f64 {
     let elapsed = now.duration_since(prev.at).as_micros();
     if elapsed == 0 {
@@ -154,8 +126,6 @@ fn cpu_percent(prev: &Previous, current: &CgroupSample, now: Instant) -> f64 {
     (delta as f64 / elapsed as f64) * 100.0
 }
 
-/// Logs a warning when the monitored container count is high enough that the
-/// operator probably wants a filter.
 pub fn warn_if_dense(count: usize, filter_is_unset: bool) {
     const DENSE: usize = 500;
 
@@ -189,7 +159,6 @@ mod tests {
             sample: sample(1_000_000),
             at: start,
         };
-        // 500 ms of CPU over 1 s of wall clock = 50% of one core.
         let now = start + Duration::from_secs(1);
         let percent = cpu_percent(&prev, &sample(1_500_000), now);
 
@@ -203,7 +172,6 @@ mod tests {
             sample: sample(0),
             at: start,
         };
-        // 2 s of CPU in 1 s of wall clock = two cores saturated.
         let now = start + Duration::from_secs(1);
         let percent = cpu_percent(&prev, &sample(2_000_000), now);
 
@@ -212,7 +180,6 @@ mod tests {
 
     #[test]
     fn a_counter_going_backwards_does_not_underflow() {
-        // Can happen if a container is replaced under the same id.
         let start = Instant::now();
         let prev = Previous {
             sample: sample(5_000_000),

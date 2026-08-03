@@ -2,32 +2,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-/// cgroup v2 metrics for one container, read directly from the filesystem.
-///
-/// This is the high-density path: reading a few procfs-style files costs ~35 µs
-/// per container and bypasses the docker daemon entirely, so a host with
-/// thousands of containers can be sampled without putting load on dockerd.
-#[derive(Debug, Default, Clone)]
-pub struct CgroupSample {
-    pub cpu_usage_usec: u64,
-    pub memory_usage: u64,
-    pub memory_cache: u64,
-    pub memory_limit: u64,
-    pub io_read_bytes: u64,
-    pub io_write_bytes: u64,
-}
+pub use super::types::CgroupSample;
 
-/// Maps a container id to its cgroup directory.
-///
-/// Docker's cgroup driver determines the layout:
-/// - systemd:  `/sys/fs/cgroup/system.slice/docker-<id>.scope`
-/// - cgroupfs: `/sys/fs/cgroup/docker/<id>`
-///
-/// Both are probed; whichever exists wins. The mountpoint itself may be
-/// anywhere under `/sys/fs/cgroup` depending on the distro, so the cgroup v2
-/// root is discovered rather than assumed.
 pub struct CgroupReader {
-    /// Root of the cgroup v2 filesystem.
     root: PathBuf,
 }
 
@@ -50,9 +27,7 @@ impl CgroupReader {
         })
     }
 
-    /// Finds the cgroup directory for a container id.
     fn cgroup_dir(&self, container_id: &str) -> Option<PathBuf> {
-        // systemd driver
         let systemd = self
             .root
             .join("system.slice")
@@ -61,14 +36,11 @@ impl CgroupReader {
             return Some(systemd);
         }
 
-        // cgroupfs driver
         let cgroupfs = self.root.join("docker").join(container_id);
         if cgroupfs.join("cpu.stat").exists() {
             return Some(cgroupfs);
         }
 
-        // Kubernetes / containerd use a different path shape; probe any
-        // directory containing the id rather than assuming one driver.
         if let Ok(entries) = fs::read_dir(&self.root) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -84,15 +56,10 @@ impl CgroupReader {
         None
     }
 
-    /// Reads cgroup files for one container. `None` when the container's
-    /// cgroup is gone (it stopped), which the caller treats as "no longer
-    /// collected" rather than an error.
     pub fn read(&self, container_id: &str) -> Option<CgroupSample> {
         let dir = self.cgroup_dir(container_id)?;
 
         let cpu = fs::read_to_string(dir.join("cpu.stat")).ok()?;
-        // usage_usec is the total; on kernels that omit it, user + system is
-        // the same figure split in two.
         let cpu_usage_usec = parse_field(&cpu, "usage_usec").unwrap_or_else(|| {
             parse_field(&cpu, "user_usec").unwrap_or(0)
                 + parse_field(&cpu, "system_usec").unwrap_or(0)
@@ -144,11 +111,6 @@ impl CgroupReader {
         })
     }
 
-    /// Reads every container in one pass.
-    ///
-    /// This is deliberately not parallel: the filesystem reads are ~35 µs each
-    /// and scale linearly, so spawning tasks for thousands of reads adds
-    /// coordination cost for no throughput gain.
     pub fn read_many(
         &self,
         containers: &[String],
@@ -188,7 +150,6 @@ mod tests {
     #[test]
     fn reads_io_stat_accumulating_per_device() {
         let content = "259:4 rbytes=2908160 wbytes=0 rios=41 wios=0\n8:0 rbytes=100 wbytes=500\n";
-        // Parsed inline here because it's a private helper.
         let mut read = 0u64;
         let mut write = 0u64;
         for line in content.lines() {

@@ -1,13 +1,5 @@
 use serde::de::DeserializeOwned;
 
-/// Accumulates raw chunks from a streaming docker endpoint and yields whole
-/// JSON documents as they complete.
-///
-/// The daemon streams stats as a series of JSON documents with no framing
-/// between them. Newlines cannot be used as delimiters — the daemon
-/// pretty-prints, so newlines appear *inside* a document too. Instead the
-/// buffer is scanned for the longest prefix ending in `}` that parses, which is
-/// what the CLI effectively does as well.
 #[derive(Default)]
 pub struct JsonAccumulator {
     buffer: String,
@@ -18,16 +10,11 @@ impl JsonAccumulator {
         Self::default()
     }
 
-    /// Appends a chunk and returns every document that is now complete.
-    ///
-    /// Bytes that do not yet form a document stay buffered for the next call.
     pub fn push<T: DeserializeOwned>(&mut self, chunk: &[u8]) -> Vec<T> {
         self.buffer.push_str(&String::from_utf8_lossy(chunk));
 
         let mut documents = Vec::new();
 
-        // Repeatedly take the longest parseable prefix. Searching from the last
-        // `}` backwards handles several documents arriving in one chunk.
         loop {
             let Some(document) = self.take_one() else {
                 break;
@@ -49,14 +36,12 @@ impl JsonAccumulator {
                 return Some(value);
             }
 
-            // Not parseable up to this brace — try an earlier one.
             search_end = brace;
         }
 
         None
     }
 
-    /// Bytes currently held back waiting for the rest of a document.
     #[cfg(test)]
     pub fn buffered_len(&self) -> usize {
         self.buffer.len()
@@ -102,7 +87,6 @@ mod tests {
 
     #[test]
     fn newlines_inside_a_document_do_not_break_parsing() {
-        // The daemon pretty-prints, so a newline is not a document boundary.
         let mut acc = JsonAccumulator::new();
         let docs: Vec<Value> = acc.push(b"{\n  \"cpu\": 1,\n  \"mem\": \"x\"\n}");
 

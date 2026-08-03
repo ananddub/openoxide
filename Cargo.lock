@@ -3448,7 +3448,7 @@ dependencies = [
 
 [[package]]
 name = "rustploy_monitor"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -3464,6 +3464,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "sysinfo",
+ "thiserror",
  "tokio",
  "tokio-stream",
  "tokio-util",

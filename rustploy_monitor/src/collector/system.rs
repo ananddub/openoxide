@@ -2,19 +2,13 @@ use std::time::Duration;
 use sysinfo::{Disks, Networks, System};
 use tracing::debug;
 
+use super::{bytes_to_gb, bytes_to_mb};
 use crate::store::ServerMetric;
 
-/// Samples host-level metrics via `sysinfo`.
-///
-/// Holds `System`, `Disks` and `Networks` across calls because CPU percentages
-/// and network rates are deltas — they need the previous sample to compare
-/// against. Rebuilding these per call (as the old code did) is why the first
-/// reading was always zero.
 pub struct SystemCollector {
     system: System,
     disks: Disks,
     networks: Networks,
-    /// Static host facts, read once — they don't change while we run.
     host: HostInfo,
 }
 
@@ -40,7 +34,6 @@ impl SystemCollector {
             .first()
             .map(|c| c.brand().trim().to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        // sysinfo reports MHz; the panel's schema stores GHz.
         let cpu_speed = cpus.first().map(|c| c.frequency() as f64 / 1000.0).unwrap_or(0.0);
 
         let host = HostInfo {
@@ -64,9 +57,6 @@ impl SystemCollector {
         }
     }
 
-    /// Takes one sample. Sleeps for `MINIMUM_CPU_UPDATE_INTERVAL` between the
-    /// two CPU refreshes because sysinfo needs a gap to compute a usage delta;
-    /// without it CPU always reads 0.
     pub async fn sample(&mut self) -> ServerMetric {
         self.system.refresh_cpu_usage();
         tokio::time::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
@@ -85,8 +75,6 @@ impl SystemCollector {
             0.0
         };
 
-        // Only count physical disks: container overlays and tmpfs would
-        // otherwise be summed in and inflate the total.
         let (disk_used_bytes, disk_total_bytes) = self
             .disks
             .list()
@@ -105,7 +93,6 @@ impl SystemCollector {
             0.0
         };
 
-        // Cumulative counters since boot, not a rate.
         let (net_in, net_out) = self
             .networks
             .list()
@@ -146,19 +133,9 @@ impl SystemCollector {
         metric
     }
 
-    /// How long to wait before the next sample, accounting for the CPU-delta
-    /// sleep already spent inside `sample`.
     pub fn interval_after_sample(refresh_rate: u64) -> Duration {
         Duration::from_secs(refresh_rate).saturating_sub(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL)
     }
-}
-
-fn bytes_to_gb(bytes: f64) -> f64 {
-    bytes / 1_073_741_824.0
-}
-
-fn bytes_to_mb(bytes: f64) -> f64 {
-    bytes / 1_048_576.0
 }
 
 #[cfg(test)]

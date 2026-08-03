@@ -5,6 +5,7 @@ use tonic::{Request, Response, Status};
 use tracing::debug;
 
 use crate::docker::api::DockerApi;
+use crate::docker::types::ContainerId;
 use crate::logs::tail_container_logs;
 use crate::store::Store;
 
@@ -19,19 +20,12 @@ use proto::{
     LogChunk, LogStreamRequest, ServerMetricPoint, ServerMetricsResponse,
 };
 
-/// Default number of metric points returned when a request omits `limit`.
 const DEFAULT_LIMIT: i64 = 50;
-/// Upper bound on `limit` so one query can't pull the whole table into memory.
 const MAX_LIMIT: i64 = 1000;
-/// Default log lines returned when a request omits `tail_lines`.
 const DEFAULT_TAIL_LINES: usize = 100;
 
-/// Serves the panel's read queries against this agent's local metric store.
 pub struct MonitoringGrpc {
     store: Arc<Store>,
-    /// This agent's own id. Requests naming a different host are rejected —
-    /// the store holds only this host's metrics, so answering anyway would
-    /// hand back the wrong host's data under the caller's label.
     server_id: i64,
     docker: DockerApi,
 }
@@ -46,7 +40,6 @@ impl MonitoringGrpc {
     }
 
     fn check_server_id(&self, requested: i64) -> Result<(), Status> {
-        // 0 means "whichever host you are" — the panel doesn't always know.
         if requested == 0 || requested == self.server_id {
             return Ok(());
         }
@@ -58,55 +51,61 @@ impl MonitoringGrpc {
     }
 }
 
-/// Clamps a caller-supplied limit into `1..=MAX_LIMIT`.
-fn clamp_limit(requested: i32) -> i64 {
-    if requested <= 0 {
+fn clamp_limit(raw: i64) -> i64 {
+    if raw <= 0 {
         DEFAULT_LIMIT
     } else {
-        i64::from(requested).min(MAX_LIMIT)
+        raw.min(MAX_LIMIT)
     }
 }
 
 #[tonic::async_trait]
 impl MonitoringService for MonitoringGrpc {
+    type StreamLogsStream =
+        Pin<Box<dyn Stream<Item = Result<LogChunk, Status>> + Send + 'static>>;
+
     async fn get_server_metrics(
         &self,
         request: Request<GetMetricsRequest>,
     ) -> Result<Response<ServerMetricsResponse>, Status> {
         let req = request.into_inner();
         self.check_server_id(req.server_id)?;
-        let limit = clamp_limit(req.limit);
 
+        let limit = clamp_limit(req.limit as i64);
         let rows = self
             .store
             .get_last_n_server_metrics(limit)
             .await
-            .map_err(|e| Status::internal(format!("could not read server metrics: {e}")))?;
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        debug!(count = rows.len(), limit, "served server metrics query");
+        debug!(
+            requested = limit,
+            returned = rows.len(),
+            "serving server metrics gRPC"
+        );
 
         let metrics = rows
             .into_iter()
-            .map(|m| ServerMetricPoint {
-                id: m.id.unwrap_or(0),
-                timestamp: m.timestamp,
-                cpu: m.cpu,
-                cpu_model: m.cpu_model,
-                cpu_cores: m.cpu_cores,
-                cpu_physical_cores: m.cpu_physical_cores,
-                cpu_speed: m.cpu_speed,
-                os: m.os,
-                distro: m.distro,
-                kernel: m.kernel,
-                arch: m.arch,
-                mem_used: m.mem_used,
-                mem_used_gb: m.mem_used_gb,
-                mem_total: m.mem_total,
-                uptime: m.uptime,
-                disk_used: m.disk_used,
-                total_disk: m.total_disk,
-                network_in: m.network_in,
-                network_out: m.network_out,
+            .map(|r| ServerMetricPoint {
+                id: r.id.unwrap_or(0),
+                timestamp: r.timestamp,
+                cpu: r.cpu,
+                cpu_model: r.cpu_model,
+                cpu_cores: r.cpu_cores,
+                cpu_physical_cores: r.cpu_physical_cores,
+                cpu_speed: r.cpu_speed,
+                os: r.os,
+                distro: r.distro,
+                kernel: r.kernel,
+                arch: r.arch,
+                mem_used: r.mem_used,
+                mem_used_gb: r.mem_used_gb,
+                mem_total: r.mem_total,
+                uptime: r.uptime,
+                disk_used: r.disk_used,
+                total_disk: r.total_disk,
+                network_in: r.network_in,
+                network_out: r.network_out,
             })
             .collect();
 
@@ -119,54 +118,47 @@ impl MonitoringService for MonitoringGrpc {
     ) -> Result<Response<ContainerMetricsResponse>, Status> {
         let req = request.into_inner();
         self.check_server_id(req.server_id)?;
-        let limit = clamp_limit(req.limit);
 
+        let limit = clamp_limit(req.limit as i64);
         let rows = self
             .store
             .get_last_n_container_metrics(&req.app_name, limit)
             .await
-            .map_err(|e| Status::internal(format!("could not read container metrics: {e}")))?;
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         debug!(
-            count = rows.len(),
-            app_name = %req.app_name,
-            "served container metrics query"
+            container = %req.app_name,
+            requested = limit,
+            returned = rows.len(),
+            "serving container metrics gRPC"
         );
 
         let metrics = rows
             .into_iter()
-            .map(|m| ContainerMetricPoint {
-                id: m.id.unwrap_or(0),
-                timestamp: m.timestamp,
-                container_id: m.container_id,
-                name: m.name,
-                cpu_perc: m.cpu_perc,
-                mem_perc: m.mem_perc,
-                mem_used_mb: m.mem_used_mb,
-                mem_total_mb: m.mem_total_mb,
-                net_in_mb: m.net_in_mb,
-                net_out_mb: m.net_out_mb,
-                block_read_mb: m.block_read_mb,
-                block_write_mb: m.block_write_mb,
+            .map(|r| ContainerMetricPoint {
+                id: r.id.unwrap_or(0),
+                timestamp: r.timestamp,
+                container_id: r.container_id,
+                name: r.name,
+                cpu_perc: r.cpu_perc,
+                mem_perc: r.mem_perc,
+                mem_used_mb: r.mem_used_mb,
+                mem_total_mb: r.mem_total_mb,
+                net_in_mb: r.net_in_mb,
+                net_out_mb: r.net_out_mb,
+                block_read_mb: r.block_read_mb,
+                block_write_mb: r.block_write_mb,
             })
             .collect();
 
         Ok(Response::new(ContainerMetricsResponse { metrics }))
     }
 
-    type StreamLogsStream = Pin<Box<dyn Stream<Item = Result<LogChunk, Status>> + Send + 'static>>;
-
-    /// Tails a container's recent logs. This reads a bounded snapshot and then
-    /// completes — it is not a live follow, despite the streaming response type.
     async fn stream_logs(
         &self,
         request: Request<LogStreamRequest>,
     ) -> Result<Response<Self::StreamLogsStream>, Status> {
         let req = request.into_inner();
-
-        if req.container_id.trim().is_empty() {
-            return Err(Status::invalid_argument("container_id is required"));
-        }
 
         let tail_lines = if req.tail_lines > 0 {
             req.tail_lines as usize
@@ -175,7 +167,7 @@ impl MonitoringService for MonitoringGrpc {
         };
 
         debug!(
-            container_id = %req.container_id,
+            container = %req.container_id,
             tail_lines,
             "serving log tail"
         );
@@ -186,14 +178,14 @@ impl MonitoringService for MonitoringGrpc {
 
         tokio::spawn(async move {
             let timestamp = chrono::Utc::now().timestamp();
-            for line in tail_container_logs(&docker, &container_id, tail_lines).await {
+            let typed_id = ContainerId::new(&container_id);
+            for line in tail_container_logs(&docker, &typed_id, tail_lines).await {
                 let chunk = LogChunk {
                     container_id: container_id.clone(),
                     log_line: line,
                     timestamp,
                     is_stderr: false,
                 };
-                // Receiver hung up — stop reading rather than filling the channel.
                 if tx.send(Ok(chunk)).await.is_err() {
                     break;
                 }
@@ -222,9 +214,6 @@ mod tests {
         assert_eq!(clamp_limit(50_000), MAX_LIMIT);
     }
 
-    /// Builds a service whose store is never touched — these tests only
-    /// exercise the server_id gate, which runs before any query.
-    /// Async because sqlx needs a Tokio context even to build a lazy pool.
     fn service_for(server_id: i64) -> MonitoringGrpc {
         let pool = sqlx::SqlitePool::connect_lazy("sqlite::memory:").expect("lazy pool");
         MonitoringGrpc::new(
@@ -244,9 +233,6 @@ mod tests {
         assert!(service_for(7).check_server_id(0).is_ok());
     }
 
-    /// Regression: the store has no server_id column, so a query for another
-    /// host used to silently return this host's rows. The panel would then
-    /// file them under the wrong server.
     #[tokio::test]
     async fn rejects_a_different_server_id() {
         let status = service_for(1)

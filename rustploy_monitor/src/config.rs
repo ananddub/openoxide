@@ -1,45 +1,46 @@
 use std::env;
+use std::str::FromStr;
 
-/// Every tunable the agent reads, resolved once at startup.
-///
-/// Previously these were scattered across `main.rs` as inline `env::var` calls
-/// with silent `unwrap_or` fallbacks, so a typo in a var name looked identical
-/// to "not configured". Loading them in one place lets us validate up front and
-/// fail loudly instead of running half-configured.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CollectionMode {
+    #[default]
+    Auto,
+    Cgroup,
+    Stream,
+}
+
+impl FromStr for CollectionMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "auto" => Ok(Self::Auto),
+            "cgroup" => Ok(Self::Cgroup),
+            "stream" => Ok(Self::Stream),
+            invalid => Err(format!(
+                "invalid COLLECTION_MODE: {invalid:?}, expected 'auto', 'cgroup', or 'stream'"
+            )),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// Identifies this agent's host in metrics sent to the panel.
     pub server_id: i64,
-    /// SQLite URL for the agent's local metric store.
     pub database_url: String,
-    /// Port the gRPC query server listens on.
     pub grpc_port: u16,
-    /// Seconds between collection cycles.
     pub refresh_rate: u64,
-    /// Days of metrics to keep before the cleanup task deletes them.
     pub retention_days: i64,
-    /// Base URL of the rustploy panel, used to push container metrics.
     pub panel_url: String,
-    /// Shared secret sent with pushes so the panel can identify this agent.
     pub metrics_token: String,
-    /// Unix socket of the docker daemon the agent talks to.
     pub docker_socket: String,
-    /// Comma-separated container name patterns to monitor. Empty means all
-    /// not excluded. `*` is the wildcard.
     pub include_containers: Vec<String>,
-    /// Comma-separated container name patterns to never monitor.
     pub exclude_containers: Vec<String>,
-    /// How container metrics are collected: `auto`, `cgroup` or `stream`.
-    pub collection_mode: String,
-    /// Samples per rollup window. High-density hosts set this to shrink what
-    /// reaches storage: 300 samples at a 60 s cadence is a 5-minute window,
-    /// collapsed to an average + peak pair.
+    pub collection_mode: CollectionMode,
     pub rollup_samples: u32,
 }
 
-/// Reads an env var as `T`, falling back to `default` when unset. A value that
-/// is set but unparseable is an error rather than a silent fallback — that case
-/// is always a misconfiguration worth surfacing.
 fn parse_var<T: std::str::FromStr>(key: &str, default: T) -> Result<T, String> {
     match env::var(key) {
         Ok(raw) if !raw.trim().is_empty() => raw
@@ -51,7 +52,6 @@ fn parse_var<T: std::str::FromStr>(key: &str, default: T) -> Result<T, String> {
 }
 
 impl Config {
-    /// Loads configuration from the environment and validates it.
     pub fn from_env() -> Result<Self, String> {
         let config = Self {
             server_id: parse_var("SERVER_ID", 1i64)?,
@@ -71,9 +71,7 @@ impl Config {
             exclude_containers: crate::filter::parse_patterns(
                 &env::var("EXCLUDE_CONTAINERS").unwrap_or_default(),
             ),
-            collection_mode: env::var("COLLECTION_MODE")
-                .unwrap_or_else(|_| "auto".to_string())
-                .to_ascii_lowercase(),
+            collection_mode: parse_var("COLLECTION_MODE", CollectionMode::Auto)?,
             rollup_samples: parse_var("ROLLUP_SAMPLES", 1u32)?,
         };
 
@@ -114,17 +112,9 @@ impl Config {
             ));
         }
 
-        if !matches!(self.collection_mode.as_str(), "auto" | "cgroup" | "stream") {
-            return Err(format!(
-                "COLLECTION_MODE must be auto, cgroup or stream, got {:?}",
-                self.collection_mode
-            ));
-        }
-
         Ok(())
     }
 
-    /// Panel endpoint that receives batched container metric pushes.
     pub fn container_metrics_endpoint(&self) -> String {
         format!(
             "{}/api/monitoring/containers/batch",
@@ -132,7 +122,6 @@ impl Config {
         )
     }
 
-    /// Filter describing which containers this agent collects.
     pub fn container_filter(&self) -> crate::filter::ContainerFilter {
         crate::filter::ContainerFilter::new(
             self.include_containers.clone(),
@@ -157,7 +146,7 @@ mod tests {
             docker_socket: "/var/run/docker.sock".into(),
             include_containers: Vec::new(),
             exclude_containers: Vec::new(),
-            collection_mode: "auto".into(),
+            collection_mode: CollectionMode::Auto,
             rollup_samples: 1,
         }
     }

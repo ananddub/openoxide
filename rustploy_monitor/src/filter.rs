@@ -1,8 +1,3 @@
-/// Decides which containers this agent collects metrics for.
-///
-/// At high container counts most of what runs on a host is noise — sidecars,
-/// build containers, other tenants. Collecting everything wastes storage and
-/// buries the containers that matter, so the set is narrowed here.
 #[derive(Debug, Clone, Default)]
 pub struct ContainerFilter {
     include: Vec<String>,
@@ -14,11 +9,6 @@ impl ContainerFilter {
         Self { include, exclude }
     }
 
-    /// True when this container should be collected.
-    ///
-    /// Exclude wins over include, and an empty include list means "everything
-    /// not excluded" — so a filter that is entirely unset collects all
-    /// containers, which is the sensible default for a small host.
     pub fn should_monitor(&self, name: &str) -> bool {
         if self.exclude.iter().any(|p| glob_match(p, name)) {
             return false;
@@ -46,21 +36,12 @@ impl ContainerFilter {
     }
 }
 
-/// Matches `text` against a pattern where `*` stands for any run of characters.
-///
-/// Patterns are deliberately explicit rather than implicit substring matches.
-/// A bare `api` matches only a container actually named `api`; to catch
-/// `myproject-api-1` the pattern must say `*api*`. Substring-by-default is what
-/// makes filters silently over-match — an `exclude: ["api"]` that also drops
-/// `my-api-gateway` is very hard to notice.
 fn glob_match(pattern: &str, text: &str) -> bool {
-    let p: Vec<char> = pattern.chars().collect();
-    let t: Vec<char> = text.chars().collect();
+    let p = pattern.as_bytes();
+    let t = text.as_bytes();
 
     let mut pi = 0;
     let mut ti = 0;
-    // Position of the last `*` seen, and how much of `text` it had consumed, so
-    // a failed match can backtrack and let the star swallow one more character.
     let mut star: Option<usize> = None;
     let mut star_consumed = 0;
 
@@ -68,7 +49,7 @@ fn glob_match(pattern: &str, text: &str) -> bool {
         if pi < p.len() && p[pi] == t[ti] {
             pi += 1;
             ti += 1;
-        } else if pi < p.len() && p[pi] == '*' {
+        } else if pi < p.len() && p[pi] == b'*' {
             star = Some(pi);
             star_consumed = ti;
             pi += 1;
@@ -81,15 +62,13 @@ fn glob_match(pattern: &str, text: &str) -> bool {
         }
     }
 
-    // Trailing stars can match the empty remainder.
-    while pi < p.len() && p[pi] == '*' {
+    while pi < p.len() && p[pi] == b'*' {
         pi += 1;
     }
 
     pi == p.len()
 }
 
-/// Splits a comma-separated env var into patterns, dropping blanks.
 pub fn parse_patterns(raw: &str) -> Vec<String> {
     raw.split(',')
         .map(str::trim)
@@ -127,7 +106,6 @@ mod tests {
 
     #[test]
     fn a_bare_pattern_does_not_match_a_substring() {
-        // The bug this avoids: excluding "api" must not also drop "my-api-gateway".
         let filter = ContainerFilter::new(vec![], vec!["api".into()]);
         assert!(!filter.should_monitor("api"));
         assert!(filter.should_monitor("my-api-gateway"));
