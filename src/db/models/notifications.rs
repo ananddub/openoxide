@@ -28,6 +28,8 @@ pub struct Notification {
     pub on_docker_cleanup: i64,
     #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
     pub on_server_threshold: i64,
+    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    pub on_panel_backup: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub slack_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]

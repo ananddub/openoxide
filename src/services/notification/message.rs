@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Severity of a notification, used by providers that support priority levels
-/// (gotify, ntfy, pushover) and to pick decoration colors/emoji.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NotificationLevel {
     Info,
@@ -26,16 +24,14 @@ impl NotificationLevel {
         }
     }
 
-    /// Discord embed color (decimal RGB).
     pub fn discord_color(&self) -> i64 {
         match self {
-            Self::Info => 3_447_003,      // blue
-            Self::Warning => 16_098_851,  // amber
-            Self::Critical => 15_158_332, // red
+            Self::Info => 3_447_003,
+            Self::Warning => 16_098_851,
+            Self::Critical => 15_158_332,
         }
     }
 
-    /// Teams MessageCard theme color (hex, no leading #).
     pub fn teams_color(&self) -> &'static str {
         match self {
             Self::Info => "0076D7",
@@ -44,7 +40,6 @@ impl NotificationLevel {
         }
     }
 
-    /// gotify priority (0-10)
     pub fn gotify_priority(&self) -> i64 {
         match self {
             Self::Info => 3,
@@ -53,7 +48,6 @@ impl NotificationLevel {
         }
     }
 
-    /// ntfy priority (1-5)
     pub fn ntfy_priority(&self) -> i64 {
         match self {
             Self::Info => 3,
@@ -63,18 +57,13 @@ impl NotificationLevel {
     }
 }
 
-/// A provider-agnostic notification. Each sender renders this into whatever
-/// payload shape its provider expects.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NotificationMessage {
     pub title: String,
     pub body: String,
     pub level: NotificationLevel,
     pub timestamp: i64,
-    /// Optional deep link back into the panel for this event.
     pub url: Option<String>,
-    /// Extra key/value context rendered as fields by providers that support it
-    /// and appended to the body by those that don't.
     pub fields: Vec<(String, String)>,
 }
 
@@ -105,13 +94,10 @@ impl NotificationMessage {
         self
     }
 
-    /// Single-line summary used as a subject / notification title.
     pub fn subject(&self) -> String {
         format!("{} {}", self.level.emoji(), self.title)
     }
 
-    /// Plain text rendering. Providers with no rich formatting use this as-is;
-    /// fields and URL are folded into the text since there's nowhere else to put them.
     pub fn to_plain_text(&self) -> String {
         let mut out = format!("{}\n\n{}", self.subject(), self.body);
 

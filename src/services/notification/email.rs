@@ -9,11 +9,6 @@ use lettre::{
     },
 };
 
-/// Sends a notification over SMTP.
-///
-/// Transport security is chosen from the port: 465 is implicit TLS (SMTPS),
-/// anything else uses STARTTLS. Plaintext SMTP is never used — if the server
-/// can't negotiate TLS the send fails rather than leaking the password.
 pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(), String> {
     let recipients = parse_addresses(&cfg.to_addresses);
     if recipients.is_empty() {
