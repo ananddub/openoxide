@@ -1,7 +1,7 @@
 use crate::utils::traefik::{
     middleware::Middleware, rule::Rule, traefik::TraefikBuilder, types::CertificateType,
 };
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 const TRAEFIK_NETWORK: &str = "rustploy-network";
 
@@ -142,5 +142,45 @@ pub fn build_traefik_labels_for_network(
             .extend(traefik.labels);
     }
 
-    builders.into_iter().map(|(k, v)| (k, v.build())).collect()
+    builders
+        .into_iter()
+        .map(|(service, builder)| (service, deduplicate_labels_by_key(builder.build())))
+        .collect()
+}
+
+/// Docker Compose validates label sequences as a set, while Traefik's common
+/// labels (`traefik.enable`, `traefik.docker.network`) are emitted once per
+/// domain. Multiple domains on one service must therefore be reconciled by
+/// label key before serializing the stack file.
+fn deduplicate_labels_by_key(labels: Vec<String>) -> Vec<String> {
+    let mut unique = BTreeMap::<String, String>::new();
+    for label in labels {
+        let key = label.split_once('=').map_or(label.as_str(), |(key, _)| key);
+        unique.insert(key.to_owned(), label);
+    }
+    unique.into_values().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn domain(key: &str, host: &str) -> SharedDomain {
+        SharedDomain {
+            key: key.into(), host: host.into(), https: false, port: 3000,
+            service_name: None, path: "/".into(), internal_path: "/".into(),
+            strip_path: false, entrypoint: None, certificate_type: "NONE".into(),
+            custom_cert_resolver: None, middlewares: vec![],
+        }
+    }
+
+    #[test]
+    fn multiple_domains_emit_common_labels_once() {
+        let labels = build_traefik_labels("api", &[domain("1", "one.test"), domain("2", "two.test")])
+            .remove("api").unwrap();
+        assert_eq!(labels.iter().filter(|v| v.starts_with("traefik.enable=")).count(), 1);
+        assert_eq!(labels.iter().filter(|v| v.starts_with("traefik.docker.network=")).count(), 1);
+        let keys: std::collections::HashSet<_> = labels.iter().map(|v| v.split_once('=').map_or(v.as_str(), |(k, _)| k)).collect();
+        assert_eq!(keys.len(), labels.len());
+    }
 }

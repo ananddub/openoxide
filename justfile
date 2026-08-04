@@ -121,6 +121,11 @@ db-gen:
 
 run:
     cargo run
+
+# Run the React frontend dev server
+web:
+    cd web/rustploy_react && bun run dev
+
 dev:
     sudo pkill rustploy || true
     cargo watch -x check -x run

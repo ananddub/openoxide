@@ -139,7 +139,7 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
         &shared_domains,
         traefik_network,
     );
-    let traefik_labels = traefik_map.into_values().flatten().collect::<Vec<_>>();
+    let traefik_labels = reconcile_labels(traefik_map.into_values().flatten());
     let mut services = BTreeMap::new();
     services.insert(
         app.app_name.clone(),
@@ -224,6 +224,15 @@ fn is_false(value: &bool) -> bool {
     !*value
 }
 
+fn reconcile_labels(labels: impl IntoIterator<Item = String>) -> Vec<String> {
+    let mut unique = BTreeMap::<String, String>::new();
+    for label in labels {
+        let key = label.split_once('=').map_or(label.as_str(), |(key, _)| key);
+        unique.insert(key.to_owned(), label);
+    }
+    unique.into_values().collect()
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -273,5 +282,23 @@ pub(crate) mod tests {
         assert!(yaml.contains("node.role==worker"));
         assert!(yaml.contains("failure_action: rollback"));
         assert!(yaml.contains("source: api-data"));
+    }
+
+    #[test]
+    fn final_application_labels_are_unique_by_key() {
+        let labels = reconcile_labels([
+            "traefik.enable=true".into(),
+            "traefik.http.routers.one.rule=Host(`one.test`)".into(),
+            "traefik.enable=true".into(),
+            "traefik.http.routers.two.rule=Host(`two.test`)".into(),
+        ]);
+        assert_eq!(
+            labels
+                .iter()
+                .filter(|label| label.starts_with("traefik.enable="))
+                .count(),
+            1
+        );
+        assert_eq!(labels.len(), 3);
     }
 }

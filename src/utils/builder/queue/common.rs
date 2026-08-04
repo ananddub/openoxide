@@ -80,13 +80,6 @@ impl BuilderQueue {
             }
         };
 
-        if let Err(e) = repo
-            .update_final_status(deployment_id, final_status, error_message.as_deref())
-            .await
-        {
-            tracing::error!(deployment_id, error = %e, "builder queue: could not persist final deployment status");
-        }
-
         let is_stop = operation.eq_ignore_ascii_case("stop");
         let target_status = if final_status == "DONE" {
             if is_stop {
@@ -98,10 +91,11 @@ impl BuilderQueue {
             ComposeStatus::Error.as_str()
         };
 
+        if let Err(e) = repo.finalize_with_resource(deployment_id, final_status, error_message.as_deref(), application_id, compose_id, database_id, database_kind.as_deref(), target_status).await {
+            tracing::error!(deployment_id, error = %e, "builder queue: could not atomically persist deployment outcome");
+        }
+
         if let Some(app_id) = application_id {
-            if let Err(e) = repo.set_application_status(app_id, target_status).await {
-                tracing::error!(deployment_id, app_id, error = %e, "builder queue: could not persist application status");
-            }
             self.cache
                 .invalidate(&crate::core::cache::CacheKey::Application(app_id))
                 .await;
@@ -109,9 +103,6 @@ impl BuilderQueue {
         }
 
         if let Some(cmp_id) = compose_id {
-            if let Err(e) = repo.set_compose_status(cmp_id, target_status).await {
-                tracing::error!(deployment_id, cmp_id, error = %e, "builder queue: could not persist compose status");
-            }
             self.cache
                 .invalidate(&crate::core::cache::CacheKey::Compose(cmp_id))
                 .await;
@@ -119,13 +110,7 @@ impl BuilderQueue {
                 .remove_state(IdType::ComposeId(cmp_id));
         }
 
-        if let (Some(db_id), Some(db_kind)) = (database_id, database_kind.as_deref()) {
-            if let Err(e) = repo
-                .set_database_status(db_id, db_kind, target_status)
-                .await
-            {
-                tracing::error!(deployment_id, db_id, db_kind, error = %e, "builder queue: could not persist database status");
-            }
+        if let (Some(db_id), Some(_db_kind)) = (database_id, database_kind.as_deref()) {
             self.cache
                 .invalidate(&crate::core::cache::CacheKey::Database(db_id))
                 .await;

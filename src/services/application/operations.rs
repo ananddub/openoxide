@@ -27,10 +27,6 @@ impl ApplicationService {
             .ensure_capacity()
             .await?;
 
-        let _ = self.repo_app.update_status(id, "STARTING").await;
-        self.cache
-            .invalidate(&crate::core::cache::CacheKey::Application(id))
-            .await;
         let app = self.get_by_id(id).await?;
 
         let log_path = format!("pending-app-{}", id);
@@ -45,6 +41,11 @@ impl ApplicationService {
                 app.server_id,
             )
             .await?;
+
+        self.repo_app.update_status(id, "STARTING").await?;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Application(id))
+            .await;
 
         let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
         self.repo_deploy
