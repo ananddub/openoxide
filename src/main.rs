@@ -4,7 +4,7 @@ use rustploy::{
     core::config::Config,
     core::logs::init_logs,
     services::{
-        monitoring::{alert_service::AlertService, monitoring_service::MonitoringService},
+        monitoring::alert_service::AlertService,
         notification::{
             NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
             NotificationTrigger,
@@ -51,10 +51,6 @@ async fn main() {
         .await
         .expect("failed to resolve alert service")
         .start();
-    resolve::<MonitoringService>()
-        .await
-        .expect("failed to resolve monitoring service")
-        .start_retention();
 
     // 3. Dispatch PanelRestart notification on boot
     if let Ok(notif_svc) = resolve::<NotificationService>().await {

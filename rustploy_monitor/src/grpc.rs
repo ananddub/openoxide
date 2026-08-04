@@ -147,6 +147,8 @@ impl MonitoringService for MonitoringGrpc {
                 net_out_mb: r.net_out_mb,
                 block_read_mb: r.block_read_mb,
                 block_write_mb: r.block_write_mb,
+                application_id: r.application_id.unwrap_or(0),
+                compose_id: r.compose_id.unwrap_or(0),
             })
             .collect();
 

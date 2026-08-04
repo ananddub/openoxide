@@ -106,7 +106,9 @@ impl Store {
                 net_in_mb REAL NOT NULL,
                 net_out_mb REAL NOT NULL,
                 block_read_mb REAL NOT NULL,
-                block_write_mb REAL NOT NULL
+                block_write_mb REAL NOT NULL,
+                application_id INTEGER,
+                compose_id INTEGER
             );
 
             CREATE INDEX IF NOT EXISTS idx_server_metrics_ts ON server_metrics(timestamp);
@@ -116,6 +118,27 @@ impl Store {
         )
         .execute(&pool)
         .await?;
+
+        let columns = sqlx::query("PRAGMA table_info(container_metrics)")
+            .fetch_all(&pool)
+            .await?;
+        use sqlx::Row;
+        let has_application_id = columns
+            .iter()
+            .any(|row| row.get::<String, _>("name") == "application_id");
+        let has_compose_id = columns
+            .iter()
+            .any(|row| row.get::<String, _>("name") == "compose_id");
+        if !has_application_id {
+            sqlx::query("ALTER TABLE container_metrics ADD COLUMN application_id INTEGER")
+                .execute(&pool)
+                .await?;
+        }
+        if !has_compose_id {
+            sqlx::query("ALTER TABLE container_metrics ADD COLUMN compose_id INTEGER")
+                .execute(&pool)
+                .await?;
+        }
 
         info!(url = db_url, "metric store initialized");
         Ok(Self { pool })
@@ -172,8 +195,9 @@ impl Store {
             r#"
             INSERT INTO container_metrics (
                 timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb,
-                mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb,
+                application_id, compose_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(&m.timestamp)
@@ -187,6 +211,8 @@ impl Store {
         .bind(m.net_out_mb)
         .bind(m.block_read_mb)
         .bind(m.block_write_mb)
+        .bind(m.application_id)
+        .bind(m.compose_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -206,8 +232,9 @@ impl Store {
                 r#"
                 INSERT INTO container_metrics (
                     timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb,
-                    mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb,
+                    application_id, compose_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
             .bind(&m.timestamp)
@@ -221,6 +248,8 @@ impl Store {
             .bind(m.net_out_mb)
             .bind(m.block_read_mb)
             .bind(m.block_write_mb)
+            .bind(m.application_id)
+            .bind(m.compose_id)
             .execute(&mut *tx)
             .await?;
         }
@@ -234,7 +263,7 @@ impl Store {
         limit: i64,
     ) -> Result<Vec<ContainerMetricRow>, MonitorError> {
         let rows = sqlx::query_as::<_, ContainerMetricRow>(
-            r#"SELECT id, timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb, mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb FROM container_metrics WHERE name LIKE ? ORDER BY id DESC LIMIT ?"#
+            r#"SELECT id, timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb, mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb, application_id, compose_id FROM container_metrics WHERE name LIKE ? ORDER BY id DESC LIMIT ?"#
         )
         .bind(format!("%{}%", app_name))
         .bind(limit)

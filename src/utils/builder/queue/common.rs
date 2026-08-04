@@ -91,7 +91,19 @@ impl BuilderQueue {
             ComposeStatus::Error.as_str()
         };
 
-        if let Err(e) = repo.finalize_with_resource(deployment_id, final_status, error_message.as_deref(), application_id, compose_id, database_id, database_kind.as_deref(), target_status).await {
+        if let Err(e) = repo
+            .finalize_with_resource(
+                deployment_id,
+                final_status,
+                error_message.as_deref(),
+                application_id,
+                compose_id,
+                database_id,
+                database_kind.as_deref(),
+                target_status,
+            )
+            .await
+        {
             tracing::error!(deployment_id, error = %e, "builder queue: could not atomically persist deployment outcome");
         }
 

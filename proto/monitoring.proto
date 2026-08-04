@@ -4,12 +4,8 @@ package monitoring;
 
 // Query API the panel uses to read metrics collected by an agent.
 //
-// Metric *ingestion* deliberately does not live here: agents push container
-// metrics to the panel over HTTP (POST /api/monitoring/containers) and persist
-// host metrics to their own local store. Earlier revisions declared bi-di
-// streaming RPCs for ingestion, but their handlers only logged and dropped
-// every message, so they were removed rather than left as a working-looking
-// API that silently discarded data.
+// Agents are the only durable metric store. The panel authenticates to this
+// query API and proxies results to authorized browser clients.
 service MonitoringService {
   // Query historical server metrics
   rpc GetServerMetrics (GetMetricsRequest) returns (ServerMetricsResponse);
@@ -70,6 +66,8 @@ message ContainerMetricPoint {
   double net_out_mb = 10;
   double block_read_mb = 11;
   double block_write_mb = 12;
+  int64 application_id = 13;
+  int64 compose_id = 14;
 }
 
 message GetMetricsRequest {

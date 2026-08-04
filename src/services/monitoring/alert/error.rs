@@ -5,6 +5,7 @@ pub enum AlertParseError {
     Target(String),
     Metric(String),
     Operator(String),
+    EventState(String),
     MissingId(String),
 }
 
@@ -14,6 +15,7 @@ impl fmt::Display for AlertParseError {
             Self::Target(value) => write!(f, "unknown alert target {value:?}"),
             Self::Metric(value) => write!(f, "unknown alert metric {value:?}"),
             Self::Operator(value) => write!(f, "unknown alert operator {value:?}"),
+            Self::EventState(value) => write!(f, "unknown alert event state {value:?}"),
             Self::MissingId(name) => write!(f, "alert rule {name:?} has no id"),
         }
     }

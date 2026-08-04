@@ -34,9 +34,10 @@ pub async fn serve_grpc(ctx: MonitorContext, shutdown: CancellationToken) {
     let service = MonitoringGrpc::new(ctx.store.clone(), ctx.config.server_id, ctx.docker.clone());
     let token = ctx.config.metrics_token.clone();
     let result = tonic::transport::Server::builder()
-        .add_service(MonitoringServiceServer::with_interceptor(service, move |request| {
-            authenticate(&token, request)
-        }))
+        .add_service(MonitoringServiceServer::with_interceptor(
+            service,
+            move |request| authenticate(&token, request),
+        ))
         .serve_with_shutdown(addr, shutdown.cancelled_owned())
         .await;
 

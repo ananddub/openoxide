@@ -167,20 +167,45 @@ mod tests {
 
     fn domain(key: &str, host: &str) -> SharedDomain {
         SharedDomain {
-            key: key.into(), host: host.into(), https: false, port: 3000,
-            service_name: None, path: "/".into(), internal_path: "/".into(),
-            strip_path: false, entrypoint: None, certificate_type: "NONE".into(),
-            custom_cert_resolver: None, middlewares: vec![],
+            key: key.into(),
+            host: host.into(),
+            https: false,
+            port: 3000,
+            service_name: None,
+            path: "/".into(),
+            internal_path: "/".into(),
+            strip_path: false,
+            entrypoint: None,
+            certificate_type: "NONE".into(),
+            custom_cert_resolver: None,
+            middlewares: vec![],
         }
     }
 
     #[test]
     fn multiple_domains_emit_common_labels_once() {
-        let labels = build_traefik_labels("api", &[domain("1", "one.test"), domain("2", "two.test")])
-            .remove("api").unwrap();
-        assert_eq!(labels.iter().filter(|v| v.starts_with("traefik.enable=")).count(), 1);
-        assert_eq!(labels.iter().filter(|v| v.starts_with("traefik.docker.network=")).count(), 1);
-        let keys: std::collections::HashSet<_> = labels.iter().map(|v| v.split_once('=').map_or(v.as_str(), |(k, _)| k)).collect();
+        let labels =
+            build_traefik_labels("api", &[domain("1", "one.test"), domain("2", "two.test")])
+                .remove("api")
+                .unwrap();
+        assert_eq!(
+            labels
+                .iter()
+                .filter(|v| v.starts_with("traefik.enable="))
+                .count(),
+            1
+        );
+        assert_eq!(
+            labels
+                .iter()
+                .filter(|v| v.starts_with("traefik.docker.network="))
+                .count(),
+            1
+        );
+        let keys: std::collections::HashSet<_> = labels
+            .iter()
+            .map(|v| v.split_once('=').map_or(v.as_str(), |(k, _)| k))
+            .collect();
         assert_eq!(keys.len(), labels.len());
     }
 }

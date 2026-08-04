@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::db::models::alert_rule::AlertRule;
-use crate::services::monitoring::alert::{MetricKind, Operator, RuleState, TargetKind};
+use crate::services::monitoring::alert::{
+    AlertEventState, MetricKind, Operator, RuleState, TargetKind,
+};
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateAlertRuleDto {
@@ -139,16 +141,28 @@ pub struct AlertEventResponseDto {
     pub alert_rule_id: i64,
     pub organization_id: i64,
     pub target_key: String,
-    pub state: String,
+    pub state: AlertEventState,
     pub value: Option<f64>,
     pub threshold: Option<f64>,
     pub message: String,
     pub created_at: i64,
 }
 
-impl From<crate::db::repository::alert_rule::AlertEvent> for AlertEventResponseDto {
-    fn from(value: crate::db::repository::alert_rule::AlertEvent) -> Self {
-        Self { id: value.id, alert_rule_id: value.alert_rule_id, organization_id: value.organization_id, target_key: value.target_key, state: value.state, value: value.value, threshold: value.threshold, message: value.message, created_at: value.created_at }
+impl TryFrom<crate::db::repository::alert_rule::AlertEvent> for AlertEventResponseDto {
+    type Error = String;
+
+    fn try_from(value: crate::db::repository::alert_rule::AlertEvent) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: value.id,
+            alert_rule_id: value.alert_rule_id,
+            organization_id: value.organization_id,
+            target_key: value.target_key,
+            state: value.state.parse().map_err(|error| format!("{error}"))?,
+            value: value.value,
+            threshold: value.threshold,
+            message: value.message,
+            created_at: value.created_at,
+        })
     }
 }
 

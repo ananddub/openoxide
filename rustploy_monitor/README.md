@@ -2,8 +2,8 @@
 
 `rustploy_monitor` is the host-side monitoring agent for Rustploy. One agent
 runs on every Docker server managed by the Rustploy panel. It collects host and
-container telemetry, keeps a local history, pushes current readings to the
-panel, and exposes an authenticated gRPC API for metric and log queries.
+container telemetry, keeps the only durable metric history on that node, and
+exposes an authenticated gRPC API for panel metric and log queries.
 
 This document explains the complete data flow, configuration, server identity,
 authentication, storage, deployment, and troubleshooting model.
@@ -18,8 +18,7 @@ Docker host
 │  Host collector ───────────────┐                             │
 │  Container collector ──────────┼── Local SQLite history      │
 │                                │                             │
-│                                ├── HTTP push ───────────┐    │
-│  Authenticated gRPC API ───────┘                        │    │
+│  Authenticated gRPC API ◄──────┘                        │    │
 │       metrics + container logs                          │    │
 └─────────────────────────────────────────────────────────┼────┘
                                                           │
@@ -27,8 +26,7 @@ Docker host
                                             Rustploy panel
                                             ┌───────────────┐
                                             │ authentication│
-                                            │ panel history │
-                                            │ SSE live data │
+                                            │ query proxy   │
                                             │ alert engine  │
                                             │ notifications │
                                             └───────────────┘
@@ -40,12 +38,10 @@ The agent performs four main jobs:
 2. Collect CPU, memory, network, and block-I/O metrics for Docker containers.
 3. Persist readings in its own SQLite database and periodically remove expired
    history.
-4. Send authenticated host/container readings to the Rustploy panel and serve
-   authenticated gRPC metric/log requests.
+4. Serve authenticated gRPC metric/log requests from the Rustploy panel.
 
-The agent and panel have separate databases. Agent storage keeps local history
-available across panel downtime. Panel storage supports the product UI, SSE
-streams, multi-server history, alert evaluation, and notification delivery.
+The agent is the single metric store. The panel keeps configuration, agent
+identity and alert history, and pulls raw metrics only when needed.
 
 ## Server identity: `SERVER_ID`
 
@@ -68,19 +64,13 @@ the agent on `local-lima` must use:
 SERVER_ID=5
 ```
 
-Every pushed request contains the server ID in two places:
-
-- `X-Server-Id` HTTP header
-- `server_id` inside the JSON payload
-
-The panel rejects a request if these values differ. Metric tables also reference
-`servers(id)` with a foreign key, so a non-existent ID cannot be stored.
+Every gRPC query contains the expected `server_id`. An agent rejects requests
+for a different server, so one node cannot accidentally answer for another.
 
 Common symptoms of an incorrect ID:
 
-- Panel returns HTTP `500` while inserting metrics.
-- SQLite reports a foreign-key constraint failure.
-- Metrics appear under the wrong server if a valid but incorrect ID is used.
+- Panel returns a gRPC `NOT_FOUND` response.
+- Monitoring history appears unavailable for that server.
 
 Never copy one compose file to several servers without changing `SERVER_ID`.
 Each host must have its own panel server row and matching agent identity.
@@ -165,14 +155,8 @@ The system collector samples:
 - uptime
 - OS, distribution, kernel, and architecture
 
-Each sample is saved to the agent SQLite database and pushed to:
-
-```text
-POST /api/monitoring/server
-```
-
-The panel authenticates the request and inserts the reading into
-`server_metrics` with its `server_id`.
+Each sample is saved only to the agent SQLite database. The panel reads it on
+demand through the authenticated `GetServerMetrics` gRPC method.
 
 ### Container metrics
 
@@ -186,30 +170,18 @@ collects:
 - container ID and display name
 - optional Rustploy application or compose resource identity
 
-Samples are locally persisted and sent in batches to reduce HTTP overhead:
-
-```text
-POST /api/monitoring/containers/batch
-```
-
-A batch may contain data for only one server. The panel stores each row in
-`container_metrics` and publishes it to the live container-metric SSE bus.
+Samples are stored only on the remote agent. The panel reads them on demand
+through the authenticated `GetContainerMetrics` gRPC method.
 
 ### Live UI and history
 
-The panel provides persisted history and live streams:
+The panel provides authorized pull-through history:
 
 ```text
 GET /api/monitoring/containers/{server_id}
     ?organization_id=<organization_id>
-    &container_id=<optional-container-id>
+    &appName=<optional-container-name>
     &limit=<1..1000>
-
-GET /api/monitoring/stream/containers
-    ?server_id=<server_id>
-    &organization_id=<organization_id>
-    &application_id=<optional-id>
-    &compose_id=<optional-id>
 ```
 
 These routes require monitoring permission and validate the server's
@@ -311,16 +283,8 @@ The default is seven days.
 
 ### Panel SQLite
 
-The panel persists pushed rows in `server_metrics` and `container_metrics`.
-Panel history is server-aware, and container identity is effectively the pair:
-
-```text
-(server_id, container_id)
-```
-
-This matters because different Docker hosts may generate the same short
-container ID or container name. The panel also runs a seven-day cleanup task for
-raw panel metric history.
+The panel stores no raw host or container metrics. It stores monitoring agent
+identity/token metadata and alert configuration/history only.
 
 ## Rollups for dense hosts
 
@@ -498,8 +462,6 @@ starting rustploy monitor agent server_id=5 refresh_rate=60 grpc_port=50051
 metric store initialized url="sqlite:///app/data/monitor.db"
 gRPC query server listening addr=0.0.0.0:50051
 collecting container metrics mode="cgroup" filter=all containers
-pushed container metrics to panel count=12
-pushed host metric to panel
 ```
 
 Clean shutdown messages indicate normal Docker stop/restart behavior:
@@ -609,8 +571,8 @@ rustploy_monitor/src/
 ├── logs.rs             Docker stdout/stderr demultiplexing
 ├── store.rs            agent SQLite schema and queries
 └── tasks/
-    ├── host.rs         host collection and HTTP push loop
-    ├── container.rs    container collection, storage, and batch push
+    ├── host.rs         host collection and local persistence
+    ├── container.rs    container collection and local persistence
     ├── retention.rs    expired local history cleanup
     └── grpc.rs         authenticated gRPC server startup
 ```

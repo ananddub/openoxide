@@ -1,5 +1,6 @@
 pub mod engine;
 pub mod error;
+pub mod event_state;
 pub mod metric;
 pub mod operator;
 pub mod reading;
@@ -10,6 +11,7 @@ pub mod target;
 
 pub use engine::AlertEngine;
 pub use error::AlertParseError;
+pub use event_state::AlertEventState;
 pub use metric::MetricKind;
 pub use operator::Operator;
 pub use reading::{FiredAlert, TargetReading};

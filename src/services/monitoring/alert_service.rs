@@ -2,40 +2,26 @@ use crate::{
     db::{models::alert_rule::AlertRule, repository::AlertRuleRepository},
     services::{
         monitoring::{
-            alert::{AlertEngine, MetricSample, ParsedRule, TargetKind, TargetReading},
+            alert::{
+                AlertEngine, AlertEventState, MetricSample, ParsedRule, TargetKind, TargetReading,
+            },
             monitoring_service::MonitoringService,
-            sse::MonitoringSseBus,
         },
         notification::{NotificationScope, NotificationService, NotificationTrigger},
     },
 };
 use auto_di::singleton;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
 pub const EVALUATION_INTERVAL_SECS: i64 = 10;
 
-/// Newest metrics seen for one container, keyed by container id.
-#[derive(Clone, Debug)]
-struct ContainerSample {
-    server_id: i64,
-    kind: TargetKind,
-    target_id: i64,
-    name: String,
-    cpu_percent: f64,
-    memory_percent: f64,
-    received_at: i64,
-}
-
 pub struct AlertService {
     repo: Arc<AlertRuleRepository>,
     monitoring: Arc<MonitoringService>,
     notifications: Arc<NotificationService>,
-    sse_bus: Arc<MonitoringSseBus>,
     engine: Mutex<AlertEngine>,
     rules_cache: RwLock<Option<Vec<ParsedRule>>>,
-    container_samples: RwLock<HashMap<String, ContainerSample>>,
 }
 
 #[singleton]
@@ -44,16 +30,13 @@ impl AlertService {
         repo: Arc<AlertRuleRepository>,
         monitoring: Arc<MonitoringService>,
         notifications: Arc<NotificationService>,
-        sse_bus: Arc<MonitoringSseBus>,
     ) -> Self {
         Self {
             repo,
             monitoring,
             notifications,
-            sse_bus,
             engine: Mutex::new(AlertEngine::new()),
             rules_cache: RwLock::new(None),
-            container_samples: RwLock::new(HashMap::new()),
         }
     }
 
@@ -64,8 +47,15 @@ impl AlertService {
             .map_err(|e| e.to_string())
     }
 
-    pub async fn list_events(&self, organization_id: i64, limit: i64) -> Result<Vec<crate::db::repository::alert_rule::AlertEvent>, String> {
-        self.repo.list_events(organization_id, limit).await.map_err(|e| e.to_string())
+    pub async fn list_events(
+        &self,
+        organization_id: i64,
+        limit: i64,
+    ) -> Result<Vec<crate::db::repository::alert_rule::AlertEvent>, String> {
+        self.repo
+            .list_events(organization_id, limit)
+            .await
+            .map_err(|e| e.to_string())
     }
 
     pub async fn get_rule(
@@ -113,59 +103,7 @@ impl AlertService {
         *cache = None;
     }
 
-    /// Latches the newest metrics per container off the SSE bus.
-    ///
-    /// Agents push far more often than rules are evaluated, so only the latest
-    /// reading per container is kept; the evaluation loop reads whatever landed
-    /// since its last pass.
-    fn start_container_ingest(self: &Arc<Self>) {
-        let service = Arc::clone(self);
-        let mut receiver = self.sse_bus.subscribe_container_metrics();
-
-        tokio::spawn(async move {
-            loop {
-                match receiver.recv().await {
-                    Ok(event) => {
-                        // Agents that cannot attribute a container to a resource
-                        // send zeros; such a container has nothing to alert on.
-                        let Some((kind, target_id)) = classify_container(&event) else {
-                            continue;
-                        };
-
-                        let memory_percent = if event.memory_limit_mb > 0.0 {
-                            (event.memory_used_mb / event.memory_limit_mb) * 100.0
-                        } else {
-                            0.0
-                        };
-
-                        let mut samples = service.container_samples.write().await;
-                        samples.insert(
-                            format!("{}:{}", event.server_id, event.container_id),
-                            ContainerSample {
-                                server_id: event.server_id,
-                                kind,
-                                target_id,
-                                name: event.container_name.clone(),
-                                cpu_percent: event.cpu_percent,
-                                memory_percent,
-                                received_at: chrono::Utc::now().timestamp(),
-                            },
-                        );
-                    }
-                    // A slow pass can fall behind a fast agent. Only the newest
-                    // reading matters, so skipped events are not an error.
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        tracing::debug!(skipped, "dropped stale container metrics");
-                    }
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
-                }
-            }
-        });
-    }
-
     pub fn start(self: &Arc<Self>) {
-        self.start_container_ingest();
-
         let service = Arc::clone(self);
 
         tokio::spawn(async move {
@@ -248,7 +186,18 @@ impl AlertService {
                     &alert.to_message(),
                 )
                 .await;
-            let _ = self.repo.record_event(alert.rule_id, alert.organization_id, &alert.target_key, "FIRING", Some(alert.value), Some(alert.threshold), &alert.to_message().body).await;
+            let _ = self
+                .repo
+                .record_event(
+                    alert.rule_id,
+                    alert.organization_id,
+                    &alert.target_key,
+                    AlertEventState::Firing,
+                    Some(alert.value),
+                    Some(alert.threshold),
+                    &alert.to_message().body,
+                )
+                .await;
         }
 
         Ok(fired.len())
@@ -256,7 +205,7 @@ impl AlertService {
 
     async fn collect_readings(&self) -> Result<Vec<TargetReading>, String> {
         let mut readings = self.host_readings().await?;
-        readings.extend(self.container_readings().await);
+        readings.extend(self.container_readings().await?);
         Ok(readings)
     }
 
@@ -268,7 +217,11 @@ impl AlertService {
             .get_latest_metrics_per_server()
             .await?
             .into_iter()
-            .filter(|metric| metric.timestamp.is_some_and(|timestamp| now.saturating_sub(timestamp) <= HOST_SAMPLE_TTL_SECS))
+            .filter(|metric| {
+                metric
+                    .timestamp
+                    .is_some_and(|timestamp| now.saturating_sub(timestamp) <= HOST_SAMPLE_TTL_SECS)
+            })
             .map(|metric| TargetReading {
                 kind: TargetKind::Server,
                 key: metric.server_id.to_string(),
@@ -292,93 +245,44 @@ impl AlertService {
     /// Containers report no disk percentage — the cgroup path has no such figure
     /// and a container's writable layer is not a percentage of anything — so a
     /// DISK rule on a container target never breaches.
-    async fn container_readings(&self) -> Vec<TargetReading> {
+    async fn container_readings(&self) -> Result<Vec<TargetReading>, String> {
         const SAMPLE_TTL_SECS: i64 = EVALUATION_INTERVAL_SECS * 3;
         let now = chrono::Utc::now().timestamp();
-        let mut samples = self.container_samples.write().await;
-        samples.retain(|_, sample| now.saturating_sub(sample.received_at) <= SAMPLE_TTL_SECS);
-
-        samples
-            .values()
-            .map(|sample| TargetReading {
-                kind: sample.kind,
-                key: sample.target_id.to_string(),
-                display_name: format!("{} (server {})", sample.name, sample.server_id),
-                sample: MetricSample {
-                    cpu_percent: sample.cpu_percent,
-                    memory_percent: sample.memory_percent,
-                    disk_percent: 0.0,
-                },
+        Ok(self
+            .monitoring
+            .get_latest_container_metrics()
+            .await?
+            .into_iter()
+            .filter(|metric| now.saturating_sub(metric.timestamp) <= SAMPLE_TTL_SECS)
+            .filter_map(|metric| {
+                let (kind, target_id) = if let Some(id) = metric.application_id {
+                    (TargetKind::Application, id)
+                } else if let Some(id) = metric.compose_id {
+                    (TargetKind::Compose, id)
+                } else {
+                    return None;
+                };
+                let payload: serde_json::Value = serde_json::from_str(&metric.metrics_json).ok()?;
+                Some(TargetReading {
+                    kind,
+                    key: target_id.to_string(),
+                    display_name: format!(
+                        "{} (server {})",
+                        metric.container_name, metric.server_id
+                    ),
+                    sample: MetricSample {
+                        cpu_percent: payload
+                            .get("cpu_percent")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or_default(),
+                        memory_percent: payload
+                            .get("memory_percent")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or_default(),
+                        disk_percent: 0.0,
+                    },
+                })
             })
-            .collect()
-    }
-}
-
-/// Which resource a pushed container metric belongs to.
-///
-/// Agents report ids they can attribute and zero otherwise, so an unattributed
-/// container yields `None` rather than being filed under resource 0.
-fn classify_container(
-    event: &crate::services::monitoring::sse::ContainerMetricSseEvent,
-) -> Option<(TargetKind, i64)> {
-    if event.application_id > 0 {
-        return Some((TargetKind::Application, event.application_id));
-    }
-    if event.compose_id > 0 {
-        return Some((TargetKind::Compose, event.compose_id));
-    }
-    None
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::services::monitoring::sse::ContainerMetricSseEvent;
-
-    fn event(application_id: i64, compose_id: i64) -> ContainerMetricSseEvent {
-        ContainerMetricSseEvent {
-            server_id: 1,
-            application_id,
-            compose_id,
-            container_id: "abc123".into(),
-            container_name: "web".into(),
-            cpu_percent: 10.0,
-            memory_used_mb: 256.0,
-            memory_limit_mb: 1024.0,
-            net_rx_kbps: 0.0,
-            net_tx_kbps: 0.0,
-            timestamp: 0,
-        }
-    }
-
-    #[test]
-    fn an_application_container_is_classified_as_such() {
-        assert_eq!(
-            classify_container(&event(7, 0)),
-            Some((TargetKind::Application, 7))
-        );
-    }
-
-    #[test]
-    fn a_compose_container_is_classified_as_such() {
-        assert_eq!(
-            classify_container(&event(0, 9)),
-            Some((TargetKind::Compose, 9))
-        );
-    }
-
-    #[test]
-    fn an_application_id_wins_when_both_are_set() {
-        assert_eq!(
-            classify_container(&event(7, 9)),
-            Some((TargetKind::Application, 7))
-        );
-    }
-
-    /// Agents send zeros for containers they cannot attribute; those must not be
-    /// filed under resource 0, which would make one rule match everything.
-    #[test]
-    fn an_unattributed_container_is_ignored() {
-        assert_eq!(classify_container(&event(0, 0)), None);
+            .collect())
     }
 }

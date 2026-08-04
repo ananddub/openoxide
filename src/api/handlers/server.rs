@@ -1,3 +1,4 @@
+use crate::core::config::Config;
 use crate::{
     api::dto::deployment::DeploymentSseEventDto,
     api::dto::server::{
@@ -14,7 +15,6 @@ use crate::{
         setup::{ServerSetup, SetupConfig},
     },
 };
-use crate::core::config::Config;
 use auto_di::resolve;
 use auto_route::controller;
 use axum::{
@@ -173,9 +173,18 @@ impl ServerController {
             .await?;
         let mut config = SetupConfig::default();
         config.monitoring_server_id = Some(id);
-        let panel_config = resolve::<Config>().await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "configuration unavailable".into()))?;
-        config.monitoring_panel_url = Some(std::env::var("RUSTPLOY_SERVER_URL").unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)));
-        config.monitoring_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
+        let panel_config = resolve::<Config>().await.map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "configuration unavailable".into(),
+            )
+        })?;
+        config.monitoring_panel_url = Some(
+            std::env::var("RUSTPLOY_SERVER_URL")
+                .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
+        );
+        config.monitoring_token =
+            Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = body.advertise_addr;
         if let Some(email) = body.acme_email {
             config.acme_email = email;
@@ -214,9 +223,18 @@ impl ServerController {
 
         let mut config = SetupConfig::default();
         config.monitoring_server_id = Some(id);
-        let panel_config = resolve::<Config>().await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "configuration unavailable".into()))?;
-        config.monitoring_panel_url = Some(std::env::var("RUSTPLOY_SERVER_URL").unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)));
-        config.monitoring_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
+        let panel_config = resolve::<Config>().await.map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "configuration unavailable".into(),
+            )
+        })?;
+        config.monitoring_panel_url = Some(
+            std::env::var("RUSTPLOY_SERVER_URL")
+                .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
+        );
+        config.monitoring_token =
+            Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = body.advertise_addr;
         if let Some(email) = body.acme_email {
             config.acme_email = email;

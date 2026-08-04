@@ -2,12 +2,12 @@ use crate::core::cache::{AppStateCache, CacheKey};
 use crate::utils::builder::hash_state::ApplicationState;
 use auto_di::singleton;
 use dashmap::DashMap;
+use futures::FutureExt;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::sync::{Notify, Semaphore};
-use futures::FutureExt;
 
 type ServerKey = Option<i64>;
 
@@ -366,18 +366,39 @@ impl BuilderQueue {
                             database_id,
                             database_kind.clone(),
                             operation.clone(),
-                        )).catch_unwind().await;
+                        ))
+                        .catch_unwind()
+                        .await;
                         if outcome.is_err() {
-                            tracing::error!(deployment_id = dep_id, "builder queue worker panicked");
-                            if let Ok(repo) = auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-                                let _ = repo.finalize_with_resource(
-                                    dep_id, "ERROR", Some("builder worker panicked"), application_id,
-                                    compose_id, database_id, database_kind.as_deref(), "ERROR",
-                                ).await;
+                            tracing::error!(
+                                deployment_id = dep_id,
+                                "builder queue worker panicked"
+                            );
+                            if let Ok(repo) =
+                                auto_di::resolve::<crate::repository::DeploymentRepository>().await
+                            {
+                                let _ = repo
+                                    .finalize_with_resource(
+                                        dep_id,
+                                        "ERROR",
+                                        Some("builder worker panicked"),
+                                        application_id,
+                                        compose_id,
+                                        database_id,
+                                        database_kind.as_deref(),
+                                        "ERROR",
+                                    )
+                                    .await;
                             }
-                            if let Some(id) = application_id { q.cache.invalidate(&CacheKey::Application(id)).await; }
-                            if let Some(id) = compose_id { q.cache.invalidate(&CacheKey::Compose(id)).await; }
-                            if let Some(id) = database_id { q.cache.invalidate(&CacheKey::Database(id)).await; }
+                            if let Some(id) = application_id {
+                                q.cache.invalidate(&CacheKey::Application(id)).await;
+                            }
+                            if let Some(id) = compose_id {
+                                q.cache.invalidate(&CacheKey::Compose(id)).await;
+                            }
+                            if let Some(id) = database_id {
+                                q.cache.invalidate(&CacheKey::Database(id)).await;
+                            }
                         }
                         // Free the per-server slot, then wake dispatcher.
                         drop(permit);

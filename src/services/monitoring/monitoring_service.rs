@@ -1,13 +1,11 @@
 use crate::{
-    db::{
-        models::{container_metrics::ContainerMetric, server_metrics::ServerMetric},
-        repository::{ContainerMetricRepository, ServerMetricRepository},
-    },
-    services::remote_server::ServerService,
+    core::config::Config,
+    db::models::{container_metrics::ContainerMetric, server_metrics::ServerMetric},
+    services::{monitoring::agent_auth::MonitoringAgentAuth, remote_server::ServerService},
 };
 use auto_di::singleton;
-use serde_json::Value;
 use std::sync::Arc;
+use tonic::{Request, metadata::MetadataValue};
 
 pub mod proto {
     tonic::include_proto!("monitoring");
@@ -15,147 +13,200 @@ pub mod proto {
 
 pub struct MonitoringService {
     server_service: Arc<ServerService>,
-    repo_metrics: Arc<ServerMetricRepository>,
-    container_repo: Arc<ContainerMetricRepository>,
-}
-
-fn is_local_ip(ip: &str) -> bool {
-    ip == "127.0.0.1" || ip == "localhost" || ip == "0.0.0.0" || ip.is_empty()
+    config: Arc<Config>,
+    agent_auth: Arc<MonitoringAgentAuth>,
 }
 
 #[singleton]
 impl MonitoringService {
     pub fn new(
         server_service: Arc<ServerService>,
-        repo_metrics: Arc<ServerMetricRepository>,
-        container_repo: Arc<ContainerMetricRepository>,
+        config: Arc<Config>,
+        agent_auth: Arc<MonitoringAgentAuth>,
     ) -> Self {
         Self {
             server_service,
-            repo_metrics,
-            container_repo,
+            config,
+            agent_auth,
         }
     }
 
-    pub async fn record_container_metric(&self, metric: ContainerMetric) -> Result<i64, String> {
-        self.container_repo
-            .create(&metric)
+    async fn client(
+        &self,
+        server_id: i64,
+    ) -> Result<
+        proto::monitoring_service_client::MonitoringServiceClient<tonic::transport::Channel>,
+        String,
+    > {
+        let server = self
+            .server_service
+            .get_by_id(server_id)
             .await
-            .map_err(|e| e.to_string())
+            .map_err(|_| format!("monitoring server {server_id} not found"))?;
+        let host = match server.ip_address.as_str() {
+            "" | "0.0.0.0" | "localhost" => "127.0.0.1",
+            other => other,
+        };
+        proto::monitoring_service_client::MonitoringServiceClient::connect(format!(
+            "http://{host}:50051"
+        ))
+        .await
+        .map_err(|error| format!("monitoring agent {server_id} is unreachable: {error}"))
+    }
+
+    async fn authenticated<T>(&self, server_id: i64, message: T) -> Result<Request<T>, String> {
+        let raw_token = self
+            .agent_auth
+            .query_token(server_id)
+            .await
+            .map_err(|error| error.to_string())?
+            .unwrap_or_else(|| self.config.metrics_token.clone());
+        let token: MetadataValue<_> = raw_token
+            .parse()
+            .map_err(|_| "METRICS_TOKEN is not valid gRPC metadata".to_string())?;
+        let mut request = Request::new(message);
+        request.metadata_mut().insert("x-metrics-token", token);
+        Ok(request)
+    }
+
+    pub async fn server_history(
+        &self,
+        server_id: i64,
+        limit: i64,
+    ) -> Result<Vec<ServerMetric>, String> {
+        let mut client = self.client(server_id).await?;
+        let request = self
+            .authenticated(
+                server_id,
+                proto::GetMetricsRequest {
+                    server_id,
+                    limit: limit.clamp(1, 1000) as i32,
+                },
+            )
+            .await?;
+        let metrics = client
+            .get_server_metrics(request)
+            .await
+            .map_err(|error| format!("agent metric query failed: {error}"))?
+            .into_inner()
+            .metrics;
+        let _ = self.agent_auth.touch_seen(server_id).await;
+        Ok(metrics
+            .into_iter()
+            .map(|metric| ServerMetric {
+                timestamp: chrono::DateTime::parse_from_rfc3339(&metric.timestamp)
+                    .ok()
+                    .map(|value| value.timestamp()),
+                server_id,
+                cpu: metric.cpu,
+                cpu_model: metric.cpu_model,
+                cpu_cores: i64::from(metric.cpu_cores),
+                cpu_physical_cores: i64::from(metric.cpu_physical_cores),
+                cpu_speed: metric.cpu_speed,
+                os: metric.os,
+                distro: metric.distro,
+                kernel: metric.kernel,
+                arch: metric.arch,
+                mem_used: metric.mem_used,
+                mem_used_gb: metric.mem_used_gb,
+                mem_total: metric.mem_total,
+                uptime: metric.uptime as i64,
+                disk_used: metric.disk_used,
+                total_disk: metric.total_disk,
+                network_in: metric.network_in,
+                network_out: metric.network_out,
+            })
+            .collect())
     }
 
     pub async fn container_history(
         &self,
         server_id: i64,
-        container_id: Option<&str>,
+        app_name: &str,
         limit: i64,
     ) -> Result<Vec<ContainerMetric>, String> {
-        self.container_repo
-            .history_for_server(server_id, container_id, limit.clamp(1, 1000))
+        let mut client = self.client(server_id).await?;
+        let request = self
+            .authenticated(
+                server_id,
+                proto::GetContainerMetricsRequest {
+                    server_id,
+                    app_name: app_name.to_owned(),
+                    limit: limit.clamp(1, 1000) as i32,
+                },
+            )
+            .await?;
+        let metrics = client
+            .get_container_metrics(request)
             .await
-            .map_err(|e| e.to_string())
-    }
-
-    pub async fn record_server_metric(&self, metric: ServerMetric) -> Result<i64, String> {
-        self.repo_metrics
-            .create(&metric)
-            .await
-            .map_err(|e| format!("Database save metric failed: {}", e))
-    }
-
-    pub async fn get_latest_metrics(&self, limit: i64) -> Result<Vec<ServerMetric>, String> {
-        self.repo_metrics
-            .get_latest(limit)
-            .await
-            .map_err(|e| format!("Database get metrics failed: {}", e))
+            .map_err(|error| format!("agent container query failed: {error}"))?
+            .into_inner()
+            .metrics;
+        let _ = self.agent_auth.touch_seen(server_id).await;
+        Ok(metrics
+            .into_iter()
+            .map(|metric| ContainerMetric {
+                id: (metric.id > 0).then_some(metric.id),
+                timestamp: chrono::DateTime::parse_from_rfc3339(&metric.timestamp)
+                    .map(|value| value.timestamp())
+                    .unwrap_or_default(),
+                container_id: metric.container_id,
+                container_name: metric.name,
+                metrics_json: serde_json::json!({
+                    "cpu_percent": metric.cpu_perc,
+                    "memory_percent": metric.mem_perc,
+                    "memory_used_mb": metric.mem_used_mb,
+                    "memory_limit_mb": metric.mem_total_mb,
+                    "net_rx_kbps": metric.net_in_mb * 1024.0,
+                    "net_tx_kbps": metric.net_out_mb * 1024.0,
+                    "block_read_mb": metric.block_read_mb,
+                    "block_write_mb": metric.block_write_mb
+                })
+                .to_string(),
+                server_id,
+                application_id: (metric.application_id > 0).then_some(metric.application_id),
+                compose_id: (metric.compose_id > 0).then_some(metric.compose_id),
+            })
+            .collect())
     }
 
     pub async fn get_latest_metrics_per_server(&self) -> Result<Vec<ServerMetric>, String> {
-        self.repo_metrics
-            .get_latest_per_server()
+        let servers = self
+            .server_service
+            .list()
             .await
-            .map_err(|e| format!("Database get per-server metrics failed: {e}"))
+            .map_err(|error| error.to_string())?;
+        let mut latest = Vec::new();
+        for server in servers {
+            let Some(server_id) = server.id else { continue };
+            match self.server_history(server_id, 1).await {
+                Ok(mut metrics) => latest.append(&mut metrics),
+                Err(error) => tracing::debug!(server_id, %error, "monitoring agent unavailable"),
+            }
+        }
+        Ok(latest)
     }
 
-    pub fn start_retention(self: &Arc<Self>) {
-        let service = Arc::clone(self);
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
-            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-            loop {
-                interval.tick().await;
-                let cutoff = chrono::Utc::now().timestamp() - 7 * 24 * 60 * 60;
-                let server = service.repo_metrics.delete_older_than(cutoff).await;
-                let container = service.container_repo.delete_older_than(cutoff).await;
-                match (server, container) {
-                    (Ok(server), Ok(container)) if server + container > 0 => tracing::info!(server, container, "pruned old panel metrics"),
-                    (Err(error), _) | (_, Err(error)) => tracing::warn!(%error, "panel metric retention failed"),
-                    _ => {}
+    pub async fn get_latest_container_metrics(&self) -> Result<Vec<ContainerMetric>, String> {
+        let servers = self
+            .server_service
+            .list()
+            .await
+            .map_err(|error| error.to_string())?;
+        let mut latest = Vec::new();
+        for server in servers {
+            let Some(server_id) = server.id else { continue };
+            match self.container_history(server_id, "", 1000).await {
+                Ok(metrics) => {
+                    let mut newest = std::collections::HashMap::new();
+                    for metric in metrics {
+                        newest.entry(metric.container_id.clone()).or_insert(metric);
+                    }
+                    latest.extend(newest.into_values());
                 }
+                Err(error) => tracing::debug!(server_id, %error, "monitoring agent unavailable"),
             }
-        });
-    }
-
-    pub async fn fetch_server_metrics(&self, server_id: i64) -> Result<Value, String> {
-        let grpc_url = if let Ok(server) = self.server_service.get_by_id(server_id).await {
-            if is_local_ip(&server.ip_address) {
-                "http://127.0.0.1:50051".to_string()
-            } else {
-                format!("http://{}:50051", server.ip_address)
-            }
-        } else {
-            "http://127.0.0.1:50051".to_string()
-        };
-
-        let mut client =
-            proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
-                .await
-                .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
-
-        let response = client
-            .get_server_metrics(proto::GetMetricsRequest {
-                server_id,
-                limit: 50,
-            })
-            .await
-            .map_err(|e| format!("gRPC GetServerMetrics request failed: {}", e))?;
-
-        let inner = response.into_inner();
-        serde_json::to_value(&inner.metrics)
-            .map_err(|e| format!("Failed to serialize metrics list to JSON: {}", e))
-    }
-
-    pub async fn fetch_container_metrics(
-        &self,
-        server_id: i64,
-        app_name: &str,
-    ) -> Result<Value, String> {
-        let grpc_url = if let Ok(server) = self.server_service.get_by_id(server_id).await {
-            if is_local_ip(&server.ip_address) {
-                "http://127.0.0.1:50051".to_string()
-            } else {
-                format!("http://{}:50051", server.ip_address)
-            }
-        } else {
-            "http://127.0.0.1:50051".to_string()
-        };
-
-        let mut client =
-            proto::monitoring_service_client::MonitoringServiceClient::connect(grpc_url)
-                .await
-                .map_err(|e| format!("Failed to connect to gRPC server: {}", e))?;
-
-        let response = client
-            .get_container_metrics(proto::GetContainerMetricsRequest {
-                server_id,
-                app_name: app_name.to_string(),
-                limit: 50,
-            })
-            .await
-            .map_err(|e| format!("gRPC GetContainerMetrics request failed: {}", e))?;
-
-        let inner = response.into_inner();
-        serde_json::to_value(&inner.metrics)
-            .map_err(|e| format!("Failed to serialize container metrics list to JSON: {}", e))
+        }
+        Ok(latest)
     }
 }

@@ -5,13 +5,11 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::alert_rule::{
-        AlertRuleResponseDto, AlertEventResponseDto, CreateAlertRuleDto, TestNotificationDto, TestNotificationResponseDto,
-        UpdateAlertRuleDto,
+        AlertEventResponseDto, AlertRuleResponseDto, CreateAlertRuleDto, TestNotificationDto,
+        TestNotificationResponseDto, UpdateAlertRuleDto,
     },
     core::middleware::{
-        permission::{
-            RequirePermission, AlertWritePermission, ServerMonitorPermission,
-        },
+        permission::{AlertWritePermission, RequirePermission, ServerMonitorPermission},
         validator::ValidatedJson,
     },
     services::{
@@ -39,9 +37,10 @@ impl AlertRuleController {
     #[get("/organization/{organization_id}")]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(claims, _): RequirePermission<ServerMonitorPermission>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<AlertRuleResponseDto>>, ApiError> {
+        verify_organization(claims.user.group_id, organization_id)?;
         let rules = self
             .service
             .list_rules(organization_id)
@@ -70,16 +69,31 @@ impl AlertRuleController {
         RequirePermission(claims, _): RequirePermission<ServerMonitorPermission>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<AlertEventResponseDto>>, ApiError> {
-        if claims.user.group_id != organization_id { return Err((StatusCode::FORBIDDEN, "organization does not match authenticated scope".into())); }
-        Ok(Json(self.service.list_events(organization_id, 200).await.map_err(internal)?.into_iter().map(Into::into).collect()))
+        if claims.user.group_id != organization_id {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "organization does not match authenticated scope".into(),
+            ));
+        }
+        let events = self
+            .service
+            .list_events(organization_id, 200)
+            .await
+            .map_err(internal)?
+            .into_iter()
+            .map(AlertEventResponseDto::try_from)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| (StatusCode::UNPROCESSABLE_ENTITY, error))?;
+        Ok(Json(events))
     }
 
     #[get("/{id}/organization/{organization_id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(claims, _): RequirePermission<ServerMonitorPermission>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<Json<AlertRuleResponseDto>, ApiError> {
+        verify_organization(claims.user.group_id, organization_id)?;
         let rule = self
             .service
             .get_rule(id, organization_id)
@@ -95,9 +109,10 @@ impl AlertRuleController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
         ValidatedJson(body): ValidatedJson<CreateAlertRuleDto>,
     ) -> Result<(StatusCode, Json<AlertRuleResponseDto>), ApiError> {
+        verify_organization(claims.user.group_id, body.organization_id)?;
         let organization_id = body.organization_id;
         let id = self
             .service
@@ -120,10 +135,11 @@ impl AlertRuleController {
     #[put("/{id}/organization/{organization_id}")]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
         Path((id, organization_id)): Path<(i64, i64)>,
         ValidatedJson(body): ValidatedJson<UpdateAlertRuleDto>,
     ) -> Result<Json<AlertRuleResponseDto>, ApiError> {
+        verify_organization(claims.user.group_id, organization_id)?;
         // Confirms the rule belongs to this organization before writing.
         self.service
             .get_rule(id, organization_id)
@@ -151,9 +167,10 @@ impl AlertRuleController {
     #[delete("/{id}/organization/{organization_id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
+        verify_organization(claims.user.group_id, organization_id)?;
         let removed = self
             .service
             .delete_rule(id, organization_id)
@@ -208,4 +225,15 @@ fn internal(error: String) -> ApiError {
 
 fn not_found() -> ApiError {
     (StatusCode::NOT_FOUND, "alert rule not found".to_string())
+}
+
+fn verify_organization(authenticated: i64, requested: i64) -> Result<(), ApiError> {
+    if authenticated == requested {
+        Ok(())
+    } else {
+        Err((
+            StatusCode::FORBIDDEN,
+            "organization does not match authenticated scope".into(),
+        ))
+    }
 }

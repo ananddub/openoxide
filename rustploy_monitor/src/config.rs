@@ -121,20 +121,6 @@ impl Config {
         Ok(())
     }
 
-    pub fn container_metrics_endpoint(&self) -> String {
-        format!(
-            "{}/api/monitoring/containers/batch",
-            self.panel_url.trim_end_matches('/')
-        )
-    }
-
-    pub fn server_metrics_endpoint(&self) -> String {
-        format!(
-            "{}/api/monitoring/server",
-            self.panel_url.trim_end_matches('/')
-        )
-    }
-
     pub fn container_filter(&self) -> crate::filter::ContainerFilter {
         crate::filter::ContainerFilter::new(
             self.include_containers.clone(),
@@ -195,15 +181,5 @@ mod tests {
         let mut cfg = base();
         cfg.metrics_token.clear();
         assert!(cfg.validate().is_err());
-    }
-
-    #[test]
-    fn builds_container_endpoint_without_double_slash() {
-        let mut cfg = base();
-        cfg.panel_url = "http://panel:4000/".into();
-        assert_eq!(
-            cfg.container_metrics_endpoint(),
-            "http://panel:4000/api/monitoring/containers/batch"
-        );
     }
 }

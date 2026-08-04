@@ -215,20 +215,36 @@ impl DeploymentRepository {
 
         if let Some(resource_id) = application_id {
             sqlx::query("UPDATE applications SET app_status=? WHERE id=?")
-                .bind(resource_status).bind(resource_id).execute(&mut *tx).await?;
+                .bind(resource_status)
+                .bind(resource_id)
+                .execute(&mut *tx)
+                .await?;
         } else if let Some(resource_id) = compose_id {
             sqlx::query("UPDATE compose_projects SET compose_status=? WHERE id=?")
-                .bind(resource_status).bind(resource_id).execute(&mut *tx).await?;
+                .bind(resource_status)
+                .bind(resource_id)
+                .execute(&mut *tx)
+                .await?;
         } else if let (Some(resource_id), Some(kind)) = (database_id, database_kind) {
             let table = match kind.to_ascii_lowercase().as_str() {
-                "postgres" => "postgres_dbs", "mysql" => "mysql_dbs",
-                "mariadb" => "mariadb_dbs", "mongo" => "mongo_dbs",
-                "redis" => "redis_dbs", "libsql" => "libsql_dbs",
-                _ => return Err(sqlx::Error::Protocol(format!("invalid database kind: {kind}"))),
+                "postgres" => "postgres_dbs",
+                "mysql" => "mysql_dbs",
+                "mariadb" => "mariadb_dbs",
+                "mongo" => "mongo_dbs",
+                "redis" => "redis_dbs",
+                "libsql" => "libsql_dbs",
+                _ => {
+                    return Err(sqlx::Error::Protocol(format!(
+                        "invalid database kind: {kind}"
+                    )));
+                }
             };
             let query = format!("UPDATE {table} SET app_status=? WHERE id=?");
-            sqlx::query(sqlx::AssertSqlSafe(query)).bind(resource_status).bind(resource_id)
-                .execute(&mut *tx).await?;
+            sqlx::query(sqlx::AssertSqlSafe(query))
+                .bind(resource_status)
+                .bind(resource_id)
+                .execute(&mut *tx)
+                .await?;
         }
         tx.commit().await
     }

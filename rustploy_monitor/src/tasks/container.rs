@@ -4,7 +4,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
 use crate::collector::{CgroupCollector, cgroup};
-use crate::config::{CollectionMode, Config};
+use crate::config::CollectionMode;
 use crate::context::MonitorContext;
 use crate::docker::stream::ContainerStreamer;
 use crate::docker::types::{ContainerId, ContainerSample};
@@ -12,26 +12,6 @@ use crate::rollup::Rollup;
 use crate::store::ContainerMetricRow;
 
 const CONTAINER_REFRESH_INTERVAL: Duration = Duration::from_secs(30);
-
-#[derive(serde::Serialize)]
-struct PushMetricsPayload<'a> {
-    metrics: Vec<PushContainerMetricPoint<'a>>,
-}
-
-#[derive(serde::Serialize)]
-struct PushContainerMetricPoint<'a> {
-    server_id: i64,
-    application_id: i64,
-    compose_id: i64,
-    container_id: &'a str,
-    container_name: &'a str,
-    cpu_percent: f64,
-    memory_used_mb: f64,
-    memory_limit_mb: f64,
-    net_rx_kbps: f64,
-    net_tx_kbps: f64,
-    timestamp: i64,
-}
 
 pub async fn collect_and_push_containers(ctx: MonitorContext, shutdown: CancellationToken) {
     let filter = &ctx.filter;
@@ -68,7 +48,6 @@ async fn poll_cgroups(
     mut collector: CgroupCollector,
     shutdown: CancellationToken,
 ) {
-    let endpoint = ctx.config.container_metrics_endpoint();
     let filter_is_unset = ctx.filter.is_unset();
 
     let mut rollup = Rollup::new(ctx.config.rollup_samples);
@@ -127,7 +106,6 @@ async fn poll_cgroups(
                     error!(%error, "could not persist batch container metrics");
                 }
 
-                push_container_metrics(&ctx.http_client, &ctx.config, &endpoint, &to_store).await;
             }
         }
     }
@@ -142,7 +120,6 @@ async fn stream_and_push_containers(ctx: MonitorContext, shutdown: CancellationT
         streamer.run(streamer_shutdown).await;
     });
 
-    let endpoint = ctx.config.container_metrics_endpoint();
     let mut flush = tokio::time::interval(Duration::from_secs(ctx.config.refresh_rate));
     flush.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
@@ -167,7 +144,6 @@ async fn stream_and_push_containers(ctx: MonitorContext, shutdown: CancellationT
                     error!(%error, "could not persist batch container metrics");
                 }
 
-                push_container_metrics(&ctx.http_client, &ctx.config, &endpoint, &rows).await;
             }
             sample = samples.recv() => {
                 match sample {
@@ -202,57 +178,13 @@ fn to_metric_row(sample: &ContainerSample) -> ContainerMetricRow {
         net_out_mb: net_tx_bytes as f64 / 1_048_576.0,
         block_read_mb: block_read_bytes as f64 / 1_048_576.0,
         block_write_mb: block_write_bytes as f64 / 1_048_576.0,
-        application_id: sample.labels.get("com.rustploy.application-id").and_then(|v| v.parse().ok()),
-        compose_id: sample.labels.get("com.rustploy.compose-id").and_then(|v| v.parse().ok()),
-    }
-}
-
-pub async fn push_container_metrics(
-    client: &reqwest::Client,
-    config: &Config,
-    endpoint: &str,
-    metrics: &[ContainerMetricRow],
-) {
-    let timestamp = chrono::Utc::now().timestamp();
-
-    let points: Vec<_> = metrics
-        .iter()
-        .map(|metric| PushContainerMetricPoint {
-            server_id: config.server_id,
-            application_id: metric.application_id.unwrap_or(0),
-            compose_id: metric.compose_id.unwrap_or(0),
-            container_id: &metric.container_id,
-            container_name: &metric.name,
-            cpu_percent: metric.cpu_perc,
-            memory_used_mb: metric.mem_used_mb,
-            memory_limit_mb: metric.mem_total_mb,
-            net_rx_kbps: metric.net_in_mb * 1024.0,
-            net_tx_kbps: metric.net_out_mb * 1024.0,
-            timestamp,
-        })
-        .collect();
-
-    let payload = PushMetricsPayload { metrics: points };
-
-    let request = client
-        .post(endpoint)
-        .header("X-Metrics-Token", &config.metrics_token)
-        .header("X-Server-Id", config.server_id)
-        .json(&payload);
-
-    match request.send().await {
-        Ok(response) if response.status().is_success() => {
-            info!(count = metrics.len(), "pushed container metrics to panel");
-        }
-        Ok(response) => {
-            warn!(
-                status = response.status().as_u16(),
-                count = metrics.len(),
-                "panel rejected container metrics"
-            );
-        }
-        Err(error) => {
-            warn!(%error, count = metrics.len(), "could not reach panel");
-        }
+        application_id: sample
+            .labels
+            .get("com.rustploy.application-id")
+            .and_then(|v| v.parse().ok()),
+        compose_id: sample
+            .labels
+            .get("com.rustploy.compose-id")
+            .and_then(|v| v.parse().ok()),
     }
 }

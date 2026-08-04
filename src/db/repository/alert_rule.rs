@@ -1,4 +1,5 @@
 use crate::db::models::alert_rule::AlertRule;
+use crate::services::monitoring::alert::AlertEventState;
 use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -121,14 +122,27 @@ impl AlertRuleRepository {
         Ok(res.rows_affected() > 0)
     }
 
-    pub async fn record_event(&self, rule_id: i64, organization_id: i64, target_key: &str, state: &str, value: Option<f64>, threshold: Option<f64>, message: &str) -> Result<(), sqlx::Error> {
+    pub async fn record_event(
+        &self,
+        rule_id: i64,
+        organization_id: i64,
+        target_key: &str,
+        state: AlertEventState,
+        value: Option<f64>,
+        threshold: Option<f64>,
+        message: &str,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query("INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            .bind(rule_id).bind(organization_id).bind(target_key).bind(state).bind(value).bind(threshold).bind(message)
+            .bind(rule_id).bind(organization_id).bind(target_key).bind(state.as_str()).bind(value).bind(threshold).bind(message)
             .execute(self.pool.as_ref()).await?;
         Ok(())
     }
 
-    pub async fn list_events(&self, organization_id: i64, limit: i64) -> Result<Vec<AlertEvent>, sqlx::Error> {
+    pub async fn list_events(
+        &self,
+        organization_id: i64,
+        limit: i64,
+    ) -> Result<Vec<AlertEvent>, sqlx::Error> {
         sqlx::query_as("SELECT id, alert_rule_id, organization_id, target_key, state, value, threshold, message, created_at FROM alert_events WHERE organization_id=? ORDER BY created_at DESC LIMIT ?")
             .bind(organization_id).bind(limit.clamp(1, 500)).fetch_all(self.pool.as_ref()).await
     }

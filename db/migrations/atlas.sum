@@ -1,4 +1,4 @@
-h1:dpxvRONln+sO8k9x4e0dzeIUCtqRrHgH4yPe55gGHTE=
+h1:seTlEoseJc1HNmIUtk3v/xUovLnq+aT7+q241jr14HA=
 0001_initial.sql h1:F3W1L3w4LNfG1mRMavOXQsoYxu78Z3tIt1GEJeE+H30=
 0002_schedule_action.sql h1:EZ0IABextrgUejhihIHSqFv3rYAHRpE0JmmcU6znFUA=
 0003_deployment_queue.sql h1:P2KB/aCC3fIGylfjEIWd5VgunoTNeVMxb0+LcsSThpI=
@@ -11,3 +11,7 @@ h1:dpxvRONln+sO8k9x4e0dzeIUCtqRrHgH4yPe55gGHTE=
 0010_database_networks_mongo_cleanup.sql h1:CJyQiGUovp33Smd9Rtxi+ydDc4o3rWwjhH+7dt5IBjk=
 0011_database_network_registry.sql h1:e4qfNwbSgfOA7DvtZ9m0CzeSGu17Ay4QZuuc1PKCA1I=
 0012_application_compose_networks.sql h1:FF+ksGTP9jj8EYPnfZhm/bkfp5jMbS1eH7gpFhv+pGA=
+0013_alert_rule_organization.sql h1:/gh0tFuhjFFLJ6d9Rwg8N5/MCNeDvrgjKnwifkw4baM=
+0014_monitoring_product_hardening.sql h1:lqT93mMDmvltZ9dLHOvlbULuyCUKnpj/mHyc4/CHP+8=
+0015_strict_alert_contract.sql h1:QzGS/SmZ7szo/rGPpqH7E5KPYWkGpmb9MvfauBjMehU=
+0016_remote_metric_storage.sql h1:uppj0Yu2zuCVJMieNgdaLHf4mvZnNPOTUFgntTQUCfk=

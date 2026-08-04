@@ -260,8 +260,8 @@ impl ServerSetup {
                 // Recreate so a setup run cannot keep stale SERVER_ID/token env.
                 let _ = docker.containers().rm(name).force().run().await;
             } else {
-            docker.containers().start(name).run().await?;
-            return Ok(());
+                docker.containers().start(name).run().await?;
+                return Ok(());
             }
         }
 
@@ -304,8 +304,7 @@ impl ServerSetup {
                 .env("RETENTION_DAYS", "7")
                 .mount(Mount::volume("rustploy-monitor-data", "/data"));
         }
-        create.run()
-            .await?;
+        create.run().await?;
         Ok(())
     }
 
