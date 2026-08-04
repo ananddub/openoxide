@@ -1,3 +1,4 @@
+pub mod alert;
 pub mod application;
 pub mod auth;
 pub mod certificate;

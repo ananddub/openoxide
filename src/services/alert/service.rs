@@ -1,12 +1,10 @@
 use crate::{
     db::{models::alert_rule::AlertRule, repository::AlertRuleRepository},
     services::{
-        monitoring::{
-            alert::{
-                AlertEngine, AlertEventState, MetricSample, ParsedRule, TargetKind, TargetReading,
-            },
-            monitoring_service::MonitoringService,
+        alert::{
+            AlertEngine, AlertEventState, MetricSample, ParsedRule, TargetKind, TargetReading,
         },
+        monitoring::monitoring_service::MonitoringService,
         notification::{NotificationScope, NotificationService, NotificationTrigger},
     },
 };
@@ -101,32 +99,6 @@ impl AlertService {
     async fn invalidate_rules_cache(&self) {
         let mut cache = self.rules_cache.write().await;
         *cache = None;
-    }
-
-    pub fn start(self: &Arc<Self>) {
-        let service = Arc::clone(self);
-
-        tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(
-                EVALUATION_INTERVAL_SECS as u64,
-            ));
-            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-
-            tracing::info!(
-                interval_secs = EVALUATION_INTERVAL_SECS,
-                "alert evaluation loop started"
-            );
-
-            loop {
-                ticker.tick().await;
-
-                match service.evaluate_once().await {
-                    Ok(0) => {}
-                    Ok(count) => tracing::debug!(count, "alerts dispatched"),
-                    Err(error) => tracing::error!(error = %error, "alert evaluation failed"),
-                }
-            }
-        });
     }
 
     pub async fn evaluate_once(&self) -> Result<usize, String> {

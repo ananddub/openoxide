@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::db::models::alert_rule::AlertRule;
-use crate::services::monitoring::alert::{
-    AlertEventState, MetricKind, Operator, RuleState, TargetKind,
-};
+use crate::services::alert::{AlertEventState, MetricKind, Operator, RuleState, TargetKind};
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateAlertRuleDto {

@@ -13,7 +13,7 @@ use crate::{
         validator::ValidatedJson,
     },
     services::{
-        monitoring::alert_service::AlertService,
+        alert::AlertService,
         notification::{NotificationLevel, NotificationMessage, NotificationService},
     },
 };

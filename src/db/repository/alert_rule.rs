@@ -1,5 +1,5 @@
 use crate::db::models::alert_rule::AlertRule;
-use crate::services::monitoring::alert::AlertEventState;
+use crate::services::alert::AlertEventState;
 use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;

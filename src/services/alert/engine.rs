@@ -101,7 +101,7 @@ impl AlertEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::monitoring::alert::{MetricKind, MetricSample, Operator, TargetKind};
+    use crate::services::alert::{MetricKind, MetricSample, Operator, TargetKind};
 
     fn rule(target_kind: TargetKind, target_id: i64, window_samples: usize) -> ParsedRule {
         ParsedRule {
