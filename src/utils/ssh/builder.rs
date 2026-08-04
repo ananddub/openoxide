@@ -94,9 +94,9 @@ fn write_secret(prefix: &str, contents: &[u8], mode: u32) -> Result<TempPath, st
 
     for dir in RAM_DIRS {
         let mut builder = tempfile::Builder::new();
-        builder.prefix(prefix).permissions(
-            <std::fs::Permissions as PermissionsExt>::from_mode(mode),
-        );
+        builder
+            .prefix(prefix)
+            .permissions(<std::fs::Permissions as PermissionsExt>::from_mode(mode));
 
         let attempt = match dir {
             Some(dir) if std::path::Path::new(dir).is_dir() => builder.tempfile_in(dir),
@@ -116,9 +116,8 @@ fn write_secret(prefix: &str, contents: &[u8], mode: u32) -> Result<TempPath, st
         }
     }
 
-    Err(last_error.unwrap_or_else(|| {
-        std::io::Error::other("no writable directory available for ssh secret")
-    }))
+    Err(last_error
+        .unwrap_or_else(|| std::io::Error::other("no writable directory available for ssh secret")))
 }
 
 impl SshBuilder {
@@ -497,8 +496,7 @@ impl SshBuilder {
                 // The askpass script holds the password in plaintext, so it is
                 // written to RAM-backed storage for the same reason as the key.
                 let script = format!("#!/bin/sh\necho {}\n", quote(password));
-                let temp_file =
-                    write_secret("rustploy-ssh-askpass-", script.as_bytes(), 0o700)?;
+                let temp_file = write_secret("rustploy-ssh-askpass-", script.as_bytes(), 0o700)?;
 
                 temp_askpass_file = Some(temp_file);
             }

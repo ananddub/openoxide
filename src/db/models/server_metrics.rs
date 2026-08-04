@@ -10,6 +10,7 @@ use sqlx_gen::SqlxGen;
 pub struct ServerMetric {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
     pub timestamp: Option<i64>,
+    pub server_id: i64,
     #[sqlx_gen(sql_type = "REAL")]
     pub cpu: f64,
     #[sqlx_gen(sql_type = "TEXT")]

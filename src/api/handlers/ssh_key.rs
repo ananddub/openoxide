@@ -34,7 +34,9 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
     ) -> Result<Json<Vec<SshKeyResponseDto>>, ApiError> {
         if let Some(CacheEnum::SshKeysList(cached)) = self.cache.get(&CacheKey::SshKeysList).await {
-            return Ok(Json(cached.into_iter().map(SshKeyResponseDto::from).collect()));
+            return Ok(Json(
+                cached.into_iter().map(SshKeyResponseDto::from).collect(),
+            ));
         }
 
         let items = self.service.list().await.map_err(map_sqlx_error)?;
@@ -42,7 +44,9 @@ impl SshKeyController {
             .insert(CacheKey::SshKeysList, CacheEnum::SshKeysList(items.clone()))
             .await;
 
-        Ok(Json(items.into_iter().map(SshKeyResponseDto::from).collect()))
+        Ok(Json(
+            items.into_iter().map(SshKeyResponseDto::from).collect(),
+        ))
     }
 
     #[get("/{id}")]
@@ -65,7 +69,8 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(SshKeyResponseDto::from)
@@ -82,7 +87,8 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
         ValidatedJson(body): ValidatedJson<GenerateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        let generated = self.service
+        let generated = self
+            .service
             .generate(body.name, body.description, &body.key_type)
             .await
             .map(SshKeyResponseDto::from)
@@ -114,7 +120,8 @@ impl SshKeyController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchSshKeyDto>,
     ) -> Result<Json<SshKeyResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .patch(id, body)
             .await
             .map(SshKeyResponseDto::from)
@@ -145,10 +152,7 @@ impl SshKeyController {
         RequirePermission(_claims, _): RequirePermission<ServerDeletePermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map_err(map_sqlx_error)?;
+        self.service.delete(id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate(&CacheKey::SshKeysList).await;
         Ok(StatusCode::NO_CONTENT)

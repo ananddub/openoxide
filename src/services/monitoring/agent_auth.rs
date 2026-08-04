@@ -1,0 +1,98 @@
+use auto_di::singleton;
+use sha2::{Digest, Sha256};
+use sqlx::SqlitePool;
+use std::sync::Arc;
+
+pub struct MonitoringAgentAuth {
+    pool: Arc<SqlitePool>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, sqlx::FromRow)]
+pub struct MonitoringAgentStatus {
+    pub server_id: i64,
+    pub organization_id: i64,
+    pub last_seen_at: Option<i64>,
+    pub agent_version: Option<String>,
+}
+
+#[singleton]
+impl MonitoringAgentAuth {
+    pub fn new(pool: Arc<SqlitePool>) -> Self {
+        Self { pool }
+    }
+
+    pub async fn rotate(
+        &self,
+        server_id: i64,
+        organization_id: i64,
+    ) -> Result<String, sqlx::Error> {
+        let token = format!("rma_{}", uuid::Uuid::new_v4().simple());
+        let hash = hash_token(&token);
+        sqlx::query(
+            "INSERT INTO monitoring_agents (server_id, organization_id, token_hash, updated_at)
+             VALUES (?, ?, ?, strftime('%s','now'))
+             ON CONFLICT(server_id) DO UPDATE SET organization_id=excluded.organization_id,
+             token_hash=excluded.token_hash, updated_at=excluded.updated_at",
+        )
+        .bind(server_id)
+        .bind(organization_id)
+        .bind(hash)
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(token)
+    }
+
+    pub async fn server_belongs_to_organization(
+        &self,
+        server_id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let linked: i64 = sqlx::query_scalar(
+            "SELECT EXISTS(
+                SELECT 1 FROM applications a JOIN environments e ON e.id=a.environment_id JOIN projects p ON p.id=e.project_id WHERE a.server_id=? AND p.organization_id=?
+                UNION ALL
+                SELECT 1 FROM compose_projects c JOIN environments e ON e.id=c.environment_id JOIN projects p ON p.id=e.project_id WHERE c.server_id=? AND p.organization_id=?
+            )",
+        )
+        .bind(server_id).bind(organization_id).bind(server_id).bind(organization_id)
+        .fetch_one(self.pool.as_ref()).await?;
+        if linked != 0 { return Ok(true); }
+        let existing: Option<i64> = sqlx::query_scalar("SELECT organization_id FROM monitoring_agents WHERE server_id=?")
+            .bind(server_id).fetch_optional(self.pool.as_ref()).await?;
+        Ok(existing == Some(organization_id))
+    }
+
+    pub async fn authenticate(&self, server_id: i64, token: &str) -> Result<bool, sqlx::Error> {
+        let stored = sqlx::query_scalar::<_, String>(
+            "SELECT token_hash FROM monitoring_agents WHERE server_id = ?",
+        )
+        .bind(server_id)
+        .fetch_optional(self.pool.as_ref())
+        .await?;
+        let Some(stored) = stored else {
+            return Ok(false);
+        };
+        if stored != hash_token(token) {
+            return Ok(false);
+        }
+        sqlx::query("UPDATE monitoring_agents SET last_seen_at=strftime('%s','now'), updated_at=strftime('%s','now') WHERE server_id=?")
+            .bind(server_id).execute(self.pool.as_ref()).await?;
+        Ok(true)
+    }
+
+    pub async fn organization_id(&self, server_id: i64) -> Result<Option<i64>, sqlx::Error> {
+        sqlx::query_scalar("SELECT organization_id FROM monitoring_agents WHERE server_id=?")
+            .bind(server_id)
+            .fetch_optional(self.pool.as_ref())
+            .await
+    }
+
+    pub async fn status(&self, server_id: i64) -> Result<Option<MonitoringAgentStatus>, sqlx::Error> {
+        sqlx::query_as("SELECT server_id, organization_id, last_seen_at, agent_version FROM monitoring_agents WHERE server_id=?")
+            .bind(server_id).fetch_optional(self.pool.as_ref()).await
+    }
+}
+
+fn hash_token(token: &str) -> String {
+    format!("{:x}", Sha256::digest(token.as_bytes()))
+}

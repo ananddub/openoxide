@@ -22,11 +22,43 @@ impl NotificationRepository {
         .await
     }
 
+    /// Notifications belonging to one organization.
+    ///
+    /// Dispatch must use this rather than `get_all`: sending one tenant's alerts
+    /// to every tenant's channels leaks who runs what.
+    pub async fn get_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<Notification>, sqlx::Error> {
+        sqlx::query_as!(
+            Notification,
+            r#"SELECT id AS "id?: i64", name AS "name: String", notification_type AS "notification_type: String", on_app_deploy AS "on_app_deploy: i64", on_app_build_error AS "on_app_build_error: i64", on_database_backup AS "on_database_backup: i64", on_volume_backup AS "on_volume_backup: i64", on_panel_restart AS "on_panel_restart: i64", on_docker_cleanup AS "on_docker_cleanup: i64", on_server_threshold AS "on_server_threshold: i64", on_panel_backup AS "on_panel_backup: i64", slack_id AS "slack_id?: i64", telegram_id AS "telegram_id?: i64", discord_id AS "discord_id?: i64", email_id AS "email_id?: i64", resend_id AS "resend_id?: i64", gotify_id AS "gotify_id?: i64", ntfy_id AS "ntfy_id?: i64", mattermost_id AS "mattermost_id?: i64", custom_id AS "custom_id?: i64", lark_id AS "lark_id?: i64", pushover_id AS "pushover_id?: i64", teams_id AS "teams_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM notifications WHERE organization_id = ?"#,
+            organization_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Notification>, sqlx::Error> {
         sqlx::query_as!(
             Notification,
             r#"SELECT id AS "id?: i64", name AS "name: String", notification_type AS "notification_type: String", on_app_deploy AS "on_app_deploy: i64", on_app_build_error AS "on_app_build_error: i64", on_database_backup AS "on_database_backup: i64", on_volume_backup AS "on_volume_backup: i64", on_panel_restart AS "on_panel_restart: i64", on_docker_cleanup AS "on_docker_cleanup: i64", on_server_threshold AS "on_server_threshold: i64", on_panel_backup AS "on_panel_backup: i64", slack_id AS "slack_id?: i64", telegram_id AS "telegram_id?: i64", discord_id AS "discord_id?: i64", email_id AS "email_id?: i64", resend_id AS "resend_id?: i64", gotify_id AS "gotify_id?: i64", ntfy_id AS "ntfy_id?: i64", mattermost_id AS "mattermost_id?: i64", custom_id AS "custom_id?: i64", lark_id AS "lark_id?: i64", pushover_id AS "pushover_id?: i64", teams_id AS "teams_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM notifications WHERE id = ?"#,
             id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn get_by_id_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Option<Notification>, sqlx::Error> {
+        sqlx::query_as!(
+            Notification,
+            r#"SELECT id AS "id?: i64", name AS "name: String", notification_type AS "notification_type: String", on_app_deploy AS "on_app_deploy: i64", on_app_build_error AS "on_app_build_error: i64", on_database_backup AS "on_database_backup: i64", on_volume_backup AS "on_volume_backup: i64", on_panel_restart AS "on_panel_restart: i64", on_docker_cleanup AS "on_docker_cleanup: i64", on_server_threshold AS "on_server_threshold: i64", on_panel_backup AS "on_panel_backup: i64", slack_id AS "slack_id?: i64", telegram_id AS "telegram_id?: i64", discord_id AS "discord_id?: i64", email_id AS "email_id?: i64", resend_id AS "resend_id?: i64", gotify_id AS "gotify_id?: i64", ntfy_id AS "ntfy_id?: i64", mattermost_id AS "mattermost_id?: i64", custom_id AS "custom_id?: i64", lark_id AS "lark_id?: i64", pushover_id AS "pushover_id?: i64", teams_id AS "teams_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM notifications WHERE id = ? AND organization_id = ?"#,
+            id,
+            organization_id
         )
         .fetch_optional(self.pool.as_ref())
         .await
@@ -106,5 +138,20 @@ impl NotificationRepository {
             .execute(self.pool.as_ref())
             .await?;
         Ok(())
+    }
+
+    pub async fn delete_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"DELETE FROM notifications WHERE id = ? AND organization_id = ?"#,
+            id,
+            organization_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 }

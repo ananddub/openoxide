@@ -36,7 +36,9 @@ impl DestinationController {
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
     ) -> Result<Json<Vec<DestinationResponseDto>>, ApiError> {
-        if let Some(CacheEnum::DestinationsList(cached)) = self.cache.get(&CacheKey::DestinationsList).await {
+        if let Some(CacheEnum::DestinationsList(cached)) =
+            self.cache.get(&CacheKey::DestinationsList).await
+        {
             return Ok(Json(
                 cached
                     .into_iter()
@@ -47,7 +49,10 @@ impl DestinationController {
 
         let items = self.service.list().await.map_err(map_sqlx_error)?;
         self.cache
-            .insert(CacheKey::DestinationsList, CacheEnum::DestinationsList(items.clone()))
+            .insert(
+                CacheKey::DestinationsList,
+                CacheEnum::DestinationsList(items.clone()),
+            )
             .await;
 
         Ok(Json(
@@ -78,7 +83,8 @@ impl DestinationController {
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateDestinationDto>,
     ) -> Result<(StatusCode, Json<DestinationResponseDto>), ApiError> {
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(DestinationResponseDto::from)
@@ -96,7 +102,8 @@ impl DestinationController {
         Path(id): Path<String>,
         ValidatedJson(body): ValidatedJson<PatchDestinationDto>,
     ) -> Result<Json<DestinationResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .patch(&id, body)
             .await
             .map(DestinationResponseDto::from)
@@ -113,10 +120,7 @@ impl DestinationController {
         RequirePermission(_claims, _): RequirePermission<DatabaseDeletePermission>,
         Path(id): Path<String>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(&id)
-            .await
-            .map_err(map_sqlx_error)?;
+        self.service.delete(&id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate(&CacheKey::DestinationsList).await;
         Ok(StatusCode::NO_CONTENT)

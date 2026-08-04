@@ -26,20 +26,14 @@ impl TagController {
 
     #[get("")]
     async fn list_all(&self) -> Result<Json<Vec<TagDto>>, ApiError> {
-        let items = self.service
-            .list_all()
-            .await
-            .map_err(map_sqlx_error)?;
+        let items = self.service.list_all().await.map_err(map_sqlx_error)?;
 
         Ok(Json(items.into_iter().map(TagDto::from).collect()))
     }
 
     #[get("/{id}")]
     async fn get_by_id(&self, Path(id): Path<i64>) -> Result<Json<TagDto>, ApiError> {
-        let tag = self.service
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?;
+        let tag = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
 
         match tag {
             Some(t) => Ok(Json(TagDto::from(t))),
@@ -49,10 +43,7 @@ impl TagController {
 
     #[post("")]
     async fn create(&self, Json(body): Json<CreateTagDto>) -> Result<Json<TagDto>, ApiError> {
-        let created = self.service
-            .create(body)
-            .await
-            .map_err(map_sqlx_error)?;
+        let created = self.service.create(body).await.map_err(map_sqlx_error)?;
 
         Ok(Json(TagDto::from(created)))
     }
@@ -63,7 +54,8 @@ impl TagController {
         Path(id): Path<i64>,
         Json(body): Json<UpdateTagDto>,
     ) -> Result<Json<TagDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .update(id, body)
             .await
             .map_err(map_sqlx_error)?;
@@ -81,8 +73,12 @@ impl TagController {
     }
 
     #[get("/project/{project_id}")]
-    async fn list_project_tags(&self, Path(project_id): Path<i64>) -> Result<Json<Vec<TagDto>>, ApiError> {
-        let items = self.service
+    async fn list_project_tags(
+        &self,
+        Path(project_id): Path<i64>,
+    ) -> Result<Json<Vec<TagDto>>, ApiError> {
+        let items = self
+            .service
             .list_project_tags(project_id)
             .await
             .map_err(map_sqlx_error)?;

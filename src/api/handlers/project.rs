@@ -49,20 +49,32 @@ impl ProjectController {
         RequirePermission(_claims, _): RequirePermission<ProjectReadPermission>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<ProjectResponseDto>>, ApiError> {
-        if let Some(CacheEnum::ProjectsList(cached)) = self.cache.get(&CacheKey::ProjectsList(organization_id)).await {
-            return Ok(Json(cached.into_iter().map(ProjectResponseDto::from).collect()));
+        if let Some(CacheEnum::ProjectsList(cached)) = self
+            .cache
+            .get(&CacheKey::ProjectsList(organization_id))
+            .await
+        {
+            return Ok(Json(
+                cached.into_iter().map(ProjectResponseDto::from).collect(),
+            ));
         }
 
-        let items = self.service
+        let items = self
+            .service
             .list_by_organization(organization_id)
             .await
             .map_err(map_sqlx_error)?;
 
         self.cache
-            .insert(CacheKey::ProjectsList(organization_id), CacheEnum::ProjectsList(items.clone()))
+            .insert(
+                CacheKey::ProjectsList(organization_id),
+                CacheEnum::ProjectsList(items.clone()),
+            )
             .await;
 
-        Ok(Json(items.into_iter().map(ProjectResponseDto::from).collect()))
+        Ok(Json(
+            items.into_iter().map(ProjectResponseDto::from).collect(),
+        ))
     }
 
     #[post]
@@ -72,7 +84,8 @@ impl ProjectController {
         ValidatedJson(body): ValidatedJson<CreateProjectDto>,
     ) -> Result<(StatusCode, Json<ProjectResponseDto>), ApiError> {
         let org_id = body.organization_id;
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(ProjectResponseDto::from)
@@ -90,7 +103,8 @@ impl ProjectController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchProjectDto>,
     ) -> Result<Json<ProjectResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .update(id, body)
             .await
             .map(ProjectResponseDto::from)
@@ -107,10 +121,7 @@ impl ProjectController {
         RequirePermission(_claims, _): RequirePermission<ProjectDeletePermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map_err(map_sqlx_error)?;
+        self.service.delete(id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate_all().await;
         Ok(StatusCode::NO_CONTENT)

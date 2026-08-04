@@ -123,7 +123,11 @@ impl ScheduleService {
 
     pub async fn create(&self, input: CreateScheduleDto) -> sqlx::Result<Schedule> {
         let shell_type = normalize_shell_type(input.shell_type.as_deref())?;
-        let schedule_type = if let Some(st) = input.schedule_type.as_deref().filter(|s| !s.trim().is_empty()) {
+        let schedule_type = if let Some(st) = input
+            .schedule_type
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+        {
             normalize_schedule_type(Some(st))?
         } else if input.compose_id.is_some() {
             "COMPOSE".to_string()
@@ -146,7 +150,8 @@ impl ScheduleService {
             input.server_id,
             input.service_name.as_deref(),
         )?;
-        let app_name = if let Some(an) = input.app_name.as_deref().filter(|s| !s.trim().is_empty()) {
+        let app_name = if let Some(an) = input.app_name.as_deref().filter(|s| !s.trim().is_empty())
+        {
             format!("{an}-sched-{}", uuid::Uuid::new_v4().simple())
         } else {
             generate_schedule_app_name(&input.name)

@@ -1,7 +1,6 @@
 use super::parse::parse_addresses;
 use crate::{
-    db::models::notif_resend::NotifResend,
-    services::notification::message::NotificationMessage,
+    db::models::notif_resend::NotifResend, services::notification::message::NotificationMessage,
 };
 use reqwest::Client;
 use serde_json::json;

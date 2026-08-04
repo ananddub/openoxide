@@ -13,10 +13,25 @@ impl AlertRuleRepository {
         Self { pool }
     }
 
+    /// Every rule across all tenants. Only the evaluation loop should use this;
+    /// anything serving a request must scope by organization.
     pub async fn list(&self) -> Result<Vec<AlertRule>, sqlx::Error> {
         sqlx::query_as!(
             AlertRule,
-            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", created_at, updated_at FROM alert_rules ORDER BY created_at DESC"#
+            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", organization_id AS "organization_id: i64", created_at, updated_at FROM alert_rules ORDER BY created_at DESC"#
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn list_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<AlertRule>, sqlx::Error> {
+        sqlx::query_as!(
+            AlertRule,
+            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", organization_id AS "organization_id: i64", created_at, updated_at FROM alert_rules WHERE organization_id = ? ORDER BY created_at DESC"#,
+            organization_id
         )
         .fetch_all(self.pool.as_ref())
         .await
@@ -25,8 +40,24 @@ impl AlertRuleRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<AlertRule>, sqlx::Error> {
         sqlx::query_as!(
             AlertRule,
-            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", created_at, updated_at FROM alert_rules WHERE id = ?"#,
+            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", organization_id AS "organization_id: i64", created_at, updated_at FROM alert_rules WHERE id = ?"#,
             id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    /// Scoped lookup, so one tenant cannot read another's rule by guessing ids.
+    pub async fn get_by_id_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Option<AlertRule>, sqlx::Error> {
+        sqlx::query_as!(
+            AlertRule,
+            r#"SELECT id AS "id?: i64", name, target_type, target_id, metric_name, operator, threshold AS "threshold: f64", duration_seconds AS "duration_seconds: i32", notification_channel, enabled AS "enabled: i32", organization_id AS "organization_id: i64", created_at, updated_at FROM alert_rules WHERE id = ? AND organization_id = ?"#,
+            id,
+            organization_id
         )
         .fetch_optional(self.pool.as_ref())
         .await
@@ -35,7 +66,30 @@ impl AlertRuleRepository {
     pub async fn create(&self, rule: &AlertRule) -> Result<i64, sqlx::Error> {
         let now = chrono::Utc::now().timestamp();
         let res = sqlx::query!(
-            r#"INSERT INTO alert_rules (name, target_type, target_id, metric_name, operator, threshold, duration_seconds, notification_channel, enabled, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+            r#"INSERT INTO alert_rules (name, target_type, target_id, metric_name, operator, threshold, duration_seconds, notification_channel, enabled, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+            rule.name,
+            rule.target_type,
+            rule.target_id,
+            rule.metric_name,
+            rule.operator,
+            rule.threshold,
+            rule.duration_seconds,
+            rule.notification_channel,
+            rule.enabled,
+            rule.organization_id,
+            now,
+            now
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+
+        Ok(res.last_insert_rowid())
+    }
+
+    pub async fn update(&self, id: i64, rule: &AlertRule) -> Result<(), sqlx::Error> {
+        let now = chrono::Utc::now().timestamp();
+        sqlx::query!(
+            r#"UPDATE alert_rules SET name = ?, target_type = ?, target_id = ?, metric_name = ?, operator = ?, threshold = ?, duration_seconds = ?, notification_channel = ?, enabled = ?, updated_at = ? WHERE id = ? AND organization_id = ?"#,
             rule.name,
             rule.target_type,
             rule.target_id,
@@ -46,18 +100,49 @@ impl AlertRuleRepository {
             rule.notification_channel,
             rule.enabled,
             now,
-            now
+            id,
+            rule.organization_id
         )
         .execute(self.pool.as_ref())
         .await?;
-
-        Ok(res.last_insert_rowid())
-    }
-
-    pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(r#"DELETE FROM alert_rules WHERE id = ?"#, id)
-            .execute(self.pool.as_ref())
-            .await?;
         Ok(())
     }
+
+    /// Returns whether a row was actually removed, so a caller can tell a
+    /// missing rule from one belonging to another tenant.
+    pub async fn delete(&self, id: i64, organization_id: i64) -> Result<bool, sqlx::Error> {
+        let res = sqlx::query!(
+            r#"DELETE FROM alert_rules WHERE id = ? AND organization_id = ?"#,
+            id,
+            organization_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn record_event(&self, rule_id: i64, organization_id: i64, target_key: &str, state: &str, value: Option<f64>, threshold: Option<f64>, message: &str) -> Result<(), sqlx::Error> {
+        sqlx::query("INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            .bind(rule_id).bind(organization_id).bind(target_key).bind(state).bind(value).bind(threshold).bind(message)
+            .execute(self.pool.as_ref()).await?;
+        Ok(())
+    }
+
+    pub async fn list_events(&self, organization_id: i64, limit: i64) -> Result<Vec<AlertEvent>, sqlx::Error> {
+        sqlx::query_as("SELECT id, alert_rule_id, organization_id, target_key, state, value, threshold, message, created_at FROM alert_events WHERE organization_id=? ORDER BY created_at DESC LIMIT ?")
+            .bind(organization_id).bind(limit.clamp(1, 500)).fetch_all(self.pool.as_ref()).await
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, sqlx::FromRow)]
+pub struct AlertEvent {
+    pub id: i64,
+    pub alert_rule_id: i64,
+    pub organization_id: i64,
+    pub target_key: String,
+    pub state: String,
+    pub value: Option<f64>,
+    pub threshold: Option<f64>,
+    pub message: String,
+    pub created_at: i64,
 }

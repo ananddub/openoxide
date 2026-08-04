@@ -64,8 +64,7 @@ impl DeploymentService {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
 
-        if let Ok(containers) = docker.containers().ps().all().list().await
-        {
+        if let Ok(containers) = docker.containers().ps().all().list().await {
             if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
             }
@@ -100,13 +99,7 @@ impl DeploymentService {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
 
-        if let Ok(containers) = docker
-            .containers()
-            .ps()
-            .all()
-            .list()
-            .await
-        {
+        if let Ok(containers) = docker.containers().ps().all().list().await {
             if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
             }
@@ -160,12 +153,7 @@ impl DeploymentService {
                 .collect::<Vec<_>>()
         } else {
             // Standalone mode: find container by name matching
-            let all_containers = docker
-                .containers()
-                .ps()
-                .list()
-                .await
-                .unwrap_or_default();
+            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
             if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
                 vec![matched.id.clone()]
             } else {
@@ -210,12 +198,7 @@ impl DeploymentService {
                 .collect::<Vec<_>>()
         } else {
             // Fallback: name-based match
-            let all_containers = docker
-                .containers()
-                .ps()
-                .list()
-                .await
-                .unwrap_or_default();
+            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
             if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
                 vec![matched.id.clone()]
             } else {
@@ -231,31 +214,32 @@ impl DeploymentService {
         database_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let (app_name, server_id): (String, Option<i64>) = if let Ok(db) = self.repo_postgres.get_by_id(database_id).await {
-            (db.app_name, db.server_id)
-        } else {
-            let row: Option<(String, Option<i64>)> = sqlx::query_as(
-                "SELECT app_name, server_id FROM mysql_dbs WHERE id = ? \
+        let (app_name, server_id): (String, Option<i64>) =
+            if let Ok(db) = self.repo_postgres.get_by_id(database_id).await {
+                (db.app_name, db.server_id)
+            } else {
+                let row: Option<(String, Option<i64>)> = sqlx::query_as(
+                    "SELECT app_name, server_id FROM mysql_dbs WHERE id = ? \
                  UNION ALL SELECT app_name, server_id FROM mariadb_dbs WHERE id = ? \
                  UNION ALL SELECT app_name, server_id FROM mongo_dbs WHERE id = ? \
                  UNION ALL SELECT app_name, server_id FROM redis_dbs WHERE id = ? \
-                 UNION ALL SELECT app_name, server_id FROM libsql_dbs WHERE id = ?"
-            )
-            .bind(database_id)
-            .bind(database_id)
-            .bind(database_id)
-            .bind(database_id)
-            .bind(database_id)
-            .fetch_optional(self.db.as_ref())
-            .await
-            .unwrap_or(None);
+                 UNION ALL SELECT app_name, server_id FROM libsql_dbs WHERE id = ?",
+                )
+                .bind(database_id)
+                .bind(database_id)
+                .bind(database_id)
+                .bind(database_id)
+                .bind(database_id)
+                .fetch_optional(self.db.as_ref())
+                .await
+                .unwrap_or(None);
 
-            if let Some(r) = row {
-                r
-            } else {
-                return Err(sqlx::Error::RowNotFound);
-            }
-        };
+                if let Some(r) = row {
+                    r
+                } else {
+                    return Err(sqlx::Error::RowNotFound);
+                }
+            };
 
         let docker = self.docker_for_server(server_id).await?;
 
@@ -281,12 +265,7 @@ impl DeploymentService {
                 .collect::<Vec<_>>()
         } else {
             // Fallback: name-based match (standalone / non-Swarm)
-            let all_containers = docker
-                .containers()
-                .ps()
-                .list()
-                .await
-                .unwrap_or_default();
+            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
             if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
                 vec![matched.id.clone()]
             } else {
@@ -340,30 +319,34 @@ impl DeploymentService {
              UNION ALL SELECT app_name FROM mariadb_dbs WHERE name = ? OR app_name = ? \
              UNION ALL SELECT app_name FROM mongo_dbs WHERE name = ? OR app_name = ? \
              UNION ALL SELECT app_name FROM redis_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM libsql_dbs WHERE name = ? OR app_name = ?"
+             UNION ALL SELECT app_name FROM libsql_dbs WHERE name = ? OR app_name = ?",
         )
-        .bind(&target).bind(&target)
-        .bind(&target).bind(&target)
-        .bind(&target).bind(&target)
-        .bind(&target).bind(&target)
-        .bind(&target).bind(&target)
-        .bind(&target).bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
+        .bind(&target)
         .fetch_optional(self.db.as_ref())
         .await
         .unwrap_or(None);
 
-        let search_target = resolved_name_opt.map(|r| r.0).unwrap_or_else(|| target.clone());
+        let search_target = resolved_name_opt
+            .map(|r| r.0)
+            .unwrap_or_else(|| target.clone());
 
-        if let Ok(containers) = docker
-            .containers()
-            .ps()
-            .all()
-            .list()
-            .await
-        {
+        if let Ok(containers) = docker.containers().ps().all().list().await {
             if let Some(matched) = find_best_matching_container(&containers, &search_target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
-            } else if let Some(matched) = find_best_matching_container(&containers, &search_target.replace('_', "-")) {
+            } else if let Some(matched) =
+                find_best_matching_container(&containers, &search_target.replace('_', "-"))
+            {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
             }
         }

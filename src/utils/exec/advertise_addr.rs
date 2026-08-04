@@ -5,7 +5,15 @@ use tokio_util::sync::CancellationToken;
 /// WireGuard, ZeroTier, Netbird (`wt*`), Nebula, IPsec, PPP, and generic
 /// tun/tap devices — rather than a regular LAN/public NIC.
 const VPN_IFACE_PREFIXES: &[&str] = &[
-    "tailscale", "wg", "zt", "wt", "nebula", "ipsec", "ppp", "tun", "tap",
+    "tailscale",
+    "wg",
+    "zt",
+    "wt",
+    "nebula",
+    "ipsec",
+    "ppp",
+    "tun",
+    "tap",
 ];
 
 fn is_vpn_iface(name: &str) -> bool {

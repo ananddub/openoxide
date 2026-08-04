@@ -99,9 +99,8 @@ mod tests {
 
     #[test]
     fn memory_falls_back_to_cgroup_v1_cache() {
-        let stats = stats_from(
-            r#"{"memory_stats": {"usage": 100, "limit": 200, "stats": {"cache": 40}}}"#,
-        );
+        let stats =
+            stats_from(r#"{"memory_stats": {"usage": 100, "limit": 200, "stats": {"cache": 40}}}"#);
 
         assert_eq!(stats.memory.used_bytes(), 60);
     }
@@ -160,10 +159,8 @@ mod tests {
 
     #[test]
     fn container_name_drops_the_leading_slash() {
-        let summary: ContainerSummary = serde_json::from_str(
-            r#"{"Id": "abcdef123456789", "Names": ["/web"]}"#,
-        )
-        .unwrap();
+        let summary: ContainerSummary =
+            serde_json::from_str(r#"{"Id": "abcdef123456789", "Names": ["/web"]}"#).unwrap();
 
         assert_eq!(summary.display_name().as_str(), "web");
         assert_eq!(summary.short_id(), "abcdef123456");

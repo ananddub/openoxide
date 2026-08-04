@@ -35,16 +35,25 @@ impl RegistryController {
         &self,
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
     ) -> Result<Json<Vec<RegistryResponseDto>>, ApiError> {
-        if let Some(CacheEnum::RegistriesList(cached)) = self.cache.get(&CacheKey::RegistriesList).await {
-            return Ok(Json(cached.into_iter().map(RegistryResponseDto::from).collect()));
+        if let Some(CacheEnum::RegistriesList(cached)) =
+            self.cache.get(&CacheKey::RegistriesList).await
+        {
+            return Ok(Json(
+                cached.into_iter().map(RegistryResponseDto::from).collect(),
+            ));
         }
 
         let items = self.service.list().await.map_err(map_sqlx_error)?;
         self.cache
-            .insert(CacheKey::RegistriesList, CacheEnum::RegistriesList(items.clone()))
+            .insert(
+                CacheKey::RegistriesList,
+                CacheEnum::RegistriesList(items.clone()),
+            )
             .await;
 
-        Ok(Json(items.into_iter().map(RegistryResponseDto::from).collect()))
+        Ok(Json(
+            items.into_iter().map(RegistryResponseDto::from).collect(),
+        ))
     }
 
     #[get("/{id}")]
@@ -67,7 +76,8 @@ impl RegistryController {
         RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
         ValidatedJson(body): ValidatedJson<CreateRegistryDto>,
     ) -> Result<(StatusCode, Json<RegistryResponseDto>), ApiError> {
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(RegistryResponseDto::from)
@@ -85,7 +95,8 @@ impl RegistryController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchRegistryDto>,
     ) -> Result<Json<RegistryResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .patch(id, body)
             .await
             .map(RegistryResponseDto::from)
@@ -102,10 +113,7 @@ impl RegistryController {
         RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map_err(map_sqlx_error)?;
+        self.service.delete(id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate(&CacheKey::RegistriesList).await;
         Ok(StatusCode::NO_CONTENT)

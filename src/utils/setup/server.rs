@@ -256,8 +256,13 @@ impl ServerSetup {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = "rustploy-monitor";
         if docker.containers().inspect(name).await.is_ok() {
+            if self.config.monitoring_server_id.is_some() {
+                // Recreate so a setup run cannot keep stale SERVER_ID/token env.
+                let _ = docker.containers().rm(name).force().run().await;
+            } else {
             docker.containers().start(name).run().await?;
             return Ok(());
+            }
         }
 
         let architecture = self
@@ -277,15 +282,29 @@ impl ServerSetup {
 
         let p_grpc = Port::tcp(50051, 50051);
 
-        docker
-            .containers()
+        let containers = docker.containers();
+        let mut create = containers
             .create(image)
             .detach()
             .name(name)
             .restart(RestartPolicy::Always)
             .mount(docker_socket_mount)
-            .publish(p_grpc)
-            .run()
+            .publish(p_grpc);
+        if let (Some(server_id), Some(panel_url), Some(token)) = (
+            self.config.monitoring_server_id,
+            self.config.monitoring_panel_url.as_deref(),
+            self.config.monitoring_token.as_deref(),
+        ) {
+            create = create
+                .env("SERVER_ID", server_id.to_string())
+                .env("RUSTPLOY_SERVER_URL", panel_url)
+                .env("METRICS_TOKEN", token)
+                .env("MONITOR_DATABASE_URL", "sqlite:///data/monitor.db")
+                .env("REFRESH_RATE", "10")
+                .env("RETENTION_DAYS", "7")
+                .mount(Mount::volume("rustploy-monitor-data", "/data"));
+        }
+        create.run()
             .await?;
         Ok(())
     }
@@ -500,8 +519,7 @@ impl ServerSetup {
 
     fn append_swarm_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         if let Some(advertise_addr) = &self.config.advertise_addr {
-            steps.extend(sh!(
-                if !docker.swarm().active() {
+            steps.extend(sh!(if !docker.swarm().active() {
                 info!("Initializing Docker Swarm");
                 docker
                     .swarm()
@@ -713,6 +731,13 @@ impl ServerSetup {
                             "/var/run/docker.sock",
                             "/var/run/docker.sock",
                         ))
+                        .env("SERVER_ID", self.config.monitoring_server_id.unwrap_or(0).to_string())
+                        .env("RUSTPLOY_SERVER_URL", self.config.monitoring_panel_url.clone().unwrap_or_default())
+                        .env("METRICS_TOKEN", self.config.monitoring_token.clone().unwrap_or_default())
+                        .env("MONITOR_DATABASE_URL", "sqlite:///app/data/monitor.db")
+                        .env("REFRESH_RATE", "10")
+                        .env("RETENTION_DAYS", "7")
+                        .mount(Mount::volume("rustploy-monitor-data", "/app/data"))
                         .publish(Port::tcp(50051, 50051));
                 }
             }

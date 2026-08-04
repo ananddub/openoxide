@@ -42,7 +42,9 @@ impl NotificationConfigLoader {
     }
 
     pub async fn load_telegram(&self, n: &Notification) -> Result<NotifTelegram, String> {
-        let id = n.telegram_id.ok_or("telegram notification has no telegram_id")?;
+        let id = n
+            .telegram_id
+            .ok_or("telegram notification has no telegram_id")?;
         self.telegram
             .get_by_id(id)
             .await
@@ -51,7 +53,9 @@ impl NotificationConfigLoader {
     }
 
     pub async fn load_discord(&self, n: &Notification) -> Result<NotifDiscord, String> {
-        let id = n.discord_id.ok_or("discord notification has no discord_id")?;
+        let id = n
+            .discord_id
+            .ok_or("discord notification has no discord_id")?;
         self.discord
             .get_by_id(id)
             .await
@@ -96,7 +100,9 @@ impl NotificationConfigLoader {
     }
 
     pub async fn load_mattermost(&self, n: &Notification) -> Result<NotifMattermost, String> {
-        let id = n.mattermost_id.ok_or("mattermost notification has no mattermost_id")?;
+        let id = n
+            .mattermost_id
+            .ok_or("mattermost notification has no mattermost_id")?;
         self.mattermost
             .get_by_id(id)
             .await
@@ -123,7 +129,9 @@ impl NotificationConfigLoader {
     }
 
     pub async fn load_pushover(&self, n: &Notification) -> Result<NotifPushover, String> {
-        let id = n.pushover_id.ok_or("pushover notification has no pushover_id")?;
+        let id = n
+            .pushover_id
+            .ok_or("pushover notification has no pushover_id")?;
         self.pushover
             .get_by_id(id)
             .await

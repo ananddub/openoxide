@@ -1,3 +1,4 @@
+pub mod alert_rule;
 pub mod application;
 pub mod auth;
 pub mod backup;

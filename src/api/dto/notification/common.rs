@@ -1,6 +1,5 @@
 use crate::{
-    db::models::notifications::Notification,
-    services::notification::NotificationProvider,
+    db::models::notifications::Notification, services::notification::NotificationProvider,
 };
 use serde::{Deserialize, Serialize};
 use validator::Validate;

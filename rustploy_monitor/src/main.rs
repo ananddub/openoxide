@@ -54,10 +54,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "starting rustploy monitor agent"
     );
 
-    if config.metrics_token.is_empty() {
-        warn!("METRICS_TOKEN is unset — panel cannot authenticate pushes");
-    }
-
     let store = Arc::new(Store::init(&config.database_url).await?);
     let docker = DockerApi::new(&config.docker_socket);
     let filter = config.container_filter();
@@ -78,7 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut tasks = tokio::task::JoinSet::new();
     tasks.spawn(serve_grpc(context.clone(), shutdown.clone()));
     tasks.spawn(collect_host_metrics(context.clone(), shutdown.clone()));
-    tasks.spawn(collect_and_push_containers(context.clone(), shutdown.clone()));
+    tasks.spawn(collect_and_push_containers(
+        context.clone(),
+        shutdown.clone(),
+    ));
     tasks.spawn(prune_old_metrics(context.clone(), shutdown.clone()));
 
     wait_for_shutdown_signal().await;
@@ -103,7 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn wait_for_shutdown_signal() {
     #[cfg(unix)]
     {
-        use tokio::signal::unix::{signal, SignalKind};
+        use tokio::signal::unix::{SignalKind, signal};
 
         let mut sigterm = match signal(SignalKind::terminate()) {
             Ok(sig) => sig,

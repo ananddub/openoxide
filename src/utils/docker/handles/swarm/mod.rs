@@ -56,7 +56,9 @@ impl<'a> SwarmHandle<'a> {
     }
 
     pub async fn inspect(&self) -> DockerResult<crate::utils::docker::SwarmInfo> {
-        self.cli.json(&["info", "--format", "{{json .Swarm}}"]).await
+        self.cli
+            .json(&["info", "--format", "{{json .Swarm}}"])
+            .await
     }
 
     /// Same as [`inspect`](Self::inspect), but abortable — use this inside

@@ -111,10 +111,7 @@ impl CgroupReader {
         })
     }
 
-    pub fn read_many(
-        &self,
-        containers: &[String],
-    ) -> HashMap<String, CgroupSample> {
+    pub fn read_many(&self, containers: &[String]) -> HashMap<String, CgroupSample> {
         containers
             .iter()
             .filter_map(|id| self.read(id).map(|sample| (id.clone(), sample)))

@@ -1,6 +1,5 @@
 use crate::{
-    db::models::notif_pushover::NotifPushover,
-    services::notification::message::NotificationMessage,
+    db::models::notif_pushover::NotifPushover, services::notification::message::NotificationMessage,
 };
 use reqwest::Client;
 use serde_json::json;

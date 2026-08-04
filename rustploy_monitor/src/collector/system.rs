@@ -34,14 +34,15 @@ impl SystemCollector {
             .first()
             .map(|c| c.brand().trim().to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        let cpu_speed = cpus.first().map(|c| c.frequency() as f64 / 1000.0).unwrap_or(0.0);
+        let cpu_speed = cpus
+            .first()
+            .map(|c| c.frequency() as f64 / 1000.0)
+            .unwrap_or(0.0);
 
         let host = HostInfo {
             cpu_model,
             cpu_cores: logical_cores as i32,
-            cpu_physical_cores: system
-                .physical_core_count()
-                .unwrap_or(logical_cores) as i32,
+            cpu_physical_cores: system.physical_core_count().unwrap_or(logical_cores) as i32,
             cpu_speed,
             os: System::name().unwrap_or_else(|| "unknown".to_string()),
             distro: System::long_os_version().unwrap_or_else(|| "unknown".to_string()),
@@ -75,17 +76,16 @@ impl SystemCollector {
             0.0
         };
 
-        let (disk_used_bytes, disk_total_bytes) = self
-            .disks
-            .list()
-            .iter()
-            .filter(|d| !d.is_removable())
-            .fold((0u64, 0u64), |(used, total), d| {
-                (
-                    used + (d.total_space() - d.available_space()),
-                    total + d.total_space(),
-                )
-            });
+        let (disk_used_bytes, disk_total_bytes) =
+            self.disks.list().iter().filter(|d| !d.is_removable()).fold(
+                (0u64, 0u64),
+                |(used, total), d| {
+                    (
+                        used + (d.total_space() - d.available_space()),
+                        total + d.total_space(),
+                    )
+                },
+            );
 
         let disk_percent = if disk_total_bytes > 0 {
             (disk_used_bytes as f64 / disk_total_bytes as f64) * 100.0

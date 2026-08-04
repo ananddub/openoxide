@@ -11,9 +11,7 @@ pub async fn tail_container_logs(
     container_id: &ContainerId,
     tail_lines: usize,
 ) -> Vec<String> {
-    let path = format!(
-        "/containers/{container_id}/logs?stdout=true&stderr=true&tail={tail_lines}"
-    );
+    let path = format!("/containers/{container_id}/logs?stdout=true&stderr=true&tail={tail_lines}");
 
     let body = match api.get_raw(&path).await {
         Ok(body) => body,

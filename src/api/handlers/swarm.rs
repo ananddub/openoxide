@@ -261,8 +261,12 @@ impl SwarmController {
             .map_err(map_exec)?;
 
         if !target_hostname.is_empty() {
-            self.remove_stale_hostname_duplicates(&manager_docker, &target_docker, &target_hostname)
-                .await;
+            self.remove_stale_hostname_duplicates(
+                &manager_docker,
+                &target_docker,
+                &target_hostname,
+            )
+            .await;
         }
 
         self.invalidate_swarm(Some(body.target_server_id)).await;
@@ -290,7 +294,10 @@ impl SwarmController {
             return;
         };
         for n in nodes {
-            if n.hostname == target_hostname && n.id != new_node_id && n.status.to_lowercase() == "down" {
+            if n.hostname == target_hostname
+                && n.id != new_node_id
+                && n.status.to_lowercase() == "down"
+            {
                 let _ = manager_docker.nodes().remove(n.id).force().run().await;
             }
         }
@@ -301,9 +308,7 @@ impl SwarmController {
     /// invalidated (promote/demote/join/leave/etc all change what the next
     /// `/swarm/info` or `/swarm/nodes` call should return).
     async fn invalidate_swarm(&self, server_id: Option<i64>) {
-        self.cache
-            .invalidate(&CacheKey::SwarmInfo(server_id))
-            .await;
+        self.cache.invalidate(&CacheKey::SwarmInfo(server_id)).await;
         self.cache
             .invalidate(&CacheKey::SwarmNodes(server_id))
             .await;
@@ -320,7 +325,9 @@ impl SwarmController {
     }
 
     async fn docker(&self, server_id: Option<i64>) -> Result<DockerCli, ApiError> {
-        Ok(DockerCli::from_executor(self.executor_for(server_id).await?))
+        Ok(DockerCli::from_executor(
+            self.executor_for(server_id).await?,
+        ))
     }
 }
 

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 use std::path::Path;
 use tracing::info;
 
@@ -42,6 +42,10 @@ pub struct ContainerMetricRow {
     pub net_out_mb: f64,
     pub block_read_mb: f64,
     pub block_write_mb: f64,
+    #[serde(default)]
+    pub application_id: Option<i64>,
+    #[serde(default)]
+    pub compose_id: Option<i64>,
 }
 
 pub struct Store {

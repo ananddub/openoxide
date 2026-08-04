@@ -62,6 +62,8 @@ impl Accumulator {
             net_out_mb: self.net_out_mb,
             block_read_mb: self.block_read_mb,
             block_write_mb: self.block_write_mb,
+            application_id: None,
+            compose_id: None,
         };
 
         let peak = ContainerMetricRow {
@@ -147,6 +149,8 @@ mod tests {
             net_out_mb: 0.0,
             block_read_mb: 0.0,
             block_write_mb: 0.0,
+            application_id: None,
+            compose_id: None,
         }
     }
 

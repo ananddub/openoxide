@@ -51,12 +51,15 @@ impl ScheduleController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
-        let items = self.service
+        let items = self
+            .service
             .list_by_application(application_id)
             .await
             .map_err(map_sqlx_error)?;
-        
-        Ok(Json(items.into_iter().map(ScheduleResponseDto::from).collect()))
+
+        Ok(Json(
+            items.into_iter().map(ScheduleResponseDto::from).collect(),
+        ))
     }
 
     #[get("/compose/{compose_id}")]
@@ -65,12 +68,15 @@ impl ScheduleController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
-        let items = self.service
+        let items = self
+            .service
             .list_by_compose(compose_id)
             .await
             .map_err(map_sqlx_error)?;
-        
-        Ok(Json(items.into_iter().map(ScheduleResponseDto::from).collect()))
+
+        Ok(Json(
+            items.into_iter().map(ScheduleResponseDto::from).collect(),
+        ))
     }
 
     #[get("/database/{database_id}")]
@@ -119,7 +125,8 @@ impl ScheduleController {
         let app_id = body.application_id;
         let comp_id = body.compose_id;
 
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(ScheduleResponseDto::from)
@@ -143,7 +150,8 @@ impl ScheduleController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchScheduleDto>,
     ) -> Result<Json<ScheduleResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .patch(id, body)
             .await
             .map(ScheduleResponseDto::from)
@@ -160,11 +168,8 @@ impl ScheduleController {
         RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map_err(map_sqlx_error)?;
-            
+        self.service.delete(id).await.map_err(map_sqlx_error)?;
+
         self.cache.invalidate_all().await;
         Ok(StatusCode::NO_CONTENT)
     }

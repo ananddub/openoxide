@@ -18,4 +18,7 @@ pub struct ContainerMetric {
     pub container_name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub metrics_json: String,
+    pub server_id: i64,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
 }

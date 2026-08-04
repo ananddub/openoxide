@@ -70,6 +70,9 @@ pub struct SetupConfig {
     pub dashboard_port: u16,
     pub acme_email: String,
     pub advertise_addr: Option<String>,
+    pub monitoring_server_id: Option<i64>,
+    pub monitoring_panel_url: Option<String>,
+    pub monitoring_token: Option<String>,
 }
 
 impl Default for SetupConfig {
@@ -85,6 +88,9 @@ impl Default for SetupConfig {
             dashboard_port: 8080,
             acme_email: "admin@localhost".into(),
             advertise_addr: None,
+            monitoring_server_id: None,
+            monitoring_panel_url: None,
+            monitoring_token: None,
         }
     }
 }

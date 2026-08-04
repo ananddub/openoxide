@@ -78,6 +78,8 @@ pub struct ContainerSummary {
     pub id: ContainerId,
     #[serde(rename = "Names", default)]
     pub names: Vec<String>,
+    #[serde(rename = "Labels", default)]
+    pub labels: HashMap<String, String>,
 }
 
 impl ContainerSummary {
@@ -184,7 +186,10 @@ pub struct BlkioEntry {
 impl ContainerStats {
     pub fn cpu_percent(&self) -> f64 {
         let cpu_delta = self.cpu.usage.total.saturating_sub(self.precpu.usage.total) as f64;
-        let system_delta = self.cpu.system_usage.saturating_sub(self.precpu.system_usage) as f64;
+        let system_delta = self
+            .cpu
+            .system_usage
+            .saturating_sub(self.precpu.system_usage) as f64;
 
         if system_delta <= 0.0 || cpu_delta <= 0.0 {
             return 0.0;
@@ -214,15 +219,13 @@ impl ContainerStats {
             return (0, 0);
         };
 
-        entries
-            .iter()
-            .fold((0, 0), |(read, write), entry| {
-                match entry.op.to_ascii_lowercase().as_str() {
-                    "read" => (read + entry.value, write),
-                    "write" => (read, write + entry.value),
-                    _ => (read, write),
-                }
-            })
+        entries.iter().fold((0, 0), |(read, write), entry| {
+            match entry.op.to_ascii_lowercase().as_str() {
+                "read" => (read + entry.value, write),
+                "write" => (read, write + entry.value),
+                _ => (read, write),
+            }
+        })
     }
 }
 
@@ -243,4 +246,5 @@ pub struct ContainerSample {
     pub container_id: ContainerId,
     pub name: ContainerName,
     pub stats: Arc<ContainerStats>,
+    pub labels: HashMap<String, String>,
 }

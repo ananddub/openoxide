@@ -55,13 +55,14 @@ impl DockerApi {
                 message: e.to_string(),
             })?;
 
-        let response = sender
-            .send_request(request)
-            .await
-            .map_err(|e| DockerError::RequestFailed {
-                uri: uri.clone(),
-                message: e.to_string(),
-            })?;
+        let response =
+            sender
+                .send_request(request)
+                .await
+                .map_err(|e| DockerError::RequestFailed {
+                    uri: uri.clone(),
+                    message: e.to_string(),
+                })?;
 
         let status = response.status();
         let body = collect_limited(response.into_body()).await?;
@@ -118,13 +119,14 @@ impl DockerApi {
                 message: e.to_string(),
             })?;
 
-        let response = sender
-            .send_request(request)
-            .await
-            .map_err(|e| DockerError::RequestFailed {
-                uri: uri.clone(),
-                message: e.to_string(),
-            })?;
+        let response =
+            sender
+                .send_request(request)
+                .await
+                .map_err(|e| DockerError::RequestFailed {
+                    uri: uri.clone(),
+                    message: e.to_string(),
+                })?;
 
         let status = response.status();
         if !status.is_success() {

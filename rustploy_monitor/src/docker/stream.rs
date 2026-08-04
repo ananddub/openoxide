@@ -9,8 +9,8 @@ use tracing::{debug, error, info, warn};
 
 use super::api::DockerApi;
 use super::json_lines::JsonAccumulator;
-use super::types::{ContainerId, ContainerName, ContainerStats, ContainerSummary};
 pub use super::types::ContainerSample;
+use super::types::{ContainerId, ContainerName, ContainerStats, ContainerSummary};
 use crate::error::DockerError;
 use crate::filter::ContainerFilter;
 
@@ -64,7 +64,7 @@ impl ContainerStreamer {
         streams: &mut HashMap<ContainerId, CancellationToken>,
         shutdown: &CancellationToken,
     ) {
-        let containers: Vec<(ContainerId, ContainerName)> = match self
+        let containers: Vec<(ContainerId, ContainerName, HashMap<String, String>)> = match self
             .docker
             .get_json::<Vec<ContainerSummary>>("/containers/json")
             .await
@@ -76,7 +76,7 @@ impl ContainerStreamer {
                     if !self.filter.should_monitor(name.as_str()) {
                         return None;
                     }
-                    Some((c.id, name))
+                    Some((c.id, name, c.labels))
                 })
                 .collect(),
             Err(error) => {
@@ -86,12 +86,12 @@ impl ContainerStreamer {
         };
 
         let mut seen = std::collections::HashSet::new();
-        for (id, name) in containers {
+        for (id, name, labels) in containers {
             seen.insert(id.clone());
 
             if !streams.contains_key(&id) {
                 let cancel = CancellationToken::new();
-                self.spawn_stream(id.clone(), name, cancel.clone(), shutdown.clone());
+                self.spawn_stream(id.clone(), name, labels, cancel.clone(), shutdown.clone());
                 streams.insert(id.clone(), cancel);
             }
         }
@@ -113,6 +113,7 @@ impl ContainerStreamer {
         &self,
         id: ContainerId,
         name: ContainerName,
+        labels: HashMap<String, String>,
         cancel: CancellationToken,
         shutdown: CancellationToken,
     ) {
@@ -121,7 +122,7 @@ impl ContainerStreamer {
 
         tokio::spawn(async move {
             loop {
-                let result = stream_one(&docker, &broadcast, &id, &name).await;
+                let result = stream_one(&docker, &broadcast, &id, &name, &labels).await;
 
                 match result {
                     Ok(()) => debug!(%id, %name, "stats stream ended, reconnecting"),
@@ -143,6 +144,7 @@ async fn stream_one(
     broadcast: &broadcast::Sender<ContainerSample>,
     id: &ContainerId,
     name: &ContainerName,
+    labels: &HashMap<String, String>,
 ) -> Result<(), DockerError> {
     let path = format!("/containers/{id}/stats?stream=true");
     let chunks = docker.get_stream(&path).await?;
@@ -159,6 +161,7 @@ async fn stream_one(
                     container_id: id.clone(),
                     name: name.clone(),
                     stats: Arc::new(stats),
+                    labels: labels.clone(),
                 };
 
                 let _ = broadcast.send(sample);

@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use auto_di::singleton;
+use std::sync::Arc;
 
-use crate::db::models::tags::Tag;
-use crate::db::repository::tags::TagRepository;
-use crate::db::repository::project_tags::ProjectTagRepository;
 use crate::api::dto::tag::{CreateTagDto, UpdateTagDto};
+use crate::db::models::tags::Tag;
+use crate::db::repository::project_tags::ProjectTagRepository;
+use crate::db::repository::tags::TagRepository;
 
 #[derive(Clone)]
 pub struct TagService {
@@ -14,10 +14,7 @@ pub struct TagService {
 
 #[singleton]
 impl TagService {
-    fn new(
-        repo_tag: Arc<TagRepository>,
-        repo_project_tag: Arc<ProjectTagRepository>,
-    ) -> Self {
+    fn new(repo_tag: Arc<TagRepository>, repo_project_tag: Arc<ProjectTagRepository>) -> Self {
         Self {
             repo_tag,
             repo_project_tag,
@@ -42,12 +39,20 @@ impl TagService {
             created_at: now,
         };
         let id = self.repo_tag.create(&tag).await?;
-        let created = self.repo_tag.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let created = self
+            .repo_tag
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         Ok(created)
     }
 
     pub async fn update(&self, id: i64, dto: UpdateTagDto) -> sqlx::Result<Tag> {
-        let existing = self.repo_tag.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
+        let existing = self
+            .repo_tag
+            .get_by_id(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let updated = Tag {
             id: Some(id),
             name: dto.name.unwrap_or(existing.name),
@@ -91,7 +96,10 @@ impl TagService {
 
     pub async fn detach_project_tag(&self, project_id: i64, tag_id: i64) -> sqlx::Result<()> {
         let all_pt = self.repo_project_tag.get_all().await?;
-        if let Some(target) = all_pt.into_iter().find(|pt| pt.project_id == project_id && pt.tag_id == tag_id) {
+        if let Some(target) = all_pt
+            .into_iter()
+            .find(|pt| pt.project_id == project_id && pt.tag_id == tag_id)
+        {
             if let Some(id) = target.id {
                 self.repo_project_tag.delete(id).await?;
             }

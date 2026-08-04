@@ -29,10 +29,7 @@ impl ContainerFilter {
         if self.is_unset() {
             return "all containers".to_string();
         }
-        format!(
-            "include={:?} exclude={:?}",
-            self.include, self.exclude
-        )
+        format!("include={:?} exclude={:?}", self.include, self.exclude)
     }
 }
 

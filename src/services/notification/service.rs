@@ -1,6 +1,7 @@
 use super::{
     email::send_email, loader::NotificationConfigLoader, message::NotificationMessage,
-    provider::NotificationProvider, senders, trigger::NotificationTrigger,
+    provider::NotificationProvider, scope::NotificationScope, senders,
+    trigger::NotificationTrigger,
 };
 use crate::db::{
     models::notifications::Notification,
@@ -16,11 +17,12 @@ use reqwest::Client;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Semaphore;
 
+#[derive(Clone)]
 pub struct NotificationService {
     repo: Arc<NotificationRepository>,
     client: Client,
     send_limit: Arc<Semaphore>,
-    loader: NotificationConfigLoader,
+    loader: Arc<NotificationConfigLoader>,
 }
 
 #[singleton]
@@ -48,7 +50,7 @@ impl NotificationService {
             .build()
             .unwrap_or_default();
 
-        let loader = NotificationConfigLoader {
+        let loader = Arc::new(NotificationConfigLoader {
             slack,
             telegram,
             discord,
@@ -61,7 +63,7 @@ impl NotificationService {
             lark,
             pushover,
             teams,
-        };
+        });
 
         Self {
             repo,
@@ -71,8 +73,19 @@ impl NotificationService {
         }
     }
 
-    pub async fn notify(&self, trigger: NotificationTrigger, msg: &NotificationMessage) {
-        let notifications = match self.repo.get_all().await {
+    /// Dispatches to every channel in `scope` that subscribed to `trigger`.
+    pub async fn notify(
+        &self,
+        scope: NotificationScope,
+        trigger: NotificationTrigger,
+        msg: &NotificationMessage,
+    ) {
+        let loaded = match scope {
+            NotificationScope::Organization(id) => self.repo.get_by_organization(id).await,
+            NotificationScope::AllOrganizations => self.repo.get_all().await,
+        };
+
+        let notifications = match loaded {
             Ok(items) => items,
             Err(error) => {
                 tracing::error!(error = %error, "could not load notifications for dispatch");
@@ -91,29 +104,39 @@ impl NotificationService {
 
         tracing::debug!(
             trigger = ?trigger,
+            scope = ?scope,
             count = targets.len(),
             "dispatching notification"
         );
 
         for notification in targets {
-            let permit = match self.send_limit.clone().acquire_owned().await {
-                Ok(permit) => permit,
-                Err(_) => return,
-            };
+            let limit = self.send_limit.clone();
+            let loader = self.loader.clone();
+            let client = self.client.clone();
+            let msg = msg.clone();
 
-            let name = notification.name.clone();
-            let kind = notification.notification_type.clone();
+            tokio::spawn(async move {
+                let permit = match limit.acquire_owned().await {
+                    Ok(permit) => permit,
+                    Err(_) => return,
+                };
 
-            if let Err(error) = self.dispatch_one(&notification, msg).await {
-                tracing::warn!(
-                    notification = %name,
-                    provider = %kind,
-                    error = %error,
-                    "notification dispatch failed"
-                );
-            }
+                let name = notification.name.clone();
+                let kind = notification.notification_type.clone();
 
-            drop(permit);
+                if let Err(error) =
+                    Self::dispatch_one_static(&client, &loader, &notification, &msg).await
+                {
+                    tracing::warn!(
+                        notification = %name,
+                        provider = %kind,
+                        error = %error,
+                        "notification dispatch failed"
+                    );
+                }
+
+                drop(permit);
+            });
         }
     }
 
@@ -125,11 +148,12 @@ impl NotificationService {
             .map_err(|e| format!("could not load notification {id}: {e}"))?
             .ok_or_else(|| format!("notification {id} not found"))?;
 
-        self.dispatch_one(&notification, msg).await
+        Self::dispatch_one_static(&self.client, &self.loader, &notification, msg).await
     }
 
-    async fn dispatch_one(
-        &self,
+    async fn dispatch_one_static(
+        client: &Client,
+        loader: &NotificationConfigLoader,
         notification: &Notification,
         msg: &NotificationMessage,
     ) -> Result<(), String> {
@@ -137,52 +161,52 @@ impl NotificationService {
 
         match provider {
             NotificationProvider::Slack => {
-                let cfg = self.loader.load_slack(notification).await?;
-                senders::send_slack(&self.client, &cfg, msg).await
+                let cfg = loader.load_slack(notification).await?;
+                senders::send_slack(client, &cfg, msg).await
             }
             NotificationProvider::Telegram => {
-                let cfg = self.loader.load_telegram(notification).await?;
-                senders::send_telegram(&self.client, &cfg, msg).await
+                let cfg = loader.load_telegram(notification).await?;
+                senders::send_telegram(client, &cfg, msg).await
             }
             NotificationProvider::Discord => {
-                let cfg = self.loader.load_discord(notification).await?;
-                senders::send_discord(&self.client, &cfg, msg).await
+                let cfg = loader.load_discord(notification).await?;
+                senders::send_discord(client, &cfg, msg).await
             }
             NotificationProvider::Email => {
-                let cfg = self.loader.load_email(notification).await?;
+                let cfg = loader.load_email(notification).await?;
                 send_email(&cfg, msg).await
             }
             NotificationProvider::Resend => {
-                let cfg = self.loader.load_resend(notification).await?;
-                senders::send_resend(&self.client, &cfg, msg).await
+                let cfg = loader.load_resend(notification).await?;
+                senders::send_resend(client, &cfg, msg).await
             }
             NotificationProvider::Gotify => {
-                let cfg = self.loader.load_gotify(notification).await?;
-                senders::send_gotify(&self.client, &cfg, msg).await
+                let cfg = loader.load_gotify(notification).await?;
+                senders::send_gotify(client, &cfg, msg).await
             }
             NotificationProvider::Ntfy => {
-                let cfg = self.loader.load_ntfy(notification).await?;
-                senders::send_ntfy(&self.client, &cfg, msg).await
+                let cfg = loader.load_ntfy(notification).await?;
+                senders::send_ntfy(client, &cfg, msg).await
             }
             NotificationProvider::Mattermost => {
-                let cfg = self.loader.load_mattermost(notification).await?;
-                senders::send_mattermost(&self.client, &cfg, msg).await
+                let cfg = loader.load_mattermost(notification).await?;
+                senders::send_mattermost(client, &cfg, msg).await
             }
             NotificationProvider::Teams => {
-                let cfg = self.loader.load_teams(notification).await?;
-                senders::send_teams(&self.client, &cfg, msg).await
+                let cfg = loader.load_teams(notification).await?;
+                senders::send_teams(client, &cfg, msg).await
             }
             NotificationProvider::Lark => {
-                let cfg = self.loader.load_lark(notification).await?;
-                senders::send_lark(&self.client, &cfg, msg).await
+                let cfg = loader.load_lark(notification).await?;
+                senders::send_lark(client, &cfg, msg).await
             }
             NotificationProvider::Pushover => {
-                let cfg = self.loader.load_pushover(notification).await?;
-                senders::send_pushover(&self.client, &cfg, msg).await
+                let cfg = loader.load_pushover(notification).await?;
+                senders::send_pushover(client, &cfg, msg).await
             }
             NotificationProvider::Custom => {
-                let cfg = self.loader.load_custom(notification).await?;
-                senders::send_custom(&self.client, &cfg, msg).await
+                let cfg = loader.load_custom(notification).await?;
+                senders::send_custom(client, &cfg, msg).await
             }
         }
     }

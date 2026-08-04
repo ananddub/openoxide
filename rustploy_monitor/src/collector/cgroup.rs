@@ -62,7 +62,11 @@ impl CgroupCollector {
         let now = Instant::now();
         let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
-        let ids: Vec<String> = self.names.keys().map(|id| id.as_str().to_string()).collect();
+        let ids: Vec<String> = self
+            .names
+            .keys()
+            .map(|id| id.as_str().to_string())
+            .collect();
         let samples = self.reader.read_many(&ids);
 
         let mut rows = Vec::with_capacity(samples.len());
@@ -100,6 +104,8 @@ impl CgroupCollector {
                 net_out_mb: 0.0,
                 block_read_mb: bytes_to_mb(sample.io_read_bytes as f64),
                 block_write_mb: bytes_to_mb(sample.io_write_bytes as f64),
+                application_id: None,
+                compose_id: None,
             });
 
             self.previous.insert(id, Previous { sample, at: now });

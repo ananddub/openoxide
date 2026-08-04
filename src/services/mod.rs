@@ -19,7 +19,6 @@ pub mod remote_server;
 pub mod schedule;
 pub mod ssh_key;
 pub mod swarm;
+pub mod tag;
 pub mod traefik;
 pub mod user;
-pub mod tag;
-

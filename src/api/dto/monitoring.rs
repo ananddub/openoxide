@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize, Object)]
 pub struct IngestSystemMetricDto {
+    pub server_id: i64,
     pub cpu: f64,
     pub cpu_model: Option<String>,
     pub cpu_cores: Option<i64>,
@@ -50,6 +51,7 @@ pub struct IngestContainerMetricBatchDto {
 #[derive(Clone, Debug, Deserialize, Serialize, Object)]
 pub struct ServerMetricResponseDto {
     pub timestamp: Option<i64>,
+    pub server_id: i64,
     pub cpu: f64,
     pub cpu_model: String,
     pub cpu_cores: i64,
@@ -73,6 +75,7 @@ impl From<ServerMetric> for ServerMetricResponseDto {
     fn from(m: ServerMetric) -> Self {
         Self {
             timestamp: m.timestamp,
+            server_id: m.server_id,
             cpu: m.cpu,
             cpu_model: m.cpu_model,
             cpu_cores: m.cpu_cores,
@@ -120,6 +123,27 @@ pub struct MonitoringStatusResponseDto {
     pub status: String,
     pub service: String,
     pub endpoints: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct RotateMonitoringTokenDto {
+    pub organization_id: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct MonitoringTokenResponseDto {
+    pub server_id: i64,
+    pub organization_id: i64,
+    pub token: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct MonitoringAgentStatusDto {
+    pub server_id: i64,
+    pub organization_id: i64,
+    pub last_seen_at: Option<i64>,
+    pub agent_version: Option<String>,
+    pub state: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Object)]

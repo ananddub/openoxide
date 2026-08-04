@@ -167,14 +167,64 @@ impl BackupController {
         };
 
         let res: Result<Option<i64>, _> = match table {
-            "applications" => sqlx::query_scalar!(r#"SELECT id FROM applications WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "postgres" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM postgres_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "mysql" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mysql_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "mariadb" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mariadb_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "mongo" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mongo_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "redis" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM redis_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "libsql" => sqlx::query_scalar!(r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM libsql_dbs WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
-            "compose" => sqlx::query_scalar!(r#"SELECT id FROM compose_projects WHERE id = ?"#, target_id).fetch_optional(self.db.as_ref()).await,
+            "applications" => {
+                sqlx::query_scalar!(r#"SELECT id FROM applications WHERE id = ?"#, target_id)
+                    .fetch_optional(self.db.as_ref())
+                    .await
+            }
+            "postgres" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM postgres_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "mysql" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mysql_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "mariadb" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mariadb_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "mongo" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mongo_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "redis" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM redis_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "libsql" => {
+                sqlx::query_scalar!(
+                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM libsql_dbs WHERE id = ?"#,
+                    target_id
+                )
+                .fetch_optional(self.db.as_ref())
+                .await
+            }
+            "compose" => {
+                sqlx::query_scalar!(r#"SELECT id FROM compose_projects WHERE id = ?"#, target_id)
+                    .fetch_optional(self.db.as_ref())
+                    .await
+            }
             _ => Ok(None),
         };
 
@@ -190,7 +240,9 @@ impl BackupController {
         RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
         ValidatedJson(dto): ValidatedJson<CreateBackupDto>,
     ) -> Result<(StatusCode, Json<BackupResponseDto>), ApiError> {
-        let org_id = self.resolve_organization_id(Some(dto.organization_id)).await;
+        let org_id = self
+            .resolve_organization_id(Some(dto.organization_id))
+            .await;
         let dest_id = self.resolve_destination_id(Some(dto.destination_id)).await;
         let item = Backup {
             id: None,
@@ -322,7 +374,9 @@ impl BackupController {
         &self,
         RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
     ) -> Result<Json<Vec<VolumeBackupResponseDto>>, ApiError> {
-        if let Some(CacheEnum::VolumeBackups(cached_items)) = self.cache.get(&CacheKey::VolumeBackups).await {
+        if let Some(CacheEnum::VolumeBackups(cached_items)) =
+            self.cache.get(&CacheKey::VolumeBackups).await
+        {
             return Ok(Json(
                 cached_items
                     .into_iter()
@@ -333,7 +387,10 @@ impl BackupController {
 
         let items = self.repo_volume.get_all().await.map_err(map_sqlx_error)?;
         self.cache
-            .insert(CacheKey::VolumeBackups, CacheEnum::VolumeBackups(items.clone()))
+            .insert(
+                CacheKey::VolumeBackups,
+                CacheEnum::VolumeBackups(items.clone()),
+            )
             .await;
 
         Ok(Json(
@@ -383,7 +440,9 @@ impl BackupController {
             enabled: 1,
             destination_id: dest_id,
             organization_id: org_id,
-            application_id: self.verify_fk_exists("applications", dto.application_id).await,
+            application_id: self
+                .verify_fk_exists("applications", dto.application_id)
+                .await,
             postgres_id: self.verify_fk_exists("postgres", dto.postgres_id).await,
             mysql_id: self.verify_fk_exists("mysql", dto.mysql_id).await,
             mariadb_id: self.verify_fk_exists("mariadb", dto.mariadb_id).await,
@@ -417,7 +476,8 @@ impl BackupController {
             .create(&item)
             .await
             .map_err(map_sqlx_error)?;
-        let created = self.repo_volume
+        let created = self
+            .repo_volume
             .get_by_id(id)
             .await
             .map_err(map_sqlx_error)?

@@ -40,7 +40,7 @@ impl MonitoringGrpc {
     }
 
     fn check_server_id(&self, requested: i64) -> Result<(), Status> {
-        if requested == 0 || requested == self.server_id {
+        if requested == self.server_id {
             return Ok(());
         }
 
@@ -61,8 +61,7 @@ fn clamp_limit(raw: i64) -> i64 {
 
 #[tonic::async_trait]
 impl MonitoringService for MonitoringGrpc {
-    type StreamLogsStream =
-        Pin<Box<dyn Stream<Item = Result<LogChunk, Status>> + Send + 'static>>;
+    type StreamLogsStream = Pin<Box<dyn Stream<Item = Result<LogChunk, Status>> + Send + 'static>>;
 
     async fn get_server_metrics(
         &self,
@@ -229,8 +228,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn accepts_zero_as_wildcard() {
-        assert!(service_for(7).check_server_id(0).is_ok());
+    async fn rejects_zero_as_wildcard() {
+        assert!(service_for(7).check_server_id(0).is_err());
     }
 
     #[tokio::test]

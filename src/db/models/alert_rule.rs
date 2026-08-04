@@ -12,6 +12,7 @@ pub struct AlertRule {
     pub duration_seconds: i32,
     pub notification_channel: String,
     pub enabled: i32,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }

@@ -8,6 +8,9 @@ pub struct Config {
     pub socket_path: String,
     pub build_memory_limit: String,
     pub build_cpu_limit: String,
+    /// Shared secret accepted only by monitoring-agent ingestion endpoints.
+    /// Empty disables agent ingestion rather than silently accepting anonymous data.
+    pub metrics_token: String,
 }
 
 #[singleton]
@@ -27,6 +30,7 @@ impl Config {
         let build_memory_limit =
             std::env::var("BUILD_MEMORY_LIMIT").unwrap_or_else(|_| "4G".to_string());
         let build_cpu_limit = std::env::var("BUILD_CPU_LIMIT").unwrap_or_else(|_| "4".to_string());
+        let metrics_token = std::env::var("METRICS_TOKEN").unwrap_or_default();
         Ok(Config {
             database_url,
             port,
@@ -35,6 +39,7 @@ impl Config {
             socket_path,
             build_memory_limit,
             build_cpu_limit,
+            metrics_token,
         })
     }
 }

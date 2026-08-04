@@ -19,9 +19,16 @@ impl ComposeService {
                 if record.compose_file.trim().is_empty() {
                     let paths = crate::utils::paths::RustployPaths::from_env();
                     let clean_path = record.compose_path.trim_start_matches("./");
-                    let file_path_1 = format!("{}/{}", paths.compose_source(&record.app_name), clean_path);
-                    let file_path_2 = format!("{}/docker-compose.yml", paths.compose_source(&record.app_name));
-                    let file_path_3 = format!("{}/docker-compose.yml", paths.compose_files(&record.app_name));
+                    let file_path_1 =
+                        format!("{}/{}", paths.compose_source(&record.app_name), clean_path);
+                    let file_path_2 = format!(
+                        "{}/docker-compose.yml",
+                        paths.compose_source(&record.app_name)
+                    );
+                    let file_path_3 = format!(
+                        "{}/docker-compose.yml",
+                        paths.compose_files(&record.app_name)
+                    );
 
                     if let Ok(content) = tokio::fs::read_to_string(&file_path_1).await {
                         record.compose_file = content;

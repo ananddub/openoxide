@@ -1,5 +1,5 @@
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -155,9 +155,15 @@ fn read_detailed_cgroup(dir: &std::path::Path) -> Option<DetailedCgroupSample> {
 
 #[tokio::test]
 async fn test_cgroup_exhaustive_metrics_benchmark() {
-    println!("\n==========================================================================================");
-    println!(" 🚀 EXHAUSTIVE CGROUP V2 READ BENCHMARK (ALL STATS: CPU, MEMORY, DISK I/O, PIDS, EVENTS)");
-    println!("==========================================================================================\n");
+    println!(
+        "\n=========================================================================================="
+    );
+    println!(
+        " 🚀 EXHAUSTIVE CGROUP V2 READ BENCHMARK (ALL STATS: CPU, MEMORY, DISK I/O, PIDS, EVENTS)"
+    );
+    println!(
+        "==========================================================================================\n"
+    );
 
     let start_init = Instant::now();
     let reader_opt = CgroupReader::discover();
@@ -177,7 +183,10 @@ async fn test_cgroup_exhaustive_metrics_benchmark() {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().to_string();
             if name.starts_with("docker-") && name.ends_with(".scope") {
-                let id = name.trim_start_matches("docker-").trim_end_matches(".scope").to_string();
+                let id = name
+                    .trim_start_matches("docker-")
+                    .trim_end_matches(".scope")
+                    .to_string();
                 container_paths.push((id, entry.path()));
             }
         }
@@ -198,7 +207,10 @@ async fn test_cgroup_exhaustive_metrics_benchmark() {
         return;
     }
 
-    println!("Found {} active container cgroup(s). Reading ALL cgroup v2 metrics...\n", container_paths.len());
+    println!(
+        "Found {} active container cgroup(s). Reading ALL cgroup v2 metrics...\n",
+        container_paths.len()
+    );
 
     let t1 = Instant::now();
     let mut sample1 = Vec::new();
@@ -222,22 +234,43 @@ async fn test_cgroup_exhaustive_metrics_benchmark() {
 
     let avg_single_pass = sample1_time.as_micros() as f64 / sample1.len().max(1) as f64;
 
-    println!("------------------------------------------------------------------------------------------");
+    println!(
+        "------------------------------------------------------------------------------------------"
+    );
     println!("📊 EXHAUSTIVE CGROUP BENCHMARK TIMING SUMMARY");
-    println!("------------------------------------------------------------------------------------------");
+    println!(
+        "------------------------------------------------------------------------------------------"
+    );
     println!("Containers Monitored: {}", sample1.len());
-    println!("Pass 1 (Exhaustive Read of 9 Files per Container): {:?}", sample1_time);
-    println!("Pass 2 (Exhaustive Read of 9 Files per Container): {:?}", sample2_time);
-    println!("⚡ Average Exhaustive Reading Time Per Container: {:.2} µs ({:.0} ns)", avg_single_pass, avg_single_pass * 1000.0);
+    println!(
+        "Pass 1 (Exhaustive Read of 9 Files per Container): {:?}",
+        sample1_time
+    );
+    println!(
+        "Pass 2 (Exhaustive Read of 9 Files per Container): {:?}",
+        sample2_time
+    );
+    println!(
+        "⚡ Average Exhaustive Reading Time Per Container: {:.2} µs ({:.0} ns)",
+        avg_single_pass,
+        avg_single_pass * 1000.0
+    );
 
     let num_cpus = sysinfo::System::new_all().cpus().len().max(1) as f64;
 
-    println!("\n=========================================================================================================");
+    println!(
+        "\n========================================================================================================="
+    );
     println!("📋 DETAILED PER-CONTAINER EXHAUSTIVE METRICS BREAKDOWN");
-    println!("=========================================================================================================");
+    println!(
+        "========================================================================================================="
+    );
 
     for (id, _path, s1) in &sample1 {
-        let s2 = sample2.iter().find(|(s2_id, _)| s2_id == id).map(|(_, s)| s);
+        let s2 = sample2
+            .iter()
+            .find(|(s2_id, _)| s2_id == id)
+            .map(|(_, s)| s);
 
         let cpu_perc = if let Some(s2) = s2 {
             let delta_cpu_us = s2.usage_usec.saturating_sub(s1.usage_usec) as f64;
@@ -253,23 +286,52 @@ async fn test_cgroup_exhaustive_metrics_benchmark() {
         let anon_ram_mb = s1.anon as f64 / 1_048_576.0;
         let file_cache_mb = s1.file as f64 / 1_048_576.0;
         let kernel_slab_mb = s1.slab as f64 / 1_048_576.0;
-        let actual_rss_mb = (s1.memory_current.saturating_sub(s1.inactive_file)) as f64 / 1_048_576.0;
+        let actual_rss_mb =
+            (s1.memory_current.saturating_sub(s1.inactive_file)) as f64 / 1_048_576.0;
 
         let disk_read_mb = s1.io_read_bytes as f64 / 1_048_576.0;
         let disk_write_mb = s1.io_write_bytes as f64 / 1_048_576.0;
 
         println!("🔹 CONTAINER ID: {}", short_id);
-        println!("   ├─ 💻 CPU Usage        : {:.2}% (User: {:.2}s, System: {:.2}s, Throttled: {} times / {:.2}ms)", 
-            cpu_perc, s1.user_usec as f64 / 1_000_000.0, s1.system_usec as f64 / 1_000_000.0, s1.nr_throttled, s1.throttled_usec as f64 / 1000.0);
-        println!("   ├─ 🧠 Memory Footprint : Actual RSS: {:.2} MB | Total: {:.2} MB (Anon: {:.2} MB, Cache: {:.2} MB, Slab: {:.2} MB)", 
-            actual_rss_mb, total_ram_mb, anon_ram_mb, file_cache_mb, kernel_slab_mb);
-        println!("   ├─ 📄 Page Faults      : Total Faults: {} | Major Faults (Disk Reads): {}", s1.pgfault, s1.pgmajfault);
-        println!("   ├─ 💾 Block I/O        : Read: {:.2} MB ({} ops) | Write: {:.2} MB ({} ops)", 
-            disk_read_mb, s1.io_read_ops, disk_write_mb, s1.io_write_ops);
-        println!("   ├─ ⚠️ OOM Events       : OOM Triggered: {} times | OOM Kills: {} processes", s1.oom_events, s1.oom_kill_events);
-        println!("   └─ 🧵 Tasks & Processes: Running PIDs: {} (Limit: {})", s1.pids_current, if s1.pids_max < u64::MAX / 2 { s1.pids_max.to_string() } else { "Unlimited".to_string() });
-        println!("---------------------------------------------------------------------------------------------------------");
+        println!(
+            "   ├─ 💻 CPU Usage        : {:.2}% (User: {:.2}s, System: {:.2}s, Throttled: {} times / {:.2}ms)",
+            cpu_perc,
+            s1.user_usec as f64 / 1_000_000.0,
+            s1.system_usec as f64 / 1_000_000.0,
+            s1.nr_throttled,
+            s1.throttled_usec as f64 / 1000.0
+        );
+        println!(
+            "   ├─ 🧠 Memory Footprint : Actual RSS: {:.2} MB | Total: {:.2} MB (Anon: {:.2} MB, Cache: {:.2} MB, Slab: {:.2} MB)",
+            actual_rss_mb, total_ram_mb, anon_ram_mb, file_cache_mb, kernel_slab_mb
+        );
+        println!(
+            "   ├─ 📄 Page Faults      : Total Faults: {} | Major Faults (Disk Reads): {}",
+            s1.pgfault, s1.pgmajfault
+        );
+        println!(
+            "   ├─ 💾 Block I/O        : Read: {:.2} MB ({} ops) | Write: {:.2} MB ({} ops)",
+            disk_read_mb, s1.io_read_ops, disk_write_mb, s1.io_write_ops
+        );
+        println!(
+            "   ├─ ⚠️ OOM Events       : OOM Triggered: {} times | OOM Kills: {} processes",
+            s1.oom_events, s1.oom_kill_events
+        );
+        println!(
+            "   └─ 🧵 Tasks & Processes: Running PIDs: {} (Limit: {})",
+            s1.pids_current,
+            if s1.pids_max < u64::MAX / 2 {
+                s1.pids_max.to_string()
+            } else {
+                "Unlimited".to_string()
+            }
+        );
+        println!(
+            "---------------------------------------------------------------------------------------------------------"
+        );
     }
 
-    println!("==========================================================================================\n");
+    println!(
+        "==========================================================================================\n"
+    );
 }

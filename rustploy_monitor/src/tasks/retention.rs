@@ -18,7 +18,11 @@ pub async fn prune_old_metrics(ctx: MonitorContext, shutdown: CancellationToken)
             _ = ticker.tick() => {}
         }
 
-        match ctx.store.cleanup_old_metrics(ctx.config.retention_days).await {
+        match ctx
+            .store
+            .cleanup_old_metrics(ctx.config.retention_days)
+            .await
+        {
             Ok(0) => {}
             Ok(deleted) => info!(
                 deleted,

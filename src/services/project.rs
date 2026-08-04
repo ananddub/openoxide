@@ -79,7 +79,9 @@ impl ProjectService {
         let description = input.description.or(current.description);
         let env_var = input.env_var.unwrap_or(current.env_var);
 
-        self.repo_project.update_and_return(id, name, description, env_var).await
+        self.repo_project
+            .update_and_return(id, name, description, env_var)
+            .await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {

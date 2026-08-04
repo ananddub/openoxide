@@ -2,8 +2,14 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        application::ApplicationOperation, compose::ComposeOperation, compose::ComposeStatus,
-        database::DatabaseOperation, notification::{NotificationLevel, NotificationMessage, NotificationService, NotificationTrigger},
+        application::ApplicationOperation,
+        compose::ComposeOperation,
+        compose::ComposeStatus,
+        database::DatabaseOperation,
+        notification::{
+            NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
+            NotificationTrigger,
+        },
     },
     utils::builder::{
         custom_type::{DeployState, IdType},
@@ -183,6 +189,19 @@ impl BuilderQueue {
             .describe_deployment_target(application_id, compose_id, database_id, database_kind)
             .await;
 
+        // Without an owning organization the alert would have to fan out to
+        // every tenant, so stay silent instead.
+        let Some(organization_id) = self
+            .deployment_organization_id(application_id, compose_id, database_id, database_kind)
+            .await
+        else {
+            tracing::warn!(
+                deployment_id,
+                "could not resolve owning organization, skipping notification"
+            );
+            return;
+        };
+
         let title = if succeeded {
             format!("{kind} {operation} succeeded: {name}")
         } else {
@@ -209,7 +228,44 @@ impl BuilderQueue {
             message = message.field("Error", error);
         }
 
-        service.notify(trigger, &message).await;
+        service
+            .notify(
+                NotificationScope::Organization(organization_id),
+                trigger,
+                &message,
+            )
+            .await;
+    }
+
+    /// Owning organization of whichever resource this deployment targeted.
+    async fn deployment_organization_id(
+        &self,
+        application_id: Option<i64>,
+        compose_id: Option<i64>,
+        database_id: Option<i64>,
+        database_kind: Option<&str>,
+    ) -> Option<i64> {
+        let repo = resolve::<crate::repository::DeploymentRepository>()
+            .await
+            .ok()?;
+
+        let lookup = if let Some(app_id) = application_id {
+            repo.application_organization_id(app_id).await
+        } else if let Some(cmp_id) = compose_id {
+            repo.compose_organization_id(cmp_id).await
+        } else if let (Some(db_id), Some(kind)) = (database_id, database_kind) {
+            repo.database_organization_id(db_id, kind).await
+        } else {
+            return None;
+        };
+
+        match lookup {
+            Ok(id) => Some(id),
+            Err(error) => {
+                tracing::error!(error = %error, "could not resolve deployment organization");
+                None
+            }
+        }
     }
 
     /// Resolves a human-readable "<kind> <name>" for the deployed resource,

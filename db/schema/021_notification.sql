@@ -96,6 +96,7 @@ CREATE TABLE notifications (
 	on_panel_restart INTEGER NOT NULL DEFAULT 0,
 	on_docker_cleanup INTEGER NOT NULL DEFAULT 0,
 	on_server_threshold INTEGER NOT NULL DEFAULT 0,
+	on_panel_backup INTEGER NOT NULL DEFAULT 0,
 	-- Foreign keys
 	slack_id INTEGER REFERENCES notif_slack(id) ON DELETE CASCADE,
 	telegram_id INTEGER REFERENCES notif_telegram(id) ON DELETE CASCADE,

@@ -3,10 +3,10 @@ use std::time::Instant;
 
 use auto_di::singleton;
 use axum::{
+    Router,
     extract::Request,
     middleware::{self, Next},
     response::Response,
-    Router,
 };
 use tower_http::cors::{Any, CorsLayer};
 

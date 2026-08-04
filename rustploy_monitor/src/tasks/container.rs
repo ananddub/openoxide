@@ -3,7 +3,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
-use crate::collector::{cgroup, CgroupCollector};
+use crate::collector::{CgroupCollector, cgroup};
 use crate::config::{CollectionMode, Config};
 use crate::context::MonitorContext;
 use crate::docker::stream::ContainerStreamer;
@@ -202,6 +202,8 @@ fn to_metric_row(sample: &ContainerSample) -> ContainerMetricRow {
         net_out_mb: net_tx_bytes as f64 / 1_048_576.0,
         block_read_mb: block_read_bytes as f64 / 1_048_576.0,
         block_write_mb: block_write_bytes as f64 / 1_048_576.0,
+        application_id: sample.labels.get("com.rustploy.application-id").and_then(|v| v.parse().ok()),
+        compose_id: sample.labels.get("com.rustploy.compose-id").and_then(|v| v.parse().ok()),
     }
 }
 
@@ -217,8 +219,8 @@ pub async fn push_container_metrics(
         .iter()
         .map(|metric| PushContainerMetricPoint {
             server_id: config.server_id,
-            application_id: 0,
-            compose_id: 0,
+            application_id: metric.application_id.unwrap_or(0),
+            compose_id: metric.compose_id.unwrap_or(0),
             container_id: &metric.container_id,
             container_name: &metric.name,
             cpu_percent: metric.cpu_perc,
@@ -232,10 +234,11 @@ pub async fn push_container_metrics(
 
     let payload = PushMetricsPayload { metrics: points };
 
-    let mut request = client.post(endpoint).json(&payload);
-    if !config.metrics_token.is_empty() {
-        request = request.header("X-Metrics-Token", &config.metrics_token);
-    }
+    let request = client
+        .post(endpoint)
+        .header("X-Metrics-Token", &config.metrics_token)
+        .header("X-Server-Id", config.server_id)
+        .json(&payload);
 
     match request.send().await {
         Ok(response) if response.status().is_success() => {

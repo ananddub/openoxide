@@ -30,18 +30,24 @@ pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(
     }
 
     let email = builder
-        .multipart(MultiPart::alternative().singlepart(
-            SinglePart::builder()
-                .header(ContentType::TEXT_PLAIN)
-                .body(msg.to_plain_text()),
-        ))
+        .multipart(
+            MultiPart::alternative().singlepart(
+                SinglePart::builder()
+                    .header(ContentType::TEXT_PLAIN)
+                    .body(msg.to_plain_text()),
+            ),
+        )
         .map_err(|e| format!("could not build email: {e}"))?;
 
-    let port = u16::try_from(cfg.smtp_port)
-        .map_err(|_| format!("invalid smtp port {}", cfg.smtp_port))?;
+    let port =
+        u16::try_from(cfg.smtp_port).map_err(|_| format!("invalid smtp port {}", cfg.smtp_port))?;
 
-    let tls = TlsParameters::new(cfg.smtp_server.clone())
-        .map_err(|e| format!("could not build TLS parameters for {}: {e}", cfg.smtp_server))?;
+    let tls = TlsParameters::new(cfg.smtp_server.clone()).map_err(|e| {
+        format!(
+            "could not build TLS parameters for {}: {e}",
+            cfg.smtp_server
+        )
+    })?;
 
     let mut transport = if port == 465 {
         AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&cfg.smtp_server)
@@ -54,10 +60,8 @@ pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(
     };
 
     if !cfg.username.is_empty() {
-        transport = transport.credentials(Credentials::new(
-            cfg.username.clone(),
-            cfg.password.clone(),
-        ));
+        transport =
+            transport.credentials(Credentials::new(cfg.username.clone(), cfg.password.clone()));
     }
 
     transport

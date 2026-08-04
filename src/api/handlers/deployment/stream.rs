@@ -222,9 +222,8 @@ fn docker_stats_event(bytes: Vec<u8>) -> Event {
         clean.trim()
     };
 
-    let value = serde_json::from_str::<serde_json::Value>(json_str).unwrap_or_else(|_| {
-        json!({ "raw": raw })
-    });
+    let value = serde_json::from_str::<serde_json::Value>(json_str)
+        .unwrap_or_else(|_| json!({ "raw": raw }));
 
     Event::default().event("stats").data(json_payload(json!({
         "type": "stats",

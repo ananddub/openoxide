@@ -266,6 +266,67 @@ impl DeploymentRepository {
         Ok(row)
     }
 
+    /// Owning organization of an application, via its environment's project.
+    pub async fn application_organization_id(
+        &self,
+        application_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"SELECT p.organization_id AS "organization_id: i64"
+               FROM applications a
+               JOIN environments e ON e.id = a.environment_id
+               JOIN projects p ON p.id = e.project_id
+               WHERE a.id = ?"#,
+            application_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn compose_organization_id(&self, compose_id: i64) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"SELECT p.organization_id AS "organization_id: i64"
+               FROM compose_projects c
+               JOIN environments e ON e.id = c.environment_id
+               JOIN projects p ON p.id = e.project_id
+               WHERE c.id = ?"#,
+            compose_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await
+    }
+
+    /// Databases live in per-kind tables, so the table name is interpolated
+    /// from a fixed allowlist rather than bound as a parameter.
+    pub async fn database_organization_id(
+        &self,
+        database_id: i64,
+        kind: &str,
+    ) -> Result<i64, sqlx::Error> {
+        let table = match kind {
+            "postgres" => "postgres_dbs",
+            "mysql" => "mysql_dbs",
+            "mariadb" => "mariadb_dbs",
+            "mongo" => "mongo_dbs",
+            "redis" => "redis_dbs",
+            "libsql" => "libsql_dbs",
+            _ => return Err(sqlx::Error::Protocol(format!("unknown db kind: {kind}"))),
+        };
+
+        let query_str = format!(
+            "SELECT p.organization_id
+             FROM {table} d
+             JOIN environments e ON e.id = d.environment_id
+             JOIN projects p ON p.id = e.project_id
+             WHERE d.id = ?"
+        );
+
+        sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(&*query_str))
+            .bind(database_id)
+            .fetch_one(self.pool.as_ref())
+            .await
+    }
+
     pub async fn get_database_app_name(
         &self,
         db_id: i64,

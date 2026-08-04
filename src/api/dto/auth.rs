@@ -46,4 +46,3 @@ pub struct UpdateUserDto {
     pub last_name: Option<String>,
     pub avatar: Option<String>,
 }
-

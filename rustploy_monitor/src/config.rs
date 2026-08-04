@@ -112,12 +112,25 @@ impl Config {
             ));
         }
 
+        if self.metrics_token.trim().is_empty() {
+            return Err(
+                "METRICS_TOKEN must be set; anonymous metric pushes are disabled".to_string(),
+            );
+        }
+
         Ok(())
     }
 
     pub fn container_metrics_endpoint(&self) -> String {
         format!(
             "{}/api/monitoring/containers/batch",
+            self.panel_url.trim_end_matches('/')
+        )
+    }
+
+    pub fn server_metrics_endpoint(&self) -> String {
+        format!(
+            "{}/api/monitoring/server",
             self.panel_url.trim_end_matches('/')
         )
     }
@@ -142,7 +155,7 @@ mod tests {
             refresh_rate: 60,
             retention_days: 7,
             panel_url: "http://127.0.0.1:4000".into(),
-            metrics_token: String::new(),
+            metrics_token: "test-monitoring-token".into(),
             docker_socket: "/var/run/docker.sock".into(),
             include_containers: Vec::new(),
             exclude_containers: Vec::new(),
@@ -174,6 +187,13 @@ mod tests {
     fn rejects_panel_url_without_scheme() {
         let mut cfg = base();
         cfg.panel_url = "127.0.0.1:4000".into();
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_an_empty_metrics_token() {
+        let mut cfg = base();
+        cfg.metrics_token.clear();
         assert!(cfg.validate().is_err());
     }
 

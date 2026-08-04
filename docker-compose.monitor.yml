@@ -29,7 +29,8 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - monitor_data:/app/data
     environment:
-      SERVER_ID: "1"
+      # Must match an existing row in the panel's `servers` table.
+      SERVER_ID: "5"
       MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
       GRPC_PORT: "50051"
       REFRESH_RATE: "60"

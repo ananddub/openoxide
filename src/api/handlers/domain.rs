@@ -48,12 +48,15 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
-        let items = self.service
+        let items = self
+            .service
             .list_by_application(application_id)
             .await
             .map_err(map_sqlx_error)?;
-            
-        Ok(Json(items.into_iter().map(DomainResponseDto::from).collect()))
+
+        Ok(Json(
+            items.into_iter().map(DomainResponseDto::from).collect(),
+        ))
     }
 
     #[get("/compose/{compose_id}")]
@@ -62,12 +65,15 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
-        let items = self.service
+        let items = self
+            .service
             .list_by_compose(compose_id)
             .await
             .map_err(map_sqlx_error)?;
-            
-        Ok(Json(items.into_iter().map(DomainResponseDto::from).collect()))
+
+        Ok(Json(
+            items.into_iter().map(DomainResponseDto::from).collect(),
+        ))
     }
 
     #[post]
@@ -79,7 +85,8 @@ impl DomainController {
         let app_id = body.application_id;
         let comp_id = body.compose_id;
 
-        let created = self.service
+        let created = self
+            .service
             .create(body)
             .await
             .map(DomainResponseDto::from)
@@ -103,7 +110,8 @@ impl DomainController {
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchDomainDto>,
     ) -> Result<Json<DomainResponseDto>, ApiError> {
-        let updated = self.service
+        let updated = self
+            .service
             .patch(id, body)
             .await
             .map(DomainResponseDto::from)
@@ -120,10 +128,7 @@ impl DomainController {
         RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map_err(map_sqlx_error)?;
+        self.service.delete(id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate_all().await;
         Ok(StatusCode::NO_CONTENT)

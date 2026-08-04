@@ -4,8 +4,11 @@ use rustploy::{
     core::config::Config,
     core::logs::init_logs,
     services::{
-        monitoring::alert_service::AlertService,
-        notification::{NotificationLevel, NotificationMessage, NotificationService, NotificationTrigger},
+        monitoring::{alert_service::AlertService, monitoring_service::MonitoringService},
+        notification::{
+            NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
+            NotificationTrigger,
+        },
         schedule::ScheduleRunner,
     },
     utils::builder::queue::BuilderQueue,
@@ -48,6 +51,10 @@ async fn main() {
         .await
         .expect("failed to resolve alert service")
         .start();
+    resolve::<MonitoringService>()
+        .await
+        .expect("failed to resolve monitoring service")
+        .start_retention();
 
     // 3. Dispatch PanelRestart notification on boot
     if let Ok(notif_svc) = resolve::<NotificationService>().await {
@@ -57,7 +64,15 @@ async fn main() {
         )
         .level(NotificationLevel::Info);
         tokio::spawn(async move {
-            notif_svc.notify(NotificationTrigger::PanelRestart, &msg).await;
+            // A panel restart affects every tenant, so this is the one dispatch
+            // that legitimately reaches all organizations.
+            notif_svc
+                .notify(
+                    NotificationScope::AllOrganizations,
+                    NotificationTrigger::PanelRestart,
+                    &msg,
+                )
+                .await;
         });
     }
 
