@@ -4,9 +4,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::api::dto::traefik::{
+    StructuredMiddlewareDto, StructuredMiddlewareKind, StructuredMiddlewareResponseDto,
     TraefikFileContentDto, TraefikFileNodeDto, TraefikFileTreeNodeDto, TraefikHealthResponseDto,
     TraefikLogEntryDto, TraefikRequestsStatusDto, TraefikStatsLogsQueryDto,
-    TraefikStatsLogsResponseDto, TraefikToggleRequestsDto, TraefikWriteFileDto,
+    TraefikStatsLogsResponseDto, TraefikToggleRequestsDto, TraefikVersionDto, TraefikWriteFileDto,
+    UpdateTraefikVersionDto,
 };
 use crate::utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor};
 use crate::utils::os::OsCli;
@@ -122,7 +124,7 @@ impl TraefikService {
             .max_depth(3)
             .type_file()
             .names(["*.yml", "*.yaml", "*.json"])
-            .printf("%p\t%s\t%T@\n")
+            .output(crate::utils::os::dir::DirWalkOutput::PathSizeModifiedEpoch)
             .ignore_errors()
             .run()
             .await
@@ -252,7 +254,7 @@ impl TraefikService {
 
         if let Some(parent) = full_path.parent() {
             let parent_str = parent.to_string_lossy().to_string();
-            let _ = executor.run("mkdir", ["-p", &parent_str]).await;
+            let _ = os.dir(&parent_str).create().run().await;
         }
 
         let backup_path = format!("{}.bak", path_str);
@@ -283,7 +285,128 @@ impl TraefikService {
             return Err(format!("Failed to finalize file update: {}", err));
         }
 
+        tokio::time::sleep(std::time::Duration::from_millis(750)).await;
+        let health = self.check_health(payload.server_id).await?;
+        if !health.is_healthy {
+            let rollback = os.file(&backup_path).copy(&path_str).execute().await;
+            return Err(format!(
+                "Traefik rejected the configuration; previous file restored: {}{}",
+                health.configuration_errors.join("; "),
+                rollback
+                    .err()
+                    .map(|error| format!("; rollback error: {error}"))
+                    .unwrap_or_default()
+            ));
+        }
+
         Ok(())
+    }
+
+    pub async fn version(&self, server_id: Option<i64>) -> Result<TraefikVersionDto, String> {
+        let executor = self.get_executor(server_id).await?;
+        let inspect = crate::utils::docker::DockerCli::from_executor(executor)
+            .containers()
+            .inspect("rustploy-traefik")
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(TraefikVersionDto {
+            server_id,
+            current_image: inspect.config.image,
+            desired_version: "3.6.7".into(),
+        })
+    }
+
+    pub async fn update_version(
+        &self,
+        input: UpdateTraefikVersionDto,
+    ) -> Result<TraefikVersionDto, String> {
+        let version = input.version.trim().trim_start_matches('v');
+        if version.is_empty()
+            || !version
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-'))
+        {
+            return Err("invalid Traefik version".into());
+        }
+        let executor = self.get_executor(input.server_id).await?;
+        let docker = crate::utils::docker::DockerCli::from_executor(executor.clone());
+        docker
+            .images()
+            .pull(format!("traefik:v{version}"))
+            .pull()
+            .await
+            .map_err(|error| error.to_string())?;
+        let _ = docker
+            .containers()
+            .rm("rustploy-traefik")
+            .force()
+            .run()
+            .await;
+        let mut config = crate::utils::setup::SetupConfig::default();
+        config.traefik_version = version.to_owned();
+        crate::utils::setup::ServerSetup::new(executor, config)
+            .ensure_traefik()
+            .await
+            .map_err(|error| error.to_string())?;
+        self.version(input.server_id).await
+    }
+
+    pub fn structured_middleware(
+        input: StructuredMiddlewareDto,
+    ) -> Result<StructuredMiddlewareResponseDto, String> {
+        use crate::utils::traefik::middleware::Middleware;
+        let name = input.name.trim().to_owned();
+        if name.is_empty()
+            || !name
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+        {
+            return Err("invalid middleware name".into());
+        }
+        let value = |key: &str| {
+            input
+                .values
+                .get(key)
+                .cloned()
+                .ok_or_else(|| format!("missing middleware value: {key}"))
+        };
+        let middleware = match input.kind {
+            StructuredMiddlewareKind::StripPrefix => Middleware::StripPrefix {
+                name,
+                prefixes: input.list,
+            },
+            StructuredMiddlewareKind::AddPrefix => Middleware::AddPrefix {
+                name,
+                prefix: value("prefix")?,
+            },
+            StructuredMiddlewareKind::RedirectScheme => Middleware::RedirectScheme {
+                name,
+                scheme: value("scheme")?,
+                permanent: input.values.get("permanent").is_some_and(|v| v == "true"),
+            },
+            StructuredMiddlewareKind::Compress => Middleware::Compress { name },
+            StructuredMiddlewareKind::RateLimit => Middleware::RateLimit {
+                name,
+                average: value("average")?.parse().map_err(|_| "invalid average")?,
+                burst: value("burst")?.parse().map_err(|_| "invalid burst")?,
+            },
+            StructuredMiddlewareKind::IpAllowList => Middleware::IpAllowList {
+                name,
+                source_ranges: input.list,
+            },
+            StructuredMiddlewareKind::RequestHeaders => Middleware::RequestHeaders {
+                name,
+                headers: input.values.into_iter().collect(),
+            },
+            StructuredMiddlewareKind::ResponseHeaders => Middleware::ResponseHeaders {
+                name,
+                headers: input.values.into_iter().collect(),
+            },
+        };
+        Ok(StructuredMiddlewareResponseDto {
+            reference: middleware.reference(),
+            labels: middleware.labels().into_iter().collect(),
+        })
     }
 
     pub async fn check_health(

@@ -1,11 +1,15 @@
-use auto_di::resolve;
-
-use crate::repository::RollbackRepository;
+use crate::utils::builder::queue::deployment_log::DeploymentLog;
 use crate::utils::builder::spec::ApplicationSpec;
 use crate::utils::docker::DockerCli;
 
 use super::ApplicationService;
 use super::auto_excuter::app_new_cmd;
+
+#[derive(Debug, Clone)]
+pub struct ApplicationRollbackTriggerResult {
+    pub deployment_id: i64,
+    pub message: String,
+}
 
 impl ApplicationService {
     /// Trigger a rollback to a specific rollback snapshot.
@@ -15,14 +19,21 @@ impl ApplicationService {
         &self,
         application_id: i64,
         rollback_id: i64,
-    ) -> sqlx::Result<String> {
-        // 1. Load the rollback record
-        let rollback_repo = resolve::<RollbackRepository>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+    ) -> sqlx::Result<ApplicationRollbackTriggerResult> {
+        let application = self.get_by_id(application_id).await?;
+        if self
+            .repo_deploy
+            .has_running_deployment(application_id)
+            .await?
+        {
+            return Err(sqlx::Error::Protocol(
+                "application deployment is already queued or running".into(),
+            ));
+        }
 
-        let rollback = rollback_repo
-            .get_by_id(rollback_id)
+        let rollback = self
+            .repo_rollback
+            .get_for_application(rollback_id, application_id)
             .await?
             .ok_or_else(|| sqlx::Error::Protocol(format!("rollback {} not found", rollback_id)))?;
 
@@ -43,27 +54,71 @@ impl ApplicationService {
             }
         };
 
-        // 3. Get the executor for this application's server
-        let executor = app_new_cmd(self.db.clone(), application_id).await?;
-        let docker = DockerCli::from_executor(executor);
-
-        // 4. Update the Docker Swarm service with the rollback image
-        let service_name = spec.service_name();
-
-        let mut update = docker
-            .services()
-            .update(&service_name)
-            .image(rollback_image)
-            .force();
-
-        // Apply environment variables from the snapshot
-        for (k, v) in &spec.environment {
-            update = update.env_add(k, v);
+        let deployment_id = self
+            .repo_deploy
+            .create_running_deployment(
+                "Application rollback",
+                Some(&format!(
+                    "Rollback {} to version {}",
+                    application.name, rollback.version
+                )),
+                "ROLLBACK",
+                application_id,
+                application.server_id,
+            )
+            .await?;
+        let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
+        self.repo_deploy
+            .update_log_path(deployment_id, &log_path)
+            .await?;
+        let mut log = DeploymentLog::open(deployment_id).await.ok();
+        if let Some(log) = log.as_mut() {
+            let _ = log
+                .write_line(&format!(
+                    "[RUNNING] Rollback {} to version {} using image {}",
+                    application.name, rollback.version, rollback_image
+                ))
+                .await;
         }
 
-        match update.run().await {
+        let service_name = spec.service_name();
+        let result = async {
+            let executor = app_new_cmd(self.db.clone(), application_id).await?;
+            let docker = DockerCli::from_executor(executor);
+
+            // 4. Update the Docker Swarm service with the rollback image
+            let mut update = docker
+                .services()
+                .update(&service_name)
+                .image(rollback_image)
+                .force();
+
+            // Apply environment variables from the snapshot
+            for (k, v) in &spec.environment {
+                update = update.env_add(k, v);
+            }
+
+            update
+                .run()
+                .await
+                .map_err(|e| sqlx::Error::Protocol(format!("rollback service update failed: {e}")))
+        }
+        .await;
+
+        match result {
             Ok(_) => {
+                let message = format!(
+                    "Rolled back {} to version {} (image: {})",
+                    service_name, rollback.version, rollback_image
+                );
+                if let Some(log) = log.as_mut() {
+                    let _ = log.write_line(&format!("[DONE] {message}")).await;
+                }
+                self.repo_deploy
+                    .update_final_status(deployment_id, "DONE", None)
+                    .await?;
                 tracing::info!(
+                    deployment_id,
                     application_id,
                     rollback_id,
                     rollback_image,
@@ -71,22 +126,28 @@ impl ApplicationService {
                     version = rollback.version,
                     "rollback: service updated successfully"
                 );
-                Ok(format!(
-                    "Rolled back {} to version {} (image: {})",
-                    service_name, rollback.version, rollback_image
-                ))
+                Ok(ApplicationRollbackTriggerResult {
+                    deployment_id,
+                    message,
+                })
             }
             Err(e) => {
+                let error = e.to_string();
+                if let Some(log) = log.as_mut() {
+                    let _ = log.write_line(&format!("[ERROR] {error}")).await;
+                }
+                self.repo_deploy
+                    .update_final_status(deployment_id, "ERROR", Some(&error))
+                    .await?;
                 tracing::error!(
+                    deployment_id,
                     application_id,
                     rollback_id,
                     rollback_image,
                     error = %e,
                     "rollback: failed to update service"
                 );
-                Err(sqlx::Error::Protocol(format!(
-                    "rollback service update failed: {e}"
-                )))
+                Err(e)
             }
         }
     }
@@ -96,9 +157,18 @@ impl ApplicationService {
         &self,
         application_id: i64,
     ) -> sqlx::Result<Vec<crate::db::models::rollbacks::Rollback>> {
-        let rollback_repo = resolve::<RollbackRepository>()
+        self.get_by_id(application_id).await?;
+        self.repo_rollback.list_by_application(application_id).await
+    }
+
+    pub async fn delete_rollback(
+        &self,
+        application_id: i64,
+        rollback_id: i64,
+    ) -> sqlx::Result<bool> {
+        self.get_by_id(application_id).await?;
+        self.repo_rollback
+            .delete_for_application(rollback_id, application_id)
             .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        rollback_repo.list_by_application(application_id).await
     }
 }

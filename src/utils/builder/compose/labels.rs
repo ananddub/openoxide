@@ -377,6 +377,7 @@ services:
             env_file: "/tmp/site/.env".into(),
             environment: BTreeMap::new(),
             mounts: vec![],
+            patches: vec![],
             domains: vec![DomainSpec {
                 key: "1".into(),
                 host: "site.example.com".into(),
@@ -392,6 +393,10 @@ services:
                 middlewares: vec![],
             }],
             service_networks: vec![],
+            randomize: false,
+            suffix: String::new(),
+            isolated_deployment: false,
+            isolated_deployments_volume: false,
         }
     }
 }

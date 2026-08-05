@@ -286,10 +286,15 @@ fn test_shell_ir_compilation() {
 
     assert_eq!(systemctl_cmd.to_bash(), "systemctl 'is-active' 'sshd'");
 
-    let redirect = systemctl_cmd.clone().stdout("/var/log/active.log");
+    let redirect =
+        systemctl_cmd
+            .clone()
+            .stdout(crate::utils::exec::script::dsl::OutputTarget::file(
+                "/var/log/active.log",
+            ));
     assert_eq!(
         redirect.to_bash(),
-        "systemctl 'is-active' 'sshd' > /var/log/active.log"
+        "systemctl 'is-active' 'sshd' > '/var/log/active.log'"
     );
 
     let assign = ShellIR::Statement(Statement::VarAssign {
@@ -361,7 +366,7 @@ fn test_sh_macro_advanced_features() {
 
         cmd("rm", logs);
         restart_service(temp);
-        cmd("echo", "deploy-finished").stdout("/var/log/deploy.log");
+        cmd("echo", "deploy-finished").stdout(crate::utils::exec::script::dsl::OutputTarget::file("/var/log/deploy.log"));
     );
 
     let bash = script_ir
@@ -386,7 +391,7 @@ fn test_sh_macro_advanced_features() {
     assert!(bash.contains("rm \"$logs\""));
 
     // 4. Redirection test
-    assert!(bash.contains("echo 'deploy-finished' > /var/log/deploy.log"));
+    assert!(bash.contains("echo 'deploy-finished' > '/var/log/deploy.log'"));
 
     // 5. Defer (trap cleanup) test
     assert!(bash.contains("_cleanup() {"));
@@ -465,7 +470,7 @@ fn test_sh_macro_convenience_dsls() {
         os.file("/etc/passwd").read();
         os.file("$tmp").exists();
         os.file("$tmp").delete();
-        os.file("$tmp").chmod("755");
+        os.file("$tmp").chmod(crate::utils::os::file::FileMode::OwnerAllGroupReadExecuteWorldReadExecute);
         os.file("$tmp").chown("root");
 
         os.dir("/tmp/test_dir").create();
@@ -587,8 +592,8 @@ fn test_sh_macro_docker_chain_inside_if_branch() {
     let script_ir = sh!(if docker
         .containers()
         .inspect_cmd("web")
-        .stdout("/dev/null")
-        .stderr("/dev/null")
+        .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+        .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
     {
         docker.containers().start("web");
     });

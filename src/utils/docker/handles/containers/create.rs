@@ -168,10 +168,6 @@ impl<'a> ContainerCreate<'a> {
         self
     }
     /// Pass any raw flag not covered by the builder.
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     fn finalize(mut self, subcmd: &str) -> (ArgBuilder, &'a DockerCli) {
         let mut full = ArgBuilder::cmd(&["container", subcmd]);

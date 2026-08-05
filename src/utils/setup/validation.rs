@@ -53,7 +53,12 @@ pub(crate) async fn audit(
     ports: &[u16],
 ) -> ExecResult<ServerAudit> {
     async fn tool(executor: &CommandExecutor, binary: &str) -> ToolState {
-        match executor.run(binary, ["--version"]).await {
+        match crate::utils::os::OsCli::new(executor)
+            .system()
+            .tool_version(binary)
+            .run()
+            .await
+        {
             Ok(output) => ToolState {
                 installed: true,
                 version: output
@@ -68,26 +73,28 @@ pub(crate) async fn audit(
         }
     }
 
-    let os_release = executor.run("cat", ["/etc/os-release"]).await?.stdout;
+    let os = crate::utils::os::OsCli::new(executor);
+    let os_release = os.file("/etc/os-release").read().execute().await?.stdout;
     let os_id = parse_os_id(&os_release);
-    let architecture = executor
-        .run("uname", ["-m"])
-        .await?
-        .stdout_trimmed()
-        .to_owned();
+    let architecture = os.system().arch().run().await?.stdout_trimmed().to_owned();
     let docker_state = tool(executor, "docker").await;
     let git = tool(executor, "git").await;
     let rclone = tool(executor, "rclone").await;
     let nixpacks = tool(executor, "nixpacks").await;
     let railpack = tool(executor, "railpack").await;
     let buildpacks = tool(executor, "pack").await;
-    let swarm_active = executor
-        .run("docker", ["info", "--format", "{{.Swarm.LocalNodeState}}"])
+    let docker = crate::utils::docker::DockerCli::from_executor(executor.clone());
+    let swarm_active = docker
+        .swarm()
+        .active()
+        .run()
         .await
         .map(|output| output.stdout_trimmed() == "active")
         .unwrap_or(false);
-    let docker_group_member = executor
-        .run("groups", std::iter::empty::<&str>())
+    let docker_group_member = os
+        .system()
+        .current_groups()
+        .run()
         .await
         .map(|output| {
             output
@@ -96,11 +103,12 @@ pub(crate) async fn audit(
                 .any(|group| group == "docker")
         })
         .unwrap_or(false);
-    let docker = crate::utils::docker::DockerCli::from_executor(executor.clone());
     let network_exists = docker.networks().inspect(network).await.is_ok();
-    let base_directory_exists = executor.run("test", ["-d", base]).await.is_ok();
-    let listening = executor
-        .run("ss", ["-H", "-ltnu"])
+    let base_directory_exists = os.dir(base).exists().run().await.is_ok();
+    let listening = os
+        .network()
+        .listen_ports_detailed()
+        .run()
         .await
         .map(|output| output.stdout)
         .unwrap_or_default();

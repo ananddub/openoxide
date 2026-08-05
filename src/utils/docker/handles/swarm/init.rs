@@ -38,10 +38,6 @@ impl<'a> SwarmInitBuilder<'a> {
             .pair("--default-addr-pool-mask-length", len.to_string());
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub async fn run(self) -> DockerResult<DockerOutput> {
         self.cli.execute(&self.args).await

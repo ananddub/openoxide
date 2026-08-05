@@ -10,6 +10,103 @@ pub struct ApplicationRepository {
 
 #[singleton]
 impl ApplicationRepository {
+    pub async fn update_networks(
+        &self,
+        id: i64,
+        network_ids: &str,
+        detach_rustploy_network: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE applications SET network_ids = ?, detach_rustploy_network = ? WHERE id = ?",
+            network_ids,
+            detach_rustploy_network,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn move_to_environment_in_same_organization(
+        &self,
+        id: i64,
+        target_environment_id: i64,
+    ) -> Result<Option<Application>, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"UPDATE applications
+               SET environment_id = ?, updated_at = strftime('%s', 'now')
+               WHERE id = ?
+                 AND EXISTS (
+                     SELECT 1
+                     FROM environments source_environment
+                     INNER JOIN projects source_project ON source_project.id = source_environment.project_id
+                     INNER JOIN environments target_environment ON target_environment.id = ?
+                     INNER JOIN projects target_project ON target_project.id = target_environment.project_id
+                     WHERE source_environment.id = applications.environment_id
+                       AND source_project.organization_id = target_project.organization_id
+                 )"#,
+            target_environment_id,
+            id,
+            target_environment_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+
+        if result.rows_affected() == 0 {
+            return Ok(None);
+        }
+        self.get_by_id(id).await
+    }
+
+    pub async fn rotate_refresh_token(&self, id: i64, token: &str) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE applications SET refresh_token = ? WHERE id = ?",
+            token,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub async fn update_preview_config(
+        &self,
+        id: i64,
+        preview_env: Option<&str>,
+        preview_build_args: Option<&str>,
+        preview_build_secrets: Option<&str>,
+        preview_labels: Option<&str>,
+        preview_wildcard: Option<&str>,
+        preview_port: i64,
+        preview_https: bool,
+        preview_path: &str,
+        preview_certificate_type: &str,
+        preview_custom_cert_resolver: Option<&str>,
+        preview_limit: i64,
+        active: bool,
+        require_collaborator_permissions: bool,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"UPDATE applications SET preview_env = ?, preview_build_args = ?, preview_build_secrets = ?, preview_labels = ?, preview_wildcard = ?, preview_port = ?, preview_https = ?, preview_path = ?, preview_certificate_type = ?, preview_custom_cert_resolver = ?, preview_limit = ?, is_preview_deployments_active = ?, preview_require_collaborator_permissions = ? WHERE id = ?"#,
+            preview_env,
+            preview_build_args,
+            preview_build_secrets,
+            preview_labels,
+            preview_wildcard,
+            preview_port,
+            preview_https,
+            preview_path,
+            preview_certificate_type,
+            preview_custom_cert_resolver,
+            preview_limit,
+            active,
+            require_collaborator_permissions,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
     }

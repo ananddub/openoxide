@@ -15,6 +15,7 @@ pub fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_check_violation() => {
             (StatusCode::BAD_REQUEST, database_error.message().into())
         }
+        sqlx::Error::Protocol(message) => (StatusCode::BAD_REQUEST, message),
         other => {
             tracing::error!(error = %other, "managed database operation failed");
             (
@@ -46,6 +47,7 @@ pub async fn run_operation(
 }
 
 pub mod libsql;
+pub mod management;
 pub mod mariadb;
 pub mod mongo;
 pub mod mysql;

@@ -96,10 +96,6 @@ impl<'a> VolumeCreate<'a> {
         self.opts.push((k.into(), v.into()));
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.extra.push(v.into());
-        self
-    }
 
     fn build_args(&self) -> Vec<String> {
         let mut a = vec!["volume".to_string(), "create".to_string()];

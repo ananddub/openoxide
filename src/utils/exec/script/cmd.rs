@@ -44,6 +44,24 @@ impl IntoCommand for &String {
     }
 }
 
+impl IntoCommand for std::path::PathBuf {
+    fn build_str(&self) -> String {
+        self.to_string_lossy().into_owned()
+    }
+}
+
+impl IntoCommand for &std::path::PathBuf {
+    fn build_str(&self) -> String {
+        self.to_string_lossy().into_owned()
+    }
+}
+
+impl IntoCommand for &std::path::Path {
+    fn build_str(&self) -> String {
+        self.to_string_lossy().into_owned()
+    }
+}
+
 impl IntoCommand for ArgBuilder {
     fn build_str(&self) -> String {
         self.preview()

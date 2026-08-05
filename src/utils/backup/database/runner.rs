@@ -91,13 +91,7 @@ impl<'a> BackupRunner<'a> {
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let mut builder = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
-
-        if let Some(ref extra) = self.destination.additional_flags {
-            for flag in extra.split_whitespace() {
-                builder = builder.arg(flag);
-            }
-        }
+        let builder = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
 
         let rclone_cmd = builder.to_command_string();
 
@@ -126,13 +120,7 @@ impl<'a> BackupRunner<'a> {
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let mut builder = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
-
-        if let Some(ref extra) = self.destination.additional_flags {
-            for flag in extra.split_whitespace() {
-                builder = builder.arg(flag);
-            }
-        }
+        let builder = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
 
         let rclone_cmd = builder.to_command_string();
 

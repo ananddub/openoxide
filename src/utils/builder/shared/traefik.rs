@@ -1,5 +1,10 @@
 use crate::utils::traefik::{
-    middleware::Middleware, rule::Rule, traefik::TraefikBuilder, types::CertificateType,
+    entrypoint::Entrypoint,
+    middleware::Middleware,
+    rule::Rule,
+    tls::{CertResolver, TlsConfig},
+    traefik::TraefikBuilder,
+    types::CertificateType,
 };
 use std::collections::{BTreeMap, HashMap};
 
@@ -50,13 +55,16 @@ pub fn build_traefik_labels_for_network(
 
         let mut traefik = TraefikBuilder::new().enable().network(network);
 
-        let entrypoint = domain.entrypoint.clone().unwrap_or_else(|| {
-            if domain.https {
-                "websecure".into()
-            } else {
-                "web".into()
-            }
-        });
+        let entrypoint =
+            domain
+                .entrypoint
+                .clone()
+                .map(Entrypoint::custom)
+                .unwrap_or(if domain.https {
+                    Entrypoint::WebSecure
+                } else {
+                    Entrypoint::Web
+                });
 
         let router_name = format!("{app_name}-{}", domain.key);
 
@@ -103,19 +111,18 @@ pub fn build_traefik_labels_for_network(
         }
 
         if domain.https {
-            r = r.tls(true);
             let cert_type = CertificateType::from(domain.certificate_type.as_str());
-            match cert_type {
-                CertificateType::LetsEncrypt => {
-                    r = r.cert_resolver("letsencrypt");
-                }
-                CertificateType::Custom => {
-                    if let Some(resolver) = &domain.custom_cert_resolver {
-                        r = r.cert_resolver(resolver);
-                    }
-                }
-                CertificateType::None => {}
-            }
+            let tls = match cert_type {
+                CertificateType::LetsEncrypt => CertResolver::LetsEncrypt.into(),
+                CertificateType::Custom => domain
+                    .custom_cert_resolver
+                    .clone()
+                    .map(CertResolver::Custom)
+                    .map(TlsConfig::from)
+                    .unwrap_or_else(TlsConfig::enabled),
+                CertificateType::None => TlsConfig::enabled(),
+            };
+            r = r.tls_config(tls);
         }
 
         traefik = r
@@ -130,7 +137,7 @@ pub fn build_traefik_labels_for_network(
             traefik = traefik
                 .router(&redirect_name)
                 .rule(&rule)
-                .entrypoint("web")
+                .entrypoint(Entrypoint::Web)
                 .middleware("redirect-to-https@file")
                 .finish();
         }
@@ -138,8 +145,7 @@ pub fn build_traefik_labels_for_network(
         builders
             .entry(service_name)
             .or_insert_with(TraefikBuilder::new)
-            .labels
-            .extend(traefik.labels);
+            .append(traefik);
     }
 
     builders

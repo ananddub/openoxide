@@ -39,6 +39,13 @@ impl ComposeService {
             .await?;
 
         let compose = self.get_by_id(id).await?;
+        if !matches!(operation, ComposeOperation::Stop) {
+            resolve::<crate::repository::ServerManagementRepository>()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+                .assert_deployable(compose.server_id)
+                .await?;
+        }
 
         let log_path = format!("pending-compose-{}", id);
         let deployment_id = self

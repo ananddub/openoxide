@@ -1,13 +1,14 @@
 use crate::utils::exec::script::IntoCommand;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
+use crate::utils::os::file::FileMode;
 
 pub struct DirCreateBuilder<'a> {
     executor: &'a CommandExecutor,
     path: String,
     parents: bool,
     verbose: bool,
-    mode: Option<String>,
+    mode: Option<FileMode>,
 }
 
 impl<'a> DirCreateBuilder<'a> {
@@ -28,8 +29,8 @@ impl<'a> DirCreateBuilder<'a> {
         self.verbose = val;
         self
     }
-    pub fn mode(mut self, val: impl Into<String>) -> Self {
-        self.mode = Some(val.into());
+    pub fn mode(mut self, val: FileMode) -> Self {
+        self.mode = Some(val);
         self
     }
 
@@ -43,7 +44,7 @@ impl<'a> DirCreateBuilder<'a> {
         }
         if let Some(ref m) = self.mode {
             args.push("-m".to_string());
-            args.push(m.clone());
+            args.push(m.as_str().to_owned());
         }
         args.push(self.path.clone());
         self.executor.run("mkdir", &args).await
@@ -61,7 +62,7 @@ impl<'a> IntoCommand for DirCreateBuilder<'a> {
         }
         if let Some(ref m) = self.mode {
             parts.push("-m".to_string());
-            parts.push(escape_arg(m));
+            parts.push(escape_arg(m.as_str()));
         }
         parts.push(escape_arg(&self.path));
         parts.join(" ")

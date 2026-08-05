@@ -1,9 +1,13 @@
-use crate::db::models::{domains::Domain, mounts::Mount};
+use crate::db::models::{
+    application_middlewares::ApplicationMiddleware, domains::Domain, mounts::Mount, patches::Patch,
+    ports::Port, redirects::Redirect, security::Security,
+};
 use crate::utils::builder::env::generate_env_app;
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
 use crate::utils::builder::spec::{
-    ApplicationSpec, BuildStrategy, BuildType, SourceSpec, SourceType,
+    ApplicationSpec, BasicAuthSpec, BuildStrategy, BuildType, PatchSpec, PortSpec, RedirectSpec,
+    SourceSpec, SourceType, StructuredMiddlewareSpec,
 };
 use crate::utils::builder::spec::{RegistryAuth, ResourceSpec};
 use crate::utils::git::GitProviderBuilder;
@@ -14,6 +18,11 @@ pub struct AppRowWithRelations {
     pub app: AppRow,
     pub domains: Vec<Domain>,
     pub mounts: Vec<Mount>,
+    pub patches: Vec<Patch>,
+    pub ports: Vec<Port>,
+    pub redirects: Vec<Redirect>,
+    pub security: Vec<Security>,
+    pub middlewares: Vec<ApplicationMiddleware>,
     pub networks: Vec<String>,
 }
 
@@ -24,6 +33,11 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
         let app = data.app;
         let domains = data.domains;
         let mounts = data.mounts;
+        let patches = data.patches;
+        let ports = data.ports;
+        let redirects = data.redirects;
+        let security = data.security;
+        let middlewares = data.middlewares;
         let networks = data.networks;
         let source = source(&app)?;
         let build = build(&app)?;
@@ -54,6 +68,71 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
         let mount_specs = mounts
             .into_iter()
             .map(|m| mount_spec(m, &rustploy_paths().application_files(&app.app_name)))
+            .collect::<Result<Vec<_>, _>>()?;
+        let patch_specs = patches
+            .into_iter()
+            .filter(|patch| patch.enabled != 0)
+            .map(|patch| PatchSpec {
+                patch_type: patch.patch_type,
+                file_path: patch.file_path,
+                content: patch.content,
+            })
+            .collect();
+        let port_specs = ports
+            .into_iter()
+            .map(|port| {
+                Ok(PortSpec {
+                    published: u16::try_from(port.published_port)
+                        .ok()
+                        .filter(|port| *port != 0)
+                        .ok_or_else(|| AdapterError::InvalidField {
+                            field: "published_port",
+                            message: "port must be between 1 and 65535".into(),
+                        })?,
+                    target: u16::try_from(port.target_port)
+                        .ok()
+                        .filter(|port| *port != 0)
+                        .ok_or_else(|| AdapterError::InvalidField {
+                            field: "target_port",
+                            message: "port must be between 1 and 65535".into(),
+                        })?,
+                    protocol: port.protocol.to_ascii_lowercase(),
+                    mode: port.publish_mode.to_ascii_lowercase(),
+                })
+            })
+            .collect::<Result<Vec<_>, AdapterError>>()?;
+        let redirect_specs = redirects
+            .into_iter()
+            .map(|redirect| RedirectSpec {
+                key: redirect.id.unwrap_or_default().to_string(),
+                regex: redirect.regex,
+                replacement: redirect.replacement,
+                permanent: redirect.permanent != 0,
+            })
+            .collect();
+        let basic_auth = security
+            .into_iter()
+            .map(|entry| {
+                let password_hash = if entry.password.starts_with("$2") {
+                    entry.password
+                } else {
+                    bcrypt::hash(entry.password, bcrypt::DEFAULT_COST).map_err(|error| {
+                        AdapterError::InvalidField {
+                            field: "security.password",
+                            message: error.to_string(),
+                        }
+                    })?
+                };
+                Ok(BasicAuthSpec {
+                    username: entry.username,
+                    password_hash,
+                })
+            })
+            .collect::<Result<Vec<_>, AdapterError>>()?;
+        let middleware_specs = middlewares
+            .into_iter()
+            .filter(|item| item.enabled != 0)
+            .map(structured_middleware)
             .collect::<Result<Vec<_>, _>>()?;
         let healthcheck = app
             .health_check_swarm
@@ -95,6 +174,11 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             replicas: u32::try_from(app.replicas.max(1)).unwrap_or(1),
             networks,
             mounts: mount_specs,
+            patches: patch_specs,
+            ports: port_specs,
+            redirects: redirect_specs,
+            basic_auth,
+            middlewares: middleware_specs,
             domains: domain_specs,
             resources: ResourceSpec {
                 memory_limit: app.memory_limit,
@@ -106,6 +190,50 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             placement_constraints,
             stop_grace_period: app.stop_grace_period_swarm.map(|v| format!("{v}s")),
         })
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct MiddlewareConfig {
+    #[serde(default)]
+    headers: BTreeMap<String, String>,
+    average: Option<i64>,
+    burst: Option<i64>,
+    #[serde(default)]
+    source_ranges: Vec<String>,
+}
+
+fn structured_middleware(
+    item: ApplicationMiddleware,
+) -> Result<StructuredMiddlewareSpec, AdapterError> {
+    let config: MiddlewareConfig =
+        serde_json::from_str(&item.config).map_err(|error| AdapterError::InvalidField {
+            field: "application_middleware.config",
+            message: error.to_string(),
+        })?;
+    match item.middleware_type.as_str() {
+        "COMPRESS" => Ok(StructuredMiddlewareSpec::Compress { name: item.name }),
+        "HEADERS" => Ok(StructuredMiddlewareSpec::Headers {
+            name: item.name,
+            headers: config.headers,
+        }),
+        "RATE_LIMIT" => Ok(StructuredMiddlewareSpec::RateLimit {
+            name: item.name,
+            average: config
+                .average
+                .ok_or(AdapterError::MissingField("middleware.average"))?,
+            burst: config
+                .burst
+                .ok_or(AdapterError::MissingField("middleware.burst"))?,
+        }),
+        "IP_ALLOWLIST" => Ok(StructuredMiddlewareSpec::IpAllowList {
+            name: item.name,
+            source_ranges: config.source_ranges,
+        }),
+        _ => Err(AdapterError::InvalidField {
+            field: "application_middleware.middleware_type",
+            message: "unsupported middleware type".into(),
+        }),
     }
 }
 

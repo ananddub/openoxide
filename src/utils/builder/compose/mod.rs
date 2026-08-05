@@ -7,4 +7,5 @@ pub mod labels;
 pub mod mounts;
 pub mod source;
 pub mod spec;
+pub mod transform;
 pub mod validation;

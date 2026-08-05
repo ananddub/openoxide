@@ -144,6 +144,11 @@ pub struct AlertEventResponseDto {
     pub threshold: Option<f64>,
     pub message: String,
     pub created_at: i64,
+    pub acknowledged_at: Option<i64>,
+    pub acknowledged_by: Option<i64>,
+    pub silenced_until: Option<i64>,
+    pub resolved_at: Option<i64>,
+    pub notification_correlation_id: Option<String>,
 }
 
 impl TryFrom<crate::db::repository::alert_rule::AlertEvent> for AlertEventResponseDto {
@@ -160,6 +165,11 @@ impl TryFrom<crate::db::repository::alert_rule::AlertEvent> for AlertEventRespon
             threshold: value.threshold,
             message: value.message,
             created_at: value.created_at,
+            acknowledged_at: value.acknowledged_at,
+            acknowledged_by: value.acknowledged_by,
+            silenced_until: value.silenced_until,
+            resolved_at: value.resolved_at,
+            notification_correlation_id: value.notification_correlation_id,
         })
     }
 }

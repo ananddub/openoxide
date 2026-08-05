@@ -55,3 +55,40 @@ impl From<Certificate> for CertificateResponseDto {
         }
     }
 }
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct RenewCertificateDto {
+    pub certificate_data: String,
+    pub private_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct CertificateRenewalDto {
+    pub id: i64,
+    pub certificate_id: i64,
+    pub organization_id: i64,
+    pub status: String,
+    pub previous_expires_at: Option<i64>,
+    pub new_expires_at: Option<i64>,
+    pub error: Option<String>,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+}
+
+impl From<crate::db::repository::certificate_renewals::CertificateRenewal>
+    for CertificateRenewalDto
+{
+    fn from(v: crate::db::repository::certificate_renewals::CertificateRenewal) -> Self {
+        Self {
+            id: v.id,
+            certificate_id: v.certificate_id,
+            organization_id: v.organization_id,
+            status: v.status,
+            previous_expires_at: v.previous_expires_at,
+            new_expires_at: v.new_expires_at,
+            error: v.error,
+            started_at: v.started_at,
+            finished_at: v.finished_at,
+        }
+    }
+}

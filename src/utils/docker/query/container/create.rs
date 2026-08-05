@@ -278,10 +278,6 @@ impl<'a> ContainerCreate<'a> {
     }
 
     /// Pass any raw flag not yet covered by the builder.
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.extra.push(v.into());
-        self
-    }
 
     pub(crate) fn build_opts(&self) -> Vec<String> {
         let mut a: Vec<String> = vec![];

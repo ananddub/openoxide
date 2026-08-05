@@ -138,14 +138,8 @@ pub fn convert_method_call(
         let arg = method_call.args.first().ok_or_else(|| {
             syn::Error::new_spanned(method_call, "stdout method needs one argument")
         })?;
-        let arg_tokens = crate::convert::convert_expr(arg)?;
         return Ok(quote! {
-            (#receiver_tokens).stdout(
-                match #arg_tokens {
-                    crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Literal(l)) => l,
-                    _ => panic!("stdout redirect target must be a string literal"),
-                }
-            )
+            (#receiver_tokens).stdout(#arg)
         });
     }
 
@@ -165,14 +159,8 @@ pub fn convert_method_call(
         let arg = method_call.args.first().ok_or_else(|| {
             syn::Error::new_spanned(method_call, "stderr method needs one argument")
         })?;
-        let arg_tokens = crate::convert::convert_expr(arg)?;
         return Ok(quote! {
-            (#receiver_tokens).stderr(
-                match #arg_tokens {
-                    crate::utils::exec::script::dsl::ShellIR::Expr(crate::utils::exec::script::dsl::Expr::Literal(l)) => l,
-                    _ => panic!("stderr redirect target must be a string literal"),
-                }
-            )
+            (#receiver_tokens).stderr(#arg)
         });
     }
 

@@ -1,13 +1,21 @@
 use std::sync::Arc;
 
 use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use axum::{
+    Json,
+    body::Body,
+    extract::{Path, Query},
+    http::{HeaderValue, Response, StatusCode, header},
+};
 use serde::Deserialize;
 
 use crate::{
     api::dto::backup::{
-        BackupResponseDto, CreateBackupDto, CreateVolumeBackupDto, PatchBackupDto,
-        PatchVolumeBackupDto, VolumeBackupResponseDto,
+        BackupExecutionQueryDto, BackupExecutionResponseDto, BackupFilesQueryDto,
+        BackupResponseDto, ComposeConfigBackupDto, CreateBackupDto, CreateVolumeBackupDto,
+        DownloadBackupFileDto, PanelBackupResponseDto, PatchBackupDto, PatchVolumeBackupDto,
+        RestorePanelBackupDto, RetentionPreviewDto, RetentionPreviewQueryDto, StagePanelRestoreDto,
+        VerifyBackupFileDto, VolumeBackupResponseDto,
     },
     core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{
@@ -19,10 +27,13 @@ use crate::{
     },
     db::models::{backups::Backup, destinations::Destination, volume_backups::VolumeBackup},
     repository::{
-        backups::BackupRepository, destinations::DestinationRepository,
+        BackupExecutionRepository, backups::BackupRepository, destinations::DestinationRepository,
         organization::OrganizationRepository, volume_backups::VolumeBackupRepository,
     },
-    services::schedule::ScheduleService,
+    services::{
+        backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
+        schedule::ScheduleService,
+    },
 };
 
 type ApiError = (StatusCode, String);
@@ -31,6 +42,10 @@ pub struct BackupController {
     db: Arc<sqlx::SqlitePool>,
     service: Arc<ScheduleService>,
     repo_backup: Arc<BackupRepository>,
+    repo_execution: Arc<BackupExecutionRepository>,
+    panel_backup: Arc<PanelBackupService>,
+    backup_files: Arc<BackupFileService>,
+    compose_config_backup: Arc<ComposeConfigBackupService>,
     repo_volume: Arc<VolumeBackupRepository>,
     repo_dest: Arc<DestinationRepository>,
     repo_org: Arc<OrganizationRepository>,
@@ -48,6 +63,10 @@ impl BackupController {
         db: Arc<sqlx::SqlitePool>,
         service: Arc<ScheduleService>,
         repo_backup: Arc<BackupRepository>,
+        repo_execution: Arc<BackupExecutionRepository>,
+        panel_backup: Arc<PanelBackupService>,
+        backup_files: Arc<BackupFileService>,
+        compose_config_backup: Arc<ComposeConfigBackupService>,
         repo_volume: Arc<VolumeBackupRepository>,
         repo_dest: Arc<DestinationRepository>,
         repo_org: Arc<OrganizationRepository>,
@@ -57,11 +76,221 @@ impl BackupController {
             db,
             service,
             repo_backup,
+            repo_execution,
+            panel_backup,
+            backup_files,
+            compose_config_backup,
             repo_volume,
             repo_dest,
             repo_org,
             cache,
         }
+    }
+
+    #[post("/compose/{compose_id}/config/run")]
+    async fn run_compose_config_backup(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(compose_id): Path<i64>,
+        Json(body): Json<ComposeConfigBackupDto>,
+    ) -> Result<(StatusCode, Json<PanelBackupResponseDto>), ApiError> {
+        self.compose_config_backup
+            .create(compose_id, body.include_secrets.unwrap_or(false))
+            .await
+            .map(|item| (StatusCode::CREATED, Json(item)))
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/panel/run")]
+    async fn run_panel_backup(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+    ) -> Result<(StatusCode, Json<PanelBackupResponseDto>), ApiError> {
+        self.panel_backup
+            .create()
+            .await
+            .map(|item| (StatusCode::CREATED, Json(item)))
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/panel/restore/stage")]
+    async fn stage_panel_restore(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Json(body): Json<RestorePanelBackupDto>,
+    ) -> Result<Json<StagePanelRestoreDto>, ApiError> {
+        self.panel_backup
+            .stage_restore(&body.archive, body.checksum_sha256.as_deref())
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/files")]
+    async fn list_backup_files(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Query(query): Query<BackupFilesQueryDto>,
+    ) -> Result<Json<Vec<crate::api::dto::backup::BackupFileDto>>, ApiError> {
+        self.backup_files
+            .list(query.destination_id, query.prefix.as_deref().unwrap_or(""))
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/files/download")]
+    async fn download_backup_file(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Query(query): Query<DownloadBackupFileDto>,
+    ) -> Result<Response<Body>, ApiError> {
+        let bytes = self
+            .backup_files
+            .download(query.destination_id, &query.object_key)
+            .await
+            .map_err(map_sqlx_error)?;
+        let filename = query
+            .object_key
+            .rsplit('/')
+            .next()
+            .unwrap_or("backup.bin")
+            .replace(['\r', '\n', '"'], "_");
+        let mut response = Response::new(Body::from(bytes));
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/octet-stream"),
+        );
+        response.headers_mut().insert(
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+                .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?,
+        );
+        Ok(response)
+    }
+
+    #[get("/retention/preview")]
+    async fn preview_retention(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Query(query): Query<RetentionPreviewQueryDto>,
+    ) -> Result<Json<RetentionPreviewDto>, ApiError> {
+        self.backup_files
+            .retention_preview(
+                query.destination_id,
+                query.prefix.as_deref().unwrap_or(""),
+                query.keep_latest,
+            )
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/files/verify")]
+    async fn verify_backup_file(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Json(body): Json<VerifyBackupFileDto>,
+    ) -> Result<Json<crate::api::dto::backup::BackupIntegrityDto>, ApiError> {
+        self.backup_files
+            .verify(body.destination_id, &body.object_key, &body.checksum_sha256)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/executions")]
+    async fn list_executions(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Query(query): Query<BackupExecutionQueryDto>,
+    ) -> Result<Json<Vec<BackupExecutionResponseDto>>, ApiError> {
+        let limit = query.limit.unwrap_or(100).clamp(1, 500);
+        self.repo_execution
+            .list(
+                query.backup_kind.map(|kind| kind.as_str()),
+                query.backup_id,
+                limit,
+            )
+            .await
+            .map(|items| Json(items.into_iter().map(Into::into).collect()))
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/executions/{id}/retry")]
+    async fn retry_execution(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        let execution = self
+            .repo_execution
+            .get(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .ok_or(sqlx::Error::RowNotFound)
+            .map_err(map_sqlx_error)?;
+        let status = crate::services::backup::types::BackupExecutionStatus::try_from(
+            execution.status.as_str(),
+        )
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+        if status == crate::services::backup::types::BackupExecutionStatus::Running {
+            return Err((
+                StatusCode::CONFLICT,
+                "backup execution is still running".into(),
+            ));
+        }
+        let backup_id = execution.backup_id.ok_or((
+            StatusCode::BAD_REQUEST,
+            "execution is not linked to a retryable backup job".into(),
+        ))?;
+        let kind =
+            crate::services::backup::types::BackupKind::try_from(execution.backup_kind.as_str())
+                .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+        let operation =
+            crate::services::backup::types::BackupOperation::try_from(execution.operation.as_str())
+                .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+        let result = match (kind, operation) {
+            (
+                crate::services::backup::types::BackupKind::Database,
+                crate::services::backup::types::BackupOperation::Backup,
+            ) => self.service.run_database_backup(backup_id).await,
+            (
+                crate::services::backup::types::BackupKind::Volume,
+                crate::services::backup::types::BackupOperation::Backup,
+            ) => self.service.run_volume_backup(backup_id).await,
+            (
+                crate::services::backup::types::BackupKind::Database,
+                crate::services::backup::types::BackupOperation::Restore,
+            ) => {
+                let object_key = execution.object_key.ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "restore execution has no object key".into(),
+                ))?;
+                self.service
+                    .restore_database_backup(backup_id, &object_key)
+                    .await
+            }
+            (
+                crate::services::backup::types::BackupKind::Volume,
+                crate::services::backup::types::BackupOperation::Restore,
+            ) => {
+                let object_key = execution.object_key.ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "restore execution has no object key".into(),
+                ))?;
+                self.service
+                    .restore_volume_backup(backup_id, &object_key)
+                    .await
+            }
+            _ => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "execution kind cannot be retried from this endpoint".into(),
+                ));
+            }
+        };
+        result.map(|_| StatusCode::ACCEPTED).map_err(map_sqlx_error)
     }
 
     #[get("/database")]
@@ -147,7 +376,6 @@ impl BackupController {
             bucket: "backups".to_string(),
             region: "local".to_string(),
             endpoint: "".to_string(),
-            additional_flags: None,
             organization_id: org_id,
             created_at: now,
             updated_at: now,

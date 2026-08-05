@@ -1,5 +1,6 @@
 use crate::db::models::servers::Server;
 use auto_di::singleton;
+use sqlx::Row;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
@@ -96,23 +97,46 @@ impl ServerRepository {
         &self,
         server_id: i64,
     ) -> Result<Option<(String, i64, String, String, String)>, sqlx::Error> {
-        let res = sqlx::query!(
-            r#"SELECT s.ip_address AS "ip_address: String", s.port AS "port: i64", s.username AS "username: String", k.private_key AS "private_key: String", k.public_key AS "public_key: String"
-               FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?"#,
-            server_id
+        let res = sqlx::query(
+            r#"SELECT COALESCE(CASE WHEN n.status = 'ACTIVE' AND n.connection_mode != 'DIRECT_SSH' THEN n.private_host END, s.ip_address) AS ip_address, s.port, s.username, k.private_key, k.public_key
+               FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?"#,
         )
+        .bind(server_id)
         .fetch_optional(self.pool.as_ref())
         .await?;
 
-        Ok(res.map(|r| {
-            (
-                r.ip_address,
-                r.port,
-                r.username,
-                r.private_key,
-                r.public_key,
-            )
-        }))
+        res.map(|row| {
+            Ok((
+                row.try_get("ip_address")?,
+                row.try_get("port")?,
+                row.try_get("username")?,
+                row.try_get("private_key")?,
+                row.try_get("public_key")?,
+            ))
+        })
+        .transpose()
+    }
+
+    pub async fn get_direct_ssh_credentials(
+        &self,
+        server_id: i64,
+    ) -> Result<Option<(String, i64, String, String, String)>, sqlx::Error> {
+        let row = sqlx::query(
+            "SELECT s.ip_address, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?",
+        )
+        .bind(server_id)
+        .fetch_optional(self.pool.as_ref())
+        .await?;
+        row.map(|row| {
+            Ok((
+                row.try_get("ip_address")?,
+                row.try_get("port")?,
+                row.try_get("username")?,
+                row.try_get("private_key")?,
+                row.try_get("public_key")?,
+            ))
+        })
+        .transpose()
     }
 
     pub async fn list_ordered(&self) -> Result<Vec<Server>, sqlx::Error> {

@@ -8,7 +8,6 @@ pub struct S3Destination {
     pub region: String,
     pub endpoint: String,
     pub provider: Option<String>,
-    pub additional_flags: Option<String>,
 }
 
 impl S3Destination {

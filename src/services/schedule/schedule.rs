@@ -5,20 +5,28 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::services::compose::ComposeType;
-use crate::services::schedule::types::{ScheduleAction, ScheduleType, ShellType};
+use crate::services::schedule::types::{
+    ConcurrencyPolicy, MissedRunPolicy, ScheduleAction, ScheduleExecutionStatus,
+    ScheduleTriggerKind, ScheduleType, ShellType,
+};
 use crate::utils::docker::query::ContainerFilter;
 use crate::{
     api::dto::schedule::{CreateScheduleDto, PatchScheduleDto},
     db::models::schedules::Schedule,
     db::models::types::{BackupsDatabaseTypeEnum, VolumeBackupsServiceTypeEnum},
     repository::{
-        ApplicationRepository, BackupRepository, ComposeProjectRepository, DestinationRepository,
-        LibsqlRepository, MariadbRepository, MongoRepository, MysqlRepository, PostgresRepository,
-        RedisRepository, ScheduleRepository, VolumeBackupRepository,
+        ApplicationRepository, BackupExecutionRepository, BackupRepository,
+        ComposeProjectRepository, DestinationRepository, LibsqlRepository, MariadbRepository,
+        MongoRepository, MysqlRepository, PostgresRepository, RedisRepository, ScheduleRepository,
+        ScheduleRuntimeRepository, VolumeBackupRepository,
     },
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService, remote::remote_executor},
+        notification::{
+            NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
+            NotificationTrigger,
+        },
     },
     utils::{
         docker::DockerCli,
@@ -41,9 +49,12 @@ pub struct ScheduleService {
     pub applications: Arc<ApplicationService>,
     pub compose: Arc<ComposeService>,
     pub repo_schedule: Arc<ScheduleRepository>,
+    pub repo_runtime: Arc<ScheduleRuntimeRepository>,
+    pub notifications: Arc<NotificationService>,
     pub repo_app: Arc<ApplicationRepository>,
     pub repo_compose: Arc<ComposeProjectRepository>,
     pub repo_backup: Arc<BackupRepository>,
+    pub repo_backup_execution: Arc<BackupExecutionRepository>,
     pub repo_volume_backup: Arc<VolumeBackupRepository>,
     pub repo_destination: Arc<DestinationRepository>,
     pub repo_postgres: Arc<PostgresRepository>,
@@ -61,9 +72,12 @@ impl ScheduleService {
         applications: Arc<ApplicationService>,
         compose: Arc<ComposeService>,
         repo_schedule: Arc<ScheduleRepository>,
+        repo_runtime: Arc<ScheduleRuntimeRepository>,
+        notifications: Arc<NotificationService>,
         repo_app: Arc<ApplicationRepository>,
         repo_compose: Arc<ComposeProjectRepository>,
         repo_backup: Arc<BackupRepository>,
+        repo_backup_execution: Arc<BackupExecutionRepository>,
         repo_volume_backup: Arc<VolumeBackupRepository>,
         repo_destination: Arc<DestinationRepository>,
         repo_postgres: Arc<PostgresRepository>,
@@ -78,9 +92,12 @@ impl ScheduleService {
             applications,
             compose,
             repo_schedule,
+            repo_runtime,
+            notifications,
             repo_app,
             repo_compose,
             repo_backup,
+            repo_backup_execution,
             repo_volume_backup,
             repo_destination,
             repo_postgres,
@@ -274,17 +291,35 @@ impl ScheduleService {
             region: dest_model.region,
             endpoint: dest_model.endpoint,
             provider: Some(dest_model.provider),
-            additional_flags: dest_model.additional_flags,
         };
 
         let runner =
             crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner
-            .run_restore(backup_file, &cancel)
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let execution_id = self
+            .repo_backup_execution
+            .start(
+                crate::services::backup::types::BackupKind::Database,
+                crate::services::backup::types::BackupOperation::Restore,
+                Some(id),
+                Some(backup_file),
+            )
+            .await?;
+        match runner.run_restore(backup_file, &cancel).await {
+            Ok(_) => {
+                self.repo_backup_execution
+                    .succeed(execution_id, None, None)
+                    .await?
+            }
+            Err(error) => {
+                let message = error.to_string();
+                self.repo_backup_execution
+                    .fail(execution_id, &message)
+                    .await?;
+                return Err(sqlx::Error::Protocol(message));
+            }
+        }
 
         Ok(())
     }
@@ -321,7 +356,6 @@ impl ScheduleService {
             region: dest_model.region,
             endpoint: dest_model.endpoint,
             provider: Some(dest_model.provider),
-            additional_flags: dest_model.additional_flags,
         };
 
         let volume_backup = crate::utils::backup::volume::VolumeBackup {
@@ -337,10 +371,29 @@ impl ScheduleService {
         );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner
-            .run_restore(backup_file, &cancel)
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let execution_id = self
+            .repo_backup_execution
+            .start(
+                crate::services::backup::types::BackupKind::Volume,
+                crate::services::backup::types::BackupOperation::Restore,
+                Some(id),
+                Some(backup_file),
+            )
+            .await?;
+        match runner.run_restore(backup_file, &cancel).await {
+            Ok(_) => {
+                self.repo_backup_execution
+                    .succeed(execution_id, None, None)
+                    .await?
+            }
+            Err(error) => {
+                let message = error.to_string();
+                self.repo_backup_execution
+                    .fail(execution_id, &message)
+                    .await?;
+                return Err(sqlx::Error::Protocol(message));
+            }
+        }
 
         Ok(())
     }
@@ -351,10 +404,222 @@ impl ScheduleService {
     }
 
     pub async fn run_now(&self, id: i64) -> sqlx::Result<ScheduleRunResult> {
+        self.run_with_policy(
+            id,
+            ScheduleTriggerKind::Manual,
+            chrono::Utc::now().timestamp(),
+        )
+        .await
+    }
+
+    pub async fn run_scheduled(
+        &self,
+        id: i64,
+        trigger_kind: ScheduleTriggerKind,
+        scheduled_at: i64,
+    ) -> sqlx::Result<ScheduleRunResult> {
+        self.run_with_policy(id, trigger_kind, scheduled_at).await
+    }
+
+    pub async fn recover_missed(&self, id: i64, cron_expression: &str) -> sqlx::Result<bool> {
+        let policy = self.repo_runtime.policy(id).await?;
+        let now = chrono::Utc::now();
+        let Some(last_timestamp) = policy.last_scheduled_at else {
+            self.repo_runtime
+                .mark_scheduled(id, now.timestamp())
+                .await?;
+            return Ok(false);
+        };
+        if MissedRunPolicy::try_from(policy.missed_run_policy.as_str())
+            .map_err(sqlx::Error::Protocol)?
+            != MissedRunPolicy::RunOnce
+        {
+            return Ok(false);
+        }
+        let last = chrono::DateTime::from_timestamp(last_timestamp, 0)
+            .ok_or_else(|| sqlx::Error::Protocol("invalid last schedule timestamp".into()))?;
+        let cron = croner::Cron::new(cron_expression)
+            .parse()
+            .map_err(|error| sqlx::Error::Protocol(format!("invalid cron expression: {error}")))?;
+        let next = cron.find_next_occurrence(&last, false).map_err(|error| {
+            sqlx::Error::Protocol(format!("could not calculate missed run: {error}"))
+        })?;
+        if next <= now {
+            self.run_scheduled(id, ScheduleTriggerKind::Missed, next.timestamp())
+                .await?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    async fn run_with_policy(
+        &self,
+        id: i64,
+        trigger_kind: ScheduleTriggerKind,
+        scheduled_at: i64,
+    ) -> sqlx::Result<ScheduleRunResult> {
         let schedule = self.get_by_id(id).await?;
         if schedule.enabled == 0 {
             return Err(sqlx::Error::Protocol("schedule is disabled".into()));
         }
+        let policy = self.repo_runtime.policy(id).await?;
+        let owner = Uuid::new_v4().to_string();
+        let concurrency = ConcurrencyPolicy::try_from(policy.concurrency_policy.as_str())
+            .map_err(sqlx::Error::Protocol)?;
+        let locked = match concurrency {
+            ConcurrencyPolicy::Allow => true,
+            ConcurrencyPolicy::Queue => {
+                let deadline = chrono::Utc::now().timestamp() + policy.lease_seconds;
+                loop {
+                    if self
+                        .repo_runtime
+                        .acquire(id, &owner, policy.lease_seconds)
+                        .await?
+                    {
+                        break true;
+                    }
+                    if chrono::Utc::now().timestamp() >= deadline {
+                        break false;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            }
+            ConcurrencyPolicy::Skip => {
+                self.repo_runtime
+                    .acquire(id, &owner, policy.lease_seconds)
+                    .await?
+            }
+        };
+        if !locked {
+            let execution_id = self
+                .repo_runtime
+                .begin(id, schedule.organization_id, trigger_kind, 1, scheduled_at)
+                .await?;
+            self.repo_runtime
+                .finish(
+                    execution_id,
+                    ScheduleExecutionStatus::Skipped,
+                    Some("previous execution is still active"),
+                    None,
+                    None,
+                )
+                .await?;
+            return Err(sqlx::Error::Protocol(
+                "schedule skipped by concurrency policy".into(),
+            ));
+        }
+        self.repo_runtime.mark_scheduled(id, scheduled_at).await?;
+
+        let mut final_result = None;
+        let mut final_error = None;
+        for attempt in 1..=(policy.retry_count + 1) {
+            let attempt_trigger = if attempt == 1 {
+                trigger_kind
+            } else {
+                ScheduleTriggerKind::Retry
+            };
+            let execution_id = self
+                .repo_runtime
+                .begin(
+                    id,
+                    schedule.organization_id,
+                    attempt_trigger,
+                    attempt,
+                    scheduled_at,
+                )
+                .await?;
+            match self.run_once(schedule.clone()).await {
+                Ok(result) => {
+                    self.repo_runtime
+                        .finish(
+                            execution_id,
+                            ScheduleExecutionStatus::Succeeded,
+                            Some(&result.message),
+                            result.stdout.as_deref(),
+                            result.stderr.as_deref(),
+                        )
+                        .await?;
+                    final_result = Some(result);
+                    break;
+                }
+                Err(error) => {
+                    let message = error.to_string();
+                    self.repo_runtime
+                        .finish(
+                            execution_id,
+                            ScheduleExecutionStatus::Failed,
+                            Some(&message),
+                            None,
+                            Some(&message),
+                        )
+                        .await?;
+                    final_error = Some(error);
+                    if attempt <= policy.retry_count {
+                        tokio::time::sleep(std::time::Duration::from_secs(
+                            policy.retry_delay_seconds as u64,
+                        ))
+                        .await;
+                    }
+                }
+            }
+        }
+        if concurrency != ConcurrencyPolicy::Allow {
+            let _ = self.repo_runtime.release(id, &owner).await;
+        }
+        match final_result {
+            Some(result) => {
+                if policy.notify_on_success != 0 {
+                    self.notify_schedule(
+                        &schedule,
+                        NotificationTrigger::ScheduleSuccess,
+                        NotificationLevel::Info,
+                        &result.message,
+                    )
+                    .await;
+                }
+                Ok(result)
+            }
+            None => {
+                let error = final_error
+                    .unwrap_or_else(|| sqlx::Error::Protocol("schedule execution failed".into()));
+                if policy.notify_on_failure != 0 {
+                    self.notify_schedule(
+                        &schedule,
+                        NotificationTrigger::ScheduleFailure,
+                        NotificationLevel::Critical,
+                        &error.to_string(),
+                    )
+                    .await;
+                }
+                Err(error)
+            }
+        }
+    }
+
+    async fn notify_schedule(
+        &self,
+        schedule: &Schedule,
+        trigger: NotificationTrigger,
+        level: NotificationLevel,
+        detail: &str,
+    ) {
+        let Some(organization_id) = schedule.organization_id else {
+            return;
+        };
+        let message = NotificationMessage::new(format!("Schedule: {}", schedule.name), detail)
+            .level(level)
+            .field("Schedule", schedule.name.clone())
+            .field("Action", schedule.schedule_action.clone());
+        self.notifications
+            .notify(
+                NotificationScope::Organization(organization_id),
+                trigger,
+                &message,
+            )
+            .await;
+    }
+
+    async fn run_once(&self, schedule: Schedule) -> sqlx::Result<ScheduleRunResult> {
         let v = ScheduleType::try_from(schedule.schedule_type.as_str()).map_err(|_| {
             sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.schedule_type))
         })?;
@@ -1024,7 +1289,6 @@ impl ScheduleService {
             region: dest_model.region,
             endpoint: dest_model.endpoint,
             provider: Some(dest_model.provider),
-            additional_flags: dest_model.additional_flags,
         };
 
         let runner =
@@ -1041,10 +1305,29 @@ impl ScheduleService {
         );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner
-            .run(&object_key, &cancel)
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let execution_id = self
+            .repo_backup_execution
+            .start(
+                crate::services::backup::types::BackupKind::Database,
+                crate::services::backup::types::BackupOperation::Backup,
+                Some(id),
+                Some(&object_key),
+            )
+            .await?;
+        match runner.run(&object_key, &cancel).await {
+            Ok(_) => {
+                self.repo_backup_execution
+                    .succeed(execution_id, None, None)
+                    .await?
+            }
+            Err(error) => {
+                let message = error.to_string();
+                self.repo_backup_execution
+                    .fail(execution_id, &message)
+                    .await?;
+                return Err(sqlx::Error::Protocol(message));
+            }
+        }
 
         Ok(())
     }
@@ -1084,7 +1367,6 @@ impl ScheduleService {
             region: dest_model.region,
             endpoint: dest_model.endpoint,
             provider: Some(dest_model.provider),
-            additional_flags: dest_model.additional_flags,
         };
 
         let volume_backup = crate::utils::backup::volume::VolumeBackup {
@@ -1108,10 +1390,29 @@ impl ScheduleService {
         );
 
         let cancel = tokio_util::sync::CancellationToken::new();
-        runner
-            .run(&object_key, &cancel)
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let execution_id = self
+            .repo_backup_execution
+            .start(
+                crate::services::backup::types::BackupKind::Volume,
+                crate::services::backup::types::BackupOperation::Backup,
+                Some(id),
+                Some(&object_key),
+            )
+            .await?;
+        match runner.run(&object_key, &cancel).await {
+            Ok(_) => {
+                self.repo_backup_execution
+                    .succeed(execution_id, None, None)
+                    .await?
+            }
+            Err(error) => {
+                let message = error.to_string();
+                self.repo_backup_execution
+                    .fail(execution_id, &message)
+                    .await?;
+                return Err(sqlx::Error::Protocol(message));
+            }
+        }
 
         Ok(())
     }

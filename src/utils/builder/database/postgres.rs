@@ -36,6 +36,27 @@ pub async fn build_postgres_stack(
         }
         command = Some(full);
     }
+    let advanced: BTreeMap<String, String> =
+        serde_json::from_str(&db.postgres_config).map_err(|error| ExecError::CommandFailed {
+            code: None,
+            stderr: format!("Invalid PostgreSQL advanced config: {error}"),
+        })?;
+    if !advanced.is_empty() || db.replication_role != "STANDALONE" {
+        let full = command.get_or_insert_with(|| vec!["postgres".into()]);
+        for (key, value) in advanced {
+            full.extend(["-c".into(), format!("{key}={value}")]);
+        }
+        if db.replication_role == "PRIMARY" {
+            full.extend([
+                "-c".into(),
+                "wal_level=replica".into(),
+                "-c".into(),
+                "max_wal_senders=10".into(),
+                "-c".into(),
+                "max_replication_slots=10".into(),
+            ]);
+        }
+    }
 
     // Parse environment variables
     let mut resolved_env = crate::utils::builder::env::generate_env_db(

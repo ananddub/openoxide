@@ -36,3 +36,14 @@ pub async fn send_resend(
 
     Ok(())
 }
+
+pub async fn send_resend_to(
+    client: &Client,
+    cfg: &NotifResend,
+    recipient: &str,
+    msg: &NotificationMessage,
+) -> Result<(), String> {
+    let mut targeted = cfg.clone();
+    targeted.to_addresses = serde_json::to_string(&[recipient]).map_err(|e| e.to_string())?;
+    send_resend(client, &targeted, msg).await
+}

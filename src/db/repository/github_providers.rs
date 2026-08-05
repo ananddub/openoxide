@@ -32,6 +32,13 @@ impl GithubProviderRepository {
         .await
     }
 
+    pub async fn get_by_git_provider_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<GithubProvider>, sqlx::Error> {
+        sqlx::query_as!(GithubProvider, r#"SELECT id AS "id?: i64", github_app_name AS "github_app_name?: String", github_app_id AS "github_app_id?: i64", github_client_id AS "github_client_id?: String", github_client_secret AS "github_client_secret?: String", github_installation_id AS "github_installation_id?: String", github_private_key AS "github_private_key?: String", github_webhook_secret AS "github_webhook_secret?: String", git_provider_id AS "git_provider_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM github_providers WHERE git_provider_id = ?"#, id).fetch_optional(self.pool.as_ref()).await
+    }
+
     pub async fn create(&self, item: &GithubProvider) -> Result<i64, sqlx::Error> {
         let _res = sqlx::query!(
             r#"INSERT INTO github_providers (github_app_name, github_app_id, github_client_id, github_client_secret, github_installation_id, github_private_key, github_webhook_secret, git_provider_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
@@ -76,5 +83,30 @@ impl GithubProviderRepository {
             .execute(self.pool.as_ref())
             .await?;
         Ok(())
+    }
+
+    pub async fn set_installation_id(
+        &self,
+        git_provider_id: i64,
+        installation_id: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE github_providers SET github_installation_id = ?, updated_at = strftime('%s', 'now') WHERE git_provider_id = ?",
+            installation_id,
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn disconnect(&self, git_provider_id: i64) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE github_providers SET github_installation_id = NULL, updated_at = strftime('%s', 'now') WHERE git_provider_id = ?",
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
     }
 }

@@ -1,5 +1,8 @@
 use crate::{
-    db::{models::alert_rule::AlertRule, repository::AlertRuleRepository},
+    db::{
+        models::alert_rule::AlertRule,
+        repository::{AlertRuleRepository, MonitoringLifecycleRepository},
+    },
     services::{
         alert::{
             AlertEngine, AlertEventState, MetricSample, ParsedRule, TargetKind, TargetReading,
@@ -18,6 +21,7 @@ pub struct AlertService {
     repo: Arc<AlertRuleRepository>,
     monitoring: Arc<MonitoringService>,
     notifications: Arc<NotificationService>,
+    lifecycle: Arc<MonitoringLifecycleRepository>,
     engine: Mutex<AlertEngine>,
     rules_cache: RwLock<Option<Vec<ParsedRule>>>,
 }
@@ -28,11 +32,13 @@ impl AlertService {
         repo: Arc<AlertRuleRepository>,
         monitoring: Arc<MonitoringService>,
         notifications: Arc<NotificationService>,
+        lifecycle: Arc<MonitoringLifecycleRepository>,
     ) -> Self {
         Self {
             repo,
             monitoring,
             notifications,
+            lifecycle,
             engine: Mutex::new(AlertEngine::new()),
             rules_cache: RwLock::new(None),
         }
@@ -142,6 +148,21 @@ impl AlertService {
         drop(engine);
 
         for alert in &fired {
+            if alert.target_kind == TargetKind::Server {
+                let server_id = alert.target_key.parse::<i64>().unwrap_or_default();
+                if self
+                    .lifecycle
+                    .is_in_maintenance(alert.organization_id, server_id)
+                    .await
+                    .unwrap_or(false)
+                {
+                    tracing::debug!(
+                        server_id,
+                        "alert suppressed by monitoring maintenance window"
+                    );
+                    continue;
+                }
+            }
             tracing::info!(
                 rule = %alert.rule_name,
                 target = %alert.target_display,

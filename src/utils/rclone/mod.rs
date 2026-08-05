@@ -1,4 +1,4 @@
-pub use builder::RcloneBuilder;
+pub use builder::{RcloneBuilder, RcloneListFormat, RcloneSeparator};
 pub use command::RcloneCommand;
 pub use target::RcloneTarget;
 

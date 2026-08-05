@@ -79,6 +79,7 @@ pub struct Command {
 #[derive(Debug, Clone)]
 pub enum ArgToken {
     Literal(String),
+    NullDevice,
     Variable(String),
     EnvVar(String),
     Glob(String),
@@ -90,6 +91,42 @@ pub enum RedirectionFd {
     Stdout,
     Stderr,
     Both,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OutputTarget {
+    Null,
+    StandardError,
+    File(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SystemDevice {
+    Null,
+    StandardError,
+}
+
+impl SystemDevice {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Null => "/dev/null",
+            Self::StandardError => "/dev/stderr",
+        }
+    }
+}
+
+impl OutputTarget {
+    pub fn file(path: impl Into<String>) -> Self {
+        Self::File(path.into())
+    }
+
+    fn render(self) -> String {
+        match self {
+            Self::Null => SystemDevice::Null.as_str().into(),
+            Self::StandardError => SystemDevice::StandardError.as_str().into(),
+            Self::File(path) => shell_single_quote(&path),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -249,22 +286,34 @@ impl ShellIR {
     }
 
     // Fluent redirect builders
-    pub fn stdout(self, file: impl Into<String>) -> Self {
+    pub fn stdout(self, target: OutputTarget) -> Self {
         ShellIR::Redirect {
             cmd: Box::new(self),
-            target: file.into(),
+            target: target.render(),
             append: false,
             fd: RedirectionFd::Stdout,
         }
     }
 
-    pub fn stderr(self, file: impl Into<String>) -> Self {
+    pub fn stderr(self, target: OutputTarget) -> Self {
         ShellIR::Redirect {
             cmd: Box::new(self),
-            target: file.into(),
+            target: target.render(),
             append: false,
             fd: RedirectionFd::Stderr,
         }
+    }
+
+    pub fn stdout_null(self) -> Self {
+        self.stdout(OutputTarget::Null)
+    }
+
+    pub fn stderr_null(self) -> Self {
+        self.stderr(OutputTarget::Null)
+    }
+
+    pub fn stderr_console(self) -> Self {
+        self.stderr(OutputTarget::StandardError)
     }
 
     pub fn append(self, file: impl Into<String>) -> Self {
@@ -497,6 +546,7 @@ impl ArgToken {
     pub fn to_bash(&self) -> String {
         match self {
             ArgToken::Literal(lit) => shell_single_quote(lit),
+            ArgToken::NullDevice => SystemDevice::Null.as_str().into(),
             ArgToken::Variable(var) => format!("\"${}\"", var),
             ArgToken::EnvVar(env) => format!("\"${}\"", env),
             ArgToken::Glob(glob) => glob.clone(),

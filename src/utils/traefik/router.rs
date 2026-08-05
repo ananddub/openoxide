@@ -1,3 +1,4 @@
+use super::tls::TlsConfig;
 use super::traefik::TraefikBuilder;
 
 pub struct RouterBuilder {
@@ -23,13 +24,13 @@ impl RouterBuilder {
     pub fn entrypoints<I, S>(mut self, values: I) -> Self
     where
         I: IntoIterator<Item = S>,
-        S: AsRef<str>,
+        S: ToString,
     {
         self.builder.labels.insert(
             self.key("entrypoints"),
             values
                 .into_iter()
-                .map(|v| v.as_ref().to_owned())
+                .map(|v| v.to_string())
                 .collect::<Vec<_>>()
                 .join(","),
         );
@@ -37,8 +38,8 @@ impl RouterBuilder {
     }
 
     /// Convenience shorthand for a single entrypoint.
-    pub fn entrypoint(self, value: impl AsRef<str>) -> Self {
-        self.entrypoints([value.as_ref().to_owned()])
+    pub fn entrypoint(self, value: impl ToString) -> Self {
+        self.entrypoints([value])
     }
 
     /// Enable (or disable) TLS on this router.
@@ -54,6 +55,16 @@ impl RouterBuilder {
         self.builder
             .labels
             .insert(self.key("tls.certresolver"), resolver.into());
+        self
+    }
+
+    pub fn tls_config(mut self, config: TlsConfig) -> Self {
+        self.builder.labels.insert(self.key("tls"), "true".into());
+        if let Some(resolver) = config.cert_resolver {
+            self.builder
+                .labels
+                .insert(self.key("tls.certresolver"), resolver);
+        }
         self
     }
 

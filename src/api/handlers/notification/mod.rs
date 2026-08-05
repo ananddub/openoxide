@@ -8,7 +8,8 @@ use builder::NotificationProviderBuilder;
 
 use crate::{
     api::dto::notification::{
-        CreateNotificationDto, NotificationResponseDto, PatchNotificationDto,
+        CreateNotificationBindingDto, CreateNotificationDto, NotificationDeliveryAttemptDto,
+        NotificationResourceBindingDto, NotificationResponseDto, PatchNotificationDto,
     },
     core::middleware::permission::{
         RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
@@ -21,7 +22,7 @@ use crate::{
             NotifGotifyRepository, NotifLarkRepository, NotifMattermostRepository,
             NotifNtfyRepository, NotifPushoverRepository, NotifResendRepository,
             NotifSlackRepository, NotifTeamRepository, NotifTelegramRepository,
-            NotificationRepository,
+            NotificationDeliveryRepository, NotificationRepository,
         },
     },
     services::notification::{
@@ -35,6 +36,7 @@ pub struct NotificationController {
     repo: Arc<NotificationRepository>,
     service: Arc<NotificationService>,
     builder: NotificationProviderBuilder,
+    delivery: Arc<NotificationDeliveryRepository>,
 }
 
 #[controller("/notifications")]
@@ -55,6 +57,7 @@ impl NotificationController {
         lark: Arc<NotifLarkRepository>,
         pushover: Arc<NotifPushoverRepository>,
         teams: Arc<NotifTeamRepository>,
+        delivery: Arc<NotificationDeliveryRepository>,
     ) -> Self {
         let builder = NotificationProviderBuilder {
             slack,
@@ -75,6 +78,80 @@ impl NotificationController {
             repo,
             service,
             builder,
+            delivery,
+        }
+    }
+
+    #[get("/delivery-history/organization/{organization_id}")]
+    async fn delivery_history(
+        &self,
+        RequirePermission(claims, _): RequirePermission<ServerReadPermission>,
+        Path(organization_id): Path<i64>,
+    ) -> Result<Json<Vec<NotificationDeliveryAttemptDto>>, ApiError> {
+        verify_scope(claims.user.group_id, organization_id)?;
+        self.delivery
+            .list(organization_id, 200)
+            .await
+            .map(|rows| Json(rows.into_iter().map(Into::into).collect()))
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))
+    }
+
+    #[post("/bindings/organization/{organization_id}")]
+    async fn create_binding(
+        &self,
+        RequirePermission(claims, _): RequirePermission<ServerCreatePermission>,
+        Path(organization_id): Path<i64>,
+        Json(body): Json<CreateNotificationBindingDto>,
+    ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
+        verify_scope(claims.user.group_id, organization_id)?;
+        self.repo
+            .get_by_id_for_organization(body.notification_id, organization_id)
+            .await
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
+            .ok_or((StatusCode::NOT_FOUND, "notification not found".into()))?;
+        let id = self
+            .delivery
+            .create_binding(
+                body.notification_id,
+                organization_id,
+                body.resource_type.as_str(),
+                body.resource_id,
+            )
+            .await
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        Ok((StatusCode::CREATED, Json(serde_json::json!({ "id": id }))))
+    }
+
+    #[get("/bindings/organization/{organization_id}")]
+    async fn bindings(
+        &self,
+        RequirePermission(claims, _): RequirePermission<ServerReadPermission>,
+        Path(organization_id): Path<i64>,
+    ) -> Result<Json<Vec<NotificationResourceBindingDto>>, ApiError> {
+        verify_scope(claims.user.group_id, organization_id)?;
+        self.delivery
+            .bindings(organization_id)
+            .await
+            .map(|rows| Json(rows.into_iter().map(Into::into).collect()))
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))
+    }
+
+    #[delete("/bindings/{id}/organization/{organization_id}")]
+    async fn delete_binding(
+        &self,
+        RequirePermission(claims, _): RequirePermission<ServerDeletePermission>,
+        Path((id, organization_id)): Path<(i64, i64)>,
+    ) -> Result<StatusCode, ApiError> {
+        verify_scope(claims.user.group_id, organization_id)?;
+        if self
+            .delivery
+            .delete_binding(id, organization_id)
+            .await
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
+        {
+            Ok(StatusCode::NO_CONTENT)
+        } else {
+            Err((StatusCode::NOT_FOUND, "binding not found".into()))
         }
     }
 
@@ -177,6 +254,8 @@ impl NotificationController {
             on_docker_cleanup: settings.on_docker_cleanup as i64,
             on_server_threshold: settings.on_server_threshold as i64,
             on_panel_backup: settings.on_panel_backup as i64,
+            on_schedule_success: settings.on_schedule_success as i64,
+            on_schedule_failure: settings.on_schedule_failure as i64,
             slack_id: None,
             telegram_id: None,
             discord_id: None,
@@ -255,6 +334,12 @@ impl NotificationController {
         if let Some(val) = dto.on_panel_backup {
             notif.on_panel_backup = val as i64;
         }
+        if let Some(val) = dto.on_schedule_success {
+            notif.on_schedule_success = val as i64;
+        }
+        if let Some(val) = dto.on_schedule_failure {
+            notif.on_schedule_failure = val as i64;
+        }
 
         notif.updated_at = chrono::Utc::now().timestamp();
 
@@ -299,6 +384,8 @@ impl NotificationController {
             on_docker_cleanup: dto.settings.on_docker_cleanup as i64,
             on_server_threshold: dto.settings.on_server_threshold as i64,
             on_panel_backup: dto.settings.on_panel_backup as i64,
+            on_schedule_success: dto.settings.on_schedule_success as i64,
+            on_schedule_failure: dto.settings.on_schedule_failure as i64,
             slack_id: None,
             telegram_id: None,
             discord_id: None,
@@ -385,5 +472,16 @@ fn provider_of(dto: &CreateNotificationDto) -> NotificationProvider {
         Lark(_) => NotificationProvider::Lark,
         Pushover(_) => NotificationProvider::Pushover,
         Teams(_) => NotificationProvider::Teams,
+    }
+}
+
+fn verify_scope(authenticated: i64, requested: i64) -> Result<(), ApiError> {
+    if authenticated == requested {
+        Ok(())
+    } else {
+        Err((
+            StatusCode::FORBIDDEN,
+            "organization does not match authenticated scope".into(),
+        ))
     }
 }

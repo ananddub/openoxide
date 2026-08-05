@@ -134,9 +134,10 @@ impl Cgroup {
 
     pub async fn create(&self) -> Result<(), CgroupError> {
         let cgroup_dir = self.cgroup_path();
-        let output = self
-            .executor
-            .run("mkdir", &["-p", &cgroup_dir])
+        let output = crate::utils::os::OsCli::new(&self.executor)
+            .dir(&cgroup_dir)
+            .create()
+            .run()
             .await
             .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
         if !output.success() {
@@ -173,9 +174,10 @@ impl Cgroup {
             let parent_dir = format!("{}/{}", self.base_path, current_path);
             let parent_subtree = format!("{}/cgroup.subtree_control", parent_dir);
 
-            let mkdir_out = self
-                .executor
-                .run("mkdir", &["-p", &parent_dir])
+            let mkdir_out = crate::utils::os::OsCli::new(&self.executor)
+                .dir(&parent_dir)
+                .create()
+                .run()
                 .await
                 .map_err(|e| CgroupError::ExecutorError(e.to_string()))?;
             if !mkdir_out.success() {
@@ -435,7 +437,12 @@ impl Cgroup {
 
     pub async fn delete(&self) -> Result<(), CgroupError> {
         let path = self.cgroup_path();
-        match self.executor.run("rmdir", &[&path]).await {
+        match crate::utils::os::OsCli::new(&self.executor)
+            .dir(&path)
+            .remove_if_empty()
+            .run()
+            .await
+        {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_str = e.to_string();
@@ -454,7 +461,8 @@ impl Cgroup {
         let path = self.cgroup_path();
 
         // 1. Idempotency Check: if directory doesn't exist, we are done
-        let check_dir = self.executor.run("test", &["-d", &path]).await;
+        let os = crate::utils::os::OsCli::new(&self.executor);
+        let check_dir = os.dir(&path).exists().run().await;
         if let Err(e) = check_dir {
             let err_str = e.to_string();
             if err_str.contains("exit code Some(1)") || err_str.contains("No such file") {
@@ -466,7 +474,7 @@ impl Cgroup {
         let kill_path = format!("{}/cgroup.kill", path);
 
         // 2. Try atomic termination if supported (kernel 5.14+)
-        let check_kill_file = self.executor.run("test", &["-f", &kill_path]).await;
+        let check_kill_file = os.file(&kill_path).exists().run().await;
         let has_kill_file = match check_kill_file {
             Ok(_) => true,
             Err(e) => {

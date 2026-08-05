@@ -160,6 +160,13 @@ impl ScheduleRunner {
             };
             let key = format!("schedule:{schedule_id}");
             let cron_expression = normalize_cron_expression(&schedule.cron_expression);
+            if let Err(error) = self
+                .service
+                .recover_missed(schedule_id, &cron_expression)
+                .await
+            {
+                tracing::warn!(schedule_id, error = %error, "missed schedule recovery failed");
+            }
             let should_replace = current.get(&key).is_none_or(|registered| {
                 registered.cron_expression != cron_expression
                     || registered.enabled != schedule.enabled
@@ -186,7 +193,13 @@ impl ScheduleRunner {
                         );
                         return;
                     }
-                    let result = service.run_now(schedule_id).await;
+                    let result = service
+                        .run_scheduled(
+                            schedule_id,
+                            crate::services::schedule::types::ScheduleTriggerKind::Cron,
+                            chrono::Utc::now().timestamp(),
+                        )
+                        .await;
                     in_flight.remove(&key_str);
                     match result {
                         Ok(result) => tracing::info!(

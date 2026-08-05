@@ -32,6 +32,13 @@ impl GitlabProviderRepository {
         .await
     }
 
+    pub async fn get_by_git_provider_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<GitlabProvider>, sqlx::Error> {
+        sqlx::query_as!(GitlabProvider, r#"SELECT id AS "id?: i64", gitlab_url AS "gitlab_url: String", gitlab_internal_url AS "gitlab_internal_url?: String", application_id AS "application_id?: String", redirect_uri AS "redirect_uri?: String", secret AS "secret?: String", access_token AS "access_token?: String", refresh_token AS "refresh_token?: String", group_name AS "group_name?: String", expires_at AS "expires_at?: i64", git_provider_id AS "git_provider_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM gitlab_providers WHERE git_provider_id = ?"#, id).fetch_optional(self.pool.as_ref()).await
+    }
+
     pub async fn create(&self, item: &GitlabProvider) -> Result<i64, sqlx::Error> {
         let _res = sqlx::query!(
             r#"INSERT INTO gitlab_providers (gitlab_url, gitlab_internal_url, application_id, redirect_uri, secret, access_token, refresh_token, group_name, expires_at, git_provider_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
@@ -80,5 +87,34 @@ impl GitlabProviderRepository {
             .execute(self.pool.as_ref())
             .await?;
         Ok(())
+    }
+
+    pub async fn set_oauth_tokens(
+        &self,
+        git_provider_id: i64,
+        access_token: &str,
+        refresh_token: Option<&str>,
+        expires_at: Option<i64>,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE gitlab_providers SET access_token = ?, refresh_token = ?, expires_at = ?, updated_at = strftime('%s', 'now') WHERE git_provider_id = ?",
+            access_token,
+            refresh_token,
+            expires_at,
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn disconnect(&self, git_provider_id: i64) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE gitlab_providers SET access_token = NULL, refresh_token = NULL, expires_at = NULL, updated_at = strftime('%s', 'now') WHERE git_provider_id = ?",
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
     }
 }

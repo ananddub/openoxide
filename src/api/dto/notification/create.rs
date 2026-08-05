@@ -23,6 +23,10 @@ pub struct NotificationSettingsDto {
     pub on_server_threshold: bool,
     #[serde(default)]
     pub on_panel_backup: bool,
+    #[serde(default)]
+    pub on_schedule_success: bool,
+    #[serde(default)]
+    pub on_schedule_failure: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Validate, Object)]

@@ -59,28 +59,49 @@ impl<'a> IntoCommand for PackageUpdateIndexBuilder<'a> {
                 PackageManager::Brew => "brew update".to_string(),
             }
         } else {
-            let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
+            let script = sh!(if cmd("command", "-v", "apt-get")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apt-get", "update", "-y");
-            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+            } else if cmd("command", "-v", "dnf")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("dnf", "check-update");
-            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+            } else if cmd("command", "-v", "yum")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("yum", "check-update");
-            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+            } else if cmd("command", "-v", "apk")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apk", "update");
-            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+            } else if cmd("command", "-v", "pacman")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("pacman", "-Sy");
-            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+            } else if cmd("command", "-v", "zypper")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("zypper", "refresh");
-            } else if cmd("command", "-v", "xbps-install").stdout("/dev/null") {
+            } else if cmd("command", "-v", "xbps-install")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("xbps-install", "-S");
-            } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
+            } else if cmd("command", "-v", "emerge")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("emerge", "--sync");
-            } else if cmd("command", "-v", "nix-channel").stdout("/dev/null") {
+            } else if cmd("command", "-v", "nix-channel")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("nix-channel", "--update");
-            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+            } else if cmd("command", "-v", "brew")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("brew", "update");
             } else {
-                echo("No supported package manager found").stderr("/dev/stderr");
+                echo("No supported package manager found")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 cmd("exit", "1");
             });
             script.build_str()

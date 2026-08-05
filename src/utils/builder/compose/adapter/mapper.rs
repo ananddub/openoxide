@@ -1,10 +1,10 @@
 use crate::utils::builder::compose::spec::{ComposeRuntime, ComposeSource, ComposeSpec};
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
-use crate::utils::builder::spec::{RuntimeType, SourceType};
+use crate::utils::builder::spec::{PatchSpec, RuntimeType, SourceType};
 use crate::utils::git::GitProviderBuilder;
 use crate::{
-    db::models::{domains::Domain, mounts::Mount},
+    db::models::{domains::Domain, mounts::Mount, patches::Patch},
     utils::builder::env::generate_env_app,
     utils::paths::rustploy_paths,
 };
@@ -13,6 +13,7 @@ pub struct ComposeRowWithRelations {
     pub compose: ComposeRow,
     pub domains: Vec<Domain>,
     pub mounts: Vec<Mount>,
+    pub patches: Vec<Patch>,
     pub service_networks: Vec<crate::utils::builder::compose::spec::ComposeServiceNetworkSpec>,
 }
 
@@ -24,6 +25,10 @@ pub struct ComposeRow {
     pub compose_file: String,
     pub env_var: Option<String>,
     pub service_networks: String,
+    pub randomize: i64,
+    pub suffix: String,
+    pub isolated_deployment: i64,
+    pub isolated_deployments_volume: i64,
     pub repository: Option<String>,
     pub owner: Option<String>,
     pub branch: Option<String>,
@@ -56,6 +61,7 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
         let compose = data.compose;
         let domains = data.domains;
         let mounts = data.mounts;
+        let patches = data.patches;
         let service_networks = data.service_networks;
         let paths = rustploy_paths();
         let app_dir = paths.compose_dir(&compose.app_name);
@@ -81,12 +87,25 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
                 .into_iter()
                 .map(|mount| mount_spec(mount, &paths.compose_files(&compose.app_name)))
                 .collect::<Result<Vec<_>, _>>()?,
+            patches: patches
+                .into_iter()
+                .filter(|patch| patch.enabled != 0)
+                .map(|patch| PatchSpec {
+                    patch_type: patch.patch_type,
+                    file_path: patch.file_path,
+                    content: patch.content,
+                })
+                .collect(),
 
             domains: domains
                 .into_iter()
                 .map(domain)
                 .collect::<Result<Vec<_>, _>>()?,
             service_networks,
+            randomize: compose.randomize != 0,
+            suffix: compose.suffix,
+            isolated_deployment: compose.isolated_deployment != 0,
+            isolated_deployments_volume: compose.isolated_deployments_volume != 0,
         })
     }
 }

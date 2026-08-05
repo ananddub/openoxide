@@ -106,12 +106,18 @@ impl ServerSetup {
         for path in self.config.paths.all() {
             os.dir(path).create().parents(true).run().await?;
         }
-        os.file(&self.config.paths.ssh).chmod("700").run().await?;
+        os.file(&self.config.paths.ssh)
+            .chmod(crate::utils::os::file::FileMode::OwnerReadWriteExecute)
+            .run()
+            .await?;
         let acme = format!("{}/acme.json", self.config.paths.traefik_dynamic);
         if os.file(&acme).exists().run().await.is_err() {
             os.file(&acme).write("").execute().await?;
         }
-        os.file(&acme).chmod("600").run().await?;
+        os.file(&acme)
+            .chmod(crate::utils::os::file::FileMode::OwnerReadWrite)
+            .run()
+            .await?;
         Ok(())
     }
     pub async fn install_build_tools(&self) -> ExecResult<()> {
@@ -199,10 +205,14 @@ impl ServerSetup {
         if !overwrite && os.file(path).exists().run().await.is_ok() {
             return Ok(());
         }
-        self.executor
-            .run_with_stdin("tee", [path], contents)
+        os.file(path)
+            .write(String::from_utf8_lossy(contents).as_ref())
+            .execute()
             .await?;
-        os.file(path).chmod("600").run().await?;
+        os.file(path)
+            .chmod(crate::utils::os::file::FileMode::OwnerReadWrite)
+            .run()
+            .await?;
         Ok(())
     }
     pub async fn ensure_traefik(&self) -> ExecResult<()> {
@@ -265,9 +275,10 @@ impl ServerSetup {
             }
         }
 
-        let architecture = self
-            .executor
-            .run("uname", ["-m"])
+        let architecture = OsCli::new(&self.executor)
+            .system()
+            .arch()
+            .run()
             .await
             .map(|output| output.stdout_trimmed().to_owned())
             .unwrap_or_default();
@@ -301,7 +312,10 @@ impl ServerSetup {
                 .env("METRICS_TOKEN", token)
                 .env("MONITOR_DATABASE_URL", "sqlite:///data/monitor.db")
                 .env("REFRESH_RATE", "10")
-                .env("RETENTION_DAYS", "7")
+                .env(
+                    "RETENTION_DAYS",
+                    self.config.monitoring_retention_days.to_string(),
+                )
                 .mount(Mount::volume("rustploy-monitor-data", "/data"));
         }
         create.run().await?;
@@ -508,11 +522,11 @@ impl ServerSetup {
         let acme = format!("{}/acme.json", self.config.paths.traefik_dynamic);
         let ssh_path = self.config.paths.ssh.as_str();
         steps.extend(sh!(
-            os.file(ssh_path).chmod("700");
+            os.file(ssh_path).chmod(crate::utils::os::file::FileMode::OwnerReadWriteExecute);
             if !os.file(acme.as_str()).exists() {
                 os.file(acme.as_str()).write("");
             }
-            os.file(acme.as_str()).chmod("600");
+            os.file(acme.as_str()).chmod(crate::utils::os::file::FileMode::OwnerReadWrite);
         ));
     }
 
@@ -597,8 +611,8 @@ impl ServerSetup {
             if !docker
                 .networks()
                 .inspect_cmd(network_name)
-                .stdout("/dev/null")
-                .stderr("/dev/null")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+                .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Creating Rustploy Docker network");
                 docker
@@ -620,21 +634,21 @@ impl ServerSetup {
             info!("Writing Traefik configuration");
             if os.dir(static_path.as_str()).exists() {
                 echo("Removing directory created at Traefik config file path")
-                    .stderr("/dev/stderr");
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 os.dir(static_path.as_str()).delete();
             }
             if !os.file(static_path.as_str()).exists() {
                 os.file(static_path.as_str()).write(static_config);
-                os.file(static_path.as_str()).chmod("600");
+                os.file(static_path.as_str()).chmod(crate::utils::os::file::FileMode::OwnerReadWrite);
             }
             if os.dir(middleware_path.as_str()).exists() {
                 echo("Removing directory created at Traefik middleware file path")
-                    .stderr("/dev/stderr");
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 os.dir(middleware_path.as_str()).delete();
             }
             if !os.file(middleware_path.as_str()).exists() {
                 os.file(middleware_path.as_str()).write(middleware_config);
-                os.file(middleware_path.as_str()).chmod("600");
+                os.file(middleware_path.as_str()).chmod(crate::utils::os::file::FileMode::OwnerReadWrite);
             }
         ));
     }
@@ -656,8 +670,8 @@ impl ServerSetup {
             if docker
                 .containers()
                 .inspect_cmd(name)
-                .stdout("/dev/null")
-                .stderr("/dev/null")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+                .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Starting existing Traefik container");
                 docker.containers().start(name);
@@ -665,8 +679,8 @@ impl ServerSetup {
                 if docker
                     .services()
                     .inspect_cmd(name)
-                    .stdout("/dev/null")
-                    .stderr("/dev/null")
+                    .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
                 {
                     info!("Removing existing Traefik service");
                     docker.services().remove(name);
@@ -701,8 +715,8 @@ impl ServerSetup {
             if docker
                 .containers()
                 .inspect_cmd(name)
-                .stdout("/dev/null")
-                .stderr("/dev/null")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+                .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Starting existing Rustploy monitor container");
                 docker.containers().start(name);
@@ -712,10 +726,10 @@ impl ServerSetup {
                 };
                 if cmd("test", _rustploy_arch, "=", "aarch64") {
                     echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
-                        .stderr("/dev/stderr");
+                        .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 } else if cmd("test", _rustploy_arch, "=", "arm64") {
                     echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
-                        .stderr("/dev/stderr");
+                        .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 } else {
                     info!("Pulling Rustploy monitor image");
                     docker.images().pull(image);
@@ -735,7 +749,7 @@ impl ServerSetup {
                         .env("METRICS_TOKEN", self.config.monitoring_token.clone().unwrap_or_default())
                         .env("MONITOR_DATABASE_URL", "sqlite:///app/data/monitor.db")
                         .env("REFRESH_RATE", "10")
-                        .env("RETENTION_DAYS", "7")
+                        .env("RETENTION_DAYS", self.config.monitoring_retention_days.to_string())
                         .mount(Mount::volume("rustploy-monitor-data", "/app/data"))
                         .publish(Port::tcp(50051, 50051));
                 }

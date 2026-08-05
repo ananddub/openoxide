@@ -1,6 +1,7 @@
 use crate::utils::exec::script::IntoCommand;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
+use tokio_util::sync::CancellationToken;
 
 pub struct SystemCommandBuilder<'a> {
     executor: &'a CommandExecutor,
@@ -19,6 +20,11 @@ impl<'a> SystemCommandBuilder<'a> {
 
     pub async fn run(self) -> ExecResult<ExecOutput> {
         self.executor.run(&self.cmd, &self.args).await
+    }
+    pub async fn run_cancelled(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
+        self.executor
+            .run_cancelled(&self.cmd, &self.args, cancel)
+            .await
     }
 }
 

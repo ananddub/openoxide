@@ -41,7 +41,7 @@ impl<'a> FileBuilder<'a> {
     pub fn delete(self) -> FileDeleteBuilder<'a> {
         FileDeleteBuilder::new(self.executor, self.path)
     }
-    pub fn chmod(self, mode: impl IntoCommand) -> FileChmodBuilder<'a> {
+    pub fn chmod(self, mode: super::FileMode) -> FileChmodBuilder<'a> {
         FileChmodBuilder::new(self.executor, self.path, mode)
     }
     pub fn chown(self, owner: impl IntoCommand) -> FileChownBuilder<'a> {

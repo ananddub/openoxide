@@ -24,6 +24,18 @@ pub struct PostgresDb {
     pub database_user: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub database_password: String,
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'{}'")]
+    pub postgres_config: String,
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'STANDALONE'")]
+    pub replication_role: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub primary_host: Option<String>,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub primary_port: Option<i64>,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub replication_user: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub replication_password: Option<String>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub external_port: Option<i64>,
     #[sqlx_gen(sql_type = "TEXT")]

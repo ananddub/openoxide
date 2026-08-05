@@ -1,4 +1,4 @@
-use crate::utils::builder::spec::{DomainSpec, MountSpec};
+use crate::utils::builder::spec::{DomainSpec, MountSpec, PatchSpec};
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
@@ -40,8 +40,13 @@ pub struct ComposeSpec {
     pub env_file: String,
     pub environment: BTreeMap<String, String>,
     pub mounts: Vec<MountSpec>,
+    pub patches: Vec<PatchSpec>,
     pub domains: Vec<DomainSpec>,
     pub service_networks: Vec<ComposeServiceNetworkSpec>,
+    pub randomize: bool,
+    pub suffix: String,
+    pub isolated_deployment: bool,
+    pub isolated_deployments_volume: bool,
 }
 
 impl ComposeSpec {

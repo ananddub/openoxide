@@ -41,6 +41,11 @@ impl DatabaseService {
             DatabaseKind::Redis => self.repo_redis.get_server_id_and_name(id).await?,
             DatabaseKind::Libsql => self.repo_libsql.get_server_id_and_name(id).await?,
         };
+        resolve::<crate::repository::ServerManagementRepository>()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+            .assert_deployable(server_id)
+            .await?;
 
         let target_status = match operation {
             DatabaseOperation::Start

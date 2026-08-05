@@ -61,6 +61,14 @@ impl ComposeBuilder {
         self.ctx.emit(BuilderEvent::Preparing).await;
         self.ctx.cancelled(cancel)?;
         self.prepare_source(spec, cancel).await?;
+        crate::utils::builder::shared::patches::apply_file_patches(
+            &self.ctx,
+            &spec.work_directory,
+            &spec.patches,
+            cancel,
+        )
+        .await?;
+        self.transform_compose_file(spec, cancel).await?;
         self.ctx.emit(BuilderEvent::SourceReady).await;
         self.prepare_runtime_files(spec, cancel).await?;
         write_labeled_compose(self, spec, cancel).await?;
@@ -139,6 +147,9 @@ impl ComposeBuilder {
                 ensure_overlay_network(&self.ctx.docker, network, cancel).await?;
             }
         }
+        if spec.isolated_deployment {
+            ensure_overlay_network(&self.ctx.docker, &spec.app_name, cancel).await?;
+        }
         self.ctx
             .emit(BuilderEvent::Message(format!(
                 "building compose stack {} from {}",
@@ -195,6 +206,24 @@ impl ComposeBuilder {
         spec: &ComposeSpec,
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
+        if spec.isolated_deployment
+            && self
+                .ctx
+                .docker
+                .networks()
+                .inspect(&spec.app_name)
+                .await
+                .is_err()
+        {
+            self.ctx
+                .docker
+                .networks()
+                .create(&spec.app_name)
+                .driver(crate::utils::docker::NetworkDriver::Bridge)
+                .attachable()
+                .run()
+                .await?;
+        }
         self.ctx
             .emit(BuilderEvent::Message(format!(
                 "docker compose build and up project {} file {}",

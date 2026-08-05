@@ -39,10 +39,6 @@ impl<'a> SwarmJoinBuilder<'a> {
         self.args.pair("--data-path-port", port.to_string());
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub async fn run(mut self) -> DockerResult<DockerOutput> {
         if let Some(r) = self.remote.take() {

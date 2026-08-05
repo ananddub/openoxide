@@ -74,13 +74,20 @@ fn first_non_loopback(hostname_dash_i_output: &str) -> Option<String> {
 /// unreachable from peers that only share a VPN mesh. Callers can always
 /// override this via an explicit `advertise_addr` setting.
 pub async fn detect_advertise_addr(executor: &CommandExecutor) -> String {
-    if let Ok(out) = executor.run("ip", ["-4", "-o", "addr", "show"]).await {
+    if let Ok(out) = crate::utils::os::OsCli::new(executor)
+        .network()
+        .ipv4_addresses()
+        .run()
+        .await
+    {
         if let Some(ip) = first_vpn_addr(&out.stdout) {
             return ip;
         }
     }
-    executor
-        .run("hostname", ["-I"])
+    crate::utils::os::OsCli::new(executor)
+        .system()
+        .host_addresses()
+        .run()
         .await
         .ok()
         .and_then(|out| first_non_loopback(&out.stdout))
@@ -91,16 +98,15 @@ pub async fn detect_advertise_addr_cancelled(
     executor: &CommandExecutor,
     cancel: &CancellationToken,
 ) -> String {
-    if let Ok(out) = executor
-        .run_cancelled("ip", ["-4", "-o", "addr", "show"], cancel)
-        .await
-    {
+    let os = crate::utils::os::OsCli::new(executor);
+    if let Ok(out) = os.network().ipv4_addresses().run_cancelled(cancel).await {
         if let Some(ip) = first_vpn_addr(&out.stdout) {
             return ip;
         }
     }
-    executor
-        .run_cancelled("hostname", ["-I"], cancel)
+    os.system()
+        .host_addresses()
+        .run_cancelled(cancel)
         .await
         .ok()
         .and_then(|out| first_non_loopback(&out.stdout))

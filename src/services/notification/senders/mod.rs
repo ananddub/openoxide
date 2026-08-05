@@ -20,7 +20,7 @@ pub use mattermost::send_mattermost;
 pub use ntfy::send_ntfy;
 pub use parse::parse_addresses;
 pub use pushover::send_pushover;
-pub use resend::send_resend;
+pub use resend::{send_resend, send_resend_to};
 pub use slack::send_slack;
 pub use teams::send_teams;
 pub use telegram::send_telegram;

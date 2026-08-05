@@ -5,7 +5,8 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::schedule::{
-        CreateScheduleDto, PatchScheduleDto, ScheduleResponseDto, ScheduleRunResponseDto,
+        CreateScheduleDto, PatchScheduleDto, ScheduleExecutionDto, ScheduleResponseDto,
+        ScheduleRunResponseDto, ScheduleRuntimePolicyDto, UpdateScheduleRuntimePolicyDto,
     },
     core::cache::{AppStateCache, CacheKey},
     core::middleware::{
@@ -185,6 +186,72 @@ impl ScheduleController {
             .await
             .map(ScheduleRunResponseDto::from)
             .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/runtime-policy")]
+    async fn runtime_policy(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ScheduleRuntimePolicyDto>, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        self.service
+            .repo_runtime
+            .policy(id)
+            .await
+            .map(Into::into)
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[put("/{id}/runtime-policy")]
+    async fn update_runtime_policy(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(id): Path<i64>,
+        Json(body): Json<UpdateScheduleRuntimePolicyDto>,
+    ) -> Result<Json<ScheduleRuntimePolicyDto>, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        if !(0..=10).contains(&body.retry_count)
+            || !(1..=86400).contains(&body.retry_delay_seconds)
+            || !(30..=86400).contains(&body.lease_seconds)
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "invalid schedule runtime policy".into(),
+            ));
+        }
+        self.service
+            .repo_runtime
+            .update_policy(
+                id,
+                body.retry_count,
+                body.retry_delay_seconds,
+                body.missed_run_policy.as_str(),
+                body.concurrency_policy.as_str(),
+                body.lease_seconds,
+                body.notify_on_success,
+                body.notify_on_failure,
+            )
+            .await
+            .map(Into::into)
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/executions")]
+    async fn executions(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Vec<ScheduleExecutionDto>>, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        self.service
+            .repo_runtime
+            .list(id, 200)
+            .await
+            .map(|rows| Json(rows.into_iter().map(Into::into).collect()))
             .map_err(map_sqlx_error)
     }
 }

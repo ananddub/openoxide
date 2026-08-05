@@ -128,6 +128,66 @@ pub struct MountSpec {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PatchSpec {
+    pub patch_type: String,
+    pub file_path: String,
+    pub content: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PortSpec {
+    pub published: u16,
+    pub target: u16,
+    pub protocol: String,
+    pub mode: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RedirectSpec {
+    pub key: String,
+    pub regex: String,
+    pub replacement: String,
+    pub permanent: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BasicAuthSpec {
+    pub username: String,
+    pub password_hash: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum StructuredMiddlewareSpec {
+    Compress {
+        name: String,
+    },
+    Headers {
+        name: String,
+        headers: BTreeMap<String, String>,
+    },
+    RateLimit {
+        name: String,
+        average: i64,
+        burst: i64,
+    },
+    IpAllowList {
+        name: String,
+        source_ranges: Vec<String>,
+    },
+}
+
+impl StructuredMiddlewareSpec {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Compress { name }
+            | Self::Headers { name, .. }
+            | Self::RateLimit { name, .. }
+            | Self::IpAllowList { name, .. } => name,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DomainSpec {
     pub key: String,
     pub host: String,
@@ -159,6 +219,11 @@ pub struct ApplicationSpec {
     pub replicas: u32,
     pub networks: Vec<String>,
     pub mounts: Vec<MountSpec>,
+    pub patches: Vec<PatchSpec>,
+    pub ports: Vec<PortSpec>,
+    pub redirects: Vec<RedirectSpec>,
+    pub basic_auth: Vec<BasicAuthSpec>,
+    pub middlewares: Vec<StructuredMiddlewareSpec>,
     pub domains: Vec<DomainSpec>,
     pub resources: ResourceSpec,
     pub healthcheck: Option<HealthSpec>,

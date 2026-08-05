@@ -1,4 +1,7 @@
-use crate::utils::builder::spec::{ApplicationSpec, HealthSpec, MountKind};
+use crate::utils::builder::spec::{
+    ApplicationSpec, HealthSpec, MountKind, StructuredMiddlewareSpec,
+};
+use crate::utils::traefik::{middleware::Middleware, traefik::TraefikBuilder};
 use serde::Serialize;
 use std::collections::BTreeMap;
 
@@ -20,6 +23,8 @@ struct StackService {
     args: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     volumes: Vec<StackMount>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    ports: Vec<StackPort>,
     networks: Vec<String>,
     deploy: DeploySpec,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -107,7 +112,27 @@ struct StackMount {
     read_only: bool,
 }
 
-pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
+#[derive(Serialize)]
+struct StackPort {
+    target: u16,
+    published: u16,
+    protocol: String,
+    mode: String,
+}
+
+pub(crate) fn application_traefik_labels(app: &ApplicationSpec) -> Vec<String> {
+    let redirect_names: Vec<String> = app
+        .redirects
+        .iter()
+        .map(|redirect| format!("{}-redirect-{}", app.app_name, redirect.key))
+        .collect();
+    let basic_auth_name =
+        (!app.basic_auth.is_empty()).then(|| format!("{}-basic-auth", app.app_name));
+    let structured_names: Vec<String> = app
+        .middlewares
+        .iter()
+        .map(|middleware| middleware.name().to_string())
+        .collect();
     let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = app
         .domains
         .iter()
@@ -123,7 +148,14 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
             entrypoint: d.entrypoint.clone(),
             certificate_type: d.certificate_type.clone(),
             custom_cert_resolver: d.custom_cert_resolver.clone(),
-            middlewares: d.middlewares.clone(),
+            middlewares: d
+                .middlewares
+                .iter()
+                .cloned()
+                .chain(redirect_names.iter().cloned())
+                .chain(basic_auth_name.iter().cloned())
+                .chain(structured_names.iter().cloned())
+                .collect(),
         })
         .collect();
 
@@ -139,7 +171,66 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
         &shared_domains,
         traefik_network,
     );
-    let traefik_labels = reconcile_labels(traefik_map.into_values().flatten());
+    let mut traefik_labels = reconcile_labels(traefik_map.into_values().flatten());
+    let mut typed_middlewares = app
+        .redirects
+        .iter()
+        .zip(redirect_names)
+        .map(|(redirect, name)| Middleware::RedirectRegex {
+            name,
+            regex: redirect.regex.clone(),
+            replacement: redirect.replacement.clone(),
+            permanent: redirect.permanent,
+        })
+        .collect::<Vec<_>>();
+    if let Some(name) = basic_auth_name {
+        typed_middlewares.push(Middleware::BasicAuth {
+            name,
+            users: app
+                .basic_auth
+                .iter()
+                .map(|entry| (entry.username.clone(), entry.password_hash.clone()))
+                .collect(),
+        });
+    }
+    for middleware in &app.middlewares {
+        typed_middlewares.push(match middleware {
+            StructuredMiddlewareSpec::Compress { name } => {
+                Middleware::Compress { name: name.clone() }
+            }
+            StructuredMiddlewareSpec::Headers { name, headers } => Middleware::RequestHeaders {
+                name: name.clone(),
+                headers: headers
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect(),
+            },
+            StructuredMiddlewareSpec::RateLimit {
+                name,
+                average,
+                burst,
+            } => Middleware::RateLimit {
+                name: name.clone(),
+                average: *average,
+                burst: *burst,
+            },
+            StructuredMiddlewareSpec::IpAllowList {
+                name,
+                source_ranges,
+            } => Middleware::IpAllowList {
+                name: name.clone(),
+                source_ranges: source_ranges.clone(),
+            },
+        });
+    }
+    for middleware in typed_middlewares {
+        traefik_labels.extend(TraefikBuilder::new().middleware(middleware).build());
+    }
+    reconcile_labels(traefik_labels)
+}
+
+pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
+    let traefik_labels = application_traefik_labels(app);
     let mut services = BTreeMap::new();
     services.insert(
         app.app_name.clone(),
@@ -159,6 +250,16 @@ pub(super) fn stack_spec(app: &ApplicationSpec) -> StackFile {
                     source: mount.source.clone(),
                     target: mount.target.clone(),
                     read_only: mount.read_only || matches!(mount.kind, MountKind::File),
+                })
+                .collect(),
+            ports: app
+                .ports
+                .iter()
+                .map(|port| StackPort {
+                    target: port.target,
+                    published: port.published,
+                    protocol: port.protocol.clone(),
+                    mode: port.mode.clone(),
                 })
                 .collect(),
             networks: app.networks.clone(),
@@ -236,7 +337,9 @@ fn reconcile_labels(labels: impl IntoIterator<Item = String>) -> Vec<String> {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::utils::builder::spec::{ApplicationSpec, MountSpec, ResourceSpec, SourceSpec};
+    use crate::utils::builder::spec::{
+        ApplicationSpec, BasicAuthSpec, MountSpec, PortSpec, RedirectSpec, ResourceSpec, SourceSpec,
+    };
 
     pub(crate) fn spec() -> ApplicationSpec {
         ApplicationSpec {
@@ -263,6 +366,11 @@ pub(crate) mod tests {
                 read_only: false,
                 content: None,
             }],
+            patches: vec![],
+            ports: vec![],
+            redirects: vec![],
+            basic_auth: vec![],
+            middlewares: vec![],
             domains: vec![],
             resources: ResourceSpec {
                 memory_limit: Some("512M".into()),
@@ -282,6 +390,46 @@ pub(crate) mod tests {
         assert!(yaml.contains("node.role==worker"));
         assert!(yaml.contains("failure_action: rollback"));
         assert!(yaml.contains("source: api-data"));
+    }
+
+    #[test]
+    fn stack_yaml_contains_application_ports_and_security_middlewares() {
+        let mut value = spec();
+        value.ports.push(PortSpec {
+            target: 3000,
+            published: 8080,
+            protocol: "tcp".into(),
+            mode: "host".into(),
+        });
+        value.redirects.push(RedirectSpec {
+            key: "1".into(),
+            regex: "^https://old.example/(.*)".into(),
+            replacement: "https://new.example/$1".into(),
+            permanent: true,
+        });
+        value.basic_auth.push(BasicAuthSpec {
+            username: "admin".into(),
+            password_hash: "$2b$12$example".into(),
+        });
+        value.domains.push(crate::utils::builder::spec::DomainSpec {
+            key: "1".into(),
+            host: "example.test".into(),
+            https: false,
+            port: 3000,
+            service_name: None,
+            path: "/".into(),
+            internal_path: "/".into(),
+            strip_path: false,
+            entrypoint: None,
+            certificate_type: "NONE".into(),
+            custom_cert_resolver: None,
+            middlewares: vec![],
+        });
+
+        let yaml = serde_yaml::to_string(&stack_spec(&value)).unwrap();
+        assert!(yaml.contains("published: 8080"));
+        assert!(yaml.contains("redirectregex.regex"));
+        assert!(yaml.contains("basicauth.users=admin:$$2b$$12$$example"));
     }
 
     #[test]

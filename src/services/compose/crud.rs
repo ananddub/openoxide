@@ -99,6 +99,12 @@ impl ComposeService {
             crate::api::dto::compose::serialize_service_networks(input.service_networks.as_ref())?
                 .unwrap_or(current.service_networks);
 
+        let suffix = match (input.suffix, input.randomize) {
+            (Some(value), _) if !value.trim().is_empty() => Some(value),
+            (_, Some(1)) if current.suffix.trim().is_empty() => Some(generate_random_suffix()),
+            (value, _) => value,
+        };
+
         self.repo_compose
             .patch(
                 id,
@@ -111,7 +117,7 @@ impl ComposeService {
                 command,
                 input.enable_submodules,
                 compose_path,
-                input.suffix,
+                suffix,
                 input.randomize,
                 input.isolated_deployment,
                 input.isolated_deployments_volume,
@@ -130,4 +136,10 @@ impl ComposeService {
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         Ok(())
     }
+}
+
+fn generate_random_suffix() -> String {
+    let mut bytes = [0_u8; 4];
+    let _ = getrandom::fill(&mut bytes);
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

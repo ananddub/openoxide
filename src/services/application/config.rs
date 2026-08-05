@@ -1,8 +1,52 @@
 use super::{ApplicationRecord, ApplicationService};
-use crate::api::dto::application::{PatchBuildConfigDto, PatchResourceConfigDto};
+use crate::api::dto::application::{
+    PatchBuildConfigDto, PatchPreviewConfigDto, PatchResourceConfigDto,
+};
 use crate::core::cache::CacheKey;
 
 impl ApplicationService {
+    pub async fn patch_preview_config(
+        &self,
+        id: i64,
+        input: PatchPreviewConfigDto,
+    ) -> sqlx::Result<()> {
+        self.get_by_id(id).await?;
+        if input.active && input.preview_wildcard.as_deref().is_none_or(str::is_empty) {
+            return Err(sqlx::Error::Protocol(
+                "preview_wildcard is required when preview deployments are active".into(),
+            ));
+        }
+        if input.preview_certificate_type == crate::utils::traefik::types::CertificateType::Custom
+            && input
+                .preview_custom_cert_resolver
+                .as_deref()
+                .is_none_or(str::is_empty)
+        {
+            return Err(sqlx::Error::Protocol(
+                "preview_custom_cert_resolver is required for CUSTOM certificates".into(),
+            ));
+        }
+        self.repo_app
+            .update_preview_config(
+                id,
+                input.preview_env.as_deref(),
+                input.preview_build_args.as_deref(),
+                input.preview_build_secrets.as_deref(),
+                input.preview_labels.as_deref(),
+                input.preview_wildcard.as_deref(),
+                input.preview_port,
+                input.preview_https,
+                &input.preview_path,
+                input.preview_certificate_type.as_str(),
+                input.preview_custom_cert_resolver.as_deref(),
+                input.preview_limit,
+                input.active,
+                input.require_collaborator_permissions,
+            )
+            .await?;
+        self.cache.invalidate(&CacheKey::Application(id)).await;
+        Ok(())
+    }
     pub async fn patch_build_config(
         &self,
         id: i64,

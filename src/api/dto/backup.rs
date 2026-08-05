@@ -1,6 +1,134 @@
-use crate::db::models::{backups::Backup, volume_backups::VolumeBackup};
+use crate::db::models::{
+    backup_executions::BackupExecution, backups::Backup, volume_backups::VolumeBackup,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct PanelBackupResponseDto {
+    pub path: String,
+    pub checksum_sha256: String,
+    pub size_bytes: i64,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct RestorePanelBackupDto {
+    pub archive: String,
+    pub checksum_sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct StagePanelRestoreDto {
+    pub restore_id: String,
+    pub checksum_sha256: String,
+    pub restart_required: bool,
+    pub pending_marker: String,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct BackupFilesQueryDto {
+    pub destination_id: i64,
+    pub prefix: Option<String>,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct DownloadBackupFileDto {
+    pub destination_id: i64,
+    pub object_key: String,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct RetentionPreviewQueryDto {
+    pub destination_id: i64,
+    pub prefix: Option<String>,
+    pub keep_latest: i64,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct BackupFileDto {
+    pub name: String,
+    pub path: String,
+    pub size_bytes: i64,
+    pub modified_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RetentionPreviewDto {
+    pub keep: Vec<BackupFileDto>,
+    pub delete: Vec<BackupFileDto>,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct ComposeConfigBackupDto {
+    pub include_secrets: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct VerifyBackupFileDto {
+    pub destination_id: i64,
+    pub object_key: String,
+    pub checksum_sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct BackupIntegrityDto {
+    pub valid: bool,
+    pub expected_sha256: String,
+    pub actual_sha256: String,
+    pub size_bytes: i64,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct BackupExecutionQueryDto {
+    pub backup_kind: Option<crate::services::backup::types::BackupKind>,
+    pub backup_id: Option<i64>,
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct BackupExecutionResponseDto {
+    pub id: i64,
+    pub backup_kind: crate::services::backup::types::BackupKind,
+    pub operation: crate::services::backup::types::BackupOperation,
+    pub backup_id: Option<i64>,
+    pub status: crate::services::backup::types::BackupExecutionStatus,
+    pub object_key: Option<String>,
+    pub checksum_sha256: Option<String>,
+    pub size_bytes: Option<i64>,
+    pub attempt: i64,
+    pub error: Option<String>,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+}
+
+impl From<BackupExecution> for BackupExecutionResponseDto {
+    fn from(value: BackupExecution) -> Self {
+        Self {
+            id: value.id,
+            backup_kind: crate::services::backup::types::BackupKind::try_from(
+                value.backup_kind.as_str(),
+            )
+            .expect("database enforces backup kind"),
+            operation: crate::services::backup::types::BackupOperation::try_from(
+                value.operation.as_str(),
+            )
+            .expect("database enforces backup operation"),
+            backup_id: value.backup_id,
+            status: crate::services::backup::types::BackupExecutionStatus::try_from(
+                value.status.as_str(),
+            )
+            .expect("database enforces backup status"),
+            object_key: value.object_key,
+            checksum_sha256: value.checksum_sha256,
+            size_bytes: value.size_bytes,
+            attempt: value.attempt,
+            error: value.error,
+            started_at: value.started_at,
+            finished_at: value.finished_at,
+        }
+    }
+}
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateBackupDto {

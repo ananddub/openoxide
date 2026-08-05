@@ -32,6 +32,13 @@ impl GiteaProviderRepository {
         .await
     }
 
+    pub async fn get_by_git_provider_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<GiteaProvider>, sqlx::Error> {
+        sqlx::query_as!(GiteaProvider, r#"SELECT id AS "id?: i64", gitea_url AS "gitea_url: String", gitea_internal_url AS "gitea_internal_url?: String", redirect_uri AS "redirect_uri?: String", client_id AS "client_id?: String", client_secret AS "client_secret?: String", access_token AS "access_token?: String", refresh_token AS "refresh_token?: String", expires_at AS "expires_at?: i64", scopes AS "scopes?: String", last_authenticated_at AS "last_authenticated_at?: i64", git_provider_id AS "git_provider_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM gitea_providers WHERE git_provider_id = ?"#, id).fetch_optional(self.pool.as_ref()).await
+    }
+
     pub async fn create(&self, item: &GiteaProvider) -> Result<i64, sqlx::Error> {
         let _res = sqlx::query!(
             r#"INSERT INTO gitea_providers (gitea_url, gitea_internal_url, redirect_uri, client_id, client_secret, access_token, refresh_token, expires_at, scopes, last_authenticated_at, git_provider_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
@@ -82,5 +89,39 @@ impl GiteaProviderRepository {
             .execute(self.pool.as_ref())
             .await?;
         Ok(())
+    }
+
+    pub async fn set_oauth_tokens(
+        &self,
+        git_provider_id: i64,
+        access_token: &str,
+        refresh_token: Option<&str>,
+        expires_at: Option<i64>,
+        scopes: Option<&str>,
+    ) -> Result<bool, sqlx::Error> {
+        let now = chrono::Utc::now().timestamp();
+        let result = sqlx::query!(
+            "UPDATE gitea_providers SET access_token = ?, refresh_token = ?, expires_at = ?, scopes = COALESCE(?, scopes), last_authenticated_at = ?, updated_at = ? WHERE git_provider_id = ?",
+            access_token,
+            refresh_token,
+            expires_at,
+            scopes,
+            now,
+            now,
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn disconnect(&self, git_provider_id: i64) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE gitea_providers SET access_token = NULL, refresh_token = NULL, expires_at = NULL, last_authenticated_at = NULL, updated_at = strftime('%s', 'now') WHERE git_provider_id = ?",
+            git_provider_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
     }
 }

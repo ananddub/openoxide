@@ -1,5 +1,35 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use validator::Validate;
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PostgresReplicationRole {
+    Standalone,
+    Primary,
+    Replica,
+}
+impl PostgresReplicationRole {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Standalone => "STANDALONE",
+            Self::Primary => "PRIMARY",
+            Self::Replica => "REPLICA",
+        }
+    }
+}
+impl TryFrom<&str> for PostgresReplicationRole {
+    type Error = String;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.trim().to_ascii_uppercase().as_str() {
+            "STANDALONE" => Ok(Self::Standalone),
+            "PRIMARY" => Ok(Self::Primary),
+            "REPLICA" => Ok(Self::Replica),
+            other => Err(format!("invalid PostgreSQL replication role: {other}")),
+        }
+    }
+}
 
 use crate::services::database::{DatabaseOperationResult, DatabaseRecord};
 
@@ -125,6 +155,105 @@ pub(crate) fn parse_json_string_vec(value: &str) -> Vec<String> {
 pub struct DatabaseOperationResponseDto {
     pub database: DatabaseResponseDto,
     pub operation: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct DatabaseConnectionDto {
+    pub kind: crate::services::database::DatabaseKind,
+    pub host: String,
+    pub port: i64,
+    pub database: Option<String>,
+    pub username: Option<String>,
+    pub password: String,
+    pub internal_url: String,
+    pub external_url: Option<String>,
+    pub server_id: Option<i64>,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct RotateDatabaseCredentialsDto {
+    #[validate(length(min = 16, max = 512))]
+    pub password: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct DatabaseCredentialRotationDto {
+    pub password: String,
+    pub redeploy_required: bool,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct DatabaseValidationDto {
+    pub valid: bool,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct PostgresAdvancedConfigDto {
+    pub settings: BTreeMap<String, String>,
+    pub replication_role: PostgresReplicationRole,
+    pub primary_host: Option<String>,
+    pub primary_port: Option<i64>,
+    pub replication_user: Option<String>,
+    #[validate(length(min = 16, max = 512))]
+    pub replication_password: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct PostgresAdvancedConfigResponseDto {
+    pub settings: BTreeMap<String, String>,
+    pub replication_role: PostgresReplicationRole,
+    pub primary_host: Option<String>,
+    pub primary_port: Option<i64>,
+    pub replication_user: Option<String>,
+    pub replication_password_configured: bool,
+    pub redeploy_required: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseExportBundleDto {
+    pub schema_version: u32,
+    pub exported_at: i64,
+    pub secrets_included: bool,
+    pub kind: crate::services::database::DatabaseKind,
+    pub name: String,
+    pub description: Option<String>,
+    pub docker_image: String,
+    pub database_name: Option<String>,
+    pub database_user: Option<String>,
+    pub database_password: Option<String>,
+    pub external_port: Option<i64>,
+    pub env_var: Option<String>,
+    pub memory_reservation: Option<String>,
+    pub memory_limit: Option<String>,
+    pub cpu_reservation: Option<String>,
+    pub cpu_limit: Option<String>,
+    pub replicas: i64,
+    pub network_ids: Vec<String>,
+    pub detach_rustploy_network: i64,
+}
+
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct DatabaseExportQueryDto {
+    pub include_secrets: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct DatabaseArchiveDto {
+    pub format: String,
+    pub schema_version: i64,
+    pub archive: String,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct ImportDatabaseDto {
+    #[validate(length(min = 2))]
+    pub archive: String,
+    pub environment_id: i64,
+    pub server_id: Option<i64>,
+    #[validate(length(min = 1, max = 255))]
+    pub name: Option<String>,
 }
 
 impl From<DatabaseOperationResult> for DatabaseOperationResponseDto {

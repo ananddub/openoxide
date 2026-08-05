@@ -30,17 +30,6 @@ impl<'a> MountBuilder<'a> {
             ],
         )
     }
-    pub fn options(self, opts: impl IntoCommand) -> MountCommandBuilder<'a> {
-        MountCommandBuilder::new(
-            self.executor,
-            vec![
-                "-o".to_string(),
-                opts.build_str(),
-                self.source.expect("source required for mount options"),
-                self.target,
-            ],
-        )
-    }
     pub fn unmount(self) -> MountActionBuilder<'a> {
         MountActionBuilder::new(self.executor, "umount", vec![self.target])
     }

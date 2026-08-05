@@ -6,8 +6,10 @@ use sqlx::SqlitePool;
 use crate::api::dto::domain::{CreateDomainDto, PatchDomainDto};
 use crate::repository::{ApplicationRepository, ComposeProjectRepository, DomainRepository};
 use crate::services::compose::ComposeType;
+use crate::utils::builder::application::{
+    adapter::ApplicationSpecAdapter, stack::application_traefik_labels,
+};
 use crate::utils::builder::compose::labels::build_compose_service_labels;
-use crate::utils::builder::shared::traefik::build_traefik_labels;
 use crate::utils::docker::DockerCli;
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
 
@@ -38,6 +40,7 @@ pub struct DomainService {
     repo_domain: Arc<DomainRepository>,
     repo_app: Arc<ApplicationRepository>,
     repo_compose: Arc<ComposeProjectRepository>,
+    application_spec: Arc<ApplicationSpecAdapter>,
 }
 
 #[singleton]
@@ -47,12 +50,14 @@ impl DomainService {
         repo_domain: Arc<DomainRepository>,
         repo_app: Arc<ApplicationRepository>,
         repo_compose: Arc<ComposeProjectRepository>,
+        application_spec: Arc<ApplicationSpecAdapter>,
     ) -> Self {
         Self {
             db,
             repo_domain,
             repo_app,
             repo_compose,
+            application_spec,
         }
     }
 
@@ -75,6 +80,9 @@ impl DomainService {
     }
 
     pub async fn create(&self, input: CreateDomainDto) -> sqlx::Result<DomainRecord> {
+        validate_owner(input.application_id, input.compose_id)?;
+        self.validate_route_available(&input.host, &input.path, None)
+            .await?;
         let https = bool_to_i64(input.https);
         let strip_path = bool_to_i64(input.strip_path);
         let port = input.port.or(Some(3000));
@@ -125,6 +133,8 @@ impl DomainService {
         let https = input.https.map(bool_to_i64).unwrap_or(current.https);
         let port = input.port.or(current.port);
         let path = input.path.or(current.path);
+        self.validate_route_available(&host, path.as_deref().unwrap_or("/"), Some(id))
+            .await?;
         let internal_path = input.internal_path.or(current.internal_path);
         let custom_entrypoint = input.custom_entrypoint.or(current.custom_entrypoint);
         let service_name = input.service_name.or(current.service_name);
@@ -199,6 +209,26 @@ impl DomainService {
         }
     }
 
+    async fn validate_route_available(
+        &self,
+        host: &str,
+        path: &str,
+        exclude_id: Option<i64>,
+    ) -> sqlx::Result<()> {
+        let host = normalize_host(host)?;
+        let path = normalize_path(path);
+        if self
+            .repo_domain
+            .route_in_use(&host, &path, exclude_id)
+            .await?
+        {
+            return Err(sqlx::Error::Protocol(format!(
+                "domain route already exists for {host}{path}"
+            )));
+        }
+        Ok(())
+    }
+
     async fn try_apply_application_traefik(&self, application_id: i64) -> Result<(), String> {
         let app = self
             .repo_app
@@ -211,32 +241,12 @@ impl DomainService {
 
         let service_name = format!("{app_name}_{app_name}");
 
-        // Load all remaining domains for this application.
-        let domains = self
-            .list_by_application(application_id)
+        let spec = self
+            .application_spec
+            .load(application_id)
             .await
-            .map_err(|e| format!("could not load domains: {e}"))?;
-
-        let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = domains
-            .iter()
-            .map(|d| crate::utils::builder::shared::traefik::SharedDomain {
-                key: d.id.to_string(),
-                host: d.host.clone(),
-                https: d.https != 0,
-                port: d.port.unwrap_or(3000) as u16,
-                service_name: d.service_name.clone(),
-                path: d.path.clone().unwrap_or_else(|| "/".into()),
-                internal_path: d.internal_path.clone().unwrap_or_else(|| "/".into()),
-                strip_path: d.strip_path != 0,
-                entrypoint: d.custom_entrypoint.clone(),
-                certificate_type: d.certificate_type.clone(),
-                custom_cert_resolver: d.custom_cert_resolver.clone(),
-                middlewares: serde_json::from_str(&d.middlewares).unwrap_or_default(),
-            })
-            .collect();
-
-        let traefik_map = build_traefik_labels(&app_name, &shared_domains);
-        let new_labels: Vec<String> = traefik_map.into_values().flatten().collect();
+            .map_err(|e| format!("could not load application routing configuration: {e}"))?;
+        let new_labels = application_traefik_labels(&spec);
 
         // Build docker executor (local or remote).
         let executor = match server_id {
@@ -396,6 +406,7 @@ impl DomainService {
                             self.repo_compose.clone(),
                             self.repo_domain.clone(),
                             Arc::new(crate::repository::MountRepository::new(self.db.clone())),
+                            Arc::new(crate::repository::PatchRepository::new(self.db.clone())),
                         );
                     if let Ok(spec) = adapter.load(compose_id).await {
                         if let Ok(updated_yaml) =
@@ -429,4 +440,34 @@ impl DomainService {
 
 fn bool_to_i64(value: bool) -> i64 {
     if value { 1 } else { 0 }
+}
+
+fn validate_owner(application_id: Option<i64>, compose_id: Option<i64>) -> sqlx::Result<()> {
+    if application_id.is_some() == compose_id.is_some() {
+        return Err(sqlx::Error::Protocol(
+            "exactly one of application_id or compose_id is required".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn normalize_host(value: &str) -> sqlx::Result<String> {
+    let host = value.trim().trim_end_matches('.').to_ascii_lowercase();
+    if host.is_empty()
+        || host.contains('/')
+        || host.contains(':')
+        || host.chars().any(char::is_whitespace)
+    {
+        return Err(sqlx::Error::Protocol("invalid domain host".into()));
+    }
+    Ok(host)
+}
+
+fn normalize_path(value: &str) -> String {
+    let value = value.trim();
+    if value.is_empty() || value == "/" {
+        "/".into()
+    } else {
+        format!("/{}", value.trim_matches('/'))
+    }
 }

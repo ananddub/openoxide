@@ -81,6 +81,26 @@ pub struct DatabaseRecord {
     pub updated_at: i64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DatabaseRuntimeStatus {
+    Idle,
+    Running,
+    Done,
+    Failed,
+}
+impl TryFrom<&str> for DatabaseRuntimeStatus {
+    type Error = String;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.trim().to_ascii_uppercase().as_str() {
+            "IDLE" => Ok(Self::Idle),
+            "RUNNING" => Ok(Self::Running),
+            "DONE" => Ok(Self::Done),
+            "ERROR" => Ok(Self::Failed),
+            other => Err(format!("invalid database runtime status: {other}")),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum DatabaseOperation {
     Deploy,

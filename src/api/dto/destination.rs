@@ -12,7 +12,6 @@ pub struct CreateDestinationDto {
     pub bucket: String,
     pub region: String,
     pub endpoint: String,
-    pub additional_flags: Option<String>,
     pub organization_id: i64,
 }
 
@@ -24,7 +23,6 @@ pub struct TestDestinationDto {
     pub bucket: String,
     pub region: String,
     pub endpoint: String,
-    pub additional_flags: Option<String>,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -37,7 +35,6 @@ pub struct PatchDestinationDto {
     pub bucket: Option<String>,
     pub region: Option<String>,
     pub endpoint: Option<String>,
-    pub additional_flags: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
@@ -50,7 +47,6 @@ pub struct DestinationResponseDto {
     pub bucket: String,
     pub region: String,
     pub endpoint: String,
-    pub additional_flags: Option<String>,
     pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
@@ -67,7 +63,6 @@ impl From<Destination> for DestinationResponseDto {
             bucket: val.bucket,
             region: val.region,
             endpoint: val.endpoint,
-            additional_flags: val.additional_flags,
             organization_id: val.organization_id,
             created_at: val.created_at,
             updated_at: val.updated_at,

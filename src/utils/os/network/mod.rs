@@ -17,6 +17,13 @@ impl<'a> NetworkCli<'a> {
             vec!["-o".to_string(), "link".to_string(), "show".to_string()],
         )
     }
+    pub fn ipv4_addresses(&self) -> NetworkCommandBuilder<'a> {
+        NetworkCommandBuilder::new(
+            self.executor,
+            "ip",
+            vec!["-4".into(), "-o".into(), "addr".into(), "show".into()],
+        )
+    }
     pub fn ip(&self, interface: impl IntoCommand) -> NetworkCommandBuilder<'a> {
         NetworkCommandBuilder::new(
             self.executor,
@@ -95,6 +102,9 @@ impl<'a> NetworkCli<'a> {
     }
     pub fn listen_ports(&self) -> NetworkCommandBuilder<'a> {
         NetworkCommandBuilder::new(self.executor, "ss", vec!["-tuln".to_string()])
+    }
+    pub fn listen_ports_detailed(&self) -> NetworkCommandBuilder<'a> {
+        NetworkCommandBuilder::new(self.executor, "ss", vec!["-H".into(), "-ltnu".into()])
     }
     pub fn route_table(&self) -> NetworkCommandBuilder<'a> {
         NetworkCommandBuilder::new(

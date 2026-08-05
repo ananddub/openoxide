@@ -31,6 +31,42 @@ pub struct TestRegistryDto {
     pub password: String,
 }
 
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct RotateRegistryCredentialsDto {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RegistryRepositoriesDto {
+    pub repositories: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RegistryTagsDto {
+    pub repository: String,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RegistryUsageDto {
+    pub resource_id: String,
+    pub resource_name: String,
+    pub resource_type: String,
+    pub usage_kind: String,
+}
+
+impl From<crate::db::repository::registries::RegistryUsage> for RegistryUsageDto {
+    fn from(value: crate::db::repository::registries::RegistryUsage) -> Self {
+        Self {
+            resource_id: value.resource_id,
+            resource_name: value.resource_name,
+            resource_type: value.resource_type,
+            usage_kind: value.usage_kind,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
 pub struct RegistryResponseDto {
     pub id: String,

@@ -39,7 +39,12 @@ pub fn parse_cpu_limit(s: &str) -> Option<CpuLimit> {
 }
 
 pub async fn get_total_memory_kb(executor: &CommandExecutor) -> Option<u64> {
-    if let Ok(res) = executor.run("cat", &["/proc/meminfo"]).await {
+    if let Ok(res) = crate::utils::os::OsCli::new(executor)
+        .file("/proc/meminfo")
+        .read()
+        .execute()
+        .await
+    {
         for line in res.stdout.lines() {
             if line.starts_with("MemTotal:") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
@@ -53,12 +58,13 @@ pub async fn get_total_memory_kb(executor: &CommandExecutor) -> Option<u64> {
 }
 
 pub async fn get_cpu_cores(executor: &CommandExecutor) -> Option<f32> {
-    if let Ok(res) = executor.run("nproc", &[] as &[&str]).await {
+    let os = crate::utils::os::OsCli::new(executor);
+    if let Ok(res) = os.system().cpu_count().run().await {
         if let Ok(cores) = res.stdout.trim().parse::<f32>() {
             return Some(cores);
         }
     }
-    if let Ok(res) = executor.run("cat", &["/proc/cpuinfo"]).await {
+    if let Ok(res) = os.file("/proc/cpuinfo").read().execute().await {
         let mut count = 0;
         for line in res.stdout.lines() {
             if line.starts_with("processor") {

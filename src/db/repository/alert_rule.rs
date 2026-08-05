@@ -132,9 +132,20 @@ impl AlertRuleRepository {
         threshold: Option<f64>,
         message: &str,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            .bind(rule_id).bind(organization_id).bind(target_key).bind(state.as_str()).bind(value).bind(threshold).bind(message)
-            .execute(self.pool.as_ref()).await?;
+        let state = state.as_str();
+        sqlx::query!(
+            "INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'RESOLVED' THEN unixepoch() END)",
+            rule_id,
+            organization_id,
+            target_key,
+            state,
+            value,
+            threshold,
+            message,
+            state
+        )
+        .execute(self.pool.as_ref())
+        .await?;
         Ok(())
     }
 
@@ -143,8 +154,14 @@ impl AlertRuleRepository {
         organization_id: i64,
         limit: i64,
     ) -> Result<Vec<AlertEvent>, sqlx::Error> {
-        sqlx::query_as("SELECT id, alert_rule_id, organization_id, target_key, state, value, threshold, message, created_at FROM alert_events WHERE organization_id=? ORDER BY created_at DESC LIMIT ?")
-            .bind(organization_id).bind(limit.clamp(1, 500)).fetch_all(self.pool.as_ref()).await
+        sqlx::query_as!(
+            AlertEvent,
+            r#"SELECT id AS "id!: i64", alert_rule_id AS "alert_rule_id!: i64", organization_id AS "organization_id!: i64", target_key AS "target_key!: String", state AS "state!: String", value, threshold, message AS "message!: String", created_at AS "created_at!: i64", acknowledged_at, acknowledged_by, silenced_until, resolved_at, notification_correlation_id FROM alert_events WHERE organization_id=? ORDER BY created_at DESC LIMIT ?"#,
+            organization_id,
+            limit.clamp(1, 500)
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
     }
 }
 
@@ -159,4 +176,9 @@ pub struct AlertEvent {
     pub threshold: Option<f64>,
     pub message: String,
     pub created_at: i64,
+    pub acknowledged_at: Option<i64>,
+    pub acknowledged_by: Option<i64>,
+    pub silenced_until: Option<i64>,
+    pub resolved_at: Option<i64>,
+    pub notification_correlation_id: Option<String>,
 }

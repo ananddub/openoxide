@@ -1,5 +1,8 @@
 use crate::{
-    api::dto::certificate::{CertificateResponseDto, CreateCertificateDto, PatchCertificateDto},
+    api::dto::certificate::{
+        CertificateRenewalDto, CertificateResponseDto, CreateCertificateDto, PatchCertificateDto,
+        RenewCertificateDto,
+    },
     core::middleware::validator::ValidatedJson,
     services::certificate::CertificateService,
     utils::jwt::claim::Claims,
@@ -86,6 +89,34 @@ impl CertificateController {
             .map(|()| StatusCode::NO_CONTENT)
             .map_err(map_sqlx_error)
     }
+
+    #[post("/{id}/renew")]
+    async fn renew(
+        &self,
+        _claims: Claims,
+        Path(id): Path<i64>,
+        Json(body): Json<RenewCertificateDto>,
+    ) -> Result<Json<CertificateResponseDto>, ApiError> {
+        self.service
+            .renew(id, body)
+            .await
+            .map(CertificateResponseDto::from)
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/renewals")]
+    async fn renewals(
+        &self,
+        _claims: Claims,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Vec<CertificateRenewalDto>>, ApiError> {
+        self.service
+            .renewal_history(id)
+            .await
+            .map(|rows| Json(rows.into_iter().map(Into::into).collect()))
+            .map_err(map_sqlx_error)
+    }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {
@@ -94,6 +125,7 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }
+        sqlx::Error::Protocol(message) => (StatusCode::BAD_REQUEST, message),
         other => {
             tracing::error!(error = %other, "certificate database operation failed");
             (

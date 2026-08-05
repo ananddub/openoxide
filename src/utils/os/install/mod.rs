@@ -30,11 +30,6 @@ impl<'a> ShellInstallerBuilder<'a> {
         self
     }
 
-    pub fn arg(mut self, argument: impl Into<String>) -> Self {
-        self.arguments.push(argument.into());
-        self
-    }
-
     pub async fn run(self) -> ExecResult<()> {
         let temporary = self
             .executor

@@ -26,6 +26,8 @@ use crate::{
 
 type ApiError = (StatusCode, String);
 
+pub mod management;
+
 pub struct ComposeController {
     service: Arc<ComposeService>,
 }

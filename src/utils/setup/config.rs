@@ -73,6 +73,7 @@ pub struct SetupConfig {
     pub monitoring_server_id: Option<i64>,
     pub monitoring_panel_url: Option<String>,
     pub monitoring_token: Option<String>,
+    pub monitoring_retention_days: i64,
 }
 
 impl Default for SetupConfig {
@@ -91,6 +92,7 @@ impl Default for SetupConfig {
             monitoring_server_id: None,
             monitoring_panel_url: None,
             monitoring_token: None,
+            monitoring_retention_days: 7,
         }
     }
 }

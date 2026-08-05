@@ -1,8 +1,8 @@
 use crate::repository::ServerRepository;
 use crate::services::compose::remote::remote_executor;
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
+use crate::utils::os::OsCli;
 use crate::utils::rclone::{builder::RcloneBuilder, command::RcloneCommand, target::RcloneTarget};
-use crate::utils::zip::ZipBuilder;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -58,19 +58,22 @@ pub async fn deploy_zip_to_remote(
         .map_err(|e| format!("Failed to build SSH executor: {e}"))?;
     let cmd = CommandExecutor::Remote(ssh);
 
-    cmd.run("mkdir", &["-p", dest_path])
+    let os = OsCli::new(&cmd);
+    os.dir(dest_path)
+        .create()
+        .run()
         .await
         .map_err(|e| format!("Failed to create remote directory: {e}"))?;
 
-    ZipBuilder::new(&cmd)
-        .source(&remote_zip)
-        .destination(dest_path)
+    os.archive(&remote_zip)
+        .zip()
+        .extract_to(dest_path)
         .overwrite()
-        .unzip()
+        .run()
         .await
         .map_err(|e| format!("Failed to unzip on remote: {e}"))?;
 
-    let _ = cmd.run("rm", &["-f", &remote_zip]).await;
+    let _ = os.file(&remote_zip).delete().run().await;
 
     Ok(())
 }

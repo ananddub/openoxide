@@ -17,8 +17,55 @@ pub struct DeploymentClaim {
     pub operation: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ApplicationRunningDeployment {
+    pub id: i64,
+    pub server_id: Option<i64>,
+    pub pid: Option<String>,
+}
+
 #[singleton]
 impl DeploymentRepository {
+    pub async fn running_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Option<ApplicationRunningDeployment>, sqlx::Error> {
+        sqlx::query_as!(
+            ApplicationRunningDeployment,
+            r#"SELECT id AS "id!: i64", server_id AS "server_id?: i64", pid AS "pid?: String"
+               FROM deployments
+               WHERE application_id = ? AND status = 'RUNNING'
+               ORDER BY id DESC LIMIT 1"#,
+            application_id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn create_running_deployment(
+        &self,
+        title: &str,
+        description: Option<&str>,
+        operation: &str,
+        application_id: i64,
+        server_id: Option<i64>,
+    ) -> Result<i64, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"INSERT INTO deployments
+               (title, description, status, state, log_path, operation, application_id,
+                server_id, started_at, last_state_at)
+               VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, strftime('%s', 'now'), strftime('%s', 'now'))"#,
+            title,
+            description,
+            operation,
+            application_id,
+            server_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.last_insert_rowid())
+    }
+
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
     }
@@ -112,6 +159,78 @@ impl DeploymentRepository {
         .fetch_one(self.pool.as_ref())
         .await?;
         Ok(res != 0)
+    }
+
+    pub async fn list_finished_ids_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM deployments
+               WHERE application_id = ? AND status NOT IN ('QUEUED', 'RUNNING')
+               ORDER BY id"#,
+            application_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn delete_finished_for_application(
+        &self,
+        application_id: i64,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"DELETE FROM deployments
+               WHERE application_id = ? AND status NOT IN ('QUEUED', 'RUNNING')"#,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    pub async fn cancel_queued_for_application_count(
+        &self,
+        application_id: i64,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"UPDATE deployments
+               SET status = 'CANCELLED', state = 'CANCELLED',
+                   finished_at = strftime('%s', 'now'),
+                   last_state_at = strftime('%s', 'now')
+               WHERE application_id = ? AND status = 'QUEUED'"#,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    pub async fn list_finished_ids_for_compose(
+        &self,
+        compose_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar!(r#"SELECT id AS "id!: i64" FROM deployments WHERE compose_id = ? AND status NOT IN ('QUEUED', 'RUNNING') ORDER BY id"#, compose_id)
+            .fetch_all(self.pool.as_ref()).await
+    }
+
+    pub async fn delete_finished_for_compose(&self, compose_id: i64) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
+            "DELETE FROM deployments WHERE compose_id = ? AND status NOT IN ('QUEUED', 'RUNNING')",
+            compose_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected())
+    }
+
+    pub async fn cancel_queued_for_compose_count(
+        &self,
+        compose_id: i64,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(r#"UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = strftime('%s', 'now'), last_state_at = strftime('%s', 'now') WHERE compose_id = ? AND status = 'QUEUED'"#, compose_id)
+            .execute(self.pool.as_ref()).await?;
+        Ok(result.rows_affected())
     }
 
     pub async fn create_queued_deployment(
@@ -246,6 +365,16 @@ impl DeploymentRepository {
                 .execute(&mut *tx)
                 .await?;
         }
+        sqlx::query!(
+            r#"UPDATE preview_deployments
+               SET status = CASE WHEN ? = 'DONE' THEN 'ACTIVE' ELSE 'ERROR' END,
+                   updated_at = strftime('%s', 'now')
+               WHERE last_deployment_id = ? AND status != 'CLOSED'"#,
+            deployment_status,
+            id
+        )
+        .execute(&mut *tx)
+        .await?;
         tx.commit().await
     }
 

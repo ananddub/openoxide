@@ -4,6 +4,34 @@ use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RcloneListFormat {
+    PathSizeModified,
+}
+
+impl RcloneListFormat {
+    const fn value(self) -> &'static str {
+        match self {
+            Self::PathSizeModified => "pst",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RcloneSeparator {
+    Tab,
+    Comma,
+}
+
+impl RcloneSeparator {
+    const fn value(self) -> &'static str {
+        match self {
+            Self::Tab => "\t",
+            Self::Comma => ",",
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct RcloneBuilder {
     command: RcloneCommand,
@@ -38,8 +66,10 @@ pub struct RcloneBuilder {
     log_level: Option<String>,
     stats: Option<String>,
 
-    // Extensibility
-    additional_flags: Vec<String>,
+    recursive: bool,
+    files_only: bool,
+    list_format: Option<RcloneListFormat>,
+    separator: Option<RcloneSeparator>,
 }
 
 impl RcloneBuilder {
@@ -68,7 +98,10 @@ impl RcloneBuilder {
             log_file: None,
             log_level: None,
             stats: None,
-            additional_flags: Vec::new(),
+            recursive: false,
+            files_only: false,
+            list_format: None,
+            separator: None,
         }
     }
 
@@ -182,8 +215,23 @@ impl RcloneBuilder {
         self
     }
 
-    pub fn arg(mut self, arg: impl Into<String>) -> Self {
-        self.additional_flags.push(arg.into());
+    pub fn recursive(mut self) -> Self {
+        self.recursive = true;
+        self
+    }
+
+    pub fn files_only(mut self) -> Self {
+        self.files_only = true;
+        self
+    }
+
+    pub fn list_format(mut self, format: RcloneListFormat) -> Self {
+        self.list_format = Some(format);
+        self
+    }
+
+    pub fn separator(mut self, separator: RcloneSeparator) -> Self {
+        self.separator = Some(separator);
         self
     }
 
@@ -257,7 +305,18 @@ impl RcloneBuilder {
             args.push(format!("--stats={}", st));
         }
 
-        args.extend(self.additional_flags);
+        if self.recursive {
+            args.push("--recursive".into());
+        }
+        if self.files_only {
+            args.push("--files-only".into());
+        }
+        if let Some(format) = self.list_format {
+            args.push(format!("--format={}", format.value()));
+        }
+        if let Some(separator) = self.separator {
+            args.push(format!("--separator={}", separator.value()));
+        }
 
         if let Some(ref src) = self.source {
             let (target_path, target_envs) = src.compile("src");

@@ -102,6 +102,18 @@ impl ApplicationService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        let previews =
+            auto_di::resolve::<crate::services::preview_deployment::PreviewDeploymentService>()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        previews
+            .ensure_application_can_be_deleted(id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        previews
+            .remove_for_base_application(id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
         self.repo_app.delete(id).await?;
         self.cache.invalidate(&CacheKey::Application(id)).await;
         Ok(())

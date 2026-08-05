@@ -70,7 +70,7 @@ impl<'a> ProviderSyncBuilder<'a> {
         // 1. Then branch (if .git exists)
         let mut then_branch = ScriptPipeline::new().cmd(git.remote().set_url("origin", &self.url));
 
-        let mut fetch = git.fetch().prune().remote("origin").arg(branch);
+        let mut fetch = git.fetch().prune().remote("origin").refspec(branch);
         if let Some(auth) = &self.auth {
             fetch = fetch.auth(auth.clone());
         }
@@ -139,7 +139,13 @@ impl<'a> ProviderSyncBuilder<'a> {
 
         // Print context messages if present
         if let Some(ctx) = self.ctx {
-            if executor.run("test", ["-d", &git_dir]).await.is_ok() {
+            if crate::utils::os::OsCli::new(&executor)
+                .dir(&git_dir)
+                .exists()
+                .run()
+                .await
+                .is_ok()
+            {
                 ctx.emit(BuilderEvent::Message(format!(
                     "fetching source {} branch {} into {}",
                     self.url, branch, self.destination

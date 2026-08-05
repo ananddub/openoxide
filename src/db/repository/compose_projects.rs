@@ -151,6 +151,60 @@ impl ComposeProjectRepository {
         Ok(())
     }
 
+    pub async fn update_compose_file(
+        &self,
+        id: i64,
+        compose_file: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE compose_projects SET compose_file = ?, source_type = 'RAW', updated_at = strftime('%s', 'now') WHERE id = ?",
+            compose_file,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
+
+    pub async fn move_to_environment_in_same_organization(
+        &self,
+        id: i64,
+        target_environment_id: i64,
+    ) -> Result<Option<ComposeProject>, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"UPDATE compose_projects
+               SET environment_id = ?, updated_at = strftime('%s', 'now')
+               WHERE id = ? AND EXISTS (
+                 SELECT 1 FROM environments source_environment
+                 JOIN projects source_project ON source_project.id = source_environment.project_id
+                 JOIN environments target_environment ON target_environment.id = ?
+                 JOIN projects target_project ON target_project.id = target_environment.project_id
+                 WHERE source_environment.id = compose_projects.environment_id
+                   AND source_project.organization_id = target_project.organization_id
+               )"#,
+            target_environment_id,
+            id,
+            target_environment_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        if result.rows_affected() == 0 {
+            return Ok(None);
+        }
+        self.get_by_id(id).await
+    }
+
+    pub async fn rotate_refresh_token(&self, id: i64, token: &str) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE compose_projects SET refresh_token = ?, updated_at = strftime('%s', 'now') WHERE id = ?",
+            token,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
     pub async fn list_by_environment(
         &self,
         environment_id: i64,
@@ -456,10 +510,12 @@ impl ComposeProjectRepository {
     }
 
     pub async fn get_spec_row(&self, compose_id: i64) -> Result<ComposeRow, sqlx::Error> {
-        sqlx::query_as::<_, ComposeRow>(
+        sqlx::query_as!(
+            ComposeRow,
             r#"SELECT
                c.app_name, c.source_type, c.compose_type, c.compose_file, c.env_var,
-               c.service_networks,
+               c.service_networks, c.randomize, c.suffix, c.isolated_deployment,
+               c.isolated_deployments_volume,
                c.repository, c.owner, c.branch, c.gitlab_repository, c.gitlab_owner,
                c.gitlab_branch, c.gitea_repository, c.gitea_branch, c.bitbucket_repository,
                c.bitbucket_owner, c.bitbucket_branch, c.custom_git_url, c.custom_git_branch,
@@ -479,8 +535,8 @@ impl ComposeProjectRepository {
                LEFT JOIN gitea_providers gtp ON gtp.id = c.gitea_provider_id
                LEFT JOIN ssh_keys sk ON sk.id = c.custom_git_ssh_key_id
                WHERE c.id = ?"#,
+            compose_id
         )
-        .bind(compose_id)
         .fetch_one(self.pool.as_ref())
         .await
     }

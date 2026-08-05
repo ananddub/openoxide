@@ -4,9 +4,10 @@ use std::sync::Arc;
 
 use crate::{
     api::dto::traefik::{
-        TraefikFileContentDto, TraefikFileNodeDto, TraefikFileQueryDto, TraefikFileTreeNodeDto,
-        TraefikHealthResponseDto, TraefikRequestsStatusDto, TraefikStatsLogsQueryDto,
-        TraefikStatsLogsResponseDto, TraefikToggleRequestsDto, TraefikWriteFileDto,
+        StructuredMiddlewareDto, StructuredMiddlewareResponseDto, TraefikFileContentDto,
+        TraefikFileNodeDto, TraefikFileQueryDto, TraefikFileTreeNodeDto, TraefikHealthResponseDto,
+        TraefikRequestsStatusDto, TraefikStatsLogsQueryDto, TraefikStatsLogsResponseDto,
+        TraefikToggleRequestsDto, TraefikVersionDto, TraefikWriteFileDto, UpdateTraefikVersionDto,
     },
     core::middleware::permission::{
         RequirePermission, TraefikReadPermission, TraefikWritePermission,
@@ -148,5 +149,42 @@ impl TraefikController {
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
         Ok(Json(logs))
+    }
+
+    #[get("/version")]
+    async fn version(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        Query(params): Query<TraefikFileQueryDto>,
+    ) -> Result<Json<TraefikVersionDto>, ApiError> {
+        self.service
+            .version(params.server_id)
+            .await
+            .map(Json)
+            .map_err(|error| (StatusCode::BAD_GATEWAY, error))
+    }
+
+    #[post("/version")]
+    async fn update_version(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        Json(body): Json<UpdateTraefikVersionDto>,
+    ) -> Result<Json<TraefikVersionDto>, ApiError> {
+        self.service
+            .update_version(body)
+            .await
+            .map(Json)
+            .map_err(|error| (StatusCode::BAD_GATEWAY, error))
+    }
+
+    #[post("/middlewares/render")]
+    async fn render_middleware(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        Json(body): Json<StructuredMiddlewareDto>,
+    ) -> Result<Json<StructuredMiddlewareResponseDto>, ApiError> {
+        TraefikService::structured_middleware(body)
+            .map(Json)
+            .map_err(|error| (StatusCode::BAD_REQUEST, error))
     }
 }

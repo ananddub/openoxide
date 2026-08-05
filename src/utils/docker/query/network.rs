@@ -130,10 +130,6 @@ impl<'a> NetworkCreate<'a> {
         self.scope = Some(s.to_string());
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.extra.push(v.into());
-        self
-    }
 
     fn build_args(&self) -> Vec<String> {
         let mut a = vec!["network".to_string(), "create".to_string()];

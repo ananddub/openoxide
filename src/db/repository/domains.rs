@@ -9,6 +9,37 @@ pub struct DomainRepository {
 
 #[singleton]
 impl DomainRepository {
+    pub async fn route_in_use(
+        &self,
+        host: &str,
+        path: &str,
+        exclude_id: Option<i64>,
+    ) -> Result<bool, sqlx::Error> {
+        Ok(sqlx::query_scalar!(
+            r#"SELECT COUNT(*) AS "count!: i64"
+               FROM domains
+               WHERE lower(trim(host, '.')) = lower(trim(?, '.'))
+                 AND COALESCE(NULLIF(rtrim(path, '/'), ''), '/') = ?
+                 AND (? IS NULL OR id != ?)"#,
+            host,
+            path,
+            exclude_id,
+            exclude_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?
+            > 0)
+    }
+
+    pub async fn host_in_use(&self, host: &str) -> Result<bool, sqlx::Error> {
+        Ok(sqlx::query_scalar!(
+            r#"SELECT COUNT(*) AS "count!: i64" FROM domains WHERE lower(host) = lower(?)"#,
+            host
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?
+            > 0)
+    }
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
     }

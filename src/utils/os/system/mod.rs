@@ -18,6 +18,9 @@ impl<'a> SystemCli<'a> {
     pub fn hostname(&self) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "hostname", vec![])
     }
+    pub fn host_addresses(&self) -> SystemCommandBuilder<'a> {
+        SystemCommandBuilder::new(self.executor, "hostname", vec!["-I".into()])
+    }
     pub fn set_hostname(&self, name: impl IntoCommand) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "hostname", vec![name.build_str()])
     }
@@ -38,6 +41,12 @@ impl<'a> SystemCli<'a> {
     }
     pub fn which(&self, bin: impl IntoCommand) -> SystemCommandBuilder<'a> {
         SystemCommandBuilder::new(self.executor, "which", vec![bin.build_str()])
+    }
+    pub fn tool_version(&self, bin: impl IntoCommand) -> SystemCommandBuilder<'a> {
+        SystemCommandBuilder::new(self.executor, &bin.build_str(), vec!["--version".into()])
+    }
+    pub fn current_groups(&self) -> SystemCommandBuilder<'a> {
+        SystemCommandBuilder::new(self.executor, "groups", vec![])
     }
     pub fn has_command(&self, bin: impl IntoCommand) -> CommandExistsBuilder<'a> {
         CommandExistsBuilder::new(self.executor, bin)

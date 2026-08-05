@@ -1,11 +1,12 @@
 use crate::utils::exec::script::IntoCommand;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
+use crate::utils::os::firewall::NetworkProtocol;
 
 pub struct FirewallAllowBuilder<'a> {
     executor: &'a CommandExecutor,
     port: String,
-    proto: Option<String>,
+    proto: Option<NetworkProtocol>,
     from_ip: Option<String>,
 }
 
@@ -18,8 +19,8 @@ impl<'a> FirewallAllowBuilder<'a> {
             from_ip: None,
         }
     }
-    pub fn proto(mut self, proto: impl Into<String>) -> Self {
-        self.proto = Some(proto.into());
+    pub fn protocol(mut self, protocol: NetworkProtocol) -> Self {
+        self.proto = Some(protocol);
         self
     }
     pub fn from_ip(mut self, ip: impl Into<String>) -> Self {
@@ -36,14 +37,14 @@ impl<'a> FirewallAllowBuilder<'a> {
             args.push("any".to_string());
             args.push("port".to_string());
             let port_str = if let Some(ref p) = self.proto {
-                format!("{}/{}", self.port, p)
+                format!("{}/{}", self.port, p.as_str())
             } else {
                 self.port.clone()
             };
             args.push(port_str);
         } else {
             let port_str = if let Some(ref p) = self.proto {
-                format!("{}/{}", self.port, p)
+                format!("{}/{}", self.port, p.as_str())
             } else {
                 self.port.clone()
             };
@@ -63,14 +64,14 @@ impl<'a> IntoCommand for FirewallAllowBuilder<'a> {
             parts.push("any".to_string());
             parts.push("port".to_string());
             let port_str = if let Some(ref p) = self.proto {
-                format!("{}/{}", self.port, p)
+                format!("{}/{}", self.port, p.as_str())
             } else {
                 self.port.clone()
             };
             parts.push(escape_arg(port_str));
         } else {
             let port_str = if let Some(ref p) = self.proto {
-                format!("{}/{}", self.port, p)
+                format!("{}/{}", self.port, p.as_str())
             } else {
                 self.port.clone()
             };

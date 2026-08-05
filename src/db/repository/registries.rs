@@ -73,4 +73,22 @@ impl RegistryRepository {
             .await?;
         Ok(())
     }
+
+    pub async fn usage_references(&self, id: i64) -> Result<Vec<RegistryUsage>, sqlx::Error> {
+        sqlx::query_as!(
+            RegistryUsage,
+            r#"SELECT id AS "resource_id!: String", name AS "resource_name!: String", 'APPLICATION' AS "resource_type!: String", 'DEPLOY' AS "usage_kind!: String" FROM applications WHERE registry_id=?
+               UNION ALL SELECT id AS "resource_id!: String", name AS "resource_name!: String", 'APPLICATION' AS "resource_type!: String", 'ROLLBACK' AS "usage_kind!: String" FROM applications WHERE rollback_registry_id=?
+               UNION ALL SELECT id AS "resource_id!: String", name AS "resource_name!: String", 'APPLICATION' AS "resource_type!: String", 'BUILD' AS "usage_kind!: String" FROM applications WHERE build_registry_id=?"#,
+            id, id, id
+        ).fetch_all(self.pool.as_ref()).await
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, sqlx::FromRow)]
+pub struct RegistryUsage {
+    pub resource_id: String,
+    pub resource_name: String,
+    pub resource_type: String,
+    pub usage_kind: String,
 }

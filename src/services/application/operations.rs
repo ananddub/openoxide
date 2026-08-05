@@ -28,6 +28,11 @@ impl ApplicationService {
             .await?;
 
         let app = self.get_by_id(id).await?;
+        resolve::<crate::repository::ServerManagementRepository>()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+            .assert_deployable(app.server_id)
+            .await?;
 
         let log_path = format!("pending-app-{}", id);
         let deployment_id = self

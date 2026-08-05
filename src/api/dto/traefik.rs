@@ -88,3 +88,44 @@ pub struct TraefikStatsLogsResponseDto {
     pub page: usize,
     pub page_size: usize,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+pub struct TraefikVersionDto {
+    pub server_id: Option<i64>,
+    pub current_image: String,
+    pub desired_version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+pub struct UpdateTraefikVersionDto {
+    pub server_id: Option<i64>,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+pub struct StructuredMiddlewareDto {
+    pub kind: StructuredMiddlewareKind,
+    pub name: String,
+    pub values: std::collections::BTreeMap<String, String>,
+    pub list: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum StructuredMiddlewareKind {
+    StripPrefix,
+    AddPrefix,
+    RedirectScheme,
+    Compress,
+    RateLimit,
+    IpAllowList,
+    RequestHeaders,
+    ResponseHeaders,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+pub struct StructuredMiddlewareResponseDto {
+    pub reference: String,
+    pub labels: std::collections::BTreeMap<String, String>,
+}

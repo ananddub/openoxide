@@ -61,6 +61,7 @@ impl AlertEngine {
                     rule_id: rule.id,
                     rule_name: rule.name.clone(),
                     target_key: reading.key.clone(),
+                    target_kind: reading.kind,
                     target_display: reading.display_name.clone(),
                     metric_label: rule.metric.label(),
                     operator_symbol: rule.operator.symbol(),

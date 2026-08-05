@@ -2,7 +2,17 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::api::dto::database::parse_json_string_vec;
+use crate::db::models::rollbacks::Rollback;
 use crate::services::application::ApplicationRecord;
+
+pub mod import_export;
+pub mod middleware;
+pub mod mount;
+pub mod network;
+pub mod patch;
+pub mod port;
+pub mod redirect;
+pub mod security;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateApplicationDto {
@@ -33,6 +43,12 @@ pub struct PatchApplicationDto {
     pub registry_id: Option<i64>,
     pub network_ids: Option<Vec<String>>,
     pub detach_rustploy_network: Option<i64>,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct MoveApplicationDto {
+    #[validate(range(min = 1))]
+    pub target_environment_id: i64,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -140,6 +156,27 @@ pub struct PatchResourceConfigDto {
     pub replicas: Option<i64>,
 }
 
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct PatchPreviewConfigDto {
+    pub preview_env: Option<String>,
+    pub preview_build_args: Option<String>,
+    pub preview_build_secrets: Option<String>,
+    pub preview_labels: Option<String>,
+    #[validate(length(min = 1, max = 253))]
+    pub preview_wildcard: Option<String>,
+    #[validate(range(min = 1, max = 65535))]
+    pub preview_port: i64,
+    pub preview_https: bool,
+    #[validate(length(min = 1, max = 255))]
+    pub preview_path: String,
+    pub preview_certificate_type: crate::utils::traefik::types::CertificateType,
+    pub preview_custom_cert_resolver: Option<String>,
+    #[validate(range(min = 1, max = 20))]
+    pub preview_limit: i64,
+    pub active: bool,
+    pub require_collaborator_permissions: bool,
+}
+
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
 pub struct ApplicationResponseDto {
     pub id: i64,
@@ -174,6 +211,19 @@ pub struct ApplicationResponseDto {
     pub registry_url: Option<String>,
     pub custom_git_url: Option<String>,
     pub custom_git_branch: Option<String>,
+    pub preview_env: Option<String>,
+    pub preview_build_args: Option<String>,
+    pub preview_build_secrets: Option<String>,
+    pub preview_labels: Option<String>,
+    pub preview_wildcard: Option<String>,
+    pub preview_port: Option<i64>,
+    pub preview_https: bool,
+    pub preview_path: Option<String>,
+    pub preview_certificate_type: String,
+    pub preview_custom_cert_resolver: Option<String>,
+    pub preview_limit: Option<i64>,
+    pub preview_deployments_active: bool,
+    pub preview_require_collaborator_permissions: bool,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
     pub cpu_reservation: Option<String>,
@@ -218,6 +268,20 @@ impl From<ApplicationRecord> for ApplicationResponseDto {
             registry_url: value.registry_url,
             custom_git_url: value.custom_git_url,
             custom_git_branch: value.custom_git_branch,
+            preview_env: value.preview_env,
+            preview_build_args: value.preview_build_args,
+            preview_build_secrets: value.preview_build_secrets,
+            preview_labels: value.preview_labels,
+            preview_wildcard: value.preview_wildcard,
+            preview_port: value.preview_port,
+            preview_https: value.preview_https,
+            preview_path: value.preview_path,
+            preview_certificate_type: value.preview_certificate_type,
+            preview_custom_cert_resolver: value.preview_custom_cert_resolver,
+            preview_limit: value.preview_limit,
+            preview_deployments_active: value.preview_deployments_active,
+            preview_require_collaborator_permissions: value
+                .preview_require_collaborator_permissions,
             memory_reservation: value.memory_reservation,
             memory_limit: value.memory_limit,
             cpu_reservation: value.cpu_reservation,
@@ -234,6 +298,51 @@ pub struct ApplicationOperationResponseDto {
     pub application: ApplicationResponseDto,
     pub deployment_id: Option<i64>,
     pub operation: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ApplicationWebhookTokenResponseDto {
+    pub token: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ApplicationCleanupResponseDto {
+    pub affected: i64,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ApplicationRollbackResponseDto {
+    pub id: i64,
+    pub deployment_id: i64,
+    pub version: i64,
+    pub image: Option<String>,
+    pub has_context: bool,
+    pub created_at: i64,
+}
+
+impl From<Rollback> for ApplicationRollbackResponseDto {
+    fn from(value: Rollback) -> Self {
+        Self {
+            id: value.id.unwrap_or_default(),
+            deployment_id: value.deployment_id,
+            version: value.version,
+            image: value.image,
+            has_context: value.full_context.is_some(),
+            created_at: value.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ApplicationRollbackTriggerResponseDto {
+    pub deployment_id: i64,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ApplicationForceKillResponseDto {
+    pub deployment_id: i64,
+    pub status: String,
 }
 
 fn default_source_type() -> String {

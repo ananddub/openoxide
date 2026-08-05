@@ -73,10 +73,6 @@ impl<'a> BuildBuilder<'a> {
         self.args.pair("--progress", p.as_str());
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub fn print(&self) -> String {
         let mut a = ArgBuilder::cmd(&["image", "build"]);

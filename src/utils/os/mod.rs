@@ -91,6 +91,24 @@ impl<'a> OsCli<'a> {
             executor: self.executor,
         }
     }
+    pub fn archive(&self, path: impl IntoCommand) -> archive::ArchiveBuilder<'a> {
+        archive::ArchiveBuilder::new(self.executor, path)
+    }
+    pub fn crypto(&self) -> crypto::CryptoCli<'a> {
+        crypto::CryptoCli {
+            executor: self.executor,
+        }
+    }
+    pub fn gpu(&self) -> gpu::GpuCli<'a> {
+        gpu::GpuCli {
+            executor: self.executor,
+        }
+    }
+    pub fn diagnostics(&self) -> diagnostics::DiagnosticsCli<'a> {
+        diagnostics::DiagnosticsCli {
+            executor: self.executor,
+        }
+    }
 
     // Direct methods for zero-boilerplate usage
     pub fn file(&self, path: impl IntoCommand) -> file::FileBuilder<'a> {
@@ -362,11 +380,15 @@ pub(crate) fn escape_arg(c: impl AsRef<str>) -> String {
 }
 
 // Submodules
+pub mod archive;
+pub mod crypto;
+pub mod diagnostics;
 pub mod dir;
 pub mod disk;
 pub mod env;
 pub mod file;
 pub mod firewall;
+pub mod gpu;
 pub mod http;
 pub mod install;
 pub mod lock;

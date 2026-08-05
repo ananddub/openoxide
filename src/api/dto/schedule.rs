@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+use crate::services::schedule::types::{
+    ConcurrencyPolicy, MissedRunPolicy, ScheduleExecutionStatus, ScheduleTriggerKind,
+};
 use crate::{db::models::schedules::Schedule, services::schedule::ScheduleRunResult};
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -121,6 +124,89 @@ impl From<ScheduleRunResult> for ScheduleRunResponseDto {
             schedule: ScheduleResponseDto::from(value.schedule),
             action: value.action,
             deployment_id: value.deployment_id,
+            message: value.message,
+            stdout: value.stdout,
+            stderr: value.stderr,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+pub struct UpdateScheduleRuntimePolicyDto {
+    pub retry_count: i64,
+    pub retry_delay_seconds: i64,
+    pub missed_run_policy: MissedRunPolicy,
+    pub concurrency_policy: ConcurrencyPolicy,
+    pub lease_seconds: i64,
+    pub notify_on_success: bool,
+    pub notify_on_failure: bool,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ScheduleRuntimePolicyDto {
+    pub schedule_id: i64,
+    pub retry_count: i64,
+    pub retry_delay_seconds: i64,
+    pub missed_run_policy: MissedRunPolicy,
+    pub concurrency_policy: ConcurrencyPolicy,
+    pub lease_seconds: i64,
+    pub notify_on_success: bool,
+    pub notify_on_failure: bool,
+    pub last_scheduled_at: Option<i64>,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ScheduleExecutionDto {
+    pub id: i64,
+    pub schedule_id: i64,
+    pub organization_id: Option<i64>,
+    pub trigger_kind: ScheduleTriggerKind,
+    pub status: ScheduleExecutionStatus,
+    pub attempt: i64,
+    pub scheduled_at: i64,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+    pub message: Option<String>,
+    pub stdout: Option<String>,
+    pub stderr: Option<String>,
+}
+
+impl From<crate::db::repository::schedule_runtime::ScheduleRuntimePolicy>
+    for ScheduleRuntimePolicyDto
+{
+    fn from(value: crate::db::repository::schedule_runtime::ScheduleRuntimePolicy) -> Self {
+        Self {
+            schedule_id: value.schedule_id,
+            retry_count: value.retry_count,
+            retry_delay_seconds: value.retry_delay_seconds,
+            missed_run_policy: MissedRunPolicy::try_from(value.missed_run_policy.as_str())
+                .expect("database enforces missed run policy"),
+            concurrency_policy: ConcurrencyPolicy::try_from(value.concurrency_policy.as_str())
+                .expect("database enforces concurrency policy"),
+            lease_seconds: value.lease_seconds,
+            notify_on_success: value.notify_on_success != 0,
+            notify_on_failure: value.notify_on_failure != 0,
+            last_scheduled_at: value.last_scheduled_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<crate::db::repository::schedule_runtime::ScheduleExecution> for ScheduleExecutionDto {
+    fn from(value: crate::db::repository::schedule_runtime::ScheduleExecution) -> Self {
+        Self {
+            id: value.id,
+            schedule_id: value.schedule_id,
+            organization_id: value.organization_id,
+            trigger_kind: ScheduleTriggerKind::try_from(value.trigger_kind.as_str())
+                .expect("database enforces schedule trigger"),
+            status: ScheduleExecutionStatus::try_from(value.status.as_str())
+                .expect("database enforces execution status"),
+            attempt: value.attempt,
+            scheduled_at: value.scheduled_at,
+            started_at: value.started_at,
+            finished_at: value.finished_at,
             message: value.message,
             stdout: value.stdout,
             stderr: value.stderr,

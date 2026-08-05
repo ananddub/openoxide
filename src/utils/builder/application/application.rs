@@ -55,6 +55,7 @@ impl ApplicationBuilder {
         self.ctx.emit(BuilderEvent::Preparing).await;
         self.ctx.cancelled(cancel)?;
         self.prepare_source(spec, cancel).await?;
+        self.apply_patches(spec, cancel).await?;
         self.ctx.emit(BuilderEvent::SourceReady).await;
 
         self.ctx.cancelled(cancel)?;

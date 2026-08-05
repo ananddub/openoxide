@@ -61,7 +61,14 @@ pub async fn save_multipart_to_file(
 }
 
 pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), String> {
-    crate::utils::zip::sanitize_zip(input, output)
+    let executor =
+        crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
+    crate::utils::os::OsCli::new(&executor)
+        .archive(input)
+        .zip()
+        .sanitize()
+        .to(output)
+        .run()
         .await
         .map_err(|e| format!("ZIP validation error: {e}"))
 }

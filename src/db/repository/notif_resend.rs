@@ -63,4 +63,21 @@ impl NotifResendRepository {
             .await?;
         Ok(())
     }
+
+    pub async fn find_for_user(&self, user_id: i64) -> Result<Option<NotifResend>, sqlx::Error> {
+        sqlx::query_as!(
+            NotifResend,
+            r#"SELECT e.id AS "id?: i64", e.api_key AS "api_key: String", e.from_address AS "from_address: String", e.to_addresses AS "to_addresses: String"
+               FROM notif_resend e
+               JOIN notifications n ON n.resend_id = e.id
+               JOIN organization o ON o.id = n.organization_id
+               LEFT JOIN organization_members m ON m.organization_id = o.id AND m.user_id = ?
+               WHERE o.owner_id = ? OR m.user_id IS NOT NULL
+               ORDER BY n.id LIMIT 1"#,
+            user_id,
+            user_id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
 }

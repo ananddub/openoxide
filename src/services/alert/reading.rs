@@ -17,6 +17,7 @@ pub struct FiredAlert {
     pub rule_id: i64,
     pub rule_name: String,
     pub target_key: String,
+    pub target_kind: TargetKind,
     pub target_display: String,
     pub metric_label: &'static str,
     pub operator_symbol: &'static str,

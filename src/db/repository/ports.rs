@@ -32,6 +32,86 @@ impl PortRepository {
         .await
     }
 
+    pub async fn list_by_application(&self, application_id: i64) -> Result<Vec<Port>, sqlx::Error> {
+        sqlx::query_as!(
+            Port,
+            r#"SELECT id AS "id?: i64", published_port AS "published_port: i64",
+                      target_port AS "target_port: i64", protocol AS "protocol: String",
+                      publish_mode AS "publish_mode: String", application_id AS "application_id: i64",
+                      created_at AS "created_at: i64"
+               FROM ports WHERE application_id = ? ORDER BY id"#,
+            application_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn create_for_application(
+        &self,
+        application_id: i64,
+        published_port: i64,
+        target_port: i64,
+        protocol: &str,
+        publish_mode: &str,
+    ) -> Result<Port, sqlx::Error> {
+        let id = sqlx::query!(
+            r#"INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id)
+               VALUES (?, ?, ?, ?, ?)"#,
+            published_port,
+            target_port,
+            protocol,
+            publish_mode,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?
+        .last_insert_rowid();
+        self.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn update_for_application(
+        &self,
+        id: i64,
+        application_id: i64,
+        published_port: i64,
+        target_port: i64,
+        protocol: &str,
+        publish_mode: &str,
+    ) -> Result<Option<Port>, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"UPDATE ports SET published_port = ?, target_port = ?, protocol = ?, publish_mode = ?
+               WHERE id = ? AND application_id = ?"#,
+            published_port,
+            target_port,
+            protocol,
+            publish_mode,
+            id,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        if result.rows_affected() == 0 {
+            return Ok(None);
+        }
+        self.get_by_id(id).await
+    }
+
+    pub async fn delete_for_application(
+        &self,
+        id: i64,
+        application_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "DELETE FROM ports WHERE id = ? AND application_id = ?",
+            id,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
     pub async fn create(&self, item: &Port) -> Result<i64, sqlx::Error> {
         let _res = sqlx::query!(
             r#"INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id, created_at) VALUES (?, ?, ?, ?, ?, ?)"#,

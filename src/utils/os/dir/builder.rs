@@ -1,4 +1,7 @@
-use super::{DirCreateBuilder, DirDeleteBuilder, DirExistsBuilder, DirWalkBuilder};
+use super::{
+    DirCopyBuilder, DirCreateBuilder, DirDeleteBuilder, DirExistsBuilder, DirRemoveEmptyBuilder,
+    DirWalkBuilder,
+};
 use crate::utils::exec::CommandExecutor;
 use crate::utils::exec::script::IntoCommand;
 
@@ -23,7 +26,13 @@ impl<'a> DirBuilder<'a> {
     pub fn delete(self) -> DirDeleteBuilder<'a> {
         DirDeleteBuilder::new(self.executor, self.path)
     }
+    pub fn copy_to(self, target: impl IntoCommand) -> DirCopyBuilder<'a> {
+        DirCopyBuilder::new(self.executor, self.path, target)
+    }
     pub fn walk(self) -> DirWalkBuilder<'a> {
         DirWalkBuilder::new(self.executor, self.path)
+    }
+    pub fn remove_if_empty(self) -> DirRemoveEmptyBuilder<'a> {
+        DirRemoveEmptyBuilder::new(self.executor, self.path)
     }
 }

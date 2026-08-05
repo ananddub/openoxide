@@ -28,12 +28,6 @@ impl<'a> ServiceCreateBuilder<'a> {
             .pair("--env", format!("{}={}", k.as_ref(), v.as_ref()));
         self
     }
-
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v);
-        self
-    }
-
     pub async fn run(mut self) -> DockerResult<DockerOutput> {
         self.args.push(&self.image);
         self.cli.execute(&self.args).await

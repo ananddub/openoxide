@@ -67,4 +67,61 @@ impl GitProviderRepository {
             .await?;
         Ok(())
     }
+
+    pub async fn rotate_webhook_secret(&self, id: i64, secret: &str) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE git_providers SET webhook_secret = ?, updated_at = strftime('%s', 'now') WHERE id = ?",
+            secret,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    pub async fn has_webhook_secret(&self, id: i64) -> Result<bool, sqlx::Error> {
+        Ok(sqlx::query_scalar!(
+            "SELECT COUNT(*) AS \"count!: i64\" FROM git_providers WHERE id = ? AND webhook_secret IS NOT NULL AND webhook_secret != ''",
+            id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await? > 0)
+    }
+
+    pub async fn webhook_secret(&self, id: i64) -> Result<Option<String>, sqlx::Error> {
+        sqlx::query_scalar!("SELECT webhook_secret FROM git_providers WHERE id = ?", id)
+            .fetch_optional(self.pool.as_ref())
+            .await
+            .map(Option::flatten)
+    }
+
+    pub async fn resource_usage_count(&self, id: i64) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"SELECT
+                (SELECT COUNT(*) FROM applications a
+                 WHERE a.github_provider_id IN (SELECT id FROM github_providers WHERE git_provider_id = ?)
+                    OR a.gitlab_provider_id IN (SELECT id FROM gitlab_providers WHERE git_provider_id = ?)
+                    OR a.gitea_provider_id IN (SELECT id FROM gitea_providers WHERE git_provider_id = ?)
+                    OR a.bitbucket_provider_id IN (SELECT id FROM bitbucket_providers WHERE git_provider_id = ?))
+              + (SELECT COUNT(*) FROM compose_projects c
+                 WHERE c.github_provider_id IN (SELECT id FROM github_providers WHERE git_provider_id = ?)
+                    OR c.gitlab_provider_id IN (SELECT id FROM gitlab_providers WHERE git_provider_id = ?)
+                    OR c.gitea_provider_id IN (SELECT id FROM gitea_providers WHERE git_provider_id = ?)
+                    OR c.bitbucket_provider_id IN (SELECT id FROM bitbucket_providers WHERE git_provider_id = ?)) AS "count!: i64""#,
+            id, id, id, id,
+            id, id, id, id,
+        )
+        .fetch_one(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn delete_if_unused(&self, id: i64) -> Result<bool, sqlx::Error> {
+        if self.resource_usage_count(id).await? > 0 {
+            return Ok(false);
+        }
+        let result = sqlx::query!("DELETE FROM git_providers WHERE id = ?", id)
+            .execute(self.pool.as_ref())
+            .await?;
+        Ok(result.rows_affected() == 1)
+    }
 }

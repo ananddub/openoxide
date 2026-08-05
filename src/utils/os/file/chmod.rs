@@ -1,3 +1,4 @@
+use super::FileMode;
 use crate::utils::exec::script::IntoCommand;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
@@ -5,17 +6,17 @@ use crate::utils::os::escape_arg;
 pub struct FileChmodBuilder<'a> {
     executor: &'a CommandExecutor,
     path: String,
-    mode: String,
+    mode: FileMode,
     recursive: bool,
     reference: Option<String>,
 }
 
 impl<'a> FileChmodBuilder<'a> {
-    pub fn new(executor: &'a CommandExecutor, path: String, mode: impl IntoCommand) -> Self {
+    pub fn new(executor: &'a CommandExecutor, path: String, mode: FileMode) -> Self {
         Self {
             executor,
             path,
-            mode: mode.build_str(),
+            mode,
             recursive: false,
             reference: None,
         }
@@ -37,7 +38,7 @@ impl<'a> FileChmodBuilder<'a> {
         if let Some(ref r) = self.reference {
             args.push(format!("--reference={}", r));
         } else {
-            args.push(self.mode.clone());
+            args.push(self.mode.as_str().to_owned());
         }
         args.push(self.path.clone());
         self.executor.run("chmod", &args).await
@@ -53,7 +54,7 @@ impl<'a> IntoCommand for FileChmodBuilder<'a> {
         if let Some(ref r) = self.reference {
             parts.push(format!("--reference={}", escape_arg(r)));
         } else {
-            parts.push(escape_arg(&self.mode));
+            parts.push(escape_arg(self.mode.as_str()));
         }
         parts.push(escape_arg(&self.path));
         parts.join(" ")

@@ -66,7 +66,6 @@ impl DestinationService {
             bucket: input.bucket,
             region: input.region,
             endpoint: input.endpoint,
-            additional_flags: input.additional_flags,
             organization_id: input.organization_id,
             created_at: 0,
             updated_at: 0,
@@ -105,9 +104,6 @@ impl DestinationService {
         if let Some(v) = input.endpoint {
             current.endpoint = v;
         }
-        if let Some(v) = input.additional_flags {
-            current.additional_flags = Some(v);
-        }
 
         self.repo_dest.update(id_i64, &current).await?;
         self.repo_dest
@@ -134,7 +130,6 @@ impl DestinationService {
             &dest.bucket,
             &dest.region,
             &dest.endpoint,
-            dest.additional_flags.as_deref(),
         )
         .await
     }
@@ -147,7 +142,6 @@ impl DestinationService {
         bucket: &str,
         region: &str,
         endpoint: &str,
-        additional_flags: Option<&str>,
     ) -> Result<(), String> {
         let target = RcloneTarget::S3 {
             provider: provider.to_string(),
@@ -161,17 +155,11 @@ impl DestinationService {
             no_check_bucket: true,
         };
 
-        let mut builder = RcloneBuilder::new(RcloneCommand::Lsf)
+        let builder = RcloneBuilder::new(RcloneCommand::Lsf)
             .source(target)
             .timeout("10s")
             .connect_timeout("5s")
             .retries(1);
-
-        if let Some(flags) = additional_flags {
-            for flag in flags.split_whitespace() {
-                builder = builder.arg(flag);
-            }
-        }
 
         let executor = CommandExecutor::Local(LocalExecutor::new());
         let out = builder

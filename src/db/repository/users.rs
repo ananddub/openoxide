@@ -129,4 +129,15 @@ impl UserRepository {
         .fetch_optional(self.pool.as_ref())
         .await
     }
+
+    pub async fn set_two_factor_enabled(&self, id: i64, enabled: bool) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE users SET two_factor_enable = ? WHERE id = ?",
+            enabled,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(())
+    }
 }

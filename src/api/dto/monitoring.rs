@@ -93,3 +93,48 @@ pub struct MonitoringAgentStatusDto {
     pub agent_version: Option<String>,
     pub state: String,
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct MonitoringPolicyDto {
+    pub organization_id: i64,
+    pub desired_agent_version: Option<String>,
+    pub retention_days: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct UpdateMonitoringPolicyDto {
+    pub desired_agent_version: Option<String>,
+    pub retention_days: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct MonitoringActionDto {
+    pub action: String,
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct CreateMaintenanceWindowDto {
+    pub server_id: Option<i64>,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub reason: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct MaintenanceWindowDto {
+    pub id: i64,
+    pub organization_id: i64,
+    pub server_id: Option<i64>,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub reason: String,
+    pub created_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+pub struct SilenceAlertDto {
+    pub until: i64,
+}

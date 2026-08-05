@@ -174,6 +174,7 @@ impl PostgresRepository {
         sqlx::query_as!(
             PostgresDbDetails,
             r#"SELECT name, app_name, docker_image, database_name, database_user, database_password,
+               postgres_config, replication_role, primary_host, primary_port, replication_user, replication_password,
                external_port, command, args, env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit,
                replicas, network_ids, detach_rustploy_network, environment_id
                FROM postgres_dbs WHERE id = ?"#,
@@ -191,6 +192,12 @@ pub struct PostgresDbDetails {
     pub database_name: String,
     pub database_user: String,
     pub database_password: String,
+    pub postgres_config: String,
+    pub replication_role: String,
+    pub primary_host: Option<String>,
+    pub primary_port: Option<i64>,
+    pub replication_user: Option<String>,
+    pub replication_password: Option<String>,
     pub external_port: Option<i64>,
     pub command: Option<String>,
     pub args: Option<String>,
@@ -203,4 +210,34 @@ pub struct PostgresDbDetails {
     pub network_ids: String,
     pub detach_rustploy_network: i64,
     pub environment_id: i64,
+}
+
+impl PostgresRepository {
+    pub async fn update_advanced_config(
+        &self,
+        id: i64,
+        postgres_config: &str,
+        replication_role: &str,
+        primary_host: Option<&str>,
+        primary_port: Option<i64>,
+        replication_user: Option<&str>,
+        replication_password: Option<&str>,
+    ) -> sqlx::Result<bool> {
+        let result = sqlx::query!(
+            r#"UPDATE postgres_dbs SET postgres_config = ?, replication_role = ?,
+               primary_host = ?, primary_port = ?, replication_user = ?,
+               replication_password = COALESCE(?, replication_password)
+               WHERE id = ?"#,
+            postgres_config,
+            replication_role,
+            primary_host,
+            primary_port,
+            replication_user,
+            replication_password,
+            id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
 }

@@ -2,6 +2,19 @@ use crate::utils::exec::script::IntoCommand;
 use crate::utils::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::escape_arg;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DirWalkOutput {
+    PathSizeModifiedEpoch,
+}
+
+impl DirWalkOutput {
+    const fn format(self) -> &'static str {
+        match self {
+            Self::PathSizeModifiedEpoch => "%p\t%s\t%T@\n",
+        }
+    }
+}
+
 pub struct DirWalkBuilder<'a> {
     executor: &'a CommandExecutor,
     path: String,
@@ -10,7 +23,7 @@ pub struct DirWalkBuilder<'a> {
     min_depth: Option<u32>,
     type_filter: Option<String>,
     name_patterns: Vec<String>,
-    printf_format: Option<String>,
+    output: Option<DirWalkOutput>,
     ignore_errors: bool,
 }
 
@@ -24,7 +37,7 @@ impl<'a> DirWalkBuilder<'a> {
             min_depth: None,
             type_filter: None,
             name_patterns: Vec::new(),
-            printf_format: None,
+            output: None,
             ignore_errors: false,
         }
     }
@@ -60,8 +73,8 @@ impl<'a> DirWalkBuilder<'a> {
         self.name_patterns = values.into_iter().map(Into::into).collect();
         self
     }
-    pub fn printf(mut self, format: impl Into<String>) -> Self {
-        self.printf_format = Some(format.into());
+    pub fn output(mut self, output: DirWalkOutput) -> Self {
+        self.output = Some(output);
         self
     }
     pub fn ignore_errors(mut self) -> Self {
@@ -108,13 +121,16 @@ impl<'a> IntoCommand for DirWalkBuilder<'a> {
                 parts.push("\\)".to_string());
             }
         }
-        if let Some(format) = &self.printf_format {
+        if let Some(output) = self.output {
             parts.push("-printf".to_string());
-            parts.push(escape_arg(format));
+            parts.push(escape_arg(output.format()));
         }
         let mut command = parts.join(" ");
         if self.ignore_errors {
-            command.push_str(" 2>/dev/null || true");
+            command.push_str(&format!(
+                " 2>{} || true",
+                crate::utils::exec::script::dsl::SystemDevice::Null.as_str()
+            ));
         }
         command
     }
@@ -122,7 +138,7 @@ impl<'a> IntoCommand for DirWalkBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::DirWalkBuilder;
+    use super::{DirWalkBuilder, DirWalkOutput};
     use crate::utils::exec::script::IntoCommand;
     use crate::utils::exec::{CommandExecutor, LocalExecutor};
 
@@ -134,7 +150,7 @@ mod tests {
             .max_depth(3)
             .type_file()
             .names(["*.yml", "*.yaml", "*.json"])
-            .printf("%p\t%s\t%T@\n")
+            .output(DirWalkOutput::PathSizeModifiedEpoch)
             .ignore_errors()
             .build_str();
 

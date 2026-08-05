@@ -1,19 +1,31 @@
 use crate::{
-    api::dto::certificate::{CreateCertificateDto, PatchCertificateDto},
+    api::dto::certificate::{CreateCertificateDto, PatchCertificateDto, RenewCertificateDto},
     db::models::certificates::Certificate,
-    db::repository::certificates::CertificateRepository,
+    db::repository::{CertificateRenewalRepository, certificates::CertificateRepository},
 };
 use auto_di::singleton;
 use std::sync::Arc;
 
+use crate::utils::{
+    exec::{CommandExecutor, LocalExecutor},
+    os::OsCli,
+};
+
 pub struct CertificateService {
     repo_cert: Arc<CertificateRepository>,
+    renewals: Arc<CertificateRenewalRepository>,
 }
 
 #[singleton]
 impl CertificateService {
-    fn new(repo_cert: Arc<CertificateRepository>) -> Self {
-        Self { repo_cert }
+    fn new(
+        repo_cert: Arc<CertificateRepository>,
+        renewals: Arc<CertificateRenewalRepository>,
+    ) -> Self {
+        Self {
+            repo_cert,
+            renewals,
+        }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Certificate> {
@@ -94,4 +106,66 @@ impl CertificateService {
         self.get_by_id(id).await?;
         self.repo_cert.delete(id).await
     }
+
+    pub async fn renew(&self, id: i64, input: RenewCertificateDto) -> sqlx::Result<Certificate> {
+        let mut current = self.get_by_id(id).await?;
+        let previous = certificate_expiry(&current.certificate_data).await.ok();
+        let execution = self
+            .renewals
+            .begin(id, current.organization_id, previous)
+            .await?;
+        let new_expiry =
+            match validate_certificate_pair(&input.certificate_data, &input.private_key).await {
+                Ok(expiry) => expiry,
+                Err(error) => {
+                    self.renewals.finish(execution, None, Some(&error)).await?;
+                    return Err(sqlx::Error::Protocol(error));
+                }
+            };
+        current.certificate_data = input.certificate_data;
+        current.private_key = input.private_key;
+        current.updated_at = chrono::Utc::now().timestamp();
+        if let Err(error) = self.repo_cert.update(id, &current).await {
+            let message = error.to_string();
+            self.renewals
+                .finish(execution, None, Some(&message))
+                .await?;
+            return Err(error);
+        }
+        self.renewals
+            .finish(execution, Some(new_expiry), None)
+            .await?;
+        self.get_by_id(id).await
+    }
+
+    pub async fn renewal_history(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<Vec<crate::db::repository::certificate_renewals::CertificateRenewal>> {
+        self.get_by_id(id).await?;
+        self.renewals.list(id).await
+    }
+}
+
+async fn certificate_expiry(certificate: &str) -> Result<i64, String> {
+    let executor = CommandExecutor::Local(LocalExecutor::new());
+    OsCli::new(&executor)
+        .crypto()
+        .certificate(certificate)
+        .expiry()
+        .run()
+        .await
+        .map_err(|error| error.to_string())
+}
+
+async fn validate_certificate_pair(certificate: &str, private_key: &str) -> Result<i64, String> {
+    let executor = CommandExecutor::Local(LocalExecutor::new());
+    OsCli::new(&executor)
+        .crypto()
+        .certificate(certificate)
+        .validate_with_key(private_key)
+        .run()
+        .await
+        .map(|result| result.expires_at)
+        .map_err(|error| error.to_string())
 }

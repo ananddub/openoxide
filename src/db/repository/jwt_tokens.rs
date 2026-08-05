@@ -7,6 +7,14 @@ pub struct JwtTokenRepository {
     pool: Arc<SqlitePool>,
 }
 
+#[derive(Debug, Clone)]
+pub struct AuthSessionRow {
+    pub session_id: String,
+    pub created_at: i64,
+    pub expires_at: Option<i64>,
+    pub active: bool,
+}
+
 #[singleton]
 impl JwtTokenRepository {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
@@ -105,17 +113,61 @@ impl JwtTokenRepository {
         role: String,
         user_id: i64,
         expired_at: i64,
+        session_id: &str,
+        token_kind: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
-            "INSERT INTO jwt_tokens (jti, role, user_id, expired_at) VALUES (?, ?, ?, ?)",
+            "INSERT INTO jwt_tokens (jti, role, user_id, expired_at, session_id, token_kind) VALUES (?, ?, ?, ?, ?, ?)",
             jti,
             role,
             user_id,
-            expired_at
+            expired_at,
+            session_id,
+            token_kind
         )
         .execute(&mut **tx)
         .await?;
         Ok(())
+    }
+
+    pub async fn session_id_for_jti(&self, jti: &str) -> Result<Option<String>, sqlx::Error> {
+        sqlx::query_scalar!("SELECT session_id FROM jwt_tokens WHERE jti = ?", jti)
+            .fetch_optional(self.pool.as_ref())
+            .await
+            .map(Option::flatten)
+    }
+
+    pub async fn list_sessions(&self, user_id: i64) -> Result<Vec<AuthSessionRow>, sqlx::Error> {
+        sqlx::query_as!(
+            AuthSessionRow,
+            r#"SELECT session_id AS "session_id!: String",
+                      MIN(created_at) AS "created_at!: i64",
+                      MAX(expired_at) AS expires_at,
+                      MAX(CASE WHEN is_blacklist = 0 AND expired_at > strftime('%s', 'now') THEN 1 ELSE 0 END) != 0 AS "active!: bool"
+               FROM jwt_tokens
+               WHERE user_id = ? AND session_id IS NOT NULL
+               GROUP BY session_id
+               ORDER BY created_at DESC
+               LIMIT 100"#,
+            user_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn revoke_session(
+        &self,
+        user_id: i64,
+        session_id: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s', 'now') WHERE user_id = ? AND session_id = ? AND is_blacklist = 0",
+            user_id,
+            session_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     pub async fn is_token_active(&self, jti: &str) -> Result<bool, sqlx::Error> {

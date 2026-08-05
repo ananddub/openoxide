@@ -115,4 +115,42 @@ impl RollbackRepository {
         .await?;
         Ok(row + 1)
     }
+
+    pub async fn get_for_application(
+        &self,
+        id: i64,
+        application_id: i64,
+    ) -> Result<Option<Rollback>, sqlx::Error> {
+        sqlx::query_as!(
+            Rollback,
+            r#"SELECT r.id AS "id?: i64", r.deployment_id AS "deployment_id: i64",
+                      r.version AS "version: i64", r.image AS "image?: String",
+                      r.full_context AS "full_context?: String", r.created_at AS "created_at: i64"
+               FROM rollbacks r
+               INNER JOIN deployments d ON d.id = r.deployment_id
+               WHERE r.id = ? AND d.application_id = ?"#,
+            id,
+            application_id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn delete_for_application(
+        &self,
+        id: i64,
+        application_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"DELETE FROM rollbacks
+               WHERE id = ? AND deployment_id IN (
+                   SELECT id FROM deployments WHERE application_id = ?
+               )"#,
+            id,
+            application_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
 }

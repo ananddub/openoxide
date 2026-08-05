@@ -39,7 +39,7 @@ impl<'a> LockAcquireBuilder<'a> {
             "mkdir",
             word![dynamic!(lock_dir), "/rustploy_lock_", dynamic!(name)]
         )
-        .stderr("/dev/null")
+        .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
         .failure()
         {
             sleep(rust!(sleep_seconds.as_str()));

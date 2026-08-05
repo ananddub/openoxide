@@ -28,10 +28,6 @@ impl<'a> AddBuilder<'a> {
         self.args.push(path.into());
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub fn print(&self) -> String {
         self.args.preview()
@@ -77,10 +73,6 @@ impl<'a> CommitBuilder<'a> {
         self.args.flag("--no-edit");
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub fn print(&self) -> String {
         self.args.preview()
@@ -116,10 +108,6 @@ impl<'a> CheckoutBuilder<'a> {
     }
     pub fn force(mut self) -> Self {
         self.args.flag("--force");
-        self
-    }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
         self
     }
 
@@ -222,11 +210,6 @@ impl<'a> RemoteBuilder<'a> {
         self
     }
 
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
-
     pub fn print(&self) -> String {
         self.args.preview()
     }
@@ -265,11 +248,6 @@ impl<'a> ResetBuilder<'a> {
     }
     pub fn commit(mut self, commit: impl Into<String>) -> Self {
         self.args.push(commit.into());
-        self
-    }
-
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
         self
     }
 
@@ -312,11 +290,6 @@ impl<'a> SubmoduleBuilder<'a> {
     pub fn auth(mut self, auth: GitAuth) -> Self {
         let (k, v) = auth.to_config();
         self.args.insert_pair(0, "-c", format!("{}={}", k, v));
-        self
-    }
-
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
         self
     }
 

@@ -59,24 +59,41 @@ impl<'a> IntoCommand for PackageListInstalledBuilder<'a> {
                 PackageManager::Brew => "brew list".to_string(),
             }
         } else {
-            let script = sh!(if cmd("command", "-v", "dpkg").stdout("/dev/null") {
+            let script = sh!(if cmd("command", "-v", "dpkg")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("dpkg", "-l");
-            } else if cmd("command", "-v", "rpm").stdout("/dev/null") {
+            } else if cmd("command", "-v", "rpm")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("rpm", "-qa");
-            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+            } else if cmd("command", "-v", "apk")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apk", "info");
-            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+            } else if cmd("command", "-v", "pacman")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("pacman", "-Q");
-            } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
+            } else if cmd("command", "-v", "xbps-query")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("xbps-query", "-l");
-            } else if cmd("command", "-v", "qlist").stdout("/dev/null") {
+            } else if cmd("command", "-v", "qlist")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("qlist", "-I");
-            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+            } else if cmd("command", "-v", "nix-env")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("nix-env", "-q");
-            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+            } else if cmd("command", "-v", "brew")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("brew", "list");
             } else {
-                echo("No supported package manager found").stderr("/dev/stderr");
+                echo("No supported package manager found")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 cmd("exit", "1");
             });
             script.build_str()

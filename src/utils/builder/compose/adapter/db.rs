@@ -1,4 +1,6 @@
-use crate::repository::{ComposeProjectRepository, DomainRepository, MountRepository};
+use crate::repository::{
+    ComposeProjectRepository, DomainRepository, MountRepository, PatchRepository,
+};
 use crate::utils::builder::compose::spec::{ComposeServiceNetworkSpec, ComposeSpec};
 use auto_di::singleton;
 use serde::Deserialize;
@@ -11,6 +13,7 @@ pub struct ComposeSpecAdapter {
     compose_repo: Arc<ComposeProjectRepository>,
     domain_repo: Arc<DomainRepository>,
     mount_repo: Arc<MountRepository>,
+    patch_repo: Arc<PatchRepository>,
 }
 
 #[singleton]
@@ -19,11 +22,13 @@ impl ComposeSpecAdapter {
         compose_repo: Arc<ComposeProjectRepository>,
         domain_repo: Arc<DomainRepository>,
         mount_repo: Arc<MountRepository>,
+        patch_repo: Arc<PatchRepository>,
     ) -> Self {
         Self {
             compose_repo,
             domain_repo,
             mount_repo,
+            patch_repo,
         }
     }
 
@@ -32,11 +37,13 @@ impl ComposeSpecAdapter {
         let service_networks = resolve_service_networks(&compose.service_networks).await?;
         let domains = self.domain_repo.list_by_compose_raw(compose_id).await?;
         let mounts = self.mount_repo.fetch_for_compose(compose_id).await?;
+        let patches = self.patch_repo.list_by_compose(compose_id).await?;
 
         let data = ComposeRowWithRelations {
             compose,
             domains,
             mounts,
+            patches,
             service_networks,
         };
         ComposeSpec::try_from(data).map_err(|e| sqlx::Error::Protocol(e.to_string()))

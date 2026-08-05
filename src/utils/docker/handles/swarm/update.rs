@@ -29,10 +29,6 @@ impl<'a> SwarmUpdateBuilder<'a> {
         self.args.pair("--dispatcher-heartbeat", duration);
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub async fn run(self) -> DockerResult<DockerOutput> {
         self.cli.execute(&self.args).await

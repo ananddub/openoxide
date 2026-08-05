@@ -208,9 +208,10 @@ impl ApplicationBuilder {
 
         let secret_dir = format!("/tmp/rustploy-secrets-{}", spec.app_name);
         if !spec.build_secrets.is_empty() {
-            self.ctx
-                .executor
-                .run("mkdir", ["-p", secret_dir.as_str()])
+            crate::utils::os::OsCli::new(&self.ctx.executor)
+                .dir(&secret_dir)
+                .create()
+                .run()
                 .await?;
         }
         for (key, value) in &spec.build_secrets {
@@ -240,10 +241,10 @@ impl ApplicationBuilder {
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
 
-        let _ = self
-            .ctx
-            .executor
-            .run("rm", ["-rf", secret_dir.as_str()])
+        let _ = crate::utils::os::OsCli::new(&self.ctx.executor)
+            .dir(&secret_dir)
+            .delete()
+            .run()
             .await;
 
         result.map(|_| ())

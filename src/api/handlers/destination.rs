@@ -140,7 +140,6 @@ impl DestinationController {
                 &body.bucket,
                 &body.region,
                 &body.endpoint,
-                body.additional_flags.as_deref(),
             )
             .await
             .map(|_| StatusCode::OK)

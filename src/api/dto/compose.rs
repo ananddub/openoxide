@@ -3,6 +3,8 @@ use validator::Validate;
 
 use crate::services::compose::{ComposeOperationResult, ComposeRecord};
 
+pub mod management;
+
 #[derive(Debug, Clone, Validate, Deserialize, Serialize, poem_openapi::Object)]
 pub struct ComposeServiceNetworkDto {
     #[validate(length(min = 1, max = 255))]

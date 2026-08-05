@@ -72,3 +72,13 @@ pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(
 
     Ok(())
 }
+
+pub async fn send_email_to(
+    cfg: &NotifEmail,
+    recipient: &str,
+    msg: &NotificationMessage,
+) -> Result<(), String> {
+    let mut targeted = cfg.clone();
+    targeted.to_addresses = serde_json::to_string(&[recipient]).map_err(|e| e.to_string())?;
+    send_email(&targeted, msg).await
+}

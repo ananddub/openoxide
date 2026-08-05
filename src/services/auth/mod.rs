@@ -11,8 +11,10 @@ use crate::{
     api::dto::auth::{AuthResponseDto, LoginDto, SignupDto, UpdateUserDto},
     db::models::users::User,
     repository::{
-        GroupRepository, JwtTokenRepository, OrganizationMemberRepository, OrganizationRepository,
-        UserRepository,
+        EmailVerificationTokenRepository, GroupRepository, JwtTokenRepository,
+        NotifEmailRepository, NotifResendRepository, OrganizationMemberRepository,
+        OrganizationRepository, PasswordResetTokenRepository, PersonalAccessTokenRepository,
+        TwoFactorRepository, UserRepository,
     },
     utils::jwt::{
         claim::{Claims, JwtSubject},
@@ -21,10 +23,21 @@ use crate::{
     },
 };
 
+pub mod api_tokens;
+pub mod email_verification;
+pub mod password_reset;
+pub mod sessions;
+pub mod two_factor;
+
 #[derive(Debug)]
 pub enum AuthError {
     InvalidCredentials,
     InvalidToken,
+    TwoFactorRequired,
+    InvalidSecondFactor,
+    InvalidResetToken,
+    InvalidVerificationToken,
+    InvalidOperation(String),
     Database(sqlx::Error),
     Internal,
 }
@@ -34,6 +47,13 @@ impl fmt::Display for AuthError {
         match self {
             Self::InvalidCredentials => write!(f, "invalid email or password"),
             Self::InvalidToken => write!(f, "invalid or revoked token"),
+            Self::TwoFactorRequired => write!(f, "two-factor authentication code is required"),
+            Self::InvalidSecondFactor => write!(f, "invalid two-factor authentication code"),
+            Self::InvalidResetToken => write!(f, "invalid or expired password reset token"),
+            Self::InvalidVerificationToken => {
+                write!(f, "invalid or expired email verification token")
+            }
+            Self::InvalidOperation(message) => write!(f, "{message}"),
             Self::Database(error) => write!(f, "{error}"),
             Self::Internal => write!(f, "authentication operation failed"),
         }
@@ -62,6 +82,12 @@ pub struct AuthService {
     repo_group: Arc<GroupRepository>,
     repo_org: Arc<OrganizationRepository>,
     repo_member: Arc<OrganizationMemberRepository>,
+    pub(super) repo_two_factor: Arc<TwoFactorRepository>,
+    pub(super) repo_password_reset: Arc<PasswordResetTokenRepository>,
+    pub(super) repo_notif_email: Arc<NotifEmailRepository>,
+    pub(super) repo_notif_resend: Arc<NotifResendRepository>,
+    pub(super) repo_api_token: Arc<PersonalAccessTokenRepository>,
+    pub(super) repo_email_verification: Arc<EmailVerificationTokenRepository>,
 }
 
 #[singleton]
@@ -74,6 +100,12 @@ impl AuthService {
         repo_group: Arc<GroupRepository>,
         repo_org: Arc<OrganizationRepository>,
         repo_member: Arc<OrganizationMemberRepository>,
+        repo_two_factor: Arc<TwoFactorRepository>,
+        repo_password_reset: Arc<PasswordResetTokenRepository>,
+        repo_notif_email: Arc<NotifEmailRepository>,
+        repo_notif_resend: Arc<NotifResendRepository>,
+        repo_api_token: Arc<PersonalAccessTokenRepository>,
+        repo_email_verification: Arc<EmailVerificationTokenRepository>,
     ) -> Self {
         Self {
             db,
@@ -83,11 +115,18 @@ impl AuthService {
             repo_group,
             repo_org,
             repo_member,
+            repo_two_factor,
+            repo_password_reset,
+            repo_notif_email,
+            repo_notif_resend,
+            repo_api_token,
+            repo_email_verification,
         }
     }
 
     pub async fn signup(&self, input: SignupDto) -> Result<AuthResponseDto, AuthError> {
         let password = hash_password(input.password).await?;
+        let email = input.email.trim().to_lowercase();
         let mut tx = self.db.begin().await?;
 
         let group_id = self
@@ -100,7 +139,7 @@ impl AuthService {
             .repo_user
             .create_owner_and_return(
                 &mut tx,
-                input.email,
+                email,
                 input.first_name,
                 input.last_name,
                 avatar,
@@ -130,7 +169,8 @@ impl AuthService {
 
         let subject = subject_from_user(&user)?;
         let tokens = self.jwt.generate_token_pair(&subject)?;
-        self.store_token_pair(&mut tx, &tokens).await?;
+        let session_id = uuid::Uuid::new_v4().to_string();
+        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
         tx.commit().await?;
 
         Ok(AuthResponseDto {
@@ -140,13 +180,20 @@ impl AuthService {
     }
 
     pub async fn login(&self, input: LoginDto) -> Result<AuthResponseDto, AuthError> {
+        let email = input.email.trim().to_lowercase();
         let user = self
             .repo_user
-            .get_by_email(&input.email)
+            .get_by_email(&email)
             .await?
             .ok_or(AuthError::InvalidCredentials)?;
 
         verify_password(input.password, user.password.clone()).await?;
+        self.verify_login_second_factor(
+            &user,
+            input.two_factor_code.as_deref(),
+            input.recovery_code.as_deref(),
+        )
+        .await?;
         let subject = subject_from_user(&user)?;
         let tokens = self.issue_token_pair(&subject).await?;
         Ok(AuthResponseDto {
@@ -158,6 +205,11 @@ impl AuthService {
     pub async fn refresh(&self, refresh_token: &str) -> Result<AuthResponseDto, AuthError> {
         let old_claims = self.jwt.validate_refresh_token(refresh_token)?;
         self.ensure_token_active(&old_claims.jti).await?;
+        let session_id = self
+            .repo_token
+            .session_id_for_jti(&old_claims.jti)
+            .await?
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
         let user = self.get_user_by_id(old_claims.user.user_id).await?;
         let subject = subject_from_user(&user)?;
@@ -167,7 +219,7 @@ impl AuthService {
         self.repo_token
             .blacklist_by_jti(&mut tx, &old_claims.jti)
             .await?;
-        self.store_token_pair(&mut tx, &tokens).await?;
+        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
         tx.commit().await?;
 
         Ok(AuthResponseDto {
@@ -177,6 +229,9 @@ impl AuthService {
     }
 
     pub async fn validate_access_token(&self, token: &str) -> Result<Claims, AuthError> {
+        if token.starts_with("rp_") {
+            return self.validate_personal_access_token(token).await;
+        }
         let claims = self.jwt.validate_access_token(token)?;
         self.ensure_token_active(&claims.jti).await?;
         Ok(claims)
@@ -196,8 +251,9 @@ impl AuthService {
 
     async fn issue_token_pair(&self, subject: &JwtSubject) -> Result<TokenPair, AuthError> {
         let tokens = self.jwt.generate_token_pair(subject)?;
+        let session_id = uuid::Uuid::new_v4().to_string();
         let mut tx = self.db.begin().await?;
-        self.store_token_pair(&mut tx, &tokens).await?;
+        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
         tx.commit().await?;
         Ok(tokens)
     }
@@ -206,10 +262,11 @@ impl AuthService {
         &self,
         tx: &mut Transaction<'_, Sqlite>,
         tokens: &TokenPair,
+        session_id: &str,
     ) -> Result<(), AuthError> {
         let access = self.jwt.validate_access_token(&tokens.access_token)?;
         let refresh = self.jwt.validate_refresh_token(&tokens.refresh_token)?;
-        for claims in [access, refresh] {
+        for (claims, token_kind) in [(access, "ACCESS"), (refresh, "REFRESH")] {
             let role = claims.user.role.as_deref().unwrap_or("MEMBER");
             let expired_at = claims.exp as i64;
             self.repo_token
@@ -219,6 +276,8 @@ impl AuthService {
                     role.to_string(),
                     claims.user.user_id,
                     expired_at,
+                    session_id,
+                    token_kind,
                 )
                 .await?;
         }
@@ -277,7 +336,7 @@ impl AuthService {
     }
 }
 
-fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
+pub(super) fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
     Ok(JwtSubject {
         user_id: user.id.ok_or(AuthError::Internal)?,
         email: user.email.clone(),
@@ -289,7 +348,7 @@ fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
     })
 }
 
-async fn hash_password(password: String) -> Result<String, AuthError> {
+pub(super) async fn hash_password(password: String) -> Result<String, AuthError> {
     tokio::task::spawn_blocking(move || {
         Argon2::default()
             .hash_password(password.as_bytes())
@@ -301,7 +360,7 @@ async fn hash_password(password: String) -> Result<String, AuthError> {
     .map_err(|_| AuthError::Internal)
 }
 
-async fn verify_password(password: String, encoded: String) -> Result<(), AuthError> {
+pub(super) async fn verify_password(password: String, encoded: String) -> Result<(), AuthError> {
     tokio::task::spawn_blocking(move || {
         let hash = PasswordHash::new(&encoded).map_err(|_| AuthError::InvalidCredentials)?;
         Argon2::default()
@@ -310,82 +369,4 @@ async fn verify_password(password: String, encoded: String) -> Result<(), AuthEr
     })
     .await
     .map_err(|_| AuthError::Internal)?
-}
-
-#[cfg(test)]
-mod tests {
-    use sqlx::sqlite::SqlitePoolOptions;
-
-    use super::*;
-    use crate::utils::jwt::config::JwtConfig;
-
-    // async fn service() -> AuthService {
-    //     let pool = SqlitePoolOptions::new()
-    //         .max_connections(1)
-    //         .connect("sqlite::memory:")
-    //         .await
-    //         .unwrap();
-    //     sqlx::query("PRAGMA foreign_keys = ON")
-    //         .execute(&pool)
-    //         .await
-    //         .unwrap();
-    //     sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-    //     sqlx::query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, last_name TEXT, first_name TEXT, avatar TEXT NOT NULL, role TEXT DEFAULT 'OWNER', about_me TEXT, password TEXT NOT NULL, is_email_verify INTEGER DEFAULT 0, email_verify_at INTEGER, two_factor_enable INTEGER DEFAULT 0, is_registered INTEGER NOT NULL DEFAULT 0, added_by INTEGER REFERENCES users(id), group_id INTEGER NOT NULL REFERENCES groups(id), created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-    //     sqlx::query("CREATE TABLE jwt_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, jti TEXT NOT NULL, role TEXT NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, is_blacklist INTEGER DEFAULT 0, blacklist_at INTEGER, expired_at INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-    //
-    //     let db = Arc::new(pool);
-
-    // AuthService {
-    //     db: db.clone(),
-    //     jwt: Arc::new(JwtService::new(Arc::new(JwtConfig::default()))),
-    //     repo_user: Arc::new(UserRepository::new(db.clone())),
-    //     repo_token: Arc::new(JwtTokenRepository::new(db.clone())),
-    //     repo_group: Arc::new(GroupRepository::new(db.clone())),
-    // }
-    // }
-
-    // #[tokio::test]
-    // async fn signup_login_refresh_and_logout_flow() {
-    //     let service = service().await;
-    //     let signup = service
-    //         .signup(SignupDto {
-    //             email: "owner@example.com".into(),
-    //             password: "strong-password".into(),
-    //             first_name: Some("Owner".into()),
-    //             last_name: None,
-    //             avatar: None,
-    //         })
-    //         .await
-    //         .unwrap();
-    //
-    //     let stored_password: String = sqlx::query_scalar("SELECT password FROM users WHERE id = ?")
-    //         .bind(signup.user.user_id)
-    //         .fetch_one(service.db.as_ref())
-    //         .await
-    //         .unwrap();
-    //     assert!(stored_password.starts_with("$argon2"));
-    //     assert_ne!(stored_password, "strong-password");
-    //
-    //     let login = service
-    //         .login(LoginDto {
-    //             email: "owner@example.com".into(),
-    //             password: "strong-password".into(),
-    //         })
-    //         .await
-    //         .unwrap();
-    //     service
-    //         .validate_access_token(&login.tokens.access_token)
-    //         .await
-    //         .unwrap();
-    //
-    //     let refreshed = service.refresh(&login.tokens.refresh_token).await.unwrap();
-    //     assert!(service.refresh(&login.tokens.refresh_token).await.is_err());
-    //     service.logout_all(refreshed.user.user_id).await.unwrap();
-    //     assert!(
-    //         service
-    //             .validate_access_token(&refreshed.tokens.access_token)
-    //             .await
-    //             .is_err()
-    //     );
-    // }
 }

@@ -64,24 +64,41 @@ impl<'a> IntoCommand for PackageCheckInstalledBuilder<'a> {
             }
         } else {
             let pkg = &self.name;
-            let script = sh!(if cmd("command", "-v", "dpkg").stdout("/dev/null") {
+            let script = sh!(if cmd("command", "-v", "dpkg")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("dpkg", "-s", dynamic!(pkg));
-            } else if cmd("command", "-v", "rpm").stdout("/dev/null") {
+            } else if cmd("command", "-v", "rpm")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("rpm", "-q", dynamic!(pkg));
-            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+            } else if cmd("command", "-v", "apk")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apk", "info", "-e", dynamic!(pkg));
-            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+            } else if cmd("command", "-v", "pacman")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("pacman", "-Q", dynamic!(pkg));
-            } else if cmd("command", "-v", "xbps-query").stdout("/dev/null") {
+            } else if cmd("command", "-v", "xbps-query")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("xbps-query", "-S", dynamic!(pkg));
-            } else if cmd("command", "-v", "qlist").stdout("/dev/null") {
+            } else if cmd("command", "-v", "qlist")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("qlist", "-I", "-e", dynamic!(pkg));
-            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+            } else if cmd("command", "-v", "nix-env")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("nix-env", "-q", dynamic!(pkg));
-            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+            } else if cmd("command", "-v", "brew")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("brew", "list", dynamic!(pkg));
             } else {
-                echo("No supported package manager found").stderr("/dev/stderr");
+                echo("No supported package manager found")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 cmd("exit", "1");
             });
             script.build_str()

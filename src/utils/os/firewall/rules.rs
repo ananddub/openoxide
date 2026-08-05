@@ -15,12 +15,12 @@ impl<'a> FirewallRulesBuilder<'a> {
             verbose: false,
         }
     }
-    pub fn numbered(mut self, val: bool) -> Self {
-        self.numbered = val;
+    pub fn numbered(mut self) -> Self {
+        self.numbered = true;
         self
     }
-    pub fn verbose(mut self, val: bool) -> Self {
-        self.verbose = val;
+    pub fn verbose(mut self) -> Self {
+        self.verbose = true;
         self
     }
 

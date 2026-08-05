@@ -18,7 +18,7 @@ impl<'a> EnvExistsBuilder<'a> {
     }
     fn script(&self) -> Vec<crate::utils::exec::script::ShellIR> {
         let key = self.key.as_str();
-        sh!(cmd("printenv", dynamic!(key)).stdout("/dev/null");)
+        sh!(cmd("printenv", dynamic!(key)).stdout(crate::utils::exec::script::dsl::OutputTarget::Null);)
     }
 }
 

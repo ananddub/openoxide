@@ -63,10 +63,6 @@ impl<'a> CloneBuilder<'a> {
         self.args.flag("--quiet");
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     fn finalize(&self) -> ArgBuilder {
         let mut a = self.args.clone();
@@ -119,6 +115,10 @@ impl<'a> FetchBuilder<'a> {
         self.args.push(remote.into());
         self
     }
+    pub fn refspec(mut self, refspec: impl Into<String>) -> Self {
+        self.args.push(refspec.into());
+        self
+    }
     pub fn auth(mut self, auth: GitAuth) -> Self {
         let (k, v) = auth.to_config();
         self.args.insert_pair(0, "-c", format!("{}={}", k, v));
@@ -142,10 +142,6 @@ impl<'a> FetchBuilder<'a> {
     }
     pub fn depth(mut self, n: u32) -> Self {
         self.args.pair("--depth", n.to_string());
-        self
-    }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
         self
     }
 
@@ -210,10 +206,6 @@ impl<'a> PullBuilder<'a> {
         self.args.flag("--ff-only");
         self
     }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
-        self
-    }
 
     pub fn print(&self) -> String {
         self.args.preview()
@@ -267,10 +259,6 @@ impl<'a> PushBuilder<'a> {
     }
     pub fn set_upstream(mut self) -> Self {
         self.args.flag("--set-upstream");
-        self
-    }
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v.into());
         self
     }
 

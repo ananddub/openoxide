@@ -58,12 +58,6 @@ impl<'a> ServiceUpdateBuilder<'a> {
         self.args.pair("--update-delay", v);
         self
     }
-
-    pub fn arg(mut self, v: impl Into<String>) -> Self {
-        self.args.push(v);
-        self
-    }
-
     pub async fn run(mut self) -> DockerResult<DockerOutput> {
         self.args.push(&self.name);
         self.cli.execute(&self.args).await

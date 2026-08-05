@@ -9,7 +9,7 @@ use crate::db::{
         NotifCustomRepository, NotifDiscordRepository, NotifEmailRepository, NotifGotifyRepository,
         NotifLarkRepository, NotifMattermostRepository, NotifNtfyRepository,
         NotifPushoverRepository, NotifResendRepository, NotifSlackRepository, NotifTeamRepository,
-        NotifTelegramRepository, NotificationRepository,
+        NotifTelegramRepository, NotificationDeliveryRepository, NotificationRepository,
     },
 };
 use auto_di::singleton;
@@ -23,6 +23,7 @@ pub struct NotificationService {
     client: Client,
     send_limit: Arc<Semaphore>,
     loader: Arc<NotificationConfigLoader>,
+    delivery: Arc<NotificationDeliveryRepository>,
 }
 
 #[singleton]
@@ -42,6 +43,7 @@ impl NotificationService {
         lark: Arc<NotifLarkRepository>,
         pushover: Arc<NotifPushoverRepository>,
         teams: Arc<NotifTeamRepository>,
+        delivery: Arc<NotificationDeliveryRepository>,
     ) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(10))
@@ -70,6 +72,7 @@ impl NotificationService {
             client,
             send_limit: Arc::new(Semaphore::new(5)),
             loader,
+            delivery,
         }
     }
 
@@ -114,6 +117,9 @@ impl NotificationService {
             let loader = self.loader.clone();
             let client = self.client.clone();
             let msg = msg.clone();
+            let delivery = self.delivery.clone();
+            let trigger_name = trigger.as_str();
+            let correlation_id = uuid::Uuid::new_v4().to_string();
 
             tokio::spawn(async move {
                 let permit = match limit.acquire_owned().await {
@@ -124,15 +130,39 @@ impl NotificationService {
                 let name = notification.name.clone();
                 let kind = notification.notification_type.clone();
 
-                if let Err(error) =
-                    Self::dispatch_one_static(&client, &loader, &notification, &msg).await
-                {
-                    tracing::warn!(
-                        notification = %name,
-                        provider = %kind,
-                        error = %error,
-                        "notification dispatch failed"
-                    );
+                for attempt in 1..=3 {
+                    let delivery_id = match delivery
+                        .begin(
+                            notification.id.unwrap_or_default(),
+                            notification.organization_id,
+                            trigger_name,
+                            &correlation_id,
+                            attempt,
+                            &msg.title,
+                            &msg.body,
+                        )
+                        .await
+                    {
+                        Ok(id) => id,
+                        Err(error) => {
+                            tracing::error!(%error, "could not persist notification delivery attempt");
+                            break;
+                        }
+                    };
+                    match Self::dispatch_one_static(&client, &loader, &notification, &msg).await {
+                        Ok(()) => {
+                            let _ = delivery.finish(delivery_id, None).await;
+                            break;
+                        }
+                        Err(error) => {
+                            let _ = delivery.finish(delivery_id, Some(&error)).await;
+                            tracing::warn!(notification = %name, provider = %kind, attempt, error = %error, "notification dispatch failed");
+                            if attempt < 3 {
+                                tokio::time::sleep(Duration::from_secs(1_u64 << (attempt - 1)))
+                                    .await;
+                            }
+                        }
+                    }
                 }
 
                 drop(permit);

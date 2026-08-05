@@ -24,8 +24,6 @@ pub struct Destination {
     pub region: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub endpoint: String,
-    #[sqlx_gen(sql_type = "TEXT")]
-    pub additional_flags: Option<String>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
     #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]

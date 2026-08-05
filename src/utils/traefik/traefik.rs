@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 #[derive(Default)]
 pub struct TraefikBuilder {
-    pub labels: BTreeMap<String, String>,
+    pub(crate) labels: BTreeMap<String, String>,
 }
 
 impl TraefikBuilder {
@@ -52,6 +52,12 @@ impl TraefikBuilder {
             self.labels.insert(key, value);
         }
         self
+    }
+
+    /// Merge another completed Traefik builder into this one while preserving
+    /// the one-label-per-key invariant.
+    pub fn append(&mut self, other: TraefikBuilder) {
+        self.labels.extend(other.labels);
     }
 
     /// Attach a pre-built [`RouterBuilder`]'s labels into this builder and

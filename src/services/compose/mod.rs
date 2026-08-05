@@ -36,6 +36,7 @@ impl ComposeService {
 
 pub mod auto_excuter;
 pub mod crud;
+pub mod management;
 pub mod operations;
 pub mod queries;
 pub mod remote;

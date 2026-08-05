@@ -119,28 +119,49 @@ impl<'a> IntoCommand for PackageRemoveBuilder<'a> {
             }
         } else {
             let pkg = &self.name;
-            let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
+            let script = sh!(if cmd("command", "-v", "apt-get")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apt-get", "remove", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+            } else if cmd("command", "-v", "dnf")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("dnf", "remove", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+            } else if cmd("command", "-v", "yum")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("yum", "remove", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+            } else if cmd("command", "-v", "apk")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("apk", "del", dynamic!(pkg));
-            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+            } else if cmd("command", "-v", "pacman")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("pacman", "-R", "--noconfirm", dynamic!(pkg));
-            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+            } else if cmd("command", "-v", "zypper")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("zypper", "--non-interactive", "remove", dynamic!(pkg));
-            } else if cmd("command", "-v", "xbps-remove").stdout("/dev/null") {
+            } else if cmd("command", "-v", "xbps-remove")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("xbps-remove", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
+            } else if cmd("command", "-v", "emerge")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("emerge", "--unmerge", dynamic!(pkg));
-            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+            } else if cmd("command", "-v", "nix-env")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("nix-env", "-e", dynamic!(pkg));
-            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+            } else if cmd("command", "-v", "brew")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("brew", "uninstall", dynamic!(pkg));
             } else {
-                echo("No supported package manager found").stderr("/dev/stderr");
+                echo("No supported package manager found")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 cmd("exit", "1");
             });
             script.build_str()

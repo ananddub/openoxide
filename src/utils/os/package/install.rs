@@ -201,28 +201,49 @@ impl<'a> IntoCommand for PackageInstallBuilder<'a> {
             apk_args.push(pkg);
             let apk = command("apk", apk_args);
 
-            let script = sh!(if cmd("command", "-v", "apt-get").stdout("/dev/null") {
+            let script = sh!(if cmd("command", "-v", "apt-get")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 ir!(apt.clone());
-            } else if cmd("command", "-v", "dnf").stdout("/dev/null") {
+            } else if cmd("command", "-v", "dnf")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("dnf", "install", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "yum").stdout("/dev/null") {
+            } else if cmd("command", "-v", "yum")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("yum", "install", "-y", dynamic!(pkg));
-            } else if cmd("command", "-v", "apk").stdout("/dev/null") {
+            } else if cmd("command", "-v", "apk")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 ir!(apk.clone());
-            } else if cmd("command", "-v", "pacman").stdout("/dev/null") {
+            } else if cmd("command", "-v", "pacman")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("pacman", "-S", "--noconfirm", dynamic!(pkg));
-            } else if cmd("command", "-v", "zypper").stdout("/dev/null") {
+            } else if cmd("command", "-v", "zypper")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("zypper", "--non-interactive", "install", dynamic!(pkg));
-            } else if cmd("command", "-v", "xbps-install").stdout("/dev/null") {
+            } else if cmd("command", "-v", "xbps-install")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("xbps-install", "-Sy", dynamic!(pkg));
-            } else if cmd("command", "-v", "emerge").stdout("/dev/null") {
+            } else if cmd("command", "-v", "emerge")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("emerge", dynamic!(pkg));
-            } else if cmd("command", "-v", "nix-env").stdout("/dev/null") {
+            } else if cmd("command", "-v", "nix-env")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("nix-env", "-i", dynamic!(pkg));
-            } else if cmd("command", "-v", "brew").stdout("/dev/null") {
+            } else if cmd("command", "-v", "brew")
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
                 cmd("brew", "install", dynamic!(pkg));
             } else {
-                echo("No supported package manager found").stderr("/dev/stderr");
+                echo("No supported package manager found")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 cmd("exit", "1");
             });
             script.build_str()

@@ -5,8 +5,8 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 
 use crate::repository::{
-    DeploymentRepository, LibsqlRepository, MariadbRepository, MongoRepository, MysqlRepository,
-    PostgresRepository, RedisRepository,
+    DatabaseManagementRepository, DeploymentRepository, LibsqlRepository, MariadbRepository,
+    MongoRepository, MysqlRepository, PostgresRepository, RedisRepository,
 };
 
 use crate::core::cache::AppStateCache;
@@ -20,6 +20,7 @@ pub struct DatabaseService {
     pub(super) repo_redis: Arc<RedisRepository>,
     pub(super) repo_libsql: Arc<LibsqlRepository>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,
+    pub(super) repo_management: Arc<DatabaseManagementRepository>,
     pub(super) cache: Arc<AppStateCache>,
 }
 
@@ -34,6 +35,7 @@ impl DatabaseService {
         repo_redis: Arc<RedisRepository>,
         repo_libsql: Arc<LibsqlRepository>,
         repo_deploy: Arc<DeploymentRepository>,
+        repo_management: Arc<DatabaseManagementRepository>,
         cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
@@ -45,12 +47,14 @@ impl DatabaseService {
             repo_redis,
             repo_libsql,
             repo_deploy,
+            repo_management,
             cache,
         }
     }
 }
 
 pub mod crud;
+pub mod management;
 pub mod operations;
 pub mod queries;
 pub mod types;
