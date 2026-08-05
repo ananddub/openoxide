@@ -109,6 +109,11 @@ impl<'a> OsCli<'a> {
             executor: self.executor,
         }
     }
+    pub fn wireguard(&self) -> wireguard::WireGuardCli<'a> {
+        wireguard::WireGuardCli {
+            executor: self.executor,
+        }
+    }
 
     // Direct methods for zero-boilerplate usage
     pub fn file(&self, path: impl IntoCommand) -> file::FileBuilder<'a> {
@@ -401,3 +406,4 @@ pub mod resource;
 pub mod service;
 pub mod symlink;
 pub mod system;
+pub mod wireguard;

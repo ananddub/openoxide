@@ -25,6 +25,10 @@ impl<'a> DirCreateBuilder<'a> {
         self.parents = val;
         self
     }
+    pub fn with_parents(mut self) -> Self {
+        self.parents = true;
+        self
+    }
     pub fn verbose(mut self, val: bool) -> Self {
         self.verbose = val;
         self

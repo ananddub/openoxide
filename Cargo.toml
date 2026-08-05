@@ -63,6 +63,8 @@ minijinja = "2.21.0"
 tonic = "0.12.3"
 prost = "0.13.5"
 pty-process = { version = "0.5.3", features = ["async", "tokio"] }
+ipnet = "2.12"
+base64 = "0.22"
 
 [build-dependencies]
 tonic-build = "0.12.3"

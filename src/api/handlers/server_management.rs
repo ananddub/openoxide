@@ -82,6 +82,32 @@ impl ServerManagementController {
             .map_err(map_error)
     }
 
+    #[post("/private-network/setup")]
+    async fn setup_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(server_id): Path<i64>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.private_network
+            .setup_wireguard(server_id)
+            .await
+            .map(Json)
+            .map_err(map_error)
+    }
+
+    #[post("/private-network/teardown")]
+    async fn teardown_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(server_id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        self.private_network
+            .teardown_wireguard(server_id)
+            .await
+            .map(|_| StatusCode::NO_CONTENT)
+            .map_err(map_error)
+    }
+
     #[get]
     async fn get(
         &self,

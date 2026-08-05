@@ -53,27 +53,28 @@
         { pkgs, system }:
         {
           default = pkgs.mkShell {
-            packages =
-              with pkgs;
-              [
-                rustToolchain
-                openssl
-                pkg-config
-                atlas
-                cargo-deny
-                cargo-edit
-                cargo-watch
-                sqlx-cli
-                rust-analyzer
-                mold
-                git
-                curl
-                gnutar
-                gzip
-                docker-client
-                nodejs_22
-                self.formatter.${system}
-              ];
+            packages = with pkgs; [
+              rustToolchain
+              openssl
+              pkg-config
+              atlas
+              cargo-deny
+              cargo-edit
+              cargo-watch
+              sqlx-cli
+              rust-analyzer
+              mold
+              git
+              curl
+              gnutar
+              gzip
+              docker-client
+              wireguard-tools
+              iproute2
+              util-linux
+              nodejs_22
+              self.formatter.${system}
+            ];
 
             env = {
               # Required by rust-analyzer

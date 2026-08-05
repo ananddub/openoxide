@@ -63,4 +63,21 @@ impl ServerPrivateNetworkRepository {
             .await?;
         Ok(())
     }
+
+    pub async fn set_runtime_state(
+        &self,
+        server_id: i64,
+        status: &str,
+        public_key: Option<&str>,
+        last_handshake_at: Option<i64>,
+    ) -> sqlx::Result<()> {
+        sqlx::query("UPDATE server_private_networks SET status = ?, public_key = COALESCE(?, public_key), last_handshake_at = ?, updated_at = strftime('%s', 'now') WHERE server_id = ?")
+            .bind(status)
+            .bind(public_key)
+            .bind(last_handshake_at)
+            .bind(server_id)
+            .execute(self.pool.as_ref())
+            .await?;
+        Ok(())
+    }
 }
