@@ -86,8 +86,11 @@ impl GlobalOperationsService {
         options: GlobalSearchOptions,
     ) -> sqlx::Result<Vec<GlobalResourceDto>> {
         let pattern = format!("%{}%", options.query.trim());
+        let resource_type = options
+            .resource_type
+            .map(|value| value.trim().to_ascii_uppercase());
         let rows = sqlx::query!(r#"
-            SELECT resource_type, id, name, status FROM (
+            SELECT resource_type, id, name, COALESCE(status, '') status FROM (
                 SELECT 'APPLICATION' resource_type, CAST(id AS TEXT) id, name, app_status status FROM applications
                 UNION ALL SELECT 'COMPOSE', CAST(id AS TEXT), name, compose_status FROM compose_projects
                 UNION ALL SELECT 'SERVER', CAST(id AS TEXT), name, server_status FROM servers
@@ -99,15 +102,20 @@ impl GlobalOperationsService {
                 UNION ALL SELECT 'MONGO', CAST(id AS TEXT), name, app_status FROM mongo_dbs
                 UNION ALL SELECT 'REDIS', CAST(id AS TEXT), name, app_status FROM redis_dbs
                 UNION ALL SELECT 'LIBSQL', CAST(id AS TEXT), name, app_status FROM libsql_dbs
-            ) resources WHERE name LIKE ? COLLATE NOCASE ORDER BY name LIMIT ?
-        "#, pattern, options.limit).fetch_all(self.db.as_ref()).await?;
+                UNION ALL SELECT 'DOMAIN', CAST(id AS TEXT), host, domain_type FROM domains
+                UNION ALL SELECT 'CERTIFICATE', CAST(id AS TEXT), name, CASE auto_renew WHEN 1 THEN 'AUTO_RENEW' ELSE 'MANUAL' END FROM certificates
+                UNION ALL SELECT 'REGISTRY', CAST(id AS TEXT), registry_name, registry_type FROM registries
+                UNION ALL SELECT 'TAG', CAST(id AS TEXT), name, color FROM tags
+                UNION ALL SELECT 'DATABASE_NETWORK', CAST(id AS TEXT), name, CASE external WHEN 1 THEN 'EXTERNAL' ELSE 'MANAGED' END FROM database_networks
+            ) resources WHERE name LIKE ? COLLATE NOCASE AND (? IS NULL OR resource_type = ?) ORDER BY name LIMIT ? OFFSET ?
+        "#, pattern, resource_type, resource_type, options.limit, options.offset).fetch_all(self.db.as_ref()).await?;
         Ok(rows
             .into_iter()
             .map(|row| GlobalResourceDto {
                 resource_type: row.resource_type,
                 id: row.id,
                 name: row.name,
-                status: row.status,
+                status: (!row.status.is_empty()).then_some(row.status),
             })
             .collect())
     }

@@ -2,6 +2,8 @@
 pub struct GlobalSearchOptions {
     pub query: String,
     pub limit: i64,
+    pub offset: i64,
+    pub resource_type: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
