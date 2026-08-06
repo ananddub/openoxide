@@ -109,6 +109,11 @@ impl<'a> OsCli<'a> {
             executor: self.executor,
         }
     }
+    pub fn dns(&self) -> dns::DnsCli<'a> {
+        dns::DnsCli {
+            executor: self.executor,
+        }
+    }
     pub fn wireguard(&self) -> wireguard::WireGuardCli<'a> {
         wireguard::WireGuardCli {
             executor: self.executor,
@@ -390,6 +395,7 @@ pub mod crypto;
 pub mod diagnostics;
 pub mod dir;
 pub mod disk;
+pub mod dns;
 pub mod env;
 pub mod file;
 pub mod firewall;

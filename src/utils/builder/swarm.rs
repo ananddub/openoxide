@@ -55,6 +55,7 @@ pub(crate) async fn ensure_overlay_network(
         .networks()
         .create(name)
         .driver(crate::utils::docker::NetworkDriver::Overlay)
+        .opt("encrypted", "")
         .attachable()
         .cancel_with(cancel.clone())
         .run()

@@ -45,8 +45,7 @@ impl RootNetworkService {
         let executor = self.executor(server_id).await?;
         let docker = DockerCli::from_executor(executor.clone());
         if let Ok(network) = docker.networks().inspect(RUSTPLOY_NETWORK).await {
-            let healthy =
-                network.driver == "overlay" && network.scope == "swarm" && network.attachable;
+            let healthy = is_healthy(&network);
             if healthy {
                 return Ok(status_from_network(network, false));
             }
@@ -93,7 +92,7 @@ fn status_from_network(
     network: crate::utils::docker::NetworkInspect,
     repaired: bool,
 ) -> RootNetworkStatusDto {
-    let healthy = network.driver == "overlay" && network.scope == "swarm" && network.attachable;
+    let healthy = is_healthy(&network);
     RootNetworkStatusDto {
         name: network.name,
         exists: true,
@@ -105,9 +104,19 @@ fn status_from_network(
         connected_resources: network.containers.len() as i64,
         issue: (!healthy).then(|| {
             format!(
-                "expected attachable overlay/swarm network, found driver={} scope={} attachable={}",
-                network.driver, network.scope, network.attachable
+                "expected encrypted attachable overlay/swarm network, found driver={} scope={} attachable={} encrypted={}",
+                network.driver,
+                network.scope,
+                network.attachable,
+                network.options.contains_key("encrypted")
             )
         }),
     }
+}
+
+fn is_healthy(network: &crate::utils::docker::NetworkInspect) -> bool {
+    network.driver == "overlay"
+        && network.scope == "swarm"
+        && network.attachable
+        && network.options.contains_key("encrypted")
 }

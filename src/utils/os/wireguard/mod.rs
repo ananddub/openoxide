@@ -7,7 +7,7 @@ mod key;
 use crate::utils::exec::CommandExecutor;
 
 pub use config::{WireGuardConfig, WireGuardConfigError, WireGuardPeer};
-pub use interface::WireGuardInterfaceBuilder;
+pub use interface::{WireGuardHandshake, WireGuardInterfaceBuilder};
 pub use key::WireGuardKeyBuilder;
 
 pub struct WireGuardCli<'a> {

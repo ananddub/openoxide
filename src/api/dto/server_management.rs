@@ -92,6 +92,34 @@ pub enum PrivateNetworkProviderDto {
     Custom,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkStatusDto {
+    Disabled,
+    Configuring,
+    Active,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkHealthStatusDto {
+    Unknown,
+    Healthy,
+    Degraded,
+    Unreachable,
+    ConfigDrift,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkRotationStateDto {
+    Idle,
+    Rotating,
+    RollingBack,
+    Failed,
+}
+
 #[derive(Debug, Clone, Deserialize, Object)]
 pub struct UpdatePrivateNetworkDto {
     pub connection_mode: ServerConnectionModeDto,
@@ -102,6 +130,8 @@ pub struct UpdatePrivateNetworkDto {
     pub endpoint: Option<String>,
     pub listen_port: Option<u16>,
     pub persistent_keepalive: Option<u16>,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Object)]
@@ -115,8 +145,25 @@ pub struct ServerPrivateNetworkDto {
     pub endpoint: Option<String>,
     pub listen_port: Option<u16>,
     pub persistent_keepalive: Option<u16>,
-    pub status: String,
+    pub status: PrivateNetworkStatusDto,
     pub last_handshake_at: Option<i64>,
     pub config_version: i64,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
+    pub health_status: PrivateNetworkHealthStatusDto,
+    pub health_error: Option<String>,
+    pub last_health_check_at: Option<i64>,
+    pub consecutive_failures: i64,
+    pub rotation_state: PrivateNetworkRotationStateDto,
     pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct PrivateNetworkHealthDto {
+    pub status: PrivateNetworkHealthStatusDto,
+    pub interface_exists: bool,
+    pub private_ssh_reachable: bool,
+    pub latest_handshake_at: Option<i64>,
+    pub checked_at: i64,
+    pub error: Option<String>,
 }

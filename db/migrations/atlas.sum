@@ -1,4 +1,4 @@
-h1:nFETa2h194PO2algAnb2ZOwbctzWgN5XfKfPuRE3OcA=
+h1:hjx3Kho4XHWKqTQWqt0JmwX2cVliGDPnqrjofHhd1fY=
 0001_initial.sql h1:F3W1L3w4LNfG1mRMavOXQsoYxu78Z3tIt1GEJeE+H30=
 0002_schedule_action.sql h1:EZ0IABextrgUejhihIHSqFv3rYAHRpE0JmmcU6znFUA=
 0003_deployment_queue.sql h1:P2KB/aCC3fIGylfjEIWd5VgunoTNeVMxb0+LcsSThpI=
@@ -34,3 +34,5 @@ h1:nFETa2h194PO2algAnb2ZOwbctzWgN5XfKfPuRE3OcA=
 0033_certificate_renewals.sql h1:r+4iyv3nG28gEmHcEucqjN9WEBX1St12F8f9TJq8mtU=
 0034_remove_destination_additional_flags.sql h1:H7RvLvfX+XWCUo5bEcoDgwAbafrqxV1EtToywdJ8EKE=
 0035_server_private_networks.sql h1:7F88IUI3M83c3p/FEe7rysrRYEjpeOI06nN3cP/c6/k=
+0036_wireguard_runtime.sql h1:86JSxS6hopVkYKSG/ZZKgOcekKHK5KP6vCET/BTRHpY=
+0037_private_dns_hardening.sql h1:jeKJYi+Frk+EI//sgV7q6FiooKLaOV+QK5HZYrGENHM=

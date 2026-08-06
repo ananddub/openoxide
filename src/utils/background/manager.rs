@@ -1,7 +1,10 @@
 use auto_di::resolve;
 
 use crate::{
-    services::{alert::AlertService, notification::NotificationService, schedule::ScheduleRunner},
+    services::{
+        alert::AlertService, notification::NotificationService, schedule::ScheduleRunner,
+        server_management::ServerPrivateNetworkService,
+    },
     utils::builder::queue::BuilderQueue,
 };
 
@@ -23,6 +26,11 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve alert service: {error}"))?;
         super::alert::start(alerts);
+
+        let private_network = resolve::<ServerPrivateNetworkService>()
+            .await
+            .map_err(|error| format!("failed to resolve private-network service: {error}"))?;
+        super::private_network::start(private_network);
 
         Self::dispatch_startup_notification().await;
         tracing::info!("all background systems started");

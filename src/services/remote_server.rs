@@ -5,22 +5,43 @@ use uuid::Uuid;
 
 use crate::{
     api::dto::remote_server::{CreateRemoteServerDto, PatchRemoteServerDto},
+    db::models::server_private_networks::{PrivateNetworkStatus, ServerPrivateNetwork},
     db::models::servers::Server,
-    repository::{ServerRepository, SshKeyRepository},
+    repository::{ServerPrivateNetworkRepository, ServerRepository, SshKeyRepository},
 };
 
 pub struct ServerService {
     repo_server: Arc<ServerRepository>,
     repo_ssh: Arc<SshKeyRepository>,
+    private_networks: Arc<ServerPrivateNetworkRepository>,
 }
 
 #[singleton]
 impl ServerService {
-    fn new(repo_server: Arc<ServerRepository>, repo_ssh: Arc<SshKeyRepository>) -> Self {
+    fn new(
+        repo_server: Arc<ServerRepository>,
+        repo_ssh: Arc<SshKeyRepository>,
+        private_networks: Arc<ServerPrivateNetworkRepository>,
+    ) -> Self {
         Self {
             repo_server,
             repo_ssh,
+            private_networks,
         }
+    }
+
+    pub async fn setup_advertise_addr(
+        &self,
+        server_id: i64,
+        requested: Option<String>,
+    ) -> sqlx::Result<Option<String>> {
+        if let Some(address) = requested {
+            return validate_advertise_addr(address).map(Some);
+        }
+        let Some(network) = self.private_networks.get(server_id).await? else {
+            return Ok(None);
+        };
+        private_advertise_addr(&network)
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Server> {
@@ -133,6 +154,31 @@ impl ServerService {
     }
 }
 
+fn private_advertise_addr(network: &ServerPrivateNetwork) -> sqlx::Result<Option<String>> {
+    if PrivateNetworkStatus::try_from(network.status.as_str())? != PrivateNetworkStatus::Active {
+        return Ok(None);
+    }
+    network
+        .private_host
+        .clone()
+        .map(validate_advertise_addr)
+        .transpose()
+}
+
+fn validate_advertise_addr(value: String) -> sqlx::Result<String> {
+    let address = value.parse::<std::net::IpAddr>().map_err(|error| {
+        sqlx::Error::Protocol(format!(
+            "invalid Swarm advertise address {value:?}: {error}"
+        ))
+    })?;
+    if address.is_unspecified() || address.is_loopback() || address.is_multicast() {
+        return Err(sqlx::Error::Protocol(
+            "Swarm advertise address must be a routable unicast IP".into(),
+        ));
+    }
+    Ok(address.to_string())
+}
+
 fn generate_app_name(name: &str) -> String {
     let mut slug = String::new();
     let mut previous_dash = false;
@@ -151,4 +197,28 @@ fn generate_app_name(name: &str) -> String {
     let base = if slug.is_empty() { "server" } else { slug };
     let suffix = Uuid::new_v4().simple().to_string();
     format!("{}-{}", base, &suffix[..6])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_advertise_addr;
+
+    #[test]
+    fn swarm_advertise_address_accepts_private_provider_ips() {
+        assert_eq!(
+            validate_advertise_addr("100.64.10.2".into()).unwrap(),
+            "100.64.10.2"
+        );
+        assert_eq!(
+            validate_advertise_addr("10.77.8.2".into()).unwrap(),
+            "10.77.8.2"
+        );
+    }
+
+    #[test]
+    fn swarm_advertise_address_rejects_unroutable_values() {
+        assert!(validate_advertise_addr("127.0.0.1".into()).is_err());
+        assert!(validate_advertise_addr("0.0.0.0".into()).is_err());
+        assert!(validate_advertise_addr("tailscale0".into()).is_err());
+    }
 }

@@ -5,11 +5,14 @@ use crate::{
         ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
         SetupServerDto, TestDirectConnectionDto,
     },
+    api::dto::server_management::{
+        PrivateNetworkHealthDto, ServerPrivateNetworkDto, UpdatePrivateNetworkDto,
+    },
     core::middleware::permission::{
         RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
     },
     db::repository::ssh_keys::SshKeyRepository,
-    services::remote_server::ServerService,
+    services::{remote_server::ServerService, server_management::ServerPrivateNetworkService},
     utils::{
         exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
         setup::{ServerSetup, SetupConfig},
@@ -36,15 +39,126 @@ type ServerSetupSse = Sse<ServerSetupStream>;
 pub struct ServerController {
     service: Arc<ServerService>,
     ssh_key_repo: Arc<SshKeyRepository>,
+    private_network: Arc<ServerPrivateNetworkService>,
 }
 
 #[controller("/servers")]
 impl ServerController {
-    fn new(service: Arc<ServerService>, ssh_key_repo: Arc<SshKeyRepository>) -> Self {
+    fn new(
+        service: Arc<ServerService>,
+        ssh_key_repo: Arc<SshKeyRepository>,
+        private_network: Arc<ServerPrivateNetworkService>,
+    ) -> Self {
         Self {
             service,
             ssh_key_repo,
+            private_network,
         }
+    }
+
+    #[get("/{id}/private-network")]
+    async fn private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Option<ServerPrivateNetworkDto>>, ApiError> {
+        self.private_network
+            .get(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[put("/{id}/private-network")]
+    async fn update_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+        Json(body): Json<UpdatePrivateNetworkDto>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.private_network
+            .update(id, body)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[delete("/{id}/private-network")]
+    async fn disable_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        self.private_network
+            .disable(id)
+            .await
+            .map(|_| StatusCode::NO_CONTENT)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/private-network/setup")]
+    async fn setup_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.private_network
+            .setup_transport(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/private-network/health")]
+    async fn private_network_health(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<PrivateNetworkHealthDto>, ApiError> {
+        self.private_network
+            .health(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/private-network/repair")]
+    async fn repair_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.private_network
+            .repair_transport(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/private-network/rotate-keys")]
+    async fn rotate_private_network_keys(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.private_network
+            .rotate_wireguard(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/private-network/teardown")]
+    async fn teardown_private_network(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        self.private_network
+            .teardown_transport(id)
+            .await
+            .map(|_| StatusCode::NO_CONTENT)
+            .map_err(map_sqlx_error)
     }
 
     #[post("/test-direct-connection")]
@@ -185,7 +299,11 @@ impl ServerController {
         );
         config.monitoring_token =
             Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
-        config.advertise_addr = body.advertise_addr;
+        config.advertise_addr = self
+            .service
+            .setup_advertise_addr(id, body.advertise_addr)
+            .await
+            .map_err(map_sqlx_error)?;
         if let Some(email) = body.acme_email {
             config.acme_email = email;
         }
@@ -235,7 +353,11 @@ impl ServerController {
         );
         config.monitoring_token =
             Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
-        config.advertise_addr = body.advertise_addr;
+        config.advertise_addr = self
+            .service
+            .setup_advertise_addr(id, body.advertise_addr)
+            .await
+            .map_err(map_sqlx_error)?;
         if let Some(email) = body.acme_email {
             config.acme_email = email;
         }

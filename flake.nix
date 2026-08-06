@@ -71,6 +71,7 @@
               docker-client
               wireguard-tools
               iproute2
+              dnsutils
               util-linux
               nodejs_22
               self.formatter.${system}

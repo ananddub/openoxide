@@ -6,14 +6,13 @@ use axum::{Json, extract::Path, http::StatusCode};
 use crate::{
     api::dto::server_management::{
         ServerActionResultDto, ServerBackupDto, ServerCleanupExecutionDto, ServerManagementDto,
-        ServerPrivateNetworkDto, UpdatePrivateNetworkDto, UpdateServerManagementDto,
+        UpdateServerManagementDto,
     },
     core::middleware::permission::{
         RequirePermission, ServerCreatePermission, ServerReadPermission,
     },
     services::server_management::{
         ServerCleanupService, ServerLifecycleService, ServerManagementService,
-        ServerPrivateNetworkService,
     },
 };
 
@@ -23,7 +22,6 @@ pub struct ServerManagementController {
     management: Arc<ServerManagementService>,
     cleanup: Arc<ServerCleanupService>,
     lifecycle: Arc<ServerLifecycleService>,
-    private_network: Arc<ServerPrivateNetworkService>,
 }
 
 #[controller("/servers/{server_id}/management")]
@@ -32,80 +30,12 @@ impl ServerManagementController {
         management: Arc<ServerManagementService>,
         cleanup: Arc<ServerCleanupService>,
         lifecycle: Arc<ServerLifecycleService>,
-        private_network: Arc<ServerPrivateNetworkService>,
     ) -> Self {
         Self {
             management,
             cleanup,
             lifecycle,
-            private_network,
         }
-    }
-
-    #[get("/private-network")]
-    async fn private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<Option<ServerPrivateNetworkDto>>, ApiError> {
-        self.private_network
-            .get(server_id)
-            .await
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[put("/private-network")]
-    async fn update_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(server_id): Path<i64>,
-        Json(body): Json<UpdatePrivateNetworkDto>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .update(server_id, body)
-            .await
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[delete("/private-network")]
-    async fn disable_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(server_id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.private_network
-            .disable(server_id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_error)
-    }
-
-    #[post("/private-network/setup")]
-    async fn setup_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .setup_wireguard(server_id)
-            .await
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[post("/private-network/teardown")]
-    async fn teardown_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(server_id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.private_network
-            .teardown_wireguard(server_id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_error)
     }
 
     #[get]

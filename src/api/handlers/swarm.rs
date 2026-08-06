@@ -11,6 +11,7 @@ use crate::{
         NodeActionDto, NodeAvailabilityDto, NodeDto, SwarmConnectionDto, SwarmInfoDto,
         SwarmJoinDto, SwarmTokensDto,
     },
+    services::remote_server::ServerService,
     utils::{
         docker::DockerCli,
         exec::{
@@ -26,12 +27,13 @@ type ApiError = (StatusCode, String);
 pub struct SwarmController {
     db: Arc<SqlitePool>,
     cache: Arc<AppStateCache>,
+    servers: Arc<ServerService>,
 }
 
 #[controller("/swarm")]
 impl SwarmController {
-    fn new(db: Arc<SqlitePool>, cache: Arc<AppStateCache>) -> Self {
-        Self { db, cache }
+    fn new(db: Arc<SqlitePool>, cache: Arc<AppStateCache>, servers: Arc<ServerService>) -> Self {
+        Self { db, cache, servers }
     }
 
     #[post("/info")]
@@ -248,7 +250,15 @@ impl SwarmController {
         // If it isn't part of one, this just fails harmlessly.
         let _ = target_docker.swarm().leave().force().run().await;
 
-        let advertise_addr = detect_advertise_addr(&target_executor).await;
+        let advertise_addr = match self
+            .servers
+            .setup_advertise_addr(body.target_server_id, None)
+            .await
+            .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?
+        {
+            Some(address) => address,
+            None => detect_advertise_addr(&target_executor).await,
+        };
         target_docker
             .swarm()
             .join()
