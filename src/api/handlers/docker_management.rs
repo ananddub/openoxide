@@ -3,8 +3,9 @@ use std::sync::Arc;
 use auto_route::controller;
 use axum::{
     Json,
-    extract::{Path, Query},
-    http::StatusCode,
+    body::Body,
+    extract::{Multipart, Path, Query},
+    http::{HeaderValue, Response, StatusCode, header},
 };
 use poem_openapi::Object;
 use serde::Deserialize;
@@ -29,12 +30,101 @@ struct DockerTargetQuery {
     server_id: Option<i64>,
 }
 
+#[derive(Debug, Deserialize, Object)]
+struct DockerFileQuery {
+    server_id: Option<i64>,
+    path: String,
+}
+
 pub struct DockerManagementController {
     service: Arc<DockerManagementService>,
 }
 
 #[controller("/docker")]
 impl DockerManagementController {
+    #[post("/containers/{id}/files")]
+    async fn upload_container_file(
+        &self,
+        RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<String>,
+        Query(query): Query<DockerTargetQuery>,
+        mut multipart: Multipart,
+    ) -> Result<Json<DockerActionResponseDto>, ApiError> {
+        let mut destination = None;
+        let mut filename = None;
+        let mut bytes = None;
+        while let Some(field) = multipart
+            .next_field()
+            .await
+            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+        {
+            match field.name() {
+                Some("destination") => {
+                    destination = Some(
+                        field
+                            .text()
+                            .await
+                            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+                    )
+                }
+                Some("file") => {
+                    filename = field.file_name().map(str::to_owned);
+                    bytes = Some(
+                        field
+                            .bytes()
+                            .await
+                            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+                    );
+                }
+                _ => {}
+            }
+        }
+        let destination =
+            destination.ok_or((StatusCode::BAD_REQUEST, "destination is required".into()))?;
+        let bytes = bytes.ok_or((StatusCode::BAD_REQUEST, "file is required".into()))?;
+        self.service
+            .upload_container_bytes(
+                query.server_id,
+                &id,
+                &destination,
+                filename.as_deref().unwrap_or("upload.bin"),
+                &bytes,
+            )
+            .await
+            .map(Json)
+            .map_err(api_error)
+    }
+
+    #[get("/containers/{id}/files")]
+    async fn download_container_file(
+        &self,
+        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<String>,
+        Query(query): Query<DockerFileQuery>,
+    ) -> Result<Response<Body>, ApiError> {
+        let bytes = self
+            .service
+            .download_container_bytes(query.server_id, &id, &query.path)
+            .await
+            .map_err(api_error)?;
+        let filename = query
+            .path
+            .rsplit('/')
+            .next()
+            .unwrap_or("download.bin")
+            .replace(['\r', '\n', '"'], "_");
+        let mut response = Response::new(Body::from(bytes));
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/octet-stream"),
+        );
+        response.headers_mut().insert(
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+        );
+        Ok(response)
+    }
     fn new(service: Arc<DockerManagementService>) -> Self {
         Self { service }
     }

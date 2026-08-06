@@ -18,6 +18,46 @@ pub struct DockerManagementService {
 
 #[singleton]
 impl DockerManagementService {
+    pub async fn upload_container_bytes(
+        &self,
+        server_id: Option<i64>,
+        id: &str,
+        destination: &str,
+        filename: &str,
+        data: &[u8],
+    ) -> Result<crate::api::dto::docker_management::DockerActionResponseDto, String> {
+        validate_resource_name(id)?;
+        validate_transfer_path(destination)?;
+        validate_transfer_path(filename)?;
+        if data.len() > 100 * 1024 * 1024 {
+            return Err("file exceeds 100 MiB limit".into());
+        }
+        self.docker(server_id)
+            .await?
+            .container(id)
+            .upload(destination)
+            .bytes(filename, data)
+            .await
+            .map(Into::into)
+            .map_err(error)
+    }
+
+    pub async fn download_container_bytes(
+        &self,
+        server_id: Option<i64>,
+        id: &str,
+        source: &str,
+    ) -> Result<Vec<u8>, String> {
+        validate_resource_name(id)?;
+        validate_transfer_path(source)?;
+        self.docker(server_id)
+            .await?
+            .container(id)
+            .download(source)
+            .read()
+            .await
+            .map_err(error)
+    }
     fn new(servers: Arc<ServerRepository>) -> Self {
         Self { servers }
     }
@@ -255,6 +295,17 @@ fn validate_resource_name(value: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err("invalid Docker resource identifier".into())
+    }
+}
+fn validate_transfer_path(value: &str) -> Result<(), String> {
+    if value.is_empty()
+        || value.len() > 4096
+        || value.contains('\0')
+        || value.split('/').any(|part| part == "..")
+    {
+        Err("invalid transfer path".into())
+    } else {
+        Ok(())
     }
 }
 fn error(error: impl std::fmt::Display) -> String {
