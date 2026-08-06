@@ -15,7 +15,8 @@ use crate::{
         DeploymentSseEventDto, DockerLogQuery, DockerStatsQuery,
     },
     services::deployment::{
-        CancelDeploymentResult, DeploymentListFilter, DeploymentService, DockerLogOptions,
+        CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DeploymentService,
+        DockerLogOptions,
     },
     utils::builder::custom_type::IdType,
 };
@@ -331,10 +332,10 @@ impl DeploymentController {
     ) -> Result<DeploymentSse, ApiError> {
         let server_id = query.server_id;
         let stream = query.stream.unwrap_or_default();
-        let args = compose_log_args(query);
+        let options = compose_log_options(query);
         let receiver = self
             .service
-            .stream_docker_compose_logs(server_id, args)
+            .stream_docker_compose_logs(server_id, options)
             .await
             .map_err(map_sqlx_error)?;
 
@@ -486,46 +487,20 @@ fn sanitize_filename(value: &str) -> String {
     }
 }
 
-fn compose_log_args(query: ComposeLogQuery) -> Vec<String> {
-    let mut args = vec!["compose".into()];
-
-    if let Some(file) = query.file {
-        args.extend(["--file".into(), file]);
+fn compose_log_options(query: ComposeLogQuery) -> ComposeLogOptions {
+    ComposeLogOptions {
+        file: query.file,
+        project_directory: query.project_dir,
+        project_name: query.project_name,
+        service: query.service,
+        logs: docker_log_options(
+            query.tail,
+            query.timestamps,
+            query.follow,
+            query.since,
+            query.until,
+        ),
     }
-    if let Some(project_dir) = query.project_dir {
-        args.extend(["--project-directory".into(), project_dir]);
-    }
-    if let Some(project_name) = query.project_name {
-        args.extend(["--project-name".into(), project_name]);
-    }
-
-    args.push("logs".into());
-    let options = docker_log_options(
-        query.tail,
-        query.timestamps,
-        query.follow,
-        query.since,
-        query.until,
-    );
-    if options.follow {
-        args.push("--follow".into());
-    }
-    if options.timestamps {
-        args.push("--timestamps".into());
-    }
-    args.extend(["--tail".into(), options.tail.to_string()]);
-    if let Some(value) = options.since {
-        args.extend(["--since".into(), value]);
-    }
-    if let Some(value) = options.until {
-        args.extend(["--until".into(), value]);
-    }
-
-    if let Some(service) = query.service {
-        args.push(service);
-    }
-
-    args
 }
 
 pub mod stream;

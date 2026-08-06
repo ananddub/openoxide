@@ -37,6 +37,15 @@ pub struct DockerLogOptions {
     pub until: Option<String>,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ComposeLogOptions {
+    pub file: Option<String>,
+    pub project_directory: Option<String>,
+    pub project_name: Option<String>,
+    pub service: Option<String>,
+    pub logs: DockerLogOptions,
+}
+
 pub struct DeploymentService {
     db: Arc<SqlitePool>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,

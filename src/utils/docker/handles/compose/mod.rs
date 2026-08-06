@@ -54,6 +54,9 @@ impl<'a> ComposeHandle<'a> {
     pub fn logs(&self, service: impl Into<String>) -> ComposeLogsBuilder<'_> {
         ComposeLogsBuilder::new(self.0, service)
     }
+    pub fn logs_all(&self) -> ComposeLogsBuilder<'_> {
+        ComposeLogsBuilder::all(self.0)
+    }
     pub fn ps(&self) -> ComposePsBuilder<'_> {
         ComposePsBuilder::new(self.0)
     }

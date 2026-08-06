@@ -1,4 +1,4 @@
-use crate::services::deployment::{DeploymentService, DockerLogOptions};
+use crate::services::deployment::{ComposeLogOptions, DeploymentService, DockerLogOptions};
 use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use tokio::sync::mpsc;
 
@@ -400,10 +400,38 @@ impl DeploymentService {
     pub async fn stream_docker_compose_logs(
         &self,
         server_id: Option<i64>,
-        args: Vec<String>,
+        options: ComposeLogOptions,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
-        Ok(spawn_docker_stream(docker, args))
+        let compose = docker.compose();
+        let mut builder = match options.service {
+            Some(service) => compose.logs(service),
+            None => compose.logs_all(),
+        };
+        if let Some(file) = options.file {
+            builder = builder.file(file);
+        }
+        if let Some(directory) = options.project_directory {
+            builder = builder.project_directory(directory);
+        }
+        if let Some(project) = options.project_name {
+            builder = builder.project(project);
+        }
+        if options.logs.follow {
+            builder = builder.follow();
+        }
+        if options.logs.timestamps {
+            builder = builder.timestamps();
+        }
+        builder = builder.tail(options.logs.tail);
+        if let Some(since) = options.logs.since {
+            builder = builder.since(since);
+        }
+        if let Some(until) = options.logs.until {
+            builder = builder.until(until);
+        }
+        let command = builder.build_command_args();
+        Ok(spawn_docker_stream(docker, command))
     }
 
     async fn docker_for_server(&self, server_id: Option<i64>) -> sqlx::Result<DockerCli> {
