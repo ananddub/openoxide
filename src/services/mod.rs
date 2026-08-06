@@ -25,6 +25,7 @@ pub mod registry;
 pub mod remote_server;
 pub mod schedule;
 pub mod server_management;
+pub mod settings;
 pub mod ssh_key;
 pub mod swarm;
 pub mod tag;
