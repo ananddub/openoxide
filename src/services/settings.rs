@@ -10,17 +10,25 @@ use crate::{
 
 pub struct SettingsService {
     repository: Arc<SettingRepository>,
+    policies: Arc<crate::repository::BackgroundPolicyRepository>,
 }
 
 #[singleton]
 impl SettingsService {
-    fn new(repository: Arc<SettingRepository>) -> Self {
-        Self { repository }
+    fn new(
+        repository: Arc<SettingRepository>,
+        policies: Arc<crate::repository::BackgroundPolicyRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            policies,
+        }
     }
 
     pub async fn get(&self) -> sqlx::Result<SettingsResponseDto> {
         let setting = self.current().await?;
-        Ok(setting.into())
+        let policy = self.policies.get().await?;
+        Ok(response(setting, policy))
     }
 
     pub async fn update(&self, input: UpdateSettingsDto) -> sqlx::Result<SettingsResponseDto> {
@@ -49,7 +57,22 @@ impl SettingsService {
         self.repository
             .update(current.id.unwrap_or_default(), &setting)
             .await?;
-        Ok(setting.into())
+        let mut policy = self.policies.get().await?;
+        if let Some(value) = input.panel_backup_cron {
+            policy.panel_backup_cron = value;
+        }
+        if let Some(value) = input.log_retention_days {
+            policy.log_retention_days = value;
+        }
+        if let Some(value) = input.panel_backup_enabled {
+            policy.panel_backup_enabled = value;
+        }
+        if let Some(value) = input.log_cleanup_enabled {
+            policy.log_cleanup_enabled = value;
+        }
+        validate_policy(&policy)?;
+        self.policies.update(&policy).await?;
+        Ok(response(setting, policy))
     }
 
     async fn current(&self) -> sqlx::Result<Setting> {
@@ -179,7 +202,42 @@ impl From<Setting> for SettingsResponseDto {
             enable_docker_cleanup: value.enable_docker_cleanup != 0,
             log_cleanup_cron: value.log_cleanup_cron,
             metrics_config: value.metrics_config,
+            panel_backup_cron: "0 3 * * *".into(),
+            log_retention_days: 30,
+            panel_backup_enabled: true,
+            log_cleanup_enabled: true,
             updated_at: value.updated_at,
         }
     }
+}
+
+fn response(
+    setting: Setting,
+    policy: crate::db::repository::background_policies::BackgroundPolicy,
+) -> SettingsResponseDto {
+    let mut dto: SettingsResponseDto = setting.into();
+    dto.panel_backup_cron = policy.panel_backup_cron;
+    dto.log_cleanup_cron = Some(policy.log_cleanup_cron);
+    dto.log_retention_days = policy.log_retention_days;
+    dto.panel_backup_enabled = policy.panel_backup_enabled;
+    dto.log_cleanup_enabled = policy.log_cleanup_enabled;
+    dto
+}
+
+fn validate_policy(
+    policy: &crate::db::repository::background_policies::BackgroundPolicy,
+) -> sqlx::Result<()> {
+    if policy.panel_backup_cron.split_whitespace().count() != 5
+        || policy.log_cleanup_cron.split_whitespace().count() != 5
+    {
+        return Err(sqlx::Error::Protocol(
+            "background cron expressions must contain five fields".into(),
+        ));
+    }
+    if !(1..=3650).contains(&policy.log_retention_days) {
+        return Err(sqlx::Error::Protocol(
+            "log_retention_days must be between 1 and 3650".into(),
+        ));
+    }
+    Ok(())
 }

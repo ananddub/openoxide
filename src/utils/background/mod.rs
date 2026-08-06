@@ -4,6 +4,7 @@ pub mod log_cleanup;
 mod manager;
 pub mod notification;
 pub mod panel_backup;
+pub mod policy;
 pub mod private_network;
 pub mod schedule;
 

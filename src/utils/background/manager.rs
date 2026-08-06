@@ -1,5 +1,7 @@
 use auto_di::resolve;
+use std::sync::Arc;
 
+use crate::repository::BackgroundPolicyRepository;
 use crate::{
     services::{
         alert::AlertService, backup::PanelBackupService, deployment::DeploymentService,
@@ -31,12 +33,15 @@ impl BackgroundManager {
         let deployments = resolve::<DeploymentService>()
             .await
             .map_err(|error| format!("failed to resolve deployment service: {error}"))?;
-        super::log_cleanup::start(deployments);
+        let policies = resolve::<BackgroundPolicyRepository>()
+            .await
+            .map_err(|error| format!("failed to resolve background policies: {error}"))?;
+        super::log_cleanup::start(deployments, Arc::clone(&policies));
 
         let panel_backup = resolve::<PanelBackupService>()
             .await
             .map_err(|error| format!("failed to resolve panel backup service: {error}"))?;
-        super::panel_backup::start(panel_backup);
+        super::panel_backup::start(panel_backup, policies);
 
         let private_network = resolve::<ServerPrivateNetworkService>()
             .await

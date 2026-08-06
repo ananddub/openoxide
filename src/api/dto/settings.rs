@@ -14,6 +14,10 @@ pub struct SettingsResponseDto {
     pub enable_docker_cleanup: bool,
     pub log_cleanup_cron: Option<String>,
     pub metrics_config: String,
+    pub panel_backup_cron: String,
+    pub log_retention_days: i64,
+    pub panel_backup_enabled: bool,
+    pub log_cleanup_enabled: bool,
     pub updated_at: i64,
 }
 
@@ -28,6 +32,10 @@ pub struct UpdateSettingsDto {
     pub enable_docker_cleanup: Option<bool>,
     pub log_cleanup_cron: Option<String>,
     pub metrics_config: Option<String>,
+    pub panel_backup_cron: Option<String>,
+    pub log_retention_days: Option<i64>,
+    pub panel_backup_enabled: Option<bool>,
+    pub log_cleanup_enabled: Option<bool>,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
