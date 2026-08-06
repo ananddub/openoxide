@@ -9,6 +9,7 @@ pub mod database;
 pub mod database_network;
 pub mod deployment;
 pub mod destination;
+pub mod docker_management;
 pub mod domain;
 pub mod environment;
 pub mod git_provider;

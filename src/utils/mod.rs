@@ -22,6 +22,6 @@ pub mod os;
 async fn test_docker() {
     use crate::utils::docker::DockerCli;
     let docker = DockerCli::new_local();
-    let data = docker.containers().inspect("b671b4542569").await.unwrap();
+    let data = docker.container("b671b4542569").inspect().await.unwrap();
     println!("{:?}", data);
 }

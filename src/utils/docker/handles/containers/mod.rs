@@ -3,13 +3,15 @@ use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuild
 pub use create::ContainerCreate;
 pub use exec::ExecBuilder;
 pub use lifecycle::{
-    ContainerKillBuilder, ContainerPauseBuilder, ContainerPortBuilder, ContainerRenameBuilder,
-    ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder, ContainerStopBuilder,
-    ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, ContainerWaitBuilder,
+    ContainerKillBuilder, ContainerPauseBuilder, ContainerPortBuilder, ContainerRemoveBuilder,
+    ContainerRenameBuilder, ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder,
+    ContainerStopBuilder, ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder,
+    ContainerWaitBuilder,
 };
 pub use logs::LogsBuilder;
 pub use prune::ContainerPrune;
 pub use query::{ContainerQuery, RestartPolicy};
+pub use resource::ContainerResource;
 pub use stats::StatsBuilder;
 
 pub struct ContainerHandle<'a>(pub(crate) &'a DockerCli);
@@ -131,6 +133,7 @@ pub mod lifecycle;
 pub mod logs;
 pub mod prune;
 pub mod query;
+pub mod resource;
 pub mod stats;
 #[cfg(test)]
 pub mod tests;

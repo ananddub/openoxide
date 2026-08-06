@@ -595,7 +595,7 @@ fn test_sh_macro_docker_chain_inside_if_branch() {
         .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
         .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
     {
-        docker.containers().start("web");
+        docker.container("web").start();
     });
 
     let bash = script_ir

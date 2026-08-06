@@ -405,16 +405,41 @@ impl DockerCli {
         crate::utils::docker::handles::ContainerHandle(self)
     }
 
+    pub fn container(
+        &self,
+        id: impl Into<String>,
+    ) -> crate::utils::docker::handles::ContainerResource<'_> {
+        crate::utils::docker::handles::ContainerResource::new(self, id)
+    }
+
     pub fn images(&self) -> crate::utils::docker::handles::ImageHandle<'_> {
         crate::utils::docker::handles::ImageHandle(self)
+    }
+
+    pub fn image(&self, id: impl Into<String>) -> crate::utils::docker::handles::ImageResource<'_> {
+        crate::utils::docker::handles::ImageResource::new(self, id)
     }
 
     pub fn networks(&self) -> crate::utils::docker::handles::NetworkHandle<'_> {
         crate::utils::docker::handles::NetworkHandle(self)
     }
 
+    pub fn network(
+        &self,
+        name: impl Into<String>,
+    ) -> crate::utils::docker::handles::NetworkResource<'_> {
+        crate::utils::docker::handles::NetworkResource::new(self, name)
+    }
+
     pub fn volumes(&self) -> crate::utils::docker::handles::VolumeHandle<'_> {
         crate::utils::docker::handles::VolumeHandle(self)
+    }
+
+    pub fn volume(
+        &self,
+        name: impl Into<String>,
+    ) -> crate::utils::docker::handles::VolumeResource<'_> {
+        crate::utils::docker::handles::VolumeResource::new(self, name)
     }
 
     pub fn compose(&self) -> crate::utils::docker::handles::ComposeHandle<'_> {

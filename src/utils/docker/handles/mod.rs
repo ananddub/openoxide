@@ -3,20 +3,22 @@ pub use configs::ConfigsHandle;
 pub use containers::{
     ContainerCreate, ContainerHandle, ContainerInspectBuilder, ContainerKillBuilder,
     ContainerPauseBuilder, ContainerPortBuilder, ContainerPrune, ContainerQuery,
-    ContainerRenameBuilder, ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder,
-    ContainerStopBuilder, ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder,
-    ContainerWaitBuilder, ExecBuilder, LogsBuilder, RestartPolicy, StatsBuilder,
+    ContainerRemoveBuilder, ContainerRenameBuilder, ContainerResource, ContainerRestartBuilder,
+    ContainerRmBuilder, ContainerStartBuilder, ContainerStopBuilder, ContainerTopBuilder,
+    ContainerUnpauseBuilder, ContainerUpdateBuilder, ContainerWaitBuilder, ExecBuilder,
+    LogsBuilder, RestartPolicy, StatsBuilder,
 };
 pub use images::{
     BuildBuilder, ImageHandle, ImageHistoryBuilder, ImageImportBuilder, ImageLoadBuilder,
-    ImagePrune, ImagePushBuilder, ImageQuery, ImageRmBuilder, ImageSaveBuilder, ImageTagBuilder,
-    PullBuilder,
+    ImagePrune, ImagePushBuilder, ImageQuery, ImageRemoveBuilder, ImageResource, ImageRmBuilder,
+    ImageSaveBuilder, ImageTagBuilder, PullBuilder,
 };
 pub use nodes::NodesHandle;
 pub use resources::{
     NetworkConnectBuilder, NetworkCreate, NetworkDisconnectBuilder, NetworkHandle,
-    NetworkInspectBuilder, NetworkPrune, NetworkQuery, NetworkRmBuilder, VolumeCreate,
-    VolumeHandle, VolumePrune, VolumeQuery, VolumeRmBuilder,
+    NetworkInspectBuilder, NetworkPrune, NetworkQuery, NetworkRemoveBuilder, NetworkResource,
+    NetworkRmBuilder, VolumeCreate, VolumeHandle, VolumePrune, VolumeQuery, VolumeRemoveBuilder,
+    VolumeResource, VolumeRmBuilder,
 };
 pub use secrets::SecretsHandle;
 pub use services::{ServiceInspectBuilder, ServicesHandle};

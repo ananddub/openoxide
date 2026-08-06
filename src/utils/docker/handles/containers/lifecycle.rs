@@ -217,6 +217,7 @@ pub struct ContainerRmBuilder<'a> {
     pub(crate) id: String,
     pub(crate) args: ArgBuilder,
 }
+pub type ContainerRemoveBuilder<'a> = ContainerRmBuilder<'a>;
 
 impl<'a> ContainerRmBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli, id: impl Into<String>) -> Self {

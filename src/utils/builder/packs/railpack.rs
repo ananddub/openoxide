@@ -123,7 +123,7 @@ impl<'a> RailpackPrepareBuilder<'a> {
                 .run()
                 .await;
         } else {
-            let _ = docker.containers().start(name.clone()).run().await;
+            let _ = docker.container(name.clone()).start().run().await;
         }
 
         self.executor
@@ -156,7 +156,7 @@ impl<'a> RailpackPrepareBuilder<'a> {
                 .run()
                 .await;
         } else {
-            let _ = docker.containers().start(name.clone()).run().await;
+            let _ = docker.container(name.clone()).start().run().await;
         }
 
         self.executor

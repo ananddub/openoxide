@@ -138,6 +138,26 @@ impl ServerPrivateNetworkRepository {
         Ok(())
     }
 
+    pub async fn renew_operation(
+        &self,
+        server_id: i64,
+        operation: PrivateNetworkOperation,
+        lease_seconds: i64,
+    ) -> sqlx::Result<bool> {
+        let lease_until = chrono::Utc::now().timestamp() + lease_seconds;
+        let result = sqlx::query(
+            r#"UPDATE server_private_networks
+               SET operation_lease_until = ?, updated_at = strftime('%s', 'now')
+               WHERE server_id = ? AND operation = ?"#,
+        )
+        .bind(lease_until)
+        .bind(server_id)
+        .bind(operation.as_str())
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
     pub async fn set_health(
         &self,
         server_id: i64,

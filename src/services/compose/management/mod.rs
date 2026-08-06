@@ -17,6 +17,7 @@ use crate::{
     },
     core::cache::{AppStateCache, CacheKey},
     repository::{ComposeProjectRepository, DeploymentRepository},
+    services::deployment::DeploymentService,
     utils::builder::{compose::transform, queue::BuilderQueue},
 };
 
@@ -26,6 +27,7 @@ pub struct ComposeManagementService {
     compose: Arc<ComposeService>,
     projects: Arc<ComposeProjectRepository>,
     deployments: Arc<DeploymentRepository>,
+    deployment_service: Arc<DeploymentService>,
     cache: Arc<AppStateCache>,
 }
 
@@ -35,12 +37,14 @@ impl ComposeManagementService {
         compose: Arc<ComposeService>,
         projects: Arc<ComposeProjectRepository>,
         deployments: Arc<DeploymentRepository>,
+        deployment_service: Arc<DeploymentService>,
         cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
             compose,
             projects,
             deployments,
+            deployment_service,
             cache,
         }
     }
@@ -240,6 +244,19 @@ impl ComposeManagementService {
             }
         }
         Ok(affected)
+    }
+
+    pub async fn force_kill(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<crate::services::deployment::CancelDeploymentResult> {
+        self.compose.get_by_id(id).await?;
+        let deployment = self
+            .deployments
+            .running_for_compose(id)
+            .await?
+            .ok_or_else(|| sqlx::Error::Protocol("compose has no running deployment".into()))?;
+        self.deployment_service.cancel(deployment.id).await
     }
 }
 

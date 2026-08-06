@@ -25,6 +25,7 @@ use super::{
 };
 
 const OPERATION_LEASE_SECONDS: i64 = 300;
+const OPERATION_HEARTBEAT_SECONDS: u64 = 60;
 const STALE_HANDSHAKE_SECONDS: i64 = 180;
 const AUTO_REPAIR_FAILURE_THRESHOLD: i64 = 3;
 
@@ -484,7 +485,29 @@ impl ServerPrivateNetworkService {
                 "another private-network operation is running".into(),
             ));
         }
-        let result = future.await;
+        tokio::pin!(future);
+        let mut heartbeat =
+            tokio::time::interval(std::time::Duration::from_secs(OPERATION_HEARTBEAT_SECONDS));
+        heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        heartbeat.tick().await;
+        let result = loop {
+            tokio::select! {
+                result = &mut future => break result,
+                _ = heartbeat.tick() => {
+                    match self.networks.renew_operation(server_id, operation, OPERATION_LEASE_SECONDS).await {
+                        Ok(true) => {}
+                        Ok(false) => {
+                            break Err(sqlx::Error::Protocol(
+                                "private-network operation lease was lost".into(),
+                            ));
+                        }
+                        Err(error) => {
+                            tracing::warn!(server_id, operation = operation.as_str(), %error, "could not renew private-network operation lease");
+                        }
+                    }
+                }
+            }
+        };
         let release = self.networks.release_operation(server_id, operation).await;
         match (result, release) {
             (Err(error), _) => Err(error),

@@ -2,9 +2,11 @@ use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuild
 
 pub use network::{
     NetworkConnectBuilder, NetworkCreate, NetworkDisconnectBuilder, NetworkPrune, NetworkQuery,
-    NetworkRmBuilder,
+    NetworkRemoveBuilder, NetworkResource, NetworkRmBuilder,
 };
-pub use volume::{VolumeCreate, VolumePrune, VolumeQuery, VolumeRmBuilder};
+pub use volume::{
+    VolumeCreate, VolumePrune, VolumeQuery, VolumeRemoveBuilder, VolumeResource, VolumeRmBuilder,
+};
 
 pub struct NetworkHandle<'a>(pub(crate) &'a DockerCli);
 

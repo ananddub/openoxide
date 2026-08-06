@@ -18,7 +18,7 @@ pub struct DeploymentClaim {
 }
 
 #[derive(Debug, Clone)]
-pub struct ApplicationRunningDeployment {
+pub struct RunningDeployment {
     pub id: i64,
     pub server_id: Option<i64>,
     pub pid: Option<String>,
@@ -29,14 +29,30 @@ impl DeploymentRepository {
     pub async fn running_for_application(
         &self,
         application_id: i64,
-    ) -> Result<Option<ApplicationRunningDeployment>, sqlx::Error> {
+    ) -> Result<Option<RunningDeployment>, sqlx::Error> {
         sqlx::query_as!(
-            ApplicationRunningDeployment,
+            RunningDeployment,
             r#"SELECT id AS "id!: i64", server_id AS "server_id?: i64", pid AS "pid?: String"
                FROM deployments
                WHERE application_id = ? AND status = 'RUNNING'
                ORDER BY id DESC LIMIT 1"#,
             application_id
+        )
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn running_for_compose(
+        &self,
+        compose_id: i64,
+    ) -> Result<Option<RunningDeployment>, sqlx::Error> {
+        sqlx::query_as!(
+            RunningDeployment,
+            r#"SELECT id AS "id!: i64", server_id AS "server_id?: i64", pid AS "pid?: String"
+               FROM deployments
+               WHERE compose_id = ? AND status = 'RUNNING'
+               ORDER BY id DESC LIMIT 1"#,
+            compose_id
         )
         .fetch_optional(self.pool.as_ref())
         .await

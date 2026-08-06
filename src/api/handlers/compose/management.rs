@@ -272,6 +272,19 @@ impl ComposeManagementController {
             })
             .map_err(map_error)
     }
+
+    #[post("/{id}/deployments/force-kill")]
+    async fn force_kill(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ComposeCleanupDto>, ApiError> {
+        self.service
+            .force_kill(id)
+            .await
+            .map(|_| Json(ComposeCleanupDto { affected: 1 }))
+            .map_err(map_error)
+    }
 }
 
 pub struct ComposeMountController {

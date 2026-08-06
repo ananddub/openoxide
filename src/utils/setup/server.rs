@@ -218,8 +218,8 @@ impl ServerSetup {
     pub async fn ensure_traefik(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = self.config.traefik_name.as_str();
-        if docker.containers().inspect(name).await.is_ok() {
-            docker.containers().start(name).run().await?;
+        if docker.container(name).inspect().await.is_ok() {
+            docker.container(name).start().run().await?;
             return Ok(());
         }
         if docker.services().inspect(name).await.is_ok() {
@@ -265,12 +265,12 @@ impl ServerSetup {
     pub async fn ensure_monitoring(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = "rustploy-monitor";
-        if docker.containers().inspect(name).await.is_ok() {
+        if docker.container(name).inspect().await.is_ok() {
             if self.config.monitoring_server_id.is_some() {
                 // Recreate so a setup run cannot keep stale SERVER_ID/token env.
-                let _ = docker.containers().rm(name).force().run().await;
+                let _ = docker.container(name).remove().force().run().await;
             } else {
-                docker.containers().start(name).run().await?;
+                docker.container(name).start().run().await?;
                 return Ok(());
             }
         }
@@ -674,7 +674,7 @@ impl ServerSetup {
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Starting existing Traefik container");
-                docker.containers().start(name);
+                docker.container(name).start();
             } else {
                 if docker
                     .services()
@@ -719,7 +719,7 @@ impl ServerSetup {
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Starting existing Rustploy monitor container");
-                docker.containers().start(name);
+                docker.container(name).start();
             } else {
                 let _rustploy_arch = capture_stdout! {
                     cmd("uname", "-m");

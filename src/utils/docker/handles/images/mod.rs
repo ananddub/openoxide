@@ -9,6 +9,7 @@ pub use lifecycle::{
 pub use prune::ImagePrune;
 pub use pull::PullBuilder;
 pub use query::ImageQuery;
+pub use resource::{ImageRemoveBuilder, ImageResource};
 
 pub struct ImageHandle<'a>(pub(crate) &'a DockerCli);
 
@@ -71,5 +72,6 @@ pub mod lifecycle;
 pub mod prune;
 pub mod pull;
 pub mod query;
+pub mod resource;
 #[cfg(test)]
 pub mod tests;
