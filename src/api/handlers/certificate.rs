@@ -90,6 +90,19 @@ impl CertificateController {
             .map_err(map_sqlx_error)
     }
 
+    #[get("/{id}/dependencies")]
+    async fn dependencies(
+        &self,
+        _claims: Claims,
+        Path(id): Path<i64>,
+    ) -> Result<Json<crate::repository::CertificateDependencyCounts>, ApiError> {
+        self.service
+            .dependencies(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     #[post("/{id}/renew")]
     async fn renew(
         &self,

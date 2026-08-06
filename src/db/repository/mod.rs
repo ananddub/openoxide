@@ -6,6 +6,10 @@ pub use mount::MountRepository;
 pub use mysql::MysqlRepository;
 pub use postgres::PostgresRepository;
 pub use redis::RedisRepository;
+pub use resource_dependencies::{
+    CertificateDependencyCounts, NetworkDependencyCounts, ResourceDependencyCounts,
+    ResourceDependencyRepository,
+};
 
 pub use ai_generations::AiGenerationRepository;
 pub use ai_settings::AiSettingRepository;
@@ -147,6 +151,7 @@ pub mod redirects;
 pub mod redis;
 pub mod registries;
 pub mod resource_access;
+pub mod resource_dependencies;
 pub mod rollbacks;
 pub mod schedule_runtime;
 pub mod schedules;

@@ -513,6 +513,19 @@ impl ApplicationController {
             .map_err(map_sqlx_error)
     }
 
+    #[get("/{id}/dependencies")]
+    async fn dependencies(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<crate::repository::ResourceDependencyCounts>, ApiError> {
+        self.service
+            .dependencies(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     async fn operation(
         &self,
         id: i64,

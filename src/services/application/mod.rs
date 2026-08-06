@@ -8,7 +8,10 @@ use sqlx::SqlitePool;
 
 use crate::core::cache::AppStateCache;
 use crate::{
-    repository::{ApplicationRepository, DeploymentRepository, RollbackRepository},
+    repository::{
+        ApplicationRepository, DeploymentRepository, ResourceDependencyRepository,
+        RollbackRepository,
+    },
     services::deployment::DeploymentService,
 };
 
@@ -17,6 +20,7 @@ pub struct ApplicationService {
     pub(super) repo_app: Arc<ApplicationRepository>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,
     pub(super) repo_rollback: Arc<RollbackRepository>,
+    pub(super) repo_dependencies: Arc<ResourceDependencyRepository>,
     pub(super) deployment_service: Arc<DeploymentService>,
     pub(super) cache: Arc<AppStateCache>,
 }
@@ -28,6 +32,7 @@ impl ApplicationService {
         repo_app: Arc<ApplicationRepository>,
         repo_deploy: Arc<DeploymentRepository>,
         repo_rollback: Arc<RollbackRepository>,
+        repo_dependencies: Arc<ResourceDependencyRepository>,
         deployment_service: Arc<DeploymentService>,
         cache: Arc<AppStateCache>,
     ) -> Self {
@@ -36,6 +41,7 @@ impl ApplicationService {
             repo_app,
             repo_deploy,
             repo_rollback,
+            repo_dependencies,
             deployment_service,
             cache,
         }

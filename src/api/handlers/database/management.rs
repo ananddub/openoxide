@@ -31,6 +31,19 @@ impl DatabaseManagementController {
         Self { service }
     }
 
+    #[get("/{kind}/{id}/dependencies")]
+    async fn dependencies(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Path((kind, id)): Path<(String, i64)>,
+    ) -> Result<Json<crate::repository::ResourceDependencyCounts>, ApiError> {
+        self.service
+            .dependencies(parse_kind(&kind)?, id)
+            .await
+            .map(Json)
+            .map_err(super::map_sqlx_error)
+    }
+
     #[get("/{kind}/{id}/export")]
     async fn export(
         &self,

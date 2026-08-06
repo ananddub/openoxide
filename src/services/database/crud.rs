@@ -140,6 +140,13 @@ impl DatabaseService {
 
     pub async fn delete(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<()> {
         self.get_by_id(kind, id).await?;
+        let dependencies = self.repo_dependencies.database(kind.as_str(), id).await?;
+        if dependencies.blocks_delete() {
+            return Err(sqlx::Error::Protocol(format!(
+                "database has active dependencies: active_deployments={}, enabled_backups={}",
+                dependencies.active_deployments, dependencies.enabled_backups
+            )));
+        }
         match kind {
             DatabaseKind::Postgres => self.repo_postgres.delete(id).await?,
             DatabaseKind::Mysql => self.repo_mysql.delete(id).await?,
@@ -150,5 +157,14 @@ impl DatabaseService {
         }
         self.cache.invalidate(&CacheKey::Database(id)).await;
         Ok(())
+    }
+
+    pub async fn dependencies(
+        &self,
+        kind: DatabaseKind,
+        id: i64,
+    ) -> sqlx::Result<crate::repository::ResourceDependencyCounts> {
+        self.get_by_id(kind, id).await?;
+        self.repo_dependencies.database(kind.as_str(), id).await
     }
 }

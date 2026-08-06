@@ -132,9 +132,24 @@ impl ComposeService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        let dependencies = self.repo_dependencies.compose(id).await?;
+        if dependencies.blocks_delete() {
+            return Err(sqlx::Error::Protocol(format!(
+                "compose project has active dependencies: active_deployments={}, enabled_backups={}",
+                dependencies.active_deployments, dependencies.enabled_backups
+            )));
+        }
         self.repo_compose.delete(id).await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         Ok(())
+    }
+
+    pub async fn dependencies(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<crate::repository::ResourceDependencyCounts> {
+        self.get_by_id(id).await?;
+        self.repo_dependencies.compose(id).await
     }
 }
 

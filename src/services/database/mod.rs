@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::repository::{
     DatabaseManagementRepository, DeploymentRepository, LibsqlRepository, MariadbRepository,
     MongoRepository, MysqlRepository, PostgresRepository, RedisRepository,
+    ResourceDependencyRepository,
 };
 
 use crate::core::cache::AppStateCache;
@@ -21,6 +22,7 @@ pub struct DatabaseService {
     pub(super) repo_libsql: Arc<LibsqlRepository>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,
     pub(super) repo_management: Arc<DatabaseManagementRepository>,
+    pub(super) repo_dependencies: Arc<ResourceDependencyRepository>,
     pub(super) cache: Arc<AppStateCache>,
 }
 
@@ -36,6 +38,7 @@ impl DatabaseService {
         repo_libsql: Arc<LibsqlRepository>,
         repo_deploy: Arc<DeploymentRepository>,
         repo_management: Arc<DatabaseManagementRepository>,
+        repo_dependencies: Arc<ResourceDependencyRepository>,
         cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
@@ -48,6 +51,7 @@ impl DatabaseService {
             repo_libsql,
             repo_deploy,
             repo_management,
+            repo_dependencies,
             cache,
         }
     }

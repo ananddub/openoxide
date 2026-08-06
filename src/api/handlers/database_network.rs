@@ -121,6 +121,19 @@ impl DatabaseNetworkController {
             .map(|()| StatusCode::NO_CONTENT)
             .map_err(map_sqlx_error)
     }
+
+    #[get("/{id}/dependencies")]
+    async fn dependencies(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<crate::repository::NetworkDependencyCounts>, ApiError> {
+        self.service
+            .dependencies(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {
@@ -129,6 +142,7 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }
+        sqlx::Error::Protocol(message) => (StatusCode::CONFLICT, message),
         other => {
             tracing::error!(error = %other, "database network operation failed");
             (

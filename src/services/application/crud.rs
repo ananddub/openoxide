@@ -102,6 +102,13 @@ impl ApplicationService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        let dependencies = self.repo_dependencies.application(id).await?;
+        if dependencies.blocks_delete() {
+            return Err(sqlx::Error::Protocol(format!(
+                "application has active dependencies: active_deployments={}, enabled_backups={}",
+                dependencies.active_deployments, dependencies.enabled_backups
+            )));
+        }
         let previews =
             auto_di::resolve::<crate::services::preview_deployment::PreviewDeploymentService>()
                 .await
@@ -117,5 +124,13 @@ impl ApplicationService {
         self.repo_app.delete(id).await?;
         self.cache.invalidate(&CacheKey::Application(id)).await;
         Ok(())
+    }
+
+    pub async fn dependencies(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<crate::repository::ResourceDependencyCounts> {
+        self.get_by_id(id).await?;
+        self.repo_dependencies.application(id).await
     }
 }

@@ -1,19 +1,23 @@
 use crate::{
     api::dto::database_network::{CreateDatabaseNetworkDto, PatchDatabaseNetworkDto},
     db::models::database_networks::DatabaseNetwork,
-    repository::DatabaseNetworkRepository,
+    repository::{DatabaseNetworkRepository, ResourceDependencyRepository},
 };
 use auto_di::singleton;
 use std::sync::Arc;
 
 pub struct DatabaseNetworkService {
     repo: Arc<DatabaseNetworkRepository>,
+    dependencies: Arc<ResourceDependencyRepository>,
 }
 
 #[singleton]
 impl DatabaseNetworkService {
-    fn new(repo: Arc<DatabaseNetworkRepository>) -> Self {
-        Self { repo }
+    fn new(
+        repo: Arc<DatabaseNetworkRepository>,
+        dependencies: Arc<ResourceDependencyRepository>,
+    ) -> Self {
+        Self { repo, dependencies }
     }
 
     pub async fn list(&self) -> sqlx::Result<Vec<DatabaseNetwork>> {
@@ -69,6 +73,21 @@ impl DatabaseNetworkService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        let dependencies = self.dependencies.database_network(id).await?;
+        if dependencies.total() > 0 {
+            return Err(sqlx::Error::Protocol(format!(
+                "database network is in use: applications={}, compose_services={}, databases={}",
+                dependencies.applications, dependencies.compose_services, dependencies.databases
+            )));
+        }
         self.repo.delete(id).await
+    }
+
+    pub async fn dependencies(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<crate::repository::NetworkDependencyCounts> {
+        self.get_by_id(id).await?;
+        self.dependencies.database_network(id).await
     }
 }

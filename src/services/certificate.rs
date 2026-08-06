@@ -1,7 +1,10 @@
 use crate::{
     api::dto::certificate::{CreateCertificateDto, PatchCertificateDto, RenewCertificateDto},
     db::models::certificates::Certificate,
-    db::repository::{CertificateRenewalRepository, certificates::CertificateRepository},
+    db::repository::{
+        CertificateRenewalRepository, ResourceDependencyRepository,
+        certificates::CertificateRepository,
+    },
 };
 use auto_di::singleton;
 use std::sync::Arc;
@@ -14,6 +17,7 @@ use crate::utils::{
 pub struct CertificateService {
     repo_cert: Arc<CertificateRepository>,
     renewals: Arc<CertificateRenewalRepository>,
+    dependencies: Arc<ResourceDependencyRepository>,
 }
 
 #[singleton]
@@ -21,10 +25,12 @@ impl CertificateService {
     fn new(
         repo_cert: Arc<CertificateRepository>,
         renewals: Arc<CertificateRenewalRepository>,
+        dependencies: Arc<ResourceDependencyRepository>,
     ) -> Self {
         Self {
             repo_cert,
             renewals,
+            dependencies,
         }
     }
 
@@ -104,7 +110,21 @@ impl CertificateService {
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         // Check existence
         self.get_by_id(id).await?;
+        let dependencies = self.dependencies.certificate(id).await?;
+        if dependencies.running_renewals > 0 {
+            return Err(sqlx::Error::Protocol(
+                "certificate has a running renewal".into(),
+            ));
+        }
         self.repo_cert.delete(id).await
+    }
+
+    pub async fn dependencies(
+        &self,
+        id: i64,
+    ) -> sqlx::Result<crate::repository::CertificateDependencyCounts> {
+        self.get_by_id(id).await?;
+        self.dependencies.certificate(id).await
     }
 
     pub async fn renew(&self, id: i64, input: RenewCertificateDto) -> sqlx::Result<Certificate> {
