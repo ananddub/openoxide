@@ -6,6 +6,10 @@ use crate::utils::os::file::FileMode;
 use zeroize::Zeroize;
 
 use super::WireGuardConfig;
+use super::cli::{
+    WireGuardQuickAction, WireGuardQuickBuilder, WireGuardShowBuilder, WireGuardShowField,
+    WireGuardShowTarget, validate_interface_name,
+};
 use super::config::validate_key;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,7 +29,7 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 
     pub async fn install(self, config: &WireGuardConfig) -> ExecResult<ExecOutput> {
-        validate_name(&self.name)?;
+        validate_interface_name(&self.name)?;
         config
             .validate()
             .map_err(|error| crate::utils::exec::ExecError::CommandFailed {
@@ -44,7 +48,10 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
         rendered.zeroize();
         write_result?;
         os.file(&path).chmod(FileMode::OwnerReadWrite).run().await?;
-        match self.executor.run("wg-quick", ["up", &self.name]).await {
+        match WireGuardQuickBuilder::new(self.executor, WireGuardQuickAction::Up, self.name.clone())
+            .run()
+            .await
+        {
             Ok(output) => Ok(output),
             Err(error) => {
                 let _ = os.file(&path).delete().run().await;
@@ -54,8 +61,14 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 
     pub async fn remove(self) -> ExecResult<ExecOutput> {
-        validate_name(&self.name)?;
-        let _ = self.executor.run("wg-quick", ["down", &self.name]).await;
+        validate_interface_name(&self.name)?;
+        let _ = WireGuardQuickBuilder::new(
+            self.executor,
+            WireGuardQuickAction::Down,
+            self.name.clone(),
+        )
+        .run()
+        .await;
         OsCli::new(self.executor)
             .file(format!("/etc/wireguard/{}.conf", self.name))
             .delete()
@@ -64,15 +77,25 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 
     pub async fn latest_handshakes(self) -> ExecResult<ExecOutput> {
-        validate_name(&self.name)?;
-        self.executor
-            .run("wg", ["show", &self.name, "latest-handshakes"])
-            .await
+        validate_interface_name(&self.name)?;
+        WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .field(WireGuardShowField::LatestHandshakes)
+        .run()
+        .await
     }
 
     pub async fn exists(&self) -> ExecResult<bool> {
-        validate_name(&self.name)?;
-        match self.executor.run("wg", ["show", &self.name]).await {
+        validate_interface_name(&self.name)?;
+        match WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .run()
+        .await
+        {
             Ok(_) => Ok(true),
             Err(crate::utils::exec::ExecError::CommandFailed { .. }) => Ok(false),
             Err(error) => Err(error),
@@ -80,48 +103,62 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 
     pub async fn public_key(&self) -> ExecResult<String> {
-        validate_name(&self.name)?;
-        let output = self
-            .executor
-            .run("wg", ["show", &self.name, "public-key"])
-            .await?;
+        validate_interface_name(&self.name)?;
+        let output = WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .field(WireGuardShowField::PublicKey)
+        .run()
+        .await?;
         Ok(output.stdout.trim().to_owned())
     }
 
     pub async fn allowed_ips(&self) -> ExecResult<Vec<String>> {
-        validate_name(&self.name)?;
-        let output = self
-            .executor
-            .run("wg", ["show", &self.name, "allowed-ips"])
-            .await?;
+        validate_interface_name(&self.name)?;
+        let output = WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .field(WireGuardShowField::AllowedIps)
+        .run()
+        .await?;
         parse_allowed_ips(&output.stdout)
     }
 
     pub async fn peer_public_keys(&self) -> ExecResult<Vec<String>> {
-        validate_name(&self.name)?;
-        let output = self
-            .executor
-            .run("wg", ["show", &self.name, "peers"])
-            .await?;
+        validate_interface_name(&self.name)?;
+        let output = WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .field(WireGuardShowField::Peers)
+        .run()
+        .await?;
         parse_peer_public_keys(&output.stdout)
     }
 
     pub async fn parsed_handshakes(&self) -> ExecResult<Vec<WireGuardHandshake>> {
-        validate_name(&self.name)?;
-        let output = self
-            .executor
-            .run("wg", ["show", &self.name, "latest-handshakes"])
-            .await?;
+        validate_interface_name(&self.name)?;
+        let output = WireGuardShowBuilder::new(
+            self.executor,
+            WireGuardShowTarget::Interface(self.name.clone()),
+        )
+        .field(WireGuardShowField::LatestHandshakes)
+        .run()
+        .await?;
         parse_handshakes(&output.stdout)
     }
 
     pub async fn save_config(&self) -> ExecResult<ExecOutput> {
-        validate_name(&self.name)?;
-        self.executor.run("wg-quick", ["save", &self.name]).await
+        validate_interface_name(&self.name)?;
+        WireGuardQuickBuilder::new(self.executor, WireGuardQuickAction::Save, self.name.clone())
+            .run()
+            .await
     }
 
     pub async fn snapshot_config(&self) -> ExecResult<String> {
-        validate_name(&self.name)?;
+        validate_interface_name(&self.name)?;
         let output = OsCli::new(self.executor)
             .file(format!("/etc/wireguard/{}.conf", self.name))
             .read()
@@ -131,14 +168,22 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 
     pub async fn restore_config(self, config: &mut String) -> ExecResult<ExecOutput> {
-        validate_name(&self.name)?;
+        validate_interface_name(&self.name)?;
         let path = format!("/etc/wireguard/{}.conf", self.name);
         let os = OsCli::new(self.executor);
-        let _ = self.executor.run("wg-quick", ["down", &self.name]).await;
+        let _ = WireGuardQuickBuilder::new(
+            self.executor,
+            WireGuardQuickAction::Down,
+            self.name.clone(),
+        )
+        .run()
+        .await;
         let result = async {
             os.file(&path).write(config.as_str()).execute().await?;
             os.file(&path).chmod(FileMode::OwnerReadWrite).run().await?;
-            self.executor.run("wg-quick", ["up", &self.name]).await
+            WireGuardQuickBuilder::new(self.executor, WireGuardQuickAction::Up, self.name.clone())
+                .run()
+                .await
         }
         .await;
         config.zeroize();
@@ -225,22 +270,6 @@ fn command_error(message: &str) -> crate::utils::exec::ExecError {
     crate::utils::exec::ExecError::CommandFailed {
         code: None,
         stderr: message.into(),
-    }
-}
-
-fn validate_name(name: &str) -> ExecResult<()> {
-    if !name.is_empty()
-        && name.len() <= 15
-        && name
-            .chars()
-            .all(|value| value.is_ascii_alphanumeric() || matches!(value, '-' | '_' | '=' | '+'))
-    {
-        Ok(())
-    } else {
-        Err(crate::utils::exec::ExecError::CommandFailed {
-            code: None,
-            stderr: "invalid WireGuard interface name".into(),
-        })
     }
 }
 

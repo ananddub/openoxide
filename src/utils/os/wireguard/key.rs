@@ -1,5 +1,7 @@
 use crate::utils::exec::{CommandExecutor, ExecResult};
 
+use super::cli::{WireGuardKeyAction, WireGuardKeyCommand};
+
 pub struct WireGuardKeyBuilder<'a> {
     executor: &'a CommandExecutor,
 }
@@ -10,20 +12,32 @@ impl<'a> WireGuardKeyBuilder<'a> {
     }
 
     pub async fn generate(self) -> ExecResult<String> {
-        Ok(self
-            .executor
-            .run("wg", ["genkey"])
-            .await?
-            .stdout_trimmed()
-            .to_owned())
+        Ok(
+            WireGuardKeyCommand::new(self.executor, WireGuardKeyAction::GeneratePrivate)
+                .run()
+                .await?
+                .stdout_trimmed()
+                .to_owned(),
+        )
+    }
+
+    pub async fn generate_preshared(self) -> ExecResult<String> {
+        Ok(
+            WireGuardKeyCommand::new(self.executor, WireGuardKeyAction::GeneratePreshared)
+                .run()
+                .await?
+                .stdout_trimmed()
+                .to_owned(),
+        )
     }
 
     pub async fn public_from_private(self, private_key: &str) -> ExecResult<String> {
-        Ok(self
-            .executor
-            .run_with_stdin("wg", ["pubkey"], private_key)
-            .await?
-            .stdout_trimmed()
-            .to_owned())
+        Ok(
+            WireGuardKeyCommand::new(self.executor, WireGuardKeyAction::DerivePublic)
+                .run_with_stdin(private_key)
+                .await?
+                .stdout_trimmed()
+                .to_owned(),
+        )
     }
 }

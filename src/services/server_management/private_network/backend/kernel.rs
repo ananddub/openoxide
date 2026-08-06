@@ -2,7 +2,7 @@ use crate::utils::{
     exec::CommandExecutor,
     os::{
         OsCli,
-        wireguard::{WireGuardConfig, WireGuardPeer},
+        wireguard::{WireGuardConfigBuilder, WireGuardPeerBuilder},
     },
 };
 use zeroize::Zeroize;
@@ -139,36 +139,43 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
         local
             .wireguard()
             .interface(plan.interface)
-            .install(&WireGuardConfig {
-                private_key: panel_private,
-                addresses: vec![plan.panel_address.clone()],
-                listen_port: Some(plan.port),
-                peers: vec![WireGuardPeer {
-                    public_key: remote_public.clone(),
-                    allowed_ips: std::iter::once(format!("{}/32", plan.remote_host))
-                        .chain(plan.routes.iter().cloned())
-                        .collect(),
-                    endpoint: None,
-                    persistent_keepalive: None,
-                }],
-            })
+            .install(
+                &WireGuardConfigBuilder::new(panel_private)
+                    .address(plan.panel_address.clone())
+                    .listen_port(plan.port)
+                    .peer(
+                        std::iter::once(format!("{}/32", plan.remote_host))
+                            .chain(plan.routes.iter().cloned())
+                            .fold(
+                                WireGuardPeerBuilder::new(remote_public.clone()),
+                                |peer, route| peer.allowed_ip(route),
+                            )
+                            .build()
+                            .map_err(Self::protocol)?,
+                    )
+                    .build()
+                    .map_err(Self::protocol)?,
+            )
             .await
             .map_err(Self::protocol)?;
 
         if let Err(error) = remote
             .wireguard()
             .interface(plan.interface)
-            .install(&WireGuardConfig {
-                private_key: remote_private,
-                addresses: vec![plan.remote_address.clone()],
-                listen_port: None,
-                peers: vec![WireGuardPeer {
-                    public_key: panel_public,
-                    allowed_ips: vec![plan.panel_host.clone()],
-                    endpoint: Some(plan.endpoint.to_owned()),
-                    persistent_keepalive: Some(plan.keepalive),
-                }],
-            })
+            .install(
+                &WireGuardConfigBuilder::new(remote_private)
+                    .address(plan.remote_address.clone())
+                    .peer(
+                        WireGuardPeerBuilder::new(panel_public)
+                            .allowed_ip(plan.panel_host.clone())
+                            .endpoint(plan.endpoint)
+                            .persistent_keepalive(plan.keepalive)
+                            .build()
+                            .map_err(Self::protocol)?,
+                    )
+                    .build()
+                    .map_err(Self::protocol)?,
+            )
             .await
         {
             let _ = local.wireguard().interface(plan.interface).remove().await;

@@ -1,17 +1,200 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireGuardPeer {
-    pub public_key: String,
-    pub allowed_ips: Vec<String>,
-    pub endpoint: Option<String>,
-    pub persistent_keepalive: Option<u16>,
+    pub(crate) public_key: String,
+    pub(crate) allowed_ips: Vec<String>,
+    pub(crate) endpoint: Option<String>,
+    pub(crate) persistent_keepalive: Option<u16>,
+}
+
+pub struct WireGuardPeerBuilder {
+    peer: WireGuardPeer,
+}
+
+impl WireGuardPeerBuilder {
+    pub fn new(public_key: impl Into<String>) -> Self {
+        Self {
+            peer: WireGuardPeer {
+                public_key: public_key.into(),
+                allowed_ips: Vec::new(),
+                endpoint: None,
+                persistent_keepalive: None,
+            },
+        }
+    }
+
+    pub fn allowed_ip(mut self, network: impl Into<String>) -> Self {
+        self.peer.allowed_ips.push(network.into());
+        self
+    }
+
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.peer.endpoint = Some(endpoint.into());
+        self
+    }
+
+    pub fn persistent_keepalive(mut self, seconds: u16) -> Self {
+        self.peer.persistent_keepalive = Some(seconds);
+        self
+    }
+
+    pub fn build(self) -> Result<WireGuardPeer, WireGuardConfigError> {
+        validate_key(&self.peer.public_key).map_err(|_| WireGuardConfigError::InvalidPublicKey)?;
+        if self.peer.allowed_ips.is_empty() {
+            return Err(WireGuardConfigError::MissingAllowedIps);
+        }
+        if let Some(endpoint) = &self.peer.endpoint {
+            validate_endpoint(endpoint)?;
+        }
+        for allowed in &self.peer.allowed_ips {
+            let network = allowed
+                .parse::<ipnet::IpNet>()
+                .map_err(|_| WireGuardConfigError::InvalidAllowedIp(allowed.clone()))?;
+            if network.prefix_len() == 0 {
+                return Err(WireGuardConfigError::DefaultRouteNotAllowed);
+            }
+        }
+        Ok(self.peer)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct WireGuardConfig {
+    pub(crate) private_key: String,
+    pub(crate) addresses: Vec<String>,
+    pub(crate) listen_port: Option<u16>,
+    pub(crate) dns: Vec<std::net::IpAddr>,
+    pub(crate) mtu: Option<u16>,
+    pub(crate) table: Option<WireGuardRoutingTable>,
+    pub(crate) pre_up: Vec<WireGuardHook>,
+    pub(crate) post_up: Vec<WireGuardHook>,
+    pub(crate) pre_down: Vec<WireGuardHook>,
+    pub(crate) post_down: Vec<WireGuardHook>,
+    pub(crate) save_config: bool,
+    pub(crate) peers: Vec<WireGuardPeer>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WireGuardConfig {
-    pub private_key: String,
-    pub addresses: Vec<String>,
-    pub listen_port: Option<u16>,
-    pub peers: Vec<WireGuardPeer>,
+pub enum WireGuardRoutingTable {
+    Auto,
+    Off,
+    Id(u32),
+}
+
+impl std::fmt::Display for WireGuardRoutingTable {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Auto => formatter.write_str("auto"),
+            Self::Off => formatter.write_str("off"),
+            Self::Id(value) => write!(formatter, "{value}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireGuardHook {
+    program: String,
+    args: Vec<String>,
+}
+
+impl WireGuardHook {
+    pub fn new(program: impl Into<String>) -> Result<Self, WireGuardConfigError> {
+        let program = program.into();
+        validate_hook_token(&program)?;
+        Ok(Self {
+            program,
+            args: Vec::new(),
+        })
+    }
+
+    pub fn arg(mut self, value: impl Into<String>) -> Result<Self, WireGuardConfigError> {
+        let value = value.into();
+        validate_hook_token(&value)?;
+        self.args.push(value);
+        Ok(self)
+    }
+
+    fn render(&self) -> String {
+        std::iter::once(&self.program)
+            .chain(self.args.iter())
+            .map(|value| crate::utils::exec::script::shell_single_quote(value))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
+pub struct WireGuardConfigBuilder {
+    config: WireGuardConfig,
+}
+
+impl WireGuardConfigBuilder {
+    pub fn new(private_key: impl Into<String>) -> Self {
+        Self {
+            config: WireGuardConfig {
+                private_key: private_key.into(),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn address(mut self, address: impl Into<String>) -> Self {
+        self.config.addresses.push(address.into());
+        self
+    }
+
+    pub fn listen_port(mut self, port: u16) -> Self {
+        self.config.listen_port = Some(port);
+        self
+    }
+
+    pub fn dns(mut self, server: std::net::IpAddr) -> Self {
+        self.config.dns.push(server);
+        self
+    }
+
+    pub fn mtu(mut self, mtu: u16) -> Self {
+        self.config.mtu = Some(mtu);
+        self
+    }
+
+    pub fn table(mut self, table: WireGuardRoutingTable) -> Self {
+        self.config.table = Some(table);
+        self
+    }
+
+    pub fn pre_up(mut self, hook: WireGuardHook) -> Self {
+        self.config.pre_up.push(hook);
+        self
+    }
+
+    pub fn post_up(mut self, hook: WireGuardHook) -> Self {
+        self.config.post_up.push(hook);
+        self
+    }
+
+    pub fn pre_down(mut self, hook: WireGuardHook) -> Self {
+        self.config.pre_down.push(hook);
+        self
+    }
+
+    pub fn post_down(mut self, hook: WireGuardHook) -> Self {
+        self.config.post_down.push(hook);
+        self
+    }
+
+    pub fn save_config(mut self, enabled: bool) -> Self {
+        self.config.save_config = enabled;
+        self
+    }
+
+    pub fn peer(mut self, peer: WireGuardPeer) -> Self {
+        self.config.peers.push(peer);
+        self
+    }
+
+    pub fn build(self) -> Result<WireGuardConfig, WireGuardConfigError> {
+        self.config.validate()?;
+        Ok(self.config)
+    }
 }
 
 impl WireGuardConfig {
@@ -22,6 +205,9 @@ impl WireGuardConfig {
         }
         if self.listen_port == Some(0) {
             return Err(WireGuardConfigError::InvalidListenPort);
+        }
+        if self.mtu == Some(0) {
+            return Err(WireGuardConfigError::InvalidMtu);
         }
         let mut addresses = HashSet::new();
         for address in &self.addresses {
@@ -70,6 +256,29 @@ impl WireGuardConfig {
         if let Some(port) = self.listen_port {
             output.push_str(&format!("ListenPort = {port}\n"));
         }
+        if !self.dns.is_empty() {
+            output.push_str(&format!(
+                "DNS = {}\n",
+                self.dns
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        if let Some(mtu) = self.mtu {
+            output.push_str(&format!("MTU = {mtu}\n"));
+        }
+        if let Some(table) = &self.table {
+            output.push_str(&format!("Table = {table}\n"));
+        }
+        render_hooks(&mut output, "PreUp", &self.pre_up);
+        render_hooks(&mut output, "PostUp", &self.post_up);
+        render_hooks(&mut output, "PreDown", &self.pre_down);
+        render_hooks(&mut output, "PostDown", &self.post_down);
+        if self.save_config {
+            output.push_str("SaveConfig = true\n");
+        }
         for peer in &self.peers {
             output.push_str("\n[Peer]\n");
             output.push_str(&format!("PublicKey = {}\n", peer.public_key));
@@ -85,6 +294,20 @@ impl WireGuardConfig {
     }
 }
 
+fn render_hooks(output: &mut String, name: &str, hooks: &[WireGuardHook]) {
+    for hook in hooks {
+        output.push_str(&format!("{name} = {}\n", hook.render()));
+    }
+}
+
+fn validate_hook_token(value: &str) -> Result<(), WireGuardConfigError> {
+    if value.is_empty() || value.contains(['\n', '\r', '\0']) {
+        Err(WireGuardConfigError::InvalidHook)
+    } else {
+        Ok(())
+    }
+}
+
 pub(super) fn validate_key(value: &str) -> Result<(), ()> {
     if value.chars().any(char::is_whitespace) {
         return Err(());
@@ -95,7 +318,7 @@ pub(super) fn validate_key(value: &str) -> Result<(), ()> {
     (decoded.len() == 32).then_some(()).ok_or(())
 }
 
-fn validate_endpoint(value: &str) -> Result<(), WireGuardConfigError> {
+pub(super) fn validate_endpoint(value: &str) -> Result<(), WireGuardConfigError> {
     if value.is_empty() || value.chars().any(char::is_whitespace) {
         return Err(WireGuardConfigError::InvalidEndpoint);
     }
@@ -121,7 +344,10 @@ fn validate_endpoint(value: &str) -> Result<(), WireGuardConfigError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{WireGuardConfig, WireGuardConfigError, WireGuardPeer};
+    use super::{
+        WireGuardConfig, WireGuardConfigBuilder, WireGuardConfigError, WireGuardHook,
+        WireGuardPeer, WireGuardPeerBuilder, WireGuardRoutingTable,
+    };
 
     const PRIVATE_KEY: &str = "DM5qhLAE20PG9BbfBCger+Ac9D2NDOwCtY1rbYDLf34=";
     const PUBLIC_KEY: &str = "nwQHKWewX3F+JSitCr3JSYVfwJg1Gc9kU12xjz5HpmM=";
@@ -139,11 +365,42 @@ mod tests {
                 endpoint: Some("panel.example.com:51820".into()),
                 persistent_keepalive: Some(25),
             }],
+            ..Default::default()
         }
         .render();
         assert!(rendered.contains("ListenPort = 51820"));
         assert!(rendered.contains("AllowedIPs = 10.77.1.2/32"));
         assert!(rendered.contains("PersistentKeepalive = 25"));
+    }
+
+    #[test]
+    fn builder_renders_all_wg_quick_interface_options() {
+        let config = WireGuardConfigBuilder::new(PRIVATE_KEY)
+            .address("10.77.1.1/24")
+            .listen_port(51820)
+            .dns("1.1.1.1".parse().unwrap())
+            .mtu(1380)
+            .table(WireGuardRoutingTable::Off)
+            .pre_up(WireGuardHook::new("ip").unwrap().arg("link").unwrap())
+            .post_up(WireGuardHook::new("true").unwrap())
+            .pre_down(WireGuardHook::new("true").unwrap())
+            .post_down(WireGuardHook::new("true").unwrap())
+            .save_config(true)
+            .peer(
+                WireGuardPeerBuilder::new(PUBLIC_KEY)
+                    .allowed_ip("10.77.1.2/32")
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap()
+            .render();
+        assert!(config.contains("DNS = 1.1.1.1"));
+        assert!(config.contains("MTU = 1380"));
+        assert!(config.contains("Table = off"));
+        assert!(config.contains("PreUp = 'ip' 'link'"));
+        assert!(config.contains("PostDown = 'true'"));
+        assert!(config.contains("SaveConfig = true"));
     }
 
     fn valid_config() -> WireGuardConfig {
@@ -157,6 +414,7 @@ mod tests {
                 endpoint: Some("panel.example.com:51820".into()),
                 persistent_keepalive: Some(20),
             }],
+            ..Default::default()
         }
     }
 
@@ -263,6 +521,10 @@ pub enum WireGuardConfigError {
     DuplicateAddress(String),
     #[error("WireGuard listen port must be greater than zero")]
     InvalidListenPort,
+    #[error("WireGuard MTU cannot be zero")]
+    InvalidMtu,
+    #[error("invalid WireGuard hook command")]
+    InvalidHook,
     #[error("invalid WireGuard address: {0}")]
     InvalidAddress(String),
     #[error("invalid WireGuard allowed IP: {0}")]
