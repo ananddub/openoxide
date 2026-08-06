@@ -1,7 +1,63 @@
-use crate::services::deployment::{ComposeLogOptions, DeploymentService, DockerLogOptions};
+use crate::services::deployment::{
+    ComposeLogOptions, DeploymentService, DockerLogOptions, LogSearchOptions, LogSearchResult,
+};
 use tokio::sync::mpsc;
 
 impl DeploymentService {
+    pub async fn search_logs(
+        &self,
+        options: LogSearchOptions,
+    ) -> sqlx::Result<Vec<LogSearchResult>> {
+        let deployments = self
+            .list(crate::services::deployment::DeploymentListFilter {
+                limit: 200,
+                ..Default::default()
+            })
+            .await?;
+        let needle = options.query.map(|value| value.to_ascii_lowercase());
+        let mut results = Vec::new();
+        for deployment in deployments {
+            let Some(id) = deployment.id else { continue };
+            let Ok(content) = tokio::fs::read_to_string(&deployment.log_path).await else {
+                continue;
+            };
+            for (index, line) in content.lines().enumerate() {
+                if needle
+                    .as_ref()
+                    .is_none_or(|value| line.to_ascii_lowercase().contains(value))
+                {
+                    results.push(LogSearchResult {
+                        deployment_id: id,
+                        title: deployment.title.clone(),
+                        line_number: index + 1,
+                        line: line.to_owned(),
+                    });
+                    if results.len() >= options.limit {
+                        return Ok(results);
+                    }
+                }
+            }
+        }
+        Ok(results)
+    }
+
+    pub async fn cleanup_logs_before(&self, cutoff: i64) -> sqlx::Result<u64> {
+        let deployments = self
+            .list(crate::services::deployment::DeploymentListFilter {
+                limit: 200,
+                ..Default::default()
+            })
+            .await?;
+        let mut removed = 0;
+        for deployment in deployments {
+            if deployment.finished_at.unwrap_or(deployment.created_at) < cutoff
+                && tokio::fs::remove_file(&deployment.log_path).await.is_ok()
+            {
+                removed += 1;
+            }
+        }
+        Ok(removed)
+    }
     pub async fn export_container_logs(
         &self,
         server_id: Option<i64>,

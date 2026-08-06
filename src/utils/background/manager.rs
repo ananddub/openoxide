@@ -2,8 +2,8 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        alert::AlertService, notification::NotificationService, schedule::ScheduleRunner,
-        server_management::ServerPrivateNetworkService,
+        alert::AlertService, deployment::DeploymentService, notification::NotificationService,
+        schedule::ScheduleRunner, server_management::ServerPrivateNetworkService,
     },
     utils::builder::queue::BuilderQueue,
 };
@@ -26,6 +26,11 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve alert service: {error}"))?;
         super::alert::start(alerts);
+
+        let deployments = resolve::<DeploymentService>()
+            .await
+            .map_err(|error| format!("failed to resolve deployment service: {error}"))?;
+        super::log_cleanup::start(deployments);
 
         let private_network = resolve::<ServerPrivateNetworkService>()
             .await

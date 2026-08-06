@@ -35,3 +35,17 @@ pub struct ComposeLogOptions {
     pub service: Option<String>,
     pub logs: DockerLogOptions,
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct LogSearchOptions {
+    pub query: Option<String>,
+    pub limit: usize,
+}
+
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+pub struct LogSearchResult {
+    pub deployment_id: i64,
+    pub title: String,
+    pub line_number: usize,
+    pub line: String,
+}

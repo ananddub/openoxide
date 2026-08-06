@@ -110,6 +110,12 @@ pub struct DockerLogQuery {
 }
 
 #[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+pub struct LogSearchQuery {
+    pub query: Option<String>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
 pub struct DockerStatsQuery {
     pub server_id: Option<i64>,
     pub stream: Option<bool>,

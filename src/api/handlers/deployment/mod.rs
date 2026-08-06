@@ -12,11 +12,11 @@ use axum::{
 use crate::{
     api::dto::deployment::{
         ActiveDeploymentDto, ComposeLogQuery, DeploymentListQuery, DeploymentResponseDto,
-        DeploymentSseEventDto, DockerLogQuery, DockerStatsQuery,
+        DeploymentSseEventDto, DockerLogQuery, DockerStatsQuery, LogSearchQuery,
     },
     services::deployment::{
         CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DeploymentService,
-        DockerLogOptions,
+        DockerLogOptions, LogSearchOptions,
     },
     utils::builder::custom_type::IdType,
 };
@@ -60,6 +60,38 @@ impl DeploymentController {
             .map(|items| items.into_iter().map(DeploymentResponseDto::from).collect())
             .map(Json)
             .map_err(map_sqlx_error)
+    }
+
+    #[get("/logs/search")]
+    async fn search_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Query(query): Query<LogSearchQuery>,
+    ) -> Result<Json<Vec<crate::services::deployment::LogSearchResult>>, ApiError> {
+        self.service
+            .search_logs(LogSearchOptions {
+                query: query.query,
+                limit: query.limit.unwrap_or(200).clamp(1, 5000),
+            })
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/logs/cleanup")]
+    async fn cleanup_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+    ) -> Result<Json<serde_json::Value>, ApiError> {
+        let cutoff = chrono::Utc::now().timestamp() - 30 * 24 * 60 * 60;
+        let removed = self
+            .service
+            .cleanup_logs_before(cutoff)
+            .await
+            .map_err(map_sqlx_error)?;
+        Ok(Json(
+            serde_json::json!({ "removed": removed, "cutoff": cutoff }),
+        ))
     }
 
     #[get("/active")]
