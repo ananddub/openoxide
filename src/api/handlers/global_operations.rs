@@ -1,11 +1,16 @@
 use crate::{
     services::global_operations::{
-        GlobalOperationsService, GlobalResourceDto, GlobalSearchOptions,
+        BulkDeploymentRequest, BulkDeploymentResult, GlobalOperationsService, GlobalResourceDto,
+        GlobalSearchOptions, ServerDependencyView,
     },
     utils::jwt::claim::Claims,
 };
 use auto_route::controller;
-use axum::{Json, extract::Query, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Path, Query},
+    http::StatusCode,
+};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -53,8 +58,35 @@ impl GlobalOperationsController {
             .map(|cancelled| Json(serde_json::json!({"cancelled": cancelled})))
             .map_err(map_error)
     }
+    #[post("/deployments/bulk")]
+    async fn bulk_deployments(
+        &self,
+        _claims: Claims,
+        Json(body): Json<BulkDeploymentRequest>,
+    ) -> Result<Json<Vec<BulkDeploymentResult>>, (StatusCode, String)> {
+        self.service
+            .bulk_deployments(body)
+            .await
+            .map(Json)
+            .map_err(map_error)
+    }
+    #[get("/servers/{server_id}/dependencies")]
+    async fn server_dependencies(
+        &self,
+        _claims: Claims,
+        Path(server_id): Path<i64>,
+    ) -> Result<Json<ServerDependencyView>, (StatusCode, String)> {
+        self.service
+            .server_dependencies(server_id)
+            .await
+            .map(Json)
+            .map_err(map_error)
+    }
 }
 fn map_error(error: sqlx::Error) -> (StatusCode, String) {
+    if let sqlx::Error::Protocol(message) = error {
+        return (StatusCode::BAD_REQUEST, message);
+    }
     tracing::error!(%error, "global operation failed");
     (
         StatusCode::INTERNAL_SERVER_ERROR,

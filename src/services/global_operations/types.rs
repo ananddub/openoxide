@@ -11,3 +11,33 @@ pub struct GlobalResourceDto {
     pub name: String,
     pub status: Option<String>,
 }
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+pub enum BulkDeploymentAction {
+    Cancel,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+pub struct BulkDeploymentRequest {
+    pub action: BulkDeploymentAction,
+    pub deployment_ids: Vec<i64>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+pub struct BulkDeploymentResult {
+    pub deployment_id: i64,
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+pub struct ServerDependencyView {
+    pub server_id: i64,
+    pub applications: i64,
+    pub build_assignments: i64,
+    pub compose_projects: i64,
+    pub databases: i64,
+    pub certificates: i64,
+    pub schedules: i64,
+    pub safe_to_delete: bool,
+}

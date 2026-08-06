@@ -3,16 +3,82 @@ use std::sync::Arc;
 use auto_di::singleton;
 use sqlx::SqlitePool;
 
-use super::{GlobalResourceDto, GlobalSearchOptions};
+use super::{
+    BulkDeploymentAction, BulkDeploymentRequest, BulkDeploymentResult, GlobalResourceDto,
+    GlobalSearchOptions, ServerDependencyView,
+};
+use crate::{
+    repository::ServerRepository,
+    services::deployment::{CancelDeploymentResult, DeploymentService},
+};
 
 pub struct GlobalOperationsService {
     db: Arc<SqlitePool>,
+    deployments: Arc<DeploymentService>,
+    servers: Arc<ServerRepository>,
 }
 
 #[singleton]
 impl GlobalOperationsService {
-    fn new(db: Arc<SqlitePool>) -> Self {
-        Self { db }
+    fn new(
+        db: Arc<SqlitePool>,
+        deployments: Arc<DeploymentService>,
+        servers: Arc<ServerRepository>,
+    ) -> Self {
+        Self {
+            db,
+            deployments,
+            servers,
+        }
+    }
+
+    pub async fn bulk_deployments(
+        &self,
+        request: BulkDeploymentRequest,
+    ) -> sqlx::Result<Vec<BulkDeploymentResult>> {
+        if request.deployment_ids.is_empty() || request.deployment_ids.len() > 100 {
+            return Err(sqlx::Error::Protocol(
+                "deployment_ids must contain 1 to 100 items".into(),
+            ));
+        }
+        let mut results = Vec::with_capacity(request.deployment_ids.len());
+        for id in request.deployment_ids {
+            let outcome = match request.action {
+                BulkDeploymentAction::Cancel => self.deployments.cancel(id).await,
+            };
+            let (success, message) = match outcome {
+                Ok(CancelDeploymentResult::CancelRequested) => {
+                    (true, "cancellation requested".into())
+                }
+                Ok(other) => (false, format!("{other:?}")),
+                Err(sqlx::Error::RowNotFound) => (false, "deployment not found".into()),
+                Err(error) => (false, error.to_string()),
+            };
+            results.push(BulkDeploymentResult {
+                deployment_id: id,
+                success,
+                message,
+            });
+        }
+        Ok(results)
+    }
+
+    pub async fn server_dependencies(&self, server_id: i64) -> sqlx::Result<ServerDependencyView> {
+        self.servers
+            .get_by_id(server_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+        let value = self.servers.dependency_counts(server_id).await?;
+        Ok(ServerDependencyView {
+            server_id,
+            applications: value.applications,
+            build_assignments: value.build_assignments,
+            compose_projects: value.compose_projects,
+            databases: value.databases,
+            certificates: value.certificates,
+            schedules: value.schedules,
+            safe_to_delete: value.total() == 0,
+        })
     }
 
     pub async fn search(
