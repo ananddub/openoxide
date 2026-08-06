@@ -28,6 +28,15 @@ pub struct DeploymentListFilter {
     pub offset: i64,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct DockerLogOptions {
+    pub tail: usize,
+    pub timestamps: bool,
+    pub follow: bool,
+    pub since: Option<String>,
+    pub until: Option<String>,
+}
+
 pub struct DeploymentService {
     db: Arc<SqlitePool>,
     pub(super) repo_deploy: Arc<DeploymentRepository>,

@@ -3,7 +3,7 @@ use crate::utils::docker::{
     handles::{
         ContainerInspectBuilder, ContainerKillBuilder, ContainerPauseBuilder,
         ContainerRemoveBuilder, ContainerRestartBuilder, ContainerStartBuilder,
-        ContainerStopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder,
+        ContainerStopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, LogsBuilder,
     },
 };
 
@@ -47,6 +47,10 @@ impl<'a> ContainerResource<'a> {
 
     pub fn update(&self) -> ContainerUpdateBuilder<'a> {
         ContainerUpdateBuilder::new(self.cli, self.id.clone())
+    }
+
+    pub fn logs(&self) -> LogsBuilder<'a> {
+        LogsBuilder::new(self.cli, self.id.clone())
     }
 
     pub fn inspect_command(&self) -> ContainerInspectBuilder<'a> {

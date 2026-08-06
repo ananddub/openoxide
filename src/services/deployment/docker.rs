@@ -1,4 +1,4 @@
-use crate::services::deployment::DeploymentService;
+use crate::services::deployment::{DeploymentService, DockerLogOptions};
 use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use tokio::sync::mpsc;
 
@@ -55,11 +55,38 @@ fn find_best_matching_container<'a>(
 }
 
 impl DeploymentService {
+    pub async fn docker_container_logs(
+        &self,
+        server_id: Option<i64>,
+        target: String,
+        options: DockerLogOptions,
+    ) -> sqlx::Result<crate::utils::docker::DockerOutput> {
+        let docker = self.docker_for_server(server_id).await?;
+        let mut resolved_target = target.clone();
+
+        if let Ok(containers) = docker.containers().ps().all().list().await {
+            if let Some(matched) = find_best_matching_container(&containers, &target) {
+                resolved_target = matched.names.trim_start_matches('/').to_string();
+            }
+        }
+
+        let mut builder = docker.container(resolved_target).logs();
+        if options.timestamps {
+            builder = builder.timestamps();
+        }
+        builder = builder.tail(options.tail);
+
+        builder
+            .output_streams()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+    }
+
     pub async fn stream_docker_container_logs(
         &self,
         server_id: Option<i64>,
         target: String,
-        options: Vec<String>,
+        options: DockerLogOptions,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
@@ -72,28 +99,18 @@ impl DeploymentService {
 
         let handle = docker.containers();
         let mut builder = handle.logs(resolved_target).kind("container");
-        if options.iter().any(|o| o == "--follow" || o == "-f") {
+        if options.follow {
             builder = builder.follow();
         }
-        if options.iter().any(|o| o == "--timestamps" || o == "-t") {
+        if options.timestamps {
             builder = builder.timestamps();
         }
-        if let Some(pos) = options.iter().position(|o| o == "--tail" || o == "-n") {
-            if let Some(val) = options.get(pos + 1) {
-                if let Ok(n) = val.parse::<usize>() {
-                    builder = builder.tail(n);
-                }
-            }
+        builder = builder.tail(options.tail);
+        if let Some(value) = options.since {
+            builder = builder.since(value);
         }
-        if let Some(pos) = options.iter().position(|o| o == "--since") {
-            if let Some(value) = options.get(pos + 1) {
-                builder = builder.since(value.clone());
-            }
-        }
-        if let Some(pos) = options.iter().position(|o| o == "--until") {
-            if let Some(value) = options.get(pos + 1) {
-                builder = builder.until(value.clone());
-            }
+        if let Some(value) = options.until {
+            builder = builder.until(value);
         }
 
         let cmd_args = builder.build_command_args();
@@ -316,7 +333,7 @@ impl DeploymentService {
         &self,
         server_id: Option<i64>,
         target: String,
-        options: Vec<String>,
+        options: DockerLogOptions,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
         let logs_subcommand = "container";
@@ -363,30 +380,19 @@ impl DeploymentService {
 
         let handle = docker.containers();
         let mut builder = handle.logs(resolved_target).kind(logs_subcommand);
-        if options.iter().any(|o| o == "--follow" || o == "-f") {
+        if options.follow {
             builder = builder.follow();
         }
-        if options.iter().any(|o| o == "--timestamps" || o == "-t") {
+        if options.timestamps {
             builder = builder.timestamps();
         }
-        if let Some(pos) = options.iter().position(|o| o == "--tail" || o == "-n") {
-            if let Some(val) = options.get(pos + 1) {
-                if let Ok(n) = val.parse::<usize>() {
-                    builder = builder.tail(n);
-                }
-            }
+        builder = builder.tail(options.tail);
+        if let Some(value) = options.since {
+            builder = builder.since(value);
         }
-        if let Some(pos) = options.iter().position(|o| o == "--since") {
-            if let Some(value) = options.get(pos + 1) {
-                builder = builder.since(value.clone());
-            }
+        if let Some(value) = options.until {
+            builder = builder.until(value);
         }
-        if let Some(pos) = options.iter().position(|o| o == "--until") {
-            if let Some(value) = options.get(pos + 1) {
-                builder = builder.until(value.clone());
-            }
-        }
-
         let cmd_args = builder.build_command_args();
         Ok(spawn_docker_stream(docker, cmd_args))
     }

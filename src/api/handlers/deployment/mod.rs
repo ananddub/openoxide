@@ -3,8 +3,9 @@ use std::sync::Arc;
 use auto_route::controller;
 use axum::{
     Json,
+    body::Body,
     extract::{Path, Query},
-    http::StatusCode,
+    http::{HeaderValue, Response, StatusCode, header},
     response::sse::Sse,
 };
 
@@ -13,7 +14,9 @@ use crate::{
         ActiveDeploymentDto, ComposeLogQuery, DeploymentListQuery, DeploymentResponseDto,
         DeploymentSseEventDto, DockerLogQuery, DockerStatsQuery,
     },
-    services::deployment::{CancelDeploymentResult, DeploymentListFilter, DeploymentService},
+    services::deployment::{
+        CancelDeploymentResult, DeploymentListFilter, DeploymentService, DockerLogOptions,
+    },
     utils::builder::custom_type::IdType,
 };
 
@@ -201,6 +204,50 @@ impl DeploymentController {
             receiver,
             query.stream.unwrap_or_default(),
         )))
+    }
+
+    #[get("/docker/container/{target}/logs/export")]
+    async fn export_docker_container_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(target): Path<String>,
+        Query(query): Query<DockerLogQuery>,
+    ) -> Result<Response<Body>, ApiError> {
+        let selector = query.stream.unwrap_or_default();
+        let output = self
+            .service
+            .docker_container_logs(
+                query.server_id,
+                target.clone(),
+                docker_log_options(
+                    query.tail,
+                    query.timestamps,
+                    Some(false),
+                    query.since,
+                    query.until,
+                ),
+            )
+            .await
+            .map_err(map_sqlx_error)?;
+        let bytes = match selector {
+            crate::api::dto::deployment::DockerLogStream::All => {
+                format!("{}{}", output.stdout, output.stderr).into_bytes()
+            }
+            crate::api::dto::deployment::DockerLogStream::Stdout => output.stdout.into_bytes(),
+            crate::api::dto::deployment::DockerLogStream::Stderr => output.stderr.into_bytes(),
+        };
+        let filename = format!("{}.log", sanitize_filename(&target));
+        let mut response = Response::new(Body::from(bytes));
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        response.headers_mut().insert(
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+                .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?,
+        );
+        Ok(response)
     }
 
     #[get("/docker/stats", sse = DeploymentSseEventDto)]
@@ -414,23 +461,29 @@ fn docker_log_options(
     follow: Option<bool>,
     since: Option<String>,
     until: Option<String>,
-) -> Vec<String> {
-    let mut args = Vec::new();
-    if follow.unwrap_or(true) {
-        args.push("--follow".into());
+) -> DockerLogOptions {
+    DockerLogOptions {
+        tail: tail.unwrap_or(200).clamp(1, 100_000),
+        timestamps: timestamps.unwrap_or(false),
+        follow: follow.unwrap_or(true),
+        since,
+        until,
     }
-    if timestamps.unwrap_or(false) {
-        args.push("--timestamps".into());
+}
+
+fn sanitize_filename(value: &str) -> String {
+    let sanitized: String = value
+        .chars()
+        .map(|character| match character {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '.' => character,
+            _ => '_',
+        })
+        .collect();
+    if sanitized.is_empty() {
+        "container".into()
+    } else {
+        sanitized
     }
-    let tail = tail.unwrap_or(200).to_string();
-    args.extend(["--tail".into(), tail]);
-    if let Some(since) = since {
-        args.extend(["--since".into(), since]);
-    }
-    if let Some(until) = until {
-        args.extend(["--until".into(), until]);
-    }
-    args
 }
 
 fn compose_log_args(query: ComposeLogQuery) -> Vec<String> {
@@ -447,13 +500,26 @@ fn compose_log_args(query: ComposeLogQuery) -> Vec<String> {
     }
 
     args.push("logs".into());
-    args.extend(docker_log_options(
+    let options = docker_log_options(
         query.tail,
         query.timestamps,
         query.follow,
         query.since,
         query.until,
-    ));
+    );
+    if options.follow {
+        args.push("--follow".into());
+    }
+    if options.timestamps {
+        args.push("--timestamps".into());
+    }
+    args.extend(["--tail".into(), options.tail.to_string()]);
+    if let Some(value) = options.since {
+        args.extend(["--since".into(), value]);
+    }
+    if let Some(value) = options.until {
+        args.extend(["--until".into(), value]);
+    }
 
     if let Some(service) = query.service {
         args.push(service);

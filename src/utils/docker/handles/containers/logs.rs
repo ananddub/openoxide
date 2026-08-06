@@ -61,12 +61,16 @@ impl<'a> LogsBuilder<'a> {
     }
 
     pub async fn output(self) -> DockerResult<String> {
+        let out = self.output_streams().await?;
+        Ok(format!("{}{}", out.stdout, out.stderr))
+    }
+
+    pub async fn output_streams(self) -> DockerResult<crate::utils::docker::DockerOutput> {
         let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
         a.inherit_meta(&self.args);
         a.push_all(self.args.build());
         a.push(&self.id);
-        let out = self.cli.execute(&a).await?;
-        Ok(format!("{}{}", out.stdout, out.stderr))
+        self.cli.execute(&a).await
     }
 
     pub async fn stream(
