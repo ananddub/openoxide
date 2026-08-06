@@ -114,6 +114,8 @@ pub struct MigrateServerDependenciesDto {
 
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
 pub struct ServerDependencyMigrationDto {
+    pub migration_id: String,
+    pub status: String,
     pub source_server_id: i64,
     pub target_server_id: i64,
     pub applications: i64,
@@ -122,6 +124,41 @@ pub struct ServerDependencyMigrationDto {
     pub databases: i64,
     pub certificates: i64,
     pub schedules: i64,
+    pub queued_applications: i64,
+    pub queued_compose_projects: i64,
+    pub error: Option<String>,
+}
+
+impl TryFrom<crate::repository::ServerMigration> for ServerDependencyMigrationDto {
+    type Error = sqlx::Error;
+
+    fn try_from(value: crate::repository::ServerMigration) -> Result<Self, Self::Error> {
+        let applications: Vec<i64> = serde_json::from_str(&value.application_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let build: Vec<i64> = serde_json::from_str(&value.build_application_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let compose: Vec<i64> = serde_json::from_str(&value.compose_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let certificates: Vec<i64> = serde_json::from_str(&value.certificate_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let schedules: Vec<i64> = serde_json::from_str(&value.schedule_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        Ok(Self {
+            migration_id: value.id,
+            status: value.status,
+            source_server_id: value.source_server_id,
+            target_server_id: value.target_server_id,
+            applications: applications.len() as i64,
+            build_assignments: build.len() as i64,
+            compose_projects: compose.len() as i64,
+            databases: 0,
+            certificates: certificates.len() as i64,
+            schedules: schedules.len() as i64,
+            queued_applications: value.queued_applications,
+            queued_compose_projects: value.queued_compose_projects,
+            error: value.error,
+        })
+    }
 }
 
 fn default_port() -> i64 {

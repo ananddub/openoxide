@@ -7,13 +7,23 @@ use crate::{
     api::dto::remote_server::{CreateRemoteServerDto, PatchRemoteServerDto},
     db::models::server_private_networks::{PrivateNetworkStatus, ServerPrivateNetwork},
     db::models::servers::Server,
-    repository::{ServerPrivateNetworkRepository, ServerRepository, SshKeyRepository},
+    repository::{
+        ServerMigrationRepository, ServerPrivateNetworkRepository, ServerRepository,
+        SshKeyRepository,
+    },
+    services::{
+        application::{ApplicationOperation, ApplicationService},
+        compose::{ComposeOperation, ComposeService},
+    },
 };
 
 pub struct ServerService {
     repo_server: Arc<ServerRepository>,
     repo_ssh: Arc<SshKeyRepository>,
     private_networks: Arc<ServerPrivateNetworkRepository>,
+    migrations: Arc<ServerMigrationRepository>,
+    applications: Arc<ApplicationService>,
+    compose: Arc<ComposeService>,
 }
 
 #[singleton]
@@ -22,11 +32,17 @@ impl ServerService {
         repo_server: Arc<ServerRepository>,
         repo_ssh: Arc<SshKeyRepository>,
         private_networks: Arc<ServerPrivateNetworkRepository>,
+        migrations: Arc<ServerMigrationRepository>,
+        applications: Arc<ApplicationService>,
+        compose: Arc<ComposeService>,
     ) -> Self {
         Self {
             repo_server,
             repo_ssh,
             private_networks,
+            migrations,
+            applications,
+            compose,
         }
     }
 
@@ -177,22 +193,167 @@ impl ServerService {
         }
         self.get_by_id(source).await?;
         self.get_by_id(target).await?;
+        let dependencies = self.repo_server.dependency_counts(source).await?;
+        if dependencies.databases > 0 {
+            return Err(sqlx::Error::Protocol(format!(
+                "stateful migration is required for {} databases; database metadata was not moved",
+                dependencies.databases
+            )));
+        }
+        let (application_ids, build_ids, compose_ids, certificate_ids, schedule_ids) =
+            self.repo_server.migratable_resource_ids(source).await?;
+        let migration_id = Uuid::new_v4().simple().to_string();
+        let encode = |values: &[i64]| {
+            serde_json::to_string(values).map_err(|error| sqlx::Error::Protocol(error.to_string()))
+        };
+        self.migrations
+            .begin(
+                &migration_id,
+                source,
+                target,
+                &encode(&application_ids)?,
+                &encode(&build_ids)?,
+                &encode(&compose_ids)?,
+                &encode(&certificate_ids)?,
+                &encode(&schedule_ids)?,
+            )
+            .await?;
+        let mut stop_failures = Vec::new();
+        for id in &application_ids {
+            if let Err(error) = self.applications.cancel_operation(*id).await {
+                stop_failures.push(format!("application {id}: {error}"));
+            }
+        }
+        for id in &compose_ids {
+            if let Err(error) = self.compose.cancel_operation(*id).await {
+                stop_failures.push(format!("compose {id}: {error}"));
+            }
+        }
+        if !stop_failures.is_empty() {
+            let error = format!(
+                "source workloads could not be stopped: {}",
+                stop_failures.join("; ")
+            );
+            self.migrations
+                .finish(&migration_id, false, 0, 0, Some(&error))
+                .await?;
+            return self.migration_status(&migration_id).await;
+        }
         let counts = self
             .repo_server
             .migrate_dependencies(source, target)
             .await?;
-        Ok(
-            crate::api::dto::remote_server::ServerDependencyMigrationDto {
-                source_server_id: source,
-                target_server_id: target,
-                applications: counts.applications,
-                build_assignments: counts.build_assignments,
-                compose_projects: counts.compose_projects,
-                databases: counts.databases,
-                certificates: counts.certificates,
-                schedules: counts.schedules,
-            },
-        )
+        let mut queued_applications = 0_i64;
+        let mut queued_compose = 0_i64;
+        let mut failures = Vec::new();
+        for id in &application_ids {
+            match self
+                .applications
+                .run_operation(*id, ApplicationOperation::Redeploy)
+                .await
+            {
+                Ok(_) => queued_applications += 1,
+                Err(error) => failures.push(format!("application {id}: {error}")),
+            }
+        }
+        for id in &compose_ids {
+            match self
+                .compose
+                .run_operation(*id, ComposeOperation::Redeploy)
+                .await
+            {
+                Ok(_) => queued_compose += 1,
+                Err(error) => failures.push(format!("compose {id}: {error}")),
+            }
+        }
+        let error = (!failures.is_empty()).then(|| failures.join("; "));
+        self.migrations
+            .finish(
+                &migration_id,
+                error.is_none(),
+                queued_applications,
+                queued_compose,
+                error.as_deref(),
+            )
+            .await?;
+        let migration = self
+            .migrations
+            .get(&migration_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+        let mut dto =
+            crate::api::dto::remote_server::ServerDependencyMigrationDto::try_from(migration)?;
+        dto.databases = counts.databases;
+        Ok(dto)
+    }
+
+    pub async fn migration_status(
+        &self,
+        id: &str,
+    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+        self.migrations
+            .get(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?
+            .try_into()
+    }
+
+    pub async fn rollback_migration(
+        &self,
+        id: &str,
+    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+        let migration = self
+            .migrations
+            .get(id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+        if migration.status == "ROLLED_BACK" {
+            return migration.try_into();
+        }
+        let decode = |value: &str| {
+            serde_json::from_str::<Vec<i64>>(value)
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+        };
+        let application_ids = decode(&migration.application_ids)?;
+        let compose_ids = decode(&migration.compose_ids)?;
+        self.repo_server
+            .rollback_migrated_resources(
+                migration.source_server_id,
+                migration.target_server_id,
+                &application_ids,
+                &decode(&migration.build_application_ids)?,
+                &compose_ids,
+                &decode(&migration.certificate_ids)?,
+                &decode(&migration.schedule_ids)?,
+            )
+            .await?;
+        self.migrations.mark_rolled_back(id).await?;
+        let mut failures = Vec::new();
+        for resource_id in application_ids {
+            if let Err(error) = self
+                .applications
+                .run_operation(resource_id, ApplicationOperation::Redeploy)
+                .await
+            {
+                failures.push(format!("application {resource_id}: {error}"));
+            }
+        }
+        for resource_id in compose_ids {
+            if let Err(error) = self
+                .compose
+                .run_operation(resource_id, ComposeOperation::Redeploy)
+                .await
+            {
+                failures.push(format!("compose {resource_id}: {error}"));
+            }
+        }
+        if !failures.is_empty() {
+            return Err(sqlx::Error::Protocol(format!(
+                "metadata rolled back but some source redeploys failed: {}",
+                failures.join("; ")
+            )));
+        }
+        self.migration_status(id).await
     }
 }
 

@@ -32,6 +32,43 @@ pub struct BulkDeploymentResult {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+pub enum BulkResourceKind {
+    Application,
+    Compose,
+    Database,
+    Server,
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+pub enum BulkResourceAction {
+    Start,
+    Stop,
+    Redeploy,
+    Delete,
+    Cleanup,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+pub struct BulkResourceItem {
+    pub id: i64,
+    pub database_kind: Option<crate::services::database::DatabaseKind>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+pub struct BulkResourceRequest {
+    pub resource_kind: BulkResourceKind,
+    pub action: BulkResourceAction,
+    pub items: Vec<BulkResourceItem>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+pub struct BulkResourceResult {
+    pub id: i64,
+    pub success: bool,
+    pub message: String,
+}
+
 #[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
 pub struct ServerDependencyView {
     pub server_id: i64,

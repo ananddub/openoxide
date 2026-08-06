@@ -1,7 +1,7 @@
 use crate::{
     services::global_operations::{
-        BulkDeploymentRequest, BulkDeploymentResult, GlobalOperationsService, GlobalResourceDto,
-        GlobalSearchOptions, ServerDependencyView,
+        BulkDeploymentRequest, BulkDeploymentResult, BulkResourceRequest, BulkResourceResult,
+        GlobalOperationsService, GlobalResourceDto, GlobalSearchOptions, ServerDependencyView,
     },
     utils::jwt::claim::Claims,
 };
@@ -70,6 +70,18 @@ impl GlobalOperationsController {
     ) -> Result<Json<Vec<BulkDeploymentResult>>, (StatusCode, String)> {
         self.service
             .bulk_deployments(body)
+            .await
+            .map(Json)
+            .map_err(map_error)
+    }
+    #[post("/resources/bulk")]
+    async fn bulk_resources(
+        &self,
+        _claims: Claims,
+        Json(body): Json<BulkResourceRequest>,
+    ) -> Result<Json<Vec<BulkResourceResult>>, (StatusCode, String)> {
+        self.service
+            .bulk_resources(body)
             .await
             .map(Json)
             .map_err(map_error)

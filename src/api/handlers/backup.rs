@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{convert::Infallible, pin::Pin, sync::Arc, time::Duration};
 
 use auto_route::controller;
 use axum::{
@@ -6,7 +6,9 @@ use axum::{
     body::Body,
     extract::{Path, Query},
     http::{HeaderValue, Response, StatusCode, header},
+    response::sse::{Event, Sse},
 };
+use futures::Stream;
 use serde::Deserialize;
 
 use crate::{
@@ -37,6 +39,8 @@ use crate::{
 };
 
 type ApiError = (StatusCode, String);
+type RestoreStatusStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+type RestoreStatusSse = Sse<RestoreStatusStream>;
 
 pub struct BackupController {
     db: Arc<sqlx::SqlitePool>,
@@ -137,6 +141,22 @@ impl BackupController {
             .await
             .map(Json)
             .map_err(map_sqlx_error)
+    }
+
+    #[get("/panel/restore/{restore_id}/events", sse = crate::api::dto::backup::PanelRestoreStatusDto)]
+    async fn panel_restore_events(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(restore_id): Path<String>,
+    ) -> Result<RestoreStatusSse, ApiError> {
+        self.panel_backup
+            .restore_status(&restore_id)
+            .await
+            .map_err(map_sqlx_error)?;
+        Ok(Sse::new(restore_status_stream(
+            self.panel_backup.clone(),
+            restore_id,
+        )))
     }
 
     #[post("/panel/restore/rollback")]
@@ -860,6 +880,44 @@ impl BackupController {
             .map(|_| StatusCode::ACCEPTED)
             .map_err(map_sqlx_error)
     }
+}
+
+fn restore_status_stream(
+    service: Arc<PanelBackupService>,
+    restore_id: String,
+) -> RestoreStatusStream {
+    Box::pin(futures::stream::unfold(
+        (
+            service,
+            restore_id,
+            tokio::time::interval(Duration::from_secs(1)),
+            false,
+        ),
+        |(service, restore_id, mut interval, finished)| async move {
+            if finished {
+                return None;
+            }
+            interval.tick().await;
+            let status = match service.restore_status(&restore_id).await {
+                Ok(status) => status,
+                Err(error) => crate::api::dto::backup::PanelRestoreStatusDto {
+                    restore_id: restore_id.clone(),
+                    status: "FAILED".into(),
+                    message: error.to_string(),
+                    updated_at: chrono::Utc::now().timestamp(),
+                },
+            };
+            let finished = matches!(
+                status.status.as_str(),
+                "PENDING_RESTART" | "SUCCEEDED" | "FAILED" | "ROLLED_BACK"
+            );
+            let data = serde_json::to_string(&status).unwrap_or_else(|_| "{}".into());
+            Some((
+                Ok(Event::default().event("restore-status").data(data)),
+                (service, restore_id, interval, finished),
+            ))
+        },
+    ))
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {

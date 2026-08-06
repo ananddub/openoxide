@@ -156,6 +156,32 @@ impl RemoteServerController {
             .map(Json)
             .map_err(map_sqlx_error)
     }
+
+    #[get("/migrations/{migration_id}")]
+    async fn migration_status(
+        &self,
+        _claims: Claims,
+        Path(migration_id): Path<String>,
+    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
+        self.service
+            .migration_status(&migration_id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/migrations/{migration_id}/rollback")]
+    async fn rollback_migration(
+        &self,
+        _claims: Claims,
+        Path(migration_id): Path<String>,
+    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
+        self.service
+            .rollback_migration(&migration_id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {

@@ -77,48 +77,6 @@ impl ServerRepository {
         .execute(&mut *transaction)
         .await?;
         sqlx::query!(
-            "UPDATE postgres_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
-            "UPDATE mysql_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
-            "UPDATE mariadb_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
-            "UPDATE mongo_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
-            "UPDATE redis_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
-            "UPDATE libsql_dbs SET server_id = ? WHERE server_id = ?",
-            target,
-            source
-        )
-        .execute(&mut *transaction)
-        .await?;
-        sqlx::query!(
             "UPDATE certificates SET server_id = ? WHERE server_id = ?",
             target,
             source
@@ -134,6 +92,113 @@ impl ServerRepository {
         .await?;
         transaction.commit().await?;
         Ok(counts)
+    }
+
+    pub async fn migratable_resource_ids(
+        &self,
+        server_id: i64,
+    ) -> sqlx::Result<(Vec<i64>, Vec<i64>, Vec<i64>, Vec<i64>, Vec<i64>)> {
+        let applications = sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM applications WHERE server_id = ? ORDER BY id"#,
+            server_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+        let compose = sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM compose_projects WHERE server_id = ? ORDER BY id"#,
+            server_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+        let build_applications = sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM applications WHERE build_server_id = ? ORDER BY id"#,
+            server_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+        let certificates = sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM certificates WHERE server_id = ? ORDER BY id"#,
+            server_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+        let schedules = sqlx::query_scalar!(
+            r#"SELECT id AS "id!: i64" FROM schedules WHERE server_id = ? ORDER BY id"#,
+            server_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+        Ok((
+            applications,
+            build_applications,
+            compose,
+            certificates,
+            schedules,
+        ))
+    }
+
+    pub async fn rollback_migrated_resources(
+        &self,
+        source: i64,
+        target: i64,
+        applications: &[i64],
+        build_applications: &[i64],
+        compose: &[i64],
+        certificates: &[i64],
+        schedules: &[i64],
+    ) -> sqlx::Result<()> {
+        let mut transaction = self.pool.begin().await?;
+        for id in applications {
+            sqlx::query!(
+                "UPDATE applications SET server_id = ? WHERE id = ? AND server_id = ?",
+                source,
+                id,
+                target
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        for id in compose {
+            sqlx::query!(
+                "UPDATE compose_projects SET server_id = ? WHERE id = ? AND server_id = ?",
+                source,
+                id,
+                target
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        for id in build_applications {
+            sqlx::query!(
+                "UPDATE applications SET build_server_id = ? WHERE id = ? AND build_server_id = ?",
+                source,
+                id,
+                target
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        for id in certificates {
+            sqlx::query!(
+                "UPDATE certificates SET server_id = ? WHERE id = ? AND server_id = ?",
+                source,
+                id,
+                target
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        for id in schedules {
+            sqlx::query!(
+                "UPDATE schedules SET server_id = ? WHERE id = ? AND server_id = ?",
+                source,
+                id,
+                target
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+        transaction.commit().await
     }
     pub async fn dependency_counts(
         &self,
