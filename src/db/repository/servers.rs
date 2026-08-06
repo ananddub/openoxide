@@ -8,8 +8,125 @@ pub struct ServerRepository {
     pool: Arc<SqlitePool>,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ServerDependencyCounts {
+    pub applications: i64,
+    pub build_assignments: i64,
+    pub compose_projects: i64,
+    pub databases: i64,
+    pub certificates: i64,
+    pub schedules: i64,
+}
+
+impl ServerDependencyCounts {
+    pub fn total(&self) -> i64 {
+        self.applications
+            + self.build_assignments
+            + self.compose_projects
+            + self.databases
+            + self.certificates
+            + self.schedules
+    }
+}
+
+#[cfg(test)]
+mod dependency_tests {
+    use super::ServerDependencyCounts;
+    #[test]
+    fn totals_every_blocking_dependency() {
+        let counts = ServerDependencyCounts {
+            applications: 1,
+            build_assignments: 2,
+            compose_projects: 3,
+            databases: 4,
+            certificates: 5,
+            schedules: 6,
+        };
+        assert_eq!(counts.total(), 21);
+    }
+}
+
 #[singleton]
 impl ServerRepository {
+    pub async fn dependency_counts(
+        &self,
+        server_id: i64,
+    ) -> Result<ServerDependencyCounts, sqlx::Error> {
+        let applications = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM applications WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let build_assignments = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM applications WHERE build_server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let compose_projects = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM compose_projects WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let postgres = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM postgres_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let mysql = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM mysql_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let mariadb = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM mariadb_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let mongo = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM mongo_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let redis = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM redis_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let libsql = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM libsql_dbs WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let certificates = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM certificates WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        let schedules = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM schedules WHERE server_id = ?",
+            server_id
+        )
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        Ok(ServerDependencyCounts {
+            applications,
+            build_assignments,
+            compose_projects,
+            databases: postgres + mysql + mariadb + mongo + redis + libsql,
+            certificates,
+            schedules,
+        })
+    }
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
     }

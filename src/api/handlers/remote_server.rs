@@ -156,6 +156,7 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_check_violation() => {
             (StatusCode::BAD_REQUEST, database_error.message().into())
         }
+        sqlx::Error::Protocol(message) => (StatusCode::CONFLICT, message),
         other => {
             tracing::error!(error = %other, "remote server database operation failed");
             (

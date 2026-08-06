@@ -150,6 +150,18 @@ impl ServerService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
+        let dependencies = self.repo_server.dependency_counts(id).await?;
+        if dependencies.total() > 0 {
+            return Err(sqlx::Error::Protocol(format!(
+                "server has active dependencies: applications={}, build_assignments={}, compose_projects={}, databases={}, certificates={}, schedules={}",
+                dependencies.applications,
+                dependencies.build_assignments,
+                dependencies.compose_projects,
+                dependencies.databases,
+                dependencies.certificates,
+                dependencies.schedules,
+            )));
+        }
         self.repo_server.delete(id).await
     }
 }
