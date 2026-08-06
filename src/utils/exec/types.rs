@@ -29,6 +29,13 @@ pub struct ExecOutput {
     pub stdout: String,
     pub stderr: String,
 }
+
+#[derive(Debug)]
+pub struct ExecBytesOutput {
+    pub status: ExecExitStatus,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
 impl ExecOutput {
     pub fn success(&self) -> bool {
         self.status.success()
@@ -138,6 +145,42 @@ pub enum CommandExecutor {
     Remote(RemoteExecutor),
 }
 impl CommandExecutor {
+    pub async fn run_bytes<I, S>(&self, program: &str, args: I) -> ExecResult<ExecBytesOutput>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let args = args
+            .into_iter()
+            .map(|value| value.as_ref().to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        let (sender, mut receiver) = mpsc::channel(128);
+        let executor = self.clone();
+        let program = program.to_owned();
+        let task = tokio::spawn(async move { executor.run_stream(&program, &args, sender).await });
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        while let Some(event) = receiver.recv().await {
+            match event {
+                ExecStreamEvent::Stdout(bytes) => stdout.extend(bytes),
+                ExecStreamEvent::Stderr(bytes) => stderr.extend(bytes),
+            }
+        }
+        let status = task
+            .await
+            .map_err(|error| ExecError::Ssh(error.to_string()))??;
+        if !status.success() {
+            return Err(ExecError::CommandFailed {
+                code: status.code(),
+                stderr: String::from_utf8_lossy(&stderr).into_owned(),
+            });
+        }
+        Ok(ExecBytesOutput {
+            status,
+            stdout,
+            stderr,
+        })
+    }
     pub async fn run<I, S>(&self, program: &str, args: I) -> ExecResult<ExecOutput>
     where
         I: IntoIterator<Item = S>,

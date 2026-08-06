@@ -5,7 +5,8 @@ pub use exec_local::LocalExecutor;
 pub use exec_remote::{RemoteExecutor, RemoteTerminal};
 pub use script::{Condition, IfBuilder, IfThenBuilder, IntoCommand, ScriptPipeline};
 pub use types::{
-    CommandExecutor, ExecExitStatus, ExecOutput, ExecStreamEvent, SshAuth, SshHostKey,
+    CommandExecutor, ExecBytesOutput, ExecExitStatus, ExecOutput, ExecStreamEvent, SshAuth,
+    SshHostKey,
 };
 
 pub mod pipeline {

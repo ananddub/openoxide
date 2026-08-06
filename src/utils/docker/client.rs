@@ -131,6 +131,17 @@ impl DockerCli {
             .run_with_stdin(&self.executable, args, stdin)
             .await
     }
+    pub async fn run_bytes<I, S>(
+        &self,
+        args: I,
+    ) -> DockerResult<crate::utils::exec::ExecBytesOutput>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let args = self.arguments(args);
+        self.executor.run_bytes(&self.executable, args).await
+    }
     pub async fn run_stream<I, S>(
         &self,
         args: I,
