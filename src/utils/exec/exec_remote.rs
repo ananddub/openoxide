@@ -18,6 +18,7 @@ pub struct RemoteExecutor {
     sudo_password: Option<String>,
     command_timeout: Duration,
     connect_timeout: Duration,
+    terminal_timeout: Duration,
     job_pid_file: Option<String>,
 }
 
@@ -59,6 +60,7 @@ impl RemoteExecutor {
             sudo_password: None,
             command_timeout: Duration::from_secs(300),
             connect_timeout: Duration::from_secs(15),
+            terminal_timeout: Duration::from_secs(30 * 60),
             job_pid_file: None,
         }
     }
@@ -102,6 +104,10 @@ impl RemoteExecutor {
     }
     pub fn with_connect_timeout(mut self, timeout: Duration) -> Self {
         self.connect_timeout = timeout;
+        self
+    }
+    pub fn with_terminal_timeout(mut self, timeout: Duration) -> Self {
+        self.terminal_timeout = timeout.max(Duration::from_secs(30));
         self
     }
     pub fn with_job_pid_file(mut self, pid_file: impl Into<String>) -> Self {
@@ -180,6 +186,7 @@ impl RemoteExecutor {
         let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
         let cancel = CancellationToken::new();
         let task_cancel = cancel.clone();
+        let terminal_timeout = self.terminal_timeout;
 
         let task = tokio::spawn(async move {
             // Held for the life of the session: dropping the agent kills it and
@@ -190,9 +197,15 @@ impl RemoteExecutor {
             let mut stderr_buf = [0u8; 4096];
             let mut stdout_done = false;
             let mut stderr_done = false;
+            let idle_timeout = tokio::time::sleep(terminal_timeout);
+            tokio::pin!(idle_timeout);
 
             loop {
                 tokio::select! {
+                    _ = &mut idle_timeout => {
+                        let _ = child.kill().await;
+                        return Err(ExecError::Timeout { seconds: terminal_timeout.as_secs() });
+                    }
                     _ = task_cancel.cancelled() => {
                         let _ = child.kill().await;
                         return Ok(());
@@ -204,9 +217,11 @@ impl RemoteExecutor {
                         if child_stdin.write_all(&input).await.is_err() || child_stdin.flush().await.is_err() {
                             break;
                         }
+                        idle_timeout.as_mut().reset(tokio::time::Instant::now() + terminal_timeout);
                     }
                     resize = resize_rx.recv() => {
                         let _ = resize;
+                        idle_timeout.as_mut().reset(tokio::time::Instant::now() + terminal_timeout);
                     }
                     res = child_stdout.read(&mut stdout_buf), if !stdout_done => {
                         match res {
@@ -215,6 +230,7 @@ impl RemoteExecutor {
                                 if output.send(ExecStreamEvent::Stdout(stdout_buf[..n].to_vec())).await.is_err() {
                                     break;
                                 }
+                                idle_timeout.as_mut().reset(tokio::time::Instant::now() + terminal_timeout);
                             }
                             Err(_) => break,
                         }
@@ -226,6 +242,7 @@ impl RemoteExecutor {
                                 if output.send(ExecStreamEvent::Stderr(stderr_buf[..n].to_vec())).await.is_err() {
                                     break;
                                 }
+                                idle_timeout.as_mut().reset(tokio::time::Instant::now() + terminal_timeout);
                             }
                             Err(_) => break,
                         }

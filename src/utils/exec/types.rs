@@ -145,6 +145,17 @@ pub enum CommandExecutor {
     Remote(RemoteExecutor),
 }
 impl CommandExecutor {
+    pub async fn write_file_bytes(&self, path: &str, content: &[u8]) -> ExecResult<ExecOutput> {
+        validate_file_path(path)?;
+        self.run_with_stdin("tee", [path], content).await
+    }
+
+    pub async fn read_file_bytes(&self, path: &str) -> ExecResult<Vec<u8>> {
+        validate_file_path(path)?;
+        self.run_bytes("cat", [path])
+            .await
+            .map(|output| output.stdout)
+    }
     pub async fn run_bytes<I, S>(&self, program: &str, args: I) -> ExecResult<ExecBytesOutput>
     where
         I: IntoIterator<Item = S>,
@@ -331,5 +342,33 @@ impl CommandExecutor {
 
     pub async fn read_file(&self, path: &str) -> ExecResult<ExecOutput> {
         self.run("cat", &[path]).await
+    }
+}
+
+fn validate_file_path(path: &str) -> ExecResult<()> {
+    if path.is_empty()
+        || path.len() > 4096
+        || path.contains('\0')
+        || path.split('/').any(|part| part == "..")
+    {
+        Err(ExecError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid file path",
+        )))
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod file_path_tests {
+    use super::validate_file_path;
+
+    #[test]
+    fn rejects_unsafe_transfer_paths() {
+        assert!(validate_file_path("/srv/app/config.toml").is_ok());
+        assert!(validate_file_path("../secret").is_err());
+        assert!(validate_file_path("/srv/../secret").is_err());
+        assert!(validate_file_path("").is_err());
     }
 }
