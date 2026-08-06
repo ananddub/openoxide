@@ -1,7 +1,7 @@
 use crate::utils::docker::{
     DockerCli, DockerResult,
     handles::{
-        ContainerInspectBuilder, ContainerKillBuilder, ContainerPauseBuilder,
+        ContainerCopyBuilder, ContainerInspectBuilder, ContainerKillBuilder, ContainerPauseBuilder,
         ContainerRemoveBuilder, ContainerRestartBuilder, ContainerStartBuilder,
         ContainerStopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, LogsBuilder,
     },
@@ -51,6 +51,14 @@ impl<'a> ContainerResource<'a> {
 
     pub fn logs(&self) -> LogsBuilder<'a> {
         LogsBuilder::new(self.cli, self.id.clone())
+    }
+
+    pub fn upload(&self, destination: impl Into<String>) -> ContainerCopyBuilder<'a> {
+        ContainerCopyBuilder::upload(self.cli, self.id.clone(), destination.into())
+    }
+
+    pub fn download(&self, source: impl Into<String>) -> ContainerCopyBuilder<'a> {
+        ContainerCopyBuilder::download(self.cli, self.id.clone(), source.into())
     }
 
     pub fn inspect_command(&self) -> ContainerInspectBuilder<'a> {

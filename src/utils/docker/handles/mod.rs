@@ -1,12 +1,12 @@
 pub use compose::ComposeHandle;
 pub use configs::ConfigsHandle;
 pub use containers::{
-    ContainerCreate, ContainerHandle, ContainerInspectBuilder, ContainerKillBuilder,
-    ContainerPauseBuilder, ContainerPortBuilder, ContainerPrune, ContainerQuery,
-    ContainerRemoveBuilder, ContainerRenameBuilder, ContainerResource, ContainerRestartBuilder,
-    ContainerRmBuilder, ContainerStartBuilder, ContainerStopBuilder, ContainerTopBuilder,
-    ContainerUnpauseBuilder, ContainerUpdateBuilder, ContainerWaitBuilder, ExecBuilder,
-    LogsBuilder, RestartPolicy, StatsBuilder,
+    ContainerCopyBuilder, ContainerCreate, ContainerHandle, ContainerInspectBuilder,
+    ContainerKillBuilder, ContainerPauseBuilder, ContainerPortBuilder, ContainerPrune,
+    ContainerQuery, ContainerRemoveBuilder, ContainerRenameBuilder, ContainerResource,
+    ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder, ContainerStopBuilder,
+    ContainerTopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, ContainerWaitBuilder,
+    ExecBuilder, LogsBuilder, RestartPolicy, StatsBuilder,
 };
 pub use images::{
     BuildBuilder, ImageHandle, ImageHistoryBuilder, ImageImportBuilder, ImageLoadBuilder,

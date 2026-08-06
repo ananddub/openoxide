@@ -1,5 +1,6 @@
 use crate::utils::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
+pub use copy::ContainerCopyBuilder;
 pub use create::ContainerCreate;
 pub use exec::ExecBuilder;
 pub use lifecycle::{
@@ -127,6 +128,7 @@ impl crate::utils::exec::script::IntoCommand for ContainerInspectBuilder<'_> {
     }
 }
 
+pub mod copy;
 pub mod create;
 pub mod exec;
 pub mod lifecycle;
