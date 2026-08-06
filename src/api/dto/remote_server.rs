@@ -106,6 +106,24 @@ pub struct RemoteServerActionResponseDto {
     pub action: String,
 }
 
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct MigrateServerDependenciesDto {
+    #[validate(range(min = 1))]
+    pub target_server_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ServerDependencyMigrationDto {
+    pub source_server_id: i64,
+    pub target_server_id: i64,
+    pub applications: i64,
+    pub build_assignments: i64,
+    pub compose_projects: i64,
+    pub databases: i64,
+    pub certificates: i64,
+    pub schedules: i64,
+}
+
 fn default_port() -> i64 {
     22
 }

@@ -5,8 +5,8 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::remote_server::{
-        CreateRemoteServerDto, PatchRemoteServerDto, RemoteServerActionResponseDto,
-        RemoteServerResponseDto,
+        CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
+        RemoteServerActionResponseDto, RemoteServerResponseDto, ServerDependencyMigrationDto,
     },
     core::middleware::validator::ValidatedJson,
     services::remote_server::ServerService,
@@ -140,6 +140,20 @@ impl RemoteServerController {
             .delete(id)
             .await
             .map(|()| StatusCode::NO_CONTENT)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/dependencies/migrate")]
+    async fn migrate_dependencies(
+        &self,
+        _claims: Claims,
+        Path(id): Path<i64>,
+        ValidatedJson(body): ValidatedJson<MigrateServerDependenciesDto>,
+    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
+        self.service
+            .migrate_dependencies(id, body.target_server_id)
+            .await
+            .map(Json)
             .map_err(map_sqlx_error)
     }
 }

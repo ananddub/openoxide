@@ -48,6 +48,93 @@ mod dependency_tests {
 
 #[singleton]
 impl ServerRepository {
+    pub async fn migrate_dependencies(
+        &self,
+        source: i64,
+        target: i64,
+    ) -> Result<ServerDependencyCounts, sqlx::Error> {
+        let counts = self.dependency_counts(source).await?;
+        let mut transaction = self.pool.begin().await?;
+        sqlx::query!(
+            "UPDATE applications SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE applications SET build_server_id = ? WHERE build_server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE compose_projects SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE postgres_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE mysql_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE mariadb_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE mongo_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE redis_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE libsql_dbs SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE certificates SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        sqlx::query!(
+            "UPDATE schedules SET server_id = ? WHERE server_id = ?",
+            target,
+            source
+        )
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        Ok(counts)
+    }
     pub async fn dependency_counts(
         &self,
         server_id: i64,

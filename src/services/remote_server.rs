@@ -164,6 +164,36 @@ impl ServerService {
         }
         self.repo_server.delete(id).await
     }
+
+    pub async fn migrate_dependencies(
+        &self,
+        source: i64,
+        target: i64,
+    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+        if source == target {
+            return Err(sqlx::Error::Protocol(
+                "source and target server must differ".into(),
+            ));
+        }
+        self.get_by_id(source).await?;
+        self.get_by_id(target).await?;
+        let counts = self
+            .repo_server
+            .migrate_dependencies(source, target)
+            .await?;
+        Ok(
+            crate::api::dto::remote_server::ServerDependencyMigrationDto {
+                source_server_id: source,
+                target_server_id: target,
+                applications: counts.applications,
+                build_assignments: counts.build_assignments,
+                compose_projects: counts.compose_projects,
+                databases: counts.databases,
+                certificates: counts.certificates,
+                schedules: counts.schedules,
+            },
+        )
+    }
 }
 
 fn private_advertise_addr(network: &ServerPrivateNetwork) -> sqlx::Result<Option<String>> {
