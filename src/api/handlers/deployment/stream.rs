@@ -1,3 +1,4 @@
+use crate::api::dto::deployment::DockerLogStream;
 use crate::utils::{
     builder::custom_type::{DeployEvent, DeployState, DeploySubscription},
     docker::DockerStreamEvent,
@@ -17,7 +18,7 @@ pub fn deployment_log_stream(receiver: mpsc::Receiver<String>) -> DeploymentEven
 
     Box::pin(futures::stream::unfold(
         (receiver, keep_alive),
-        |(mut receiver, mut keep_alive)| async move {
+        move |(mut receiver, mut keep_alive)| async move {
             loop {
                 tokio::select! {
                     _ = keep_alive.tick() => {
@@ -85,25 +86,32 @@ pub fn deployment_event_stream(subscription: DeploySubscription) -> DeploymentEv
     ))
 }
 
-pub fn docker_stream(receiver: mpsc::Receiver<DockerStreamEvent>) -> DeploymentEventStream {
+pub fn docker_stream(
+    receiver: mpsc::Receiver<DockerStreamEvent>,
+    selector: DockerLogStream,
+) -> DeploymentEventStream {
     let mut keep_alive = tokio::time::interval(Duration::from_secs(15));
     keep_alive.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
     Box::pin(futures::stream::unfold(
         (receiver, keep_alive),
-        |(mut receiver, mut keep_alive)| async move {
+        move |(mut receiver, mut keep_alive)| async move {
             loop {
                 tokio::select! {
                     _ = keep_alive.tick() => {
                         return Some((Ok(keep_alive_event()), (receiver, keep_alive)));
                     }
                     received = receiver.recv() => {
-                        let event = match received {
-                            Some(DockerStreamEvent::Stdout(bytes)) => docker_log_event("stdout", bytes),
-                            Some(DockerStreamEvent::Stderr(bytes)) => docker_log_event("stderr", bytes),
+                        match received {
+                            Some(DockerStreamEvent::Stdout(bytes)) if !matches!(selector, DockerLogStream::Stderr) => {
+                                return Some((Ok(docker_log_event("stdout", bytes)), (receiver, keep_alive)));
+                            }
+                            Some(DockerStreamEvent::Stderr(bytes)) if !matches!(selector, DockerLogStream::Stdout) => {
+                                return Some((Ok(docker_log_event("stderr", bytes)), (receiver, keep_alive)));
+                            }
+                            Some(_) => continue,
                             None => return None,
-                        };
-                        return Some((Ok(event), (receiver, keep_alive)));
+                        }
                     }
                 }
             }

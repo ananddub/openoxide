@@ -85,6 +85,16 @@ impl DeploymentService {
                 }
             }
         }
+        if let Some(pos) = options.iter().position(|o| o == "--since") {
+            if let Some(value) = options.get(pos + 1) {
+                builder = builder.since(value.clone());
+            }
+        }
+        if let Some(pos) = options.iter().position(|o| o == "--until") {
+            if let Some(value) = options.get(pos + 1) {
+                builder = builder.until(value.clone());
+            }
+        }
 
         let cmd_args = builder.build_command_args();
         Ok(spawn_docker_stream(docker, cmd_args))
@@ -364,6 +374,16 @@ impl DeploymentService {
                 if let Ok(n) = val.parse::<usize>() {
                     builder = builder.tail(n);
                 }
+            }
+        }
+        if let Some(pos) = options.iter().position(|o| o == "--since") {
+            if let Some(value) = options.get(pos + 1) {
+                builder = builder.since(value.clone());
+            }
+        }
+        if let Some(pos) = options.iter().position(|o| o == "--until") {
+            if let Some(value) = options.get(pos + 1) {
+                builder = builder.until(value.clone());
             }
         }
 

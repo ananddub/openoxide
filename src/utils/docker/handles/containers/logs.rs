@@ -45,15 +45,6 @@ impl<'a> LogsBuilder<'a> {
         self.args.pair("--until", v.into());
         self
     }
-    pub fn stdout(mut self) -> Self {
-        self.args.flag("--stdout");
-        self
-    }
-    pub fn stderr(mut self) -> Self {
-        self.args.flag("--stderr");
-        self
-    }
-
     pub fn build_command_args(&self) -> Vec<String> {
         let mut a = ArgBuilder::cmd(&[self.kind, "logs"]);
         a.inherit_meta(&self.args);

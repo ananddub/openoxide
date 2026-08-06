@@ -186,12 +186,21 @@ impl DeploymentController {
             .stream_docker_container_logs(
                 query.server_id,
                 target,
-                docker_log_options(query.tail, query.timestamps, query.follow),
+                docker_log_options(
+                    query.tail,
+                    query.timestamps,
+                    query.follow,
+                    query.since,
+                    query.until,
+                ),
             )
             .await
             .map_err(map_sqlx_error)?;
 
-        Ok(Sse::new(docker_stream(receiver)))
+        Ok(Sse::new(docker_stream(
+            receiver,
+            query.stream.unwrap_or_default(),
+        )))
     }
 
     #[get("/docker/stats", sse = DeploymentSseEventDto)]
@@ -250,12 +259,21 @@ impl DeploymentController {
             .stream_docker_service_logs(
                 query.server_id,
                 target,
-                docker_log_options(query.tail, query.timestamps, query.follow),
+                docker_log_options(
+                    query.tail,
+                    query.timestamps,
+                    query.follow,
+                    query.since,
+                    query.until,
+                ),
             )
             .await
             .map_err(map_sqlx_error)?;
 
-        Ok(Sse::new(docker_stream(receiver)))
+        Ok(Sse::new(docker_stream(
+            receiver,
+            query.stream.unwrap_or_default(),
+        )))
     }
 
     #[get("/docker/compose/logs", sse = DeploymentSseEventDto)]
@@ -265,6 +283,7 @@ impl DeploymentController {
         Query(query): Query<ComposeLogQuery>,
     ) -> Result<DeploymentSse, ApiError> {
         let server_id = query.server_id;
+        let stream = query.stream.unwrap_or_default();
         let args = compose_log_args(query);
         let receiver = self
             .service
@@ -272,7 +291,7 @@ impl DeploymentController {
             .await
             .map_err(map_sqlx_error)?;
 
-        Ok(Sse::new(docker_stream(receiver)))
+        Ok(Sse::new(docker_stream(receiver, stream)))
     }
 
     #[post("/{id}/cancel")]
@@ -393,6 +412,8 @@ fn docker_log_options(
     tail: Option<usize>,
     timestamps: Option<bool>,
     follow: Option<bool>,
+    since: Option<String>,
+    until: Option<String>,
 ) -> Vec<String> {
     let mut args = Vec::new();
     if follow.unwrap_or(true) {
@@ -403,6 +424,12 @@ fn docker_log_options(
     }
     let tail = tail.unwrap_or(200).to_string();
     args.extend(["--tail".into(), tail]);
+    if let Some(since) = since {
+        args.extend(["--since".into(), since]);
+    }
+    if let Some(until) = until {
+        args.extend(["--until".into(), until]);
+    }
     args
 }
 
@@ -424,6 +451,8 @@ fn compose_log_args(query: ComposeLogQuery) -> Vec<String> {
         query.tail,
         query.timestamps,
         query.follow,
+        query.since,
+        query.until,
     ));
 
     if let Some(service) = query.service {
