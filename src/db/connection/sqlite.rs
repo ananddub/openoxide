@@ -8,6 +8,7 @@ use std::time::Duration;
 #[singleton]
 pub async fn connect(config: Arc<Config>) -> SqlitePool {
     if let Err(error) = apply_pending_panel_restore(&config.database_url).await {
+        persist_failed_restore(&error).await;
         panic!("Failed to apply pending panel restore: {error}");
     }
     let options = SqliteConnectOptions::from_str(config.database_url.as_str())
@@ -42,6 +43,26 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
 
     tracing::info!("Database connection established in WAL mode with indexes optimized.");
     pool
+}
+
+async fn persist_failed_restore(error: &str) {
+    let paths = crate::utils::paths::rustploy_paths();
+    let marker = format!("{}/backups/panel-restore.pending.json", paths.base);
+    let Ok(bytes) = tokio::fs::read(&marker).await else {
+        return;
+    };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return;
+    };
+    let Some(restore_id) = value.get("restore_id").and_then(|value| value.as_str()) else {
+        return;
+    };
+    let directory = format!("{}/backups/restore-history", paths.base);
+    let _ = tokio::fs::create_dir_all(&directory).await;
+    let record = serde_json::json!({ "restore_id": restore_id, "status": "FAILED", "message": error, "updated_at": chrono::Utc::now().timestamp() });
+    if let Ok(body) = serde_json::to_vec_pretty(&record) {
+        let _ = tokio::fs::write(format!("{directory}/{restore_id}.json"), body).await;
+    }
 }
 
 #[derive(serde::Deserialize)]

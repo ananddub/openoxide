@@ -18,6 +18,11 @@ pub struct RestorePanelBackupDto {
     pub checksum_sha256: Option<String>,
 }
 
+#[derive(Debug, Deserialize, poem_openapi::Object)]
+pub struct RollbackPanelRestoreDto {
+    pub recovery_database: String,
+}
+
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
 pub struct StagePanelRestoreDto {
     pub restore_id: String,

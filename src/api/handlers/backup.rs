@@ -139,6 +139,19 @@ impl BackupController {
             .map_err(map_sqlx_error)
     }
 
+    #[post("/panel/restore/rollback")]
+    async fn rollback_panel_restore(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Json(body): Json<crate::api::dto::backup::RollbackPanelRestoreDto>,
+    ) -> Result<Json<StagePanelRestoreDto>, ApiError> {
+        self.panel_backup
+            .stage_rollback(&body.recovery_database)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     #[get("/files")]
     async fn list_backup_files(
         &self,

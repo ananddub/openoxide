@@ -237,6 +237,43 @@ impl PanelBackupService {
         let bytes = tokio::fs::read(completed).await.map_err(io_error)?;
         serde_json::from_slice(&bytes).map_err(|error| sqlx::Error::Protocol(error.to_string()))
     }
+
+    pub async fn stage_rollback(
+        &self,
+        recovery_database: &str,
+    ) -> sqlx::Result<StagePanelRestoreDto> {
+        let paths = rustploy_paths();
+        let database = Path::new(recovery_database);
+        let allowed_parent = Path::new(&paths.base);
+        if !database.is_absolute()
+            || !database.starts_with(allowed_parent)
+            || !database
+                .file_name()
+                .is_some_and(|name| name.to_string_lossy().contains(".pre-restore-"))
+        {
+            return Err(sqlx::Error::Protocol(
+                "recovery database must be a Rustploy pre-restore snapshot".into(),
+            ));
+        }
+        let bytes = tokio::fs::read(database).await.map_err(io_error)?;
+        let restore_id = uuid::Uuid::new_v4().simple().to_string();
+        let staging = format!("{}/backups/restore-staging/{restore_id}", paths.base);
+        tokio::fs::create_dir_all(&staging)
+            .await
+            .map_err(io_error)?;
+        tokio::fs::write(format!("{staging}/db.sqlite3"), &bytes)
+            .await
+            .map_err(io_error)?;
+        let checksum = format!("{:x}", Sha256::digest(&bytes));
+        let marker = format!("{}/backups/panel-restore.pending.json", paths.base);
+        tokio::fs::write(&marker, serde_json::to_vec_pretty(&serde_json::json!({ "restore_id": restore_id.clone(), "staging": staging, "checksum_sha256": checksum, "created_at": chrono::Utc::now().timestamp(), "kind": "ROLLBACK" })).map_err(|error| sqlx::Error::Protocol(error.to_string()))?).await.map_err(io_error)?;
+        Ok(StagePanelRestoreDto {
+            restore_id,
+            checksum_sha256: checksum,
+            restart_required: true,
+            pending_marker: marker,
+        })
+    }
 }
 
 fn validate_local_archive_path(value: &str) -> sqlx::Result<()> {
