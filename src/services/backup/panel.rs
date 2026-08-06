@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 
 use crate::{
-    api::dto::backup::{PanelBackupResponseDto, StagePanelRestoreDto},
+    api::dto::backup::{PanelBackupResponseDto, PanelRestoreStatusDto, StagePanelRestoreDto},
     core::config::Config,
     repository::BackupExecutionRepository,
     utils::{
@@ -193,6 +193,7 @@ impl PanelBackupService {
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         let marker = format!("{}/backups/panel-restore.pending.json", paths.base);
         let marker_body = serde_json::json!({
+            "restore_id": restore_id.clone(),
             "staging": staging,
             "checksum_sha256": checksum,
             "created_at": chrono::Utc::now().timestamp(),
@@ -210,6 +211,31 @@ impl PanelBackupService {
             restart_required: true,
             pending_marker: marker,
         })
+    }
+
+    pub async fn restore_status(&self, restore_id: &str) -> sqlx::Result<PanelRestoreStatusDto> {
+        if restore_id.is_empty() || !restore_id.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(sqlx::Error::Protocol("invalid restore id".into()));
+        }
+        let paths = rustploy_paths();
+        let pending = format!("{}/backups/panel-restore.pending.json", paths.base);
+        if let Ok(bytes) = tokio::fs::read(&pending).await
+            && let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes)
+            && value.get("restore_id").and_then(|v| v.as_str()) == Some(restore_id)
+        {
+            return Ok(PanelRestoreStatusDto {
+                restore_id: restore_id.into(),
+                status: "PENDING_RESTART".into(),
+                message: "restore is staged and will be applied during panel restart".into(),
+                updated_at: value
+                    .get("created_at")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or_default(),
+            });
+        }
+        let completed = format!("{}/backups/restore-history/{restore_id}.json", paths.base);
+        let bytes = tokio::fs::read(completed).await.map_err(io_error)?;
+        serde_json::from_slice(&bytes).map_err(|error| sqlx::Error::Protocol(error.to_string()))
     }
 }
 

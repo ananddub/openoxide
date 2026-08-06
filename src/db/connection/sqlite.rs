@@ -47,6 +47,7 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
 #[derive(serde::Deserialize)]
 struct PendingPanelRestore {
     staging: String,
+    restore_id: String,
 }
 
 async fn apply_pending_panel_restore(database_url: &str) -> Result<(), String> {
@@ -115,6 +116,22 @@ async fn apply_pending_panel_restore(database_url: &str) -> Result<(), String> {
     tokio::fs::remove_file(&marker)
         .await
         .map_err(|error| error.to_string())?;
+    let history_dir = format!("{}/backups/restore-history", paths.base);
+    tokio::fs::create_dir_all(&history_dir)
+        .await
+        .map_err(|error| error.to_string())?;
+    let completed = serde_json::json!({
+        "restore_id": pending.restore_id.clone(),
+        "status": "APPLIED",
+        "message": "panel database and configuration restore applied successfully",
+        "updated_at": chrono::Utc::now().timestamp(),
+    });
+    tokio::fs::write(
+        format!("{history_dir}/{}.json", pending.restore_id),
+        serde_json::to_vec_pretty(&completed).map_err(|error| error.to_string())?,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
     tracing::info!(staging = %pending.staging, "pending panel restore applied");
     Ok(())
 }

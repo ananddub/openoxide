@@ -26,6 +26,14 @@ pub struct StagePanelRestoreDto {
     pub pending_marker: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+pub struct PanelRestoreStatusDto {
+    pub restore_id: String,
+    pub status: String,
+    pub message: String,
+    pub updated_at: i64,
+}
+
 #[derive(Debug, Deserialize, poem_openapi::Object)]
 pub struct BackupFilesQueryDto {
     pub destination_id: i64,

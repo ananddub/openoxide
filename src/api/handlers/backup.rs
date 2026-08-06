@@ -126,6 +126,19 @@ impl BackupController {
             .map_err(map_sqlx_error)
     }
 
+    #[get("/panel/restore/{restore_id}/status")]
+    async fn panel_restore_status(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        Path(restore_id): Path<String>,
+    ) -> Result<Json<crate::api::dto::backup::PanelRestoreStatusDto>, ApiError> {
+        self.panel_backup
+            .restore_status(&restore_id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     #[get("/files")]
     async fn list_backup_files(
         &self,
