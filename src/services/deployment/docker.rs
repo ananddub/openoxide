@@ -257,7 +257,7 @@ impl DeploymentService {
                 .bind(database_id)
                 .bind(database_id)
                 .bind(database_id)
-                .fetch_optional(self.db.as_ref())
+                .fetch_optional(self.database())
                 .await
                 .unwrap_or(None);
 
@@ -360,7 +360,7 @@ impl DeploymentService {
         .bind(&target)
         .bind(&target)
         .bind(&target)
-        .fetch_optional(self.db.as_ref())
+        .fetch_optional(self.database())
         .await
         .unwrap_or(None);
 
@@ -438,7 +438,7 @@ impl DeploymentService {
         match server_id {
             Some(server_id) => {
                 let executor =
-                    crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
+                    crate::services::compose::remote::remote_executor(self.database(), server_id)
                         .await
                         .map_err(sqlx::Error::Protocol)?;
                 Ok(DockerCli::from_remote_executor(executor))
