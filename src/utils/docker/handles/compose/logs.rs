@@ -60,6 +60,9 @@ impl<'a> ComposeLogsBuilder<'a> {
     ) -> DockerResult<DockerExitStatus> {
         self.cli.execute_stream(&self.command(), sender).await
     }
+    pub async fn output(self) -> DockerResult<crate::utils::docker::DockerOutput> {
+        self.cli.execute(&self.command()).await
+    }
     /// Specify an alternate compose file
     pub fn file(mut self, f: impl Into<String>) -> Self {
         self.args.insert_pair(1, "--file", f.into());

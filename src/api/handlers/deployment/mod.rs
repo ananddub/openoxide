@@ -324,6 +324,32 @@ impl DeploymentController {
         )))
     }
 
+    #[get("/docker/service/{target}/logs/export")]
+    async fn export_docker_service_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(target): Path<String>,
+        Query(query): Query<DockerLogQuery>,
+    ) -> Result<Response<Body>, ApiError> {
+        let selector = query.stream.unwrap_or_default();
+        let output = self
+            .service
+            .export_container_logs(
+                query.server_id,
+                &target,
+                docker_log_options(
+                    query.tail,
+                    query.timestamps,
+                    Some(false),
+                    query.since,
+                    query.until,
+                ),
+            )
+            .await
+            .map_err(map_sqlx_error)?;
+        log_download_response(&target, select_log_output(output, selector))
+    }
+
     #[get("/docker/compose/logs", sse = DeploymentSseEventDto)]
     async fn docker_compose_logs(
         &self,
@@ -340,6 +366,23 @@ impl DeploymentController {
             .map_err(map_sqlx_error)?;
 
         Ok(Sse::new(docker_stream(receiver, stream)))
+    }
+
+    #[get("/docker/compose/logs/export")]
+    async fn export_docker_compose_logs(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Query(query): Query<ComposeLogQuery>,
+    ) -> Result<Response<Body>, ApiError> {
+        let server_id = query.server_id;
+        let filename = query.service.clone().unwrap_or_else(|| "compose".into());
+        let selector = query.stream.unwrap_or_default();
+        let output = self
+            .service
+            .export_compose_logs(server_id, compose_log_options(query))
+            .await
+            .map_err(map_sqlx_error)?;
+        log_download_response(&filename, select_log_output(output, selector))
     }
 
     #[post("/{id}/cancel")]
@@ -484,6 +527,34 @@ fn sanitize_filename(value: &str) -> String {
         "container".into()
     } else {
         sanitized
+    }
+}
+
+fn log_download_response(name: &str, bytes: Vec<u8>) -> Result<Response<Body>, ApiError> {
+    let filename = format!("{}.log", sanitize_filename(name));
+    let mut response = Response::new(Body::from(bytes));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; charset=utf-8"),
+    );
+    response.headers_mut().insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+    );
+    Ok(response)
+}
+
+fn select_log_output(
+    output: crate::utils::docker::DockerOutput,
+    selector: crate::api::dto::deployment::DockerLogStream,
+) -> Vec<u8> {
+    match selector {
+        crate::api::dto::deployment::DockerLogStream::All => {
+            format!("{}{}", output.stdout, output.stderr).into_bytes()
+        }
+        crate::api::dto::deployment::DockerLogStream::Stdout => output.stdout.into_bytes(),
+        crate::api::dto::deployment::DockerLogStream::Stderr => output.stderr.into_bytes(),
     }
 }
 

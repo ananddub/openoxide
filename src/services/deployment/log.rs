@@ -1,7 +1,65 @@
-use crate::services::deployment::DeploymentService;
+use crate::services::deployment::{ComposeLogOptions, DeploymentService, DockerLogOptions};
 use tokio::sync::mpsc;
 
 impl DeploymentService {
+    pub async fn export_container_logs(
+        &self,
+        server_id: Option<i64>,
+        target: &str,
+        options: DockerLogOptions,
+    ) -> sqlx::Result<crate::utils::docker::DockerOutput> {
+        let docker = self.docker_for_server(server_id).await?;
+        let mut builder = docker.container(target).logs().tail(options.tail);
+        if options.timestamps {
+            builder = builder.timestamps();
+        }
+        if let Some(value) = options.since {
+            builder = builder.since(value);
+        }
+        if let Some(value) = options.until {
+            builder = builder.until(value);
+        }
+        builder
+            .output_streams()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+    }
+
+    pub async fn export_compose_logs(
+        &self,
+        server_id: Option<i64>,
+        options: ComposeLogOptions,
+    ) -> sqlx::Result<crate::utils::docker::DockerOutput> {
+        let docker = self.docker_for_server(server_id).await?;
+        let compose = docker.compose();
+        let mut builder = match options.service {
+            Some(service) => compose.logs(service),
+            None => compose.logs_all(),
+        };
+        if let Some(value) = options.file {
+            builder = builder.file(value);
+        }
+        if let Some(value) = options.project_directory {
+            builder = builder.project_directory(value);
+        }
+        if let Some(value) = options.project_name {
+            builder = builder.project(value);
+        }
+        if options.logs.timestamps {
+            builder = builder.timestamps();
+        }
+        builder = builder.no_color().tail(options.logs.tail);
+        if let Some(value) = options.logs.since {
+            builder = builder.since(value);
+        }
+        if let Some(value) = options.logs.until {
+            builder = builder.until(value);
+        }
+        builder
+            .output()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+    }
     pub async fn read_deployment_log(&self, deployment_id: i64) -> sqlx::Result<String> {
         let deployment = self.get_by_id(deployment_id).await?;
         tokio::fs::read_to_string(&deployment.log_path)

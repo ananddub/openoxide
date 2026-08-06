@@ -434,7 +434,10 @@ impl DeploymentService {
         Ok(spawn_docker_stream(docker, command))
     }
 
-    async fn docker_for_server(&self, server_id: Option<i64>) -> sqlx::Result<DockerCli> {
+    pub(super) async fn docker_for_server(
+        &self,
+        server_id: Option<i64>,
+    ) -> sqlx::Result<DockerCli> {
         match server_id {
             Some(server_id) => {
                 let executor =
