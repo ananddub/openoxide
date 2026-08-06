@@ -91,6 +91,28 @@ impl PanelBackupService {
                 .run()
                 .await
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+            let verification = os
+                .archive(&archive)
+                .tar()
+                .list()
+                .run()
+                .await
+                .map_err(|error| {
+                    sqlx::Error::Protocol(format!("panel backup verification failed: {error}"))
+                })?;
+            if !verification
+                .stdout
+                .lines()
+                .any(|entry| entry == "db.sqlite3")
+                || !verification
+                    .stdout
+                    .lines()
+                    .any(|entry| entry == "manifest.json")
+            {
+                return Err(sqlx::Error::Protocol(
+                    "panel backup verification failed: required files are missing".into(),
+                ));
+            }
             let bytes = tokio::fs::read(&archive).await.map_err(io_error)?;
             let checksum = format!("{:x}", Sha256::digest(&bytes));
             Ok::<_, sqlx::Error>((checksum, bytes.len() as i64))
