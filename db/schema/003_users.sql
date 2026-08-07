@@ -51,12 +51,16 @@ CREATE TABLE two_factor (
 	user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
 ) STRICT;
 
+CREATE UNIQUE INDEX idx_two_factor_user_id ON two_factor(user_id);
+
 CREATE TABLE jwt_tokens (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	jti TEXT NOT NULL,
 	-- Role at time of token issuance: OWNER | ADMIN | MEMBER
 	role TEXT NOT NULL,
 	user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	session_id TEXT,
+	token_kind TEXT,
 	is_blacklist INTEGER DEFAULT 0,
 	blacklist_at INTEGER,
 	expired_at INTEGER,
@@ -64,6 +68,45 @@ CREATE TABLE jwt_tokens (
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	CONSTRAINT role_check CHECK (role IN ('OWNER', 'ADMIN', 'MEMBER'))
 ) STRICT;
+
+CREATE INDEX idx_jwt_tokens_user_session ON jwt_tokens(user_id, session_id, is_blacklist);
+
+CREATE TABLE password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+) STRICT;
+
+CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
+CREATE INDEX idx_password_reset_tokens_active ON password_reset_tokens(token_hash, expires_at, used_at);
+
+CREATE TABLE personal_access_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    token_prefix TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at INTEGER,
+    last_used_at INTEGER,
+    revoked_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+) STRICT;
+
+CREATE INDEX idx_personal_access_tokens_user ON personal_access_tokens(user_id, revoked_at, expires_at);
+
+CREATE TABLE email_verification_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+) STRICT;
+
+CREATE INDEX idx_email_verification_tokens_active ON email_verification_tokens(user_id, token_hash, expires_at, used_at);
 
 -- Only one owner allowed across all users
 CREATE UNIQUE INDEX idx_single_owner ON users(is_owner) WHERE is_owner = 1;

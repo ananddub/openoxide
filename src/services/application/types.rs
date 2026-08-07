@@ -83,12 +83,6 @@ impl ApplicationOperation {
             Self::Start => "Application start",
         }
     }
-
-    pub(super) fn target_status(self) -> &'static str {
-        match self {
-            Self::Deploy | Self::Redeploy | Self::Rebuild | Self::Reload | Self::Start => "RUNNING",
-        }
-    }
 }
 
 #[derive(Debug, Clone)]

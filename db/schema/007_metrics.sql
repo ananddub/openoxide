@@ -44,6 +44,27 @@ CREATE TABLE monitoring_agents (
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
 ) STRICT;
 
+-- Monitoring retention and agent version policy
+CREATE TABLE monitoring_policy (
+    organization_id INTEGER PRIMARY KEY REFERENCES organization(id) ON DELETE CASCADE,
+    desired_agent_version TEXT,
+    retention_days INTEGER NOT NULL DEFAULT 7 CHECK (retention_days BETWEEN 1 AND 3650),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+) STRICT;
+
+-- Monitoring maintenance windows (silences alerts)
+CREATE TABLE monitoring_maintenance_windows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
+    starts_at INTEGER NOT NULL,
+    ends_at INTEGER NOT NULL CHECK (ends_at > starts_at),
+    reason TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL DEFAULT (unixepoch())
+) STRICT;
+
+CREATE INDEX idx_monitoring_windows_scope ON monitoring_maintenance_windows(organization_id, starts_at, ends_at);
+
 -- Alert events lifecycle history
 CREATE TABLE alert_events (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +75,11 @@ CREATE TABLE alert_events (
 	value REAL,
 	threshold REAL,
 	message TEXT NOT NULL,
+	acknowledged_at INTEGER,
+	acknowledged_by INTEGER,
+	silenced_until INTEGER,
+	resolved_at INTEGER,
+	notification_correlation_id TEXT,
 	created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
 ) STRICT;
 

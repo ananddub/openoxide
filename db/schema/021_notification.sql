@@ -97,6 +97,8 @@ CREATE TABLE notifications (
 	on_docker_cleanup INTEGER NOT NULL DEFAULT 0,
 	on_server_threshold INTEGER NOT NULL DEFAULT 0,
 	on_panel_backup INTEGER NOT NULL DEFAULT 0,
+	on_schedule_success INTEGER NOT NULL DEFAULT 0 CHECK (on_schedule_success IN (0, 1)),
+	on_schedule_failure INTEGER NOT NULL DEFAULT 0 CHECK (on_schedule_failure IN (0, 1)),
 	-- Foreign keys
 	slack_id INTEGER REFERENCES notif_slack(id) ON DELETE CASCADE,
 	telegram_id INTEGER REFERENCES notif_telegram(id) ON DELETE CASCADE,
@@ -116,6 +118,34 @@ CREATE TABLE notifications (
 	CONSTRAINT notif_type_check CHECK (
 		notification_type IN ('SLACK', 'TELEGRAM', 'DISCORD', 'EMAIL', 'RESEND', 'GOTIFY', 'NTFY', 'MATTERMOST', 'PUSHOVER', 'CUSTOM', 'LARK', 'TEAMS')
 	)
+) STRICT;
+
+CREATE TABLE notification_delivery_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    notification_id INTEGER NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+    organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    trigger_name TEXT NOT NULL,
+    correlation_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PENDING', 'DELIVERED', 'FAILED')),
+    attempt INTEGER NOT NULL DEFAULT 1,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    error TEXT,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    finished_at INTEGER
+) STRICT;
+
+CREATE INDEX idx_notification_attempts_org_created ON notification_delivery_attempts(organization_id, created_at DESC);
+CREATE INDEX idx_notification_attempts_retry ON notification_delivery_attempts(status, attempt, created_at);
+
+CREATE TABLE notification_resource_bindings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    notification_id INTEGER NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+    organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    resource_type TEXT NOT NULL CHECK (resource_type IN ('SERVER', 'APPLICATION', 'COMPOSE', 'DATABASE')),
+    resource_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    UNIQUE(notification_id, resource_type, resource_id)
 ) STRICT;
 
 -- Indexes for faster queries

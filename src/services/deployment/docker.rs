@@ -469,13 +469,6 @@ fn spawn_stats_stream(
     spawn_docker_stream(docker, command)
 }
 
-fn docker_logs_command(kind: &str, target: String, options: Vec<String>) -> Vec<String> {
-    let mut command = vec![kind.into(), "logs".into()];
-    command.extend(options);
-    command.push(target);
-    command
-}
-
 fn spawn_docker_stream(
     docker: DockerCli,
     command: Vec<String>,

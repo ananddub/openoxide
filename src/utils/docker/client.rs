@@ -308,13 +308,6 @@ impl DockerCli {
         }
     }
 
-    pub(crate) async fn execute_json<T: DeserializeOwned>(
-        &self,
-        builder: &crate::utils::exec::ArgBuilder,
-    ) -> DockerResult<T> {
-        Ok(serde_json::from_str(&self.execute(builder).await?.stdout)?)
-    }
-
     pub(crate) async fn execute_json_lines<T: DeserializeOwned>(
         &self,
         builder: &crate::utils::exec::ArgBuilder,
@@ -343,17 +336,6 @@ impl DockerCli {
         Ok(items)
     }
 
-    pub(crate) async fn list<T: DeserializeOwned>(
-        &self,
-        object: &str,
-        filters: &[&str],
-    ) -> DockerResult<Vec<T>> {
-        let mut args = vec![object, "ls", "--format", "{{json .}}"];
-        for filter in filters {
-            args.extend(["--filter", filter]);
-        }
-        self.json_lines(&args).await
-    }
     pub(crate) async fn prune(&self, object: &str, filters: &[&str]) -> DockerResult<DockerOutput> {
         let mut args = vec![object, "prune", "--force"];
         for filter in filters {

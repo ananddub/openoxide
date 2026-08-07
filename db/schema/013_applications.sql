@@ -128,6 +128,68 @@ CREATE INDEX idx_applications_environment_id ON applications(environment_id);
 CREATE INDEX idx_applications_server_id ON applications(server_id);
 CREATE INDEX idx_applications_app_status ON applications(app_status);
 
+CREATE TABLE preview_deployments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    base_application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    preview_application_id INTEGER REFERENCES applications(id) ON DELETE SET NULL,
+    provider_type TEXT NOT NULL,
+    provider_id INTEGER NOT NULL,
+    owner TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    source_owner TEXT,
+    source_repository TEXT,
+    pull_request_number TEXT NOT NULL,
+    source_branch TEXT NOT NULL,
+    target_branch TEXT NOT NULL,
+    commit_sha TEXT,
+    author TEXT,
+    status TEXT NOT NULL DEFAULT 'QUEUED',
+    domain TEXT NOT NULL,
+    last_deployment_id INTEGER REFERENCES deployments(id) ON DELETE SET NULL,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    CONSTRAINT preview_deployments_status_check
+        CHECK (status IN ('QUEUED', 'ACTIVE', 'ERROR', 'CLOSED')),
+    UNIQUE(base_application_id, provider_type, pull_request_number)
+) STRICT;
+
+CREATE UNIQUE INDEX idx_preview_deployments_application
+    ON preview_deployments(preview_application_id)
+    WHERE preview_application_id IS NOT NULL;
+
+CREATE INDEX idx_preview_deployments_base_status
+    ON preview_deployments(base_application_id, status);
+
+CREATE INDEX idx_preview_deployments_pull_request
+    ON preview_deployments(provider_type, owner, repository, pull_request_number);
+
+CREATE TABLE application_middlewares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    middleware_type TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    config TEXT NOT NULL DEFAULT '{}',
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    CONSTRAINT application_middleware_type_check CHECK (
+        middleware_type IN ('COMPRESS', 'HEADERS', 'RATE_LIMIT', 'IP_ALLOWLIST')
+    ),
+    UNIQUE(application_id, name)
+) STRICT;
+
+CREATE INDEX idx_application_middlewares_application_id
+    ON application_middlewares(application_id);
+
+CREATE TRIGGER application_middlewares_updated_at
+AFTER UPDATE ON application_middlewares
+FOR EACH ROW
+BEGIN
+    UPDATE application_middlewares
+    SET updated_at = strftime('%s', 'now')
+    WHERE id = OLD.id;
+END;
+
 -- Trigger Function
 CREATE TRIGGER applications_updated_at
 AFTER UPDATE ON applications

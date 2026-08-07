@@ -99,13 +99,6 @@ impl ComposeOperation {
             Self::Stop => "Compose stop",
         }
     }
-
-    pub(super) fn target_status(self) -> &'static str {
-        match self {
-            Self::Stop => "IDLE",
-            _ => "RUNNING",
-        }
-    }
 }
 
 #[derive(Debug, Clone)]

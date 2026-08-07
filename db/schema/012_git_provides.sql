@@ -6,12 +6,17 @@ CREATE TABLE git_providers (
 	provider_type TEXT NOT NULL DEFAULT 'GITHUB',
 	-- Share provider across all users (single-tenant: always true)
 	shared INTEGER NOT NULL DEFAULT 1,
+	webhook_secret TEXT,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	CONSTRAINT git_provider_type_check CHECK (
 		provider_type IN ('GITHUB', 'GITLAB', 'GITEA', 'BITBUCKET')
 	)
 ) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_git_providers_webhook_secret
+ON git_providers(webhook_secret)
+WHERE webhook_secret IS NOT NULL;
 
 -- GitHub App credentials
 CREATE TABLE github_providers (

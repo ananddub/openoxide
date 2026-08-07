@@ -9,7 +9,6 @@ CREATE TABLE destinations (
 	bucket TEXT NOT NULL,
 	region TEXT NOT NULL,
 	endpoint TEXT NOT NULL,
-	additional_flags TEXT, -- JSON array of strings (e.g. ['--max-depth', '1'])
 	-- Foreign keys (Inline References)
 	organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
 	-- Timestamp
@@ -84,6 +83,24 @@ CREATE TABLE volume_backups (
 		service_type IN ('APPLICATION', 'COMPOSE', 'POSTGRES', 'MYSQL', 'MARIADB', 'MONGO', 'REDIS', 'LIBSQL')
 	)
 ) STRICT;
+
+CREATE TABLE backup_executions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    backup_kind TEXT NOT NULL CHECK (backup_kind IN ('DATABASE', 'VOLUME', 'PANEL', 'COMPOSE_CONFIG')),
+    operation TEXT NOT NULL CHECK (operation IN ('BACKUP', 'RESTORE')),
+    backup_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'RUNNING' CHECK (status IN ('RUNNING', 'SUCCEEDED', 'FAILED')),
+    object_key TEXT,
+    checksum_sha256 TEXT,
+    size_bytes INTEGER,
+    attempt INTEGER NOT NULL DEFAULT 1,
+    error TEXT,
+    started_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    finished_at INTEGER
+);
+
+CREATE INDEX idx_backup_executions_job ON backup_executions(backup_kind, backup_id, started_at DESC);
+CREATE INDEX idx_backup_executions_status ON backup_executions(status, started_at DESC);
 
 -- Indexes for faster queries
 CREATE INDEX idx_destinations_organization_id ON destinations(organization_id);
