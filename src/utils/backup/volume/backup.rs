@@ -94,7 +94,7 @@ impl<'a> VolumeBackupRunner<'a> {
         Ok(())
     }
 
-    async fn compose_stop(&self, project: &str, service: &str) -> ExecResult<String> {
+    async fn compose_stop(&self, project: &str, service: &str) -> Result<String, ExecError> {
         let containers = self
             .docker()
             .containers()

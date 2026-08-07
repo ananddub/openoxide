@@ -119,7 +119,7 @@ async fn resolve_branch(
     branch: &Option<String>,
     auth: Option<crate::utils::git::types::GitAuth>,
     cancel: &CancellationToken,
-) -> ExecResult<String> {
+) -> Result<String, ExecError> {
     if let Some(branch) = branch.as_deref().map(str::trim).filter(|v| !v.is_empty()) {
         return Ok(branch.to_owned());
     }

@@ -17,9 +17,25 @@
       <sourceFolder url="file://$MODULE_DIR$/rustploy_monitor/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rustploy_monitor/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/agent/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/agent/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/route/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/route/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/route/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/route_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/socket/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/socket/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/socket/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/auto/socket_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/monitor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/monitor/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/os/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/rustploy_os/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/sh_macros/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route/target" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route_inventory/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/auto/route/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

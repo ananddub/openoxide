@@ -22,4 +22,6 @@ pub enum ExecError {
     Json(#[from] serde_json::Error),
 }
 
-pub type ExecResult<T> = Result<T, ExecError>;
+use super::types::ExecOutput;
+
+pub type ExecResult<T = ExecOutput> = Result<T, ExecError>;

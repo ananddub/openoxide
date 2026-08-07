@@ -5,7 +5,7 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 
 pub async fn compose_new_db(
-    db: Arc<SqlitePool>,
+    _db: Arc<SqlitePool>,
     compose_id: i64,
 ) -> Result<CommandExecutor, sqlx::Error> {
     let repo = resolve::<ComposeProjectRepository>().await.unwrap();

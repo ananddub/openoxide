@@ -1,5 +1,5 @@
 use super::application::ApplicationBuilder;
-use crate::pipeline;
+use os::pipeline;
 use crate::utils::builder::packs::{
     heroku::{HerokuBuilderImage, HerokuCli},
     nixpacks::NixpacksCli,

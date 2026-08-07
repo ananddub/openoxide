@@ -1,4 +1,4 @@
-use crate::string_enum;
+use os::string_enum;
 
 string_enum! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, poem_openapi::Enum)]

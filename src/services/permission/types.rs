@@ -1,4 +1,4 @@
-use crate::string_enum;
+use os::string_enum;
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

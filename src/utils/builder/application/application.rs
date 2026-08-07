@@ -1,4 +1,4 @@
-use crate::pipeline;
+use os::pipeline;
 use crate::utils::builder::application::{stack::stack_spec, validation::validate_spec};
 use crate::utils::builder::shared::BuilderContext;
 use crate::utils::builder::spec::{ApplicationSpec, BuilderEvent, DeploymentResult};

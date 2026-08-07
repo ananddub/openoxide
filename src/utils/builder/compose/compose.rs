@@ -3,7 +3,7 @@ use super::{
     spec::{ComposeDeploymentResult, ComposeRuntime, ComposeSpec},
     validation::validate_spec,
 };
-use crate::pipeline;
+use os::pipeline;
 use crate::utils::docker::core::types::ResolveImage;
 use os::exec::IntoCommand;
 use crate::utils::{

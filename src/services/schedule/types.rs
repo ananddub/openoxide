@@ -1,4 +1,4 @@
-use crate::string_enum;
+use os::string_enum;
 use serde::{Deserialize, Serialize};
 
 macro_rules! strict_runtime_enum {

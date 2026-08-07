@@ -16,6 +16,9 @@ pub enum AdapterError {
 
     #[error("Database error occurred: {0}")]
     DatabaseError(#[from] sqlx::Error),
+
+    #[error("Git adapter error: {0}")]
+    GitAdapterError(#[from] os::git::provider::AdapterError),
 }
 
 #[derive(Error, Debug)]
