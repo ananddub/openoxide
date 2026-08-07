@@ -391,14 +391,17 @@ pub(crate) fn escape_arg(c: impl AsRef<str>) -> String {
 
 // Submodules
 pub mod archive;
+pub mod cgroup;
 pub mod crypto;
 pub mod diagnostics;
 pub mod dir;
 pub mod disk;
 pub mod dns;
+pub mod docker;
 pub mod env;
 pub mod file;
 pub mod firewall;
+pub mod git;
 pub mod gpu;
 pub mod http;
 pub mod install;
@@ -408,8 +411,10 @@ pub mod network;
 pub mod package;
 pub mod port;
 pub mod process;
+pub mod rclone;
 pub mod resource;
 pub mod service;
+pub mod ssh;
 pub mod symlink;
 pub mod system;
 pub mod wireguard;
