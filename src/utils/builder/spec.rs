@@ -2,21 +2,7 @@ use os::string_enum;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum SourceType {
-        default = Docker;
-
-        Docker => "DOCKER",
-        Git => "GIT",
-        Github => "GITHUB",
-        Gitlab => "GITLAB",
-        Bitbucket => "BITBUCKET",
-        Gitea => "GITEA",
-        Raw => "RAW",
-        Drop => "DROP",
-    }
-}
+pub use os::git::provider::SourceType;
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

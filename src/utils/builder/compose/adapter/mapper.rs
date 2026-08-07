@@ -119,7 +119,7 @@ fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
         }),
         SourceType::Drop => Ok(ComposeSource::Drop),
         _ => {
-            let provider = GitProviderBuilder::new(source_type.as_str())
+            let provider = GitProviderBuilder::new(source_type)
                 .github(compose.owner.as_deref(), compose.repository.as_deref())
                 .gitlab(
                     compose.gitlab_owner.as_deref(),

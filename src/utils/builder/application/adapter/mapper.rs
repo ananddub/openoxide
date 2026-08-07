@@ -312,7 +312,7 @@ fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
             registry: None,
         }),
         _ => {
-            let provider = GitProviderBuilder::new(source_type.as_str())
+            let provider = GitProviderBuilder::new(source_type)
                 .github(a.owner.as_deref(), a.repository.as_deref())
                 .gitlab(a.gitlab_owner.as_deref(), a.gitlab_repository.as_deref())
                 .bitbucket(

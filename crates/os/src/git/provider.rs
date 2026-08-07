@@ -1,12 +1,19 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SourceType {
-    Github,
-    Gitlab,
-    Bitbucket,
-    Gitea,
-    Git,
-    Docker,
-    DockerImage,
+use crate::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+    pub enum SourceType {
+        default = Docker;
+
+        Docker => "DOCKER",
+        Git => "GIT",
+        Github => "GITHUB",
+        Gitlab => "GITLAB",
+        Bitbucket => "BITBUCKET",
+        Gitea => "GITEA",
+        Raw => "RAW",
+        Drop => "DROP",
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -48,33 +55,6 @@ pub struct GitProviderBuilder<'a> {
     pub bitbucket_repository: Option<&'a str>,
     pub bitbucket_owner: Option<&'a str>,
     pub custom_git_url: Option<&'a str>,
-}
-
-impl SourceType {
-    pub fn from_str(value: &str) -> Option<Self> {
-        match value.trim().to_ascii_uppercase().as_str() {
-            "GITHUB" => Some(Self::Github),
-            "GITLAB" => Some(Self::Gitlab),
-            "BITBUCKET" => Some(Self::Bitbucket),
-            "GITEA" => Some(Self::Gitea),
-            "GIT" => Some(Self::Git),
-            "DOCKER" => Some(Self::Docker),
-            "DOCKER_IMAGE" | "DOCKERIMAGE" => Some(Self::DockerImage),
-            _ => None,
-        }
-    }
-}
-
-impl From<&str> for SourceType {
-    fn from(value: &str) -> Self {
-        Self::from_str(value).unwrap_or(Self::Git)
-    }
-}
-
-impl From<String> for SourceType {
-    fn from(value: String) -> Self {
-        Self::from_str(&value).unwrap_or(Self::Git)
-    }
 }
 
 impl<'a> GitProviderBuilder<'a> {
