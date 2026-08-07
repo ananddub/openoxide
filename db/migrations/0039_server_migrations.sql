@@ -1,4 +1,4 @@
-CREATE TABLE server_migrations (
+CREATE TABLE IF NOT EXISTS server_migrations (
     id TEXT PRIMARY KEY,
     source_server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE RESTRICT,
     target_server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE RESTRICT,
@@ -15,5 +15,5 @@ CREATE TABLE server_migrations (
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 ) STRICT;
 
-CREATE INDEX idx_server_migrations_source_created
+CREATE INDEX IF NOT EXISTS idx_server_migrations_source_created
     ON server_migrations(source_server_id, created_at DESC);
