@@ -125,12 +125,64 @@ fn endpoint_port(endpoint: &str) -> sqlx::Result<u16> {
 
 #[cfg(test)]
 mod tests {
-    use super::endpoint_port;
+    use crate::api::dto::server::{
+        PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto,
+    };
+
+    use super::{endpoint_port, validate};
+
+    fn managed() -> UpdatePrivateNetworkDto {
+        UpdatePrivateNetworkDto {
+            connection_mode: ServerConnectionModeDto::ManagedWireguard,
+            provider: Some(PrivateNetworkProviderDto::Wireguard),
+            private_host: Some("10.77.2.2".into()),
+            tunnel_address: Some("10.77.2.0/24".into()),
+            public_key: None,
+            endpoint: Some("panel.example.com:51820".into()),
+            listen_port: Some(51820),
+            persistent_keepalive: Some(25),
+            dns_name: None,
+            routes: Vec::new(),
+        }
+    }
 
     #[test]
     fn validates_endpoint() {
         assert_eq!(endpoint_port("panel.example.com:51820").unwrap(), 51820);
         assert_eq!(endpoint_port("[2001:db8::1]:51820").unwrap(), 51820);
         assert!(endpoint_port("host:1\nPostUp=evil").is_err());
+    }
+
+    #[test]
+    fn accepts_complete_managed_wireguard() {
+        assert!(validate(&managed()).is_ok());
+    }
+
+    #[test]
+    fn rejects_missing_or_mismatched_managed_endpoint() {
+        let mut input = managed();
+        input.endpoint = None;
+        assert!(validate(&input).is_err());
+
+        input.endpoint = Some("panel.example.com:51821".into());
+        assert!(validate(&input).is_err());
+    }
+
+    #[test]
+    fn rejects_wrong_derived_private_host() {
+        let mut input = managed();
+        input.private_host = Some("10.77.2.3".into());
+        assert!(validate(&input).is_err());
+    }
+
+    #[test]
+    fn external_provider_requires_private_host() {
+        let mut input = managed();
+        input.connection_mode = ServerConnectionModeDto::ExternalPrivateNetwork;
+        input.provider = Some(PrivateNetworkProviderDto::Tailscale);
+        input.private_host = None;
+        input.tunnel_address = None;
+        input.endpoint = None;
+        assert!(validate(&input).is_err());
     }
 }

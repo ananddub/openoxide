@@ -442,14 +442,13 @@ impl SshBuilder {
                     .await
                     .map_err(std::io::Error::other)?;
 
-                // IdentitiesOnly=yes so ssh only queries the isolated agent containing this key.
-                Self::push_option(&mut args, "IdentitiesOnly", "yes");
+                // The process receives only this session's SSH_AUTH_SOCK. Disable
+                // OpenSSH's default identity files while still allowing it to
+                // enumerate the key loaded in the isolated agent.
+                Self::push_option(&mut args, "IdentityFile", "none");
+                Self::push_option(&mut args, "IdentitiesOnly", "no");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
-                Self::push_option(
-                    &mut args,
-                    "PreferredAuthentications",
-                    "publickey,keyboard-interactive,password",
-                );
+                Self::push_option(&mut args, "PreferredAuthentications", "publickey");
 
                 agent_socket_path = Some(session.socket_path.clone());
                 agent_session = Some(session);
@@ -813,6 +812,8 @@ mod tests {
         );
         // ssh has to be told to consult the agent.
         assert!(args.contains(&"IdentitiesOnly=no".to_string()));
+        assert!(args.contains(&"IdentityFile=none".to_string()));
+        assert!(args.contains(&"PreferredAuthentications=publickey".to_string()));
         assert_eq!(
             agent_socket.as_deref(),
             Some(agent.socket_path.as_path()),

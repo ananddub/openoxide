@@ -101,6 +101,19 @@ impl ServerPrivateNetworkController {
             .map_err(map_sqlx_error)
     }
 
+    #[post("/re-setup")]
+    async fn re_setup(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(server_id): Path<i64>,
+    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
+        self.service
+            .re_setup_transport(server_id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
     #[post("/rotate-keys")]
     async fn rotate_keys(
         &self,

@@ -145,6 +145,13 @@ pub enum CommandExecutor {
     Remote(RemoteExecutor),
 }
 impl CommandExecutor {
+    pub fn host(&self) -> Option<&str> {
+        match self {
+            Self::Local(_) => None,
+            Self::Remote(e) => Some(e.host()),
+        }
+    }
+
     pub async fn write_file_bytes(&self, path: &str, content: &[u8]) -> ExecResult<ExecOutput> {
         validate_file_path(path)?;
         self.run_with_stdin("tee", [path], content).await

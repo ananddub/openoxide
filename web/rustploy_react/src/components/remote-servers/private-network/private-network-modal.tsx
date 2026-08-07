@@ -19,6 +19,7 @@ import type {RemoteServerResponse} from '#/types/api-helpers';
 
 import {privateNetworkApi} from './api';
 import type {ConnectionMode, PrivateNetworkConfig, PrivateNetworkProvider, UpdatePrivateNetworkInput} from './types';
+import {validatePrivateNetworkForm} from './validation';
 
 interface PrivateNetworkModalProps {
 	open: boolean;
@@ -69,7 +70,7 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 		setMode('DIRECT_SSH');
 		setProvider('TAILSCALE');
 		setPrivateHost('');
-		setEndpoint(`${server.ip_address}:51820`);
+		setEndpoint('');
 		setTunnelAddress(`10.77.${(server.id % 250) + 1}.0/24`);
 		setListenPort('51820');
 		setKeepalive('25');
@@ -86,7 +87,7 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 				setProvider(current.provider === 'WIREGUARD' || !current.provider ? 'TAILSCALE' : current.provider);
 				setPrivateHost(current.private_host || '');
 				setTunnelAddress(current.tunnel_address || `10.77.${(server.id % 250) + 1}.0/24`);
-				setEndpoint(current.endpoint || `${server.ip_address}:51820`);
+				setEndpoint(current.endpoint || '');
 				setListenPort(String(current.listen_port || 51820));
 				setKeepalive(String(current.persistent_keepalive || 25));
 				setDnsName(current.dns_name || '');
@@ -129,8 +130,9 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 
 	const save = async (setup: boolean) => {
 		if (!server) return;
-		if (mode === 'MANAGED_WIREGUARD' && !managedHost) {
-			toast.error('Use a valid /24 IPv4 tunnel network, for example 10.77.2.0/24');
+		const validationError = validatePrivateNetworkForm({mode, managedHost, endpoint, listenPort, privateHost});
+		if (validationError) {
+			toast.error(validationError);
 			return;
 		}
 		await run(
@@ -141,6 +143,19 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 				return setup ? privateNetworkApi.setup(server.id) : updated;
 			},
 			setup ? 'WireGuard configured successfully' : 'Private network settings saved',
+		);
+	};
+
+	const refresh = async () => {
+		if (!server) return;
+		await run(
+			'refresh',
+			async () => {
+				const current = await privateNetworkApi.get(server.id);
+				setConfig(current);
+				return current;
+			},
+			'Private network status refreshed',
 		);
 	};
 
@@ -175,15 +190,15 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 					{mode === 'MANAGED_WIREGUARD' && (
 						<>
 							<div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-								Rustploy installs and manages kernel WireGuard on the panel and remote server. UDP{' '}
-								{listenPort || '51820'} must reach the remote server.
+								Rustploy installs and manages kernel WireGuard on the panel and remote server. The remote server
+								must be able to reach the panel endpoint over UDP {listenPort || '51820'}.
 							</div>
 							<div className="grid gap-3 sm:grid-cols-2">
-								<Field label="Remote endpoint">
+								<Field label="Panel public endpoint">
 									<Input
 										value={endpoint}
 										onChange={(event) => setEndpoint(event.target.value)}
-										placeholder="server.example.com:51820"
+										placeholder="panel.example.com:51820"
 									/>
 								</Field>
 								<Field label="Tunnel network">
@@ -265,6 +280,9 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 				</div>
 
 				<DialogFooter className="flex-wrap">
+					<Button variant="outline" size="sm" disabled={busy} onClick={refresh}>
+						<RefreshCw className={action === 'refresh' ? 'animate-spin' : ''} /> Refresh
+					</Button>
 					{config && mode !== 'DIRECT_SSH' && (
 						<>
 							<Button
@@ -284,14 +302,28 @@ export function PrivateNetworkModal({open, server, onClose}: PrivateNetworkModal
 								<Wrench /> Repair
 							</Button>
 							{mode === 'MANAGED_WIREGUARD' && (
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={busy}
-									onClick={() => run('rotate', () => privateNetworkApi.rotateKeys(server.id), 'WireGuard keys rotated')}
-								>
-									<KeyRound /> Rotate keys
-								</Button>
+								<>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={busy}
+										onClick={() =>
+											run('re-setup', () => privateNetworkApi.reSetup(server.id), 'WireGuard re-setup completed')
+										}
+									>
+										<RefreshCw /> Re-setup
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={busy}
+										onClick={() =>
+											run('rotate', () => privateNetworkApi.rotateKeys(server.id), 'WireGuard keys rotated')
+										}
+									>
+										<KeyRound /> Rotate keys
+									</Button>
+								</>
 							)}
 						</>
 					)}

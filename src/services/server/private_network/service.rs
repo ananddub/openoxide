@@ -133,6 +133,24 @@ impl ServerPrivateNetworkService {
         .await
     }
 
+    pub async fn re_setup_transport(
+        &self,
+        server_id: i64,
+    ) -> sqlx::Result<ServerPrivateNetworkDto> {
+        self.require_managed_wireguard(server_id).await?;
+        self.with_operation(server_id, PrivateNetworkOperation::Setup, async {
+            let (local, remote) = self.executors(server_id).await?;
+            let backend = KernelWireGuardBackend::new(&local, &remote);
+            let interface = interface_name(server_id);
+            let _ = backend.teardown(&interface).await;
+            self.networks
+                .set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
+                .await?;
+            self.setup_locked(server_id).await
+        })
+        .await
+    }
+
     pub async fn rotate_wireguard(&self, server_id: i64) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.require_managed_wireguard(server_id).await?;
         self.with_operation(server_id, PrivateNetworkOperation::Rotate, async {
@@ -518,9 +536,14 @@ impl ServerPrivateNetworkService {
 
     async fn executors(&self, server_id: i64) -> sqlx::Result<(CommandExecutor, CommandExecutor)> {
         let remote = self.direct_executor(server_id).await?;
+        let remote = if remote.username() == "root" {
+            remote
+        } else {
+            remote.with_sudo()
+        };
         Ok((
-            CommandExecutor::Local(LocalExecutor::new()),
-            CommandExecutor::Remote(remote.with_sudo()),
+            CommandExecutor::Local(LocalExecutor::new().with_non_interactive_sudo()),
+            CommandExecutor::Remote(remote),
         ))
     }
 

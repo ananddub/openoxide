@@ -387,8 +387,10 @@ impl RemoteExecutor {
 
         let mut input_data = Vec::new();
         if let Some(password) = &self.sudo_password {
-            input_data.extend_from_slice(password.as_bytes());
-            input_data.push(b'\n');
+            if !password.is_empty() {
+                input_data.extend_from_slice(password.as_bytes());
+                input_data.push(b'\n');
+            }
         }
         input_data.extend_from_slice(stdin);
 

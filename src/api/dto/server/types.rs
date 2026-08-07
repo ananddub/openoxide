@@ -312,6 +312,7 @@ fn default_username() -> String {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RemoteServerTypeDto {
     Deploy,
@@ -334,6 +335,7 @@ impl RemoteServerTypeDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, poem_openapi::Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RemoteServerStatusDto {
     Active,
@@ -424,6 +426,7 @@ pub struct ServerBackupDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ServerConnectionModeDto {
     DirectSsh,
@@ -432,6 +435,7 @@ pub enum ServerConnectionModeDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkProviderDto {
     Wireguard,
@@ -442,6 +446,7 @@ pub enum PrivateNetworkProviderDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkStatusDto {
     Disabled,
@@ -451,6 +456,7 @@ pub enum PrivateNetworkStatusDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkHealthStatusDto {
     Unknown,
@@ -461,6 +467,7 @@ pub enum PrivateNetworkHealthStatusDto {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkRotationStateDto {
     Idle,
@@ -515,4 +522,35 @@ pub struct PrivateNetworkHealthDto {
     pub latest_handshake_at: Option<i64>,
     pub checked_at: i64,
     pub error: Option<String>,
+}
+
+#[cfg(test)]
+mod private_network_json_tests {
+    use super::{PrivateNetworkStatusDto, ServerConnectionModeDto, UpdatePrivateNetworkDto};
+
+    #[test]
+    fn accepts_frontend_enum_casing() {
+        let input: UpdatePrivateNetworkDto = serde_json::from_value(serde_json::json!({
+            "connection_mode": "MANAGED_WIREGUARD",
+            "provider": "WIREGUARD",
+            "private_host": "10.77.2.2",
+            "tunnel_address": "10.77.2.0/24",
+            "public_key": null,
+            "endpoint": "panel.example.com:51820",
+            "listen_port": 51820,
+            "persistent_keepalive": 25,
+            "dns_name": null,
+            "routes": []
+        }))
+        .unwrap();
+        assert_eq!(input.connection_mode, ServerConnectionModeDto::ManagedWireguard);
+    }
+
+    #[test]
+    fn serializes_response_enums_for_frontend() {
+        assert_eq!(
+            serde_json::to_string(&PrivateNetworkStatusDto::Configuring).unwrap(),
+            "\"CONFIGURING\""
+        );
+    }
 }

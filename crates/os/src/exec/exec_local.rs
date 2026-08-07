@@ -8,17 +8,32 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Default)]
-pub struct LocalExecutor;
+pub struct LocalExecutor {
+    non_interactive_sudo: bool,
+}
 impl LocalExecutor {
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    /// Runs commands through `sudo -n` without making the parent process root.
+    /// The host must grant the Rustploy user narrowly scoped NOPASSWD rules.
+    pub fn with_non_interactive_sudo(mut self) -> Self {
+        self.non_interactive_sudo = true;
+        self
     }
     pub fn command<I, S>(&self, program: &str, args: I) -> Command
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let mut c = Command::new(program);
+        let mut c = if self.non_interactive_sudo {
+            let mut command = Command::new("sudo");
+            command.args(["-n", "--", program]);
+            command
+        } else {
+            Command::new(program)
+        };
         c.args(args);
         c
     }

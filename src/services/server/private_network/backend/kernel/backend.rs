@@ -80,6 +80,41 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .await
             .map_err(Self::protocol)?;
 
+        let endpoint_host = plan.endpoint.split(':').next().unwrap_or(plan.endpoint);
+        let remote_host_str = self.remote.host().unwrap_or_default();
+        let is_remote_endpoint = remote_host_str == endpoint_host
+            || (!remote_host_str.is_empty()
+                && remote_host_str != "127.0.0.1"
+                && plan.endpoint.contains(remote_host_str));
+
+        let (local_peer_builder, remote_peer_builder) = if is_remote_endpoint {
+            (
+                std::iter::once(format!("{}/32", plan.remote_host))
+                    .chain(plan.routes.iter().cloned())
+                    .fold(
+                        WireGuardPeerBuilder::new(remote_public.clone())
+                            .endpoint(plan.endpoint)
+                            .persistent_keepalive(plan.keepalive),
+                        |peer, route| peer.allowed_ip(route),
+                    ),
+                WireGuardPeerBuilder::new(panel_public)
+                    .allowed_ip(plan.panel_host.clone()),
+            )
+        } else {
+            (
+                std::iter::once(format!("{}/32", plan.remote_host))
+                    .chain(plan.routes.iter().cloned())
+                    .fold(
+                        WireGuardPeerBuilder::new(remote_public.clone()),
+                        |peer, route| peer.allowed_ip(route),
+                    ),
+                WireGuardPeerBuilder::new(panel_public)
+                    .allowed_ip(plan.panel_host.clone())
+                    .endpoint(plan.endpoint)
+                    .persistent_keepalive(plan.keepalive),
+            )
+        };
+
         local
             .wireguard()
             .interface(plan.interface)
@@ -87,16 +122,7 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                 &WireGuardConfigBuilder::new(panel_private)
                     .address(plan.panel_address.clone())
                     .listen_port(plan.port)
-                    .peer(
-                        std::iter::once(format!("{}/32", plan.remote_host))
-                            .chain(plan.routes.iter().cloned())
-                            .fold(
-                                WireGuardPeerBuilder::new(remote_public.clone()),
-                                |peer, route| peer.allowed_ip(route),
-                            )
-                            .build()
-                            .map_err(Self::protocol)?,
-                    )
+                    .peer(local_peer_builder.build().map_err(Self::protocol)?)
                     .build()
                     .map_err(Self::protocol)?,
             )
@@ -109,14 +135,8 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .install(
                 &WireGuardConfigBuilder::new(remote_private)
                     .address(plan.remote_address.clone())
-                    .peer(
-                        WireGuardPeerBuilder::new(panel_public)
-                            .allowed_ip(plan.panel_host.clone())
-                            .endpoint(plan.endpoint)
-                            .persistent_keepalive(plan.keepalive)
-                            .build()
-                            .map_err(Self::protocol)?,
-                    )
+                    .listen_port(plan.port)
+                    .peer(remote_peer_builder.build().map_err(Self::protocol)?)
                     .build()
                     .map_err(Self::protocol)?,
             )

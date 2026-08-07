@@ -167,10 +167,10 @@ impl ServerPrivateNetworkRepository {
     ) -> sqlx::Result<()> {
         sqlx::query("UPDATE server_private_networks SET health_status = ?, health_error = ?, last_handshake_at = COALESCE(?, last_handshake_at), last_health_check_at = strftime('%s', 'now'), consecutive_failures = CASE WHEN ? = ? THEN 0 ELSE consecutive_failures + 1 END, updated_at = strftime('%s', 'now') WHERE server_id = ?")
             .bind(status.as_str())
-            .bind(PrivateNetworkHealthStatus::Healthy.as_str())
             .bind(error)
             .bind(handshake)
             .bind(status.as_str())
+            .bind(PrivateNetworkHealthStatus::Healthy.as_str())
             .bind(server_id)
             .execute(self.pool.as_ref())
             .await?;

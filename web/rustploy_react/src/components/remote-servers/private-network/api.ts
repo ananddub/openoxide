@@ -18,9 +18,40 @@ function authHeaders(json = false): HeadersInit {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(`${getApiBaseUrl()}${path}`, init);
+	let response = await fetch(`${getApiBaseUrl()}${path}`, init);
+	if (response.status === 401) {
+		const sessionRaw = localStorage.getItem('rustploy-auth-session');
+		let refreshToken = '';
+		try {
+			refreshToken = sessionRaw ? JSON.parse(sessionRaw)?.tokens?.refresh_token || '' : '';
+		} catch {
+			refreshToken = '';
+		}
+		if (refreshToken) {
+			const refreshed = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({refresh_token: refreshToken}),
+			});
+			if (refreshed.ok) {
+				const session = await refreshed.json();
+				localStorage.setItem('rustploy-auth-session', JSON.stringify(session));
+				const headers = new Headers(init?.headers);
+				const accessToken = session?.tokens?.access_token;
+				if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+				response = await fetch(`${getApiBaseUrl()}${path}`, {...init, headers});
+			}
+		}
+	}
 	if (!response.ok) {
-		const message = await response.text();
+		const body = await response.text();
+		let message = body;
+		try {
+			const parsed = JSON.parse(body);
+			message = parsed?.error || parsed?.message || body;
+		} catch {
+			// Plain-text API errors are already user-readable.
+		}
 		throw new Error(message || `Request failed (${response.status})`);
 	}
 	if (response.status === 204) return undefined as T;
@@ -49,6 +80,11 @@ export const privateNetworkApi = {
 		request<{status: string; error: string | null}>(pathFor(serverId, '/health'), {headers: authHeaders()}),
 	repair: (serverId: number) =>
 		request<PrivateNetworkConfig>(pathFor(serverId, '/repair'), {
+			method: 'POST',
+			headers: authHeaders(),
+		}),
+	reSetup: (serverId: number) =>
+		request<PrivateNetworkConfig>(pathFor(serverId, '/re-setup'), {
 			method: 'POST',
 			headers: authHeaders(),
 		}),
