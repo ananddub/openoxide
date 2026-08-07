@@ -5,7 +5,7 @@ use super::{
 };
 use crate::pipeline;
 use crate::utils::docker::core::types::ResolveImage;
-use crate::utils::exec::script::IntoCommand;
+use os::exec::IntoCommand;
 use crate::utils::{
     builder::{
         shared::BuilderContext,

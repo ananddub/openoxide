@@ -12,7 +12,7 @@ pub mod setup;
 pub mod traefik;
 pub mod watch_paths;
 // pub mod k8s;
-pub mod os;
+pub use os as os;
 
 #[tokio::test]
 async fn test_docker() {

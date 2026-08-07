@@ -2,7 +2,7 @@ pub use cmd::IntoCommand;
 pub use condition::Condition;
 pub use dsl::ShellIR;
 pub use pipeline::{IfBuilder, IfThenBuilder, ScriptPipeline};
-pub use rustploy_sh_macros::sh;
+pub use sh_macros::sh;
 
 pub fn shell_single_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))

@@ -18,7 +18,21 @@ pub async fn app_new_cmd(db: Arc<SqlitePool>, app_id: i64) -> Result<CommandExec
             "application has no server assigned; cannot cancel operation"
         );
     } else {
-        let rm = RemoteExecutor::new_with_db(db.clone(), app_user.server_id.unwrap_or(0)).await?;
+        let server_repo = resolve::<crate::repository::ServerRepository>().await.unwrap();
+        let server_id = app_user.server_id.unwrap_or(0);
+        let creds = server_repo
+            .get_ssh_credentials(server_id)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
+        let port = u16::try_from(creds.1).map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+        let rm = RemoteExecutor::new(
+            creds.0,
+            port,
+            creds.2,
+            crate::utils::exec::SshAuth::key_pair(creds.3, creds.4),
+            crate::utils::exec::SshHostKey::InsecureAcceptAny,
+        )
+        .with_sudo();
         cmd = CommandExecutor::Remote(rm)
     }
     Ok(cmd)

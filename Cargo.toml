@@ -5,20 +5,22 @@ edition = "2024"
 
 [workspace]
 members = [
-    "auto_socket_macros",
-    "auto_route_macros",
-    "auto_socket",
-    "auto_route",
-    "rustploy_sh_macros",
-    "rustploy_monitor",
+    "crates/auto/route_macros",
+    "crates/auto/route",
+    "crates/auto/socket_macros",
+    "crates/auto/socket",
+    "crates/sh_macros",
+    "crates/os",
+    "agent",
 ]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 auto-di = "0.6.0"
-auto_route = { version = "0.2.1", path = "auto_route" }
-rustploy_sh_macros = { path = "rustploy_sh_macros" }
-auto_socket = "0.1.0"
+auto_route = { version = "0.2.1", path = "crates/auto/route" }
+sh_macros = { path = "crates/sh_macros" }
+os = { path = "crates/os" }
+auto_socket = { version = "0.1.0", path = "crates/auto/socket" }
 serde = { version = "1.0", features = ["derive"] }
 axum-extra = { version = "0.12.6", features = ["typed-header"] }
 serde_json = "1.0"

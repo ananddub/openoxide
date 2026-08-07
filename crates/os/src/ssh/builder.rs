@@ -327,7 +327,7 @@ impl SshBuilder {
                     let fp_str = fingerprint.as_str();
                     let sha256_fp = format!("SHA256:{}", fingerprint);
                     let sha256_str = sha256_fp.as_str();
-                    let check_script = rustploy_sh_macros::sh!(if cmd("[", "$2", "=", fp_str, "]")
+                    let check_script = sh_macros::sh!(if cmd("[", "$2", "=", fp_str, "]")
                         || cmd("[", "$2", "=", sha256_str, "]")
                     {
                         cmd("echo", "$1", "$3", "$4");

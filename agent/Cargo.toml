@@ -1,5 +1,5 @@
 [package]
-name = "rustploy_monitor"
+name = "agent"
 version = "0.4.0"
 edition = "2024"
 
@@ -24,6 +24,8 @@ dotenvy = "0.15.7"
 tonic = "0.12.3"
 prost = "0.13.5"
 tokio-util = "0.7"
+os = { path = "../crates/os" }
+sh_macros = { path = "../crates/sh_macros" }
 
 hyper = { version = "1", features = ["client", "http1"] }
 hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "tokio"] }

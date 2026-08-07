@@ -12,7 +12,7 @@ categories = ["web-programming", "asynchronous"]
 
 [dependencies]
 auto-di = "0.6.0"
-auto_socket_macros = { version = "0.1.0", path = "../auto_socket_macros" }
+auto_socket_macros = { version = "0.1.0", path = "../socket_macros" }
 inventory = "0.3.24"
 socketioxide = "0.18.4"
 

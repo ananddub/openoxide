@@ -4,7 +4,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("PROTOC", protoc_path);
     }
 
-    let proto_path = if std::path::Path::new("../proto/monitoring.proto").exists() {
+    let proto_path = if std::path::Path::new("../../proto/monitoring.proto").exists() {
+        "../../proto/monitoring.proto"
+    } else if std::path::Path::new("../proto/monitoring.proto").exists() {
         "../proto/monitoring.proto"
     } else {
         "proto/monitoring.proto"
@@ -16,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure().compile_protos_with_config(
         config,
         &[proto_path],
-        &["../proto", "proto", "../", "."],
+        &["../../proto", "../proto", "proto", "../../", "../", "."],
     )?;
 
     Ok(())
