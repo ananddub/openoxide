@@ -442,8 +442,8 @@ impl SshBuilder {
                     .await
                     .map_err(std::io::Error::other)?;
 
-                // IdentitiesOnly=no so ssh actually queries the agent.
-                Self::push_option(&mut args, "IdentitiesOnly", "no");
+                // IdentitiesOnly=yes so ssh only queries the isolated agent containing this key.
+                Self::push_option(&mut args, "IdentitiesOnly", "yes");
                 Self::push_option(&mut args, "PubkeyAuthentication", "yes");
                 Self::push_option(
                     &mut args,

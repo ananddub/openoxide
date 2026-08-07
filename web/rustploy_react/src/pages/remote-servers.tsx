@@ -7,6 +7,7 @@ import {CreateServerModal} from '#/components/remote-servers/create-server-modal
 import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
 import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {PrivateNetworkModal} from '#/components/remote-servers/private-network';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -22,6 +23,7 @@ function RemoteServersPage() {
 	const [deletingServer, setDeletingServer] = useState<RemoteServerResponse | null>(null);
 	const [setupServer, setSetupServer] = useState<RemoteServerResponse | null>(null);
 	const [terminalServer, setTerminalServer] = useState<RemoteServerResponse | null>(null);
+	const [privateNetworkServer, setPrivateNetworkServer] = useState<RemoteServerResponse | null>(null);
 
 	const {
 		data: rawServers = [],
@@ -42,10 +44,14 @@ function RemoteServersPage() {
 		const isActive = (server.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 		try {
 			if (isActive) {
-				await deactivateMutation.mutateAsync({params: {path: {id: server.id}}});
+				await deactivateMutation.mutateAsync({
+					params: {path: {id: server.id}},
+				});
 				toast.success(`Server "${server.name}" disabled`);
 			} else {
-				await activateMutation.mutateAsync({params: {path: {id: server.id}}});
+				await activateMutation.mutateAsync({
+					params: {path: {id: server.id}},
+				});
 				toast.success(`Server "${server.name}" activated`);
 			}
 			refetch();
@@ -70,14 +76,15 @@ function RemoteServersPage() {
 				servers={servers}
 				sshKeys={sshKeys}
 				isLoading={isServersLoading}
-				onEditServer={server => {
+				onEditServer={(server) => {
 					setEditingServer(server);
 					setIsCreateOpen(true);
 				}}
-				onDeleteServer={server => setDeletingServer(server)}
-				onSetupServer={server => setSetupServer(server)}
+				onDeleteServer={(server) => setDeletingServer(server)}
+				onSetupServer={(server) => setSetupServer(server)}
 				onToggleStatus={handleToggleStatus}
-				onOpenTerminal={server => setTerminalServer(server)}
+				onOpenTerminal={(server) => setTerminalServer(server)}
+				onPrivateNetwork={(server) => setPrivateNetworkServer(server)}
 			/>
 
 			<CreateServerModal
@@ -91,11 +98,7 @@ function RemoteServersPage() {
 				onSuccess={refetch}
 			/>
 
-			<SetupServerModal
-				isOpen={!!setupServer}
-				server={setupServer}
-				onClose={() => setSetupServer(null)}
-			/>
+			<SetupServerModal isOpen={!!setupServer} server={setupServer} onClose={() => setSetupServer(null)} />
 
 			<DeleteServerModal
 				isOpen={!!deletingServer}
@@ -113,6 +116,12 @@ function RemoteServersPage() {
 				}}
 				open={!!terminalServer}
 				onClose={() => setTerminalServer(null)}
+			/>
+
+			<PrivateNetworkModal
+				open={!!privateNetworkServer}
+				server={privateNetworkServer}
+				onClose={() => setPrivateNetworkServer(null)}
 			/>
 		</div>
 	);

@@ -20,6 +20,7 @@ pub struct RemoteExecutor {
     connect_timeout: Duration,
     terminal_timeout: Duration,
     job_pid_file: Option<String>,
+    multiplexing: bool,
 }
 
 #[derive(Debug)]
@@ -62,6 +63,7 @@ impl RemoteExecutor {
             connect_timeout: Duration::from_secs(15),
             terminal_timeout: Duration::from_secs(30 * 60),
             job_pid_file: None,
+            multiplexing: true,
         }
     }
 
@@ -90,6 +92,10 @@ impl RemoteExecutor {
     }
     pub fn with_job_pid_file(mut self, pid_file: impl Into<String>) -> Self {
         self.job_pid_file = Some(pid_file.into());
+        self
+    }
+    pub fn with_multiplexing(mut self, enabled: bool) -> Self {
+        self.multiplexing = enabled;
         self
     }
 
@@ -322,7 +328,7 @@ impl RemoteExecutor {
         stream: Option<mpsc::Sender<ExecStreamEvent>>,
         cancel: Option<&CancellationToken>,
     ) -> ExecResult<ExecOutput> {
-        let builder = crate::ssh::SshBuilder::new(
+        let mut builder = crate::ssh::SshBuilder::new(
             self.host.clone(),
             self.username.clone(),
             self.auth.clone(),
@@ -330,6 +336,10 @@ impl RemoteExecutor {
         )
         .port(self.port)
         .connect_timeout(self.connect_timeout.as_secs() as u32);
+
+        if !self.multiplexing {
+            builder = builder.disable_multiplexing();
+        }
 
         let base_command = remote_command(program, args, self.sudo_password.is_some());
         let cancel_job = cancel.map(|_| {

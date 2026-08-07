@@ -61,6 +61,12 @@ impl ServerController {
                 .await
                 .map_err(map_sqlx_error)?
             {
+                if key.private_key.trim().is_empty() {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "Selected SSH Key has no private key".into(),
+                    ));
+                }
                 SshAuth::key_pair(key.private_key, key.public_key)
             } else {
                 return Err((StatusCode::BAD_REQUEST, "SSH Key not found".into()));
@@ -78,7 +84,8 @@ impl ServerController {
             body.username,
             auth,
             SshHostKey::InsecureAcceptAny,
-        );
+        )
+        .with_multiplexing(false);
         executor
             .run("true", std::iter::empty::<&str>())
             .await

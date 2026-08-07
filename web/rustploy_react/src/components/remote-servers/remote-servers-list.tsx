@@ -25,6 +25,7 @@ import {
 	Pencil,
 	Trash2,
 	ShieldCheck,
+	Shield,
 	AlertCircle,
 	Search,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ interface RemoteServersListProps {
 	onSetupServer: (server: RemoteServerResponse) => void;
 	onToggleStatus: (server: RemoteServerResponse) => void;
 	onOpenTerminal?: (server: RemoteServerResponse) => void;
+	onPrivateNetwork: (server: RemoteServerResponse) => void;
 }
 
 const STATUS_FILTERS = ['All', 'Connected', 'Not Connected'] as const;
@@ -53,6 +55,7 @@ export function RemoteServersList({
 	onSetupServer,
 	onToggleStatus,
 	onOpenTerminal,
+	onPrivateNetwork,
 }: RemoteServersListProps) {
 	const [storeVersion, setStoreVersion] = useState(0);
 	const [search, setSearch] = useState('');
@@ -60,13 +63,14 @@ export function RemoteServersList({
 	const testConnMutation = $api.useMutation('post', '/servers/{id}/test-connection');
 
 	useEffect(() => {
-		const unsubscribe = globalServerConnStore.subscribe(() => setStoreVersion(v => v + 1));
+		const unsubscribe = globalServerConnStore.subscribe(() => setStoreVersion((v) => v + 1));
 		return unsubscribe;
 	}, []);
 
 	const filtered = useMemo(() => {
-		return servers.filter(s => {
-			const matchName = s.name.toLowerCase().includes(search.toLowerCase()) ||
+		return servers.filter((s) => {
+			const matchName =
+				s.name.toLowerCase().includes(search.toLowerCase()) ||
 				s.ip_address?.toLowerCase().includes(search.toLowerCase());
 			const connSt = globalServerConnStore.getStatus(s.id);
 			const isConnected = connSt === 'success';
@@ -80,7 +84,10 @@ export function RemoteServersList({
 	}, [servers, search, statusFilter, storeVersion]);
 
 	const hasFilters = search !== '' || statusFilter !== 'All';
-	const clearFilters = () => { setSearch(''); setStatusFilter('All'); };
+	const clearFilters = () => {
+		setSearch('');
+		setStatusFilter('All');
+	};
 
 	const handleTestConnection = async (server: RemoteServerResponse) => {
 		globalServerConnStore.setStatus(server.id, 'testing');
@@ -101,7 +108,7 @@ export function RemoteServersList({
 	if (isLoading) {
 		return (
 			<div className="flex flex-col gap-2">
-				{[1, 2, 3].map(i => (
+				{[1, 2, 3].map((i) => (
 					<div key={i} className="flex items-center gap-4 px-4 py-4 border border-border rounded-lg">
 						<Skeleton className="w-9 h-9 rounded-lg shrink-0" />
 						<div className="flex-1 space-y-2">
@@ -125,7 +132,7 @@ export function RemoteServersList({
 					<Input
 						placeholder="Search by name or IP…"
 						value={search}
-						onChange={e => setSearch(e.target.value)}
+						onChange={(e) => setSearch(e.target.value)}
 						className="pl-8 h-8 text-xs"
 					/>
 					{search && (
@@ -144,13 +151,13 @@ export function RemoteServersList({
 						<SelectValue placeholder="Status" />
 					</SelectTrigger>
 					<SelectContent>
-						{STATUS_FILTERS.map(f => (
-							<SelectItem key={f} value={f}>{f === 'All' ? 'All Servers' : f}</SelectItem>
+						{STATUS_FILTERS.map((f) => (
+							<SelectItem key={f} value={f}>
+								{f === 'All' ? 'All Servers' : f}
+							</SelectItem>
 						))}
 					</SelectContent>
 				</Select>
-
-
 			</div>
 
 			{/* ── Empty — no servers at all ── */}
@@ -170,12 +177,14 @@ export function RemoteServersList({
 				<div className="flex flex-col items-center justify-center gap-2 py-14 text-center border border-dashed border-border rounded-lg">
 					<Search className="w-5 h-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">No servers match your filter</p>
-					<Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs h-7">Clear filters</Button>
+					<Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs h-7">
+						Clear filters
+					</Button>
 				</div>
 			) : (
 				/* ── List ── */
 				<div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
-					{filtered.map(item => {
+					{filtered.map((item) => {
 						const connStatus = globalServerConnStore.getStatus(item.id);
 						const isTesting = connStatus === 'testing';
 						const isServerActive = (item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
@@ -208,7 +217,9 @@ export function RemoteServersList({
 									<div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
 										<Server className="w-4 h-4 text-foreground/70" />
 									</div>
-									<span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${dotCls}`} />
+									<span
+										className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${dotCls}`}
+									/>
 								</div>
 
 								{/* Info */}
@@ -242,11 +253,18 @@ export function RemoteServersList({
 									)}
 								</div>
 
-								<Separator orientation="vertical" className="h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+								<Separator
+									orientation="vertical"
+									className="h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+								/>
 
 								{/* 3-dot menu */}
 								<DropdownMenu>
-									<DropdownMenuTrigger render={<button className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer" />}>
+									<DropdownMenuTrigger
+										render={
+											<button className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer" />
+										}
+									>
 										<MoreVertical className="w-4 h-4" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-44">
@@ -261,12 +279,19 @@ export function RemoteServersList({
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleTestConnection(item)}>
 											<Plug className="w-3.5 h-3.5" /> Test Connection
 										</DropdownMenuItem>
+										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onPrivateNetwork(item)}>
+											<Shield className="w-3.5 h-3.5" /> Private Network
+										</DropdownMenuItem>
 										<DropdownMenuSeparator />
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onToggleStatus(item)}>
 											{isServerActive ? (
-												<><AlertCircle className="w-3.5 h-3.5" /> Deactivate</>
+												<>
+													<AlertCircle className="w-3.5 h-3.5" /> Deactivate
+												</>
 											) : (
-												<><Check className="w-3.5 h-3.5" /> Activate</>
+												<>
+													<Check className="w-3.5 h-3.5" /> Activate
+												</>
 											)}
 										</DropdownMenuItem>
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onEditServer(item)}>
