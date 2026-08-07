@@ -1,28 +1,18 @@
+use super::error::{ApiError, map_sqlx_error};
 use crate::core::config::Config;
 use crate::{
     api::dto::deployment::DeploymentSseEventDto,
     api::dto::server::{
-        CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
-        PrivateNetworkHealthDto, RemoteServerActionResponseDto, RemoteServerResponseDto,
-        ServerActionResultDto, ServerAuditDto, ServerBackupDto, ServerCleanupExecutionDto,
-        ServerConnectionDto, ServerConnectionResponseDto, ServerDependencyMigrationDto,
-        ServerManagementDto, ServerPrivateNetworkDto, SetupOutcomeDto, SetupServerDto,
-        TestDirectConnectionDto, UpdatePrivateNetworkDto, UpdateServerManagementDto,
+        ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
+        SetupServerDto, TestDirectConnectionDto,
     },
-    core::middleware::{
-        permission::{
-            RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
-        },
-        validator::ValidatedJson,
+    core::middleware::permission::{
+        RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
     },
     db::repository::ssh_keys::SshKeyRepository,
-    services::server::{
-        ServerCleanupService, ServerLifecycleService, ServerManagementService,
-        ServerPrivateNetworkService, ServerService,
-    },
+    services::server::{RemoteServerService, RemoteServerStatus},
     utils::{
         exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
-        jwt::claim::Claims,
         setup::{ServerSetup, SetupConfig},
     },
 };
@@ -40,260 +30,21 @@ use std::{convert::Infallible, pin::Pin, sync::Arc};
 use tokio::sync::mpsc;
 use tokio::time::{Duration, MissedTickBehavior};
 
-type ApiError = (StatusCode, String);
 type ServerSetupStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
 type ServerSetupSse = Sse<ServerSetupStream>;
 
 pub struct ServerController {
-    service: Arc<ServerService>,
+    service: Arc<RemoteServerService>,
     ssh_key_repo: Arc<SshKeyRepository>,
-    private_network: Arc<ServerPrivateNetworkService>,
-    management: Arc<ServerManagementService>,
-    cleanup: Arc<ServerCleanupService>,
-    lifecycle: Arc<ServerLifecycleService>,
 }
 
 #[controller("/servers")]
 impl ServerController {
-    fn new(
-        service: Arc<ServerService>,
-        ssh_key_repo: Arc<SshKeyRepository>,
-        private_network: Arc<ServerPrivateNetworkService>,
-        management: Arc<ServerManagementService>,
-        cleanup: Arc<ServerCleanupService>,
-        lifecycle: Arc<ServerLifecycleService>,
-    ) -> Self {
+    fn new(service: Arc<RemoteServerService>, ssh_key_repo: Arc<SshKeyRepository>) -> Self {
         Self {
             service,
             ssh_key_repo,
-            private_network,
-            management,
-            cleanup,
-            lifecycle,
         }
-    }
-
-    #[get("/{id}/private-network")]
-    async fn private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<Option<ServerPrivateNetworkDto>>, ApiError> {
-        self.private_network
-            .get(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[put("/{id}/private-network")]
-    async fn update_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-        Json(body): Json<UpdatePrivateNetworkDto>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .update(id, body)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}/private-network")]
-    async fn disable_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.private_network
-            .disable(id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/private-network/setup")]
-    async fn setup_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .setup_transport(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}/private-network/health")]
-    async fn private_network_health(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<PrivateNetworkHealthDto>, ApiError> {
-        self.private_network
-            .health(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/private-network/repair")]
-    async fn repair_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .repair_transport(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/private-network/rotate-keys")]
-    async fn rotate_private_network_keys(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
-        self.private_network
-            .rotate_wireguard(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/private-network/teardown")]
-    async fn teardown_private_network(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.private_network
-            .teardown_transport(id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}/management")]
-    async fn get_management(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerManagementDto>, ApiError> {
-        self.management
-            .get(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[put("/{id}/management")]
-    async fn update_management(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-        Json(body): Json<UpdateServerManagementDto>,
-    ) -> Result<Json<ServerManagementDto>, ApiError> {
-        self.management
-            .update(id, body)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/audit/repair")]
-    async fn repair(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerActionResultDto>, ApiError> {
-        self.lifecycle
-            .auto_repair(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/gpu/configure")]
-    async fn configure_gpu(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerActionResultDto>, ApiError> {
-        self.lifecycle
-            .configure_gpu(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/cleanup/run")]
-    async fn cleanup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerActionResultDto>, ApiError> {
-        self.cleanup
-            .run(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}/management/cleanup/history")]
-    async fn cleanup_history(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<Vec<ServerCleanupExecutionDto>>, ApiError> {
-        self.cleanup
-            .history(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/upgrade")]
-    async fn upgrade(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerActionResultDto>, ApiError> {
-        self.lifecycle
-            .upgrade(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/backup")]
-    async fn backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerBackupDto>, ApiError> {
-        self.lifecycle
-            .backup(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/management/diagnostics")]
-    async fn diagnostics(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerActionResultDto>, ApiError> {
-        self.lifecycle
-            .diagnostics(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
     }
 
     #[post("/test-direct-connection")]
@@ -447,7 +198,7 @@ impl ServerController {
             .await
             .map_err(map_exec_error)?;
         self.service
-            .set_status(id, "ACTIVE")
+            .set_status(id, RemoteServerStatus::Active)
             .await
             .map_err(map_sqlx_error)?;
         self.service
@@ -509,7 +260,7 @@ impl ServerController {
 
             match result {
                 Ok(_) => {
-                    if let Err(error) = service.set_status(id, "ACTIVE").await {
+                    if let Err(error) = service.set_status(id, RemoteServerStatus::Active).await {
                         let _ = sender
                             .send(format!("Failed to mark server active: {error}"))
                             .await;
@@ -670,198 +421,6 @@ fn map_exec_error(error: ExecError) -> ApiError {
         _ => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
     }
 }
-pub struct RemoteServerController {
-    service: Arc<ServerService>,
-}
-
-#[controller("/remote-servers")]
-impl RemoteServerController {
-    fn new(service: Arc<ServerService>) -> Self {
-        Self { service }
-    }
-
-    #[get]
-    async fn list(&self, _claims: Claims) -> Result<Json<Vec<RemoteServerResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(RemoteServerResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}")]
-    async fn get(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(RemoteServerResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        _claims: Claims,
-        ValidatedJson(body): ValidatedJson<CreateRemoteServerDto>,
-    ) -> Result<(StatusCode, Json<RemoteServerResponseDto>), ApiError> {
-        self.service
-            .create(body)
-            .await
-            .map(RemoteServerResponseDto::from)
-            .map(|server| (StatusCode::CREATED, Json(server)))
-            .map_err(map_sqlx_error)
-    }
-
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchRemoteServerDto>,
-    ) -> Result<Json<RemoteServerResponseDto>, ApiError> {
-        self.service
-            .patch(id, body)
-            .await
-            .map(RemoteServerResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/activate")]
-    async fn activate(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.service
-            .set_status(id, "ACTIVE")
-            .await
-            .map(|server| RemoteServerActionResponseDto {
-                server: RemoteServerResponseDto::from(server),
-                action: "activate".into(),
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/deactivate")]
-    async fn deactivate(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.service
-            .set_status(id, "INACTIVE")
-            .await
-            .map(|server| RemoteServerActionResponseDto {
-                server: RemoteServerResponseDto::from(server),
-                action: "deactivate".into(),
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/test-connection")]
-    async fn test_connection(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.service
-            .touch_test_connection(id)
-            .await
-            .map(|server| RemoteServerActionResponseDto {
-                server: RemoteServerResponseDto::from(server),
-                action: "test-connection".into(),
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(&self, _claims: Claims, Path(id): Path<i64>) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/{id}/dependencies/migrate")]
-    async fn migrate_dependencies(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<MigrateServerDependenciesDto>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
-            .migrate_dependencies(id, body.target_server_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/migrations/{migration_id}")]
-    async fn migration_status(
-        &self,
-        _claims: Claims,
-        Path(migration_id): Path<String>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
-            .migration_status(&migration_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/migrations/{migration_id}/rollback")]
-    async fn rollback_migration(
-        &self,
-        _claims: Claims,
-        Path(migration_id): Path<String>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
-            .rollback_migration(&migration_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-}
-
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "server or SSH key not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (StatusCode::NOT_FOUND, "ssh key not found".into())
-        }
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
-        }
-        sqlx::Error::Database(ref database_error) if database_error.is_check_violation() => {
-            (StatusCode::BAD_REQUEST, database_error.message().into())
-        }
-        sqlx::Error::Protocol(message) => (StatusCode::CONFLICT, message),
-        other => {
-            tracing::error!(error = %other, "server database operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

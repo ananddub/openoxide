@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::OsCli;
+use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::file::FileMode;
 use zeroize::Zeroize;
 
@@ -197,12 +197,12 @@ fn parse_handshakes(value: &str) -> ExecResult<Vec<WireGuardHandshake>> {
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| {
-            let (public_key, timestamp) = line.split_once('\t').ok_or_else(|| {
-                crate::exec::ExecError::CommandFailed {
-                    code: None,
-                    stderr: "invalid WireGuard handshake output".into(),
-                }
-            })?;
+            let (public_key, timestamp) =
+                line.split_once('\t')
+                    .ok_or_else(|| crate::exec::ExecError::CommandFailed {
+                        code: None,
+                        stderr: "invalid WireGuard handshake output".into(),
+                    })?;
             validate_key(public_key).map_err(|_| command_error("invalid WireGuard peer key"))?;
             if !keys.insert(public_key) {
                 return Err(command_error("duplicate WireGuard peer key"));

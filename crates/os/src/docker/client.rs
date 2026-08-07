@@ -145,10 +145,7 @@ impl DockerCli {
             .run_with_stdin(&self.executable, args, stdin)
             .await
     }
-    pub async fn run_bytes<I, S>(
-        &self,
-        args: I,
-    ) -> DockerResult<crate::exec::ExecBytesOutput>
+    pub async fn run_bytes<I, S>(&self, args: I) -> DockerResult<crate::exec::ExecBytesOutput>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -224,10 +221,7 @@ impl DockerCli {
         Ok(items)
     }
 
-    pub async fn execute(
-        &self,
-        builder: &crate::exec::ArgBuilder,
-    ) -> DockerResult<DockerOutput> {
+    pub async fn execute(&self, builder: &crate::exec::ArgBuilder) -> DockerResult<DockerOutput> {
         let mut attempts = 0;
         let args = builder.clone().build();
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
@@ -242,9 +236,7 @@ impl DockerCli {
                     Ok(out) => return Ok(out),
                     Err(e)
                         if attempts <= builder.retry_limit.unwrap_or(0)
-                            && crate::docker::error::is_transient_docker_error(
-                                &e.to_string(),
-                            ) =>
+                            && crate::docker::error::is_transient_docker_error(&e.to_string()) =>
                     {
                         tokio::time::sleep(tokio::time::Duration::from_secs(2 * attempts as u64))
                             .await;
@@ -257,9 +249,7 @@ impl DockerCli {
                     Ok(out) => return Ok(out),
                     Err(e)
                         if attempts <= builder.retry_limit.unwrap_or(0)
-                            && crate::docker::error::is_transient_docker_error(
-                                &e.to_string(),
-                            ) =>
+                            && crate::docker::error::is_transient_docker_error(&e.to_string()) =>
                     {
                         tokio::time::sleep(tokio::time::Duration::from_secs(2 * attempts as u64))
                             .await;
@@ -290,9 +280,7 @@ impl DockerCli {
                 Ok(out) => return Ok(out),
                 Err(e)
                     if attempts <= builder.retry_limit.unwrap_or(0)
-                        && crate::docker::error::is_transient_docker_error(
-                            &e.to_string(),
-                        ) =>
+                        && crate::docker::error::is_transient_docker_error(&e.to_string()) =>
                 {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2 * attempts as u64)).await;
                     continue;
@@ -403,10 +391,7 @@ impl DockerCli {
         crate::docker::handles::NetworkHandle(self)
     }
 
-    pub fn network(
-        &self,
-        name: impl Into<String>,
-    ) -> crate::docker::handles::NetworkResource<'_> {
+    pub fn network(&self, name: impl Into<String>) -> crate::docker::handles::NetworkResource<'_> {
         crate::docker::handles::NetworkResource::new(self, name)
     }
 
@@ -414,10 +399,7 @@ impl DockerCli {
         crate::docker::handles::VolumeHandle(self)
     }
 
-    pub fn volume(
-        &self,
-        name: impl Into<String>,
-    ) -> crate::docker::handles::VolumeResource<'_> {
+    pub fn volume(&self, name: impl Into<String>) -> crate::docker::handles::VolumeResource<'_> {
         crate::docker::handles::VolumeResource::new(self, name)
     }
 

@@ -270,10 +270,8 @@ fn toggle(args: &mut Vec<String>, option: &str, value: bool) {
 #[cfg(test)]
 mod tests {
     use super::DigBuilder;
+    use crate::dns::{DigPort, DigRecordType, DigTimeout, DigTransport, DigTries, DnsName};
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::dns::{
-        DigPort, DigRecordType, DigTimeout, DigTransport, DigTries, DnsName,
-    };
     use std::net::{IpAddr, Ipv4Addr};
 
     #[test]

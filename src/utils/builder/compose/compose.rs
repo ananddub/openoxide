@@ -3,9 +3,7 @@ use super::{
     spec::{ComposeDeploymentResult, ComposeRuntime, ComposeSpec},
     validation::validate_spec,
 };
-use os::pipeline;
 use crate::utils::docker::core::types::ResolveImage;
-use os::exec::IntoCommand;
 use crate::utils::{
     builder::{
         shared::BuilderContext,
@@ -14,6 +12,8 @@ use crate::utils::{
     },
     exec::{CommandExecutor, ExecResult},
 };
+use os::exec::IntoCommand;
+use os::pipeline;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]

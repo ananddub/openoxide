@@ -21,7 +21,9 @@ pub async fn compose_new_db(
             "application has no server assigned; cannot cancel operation"
         );
     } else {
-        let server_repo = resolve::<crate::repository::ServerRepository>().await.unwrap();
+        let server_repo = resolve::<crate::repository::ServerRepository>()
+            .await
+            .unwrap();
         let server_id = compose_user.server_id.unwrap_or(0);
         let creds = server_repo
             .get_ssh_credentials(server_id)

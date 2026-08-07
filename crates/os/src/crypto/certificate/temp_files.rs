@@ -1,5 +1,5 @@
-use crate::exec::{CommandExecutor, ExecResult};
 use crate::OsCli;
+use crate::exec::{CommandExecutor, ExecResult};
 use crate::file::FileMode;
 
 pub(crate) struct TemporaryPemFiles<'a> {

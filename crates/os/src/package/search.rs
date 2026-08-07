@@ -1,7 +1,7 @@
 use super::{PackageManager, detect_manager};
+use crate::escape_arg;
 use crate::exec::script::{IntoCommand, sh};
 use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::escape_arg;
 
 #[allow(unused_macros)]
 macro_rules! rust {

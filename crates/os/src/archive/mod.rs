@@ -8,10 +8,10 @@ pub use zip::{CompressionLevel, ZipBuilder, ZipError, ZipPathMode};
 
 #[cfg(test)]
 mod tests {
-    use crate::exec::script::IntoCommand;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
     use crate::archive::{CompressionLevel, ZipPathMode};
+    use crate::exec::script::IntoCommand;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     #[test]
     fn archive_actions_build_reusable_commands() {

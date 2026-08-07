@@ -2,8 +2,8 @@ pub mod ai;
 pub mod background;
 pub mod backup;
 pub mod builder;
-pub use os::{cgroup, docker, git, rclone, ssh};
 pub use os::exec;
+pub use os::{cgroup, docker, git, rclone, ssh};
 pub mod jwt;
 pub use os::macros;
 pub mod paths;
@@ -12,7 +12,7 @@ pub mod setup;
 pub mod traefik;
 pub mod watch_paths;
 // pub mod k8s;
-pub use os as os;
+pub use os;
 
 #[tokio::test]
 async fn test_docker() {

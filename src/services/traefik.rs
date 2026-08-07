@@ -1,7 +1,5 @@
 use auto_di::singleton;
-use sqlx::SqlitePool;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use crate::api::dto::traefik::{
     StructuredMiddlewareDto, StructuredMiddlewareKind, StructuredMiddlewareResponseDto,
@@ -14,14 +12,12 @@ use crate::utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor};
 use crate::utils::os::OsCli;
 use crate::utils::paths::rustploy_paths;
 
-pub struct TraefikService {
-    db: Arc<SqlitePool>,
-}
+pub struct TraefikService;
 
 #[singleton]
 impl TraefikService {
-    fn new(db: Arc<SqlitePool>) -> Self {
-        Self { db }
+    fn new() -> Self {
+        Self
     }
 
     pub fn get_traefik_base_path() -> String {

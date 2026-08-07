@@ -1,6 +1,4 @@
-use crate::docker::{
-    DockerCli, DockerResult, NetworkDriver, NetworkScope, core::ArgBuilder,
-};
+use crate::docker::{DockerCli, DockerResult, NetworkDriver, NetworkScope, core::ArgBuilder};
 
 pub struct NetworkCreate<'a> {
     pub(crate) cli: &'a DockerCli,

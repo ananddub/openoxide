@@ -2,8 +2,8 @@ use crate::exec::Condition;
 use crate::exec::ScriptPipeline;
 
 use super::*;
-use crate::pipeline;
 use crate::exec::{CommandExecutor, LocalExecutor};
+use crate::pipeline;
 use crate::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
 use tokio_util::sync::CancellationToken;
 
@@ -286,12 +286,11 @@ fn test_shell_ir_compilation() {
 
     assert_eq!(systemctl_cmd.to_bash(), "systemctl 'is-active' 'sshd'");
 
-    let redirect =
-        systemctl_cmd
-            .clone()
-            .stdout(crate::exec::script::dsl::OutputTarget::file(
-                "/var/log/active.log",
-            ));
+    let redirect = systemctl_cmd
+        .clone()
+        .stdout(crate::exec::script::dsl::OutputTarget::file(
+            "/var/log/active.log",
+        ));
     assert_eq!(
         redirect.to_bash(),
         "systemctl 'is-active' 'sshd' > '/var/log/active.log'"
@@ -341,8 +340,8 @@ fn test_sh_macro_compilation() {
 #[test]
 fn test_sh_macro_advanced_features() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
     let temp = "test";
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -455,8 +454,8 @@ fn test_sh_macro_validated_text_tools() {
 #[test]
 fn test_sh_macro_convenience_dsls() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -695,8 +694,8 @@ fn test_sh_macro_linux_commands_validation() {
 #[test]
 fn test_sh_macro_generic_unix_dsl() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -731,8 +730,8 @@ fn test_sh_macro_generic_unix_dsl() {
 #[test]
 fn test_sh_macro_mvp_deploy_dsl() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -767,8 +766,8 @@ fn test_sh_macro_mvp_deploy_dsl() {
 #[test]
 fn test_pipeline_and_sh_unification() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -819,9 +818,9 @@ async fn test_sh_macro_direct_execution() {
 
 #[test]
 fn test_rust_dsl_api_usage() {
+    use crate::OsCli;
     use crate::exec::script::IntoCommand;
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -857,9 +856,9 @@ fn test_rust_dsl_api_usage() {
 
 #[test]
 fn test_file_write_escapes_multiline_literals() {
+    use crate::OsCli;
     use crate::exec::script::IntoCommand;
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -876,9 +875,9 @@ fn test_file_write_escapes_multiline_literals() {
 
 #[test]
 fn test_package_builders_and_macro_dsl() {
+    use crate::OsCli;
     use crate::exec::script::{IntoCommand, sh};
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -934,8 +933,8 @@ fn test_sh_macro_json() {
 #[test]
 fn test_sh_macro_binary_and_unary_conditions() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -967,8 +966,8 @@ fn test_sh_macro_binary_and_unary_conditions() {
 #[test]
 fn test_sh_macro_sudo() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -1019,8 +1018,8 @@ fn test_sh_macro_capture_success_failure() {
 #[test]
 fn test_sh_macro_new_features() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);
@@ -1075,8 +1074,8 @@ fn test_sh_macro_nested_captures() {
 #[test]
 fn test_sh_macro_os_api_utilities() {
     use super::sh;
-    use crate::exec::{CommandExecutor, LocalExecutor};
     use crate::OsCli;
+    use crate::exec::{CommandExecutor, LocalExecutor};
 
     let executor = CommandExecutor::Local(LocalExecutor::new());
     let os = OsCli::new(&executor);

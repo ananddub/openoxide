@@ -1,6 +1,6 @@
-use os::string_enum;
 use crate::utils::exec::{ArgBuilder, CommandExecutor, ExecOutput, ExecResult};
 use crate::utils::os::OsCli;
+use os::string_enum;
 use tokio_util::sync::CancellationToken;
 
 string_enum! {

@@ -85,8 +85,7 @@ impl<'a> ContainerHandle<'a> {
         id: impl AsRef<str>,
     ) -> DockerResult<crate::docker::ContainerInspect> {
         let out = self.0.run(["container", "inspect", id.as_ref()]).await?;
-        let mut json: Vec<crate::docker::ContainerInspect> =
-            serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::docker::ContainerInspect> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 

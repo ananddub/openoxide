@@ -11,7 +11,7 @@ use crate::{
         NodeActionDto, NodeAvailabilityDto, NodeDto, SwarmConnectionDto, SwarmInfoDto,
         SwarmJoinDto, SwarmTokensDto,
     },
-    services::server::ServerService,
+    services::server::RemoteServerService,
     utils::{
         docker::DockerCli,
         exec::{
@@ -27,12 +27,16 @@ type ApiError = (StatusCode, String);
 pub struct SwarmController {
     db: Arc<SqlitePool>,
     cache: Arc<AppStateCache>,
-    servers: Arc<ServerService>,
+    servers: Arc<RemoteServerService>,
 }
 
 #[controller("/swarm")]
 impl SwarmController {
-    fn new(db: Arc<SqlitePool>, cache: Arc<AppStateCache>, servers: Arc<ServerService>) -> Self {
+    fn new(
+        db: Arc<SqlitePool>,
+        cache: Arc<AppStateCache>,
+        servers: Arc<RemoteServerService>,
+    ) -> Self {
         Self { db, cache, servers }
     }
 

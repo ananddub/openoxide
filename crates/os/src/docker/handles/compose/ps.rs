@@ -1,6 +1,4 @@
-use crate::docker::{
-    ComposeContainer, DockerCli, DockerOutput, DockerResult, core::ArgBuilder,
-};
+use crate::docker::{ComposeContainer, DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
 pub struct ComposePsBuilder<'a> {
     pub(crate) cli: &'a DockerCli,

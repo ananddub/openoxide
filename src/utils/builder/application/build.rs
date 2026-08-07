@@ -1,5 +1,4 @@
 use super::application::ApplicationBuilder;
-use os::pipeline;
 use crate::utils::builder::packs::{
     heroku::{HerokuBuilderImage, HerokuCli},
     nixpacks::NixpacksCli,
@@ -10,6 +9,7 @@ use crate::utils::{
     builder::spec::{ApplicationSpec, BuildStrategy, BuilderEvent, SourceSpec},
     exec::{ExecError, ExecResult},
 };
+use os::pipeline;
 use tokio_util::sync::CancellationToken;
 
 impl ApplicationBuilder {

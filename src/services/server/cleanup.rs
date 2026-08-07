@@ -3,9 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::{
-    api::dto::server::{
-        ServerActionResultDto, ServerCleanupExecutionDto, ServerCleanupPolicyDto,
-    },
+    api::dto::server::{ServerActionResultDto, ServerCleanupExecutionDto, ServerCleanupPolicyDto},
     repository::{ServerManagementRepository, ServerRepository},
     utils::{docker::DockerCli, exec::CommandExecutor, os::OsCli},
 };

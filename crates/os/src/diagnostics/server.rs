@@ -1,7 +1,7 @@
-use crate::docker::DockerCli;
-use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::OsCli;
 use crate::diagnostics::DiagnosticScope;
+use crate::docker::DockerCli;
+use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
 use crate::firewall::FirewallBackend;
 
 pub struct ServerDiagnosticsOutput {

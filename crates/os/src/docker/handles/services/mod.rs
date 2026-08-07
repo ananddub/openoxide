@@ -59,8 +59,7 @@ impl<'a> ServicesHandle<'a> {
         name: impl AsRef<str>,
     ) -> DockerResult<crate::docker::ServiceInspect> {
         let out = self.cli.run(["service", "inspect", name.as_ref()]).await?;
-        let mut json: Vec<crate::docker::ServiceInspect> =
-            serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::docker::ServiceInspect> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 

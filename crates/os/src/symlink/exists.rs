@@ -1,6 +1,6 @@
+use crate::escape_arg;
 use crate::exec::script::IntoCommand;
 use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::escape_arg;
 
 pub struct SymlinkExistsBuilder<'a> {
     executor: &'a CommandExecutor,

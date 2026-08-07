@@ -7,7 +7,10 @@ pub struct SystemLogoutBuilder<'a> {
 
 impl<'a> SystemLogoutBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli, registry: None }
+        Self {
+            cli,
+            registry: None,
+        }
     }
 
     pub fn registry(mut self, r: impl Into<String>) -> Self {

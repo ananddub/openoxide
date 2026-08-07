@@ -1,8 +1,8 @@
 use super::{
     ExecError, ExecExitStatus, ExecOutput, ExecResult, ExecStreamEvent, SshAuth, SshHostKey,
 };
+use std::ffi::OsStr;
 use std::time::Duration;
-use std::{ffi::OsStr, sync::Arc};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::{sync::mpsc, task::JoinHandle};
 use tokio_util::sync::CancellationToken;

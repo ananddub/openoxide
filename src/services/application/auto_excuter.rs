@@ -4,7 +4,10 @@ use auto_di::resolve;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
-pub async fn app_new_cmd(_db: Arc<SqlitePool>, app_id: i64) -> Result<CommandExecutor, sqlx::Error> {
+pub async fn app_new_cmd(
+    _db: Arc<SqlitePool>,
+    app_id: i64,
+) -> Result<CommandExecutor, sqlx::Error> {
     let repo = resolve::<ApplicationRepository>().await.unwrap();
     let app_user = repo
         .get_by_id(app_id)
@@ -18,7 +21,9 @@ pub async fn app_new_cmd(_db: Arc<SqlitePool>, app_id: i64) -> Result<CommandExe
             "application has no server assigned; cannot cancel operation"
         );
     } else {
-        let server_repo = resolve::<crate::repository::ServerRepository>().await.unwrap();
+        let server_repo = resolve::<crate::repository::ServerRepository>()
+            .await
+            .unwrap();
         let server_id = app_user.server_id.unwrap_or(0);
         let creds = server_repo
             .get_ssh_credentials(server_id)

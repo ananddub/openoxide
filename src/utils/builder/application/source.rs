@@ -62,7 +62,14 @@ impl ApplicationBuilder {
                 .cancel_with(cancel.clone())
                 .pull()
                 .await;
-            let logout = self.ctx.docker.system().logout().registry(&auth.registry).run().await;
+            let logout = self
+                .ctx
+                .docker
+                .system()
+                .logout()
+                .registry(&auth.registry)
+                .run()
+                .await;
             match (pull, logout) {
                 (Err(error), _) => return Err(error),
                 (Ok(_), Err(error)) => return Err(error),

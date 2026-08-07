@@ -103,7 +103,11 @@ impl RegistryService {
             Some(registry_url)
         };
 
-        let mut login_builder = docker.system().login().username(username).password(password);
+        let mut login_builder = docker
+            .system()
+            .login()
+            .username(username)
+            .password(password);
         if let Some(r) = registry {
             login_builder = login_builder.registry(r);
         }

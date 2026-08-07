@@ -1,7 +1,7 @@
 use crate::{
     core::config::Config,
     db::models::{container_metrics::ContainerMetric, server_metrics::ServerMetric},
-    services::{monitoring::agent_auth::MonitoringAgentAuth, server::ServerService},
+    services::{monitoring::agent_auth::MonitoringAgentAuth, server::RemoteServerService},
 };
 use auto_di::singleton;
 use std::sync::Arc;
@@ -12,7 +12,7 @@ pub mod proto {
 }
 
 pub struct MonitoringService {
-    server_service: Arc<ServerService>,
+    server_service: Arc<RemoteServerService>,
     config: Arc<Config>,
     agent_auth: Arc<MonitoringAgentAuth>,
 }
@@ -20,7 +20,7 @@ pub struct MonitoringService {
 #[singleton]
 impl MonitoringService {
     pub fn new(
-        server_service: Arc<ServerService>,
+        server_service: Arc<RemoteServerService>,
         config: Arc<Config>,
         agent_auth: Arc<MonitoringAgentAuth>,
     ) -> Self {

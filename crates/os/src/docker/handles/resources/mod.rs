@@ -45,8 +45,7 @@ impl<'a> NetworkHandle<'a> {
         name: impl AsRef<str>,
     ) -> DockerResult<crate::docker::NetworkInspect> {
         let out = self.0.run(["network", "inspect", name.as_ref()]).await?;
-        let mut json: Vec<crate::docker::NetworkInspect> =
-            serde_json::from_str(&out.stdout)?;
+        let mut json: Vec<crate::docker::NetworkInspect> = serde_json::from_str(&out.stdout)?;
         Ok(json.pop().unwrap_or_default())
     }
 

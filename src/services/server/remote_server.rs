@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-pub struct ServerService {
+pub struct RemoteServerService {
     repo_server: Arc<ServerRepository>,
     repo_ssh: Arc<SshKeyRepository>,
     private_networks: Arc<ServerPrivateNetworkRepository>,
@@ -27,7 +27,7 @@ pub struct ServerService {
 }
 
 #[singleton]
-impl ServerService {
+impl RemoteServerService {
     fn new(
         repo_server: Arc<ServerRepository>,
         repo_ssh: Arc<SshKeyRepository>,
@@ -87,10 +87,7 @@ impl ServerService {
 
     pub async fn create(&self, input: CreateRemoteServerDto) -> sqlx::Result<Server> {
         let app_name = generate_app_name(&input.name);
-        let server_type = match input.server_type.to_uppercase().as_str() {
-            "BUILD" => "BUILD".to_string(),
-            _ => "DEPLOY".to_string(),
-        };
+        let server_type = input.server_type.as_str().to_owned();
 
         self.repo_server
             .create_and_return(
@@ -115,12 +112,14 @@ impl ServerService {
         let ip_address = input.ip_address.unwrap_or(current.ip_address);
         let port = input.port.unwrap_or(current.port);
         let username = input.username.unwrap_or(current.username);
-        let server_status = input.server_status.unwrap_or(current.server_status);
-        let server_type = input.server_type.unwrap_or(current.server_type);
-        let server_type = match server_type.to_uppercase().as_str() {
-            "BUILD" => "BUILD".to_string(),
-            _ => "DEPLOY".to_string(),
-        };
+        let server_status = input
+            .server_status
+            .map(|value| value.as_str().to_owned())
+            .unwrap_or(current.server_status);
+        let server_type = input
+            .server_type
+            .map(|value| value.as_str().to_owned())
+            .unwrap_or(current.server_type);
         let enable_docker_cleanup = input
             .enable_docker_cleanup
             .unwrap_or(current.enable_docker_cleanup);
@@ -152,8 +151,8 @@ impl ServerService {
             .await
     }
 
-    pub async fn set_status(&self, id: i64, status: &str) -> sqlx::Result<Server> {
-        self.repo_server.set_status(id, status).await
+    pub async fn set_status(&self, id: i64, status: RemoteServerStatus) -> sqlx::Result<Server> {
+        self.repo_server.set_status(id, status.as_str()).await
     }
 
     pub async fn touch_test_connection(&self, id: i64) -> sqlx::Result<Server> {
@@ -281,8 +280,7 @@ impl ServerService {
             .get(&migration_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
-        let mut dto =
-            crate::api::dto::server::ServerDependencyMigrationDto::try_from(migration)?;
+        let mut dto = crate::api::dto::server::ServerDependencyMigrationDto::try_from(migration)?;
         dto.databases = counts.databases;
         Ok(dto)
     }
@@ -354,6 +352,21 @@ impl ServerService {
             )));
         }
         self.migration_status(id).await
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RemoteServerStatus {
+    Active,
+    Inactive,
+}
+
+impl RemoteServerStatus {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Inactive => "INACTIVE",
+        }
     }
 }
 

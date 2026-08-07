@@ -1,7 +1,5 @@
 use super::types::{Mount, MountKind, PortBinding, Protocol, RestartPolicy};
-use crate::docker::{
-    DockerCli, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent,
-};
+use crate::docker::{DockerCli, DockerExitStatus, DockerOutput, DockerResult, DockerStreamEvent};
 use tokio::sync::mpsc;
 
 /// Fluent builder for `docker container create` / `docker container run`.

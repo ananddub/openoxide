@@ -15,9 +15,7 @@ use crate::{
         validator::ValidatedJson,
     },
     services::{
-        preview::{
-            PreviewDeploymentOutcome, PreviewDeploymentService, PreviewDeploymentView,
-        },
+        preview::{PreviewDeploymentOutcome, PreviewDeploymentService, PreviewDeploymentView},
         webhook::{GitProviderKind, PullRequestEvent},
     },
 };

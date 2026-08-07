@@ -21,7 +21,10 @@ pub enum AdapterError {
     #[error("Missing field: {0}")]
     MissingField(&'static str),
     #[error("Invalid field {field}: {message}")]
-    InvalidField { field: &'static str, message: String },
+    InvalidField {
+        field: &'static str,
+        message: String,
+    },
     #[error("Unsupported source type: {0}")]
     UnsupportedSourceType(String),
 }

@@ -1,6 +1,6 @@
+use crate::escape_arg;
 use crate::exec::script::{IntoCommand, shell_single_quote};
 use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::escape_arg;
 
 pub struct FileWriteBuilder<'a> {
     executor: &'a CommandExecutor,

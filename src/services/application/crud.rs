@@ -109,10 +109,9 @@ impl ApplicationService {
                 dependencies.active_deployments, dependencies.enabled_backups
             )));
         }
-        let previews =
-            auto_di::resolve::<crate::services::preview::PreviewDeploymentService>()
-                .await
-                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let previews = auto_di::resolve::<crate::services::preview::PreviewDeploymentService>()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         previews
             .ensure_application_can_be_deleted(id)
             .await

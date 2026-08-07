@@ -55,9 +55,9 @@ impl<'a> FirewallCli<'a> {
 #[cfg(test)]
 mod tests {
     use super::FirewallBackend;
+    use crate::OsCli;
     use crate::exec::script::IntoCommand;
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     #[test]
     fn firewall_actions_build_typed_commands() {

@@ -60,16 +60,8 @@ impl LocalExecutor {
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
 
-        let stdout_task = tokio::spawn(read_pipe_with_trace(
-            program.to_owned(),
-            "stdout",
-            stdout,
-        ));
-        let stderr_task = tokio::spawn(read_pipe_with_trace(
-            program.to_owned(),
-            "stderr",
-            stderr,
-        ));
+        let stdout_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stdout", stdout));
+        let stderr_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stderr", stderr));
         tokio::select! {
             status = child.wait() => {
                 let stdout = join_pipe(stdout_task).await?;
@@ -143,16 +135,8 @@ impl LocalExecutor {
         let stderr = child.stderr.take();
         tracing::debug!(program, "starting local command with stdin");
 
-        let stdout_task = tokio::spawn(read_pipe_with_trace(
-            program.to_owned(),
-            "stdout",
-            stdout,
-        ));
-        let stderr_task = tokio::spawn(read_pipe_with_trace(
-            program.to_owned(),
-            "stderr",
-            stderr,
-        ));
+        let stdout_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stdout", stdout));
+        let stderr_task = tokio::spawn(read_pipe_with_trace(program.to_owned(), "stderr", stderr));
         tokio::select! {
             status = child.wait() => {
                 let stdout = join_pipe(stdout_task).await?;

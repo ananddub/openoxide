@@ -1,6 +1,6 @@
 use super::ZipError;
-use crate::exec::{CommandExecutor, LocalExecutor};
 use crate::OsCli;
+use crate::exec::{CommandExecutor, LocalExecutor};
 use std::path::Path;
 
 /// Security-check `input` ZIP, then write a sanitized copy to `output`.

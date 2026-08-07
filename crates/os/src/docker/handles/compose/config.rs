@@ -41,10 +41,7 @@ impl<'a> ComposeConfigBuilder<'a> {
         self.args.pair("--format", "json");
         let output = self.cli.execute(&self.args).await?;
         let json = serde_json::from_str(&output.stdout).map_err(|e| {
-            crate::exec::ExecError::Io(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                e,
-            ))
+            crate::exec::ExecError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
         })?;
         Ok(json)
     }

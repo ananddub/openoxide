@@ -1,7 +1,7 @@
 use super::{TarCompression, TarOverwritePolicy};
+use crate::escape_arg;
 use crate::exec::script::IntoCommand;
 use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
-use crate::escape_arg;
 
 pub struct ArchiveExtractBuilder<'a> {
     executor: &'a CommandExecutor,

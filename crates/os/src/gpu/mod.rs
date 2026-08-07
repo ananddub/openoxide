@@ -20,9 +20,9 @@ impl<'a> GpuCli<'a> {
 #[cfg(test)]
 mod tests {
     use super::{ContainerRuntime, NvidiaQueryField, NvidiaQueryFormat};
+    use crate::OsCli;
     use crate::exec::script::IntoCommand;
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     #[test]
     fn nvidia_actions_build_commands() {

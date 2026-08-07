@@ -42,9 +42,9 @@ impl<'a> DirCli<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::OsCli;
     use crate::exec::script::IntoCommand;
     use crate::exec::{CommandExecutor, LocalExecutor};
-    use crate::OsCli;
 
     #[test]
     fn directory_copy_and_empty_remove_build_commands() {

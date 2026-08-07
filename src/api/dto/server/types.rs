@@ -148,8 +148,8 @@ pub struct CreateRemoteServerDto {
     pub port: i64,
     #[serde(default = "default_username")]
     pub username: String,
-    #[serde(default = "default_server_type")]
-    pub server_type: String,
+    #[serde(default)]
+    pub server_type: RemoteServerTypeDto,
     pub ssh_key_id: Option<i64>,
     pub build_memory_limit: Option<String>,
     pub build_cpu_limit: Option<String>,
@@ -175,8 +175,8 @@ pub struct PatchRemoteServerDto {
     pub ip_address: Option<String>,
     pub port: Option<i64>,
     pub username: Option<String>,
-    pub server_status: Option<String>,
-    pub server_type: Option<String>,
+    pub server_status: Option<RemoteServerStatusDto>,
+    pub server_type: Option<RemoteServerTypeDto>,
     pub enable_docker_cleanup: Option<i64>,
     pub log_cleanup_cron: Option<String>,
     pub command: Option<String>,
@@ -236,7 +236,16 @@ impl From<Server> for RemoteServerResponseDto {
 #[derive(Debug, Clone, Serialize, poem_openapi::Object)]
 pub struct RemoteServerActionResponseDto {
     pub server: RemoteServerResponseDto,
-    pub action: String,
+    pub action: RemoteServerAction,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, poem_openapi::Enum)]
+#[serde(rename_all = "kebab-case")]
+#[oai(rename_all = "kebab-case")]
+pub enum RemoteServerAction {
+    Activate,
+    Deactivate,
+    TestConnection,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -302,8 +311,42 @@ fn default_username() -> String {
     "root".into()
 }
 
-fn default_server_type() -> String {
-    "DEPLOY".into()
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, poem_openapi::Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum RemoteServerTypeDto {
+    Deploy,
+    Build,
+}
+
+impl Default for RemoteServerTypeDto {
+    fn default() -> Self {
+        Self::Deploy
+    }
+}
+
+impl RemoteServerTypeDto {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Deploy => "DEPLOY",
+            Self::Build => "BUILD",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, poem_openapi::Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum RemoteServerStatusDto {
+    Active,
+    Inactive,
+}
+
+impl RemoteServerStatusDto {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "ACTIVE",
+            Self::Inactive => "INACTIVE",
+        }
+    }
 }
 
 // Server Management & Private Network DTOs
