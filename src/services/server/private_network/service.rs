@@ -24,8 +24,8 @@ use super::{
     validation::validate,
 };
 
-const OPERATION_LEASE_SECONDS: i64 = 300;
-const OPERATION_HEARTBEAT_SECONDS: u64 = 60;
+const OPERATION_LEASE_SECONDS: i64 = 30;
+const OPERATION_HEARTBEAT_SECONDS: u64 = 10;
 const STALE_HANDSHAKE_SECONDS: i64 = 180;
 const AUTO_REPAIR_FAILURE_THRESHOLD: i64 = 3;
 
@@ -138,6 +138,7 @@ impl ServerPrivateNetworkService {
         server_id: i64,
     ) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.require_managed_wireguard(server_id).await?;
+        let _ = self.networks.force_release_operation(server_id).await;
         self.with_operation(server_id, PrivateNetworkOperation::Setup, async {
             let (local, remote) = self.executors(server_id).await?;
             let backend = KernelWireGuardBackend::new(&local, &remote);

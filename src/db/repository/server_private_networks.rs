@@ -138,6 +138,14 @@ impl ServerPrivateNetworkRepository {
         Ok(())
     }
 
+    pub async fn force_release_operation(&self, server_id: i64) -> sqlx::Result<()> {
+        sqlx::query("UPDATE server_private_networks SET operation = NULL, operation_lease_until = NULL WHERE server_id = ?")
+            .bind(server_id)
+            .execute(self.pool.as_ref())
+            .await?;
+        Ok(())
+    }
+
     pub async fn renew_operation(
         &self,
         server_id: i64,
