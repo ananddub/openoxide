@@ -21,6 +21,10 @@ impl Default for DockerCli {
     }
 }
 impl DockerCli {
+    pub fn new() -> Self {
+        Self::new_local()
+    }
+
     pub fn system(&self) -> super::handles::SystemHandle<'_> {
         super::handles::SystemHandle(self)
     }
@@ -37,6 +41,12 @@ impl DockerCli {
             executor,
             executable: "docker".into(),
             global_args: vec![],
+        }
+    }
+    pub fn from_optional_executor(executor: Option<CommandExecutor>) -> Self {
+        match executor {
+            Some(exec) => Self::from_executor(exec),
+            None => Self::new_local(),
         }
     }
 
