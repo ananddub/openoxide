@@ -22,19 +22,17 @@ impl ComposeResourceKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ComposePatchType {
-    Update,
-    Delete,
-}
-impl ComposePatchType {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Update => "UPDATE",
-            Self::Delete => "DELETE",
-        }
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum ComposePatchType {
+        default = Update;
+
+        Update => "UPDATE",
+        Delete => "DELETE",
     }
 }
 

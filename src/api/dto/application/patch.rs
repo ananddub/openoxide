@@ -3,21 +3,18 @@ use validator::Validate;
 
 use crate::db::models::patches::Patch;
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ApplicationPatchType {
-    Create,
-    Update,
-    Delete,
-}
-impl ApplicationPatchType {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Create => "CREATE",
-            Self::Update => "UPDATE",
-            Self::Delete => "DELETE",
-        }
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum ApplicationPatchType {
+        default = Create;
+
+        Create => "CREATE",
+        Update => "UPDATE",
+        Delete => "DELETE",
     }
 }
 

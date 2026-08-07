@@ -2,32 +2,18 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use validator::Validate;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum PostgresReplicationRole {
-    Standalone,
-    Primary,
-    Replica,
-}
-impl PostgresReplicationRole {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Standalone => "STANDALONE",
-            Self::Primary => "PRIMARY",
-            Self::Replica => "REPLICA",
-        }
-    }
-}
-impl TryFrom<&str> for PostgresReplicationRole {
-    type Error = String;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.trim().to_ascii_uppercase().as_str() {
-            "STANDALONE" => Ok(Self::Standalone),
-            "PRIMARY" => Ok(Self::Primary),
-            "REPLICA" => Ok(Self::Replica),
-            other => Err(format!("invalid PostgreSQL replication role: {other}")),
-        }
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum PostgresReplicationRole {
+        default = Standalone;
+
+        Standalone => "STANDALONE",
+        Primary => "PRIMARY",
+        Replica => "REPLICA",
     }
 }
 

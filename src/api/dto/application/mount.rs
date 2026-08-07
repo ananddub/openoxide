@@ -3,23 +3,7 @@ use validator::Validate;
 
 use crate::db::models::mounts::Mount;
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ApplicationMountType {
-    Bind,
-    Volume,
-    File,
-}
-impl ApplicationMountType {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Bind => "BIND",
-            Self::Volume => "VOLUME",
-            Self::File => "FILE",
-        }
-    }
-}
+pub use crate::utils::builder::spec::MountType as ApplicationMountType;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct UpsertApplicationMountDto {

@@ -121,10 +121,10 @@ impl DatabaseService {
         Ok(PostgresAdvancedConfigResponseDto {
             settings: serde_json::from_str(&value.postgres_config)
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
-            replication_role: crate::api::dto::database::PostgresReplicationRole::try_from(
-                value.replication_role.as_str(),
+            replication_role: crate::api::dto::database::PostgresReplicationRole::from_str(
+                &value.replication_role,
             )
-            .map_err(sqlx::Error::Protocol)?,
+            .ok_or_else(|| sqlx::Error::Protocol("invalid replication role".into()))?,
             primary_host: value.primary_host,
             primary_port: value.primary_port,
             replication_user: value.replication_user,

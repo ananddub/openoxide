@@ -19,7 +19,9 @@ string_enum! {
 }
 
 string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum MountType {
         default = Bind;
 

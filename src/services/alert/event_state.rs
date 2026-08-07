@@ -1,43 +1,28 @@
+use os::string_enum;
 use serde::{Deserialize, Serialize};
-use std::{fmt, str::FromStr};
 
 use super::AlertParseError;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AlertEventState {
-    Firing,
-    Resolved,
-    NoData,
-}
+string_enum! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum AlertEventState {
+        default = Firing;
 
-impl AlertEventState {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Firing => "FIRING",
-            Self::Resolved => "RESOLVED",
-            Self::NoData => "NO_DATA",
-        }
+        Firing => "FIRING",
+        Resolved => "RESOLVED",
+        NoData => "NO_DATA",
     }
 }
 
-impl fmt::Display for AlertEventState {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
+use std::str::FromStr;
 
 impl FromStr for AlertEventState {
     type Err = AlertParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value.trim().to_ascii_uppercase().as_str() {
-            "FIRING" => Ok(Self::Firing),
-            "RESOLVED" => Ok(Self::Resolved),
-            "NO_DATA" => Ok(Self::NoData),
-            other => Err(AlertParseError::EventState(other.to_owned())),
-        }
+        Self::from_str(value).ok_or_else(|| AlertParseError::EventState(value.to_owned()))
     }
 }
 

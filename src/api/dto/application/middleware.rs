@@ -1,23 +1,19 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, poem_openapi::Enum)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ApplicationMiddlewareType {
-    Compress,
-    Headers,
-    RateLimit,
-    IpAllowlist,
-}
-impl ApplicationMiddlewareType {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Compress => "COMPRESS",
-            Self::Headers => "HEADERS",
-            Self::RateLimit => "RATE_LIMIT",
-            Self::IpAllowlist => "IP_ALLOWLIST",
-        }
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum ApplicationMiddlewareType {
+        default = Compress;
+
+        Compress => "COMPRESS",
+        Headers => "HEADERS",
+        RateLimit => "RATE_LIMIT",
+        IpAllowlist => "IP_ALLOWLIST",
     }
 }
 
