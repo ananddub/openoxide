@@ -21,6 +21,10 @@ impl Default for DockerCli {
     }
 }
 impl DockerCli {
+    pub fn system(&self) -> super::handles::SystemHandle<'_> {
+        super::handles::SystemHandle(self)
+    }
+
     pub fn new_local() -> Self {
         Self {
             executor: CommandExecutor::Local(LocalExecutor::new()),
@@ -209,26 +213,6 @@ impl DockerCli {
         }
         Ok(items)
     }
-    pub(crate) async fn prefixed(
-        &self,
-        prefix: &[&str],
-        args: &[&str],
-    ) -> DockerResult<DockerOutput> {
-        let mut command = prefix.to_vec();
-        command.extend_from_slice(args);
-        tracing::debug!(command = ?command, "running docker command");
-        self.run(command).await
-    }
-    pub(crate) async fn prefixed_cancelled(
-        &self,
-        prefix: &[&str],
-        args: &[&str],
-        cancel: &CancellationToken,
-    ) -> DockerResult<DockerOutput> {
-        let mut command = prefix.to_vec();
-        command.extend_from_slice(args);
-        self.run_cancelled(command, cancel).await
-    }
 
     pub async fn execute(
         &self,
@@ -334,14 +318,6 @@ impl DockerCli {
             }
         }
         Ok(items)
-    }
-
-    pub(crate) async fn prune(&self, object: &str, filters: &[&str]) -> DockerResult<DockerOutput> {
-        let mut args = vec![object, "prune", "--force"];
-        for filter in filters {
-            args.extend(["--filter", filter]);
-        }
-        self.run(args).await
     }
 
     /// Return a typesafe fluent query / command builder backed by this client.

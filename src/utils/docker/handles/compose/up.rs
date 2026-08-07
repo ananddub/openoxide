@@ -27,6 +27,10 @@ impl<'a> UpBuilder<'a> {
         self.args.flag("--build");
         self
     }
+    pub fn no_build(mut self) -> Self {
+        self.args.flag("--no-build");
+        self
+    }
     pub fn no_deps(mut self) -> Self {
         self.args.flag("--no-deps");
         self

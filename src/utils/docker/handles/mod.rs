@@ -24,6 +24,10 @@ pub use secrets::SecretsHandle;
 pub use services::{ServiceInspectBuilder, ServicesHandle};
 pub use stacks::StacksHandle;
 pub use swarm::{SwarmActiveBuilder, SwarmHandle};
+pub use system::{
+    SystemDfBuilder, SystemEventsBuilder, SystemHandle, SystemInfoBuilder, SystemLoginBuilder,
+    SystemLogoutBuilder, SystemPruneBuilder,
+};
 
 pub mod compose;
 pub mod configs;
@@ -35,3 +39,4 @@ pub mod secrets;
 pub mod services;
 pub mod stacks;
 pub mod swarm;
+pub mod system;

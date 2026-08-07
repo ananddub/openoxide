@@ -13,21 +13,6 @@ macro_rules! impl_builder_opts {
                 self.args.cancel_token = Some(token);
                 self
             }
-
-            /// Escape hatch to pass a raw, custom argument directly to the Docker CLI.
-            pub fn custom_arg(mut self, arg: impl Into<String>) -> Self {
-                self.args.push(arg.into());
-                self
-            }
-
-            /// Escape hatch to pass multiple raw, custom arguments directly to the Docker CLI.
-            pub fn custom_args(
-                mut self,
-                args: impl IntoIterator<Item = impl Into<String>>,
-            ) -> Self {
-                self.args.push_all(args);
-                self
-            }
         }
     };
 }

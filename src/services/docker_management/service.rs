@@ -197,7 +197,9 @@ impl DockerManagementService {
     pub async fn disk_usage(&self, server_id: Option<i64>) -> Result<serde_json::Value, String> {
         self.docker(server_id)
             .await?
-            .system_df()
+            .system()
+            .df()
+            .run()
             .await
             .map(serde_json::Value::Object)
             .map_err(error)

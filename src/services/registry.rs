@@ -103,11 +103,19 @@ impl RegistryService {
             Some(registry_url)
         };
 
-        let res = docker.login(registry, username, password).await;
+        let mut login_builder = docker.system().login().username(username).password(password);
+        if let Some(r) = registry {
+            login_builder = login_builder.registry(r);
+        }
+        let res = login_builder.run().await;
         match res {
             Ok(output) => {
                 if output.success() {
-                    let _ = docker.logout(registry).await;
+                    let mut logout_builder = docker.system().logout();
+                    if let Some(r) = registry {
+                        logout_builder = logout_builder.registry(r);
+                    }
+                    let _ = logout_builder.run().await;
                     Ok(())
                 } else {
                     Err(format!("Login failed: {}", output.stderr))

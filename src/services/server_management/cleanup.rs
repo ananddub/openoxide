@@ -45,7 +45,11 @@ impl ServerCleanupService {
         let result = async {
             if policy.containers || policy.images || policy.networks || policy.volumes {
                 let output = docker
-                    .system_prune(policy.images, policy.volumes, &[])
+                    .system()
+                    .prune()
+                    .all(policy.images)
+                    .volumes(policy.volumes)
+                    .run()
                     .await
                     .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
                 stdout.push(output.stdout);

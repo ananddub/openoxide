@@ -47,7 +47,12 @@ impl ApplicationBuilder {
         if let Some(auth) = registry {
             self.ctx
                 .docker
-                .login(Some(&auth.registry), &auth.username, &auth.password)
+                .system()
+                .login()
+                .registry(&auth.registry)
+                .username(&auth.username)
+                .password(&auth.password)
+                .run()
                 .await?;
             let pull = self
                 .ctx
@@ -57,7 +62,7 @@ impl ApplicationBuilder {
                 .cancel_with(cancel.clone())
                 .pull()
                 .await;
-            let logout = self.ctx.docker.logout(Some(&auth.registry)).await;
+            let logout = self.ctx.docker.system().logout().registry(&auth.registry).run().await;
             match (pull, logout) {
                 (Err(error), _) => return Err(error),
                 (Ok(_), Err(error)) => return Err(error),

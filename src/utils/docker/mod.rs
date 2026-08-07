@@ -8,14 +8,10 @@ pub use types::*;
 #[macro_use]
 
 pub mod client;
-pub mod compose;
-pub mod container;
 pub mod core;
 pub mod error;
 pub mod expand;
 pub mod handles;
-pub mod image;
 pub mod macros;
 pub mod query;
-pub mod system;
 pub mod types;

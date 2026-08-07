@@ -55,8 +55,8 @@ impl<'a> ServerDiagnosticsBuilder<'a> {
         }
         if self.includes(DiagnosticScope::Docker) {
             let docker = DockerCli::from_executor(self.executor.clone());
-            collect_debug(docker.version().await, &mut stdout, &mut stderr);
-            collect_debug(docker.info().await, &mut stdout, &mut stderr);
+            collect_debug(docker.system().version().await, &mut stdout, &mut stderr);
+            collect_debug(docker.system().info().run().await, &mut stdout, &mut stderr);
         }
         if self.includes(DiagnosticScope::Firewall) {
             for backend in [

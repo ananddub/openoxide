@@ -426,7 +426,7 @@ impl DomainService {
                     .env_file(&env_file)
                     .file(&compose_file_path)
                     .detach()
-                    .custom_arg("--no-build")
+                    .no_build()
                     .run()
                     .await
                     .map_err(|e| format!("compose up failed: {e}"))?;

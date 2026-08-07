@@ -240,7 +240,9 @@ impl SwarmController {
         // etc.) leaves a "Down" ghost entry behind under its old ID. Grab the
         // hostname up front so we can sweep those away once the new join lands.
         let target_hostname = target_docker
+            .system()
             .info()
+            .run()
             .await
             .ok()
             .and_then(|info| info.get("Name").and_then(|v| v.as_str()).map(str::to_owned))
