@@ -10,9 +10,9 @@ pub(super) struct RetryPolicy {
 impl RetryPolicy {
     pub(super) const fn network() -> Self {
         Self {
-            attempts: 3,
+            attempts: 6,
             initial_delay: Duration::from_secs(1),
-            max_delay: Duration::from_secs(4),
+            max_delay: Duration::from_secs(3),
         }
     }
 

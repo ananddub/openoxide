@@ -122,6 +122,7 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                 &WireGuardConfigBuilder::new(panel_private)
                     .address(plan.panel_address.clone())
                     .listen_port(plan.port)
+                    .mtu(1420)
                     .peer(local_peer_builder.build().map_err(Self::protocol)?)
                     .build()
                     .map_err(Self::protocol)?,
@@ -136,6 +137,7 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                 &WireGuardConfigBuilder::new(remote_private)
                     .address(plan.remote_address.clone())
                     .listen_port(plan.port)
+                    .mtu(1420)
                     .peer(remote_peer_builder.build().map_err(Self::protocol)?)
                     .build()
                     .map_err(Self::protocol)?,
