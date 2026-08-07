@@ -48,47 +48,29 @@ impl DockerManagementController {
         RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
-        mut multipart: Multipart,
+        multipart: Multipart,
     ) -> Result<Json<DockerActionResponseDto>, ApiError> {
-        let mut destination = None;
-        let mut filename = None;
-        let mut bytes = None;
-        while let Some(field) = multipart
-            .next_field()
-            .await
-            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
-        {
-            match field.name() {
-                Some("destination") => {
-                    destination = Some(
-                        field
-                            .text()
-                            .await
-                            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
-                    )
-                }
-                Some("file") => {
-                    filename = field.file_name().map(str::to_owned);
-                    bytes = Some(
-                        field
-                            .bytes()
-                            .await
-                            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
-                    );
-                }
-                _ => {}
-            }
-        }
-        let destination =
-            destination.ok_or((StatusCode::BAD_REQUEST, "destination is required".into()))?;
-        let bytes = bytes.ok_or((StatusCode::BAD_REQUEST, "file is required".into()))?;
+        let temporary = tempfile::NamedTempFile::new()
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        let upload = crate::utils::upload::stream_multipart_file(
+            multipart,
+            "file",
+            temporary.path(),
+            crate::utils::upload::MAX_UPLOAD_BYTES,
+        )
+        .await
+        .map_err(|error| (StatusCode::BAD_REQUEST, error))?;
+        let destination = upload
+            .fields
+            .get("destination")
+            .ok_or((StatusCode::BAD_REQUEST, "destination is required".into()))?;
         self.service
-            .upload_container_bytes(
+            .upload_container_file(
                 query.server_id,
                 &id,
-                &destination,
-                filename.as_deref().unwrap_or("upload.bin"),
-                &bytes,
+                destination,
+                &upload.filename,
+                temporary.path(),
             )
             .await
             .map(Json)

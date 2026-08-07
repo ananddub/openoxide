@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_route::controller;
 use axum::{
     Json,
-    extract::{Path, Query},
+    extract::{Multipart, Path, Query},
     http::StatusCode,
 };
 
@@ -259,6 +259,21 @@ impl ApplicationController {
             .map(ApplicationResponseDto::from)
             .map(Json)
             .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/source/upload")]
+    async fn upload_drop_source(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        Path(id): Path<i64>,
+        multipart: Multipart,
+    ) -> Result<Json<ApplicationResponseDto>, ApiError> {
+        self.service
+            .upload_drop_source(id, multipart)
+            .await
+            .map(ApplicationResponseDto::from)
+            .map(Json)
+            .map_err(|error| (StatusCode::BAD_REQUEST, error))
     }
 
     #[patch("/{id}/build")]

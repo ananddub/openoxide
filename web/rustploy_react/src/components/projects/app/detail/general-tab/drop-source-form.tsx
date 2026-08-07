@@ -5,6 +5,7 @@ import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {getApiBaseUrl} from '#/api/client';
 
 interface DropSourceFormProps {
 	app: any;
@@ -22,8 +23,8 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 	const handleFileSelect = (files: FileList | null) => {
 		if (files && files[0]) {
 			const file = files[0];
-			if (!file.name.endsWith('.zip') && !file.name.endsWith('.tar.gz') && !file.name.endsWith('.tgz')) {
-				toast.error('Please select a .zip or .tar.gz archive file');
+			if (!file.name.toLowerCase().endsWith('.zip')) {
+				toast.error('Please select a .zip archive file');
 				return;
 			}
 			setSelectedZip(file);
@@ -33,12 +34,28 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 	const handleSave = async () => {
 		setSaving(true);
 		try {
-			await patchDrop.mutateAsync({
-				params: {path: {id: app.id}},
-				body: {
-					drop_build_path: dropBuildPath || '/',
-				},
-			});
+			if (selectedZip) {
+				const form = new FormData();
+				form.append('file', selectedZip, selectedZip.name);
+				form.append('drop_build_path', dropBuildPath || '/');
+				const sessionRaw = localStorage.getItem('rustploy-auth-session');
+				const accessToken = sessionRaw ? JSON.parse(sessionRaw)?.tokens?.access_token : undefined;
+				const response = await fetch(`${getApiBaseUrl()}/applications/${app.id}/source/upload`, {
+					method: 'POST',
+					headers: accessToken ? {Authorization: `Bearer ${accessToken}`} : undefined,
+					body: form,
+				});
+				if (!response.ok) {
+					throw new Error((await response.text()) || 'Source upload failed');
+				}
+			} else {
+				await patchDrop.mutateAsync({
+					params: {path: {id: app.id}},
+					body: {
+						drop_build_path: dropBuildPath || '/',
+					},
+				});
+			}
 			toast.success('Drop source configuration saved');
 			onUpdated();
 		} catch (err: any) {
@@ -82,7 +99,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 					onClick={() => {
 						const input = document.createElement('input');
 						input.type = 'file';
-						input.accept = '.zip,.tar.gz,.tgz';
+					input.accept = '.zip';
 						input.onchange = e => {
 							const target = e.target as HTMLInputElement;
 							handleFileSelect(target.files);
@@ -92,7 +109,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				>
 					<UploadCloud className="w-8 h-8 text-muted-foreground mb-2" />
 					<p className="text-xs font-semibold text-foreground">Drop files or click here to upload .zip archive</p>
-					<p className="text-[10px] text-muted-foreground mt-0.5">Supports .zip, .tar.gz archives up to 100MB</p>
+					<p className="text-[10px] text-muted-foreground mt-0.5">Supports sanitized .zip archives up to 100 MiB</p>
 				</div>
 
 				{selectedZip && (

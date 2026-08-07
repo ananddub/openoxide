@@ -1,4 +1,5 @@
 use auto_di::singleton;
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::{
@@ -18,28 +19,60 @@ pub struct DockerManagementService {
 
 #[singleton]
 impl DockerManagementService {
-    pub async fn upload_container_bytes(
+    pub async fn upload_container_file(
         &self,
         server_id: Option<i64>,
         id: &str,
         destination: &str,
         filename: &str,
-        data: &[u8],
+        local_path: &Path,
     ) -> Result<crate::api::dto::global_op::DockerActionResponseDto, String> {
         validate_resource_name(id)?;
         validate_transfer_path(destination)?;
         validate_transfer_path(filename)?;
-        if data.len() > 100 * 1024 * 1024 {
-            return Err("file exceeds 100 MiB limit".into());
+        let container_path = format!("{}/{}", destination.trim_end_matches('/'), filename);
+        validate_transfer_path(&container_path)?;
+        match server_id {
+            None => self
+                .docker(None)
+                .await?
+                .container(id)
+                .upload(&container_path)
+                .from_host(local_path.to_string_lossy())
+                .run()
+                .await
+                .map(Into::into)
+                .map_err(error),
+            Some(server_id) => {
+                let remote_path = format!(
+                    "/tmp/rustploy-container-upload-{}-{filename}",
+                    uuid::Uuid::new_v4()
+                );
+                let remote = crate::utils::upload::upload_via_rclone(
+                    self.servers.as_ref(),
+                    server_id,
+                    local_path,
+                    &remote_path,
+                )
+                .await?;
+                let executor = CommandExecutor::Remote(remote);
+                let docker = DockerCli::from_executor(executor.clone());
+                let result = docker
+                    .container(id)
+                    .upload(&container_path)
+                    .from_host(&remote_path)
+                    .run()
+                    .await
+                    .map(Into::into)
+                    .map_err(error);
+                let _ = crate::utils::os::OsCli::new(&executor)
+                    .file(&remote_path)
+                    .delete()
+                    .run()
+                    .await;
+                result
+            }
         }
-        self.docker(server_id)
-            .await?
-            .container(id)
-            .upload(destination)
-            .bytes(filename, data)
-            .await
-            .map(Into::into)
-            .map_err(error)
     }
 
     pub async fn download_container_bytes(

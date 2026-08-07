@@ -42,13 +42,6 @@ impl<'a> ContainerCopyBuilder<'a> {
             args: self.args(destination.into()),
         }
     }
-    pub async fn bytes(self, filename: &str, data: &[u8]) -> DockerResult<DockerOutput> {
-        match self.direction {
-            CopyDirection::ToContainer => self.from_host("-").upload_bytes(filename, data).await,
-            CopyDirection::FromContainer => Err(transfer_error("download builder cannot write")),
-        }
-    }
-
     pub async fn read(self) -> DockerResult<Vec<u8>> {
         match self.direction {
             CopyDirection::FromContainer => self.to_host("-").download_bytes().await,
@@ -90,32 +83,6 @@ impl DockerCopyCommand<'_> {
         let output = self.cli.run_bytes(self.args).await?;
         Ok(extract_single_tar_file(&output.stdout)?)
     }
-
-    pub async fn upload_bytes(self, filename: &str, data: &[u8]) -> DockerResult<DockerOutput> {
-        let archive = single_file_tar(filename, data)?;
-        self.cli.run_with_stdin(self.args, archive).await
-    }
-}
-
-fn single_file_tar(filename: &str, data: &[u8]) -> DockerResult<Vec<u8>> {
-    validate_path(filename)?;
-    let mut archive = vec![0u8; 512];
-    write_field(&mut archive[0..100], filename.as_bytes());
-    write_octal(&mut archive[100..108], 0o644, 8);
-    write_octal(&mut archive[108..116], 0, 8);
-    write_octal(&mut archive[116..124], 0, 8);
-    write_octal(&mut archive[124..136], data.len() as u64, 12);
-    write_octal(&mut archive[136..148], 0, 12);
-    archive[156] = b'0';
-    archive[257..263].copy_from_slice(b"ustar\0");
-    archive[263..265].copy_from_slice(b"00");
-    archive[148..156].fill(b' ');
-    let checksum: u32 = archive.iter().map(|byte| *byte as u32).sum();
-    write_octal(&mut archive[148..156], checksum as u64, 8);
-    archive.extend_from_slice(data);
-    archive.resize((archive.len() + 511) / 512 * 512, 0);
-    archive.extend_from_slice(&[0u8; 1024]);
-    Ok(archive)
 }
 
 fn extract_single_tar_file(archive: &[u8]) -> DockerResult<Vec<u8>> {
@@ -132,21 +99,6 @@ fn extract_single_tar_file(archive: &[u8]) -> DockerResult<Vec<u8>> {
     Ok(archive[512..end].to_vec())
 }
 
-fn validate_path(path: &str) -> DockerResult<()> {
-    if path.is_empty() || path.contains('\0') || path.contains("..") || path.starts_with('/') {
-        return Err(transfer_error("invalid transfer path"));
-    }
-    Ok(())
-}
-
-fn write_field(field: &mut [u8], value: &[u8]) {
-    let len = value.len().min(field.len());
-    field[..len].copy_from_slice(&value[..len]);
-}
-fn write_octal(field: &mut [u8], value: u64, width: usize) {
-    let text = format!("{:0width$o}\0", value, width = width.saturating_sub(1));
-    write_field(field, text.as_bytes());
-}
 fn parse_octal(field: &[u8]) -> DockerResult<u64> {
     let text = String::from_utf8_lossy(field)
         .trim_matches(char::from(0))
@@ -181,12 +133,5 @@ mod tests {
             .to_host("/tmp/log.txt")
             .build_command_args();
         assert_eq!(download, ["cp", "web:/app/log.txt", "/tmp/log.txt"]);
-    }
-
-    #[test]
-    fn single_file_tar_round_trip_preserves_binary_bytes() {
-        let data = [0, 1, 2, 127, 128, 200, 255];
-        let archive = single_file_tar("payload.bin", &data).unwrap();
-        assert_eq!(extract_single_tar_file(&archive).unwrap(), data);
     }
 }

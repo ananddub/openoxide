@@ -66,3 +66,4 @@ pub mod rollback;
 pub mod security;
 pub mod source;
 pub mod types;
+pub mod upload;

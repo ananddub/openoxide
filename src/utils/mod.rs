@@ -10,6 +10,7 @@ pub mod paths;
 pub mod provider;
 pub mod setup;
 pub mod traefik;
+pub mod upload;
 pub mod watch_paths;
 // pub mod k8s;
 pub use os;
