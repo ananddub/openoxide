@@ -22,13 +22,29 @@ async fn request_duration_middleware(req: Request, next: Next) -> Response {
     let latency = start.elapsed();
     let status = response.status();
 
-    if status.is_server_error() || latency.as_millis() >= 1000 {
+    if status.is_server_error() {
+        tracing::error!(
+            method = %method,
+            uri = %uri,
+            status = status.as_u16(),
+            elapsed = ?latency,
+            "HTTP Request failed (SERVER ERROR)"
+        );
+    } else if status.is_client_error() {
         tracing::warn!(
             method = %method,
             uri = %uri,
             status = status.as_u16(),
             elapsed = ?latency,
-            "HTTP Request completed (slow/error)"
+            "HTTP Request failed (CLIENT ERROR)"
+        );
+    } else if latency.as_millis() >= 1000 {
+        tracing::warn!(
+            method = %method,
+            uri = %uri,
+            status = status.as_u16(),
+            elapsed = ?latency,
+            "HTTP Request completed (SLOW)"
         );
     } else {
         tracing::info!(
