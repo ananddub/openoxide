@@ -1,7 +1,7 @@
+#[cfg(test)]
+mod architecture_tests;
 mod cli;
 mod config;
-#[cfg(test)]
-mod integration_tests;
 mod interface;
 mod key;
 
