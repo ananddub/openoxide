@@ -18,6 +18,14 @@ impl<'a> OsCli<'a> {
         Self { executor }
     }
 
+    pub fn docker(&self) -> crate::docker::DockerCli {
+        crate::docker::DockerCli::from_executor(self.executor.clone())
+    }
+
+    pub fn git(&self) -> crate::git::GitCli {
+        crate::git::GitCli::from_executor(self.executor.clone())
+    }
+
     pub fn port(&self) -> port::PortCli<'a> {
         port::PortCli {
             executor: self.executor,
