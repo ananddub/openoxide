@@ -3,7 +3,7 @@ use std::fs;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use rustploy_monitor::docker::cgroup::CgroupReader;
+use agent::docker::cgroup::CgroupReader;
 
 #[derive(Debug, Default)]
 struct DetailedCgroupSample {

@@ -12,12 +12,8 @@ FROM rust:latest AS backend-builder
 WORKDIR /usr/src/rustploy
 
 COPY Cargo.toml Cargo.lock ./
-COPY auto_route ./auto_route
-COPY auto_route_macros ./auto_route_macros
-COPY auto_socket ./auto_socket
-COPY auto_socket_macros ./auto_socket_macros
-COPY rustploy_sh_macros ./rustploy_sh_macros
-COPY rustploy_monitor ./rustploy_monitor
+COPY crates ./crates
+COPY agent ./agent
 COPY db ./db
 COPY data ./data
 COPY src ./src

@@ -10,37 +10,22 @@ RUN apk add --no-cache musl-dev gcc build-base ca-certificates
 
 WORKDIR /usr/src/rustploy
 
-# Workspace manifests. Every member must be present for cargo to resolve the
-# workspace, so the other members' manifests are copied and their sources
-# stubbed — the panel depends on them by version, so the real manifests are
-# needed for resolution even though none of their code is compiled here.
 COPY Cargo.toml Cargo.lock ./
-COPY rustploy_monitor ./rustploy_monitor
+COPY agent ./agent
+COPY crates ./crates
 COPY proto ./proto
-COPY auto_route/Cargo.toml ./auto_route/
-COPY auto_route_macros/Cargo.toml ./auto_route_macros/
-COPY auto_socket/Cargo.toml ./auto_socket/
-COPY auto_socket_macros/Cargo.toml ./auto_socket_macros/
-COPY rustploy_sh_macros/Cargo.toml ./rustploy_sh_macros/
-
-# Stub the panel binary and the other members' sources. Only rustploy_monitor
-# is actually built, so empty lib roots are enough to satisfy cargo.
-RUN mkdir -p src && echo "fn main() {}" > src/main.rs && : > src/lib.rs && \
-    for member in auto_route auto_route_macros auto_socket auto_socket_macros rustploy_sh_macros; do \
-        mkdir -p "$member/src" && : > "$member/src/lib.rs"; \
-    done
 
 # Static musl build. The flag is scoped to the target triple rather than set via
 # RUSTFLAGS, which would also apply to proc-macro crates — those are host
 # dynamic libraries and cannot be built static.
 ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static"
-RUN cargo build --release --target x86_64-unknown-linux-musl -p rustploy_monitor && \
-    strip target/x86_64-unknown-linux-musl/release/rustploy_monitor
+RUN cargo build --release --target x86_64-unknown-linux-musl -p agent && \
+    strip target/x86_64-unknown-linux-musl/release/agent
 
 # scratch: nothing to attack, nothing to patch. The binary is self-contained.
 FROM scratch
 
-COPY --from=builder /usr/src/rustploy/target/x86_64-unknown-linux-musl/release/rustploy_monitor /rustploy_monitor
+COPY --from=builder /usr/src/rustploy/target/x86_64-unknown-linux-musl/release/agent /agent
 
 # HTTPS to the panel needs CA roots. webpki-roots is compiled into reqwest, so
 # /etc/ssl/certs is not required; keep a copy for anything that reads them.
@@ -54,8 +39,8 @@ ENV MONITOR_DATABASE_URL="sqlite:///app/data/monitor.db" \
     GRPC_PORT=50051 \
     REFRESH_RATE=60 \
     RETENTION_DAYS=7 \
-    RUST_LOG=rustploy_monitor=info
+    RUST_LOG=agent=info
 
 EXPOSE 50051
 
-ENTRYPOINT ["/rustploy_monitor"]
+ENTRYPOINT ["/agent"]
