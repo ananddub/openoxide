@@ -371,7 +371,23 @@ impl ServerPrivateNetworkService {
             return self.get_required(server_id).await;
         }
         let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
-        let endpoint = required(network.endpoint.as_deref(), "endpoint")?;
+        let raw_endpoint = network.endpoint.as_deref().unwrap_or("").trim();
+        let remote_ip = self.servers.get_by_id(server_id).await?.map(|s| s.ip_address).unwrap_or_default();
+        let port = network
+            .listen_port
+            .and_then(|value| value.try_into().ok())
+            .unwrap_or(51820);
+
+        let fallback_endpoint = format!("{remote_ip}:{port}");
+        let endpoint = if raw_endpoint.is_empty()
+            || raw_endpoint.contains("example.com")
+            || raw_endpoint.contains("pannel.example")
+            || raw_endpoint.contains("example")
+        {
+            &fallback_endpoint
+        } else {
+            raw_endpoint
+        };
         let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
         let (local, remote) = self.executors(server_id).await?;
         let backend = KernelWireGuardBackend::new(&local, &remote);
