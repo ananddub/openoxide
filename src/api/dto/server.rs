@@ -1,6 +1,7 @@
 use crate::utils::setup::{PortAvailability, ServerAudit, SetupOutcome, SetupStep, ToolState};
 use poem_openapi::Object;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 #[derive(Clone, Debug, Default, Deserialize, Object)]
 pub struct ServerConnectionDto {
@@ -130,4 +131,345 @@ pub struct ServerConnectionResponseDto {
     pub connections: usize,
     pub active_channels: usize,
     pub max_channels_per_session: usize,
+}
+
+// Remote Server DTOs
+use crate::db::models::servers::Server;
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct CreateRemoteServerDto {
+    #[validate(length(min = 1, max = 255))]
+    pub name: String,
+    #[validate(length(max = 1_000))]
+    pub description: Option<String>,
+    #[validate(length(min = 1, max = 255))]
+    pub ip_address: String,
+    #[serde(default = "default_port")]
+    pub port: i64,
+    #[serde(default = "default_username")]
+    pub username: String,
+    #[serde(default = "default_server_type")]
+    pub server_type: String,
+    pub ssh_key_id: Option<i64>,
+    pub build_memory_limit: Option<String>,
+    pub build_cpu_limit: Option<String>,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct TestRemoteServerConnectionDto {
+    #[validate(length(min = 1, max = 255))]
+    pub ip_address: String,
+    #[serde(default = "default_port")]
+    pub port: i64,
+    #[serde(default = "default_username")]
+    pub username: String,
+    pub ssh_key_id: Option<i64>,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct PatchRemoteServerDto {
+    #[validate(length(min = 1, max = 255))]
+    pub name: Option<String>,
+    #[validate(length(max = 1_000))]
+    pub description: Option<String>,
+    pub ip_address: Option<String>,
+    pub port: Option<i64>,
+    pub username: Option<String>,
+    pub server_status: Option<String>,
+    pub server_type: Option<String>,
+    pub enable_docker_cleanup: Option<i64>,
+    pub log_cleanup_cron: Option<String>,
+    pub command: Option<String>,
+    pub metrics_config: Option<String>,
+    pub ssh_key_id: Option<i64>,
+    pub build_memory_limit: Option<String>,
+    pub build_cpu_limit: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RemoteServerResponseDto {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub ip_address: String,
+    pub port: i64,
+    pub username: String,
+    pub app_name: String,
+    pub server_status: String,
+    pub server_type: String,
+    pub enable_docker_cleanup: i64,
+    pub log_cleanup_cron: Option<String>,
+    pub command: String,
+    pub metrics_config: String,
+    pub ssh_key_id: Option<i64>,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub build_memory_limit: Option<String>,
+    pub build_cpu_limit: Option<String>,
+}
+
+impl From<Server> for RemoteServerResponseDto {
+    fn from(value: Server) -> Self {
+        Self {
+            id: value.id.expect("persisted server must have an id"),
+            name: value.name,
+            description: value.description,
+            ip_address: value.ip_address,
+            port: value.port,
+            username: value.username,
+            app_name: value.app_name,
+            server_status: value.server_status,
+            server_type: value.server_type,
+            enable_docker_cleanup: value.enable_docker_cleanup,
+            log_cleanup_cron: value.log_cleanup_cron,
+            command: value.command,
+            metrics_config: value.metrics_config,
+            ssh_key_id: value.ssh_key_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+            build_memory_limit: value.build_memory_limit,
+            build_cpu_limit: value.build_cpu_limit,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct RemoteServerActionResponseDto {
+    pub server: RemoteServerResponseDto,
+    pub action: String,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct MigrateServerDependenciesDto {
+    #[validate(range(min = 1))]
+    pub target_server_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ServerDependencyMigrationDto {
+    pub migration_id: String,
+    pub status: String,
+    pub source_server_id: i64,
+    pub target_server_id: i64,
+    pub applications: i64,
+    pub build_assignments: i64,
+    pub compose_projects: i64,
+    pub databases: i64,
+    pub certificates: i64,
+    pub schedules: i64,
+    pub queued_applications: i64,
+    pub queued_compose_projects: i64,
+    pub error: Option<String>,
+}
+
+impl TryFrom<crate::repository::ServerMigration> for ServerDependencyMigrationDto {
+    type Error = sqlx::Error;
+
+    fn try_from(value: crate::repository::ServerMigration) -> Result<Self, Self::Error> {
+        let applications: Vec<i64> = serde_json::from_str(&value.application_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let build: Vec<i64> = serde_json::from_str(&value.build_application_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let compose: Vec<i64> = serde_json::from_str(&value.compose_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let certificates: Vec<i64> = serde_json::from_str(&value.certificate_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let schedules: Vec<i64> = serde_json::from_str(&value.schedule_ids)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        Ok(Self {
+            migration_id: value.id,
+            status: value.status,
+            source_server_id: value.source_server_id,
+            target_server_id: value.target_server_id,
+            applications: applications.len() as i64,
+            build_assignments: build.len() as i64,
+            compose_projects: compose.len() as i64,
+            databases: 0,
+            certificates: certificates.len() as i64,
+            schedules: schedules.len() as i64,
+            queued_applications: value.queued_applications,
+            queued_compose_projects: value.queued_compose_projects,
+            error: value.error,
+        })
+    }
+}
+
+fn default_port() -> i64 {
+    22
+}
+
+fn default_username() -> String {
+    "root".into()
+}
+
+fn default_server_type() -> String {
+    "DEPLOY".into()
+}
+
+// Server Management & Private Network DTOs
+use poem_openapi::Enum;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+pub struct ServerCleanupPolicyDto {
+    pub containers: bool,
+    pub images: bool,
+    pub networks: bool,
+    pub volumes: bool,
+    pub packages: bool,
+}
+
+impl Default for ServerCleanupPolicyDto {
+    fn default() -> Self {
+        Self {
+            containers: true,
+            images: true,
+            networks: true,
+            volumes: false,
+            packages: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Object)]
+pub struct UpdateServerManagementDto {
+    pub maintenance_mode: bool,
+    pub maintenance_message: Option<String>,
+    pub labels: std::collections::BTreeMap<String, String>,
+    pub cleanup_policy: ServerCleanupPolicyDto,
+    pub gpu_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct ServerManagementDto {
+    pub server_id: i64,
+    pub maintenance_mode: bool,
+    pub maintenance_message: Option<String>,
+    pub labels: std::collections::BTreeMap<String, String>,
+    pub cleanup_policy: ServerCleanupPolicyDto,
+    pub gpu_enabled: bool,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct ServerActionResultDto {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct ServerCleanupExecutionDto {
+    pub id: i64,
+    pub server_id: i64,
+    pub status: String,
+    pub policy: String,
+    pub stdout: Option<String>,
+    pub stderr: Option<String>,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, Object)]
+pub struct ServerActionConnectionDto {
+    pub sudo_password: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct ServerBackupDto {
+    pub remote_path: String,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ServerConnectionModeDto {
+    DirectSsh,
+    ManagedWireguard,
+    ExternalPrivateNetwork,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkProviderDto {
+    Wireguard,
+    Tailscale,
+    Zerotier,
+    Netbird,
+    Custom,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkStatusDto {
+    Disabled,
+    Configuring,
+    Active,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkHealthStatusDto {
+    Unknown,
+    Healthy,
+    Degraded,
+    Unreachable,
+    ConfigDrift,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkRotationStateDto {
+    Idle,
+    Rotating,
+    RollingBack,
+    Failed,
+}
+
+#[derive(Debug, Clone, Deserialize, Object)]
+pub struct UpdatePrivateNetworkDto {
+    pub connection_mode: ServerConnectionModeDto,
+    pub provider: Option<PrivateNetworkProviderDto>,
+    pub private_host: Option<String>,
+    pub tunnel_address: Option<String>,
+    pub public_key: Option<String>,
+    pub endpoint: Option<String>,
+    pub listen_port: Option<u16>,
+    pub persistent_keepalive: Option<u16>,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct ServerPrivateNetworkDto {
+    pub server_id: i64,
+    pub connection_mode: ServerConnectionModeDto,
+    pub provider: Option<PrivateNetworkProviderDto>,
+    pub private_host: Option<String>,
+    pub tunnel_address: Option<String>,
+    pub public_key: Option<String>,
+    pub endpoint: Option<String>,
+    pub listen_port: Option<u16>,
+    pub persistent_keepalive: Option<u16>,
+    pub status: PrivateNetworkStatusDto,
+    pub last_handshake_at: Option<i64>,
+    pub config_version: i64,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
+    pub health_status: PrivateNetworkHealthStatusDto,
+    pub health_error: Option<String>,
+    pub last_health_check_at: Option<i64>,
+    pub consecutive_failures: i64,
+    pub rotation_state: PrivateNetworkRotationStateDto,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Object)]
+pub struct PrivateNetworkHealthDto {
+    pub status: PrivateNetworkHealthStatusDto,
+    pub interface_exists: bool,
+    pub private_ssh_reachable: bool,
+    pub latest_handshake_at: Option<i64>,
+    pub checked_at: i64,
+    pub error: Option<String>,
 }

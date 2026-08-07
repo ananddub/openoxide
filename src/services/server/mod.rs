@@ -1,17 +1,19 @@
 mod cleanup;
 mod lifecycle;
 mod private_network;
+mod remote_server;
 
 pub use cleanup::ServerCleanupService;
 pub use lifecycle::ServerLifecycleService;
 pub use private_network::ServerPrivateNetworkService;
+pub use remote_server::*;
 
 use std::{collections::BTreeMap, sync::Arc};
 
 use auto_di::singleton;
 
 use crate::{
-    api::dto::server_management::{ServerManagementDto, UpdateServerManagementDto},
+    api::dto::server::{ServerManagementDto, UpdateServerManagementDto},
     repository::{ServerManagementRepository, ServerRepository},
 };
 

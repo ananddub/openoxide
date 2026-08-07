@@ -15,7 +15,7 @@ use crate::{
         compose::{ComposeOperation, ComposeService},
         database::{DatabaseOperation, DatabaseService},
         deployment::{CancelDeploymentResult, DeploymentService},
-        server_management::ServerCleanupService,
+        server::ServerCleanupService,
     },
 };
 

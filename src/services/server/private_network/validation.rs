@@ -1,4 +1,4 @@
-use crate::api::dto::server_management::{
+use crate::api::dto::server::{
     PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto,
 };
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::{
-    api::dto::server_management::{
+    api::dto::server::{
         ServerActionResultDto, ServerCleanupExecutionDto, ServerCleanupPolicyDto,
     },
     repository::{ServerManagementRepository, ServerRepository},

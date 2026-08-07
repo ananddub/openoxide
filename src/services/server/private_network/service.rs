@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::{
-    api::dto::server_management::{
+    api::dto::server::{
         PrivateNetworkHealthDto, PrivateNetworkHealthStatusDto, PrivateNetworkRotationStateDto,
         PrivateNetworkStatusDto, ServerConnectionModeDto, ServerPrivateNetworkDto,
         UpdatePrivateNetworkDto,
@@ -634,7 +634,7 @@ fn direct_network(server_id: i64) -> ServerPrivateNetworkDto {
 
 #[cfg(test)]
 mod tests {
-    use crate::api::dto::server_management::PrivateNetworkHealthStatusDto;
+    use crate::api::dto::server::PrivateNetworkHealthStatusDto;
 
     use super::should_auto_repair;
 

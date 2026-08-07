@@ -8,7 +8,7 @@ use crate::utils::{
 use zeroize::Zeroize;
 
 use super::{KernelWireGuardHealth, WireGuardInstallPlan};
-use crate::services::server_management::private_network::backend::ManagedWireGuardBackend;
+use crate::services::server::private_network::backend::ManagedWireGuardBackend;
 
 pub struct KernelWireGuardBackend<'a> {
     pub(super) local: &'a CommandExecutor,

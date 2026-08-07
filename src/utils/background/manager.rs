@@ -6,7 +6,7 @@ use crate::{
     services::{
         alert::AlertService, backup::PanelBackupService, deployment::DeploymentService,
         notification::NotificationService, schedule::ScheduleRunner,
-        server_management::ServerPrivateNetworkService,
+        server::ServerPrivateNetworkService,
     },
     utils::builder::queue::BuilderQueue,
 };

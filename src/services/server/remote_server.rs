@@ -4,7 +4,7 @@ use auto_di::singleton;
 use uuid::Uuid;
 
 use crate::{
-    api::dto::remote_server::{CreateRemoteServerDto, PatchRemoteServerDto},
+    api::dto::server::{CreateRemoteServerDto, PatchRemoteServerDto},
     db::models::server_private_networks::{PrivateNetworkStatus, ServerPrivateNetwork},
     db::models::servers::Server,
     repository::{
@@ -185,7 +185,7 @@ impl ServerService {
         &self,
         source: i64,
         target: i64,
-    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+    ) -> sqlx::Result<crate::api::dto::server::ServerDependencyMigrationDto> {
         if source == target {
             return Err(sqlx::Error::Protocol(
                 "source and target server must differ".into(),
@@ -282,7 +282,7 @@ impl ServerService {
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
         let mut dto =
-            crate::api::dto::remote_server::ServerDependencyMigrationDto::try_from(migration)?;
+            crate::api::dto::server::ServerDependencyMigrationDto::try_from(migration)?;
         dto.databases = counts.databases;
         Ok(dto)
     }
@@ -290,7 +290,7 @@ impl ServerService {
     pub async fn migration_status(
         &self,
         id: &str,
-    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+    ) -> sqlx::Result<crate::api::dto::server::ServerDependencyMigrationDto> {
         self.migrations
             .get(id)
             .await?
@@ -301,7 +301,7 @@ impl ServerService {
     pub async fn rollback_migration(
         &self,
         id: &str,
-    ) -> sqlx::Result<crate::api::dto::remote_server::ServerDependencyMigrationDto> {
+    ) -> sqlx::Result<crate::api::dto::server::ServerDependencyMigrationDto> {
         let migration = self
             .migrations
             .get(id)

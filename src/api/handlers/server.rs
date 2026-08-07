@@ -2,17 +2,19 @@ use crate::core::config::Config;
 use crate::{
     api::dto::deployment::DeploymentSseEventDto,
     api::dto::server::{
-        ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
-        SetupServerDto, TestDirectConnectionDto,
-    },
-    api::dto::server_management::{
-        PrivateNetworkHealthDto, ServerPrivateNetworkDto, UpdatePrivateNetworkDto,
+        PrivateNetworkHealthDto, ServerActionResultDto, ServerAuditDto, ServerBackupDto,
+        ServerCleanupExecutionDto, ServerConnectionDto, ServerConnectionResponseDto,
+        ServerManagementDto, ServerPrivateNetworkDto, SetupOutcomeDto, SetupServerDto,
+        TestDirectConnectionDto, UpdatePrivateNetworkDto, UpdateServerManagementDto,
     },
     core::middleware::permission::{
         RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
     },
     db::repository::ssh_keys::SshKeyRepository,
-    services::{remote_server::ServerService, server_management::ServerPrivateNetworkService},
+    services::server::{
+        ServerCleanupService, ServerLifecycleService, ServerManagementService,
+        ServerPrivateNetworkService, ServerService,
+    },
     utils::{
         exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
         setup::{ServerSetup, SetupConfig},
@@ -40,6 +42,9 @@ pub struct ServerController {
     service: Arc<ServerService>,
     ssh_key_repo: Arc<SshKeyRepository>,
     private_network: Arc<ServerPrivateNetworkService>,
+    management: Arc<ServerManagementService>,
+    cleanup: Arc<ServerCleanupService>,
+    lifecycle: Arc<ServerLifecycleService>,
 }
 
 #[controller("/servers")]
@@ -48,11 +53,17 @@ impl ServerController {
         service: Arc<ServerService>,
         ssh_key_repo: Arc<SshKeyRepository>,
         private_network: Arc<ServerPrivateNetworkService>,
+        management: Arc<ServerManagementService>,
+        cleanup: Arc<ServerCleanupService>,
+        lifecycle: Arc<ServerLifecycleService>,
     ) -> Self {
         Self {
             service,
             ssh_key_repo,
             private_network,
+            management,
+            cleanup,
+            lifecycle,
         }
     }
 
@@ -158,6 +169,124 @@ impl ServerController {
             .teardown_transport(id)
             .await
             .map(|_| StatusCode::NO_CONTENT)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/management")]
+    async fn get_management(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerManagementDto>, ApiError> {
+        self.management
+            .get(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[put("/{id}/management")]
+    async fn update_management(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+        Json(body): Json<UpdateServerManagementDto>,
+    ) -> Result<Json<ServerManagementDto>, ApiError> {
+        self.management
+            .update(id, body)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/audit/repair")]
+    async fn repair(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerActionResultDto>, ApiError> {
+        self.lifecycle
+            .auto_repair(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/gpu/configure")]
+    async fn configure_gpu(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerActionResultDto>, ApiError> {
+        self.lifecycle
+            .configure_gpu(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/cleanup/run")]
+    async fn cleanup(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerActionResultDto>, ApiError> {
+        self.cleanup
+            .run(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/management/cleanup/history")]
+    async fn cleanup_history(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Vec<ServerCleanupExecutionDto>>, ApiError> {
+        self.cleanup
+            .history(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/upgrade")]
+    async fn upgrade(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerActionResultDto>, ApiError> {
+        self.lifecycle
+            .upgrade(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/backup")]
+    async fn backup(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerBackupDto>, ApiError> {
+        self.lifecycle
+            .backup(id)
+            .await
+            .map(Json)
+            .map_err(map_sqlx_error)
+    }
+
+    #[post("/{id}/management/diagnostics")]
+    async fn diagnostics(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ServerActionResultDto>, ApiError> {
+        self.lifecycle
+            .diagnostics(id)
+            .await
+            .map(Json)
             .map_err(map_sqlx_error)
     }
 

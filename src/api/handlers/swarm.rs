@@ -11,7 +11,7 @@ use crate::{
         NodeActionDto, NodeAvailabilityDto, NodeDto, SwarmConnectionDto, SwarmInfoDto,
         SwarmJoinDto, SwarmTokensDto,
     },
-    services::remote_server::ServerService,
+    services::server::ServerService,
     utils::{
         docker::DockerCli,
         exec::{

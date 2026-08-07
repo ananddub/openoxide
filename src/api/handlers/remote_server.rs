@@ -4,12 +4,12 @@ use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
-    api::dto::remote_server::{
+    api::dto::server::{
         CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
         RemoteServerActionResponseDto, RemoteServerResponseDto, ServerDependencyMigrationDto,
     },
     core::middleware::validator::ValidatedJson,
-    services::remote_server::ServerService,
+    services::server::ServerService,
     utils::jwt::claim::Claims,
 };
 

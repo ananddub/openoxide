@@ -1,5 +1,5 @@
 use crate::{
-    api::dto::server_management::{
+    api::dto::server::{
         PrivateNetworkHealthStatusDto, PrivateNetworkProviderDto, PrivateNetworkRotationStateDto,
         PrivateNetworkStatusDto, ServerConnectionModeDto, ServerPrivateNetworkDto,
     },

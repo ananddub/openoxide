@@ -1,7 +1,7 @@
 use crate::{
     core::config::Config,
     db::models::{container_metrics::ContainerMetric, server_metrics::ServerMetric},
-    services::{monitoring::agent_auth::MonitoringAgentAuth, remote_server::ServerService},
+    services::{monitoring::agent_auth::MonitoringAgentAuth, server::ServerService},
 };
 use auto_di::singleton;
 use std::sync::Arc;
