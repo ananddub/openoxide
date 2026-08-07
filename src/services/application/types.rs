@@ -43,7 +43,7 @@ pub struct ApplicationRecord {
     pub preview_certificate_type: String,
     pub preview_custom_cert_resolver: Option<String>,
     pub preview_limit: Option<i64>,
-    pub preview_deployments_active: bool,
+    pub previews_active: bool,
     pub preview_require_collaborator_permissions: bool,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
@@ -142,7 +142,7 @@ impl From<crate::db::models::applications::Application> for ApplicationRecord {
             preview_certificate_type: app.preview_certificate_type,
             preview_custom_cert_resolver: app.preview_custom_cert_resolver,
             preview_limit: app.preview_limit,
-            preview_deployments_active: app.is_preview_deployments_active != 0,
+            previews_active: app.is_preview_deployments_active != 0,
             preview_require_collaborator_permissions: app.preview_require_collaborator_permissions
                 != 0,
             memory_reservation: app.memory_reservation,

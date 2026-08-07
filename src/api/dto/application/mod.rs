@@ -222,7 +222,7 @@ pub struct ApplicationResponseDto {
     pub preview_certificate_type: String,
     pub preview_custom_cert_resolver: Option<String>,
     pub preview_limit: Option<i64>,
-    pub preview_deployments_active: bool,
+    pub previews_active: bool,
     pub preview_require_collaborator_permissions: bool,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
@@ -279,7 +279,7 @@ impl From<ApplicationRecord> for ApplicationResponseDto {
             preview_certificate_type: value.preview_certificate_type,
             preview_custom_cert_resolver: value.preview_custom_cert_resolver,
             preview_limit: value.preview_limit,
-            preview_deployments_active: value.preview_deployments_active,
+            previews_active: value.previews_active,
             preview_require_collaborator_permissions: value
                 .preview_require_collaborator_permissions,
             memory_reservation: value.memory_reservation,

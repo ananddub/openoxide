@@ -11,7 +11,7 @@ use poem_openapi::Object;
 use serde::Deserialize;
 
 use crate::{
-    api::dto::docker_management::{
+    api::dto::global_op::{
         ContainerActionRequestDto, ContainerRemoveRequestDto, DockerActionResponseDto,
         DockerPruneRequestDto, DockerPruneResponseDto,
     },
@@ -19,7 +19,7 @@ use crate::{
         permission::{RequirePermission, ServerCreatePermission, ServerReadPermission},
         validator::ValidatedJson,
     },
-    services::docker_management::DockerManagementService,
+    services::global_op::DockerManagementService,
     utils::docker::{ContainerSummary, ImageSummary, NetworkSummary, VolumeSummary},
 };
 

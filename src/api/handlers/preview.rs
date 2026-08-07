@@ -7,7 +7,7 @@ use axum::{
 use std::sync::Arc;
 
 use crate::{
-    api::dto::preview_deployment::{CreatePreviewDeploymentDto, PreviewListQueryDto},
+    api::dto::preview::{CreatePreviewDeploymentDto, PreviewListQueryDto},
     core::middleware::{
         permission::{
             AppDeletePermission, AppDeployPermission, AppReadPermission, RequirePermission,
@@ -15,7 +15,7 @@ use crate::{
         validator::ValidatedJson,
     },
     services::{
-        preview_deployment::{
+        preview::{
             PreviewDeploymentOutcome, PreviewDeploymentService, PreviewDeploymentView,
         },
         webhook::{GitProviderKind, PullRequestEvent},

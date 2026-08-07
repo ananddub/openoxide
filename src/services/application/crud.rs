@@ -110,7 +110,7 @@ impl ApplicationService {
             )));
         }
         let previews =
-            auto_di::resolve::<crate::services::preview_deployment::PreviewDeploymentService>()
+            auto_di::resolve::<crate::services::preview::PreviewDeploymentService>()
                 .await
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         previews

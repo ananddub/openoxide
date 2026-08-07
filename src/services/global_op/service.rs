@@ -2,7 +2,7 @@ use auto_di::singleton;
 use std::sync::Arc;
 
 use crate::{
-    api::dto::docker_management::{
+    api::dto::global_op::{
         ContainerActionDto, DockerActionResponseDto, DockerPruneRequestDto, DockerPruneResponseDto,
     },
     repository::ServerRepository,
@@ -25,7 +25,7 @@ impl DockerManagementService {
         destination: &str,
         filename: &str,
         data: &[u8],
-    ) -> Result<crate::api::dto::docker_management::DockerActionResponseDto, String> {
+    ) -> Result<crate::api::dto::global_op::DockerActionResponseDto, String> {
         validate_resource_name(id)?;
         validate_transfer_path(destination)?;
         validate_transfer_path(filename)?;

@@ -7,7 +7,7 @@ use crate::{
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService},
-        preview_deployment::PreviewDeploymentService,
+        preview::PreviewDeploymentService,
     },
     utils::watch_paths::should_deploy,
 };
