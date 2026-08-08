@@ -6,7 +6,11 @@ use axum::{
 use serde_json::json;
 use std::marker::PhantomData;
 
-use crate::{services::permission::PolicyAction, utils::jwt::claim::Claims};
+use crate::{
+    services::permission::{PermissionService, PolicyAction},
+    utils::jwt::claim::Claims,
+};
+use auto_di::resolve;
 
 pub trait ActionPermission: Send + Sync + 'static {
     const ACTION: PolicyAction;
@@ -23,30 +27,38 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let claims = Claims::from_request_parts(parts, state).await?;
 
-        // let perm_service = resolve::<PermissionService>()
-        //     .await
-        //     .map_err(|_| {
-        //         (
-        //             StatusCode::INTERNAL_SERVER_ERROR,
-        //             Json(json!({ "error": "permission service unavailable" })),
-        //         )
-        //     })?
-        //     .clone();
-        //
-        // let org_id = 1;
-        //
-        // let has_perm = perm_service
-        //     .check_permission(claims.user.user_id, org_id, P::ACTION)
-        //     .await
-        //     .map_err(|_| {
-        //         (
-        //             StatusCode::INTERNAL_SERVER_ERROR,
-        //             Json(json!({ "error": "failed to evaluate permission" })),
-        //         )
-        //     })?;
-
-        // if has_perm {
-        if true {
+        let permission_service = resolve::<PermissionService>()
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "permission service unavailable" })),
+                )
+            })?
+            .clone();
+        let requested_org = parts
+            .headers
+            .get("x-organization-id")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse::<i64>().ok());
+        let org_id = match requested_org {
+            Some(org_id) => org_id,
+            None => permission_service
+                .resolve_organization(claims.user.user_id)
+                .await
+                .map_err(permission_error)?
+                .ok_or_else(|| {
+                    (
+                        StatusCode::FORBIDDEN,
+                        Json(json!({ "error": "user has no organization membership" })),
+                    )
+                })?,
+        };
+        let has_permission = permission_service
+            .check_permission(claims.user.user_id, org_id, P::ACTION)
+            .await
+            .map_err(permission_error)?;
+        if has_permission {
             Ok(RequirePermission(claims, PhantomData))
         } else {
             Err((
@@ -58,6 +70,14 @@ where
             ))
         }
     }
+}
+
+fn permission_error(error: sqlx::Error) -> (StatusCode, Json<serde_json::Value>) {
+    tracing::error!(%error, "permission evaluation failed");
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(json!({ "error": "failed to evaluate permission" })),
+    )
 }
 
 // Pre-defined Action Permission Markers

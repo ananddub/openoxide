@@ -22,3 +22,8 @@
 -- atlas:import 023_network.sql
 -- atlas:import 024_audit_log.sql
 -- atlas:import 025_settings.sql
+-- atlas:import 026_database_networks.sql
+-- atlas:import 027_background_policies.sql
+-- atlas:import 028_server_migrations.sql
+-- atlas:import 029_database_resource_view.sql
+-- atlas:import 030_permission_enforcement.sql

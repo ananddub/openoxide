@@ -340,29 +340,13 @@ impl DeploymentService {
         let mut resolved_target = target.clone();
 
         // Database App Name Resolver: resolve database 'name' or 'app_name' to actual DB app_name if target is a database name
-        let resolved_name_opt: Option<(String,)> = sqlx::query_as(
-            "SELECT app_name FROM postgres_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM mysql_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM mariadb_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM mongo_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM redis_dbs WHERE name = ? OR app_name = ? \
-             UNION ALL SELECT app_name FROM libsql_dbs WHERE name = ? OR app_name = ?",
-        )
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .bind(&target)
-        .fetch_optional(self.database())
-        .await
-        .unwrap_or(None);
+        let resolved_name_opt: Option<(String,)> =
+            sqlx::query_as("SELECT app_name FROM databases WHERE name = ? OR app_name = ? LIMIT 1")
+                .bind(&target)
+                .bind(&target)
+                .fetch_optional(self.database())
+                .await
+                .unwrap_or(None);
 
         let search_target = resolved_name_opt
             .map(|r| r.0)
