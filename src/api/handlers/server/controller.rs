@@ -178,6 +178,13 @@ impl ServerController {
             )
             .await?;
         let mut config = SetupConfig::default();
+        config.build_server = self
+            .service
+            .get_by_id(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .server_type
+            .eq_ignore_ascii_case("BUILD");
         config.monitoring_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
             (
@@ -232,6 +239,13 @@ impl ServerController {
             .await?;
 
         let mut config = SetupConfig::default();
+        config.build_server = self
+            .service
+            .get_by_id(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .server_type
+            .eq_ignore_ascii_case("BUILD");
         config.monitoring_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
             (

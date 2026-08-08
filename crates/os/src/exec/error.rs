@@ -20,6 +20,8 @@ pub enum ExecError {
     Timeout { seconds: u64 },
     #[error("command output parsing failed: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("encountered unexpected or invalid data: {0}")]
+    InvalidData(String),
 }
 
 use super::types::ExecOutput;

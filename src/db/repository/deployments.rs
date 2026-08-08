@@ -420,7 +420,9 @@ impl DeploymentRepository {
         db_kind: &str,
         status: &str,
     ) -> Result<(), sqlx::Error> {
-        let Ok(table_name) = db_kind_to_table(db_kind) else { return Ok(()) };
+        let Ok(table_name) = db_kind_to_table(db_kind) else {
+            return Ok(());
+        };
         let query_str = format!("UPDATE {} SET app_status = ? WHERE id = ?", table_name);
         sqlx::query(sqlx::AssertSqlSafe(&*query_str))
             .bind(status)

@@ -60,6 +60,9 @@ impl SetupPaths {
 
 #[derive(Clone, Debug)]
 pub struct SetupConfig {
+    /// Build servers only need Docker and build tooling; they must not run
+    /// Swarm, Traefik, or the monitoring agent setup.
+    pub build_server: bool,
     pub paths: SetupPaths,
     pub network_name: String,
     pub traefik_name: String,
@@ -79,6 +82,7 @@ pub struct SetupConfig {
 impl Default for SetupConfig {
     fn default() -> Self {
         Self {
+            build_server: false,
             paths: SetupPaths::new(crate::utils::paths::rustploy_paths().base),
             network_name: "rustploy-network".into(),
             traefik_name: "rustploy-traefik".into(),

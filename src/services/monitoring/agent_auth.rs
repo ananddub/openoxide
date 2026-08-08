@@ -8,7 +8,6 @@ pub struct MonitoringAgentAuth {
     repo: Arc<MonitoringAgentRepository>,
 }
 
-
 #[singleton]
 impl MonitoringAgentAuth {
     pub fn new(repo: Arc<MonitoringAgentRepository>) -> Self {
@@ -22,7 +21,9 @@ impl MonitoringAgentAuth {
     ) -> Result<String, sqlx::Error> {
         let token = format!("rma_{}", uuid::Uuid::new_v4().simple());
         let hash = hash_token(&token);
-        self.repo.rotate(server_id, organization_id, &token, &hash).await?;
+        self.repo
+            .rotate(server_id, organization_id, &token, &hash)
+            .await?;
         Ok(token)
     }
 

@@ -29,13 +29,41 @@ pub struct ServerAudit {
     pub ports: Vec<PortAvailability>,
 }
 
-fn parse_os_id(os_release: &str) -> String {
-    os_release
+pub(crate) fn normalized_os_id(os_release: &str) -> String {
+    let raw = os_release
         .lines()
         .find_map(|line| line.strip_prefix("ID="))
         .unwrap_or_default()
         .trim_matches('"')
-        .to_owned()
+        .to_owned();
+    match raw.as_str() {
+        "manjaro" | "manjaro-arm" => "arch".into(),
+        "pop" | "linuxmint" | "zorin" => "ubuntu".into(),
+        "fedora-asahi-remix" => "fedora".into(),
+        _ => raw,
+    }
+}
+
+pub(crate) fn supported_os(os_id: &str) -> bool {
+    matches!(
+        os_id,
+        "arch"
+            | "ubuntu"
+            | "debian"
+            | "raspbian"
+            | "centos"
+            | "fedora"
+            | "rhel"
+            | "ol"
+            | "rocky"
+            | "sles"
+            | "opensuse-leap"
+            | "opensuse-tumbleweed"
+            | "almalinux"
+            | "opencloudos"
+            | "amzn"
+            | "alpine"
+    )
 }
 
 fn port_is_listening(ss_output: &str, port: u16) -> bool {
@@ -75,7 +103,7 @@ pub(crate) async fn audit(
 
     let os = crate::utils::os::OsCli::new(executor);
     let os_release = os.file("/etc/os-release").read().execute().await?.stdout;
-    let os_id = parse_os_id(&os_release);
+    let os_id = normalized_os_id(&os_release);
     let architecture = os.system().arch().run().await?.stdout_trimmed().to_owned();
     let docker_state = tool(executor, "docker").await;
     let git = tool(executor, "git").await;
@@ -143,8 +171,11 @@ mod tests {
 
     #[test]
     fn parses_quoted_and_unquoted_os_ids() {
-        assert_eq!(parse_os_id("NAME=Ubuntu\nID=ubuntu\n"), "ubuntu");
-        assert_eq!(parse_os_id("NAME=Alpine\nID=\"alpine\"\n"), "alpine");
+        assert_eq!(normalized_os_id("NAME=Ubuntu\nID=ubuntu\n"), "ubuntu");
+        assert_eq!(normalized_os_id("NAME=Alpine\nID=\"alpine\"\n"), "alpine");
+        assert_eq!(normalized_os_id("ID=linuxmint\n"), "ubuntu");
+        assert!(supported_os("ubuntu"));
+        assert!(!supported_os("plan9"));
     }
 
     #[test]

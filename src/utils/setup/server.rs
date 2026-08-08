@@ -67,6 +67,39 @@ impl ServerSetup {
         .await
     }
 
+    pub async fn preflight(&self) -> ExecResult<()> {
+        let os = OsCli::new(&self.executor);
+        let uid = self
+            .executor
+            .run("id", ["-u"])
+            .await?
+            .stdout_trimmed()
+            .to_owned();
+        if uid != "0" {
+            return Err(crate::utils::exec::ExecError::InvalidData(
+                "remote setup requires root or working sudo credentials".into(),
+            ));
+        }
+
+        let os_release = os.file("/etc/os-release").read().execute().await?.stdout;
+        let os_id = validation::normalized_os_id(&os_release);
+        if !validation::supported_os(&os_id) {
+            return Err(crate::utils::exec::ExecError::InvalidData(format!(
+                "unsupported remote operating system: {os_id}"
+            )));
+        }
+
+        if os.has_command("snap").run().await.is_ok()
+            && self.executor.run("snap", ["list", "docker"]).await.is_ok()
+        {
+            return Err(crate::utils::exec::ExecError::InvalidData(
+                "Docker installed through Snap is unsupported; install Docker Engine instead"
+                    .into(),
+            ));
+        }
+        Ok(())
+    }
+
     pub async fn install_dependencies(&self) -> ExecResult<()> {
         let os = OsCli::new(&self.executor);
         for (index, package) in [
@@ -323,6 +356,7 @@ impl ServerSetup {
     }
 
     pub async fn setup_all(&self, install_dependencies: bool) -> ExecResult<SetupOutcome> {
+        self.preflight().await?;
         let mut completed = Vec::new();
         if install_dependencies {
             self.install_dependencies().await?;
@@ -332,6 +366,10 @@ impl ServerSetup {
         }
         self.setup_directories().await?;
         completed.push(SetupStep::Directories);
+        if self.config.build_server {
+            let audit = self.audit().await?;
+            return Ok(SetupOutcome { completed, audit });
+        }
         self.ensure_swarm().await?;
         completed.push(SetupStep::Swarm);
         self.ensure_network().await?;
@@ -357,6 +395,9 @@ impl ServerSetup {
         }
 
         self.append_directory_steps(&mut steps, &os);
+        if self.config.build_server {
+            return ScriptPipeline::new().cmd(steps);
+        }
         self.append_swarm_step(&mut steps, &docker);
         self.append_network_step(&mut steps, &docker);
         self.append_traefik_config_steps(&mut steps, &os);
@@ -371,6 +412,7 @@ impl ServerSetup {
     }
 
     pub async fn setup_all_oneshot(&self, install_dependencies: bool) -> ExecResult<SetupOutcome> {
+        self.preflight().await?;
         self.oneshot_script(install_dependencies)
             .execute(&self.executor)
             .await?;
@@ -386,6 +428,7 @@ impl ServerSetup {
         install_dependencies: bool,
         sender: tokio::sync::mpsc::Sender<String>,
     ) -> ExecResult<SetupOutcome> {
+        self.preflight().await?;
         let script = self.compile_oneshot_script(install_dependencies);
         let (exec_tx, mut exec_rx) = tokio::sync::mpsc::channel::<ExecStreamEvent>(128);
         let log_tx = sender.clone();
@@ -479,6 +522,7 @@ impl ServerSetup {
                 os.service("docker").enable();
                 os.service("docker").start();
             }
+            cmd("docker", "info");
         ));
     }
 
