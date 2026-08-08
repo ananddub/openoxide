@@ -543,7 +543,10 @@ mod private_network_json_tests {
             "routes": []
         }))
         .unwrap();
-        assert_eq!(input.connection_mode, ServerConnectionModeDto::ManagedWireguard);
+        assert_eq!(
+            input.connection_mode,
+            ServerConnectionModeDto::ManagedWireguard
+        );
     }
 
     #[test]

@@ -121,8 +121,25 @@ impl ScheduleRuntimeRepository {
         stdout: Option<&str>,
         stderr: Option<&str>,
     ) -> sqlx::Result<()> {
+        let schedule_id: i64 =
+            sqlx::query_scalar("SELECT schedule_id FROM schedule_executions WHERE id=?")
+                .bind(id)
+                .fetch_one(self.pool.as_ref())
+                .await?;
         sqlx::query!("UPDATE schedule_executions SET status=?, message=?, stdout=?, stderr=?, finished_at=unixepoch() WHERE id=?", status.as_str(), message, stdout, stderr, id)
             .execute(self.pool.as_ref()).await?;
+        if let Err(error) = crate::services::schedule::file_log::append(
+            &format!("schedule-{schedule_id}"),
+            Some(id),
+            status.as_str(),
+            message,
+            stdout,
+            stderr,
+        )
+        .await
+        {
+            tracing::warn!(execution_id = id, %error, "could not write schedule execution log file");
+        }
         Ok(())
     }
 

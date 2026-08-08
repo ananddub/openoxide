@@ -63,6 +63,14 @@ impl RustployPaths {
     pub fn deployment_log_file(&self, deployment_id: i64) -> String {
         format!("{}/{}.log", self.deployment_logs(), deployment_id)
     }
+
+    pub fn schedule_logs(&self) -> String {
+        format!("{}/logs/schedules", self.base)
+    }
+
+    pub fn schedule_log_file(&self, key: &str) -> String {
+        format!("{}/{}.log", self.schedule_logs(), key)
+    }
 }
 
 pub fn rustploy_paths() -> RustployPaths {

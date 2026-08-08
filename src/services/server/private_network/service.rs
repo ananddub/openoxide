@@ -372,7 +372,12 @@ impl ServerPrivateNetworkService {
         }
         let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
         let raw_endpoint = network.endpoint.as_deref().unwrap_or("").trim();
-        let remote_ip = self.servers.get_by_id(server_id).await?.map(|s| s.ip_address).unwrap_or_default();
+        let remote_ip = self
+            .servers
+            .get_by_id(server_id)
+            .await?
+            .map(|s| s.ip_address)
+            .unwrap_or_default();
         let port = network
             .listen_port
             .and_then(|value| value.try_into().ok())

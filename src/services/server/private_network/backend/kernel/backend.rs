@@ -97,8 +97,7 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                             .persistent_keepalive(plan.keepalive),
                         |peer, route| peer.allowed_ip(route),
                     ),
-                WireGuardPeerBuilder::new(panel_public)
-                    .allowed_ip(plan.panel_host.clone()),
+                WireGuardPeerBuilder::new(panel_public).allowed_ip(plan.panel_host.clone()),
             )
         } else {
             (

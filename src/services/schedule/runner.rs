@@ -275,6 +275,25 @@ impl ScheduleRunner {
                     };
                     let result = service.run_database_backup(backup_id).await;
                     in_flight.remove(&key_str);
+                    let (status, message) = match &result {
+                        Ok(()) => (
+                            "SUCCEEDED",
+                            "database backup executed successfully".to_string(),
+                        ),
+                        Err(error) => ("FAILED", error.to_string()),
+                    };
+                    if let Err(error) = crate::services::schedule::file_log::append(
+                        &format!("db-backup-{backup_id}"),
+                        None,
+                        status,
+                        Some(&message),
+                        None,
+                        None,
+                    )
+                    .await
+                    {
+                        tracing::warn!(backup_id, %error, "could not write database backup log file");
+                    }
                     match result {
                         Ok(()) => {
                             tracing::info!(backup_id, "database backup executed successfully")
@@ -350,6 +369,25 @@ impl ScheduleRunner {
                     };
                     let result = service.run_volume_backup(backup_id).await;
                     in_flight.remove(&key_str);
+                    let (status, message) = match &result {
+                        Ok(()) => (
+                            "SUCCEEDED",
+                            "volume backup executed successfully".to_string(),
+                        ),
+                        Err(error) => ("FAILED", error.to_string()),
+                    };
+                    if let Err(error) = crate::services::schedule::file_log::append(
+                        &format!("volume-backup-{backup_id}"),
+                        None,
+                        status,
+                        Some(&message),
+                        None,
+                        None,
+                    )
+                    .await
+                    {
+                        tracing::warn!(backup_id, %error, "could not write volume backup log file");
+                    }
                     match result {
                         Ok(()) => tracing::info!(backup_id, "volume backup executed successfully"),
                         Err(error) => tracing::error!(
