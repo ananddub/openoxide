@@ -32,9 +32,7 @@ mod tests {
         assert_eq!(
             os.gpu()
                 .nvidia()
-                .query()
-                .field(NvidiaQueryField::Name)
-                .field(NvidiaQueryField::DriverVersion)
+                .query([NvidiaQueryField::Name, NvidiaQueryField::DriverVersion])
                 .format(NvidiaQueryFormat::Csv)
                 .without_header()
                 .build_str(),

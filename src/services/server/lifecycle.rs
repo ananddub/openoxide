@@ -58,8 +58,7 @@ impl ServerLifecycleService {
         let os = OsCli::new(&executor);
         os.gpu()
             .nvidia()
-            .query()
-            .fields([
+            .query([
                 crate::utils::os::gpu::NvidiaQueryField::Name,
                 crate::utils::os::gpu::NvidiaQueryField::DriverVersion,
             ])

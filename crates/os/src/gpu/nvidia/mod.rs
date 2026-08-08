@@ -17,8 +17,11 @@ impl<'a> NvidiaGpuBuilder<'a> {
         Self { executor }
     }
 
-    pub fn query(self) -> NvidiaQueryBuilder<'a> {
-        NvidiaQueryBuilder::new(self.executor)
+    pub fn query(
+        self,
+        fields: impl IntoIterator<Item = NvidiaQueryField>,
+    ) -> NvidiaQueryBuilder<'a> {
+        NvidiaQueryBuilder::new(self.executor).fields(fields)
     }
 
     pub fn configure(self) -> NvidiaConfigureBuilder<'a> {
