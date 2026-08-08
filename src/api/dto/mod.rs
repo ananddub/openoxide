@@ -17,6 +17,7 @@ pub mod monitoring;
 pub mod networking;
 pub mod notification;
 pub mod organization;
+pub mod permission;
 pub mod preview;
 pub mod project;
 pub mod registry;

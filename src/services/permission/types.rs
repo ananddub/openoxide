@@ -14,6 +14,8 @@ define_resources! {
     Environment => "env",
     Organization => "org",
     Users => "users",
+    Groups => "group",
+    Members => "member",
     Traefik => "traefik",
     Alert => "alert",
 }

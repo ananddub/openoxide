@@ -94,9 +94,8 @@ impl GroupRepository {
                 SELECT p.action
                 FROM group_policy gp
                 JOIN policy p ON p.id = gp.policy_id
-                JOIN users u ON u.group_id = gp.group_id
-                JOIN organization_members om ON om.user_id = u.id
-                WHERE u.id = ? AND om.organization_id = ?
+                JOIN organization_members om ON om.group_id = gp.group_id
+                WHERE om.user_id = ? AND om.organization_id = ?
                 UNION ALL
                 SELECT action FROM user_permissions WHERE effect = 'GRANT'
             ) perms

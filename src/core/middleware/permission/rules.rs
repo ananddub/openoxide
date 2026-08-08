@@ -1,7 +1,7 @@
 use super::{
     Alert, Application, CanCreate, CanDelete, CanDeploy, CanMonitor, CanRead, CanUpdate, CanWrite,
-    Database, Environment, Organization, PermissionOperation, PermissionResource, Project, Server,
-    Traefik, Users,
+    Database, Environment, Groups, Members, Organization, PermissionOperation, PermissionResource,
+    Project, Server, Traefik, Users,
 };
 
 pub trait Allows<O: PermissionOperation>: PermissionResource {}
@@ -19,5 +19,7 @@ allow!(Database: CanRead, CanCreate, CanUpdate, CanDelete);
 allow!(Environment: CanRead, CanWrite);
 allow!(Organization: CanRead, CanWrite);
 allow!(Users: CanRead, CanWrite);
+allow!(Groups: CanRead, CanCreate, CanUpdate, CanDelete);
+allow!(Members: CanRead, CanUpdate);
 allow!(Traefik: CanRead, CanWrite);
 allow!(Alert: CanWrite);

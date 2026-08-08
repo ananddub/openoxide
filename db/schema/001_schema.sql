@@ -27,3 +27,4 @@
 -- atlas:import 028_server_migrations.sql
 -- atlas:import 029_database_resource_view.sql
 -- atlas:import 030_permission_enforcement.sql
+-- atlas:import 031_permission_groups.sql

@@ -18,6 +18,21 @@ pub struct PermissionService {
 
 #[singleton]
 impl PermissionService {
+    pub async fn is_platform_owner(&self, user_id: i64) -> Result<bool, sqlx::Error> {
+        Ok(self
+            .user_repo
+            .get_by_id(user_id)
+            .await?
+            .and_then(|user| user.role)
+            .is_some_and(|role| UserRole::from(role.as_str()) == UserRole::Owner))
+    }
+
+    pub async fn has_legacy_full_access(&self, user_id: i64) -> Result<bool, sqlx::Error> {
+        self.compatibility_repo
+            .has_legacy_full_access(user_id)
+            .await
+    }
+
     pub fn new(
         user_repo: Arc<UserRepository>,
         group_repo: Arc<GroupRepository>,
@@ -48,12 +63,8 @@ impl PermissionService {
         action: PolicyAction,
     ) -> Result<bool, sqlx::Error> {
         // Platform owners retain global access.
-        if let Some(user) = self.user_repo.get_by_id(user_id).await? {
-            let role_str = user.role.as_deref().unwrap_or("MEMBER");
-            let role = UserRole::from(role_str);
-            if role == UserRole::Owner {
-                return Ok(true); // OWNER bypass
-            }
+        if self.is_platform_owner(user_id).await? {
+            return Ok(true);
         }
 
         let member_role = self.member_repo.role(user_id, org_id).await?;
@@ -95,12 +106,8 @@ impl PermissionService {
         resource_id: i64,
     ) -> Result<bool, sqlx::Error> {
         // Check OWNER status first
-        if let Some(user) = self.user_repo.get_by_id(user_id).await? {
-            let role_str = user.role.as_deref().unwrap_or("MEMBER");
-            let role = UserRole::from(role_str);
-            if role == UserRole::Owner {
-                return Ok(true);
-            }
+        if self.is_platform_owner(user_id).await? {
+            return Ok(true);
         }
 
         self.resource_access_repo

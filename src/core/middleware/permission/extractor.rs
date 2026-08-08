@@ -18,6 +18,9 @@ where
     R: PermissionResource + Allows<O>,
     O: PermissionOperation;
 
+#[derive(Debug, Clone, Copy)]
+pub struct PermissionOrganization(pub i64);
+
 impl<S, R, O> FromRequestParts<S> for RequirePermission<R, O>
 where
     S: Send + Sync,
@@ -58,6 +61,9 @@ where
             return Err(denied(required.as_str()));
         }
 
+        parts
+            .extensions
+            .insert(PermissionOrganization(organization_id));
         Ok(Self(claims, PhantomData))
     }
 }
