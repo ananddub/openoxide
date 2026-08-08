@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Project};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -6,13 +7,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 use crate::{
     api::dto::project::{CreateProjectDto, PatchProjectDto, ProjectResponseDto},
     core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{
-        permission::{
-            ProjectCreatePermission, ProjectDeletePermission, ProjectReadPermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::project::ProjectService,
 };
 
@@ -32,7 +27,7 @@ impl ProjectController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ProjectReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ProjectResponseDto>, ApiError> {
         self.service
@@ -46,7 +41,7 @@ impl ProjectController {
     #[get("/organization/{organization_id}")]
     async fn list_by_organization(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ProjectReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<ProjectResponseDto>>, ApiError> {
         if let Some(CacheEnum::ProjectsList(cached)) = self
@@ -80,7 +75,7 @@ impl ProjectController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ProjectCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Project, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateProjectDto>,
     ) -> Result<(StatusCode, Json<ProjectResponseDto>), ApiError> {
         let org_id = body.organization_id;
@@ -99,7 +94,7 @@ impl ProjectController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ProjectCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Project, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchProjectDto>,
     ) -> Result<Json<ProjectResponseDto>, ApiError> {
@@ -118,7 +113,7 @@ impl ProjectController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ProjectDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Project, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;

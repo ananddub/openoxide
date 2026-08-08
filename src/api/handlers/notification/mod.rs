@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Server};
 pub mod builder;
 
 use std::sync::Arc;
@@ -11,9 +12,7 @@ use crate::{
         CreateNotificationBindingDto, CreateNotificationDto, NotificationDeliveryAttemptDto,
         NotificationResourceBindingDto, NotificationResponseDto, PatchNotificationDto,
     },
-    core::middleware::permission::{
-        RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
-    },
+    core::middleware::permission::RequirePermission,
     core::middleware::validator::ValidatedJson,
     db::{
         models::notifications::Notification,
@@ -85,7 +84,7 @@ impl NotificationController {
     #[get("/delivery-history/organization/{organization_id}")]
     async fn delivery_history(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<NotificationDeliveryAttemptDto>>, ApiError> {
         verify_scope(claims.user.group_id, organization_id)?;
@@ -99,7 +98,7 @@ impl NotificationController {
     #[post("/bindings/organization/{organization_id}")]
     async fn create_binding(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanCreate>,
         Path(organization_id): Path<i64>,
         Json(body): Json<CreateNotificationBindingDto>,
     ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
@@ -125,7 +124,7 @@ impl NotificationController {
     #[get("/bindings/organization/{organization_id}")]
     async fn bindings(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<NotificationResourceBindingDto>>, ApiError> {
         verify_scope(claims.user.group_id, organization_id)?;
@@ -139,7 +138,7 @@ impl NotificationController {
     #[delete("/bindings/{id}/organization/{organization_id}")]
     async fn delete_binding(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerDeletePermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanDelete>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         verify_scope(claims.user.group_id, organization_id)?;
@@ -158,7 +157,7 @@ impl NotificationController {
     #[get("/organization/{organization_id}")]
     async fn list_by_organization(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<NotificationResponseDto>>, ApiError> {
         let items = self
@@ -178,7 +177,7 @@ impl NotificationController {
     #[get("/{id}/organization/{organization_id}")]
     async fn get_by_id(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<Json<NotificationResponseDto>, ApiError> {
         let item = self
@@ -199,7 +198,7 @@ impl NotificationController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         ValidatedJson(dto): ValidatedJson<CreateNotificationDto>,
     ) -> Result<(StatusCode, Json<NotificationResponseDto>), ApiError> {
         let now = chrono::Utc::now().timestamp();
@@ -291,7 +290,7 @@ impl NotificationController {
     #[patch("/{id}/organization/{organization_id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path((id, organization_id)): Path<(i64, i64)>,
         ValidatedJson(dto): ValidatedJson<PatchNotificationDto>,
     ) -> Result<Json<NotificationResponseDto>, ApiError> {
@@ -356,7 +355,7 @@ impl NotificationController {
     #[put("/{id}/organization/{organization_id}")]
     async fn replace(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path((id, organization_id)): Path<(i64, i64)>,
         ValidatedJson(dto): ValidatedJson<CreateNotificationDto>,
     ) -> Result<Json<NotificationResponseDto>, ApiError> {
@@ -414,7 +413,7 @@ impl NotificationController {
     #[delete("/{id}/organization/{organization_id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanDelete>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         let removed = self
@@ -432,7 +431,7 @@ impl NotificationController {
     #[post("/{id}/organization/{organization_id}/test")]
     async fn send_test(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         self.repo

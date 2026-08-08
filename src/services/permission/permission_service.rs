@@ -83,7 +83,7 @@ impl PermissionService {
             .await?;
         let action_str = action.as_str();
 
-        Ok(perms.iter().any(|p| p == action_str))
+        Ok(perms.iter().any(|p| p == &action_str))
     }
 
     /// Check if user has access to a specific granular resource

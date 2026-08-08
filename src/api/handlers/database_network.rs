@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Database};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -7,13 +8,7 @@ use crate::{
     api::dto::database_network::{
         CreateDatabaseNetworkDto, DatabaseNetworkResponseDto, PatchDatabaseNetworkDto,
     },
-    core::middleware::{
-        permission::{
-            DatabaseCreatePermission, DatabaseDeletePermission, DatabaseReadPermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::database_network::DatabaseNetworkService,
 };
 
@@ -32,7 +27,7 @@ impl DatabaseNetworkController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
     ) -> Result<Json<Vec<DatabaseNetworkResponseDto>>, ApiError> {
         self.service
             .list()
@@ -50,7 +45,7 @@ impl DatabaseNetworkController {
     #[get("/server/{server_id}")]
     async fn list_by_server(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<Vec<DatabaseNetworkResponseDto>>, ApiError> {
         self.service
@@ -69,7 +64,7 @@ impl DatabaseNetworkController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<DatabaseNetworkResponseDto>, ApiError> {
         self.service
@@ -83,7 +78,7 @@ impl DatabaseNetworkController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateDatabaseNetworkDto>,
     ) -> Result<(StatusCode, Json<DatabaseNetworkResponseDto>), ApiError> {
         self.service
@@ -97,7 +92,7 @@ impl DatabaseNetworkController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchDatabaseNetworkDto>,
     ) -> Result<Json<DatabaseNetworkResponseDto>, ApiError> {
@@ -112,7 +107,7 @@ impl DatabaseNetworkController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -125,7 +120,7 @@ impl DatabaseNetworkController {
     #[get("/{id}/dependencies")]
     async fn dependencies(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<crate::repository::NetworkDependencyCounts>, ApiError> {
         self.service

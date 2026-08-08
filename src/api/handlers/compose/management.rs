@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanDeploy, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -18,13 +19,7 @@ use crate::{
             UpsertComposeResourceDto,
         },
     },
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppDeployPermission, AppReadPermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::compose::management::{
         ComposeManagementService, ComposeMountService, ComposePatchService, ComposeTransferService,
     },
@@ -50,7 +45,7 @@ impl ComposePatchController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<ComposePatchResponseDto>>, ApiError> {
         self.service
@@ -63,7 +58,7 @@ impl ComposePatchController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(compose_id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpsertComposePatchDto>,
     ) -> Result<(StatusCode, Json<ComposePatchResponseDto>), ApiError> {
@@ -77,7 +72,7 @@ impl ComposePatchController {
     #[put("/{id}")]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path((compose_id, id)): Path<(i64, i64)>,
         ValidatedJson(body): ValidatedJson<UpsertComposePatchDto>,
     ) -> Result<Json<ComposePatchResponseDto>, ApiError> {
@@ -91,7 +86,7 @@ impl ComposePatchController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path((compose_id, id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         match self.service.delete(compose_id, id).await {
@@ -111,7 +106,7 @@ impl ComposeManagementController {
     #[post("/preview")]
     async fn preview(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<ComposePreviewDto>,
     ) -> Result<Json<ComposePreviewResponseDto>, ApiError> {
         self.service.preview(body).map(Json).map_err(map_error)
@@ -120,7 +115,7 @@ impl ComposeManagementController {
     #[post("/templates/install")]
     async fn install_template(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<InstallComposeTemplateDto>,
     ) -> Result<(StatusCode, Json<ComposeResponseDto>), ApiError> {
         self.service
@@ -134,7 +129,7 @@ impl ComposeManagementController {
     #[get("/{id}/export")]
     async fn export(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<ComposeExportQueryDto>,
     ) -> Result<Json<ComposeArchiveDto>, ApiError> {
@@ -155,7 +150,7 @@ impl ComposeManagementController {
     #[post("/import")]
     async fn import(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<ImportComposeDto>,
     ) -> Result<(StatusCode, Json<ComposeResponseDto>), ApiError> {
         self.transfer
@@ -169,7 +164,7 @@ impl ComposeManagementController {
     #[post("/{id}/services/remove")]
     async fn remove_service(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<RemoveComposeServiceDto>,
     ) -> Result<Json<ComposeResponseDto>, ApiError> {
@@ -184,7 +179,7 @@ impl ComposeManagementController {
     #[put("/{id}/resources")]
     async fn upsert_resource(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpsertComposeResourceDto>,
     ) -> Result<Json<ComposeResponseDto>, ApiError> {
@@ -199,7 +194,7 @@ impl ComposeManagementController {
     #[delete("/{id}/resources")]
     async fn remove_resource(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<DeleteComposeResourceDto>,
     ) -> Result<Json<ComposeResponseDto>, ApiError> {
@@ -214,7 +209,7 @@ impl ComposeManagementController {
     #[post("/{id}/move")]
     async fn move_compose(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<MoveComposeDto>,
     ) -> Result<Json<ComposeResponseDto>, ApiError> {
@@ -229,7 +224,7 @@ impl ComposeManagementController {
     #[post("/{id}/webhook-token/rotate")]
     async fn rotate_token(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
     ) -> Result<Json<ComposeTokenDto>, ApiError> {
         self.service
@@ -242,7 +237,7 @@ impl ComposeManagementController {
     #[post("/{id}/deployments/queue/cleanup")]
     async fn cleanup_queue(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
     ) -> Result<Json<ComposeCleanupDto>, ApiError> {
         self.service
@@ -259,7 +254,7 @@ impl ComposeManagementController {
     #[delete("/{id}/deployments/history")]
     async fn clear_history(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<Json<ComposeCleanupDto>, ApiError> {
         self.service
@@ -276,7 +271,7 @@ impl ComposeManagementController {
     #[post("/{id}/deployments/force-kill")]
     async fn force_kill(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
     ) -> Result<Json<ComposeCleanupDto>, ApiError> {
         self.service
@@ -300,7 +295,7 @@ impl ComposeMountController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<ComposeMountResponseDto>>, ApiError> {
         self.service
@@ -313,7 +308,7 @@ impl ComposeMountController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(compose_id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpsertComposeMountDto>,
     ) -> Result<(StatusCode, Json<ComposeMountResponseDto>), ApiError> {
@@ -327,7 +322,7 @@ impl ComposeMountController {
     #[put("/{id}")]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path((compose_id, id)): Path<(i64, i64)>,
         ValidatedJson(body): ValidatedJson<UpsertComposeMountDto>,
     ) -> Result<Json<ComposeMountResponseDto>, ApiError> {
@@ -341,7 +336,7 @@ impl ComposeMountController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path((compose_id, id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         match self.service.delete(compose_id, id).await {

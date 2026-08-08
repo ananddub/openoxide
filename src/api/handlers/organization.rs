@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanWrite, Organization};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -7,10 +8,7 @@ use crate::{
     api::dto::organization::{
         CreateOrganizationDto, OrganizationResponseDto, PatchOrganizationDto,
     },
-    core::middleware::{
-        permission::{OrgWritePermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::organization::OrganizationService,
     utils::jwt::claim::Claims,
 };
@@ -76,7 +74,7 @@ impl OrganizationController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchOrganizationDto>,
     ) -> Result<Json<OrganizationResponseDto>, ApiError> {
@@ -91,7 +89,7 @@ impl OrganizationController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service

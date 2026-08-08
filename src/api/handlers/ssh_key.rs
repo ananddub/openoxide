@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Server};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -6,12 +7,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 use crate::{
     api::dto::ssh_key::{CreateSshKeyDto, GenerateSshKeyDto, PatchSshKeyDto, SshKeyResponseDto},
     core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{
-        permission::{
-            RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::ssh_key::SshKeyService,
 };
 
@@ -31,7 +27,7 @@ impl SshKeyController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
     ) -> Result<Json<Vec<SshKeyResponseDto>>, ApiError> {
         if let Some(CacheEnum::SshKeysList(cached)) = self.cache.get(&CacheKey::SshKeysList).await {
             return Ok(Json(
@@ -52,7 +48,7 @@ impl SshKeyController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<SshKeyResponseDto>, ApiError> {
         self.service
@@ -66,7 +62,7 @@ impl SshKeyController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
         let created = self
@@ -84,7 +80,7 @@ impl SshKeyController {
     #[post("/generate")]
     async fn generate(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         ValidatedJson(body): ValidatedJson<GenerateSshKeyDto>,
     ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
         let generated = self
@@ -102,7 +98,7 @@ impl SshKeyController {
     #[post("/generate-pair")]
     async fn generate_pair(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Json(body): Json<crate::api::dto::ssh_key::GeneratePairRequestDto>,
     ) -> Result<Json<crate::api::dto::ssh_key::GeneratePairResponseDto>, ApiError> {
         let (private_key, public_key) = crate::utils::ssh::generate_keypair(&body.key_type)
@@ -116,7 +112,7 @@ impl SshKeyController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchSshKeyDto>,
     ) -> Result<Json<SshKeyResponseDto>, ApiError> {
@@ -135,7 +131,7 @@ impl SshKeyController {
     #[post("/{id}/mark-used")]
     async fn mark_used(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<i64>,
     ) -> Result<Json<SshKeyResponseDto>, ApiError> {
         self.service
@@ -149,7 +145,7 @@ impl SshKeyController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;

@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanDeploy, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -14,13 +15,7 @@ use crate::{
         UpdateScheduleRuntimePolicyDto,
     },
     core::cache::{AppStateCache, CacheKey},
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppDeployPermission, AppReadPermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::schedule::ScheduleService,
 };
 
@@ -42,7 +37,7 @@ impl ScheduleController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ScheduleResponseDto>, ApiError> {
         self.service
@@ -56,7 +51,7 @@ impl ScheduleController {
     #[get("/application/{application_id}")]
     async fn list_by_application(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
         let items = self
@@ -73,7 +68,7 @@ impl ScheduleController {
     #[get("/compose/{compose_id}")]
     async fn list_by_compose(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
         let items = self
@@ -90,7 +85,7 @@ impl ScheduleController {
     #[get("/database/{database_id}")]
     async fn list_by_database(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(_database_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
         Ok(Json(vec![]))
@@ -99,7 +94,7 @@ impl ScheduleController {
     #[get("/server/{server_id}")]
     async fn list_by_server(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
         self.service
@@ -113,7 +108,7 @@ impl ScheduleController {
     #[get("/organization/{organization_id}")]
     async fn list_by_organization(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleResponseDto>>, ApiError> {
         self.service
@@ -127,7 +122,7 @@ impl ScheduleController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateScheduleDto>,
     ) -> Result<(StatusCode, Json<ScheduleResponseDto>), ApiError> {
         let app_id = body.application_id;
@@ -154,7 +149,7 @@ impl ScheduleController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchScheduleDto>,
     ) -> Result<Json<ScheduleResponseDto>, ApiError> {
@@ -173,7 +168,7 @@ impl ScheduleController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
@@ -185,7 +180,7 @@ impl ScheduleController {
     #[post("/{id}/trigger")]
     async fn trigger(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
     ) -> Result<Json<ScheduleRunResponseDto>, ApiError> {
         self.service
@@ -199,7 +194,7 @@ impl ScheduleController {
     #[get("/{id}/runtime-policy")]
     async fn runtime_policy(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ScheduleRuntimePolicyDto>, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
@@ -215,7 +210,7 @@ impl ScheduleController {
     #[put("/{id}/runtime-policy")]
     async fn update_runtime_policy(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
         Json(body): Json<UpdateScheduleRuntimePolicyDto>,
     ) -> Result<Json<ScheduleRuntimePolicyDto>, ApiError> {
@@ -250,7 +245,7 @@ impl ScheduleController {
     #[get("/{id}/executions")]
     async fn executions(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<Vec<ScheduleExecutionDto>>, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
@@ -265,7 +260,7 @@ impl ScheduleController {
     #[get("/{id}/logs")]
     async fn logs(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ScheduleLogDto>, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
@@ -278,7 +273,7 @@ impl ScheduleController {
     #[get("/{id}/logs/stream", sse = ScheduleLogDto)]
     async fn logs_stream(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<ScheduleLogSse, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
@@ -293,7 +288,7 @@ impl ScheduleController {
     #[get("/{id}/executions/{execution_id}/logs")]
     async fn execution_logs(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path((id, execution_id)): Path<(i64, i64)>,
     ) -> Result<Json<ScheduleLogDto>, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
@@ -317,7 +312,7 @@ impl ScheduleController {
     #[get("/{id}/executions/{execution_id}/logs/stream", sse = ScheduleLogDto)]
     async fn execution_logs_stream(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path((id, execution_id)): Path<(i64, i64)>,
     ) -> Result<ScheduleLogSse, ApiError> {
         self.service.get_by_id(id).await.map_err(map_sqlx_error)?;

@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanWrite, Organization};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -5,10 +6,7 @@ use axum::{Json, http::StatusCode};
 
 use crate::{
     api::dto::settings::{SettingsResponseDto, UpdateSettingsDto},
-    core::middleware::{
-        permission::{OrgWritePermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::settings::SettingsService,
 };
 
@@ -27,7 +25,7 @@ impl SettingsController {
     #[get]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
     ) -> Result<Json<SettingsResponseDto>, ApiError> {
         self.service.get().await.map(Json).map_err(map_error)
     }
@@ -35,7 +33,7 @@ impl SettingsController {
     #[put]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
         ValidatedJson(body): ValidatedJson<UpdateSettingsDto>,
     ) -> Result<Json<SettingsResponseDto>, ApiError> {
         self.service.update(body).await.map(Json).map_err(map_error)

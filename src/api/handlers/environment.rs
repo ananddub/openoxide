@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanRead, CanWrite, Environment};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -5,10 +6,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::environment::{CreateEnvironmentDto, EnvironmentResponseDto, PatchEnvironmentDto},
-    core::middleware::{
-        permission::{EnvReadPermission, EnvWritePermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::environment::EnvironmentService,
 };
 
@@ -27,7 +25,7 @@ impl EnvironmentController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
         self.service
@@ -41,7 +39,7 @@ impl EnvironmentController {
     #[get("/project/{project_id}")]
     async fn list_by_project(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,
         Path(project_id): Path<i64>,
     ) -> Result<Json<Vec<EnvironmentResponseDto>>, ApiError> {
         self.service
@@ -60,7 +58,7 @@ impl EnvironmentController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
         ValidatedJson(body): ValidatedJson<CreateEnvironmentDto>,
     ) -> Result<(StatusCode, Json<EnvironmentResponseDto>), ApiError> {
         self.service
@@ -74,7 +72,7 @@ impl EnvironmentController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchEnvironmentDto>,
     ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
@@ -89,7 +87,7 @@ impl EnvironmentController {
     #[put("/{id}/default")]
     async fn set_default(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
         Path(id): Path<i64>,
     ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
         self.service
@@ -103,7 +101,7 @@ impl EnvironmentController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<EnvWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service

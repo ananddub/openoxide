@@ -1,12 +1,11 @@
+use crate::core::middleware::permission::{Alert, CanMonitor, CanWrite, Server};
 use crate::{
     api::dto::monitoring::{
         CreateMaintenanceWindowDto, MaintenanceWindowDto, MonitoringActionDto,
         MonitoringAgentStatusDto, MonitoringPolicyDto, MonitoringStatusResponseDto,
         MonitoringTokenResponseDto, RotateMonitoringTokenDto, UpdateMonitoringPolicyDto,
     },
-    core::middleware::permission::{
-        AlertWritePermission, RequirePermission, ServerMonitorPermission,
-    },
+    core::middleware::permission::RequirePermission,
     services::monitoring::{
         agent_auth::MonitoringAgentAuth, lifecycle::MonitoringLifecycleService,
         monitoring_service::MonitoringService,
@@ -68,7 +67,7 @@ impl MonitoringController {
     #[get("/server/{id}")]
     async fn get_server_metrics(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanMonitor>,
         Path(id): Path<i64>,
     ) -> Result<Json<Value>, ApiError> {
         let val = serde_json::to_value(
@@ -85,7 +84,7 @@ impl MonitoringController {
     #[get("/containers/{id}")]
     async fn get_container_metrics(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanMonitor>,
         Path(id): Path<i64>,
         Query(query): Query<ContainerQueryParam>,
     ) -> Result<Json<Value>, ApiError> {
@@ -108,7 +107,7 @@ impl MonitoringController {
     #[post("/agents/{server_id}/token")]
     async fn rotate_agent_token(
         &self,
-        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
         Path(server_id): Path<i64>,
         Json(body): Json<RotateMonitoringTokenDto>,
     ) -> Result<Json<MonitoringTokenResponseDto>, ApiError> {
@@ -144,7 +143,7 @@ impl MonitoringController {
     #[get("/agents/{server_id}/status")]
     async fn agent_status(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanMonitor>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<MonitoringAgentStatusDto>, ApiError> {
         let status = self
@@ -173,7 +172,7 @@ impl MonitoringController {
     #[get("/policy/{organization_id}")]
     async fn policy(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanMonitor>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<MonitoringPolicyDto>, ApiError> {
         verify_claim_organization(claims.user.group_id, organization_id)?;
@@ -187,7 +186,7 @@ impl MonitoringController {
     #[put("/policy/{organization_id}")]
     async fn update_policy(
         &self,
-        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
         Path(organization_id): Path<i64>,
         Json(body): Json<UpdateMonitoringPolicyDto>,
     ) -> Result<Json<MonitoringPolicyDto>, ApiError> {
@@ -202,7 +201,7 @@ impl MonitoringController {
     #[post("/agents/{server_id}/restart")]
     async fn restart_agent(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Alert, CanWrite>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<MonitoringActionDto>, ApiError> {
         self.lifecycle
@@ -215,7 +214,7 @@ impl MonitoringController {
     #[post("/agents/{server_id}/reinstall")]
     async fn reinstall_agent(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Alert, CanWrite>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<MonitoringActionDto>, ApiError> {
         self.lifecycle
@@ -228,7 +227,7 @@ impl MonitoringController {
     #[get("/server/{id}/export")]
     async fn export_server_metrics(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanMonitor>,
         Path(id): Path<i64>,
     ) -> Result<String, ApiError> {
         let metrics = self
@@ -259,7 +258,7 @@ impl MonitoringController {
     #[get("/server/{id}/prometheus")]
     async fn prometheus(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanMonitor>,
         Path(id): Path<i64>,
     ) -> Result<String, ApiError> {
         let metric = self
@@ -279,7 +278,7 @@ impl MonitoringController {
     #[post("/maintenance/{organization_id}")]
     async fn create_maintenance_window(
         &self,
-        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
         Path(organization_id): Path<i64>,
         Json(body): Json<CreateMaintenanceWindowDto>,
     ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
@@ -301,7 +300,7 @@ impl MonitoringController {
     #[get("/maintenance/{organization_id}")]
     async fn maintenance_windows(
         &self,
-        RequirePermission(claims, _): RequirePermission<ServerMonitorPermission>,
+        RequirePermission(claims, _): RequirePermission<Server, CanMonitor>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<MaintenanceWindowDto>>, ApiError> {
         verify_claim_organization(claims.user.group_id, organization_id)?;
@@ -315,7 +314,7 @@ impl MonitoringController {
     #[delete("/maintenance/{organization_id}/{id}")]
     async fn delete_maintenance_window(
         &self,
-        RequirePermission(claims, _): RequirePermission<AlertWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
         Path((organization_id, id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         verify_claim_organization(claims.user.group_id, organization_id)?;

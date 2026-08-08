@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanRead, CanUpdate, Database};
 use std::{str::FromStr, sync::Arc};
 
 use auto_route::controller;
@@ -14,10 +15,7 @@ use crate::{
         DatabaseExportQueryDto, DatabaseResponseDto, DatabaseValidationDto, ImportDatabaseDto,
         PostgresAdvancedConfigDto, PostgresAdvancedConfigResponseDto, RotateDatabaseCredentialsDto,
     },
-    core::middleware::{
-        permission::{DatabaseReadPermission, DatabaseUpdatePermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::database::{DatabaseKind, DatabaseService},
 };
 
@@ -34,7 +32,7 @@ impl DatabaseManagementController {
     #[get("/{kind}/{id}/dependencies")]
     async fn dependencies(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path((kind, id)): Path<(String, i64)>,
     ) -> Result<Json<crate::repository::ResourceDependencyCounts>, ApiError> {
         self.service
@@ -47,7 +45,7 @@ impl DatabaseManagementController {
     #[get("/{kind}/{id}/export")]
     async fn export(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path((kind, id)): Path<(String, i64)>,
         Query(query): Query<DatabaseExportQueryDto>,
     ) -> Result<Json<DatabaseArchiveDto>, ApiError> {
@@ -71,7 +69,7 @@ impl DatabaseManagementController {
     #[post("/import")]
     async fn import(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseUpdatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanUpdate>,
         ValidatedJson(body): ValidatedJson<ImportDatabaseDto>,
     ) -> Result<(StatusCode, Json<DatabaseResponseDto>), ApiError> {
         self.service
@@ -85,7 +83,7 @@ impl DatabaseManagementController {
     #[get("/{kind}/{id}/connection")]
     async fn connection(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path((kind, id)): Path<(String, i64)>,
     ) -> Result<Json<DatabaseConnectionDto>, ApiError> {
         self.service
@@ -98,7 +96,7 @@ impl DatabaseManagementController {
     #[post("/{kind}/{id}/credentials/rotate")]
     async fn rotate_credentials(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseUpdatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanUpdate>,
         Path((kind, id)): Path<(String, i64)>,
         ValidatedJson(body): ValidatedJson<RotateDatabaseCredentialsDto>,
     ) -> Result<Json<DatabaseCredentialRotationDto>, ApiError> {
@@ -112,7 +110,7 @@ impl DatabaseManagementController {
     #[post("/{kind}/{id}/validate")]
     async fn validate(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path((kind, id)): Path<(String, i64)>,
     ) -> Result<Json<DatabaseValidationDto>, ApiError> {
         self.service
@@ -125,7 +123,7 @@ impl DatabaseManagementController {
     #[get("/postgres/{id}/advanced-config")]
     async fn get_postgres_advanced_config(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<PostgresAdvancedConfigResponseDto>, ApiError> {
         self.service
@@ -138,7 +136,7 @@ impl DatabaseManagementController {
     #[put("/postgres/{id}/advanced-config")]
     async fn update_postgres_advanced_config(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseUpdatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanUpdate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PostgresAdvancedConfigDto>,
     ) -> Result<Json<PostgresAdvancedConfigResponseDto>, ApiError> {

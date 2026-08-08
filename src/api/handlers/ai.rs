@@ -1,3 +1,6 @@
+use crate::core::middleware::permission::{
+    Application, CanCreate, CanDeploy, CanRead, CanWrite, Organization,
+};
 use auto_route::controller;
 use axum::{
     Json,
@@ -14,13 +17,7 @@ use crate::{
         DiscoverAiModelsDto, GenerateComposeDto, ReviewAiGenerationDto, TestAiConnectionDto,
         UpdateAiSettingDto,
     },
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeployPermission, AppReadPermission, OrgWritePermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::ai::{AiLogContext, AiService},
 };
 
@@ -39,7 +36,7 @@ impl AiController {
     #[get("/settings")]
     async fn list_settings(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
     ) -> Result<Json<Vec<AiSettingResponseDto>>, ApiError> {
         self.service
             .list_settings(claims.user.group_id)
@@ -51,7 +48,7 @@ impl AiController {
     #[get("/settings/{id}")]
     async fn get_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiSettingResponseDto>, ApiError> {
         self.service
@@ -65,7 +62,7 @@ impl AiController {
     #[post("/settings")]
     async fn create_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
         ValidatedJson(body): ValidatedJson<CreateAiSettingDto>,
     ) -> Result<(StatusCode, Json<AiSettingResponseDto>), ApiError> {
         self.service
@@ -80,7 +77,7 @@ impl AiController {
     #[put("/settings/{id}")]
     async fn update_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpdateAiSettingDto>,
     ) -> Result<Json<AiSettingResponseDto>, ApiError> {
@@ -95,7 +92,7 @@ impl AiController {
     #[delete("/settings/{id}")]
     async fn delete_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<OrgWritePermission>,
+        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         match self
@@ -112,7 +109,7 @@ impl AiController {
     #[get("/settings/{id}/models")]
     async fn setting_models(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiModelsResponseDto>, ApiError> {
         self.service
@@ -125,7 +122,7 @@ impl AiController {
     #[post("/settings/{id}/test")]
     async fn test_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiConnectionResponseDto>, ApiError> {
         self.service
@@ -143,7 +140,7 @@ impl AiController {
     #[post("/models/discover")]
     async fn discover_models(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<DiscoverAiModelsDto>,
     ) -> Result<Json<AiModelsResponseDto>, ApiError> {
         self.service
@@ -156,7 +153,7 @@ impl AiController {
     #[post("/connection/test")]
     async fn test_connection(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<TestAiConnectionDto>,
     ) -> Result<Json<AiConnectionResponseDto>, ApiError> {
         self.service
@@ -174,7 +171,7 @@ impl AiController {
     #[get("/generations")]
     async fn list_generations(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         Query(query): Query<AiGenerationListQueryDto>,
     ) -> Result<Json<Vec<AiGenerationResponseDto>>, ApiError> {
         self.service
@@ -187,7 +184,7 @@ impl AiController {
     #[post("/generations")]
     async fn generate(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<GenerateComposeDto>,
     ) -> Result<(StatusCode, Json<AiGenerationResponseDto>), ApiError> {
         self.service
@@ -207,7 +204,7 @@ impl AiController {
     #[get("/generations/{id}")]
     async fn get_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
         self.service
@@ -221,7 +218,7 @@ impl AiController {
     #[put("/generations/{id}/review")]
     async fn review_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<ReviewAiGenerationDto>,
     ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
@@ -236,7 +233,7 @@ impl AiController {
     #[post("/generations/{id}/deploy")]
     async fn deploy_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<DeployAiGenerationDto>,
     ) -> Result<(StatusCode, Json<AiDeploymentResponseDto>), ApiError> {
@@ -257,7 +254,7 @@ impl AiController {
     #[post("/logs/analyze")]
     async fn analyze_logs(
         &self,
-        RequirePermission(claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<AnalyzeLogsDto>,
     ) -> Result<Json<AnalyzeLogsResponseDto>, ApiError> {
         let context = match body.context {

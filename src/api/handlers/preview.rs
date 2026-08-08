@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanDelete, CanDeploy, CanRead};
 use auto_route::controller;
 use axum::{
     Json,
@@ -8,12 +9,7 @@ use std::sync::Arc;
 
 use crate::{
     api::dto::preview::{CreatePreviewDeploymentDto, PreviewListQueryDto},
-    core::middleware::{
-        permission::{
-            AppDeletePermission, AppDeployPermission, AppReadPermission, RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::{
         preview::{PreviewDeploymentOutcome, PreviewDeploymentService, PreviewDeploymentView},
         webhook::{GitProviderKind, PullRequestEvent},
@@ -35,7 +31,7 @@ impl PreviewDeploymentController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Query(query): Query<PreviewListQueryDto>,
     ) -> Result<Json<Vec<PreviewDeploymentView>>, ApiError> {
         self.service
@@ -48,7 +44,7 @@ impl PreviewDeploymentController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<PreviewDeploymentView>, ApiError> {
         self.service.get(id).await.map(Json).map_err(map_sqlx)
@@ -57,7 +53,7 @@ impl PreviewDeploymentController {
     #[post("/application/{application_id}")]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(application_id): Path<i64>,
         ValidatedJson(body): ValidatedJson<CreatePreviewDeploymentDto>,
     ) -> Result<(StatusCode, Json<PreviewDeploymentOutcome>), ApiError> {
@@ -72,7 +68,7 @@ impl PreviewDeploymentController {
     #[post("/{id}/redeploy")]
     async fn redeploy(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeployPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
     ) -> Result<(StatusCode, Json<PreviewDeploymentOutcome>), ApiError> {
         self.service
@@ -85,7 +81,7 @@ impl PreviewDeploymentController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service

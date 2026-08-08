@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanRead, Server};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -9,9 +10,7 @@ use crate::{
         ServerActionResultDto, ServerBackupDto, ServerCleanupExecutionDto, ServerManagementDto,
         UpdateServerManagementDto,
     },
-    core::middleware::permission::{
-        RequirePermission, ServerCreatePermission, ServerReadPermission,
-    },
+    core::middleware::permission::RequirePermission,
     services::server::{ServerCleanupService, ServerLifecycleService, ServerManagementService},
 };
 
@@ -38,7 +37,7 @@ impl ServerManagementController {
     #[get]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerManagementDto>, ApiError> {
         self.management
@@ -51,7 +50,7 @@ impl ServerManagementController {
     #[put]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
         Json(body): Json<UpdateServerManagementDto>,
     ) -> Result<Json<ServerManagementDto>, ApiError> {
@@ -65,7 +64,7 @@ impl ServerManagementController {
     #[post("/audit/repair")]
     async fn repair(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerActionResultDto>, ApiError> {
         self.lifecycle
@@ -78,7 +77,7 @@ impl ServerManagementController {
     #[post("/gpu/configure")]
     async fn configure_gpu(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerActionResultDto>, ApiError> {
         self.lifecycle
@@ -91,7 +90,7 @@ impl ServerManagementController {
     #[post("/cleanup/run")]
     async fn cleanup(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerActionResultDto>, ApiError> {
         self.cleanup
@@ -104,7 +103,7 @@ impl ServerManagementController {
     #[get("/cleanup/history")]
     async fn cleanup_history(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<Vec<ServerCleanupExecutionDto>>, ApiError> {
         self.cleanup
@@ -117,7 +116,7 @@ impl ServerManagementController {
     #[post("/upgrade")]
     async fn upgrade(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerActionResultDto>, ApiError> {
         self.lifecycle
@@ -130,7 +129,7 @@ impl ServerManagementController {
     #[post("/backup")]
     async fn backup(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerBackupDto>, ApiError> {
         self.lifecycle
@@ -143,7 +142,7 @@ impl ServerManagementController {
     #[post("/diagnostics")]
     async fn diagnostics(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerActionResultDto>, ApiError> {
         self.lifecycle

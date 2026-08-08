@@ -1,14 +1,13 @@
 use super::error::{ApiError, map_sqlx_error};
 use crate::core::config::Config;
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Server};
 use crate::{
     api::dto::deployment::DeploymentSseEventDto,
     api::dto::server::{
         ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
         SetupServerDto, TestDirectConnectionDto,
     },
-    core::middleware::permission::{
-        RequirePermission, ServerCreatePermission, ServerDeletePermission, ServerReadPermission,
-    },
+    core::middleware::permission::RequirePermission,
     db::repository::ssh_keys::SshKeyRepository,
     services::server::{RemoteServerService, RemoteServerStatus},
     utils::{
@@ -50,7 +49,7 @@ impl ServerController {
     #[post("/test-direct-connection")]
     async fn test_direct_connection(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Json(body): Json<TestDirectConnectionDto>,
     ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
         let port = body.port.unwrap_or(22);
@@ -104,7 +103,7 @@ impl ServerController {
     #[post("/{id}/test-connection")]
     async fn test_connection(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(id): Path<i64>,
         Json(body): Json<ServerConnectionDto>,
     ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
@@ -138,7 +137,7 @@ impl ServerController {
     #[post("/{id}/audit")]
     async fn audit(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(id): Path<i64>,
         Json(body): Json<ServerConnectionDto>,
     ) -> Result<Json<ServerAuditDto>, ApiError> {
@@ -165,7 +164,7 @@ impl ServerController {
     #[post("/{id}/setup")]
     async fn setup(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<i64>,
         Json(body): Json<SetupServerDto>,
     ) -> Result<Json<SetupOutcomeDto>, ApiError> {
@@ -218,7 +217,7 @@ impl ServerController {
     #[post("/{id}/setup/logs", sse = DeploymentSseEventDto)]
     async fn setup_logs(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<i64>,
         Json(body): Json<SetupServerDto>,
     ) -> Result<ServerSetupSse, ApiError> {
@@ -294,7 +293,7 @@ impl ServerController {
     #[get("/{id}/sessions")]
     async fn sessions(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
         self.service
@@ -315,7 +314,7 @@ impl ServerController {
     #[delete("/{id}/sessions")]
     async fn clear_sessions(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanDelete>,
         Path(_id): Path<i64>,
     ) -> StatusCode {
         StatusCode::NO_CONTENT

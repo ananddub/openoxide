@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanRead, Server};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -15,10 +16,7 @@ use crate::{
         ContainerActionRequestDto, ContainerRemoveRequestDto, DockerActionResponseDto,
         DockerPruneRequestDto, DockerPruneResponseDto,
     },
-    core::middleware::{
-        permission::{RequirePermission, ServerCreatePermission, ServerReadPermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::global_op::DockerManagementService,
     utils::docker::{ContainerSummary, ImageSummary, NetworkSummary, VolumeSummary},
 };
@@ -45,7 +43,7 @@ impl DockerManagementController {
     #[post("/containers/{id}/files")]
     async fn upload_container_file(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
         multipart: Multipart,
@@ -80,7 +78,7 @@ impl DockerManagementController {
     #[get("/containers/{id}/files")]
     async fn download_container_file(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Path(id): Path<String>,
         Query(query): Query<DockerFileQuery>,
     ) -> Result<Response<Body>, ApiError> {
@@ -114,7 +112,7 @@ impl DockerManagementController {
     #[get("/containers")]
     async fn containers(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<Vec<ContainerSummary>>, ApiError> {
         self.service
@@ -127,7 +125,7 @@ impl DockerManagementController {
     #[get("/images")]
     async fn images(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<Vec<ImageSummary>>, ApiError> {
         self.service
@@ -140,7 +138,7 @@ impl DockerManagementController {
     #[get("/networks")]
     async fn networks(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<Vec<NetworkSummary>>, ApiError> {
         self.service
@@ -153,7 +151,7 @@ impl DockerManagementController {
     #[get("/volumes")]
     async fn volumes(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<Vec<VolumeSummary>>, ApiError> {
         self.service
@@ -166,7 +164,7 @@ impl DockerManagementController {
     #[get("/containers/{id}/inspect")]
     async fn inspect_container(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -180,7 +178,7 @@ impl DockerManagementController {
     #[get("/images/{id}/inspect")]
     async fn inspect_image(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -194,7 +192,7 @@ impl DockerManagementController {
     #[get("/networks/{id}/inspect")]
     async fn inspect_network(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -208,7 +206,7 @@ impl DockerManagementController {
     #[get("/volumes/{id}/inspect")]
     async fn inspect_volume(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -222,7 +220,7 @@ impl DockerManagementController {
     #[post("/containers/{id}/action")]
     async fn container_action(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
         ValidatedJson(body): ValidatedJson<ContainerActionRequestDto>,
@@ -237,7 +235,7 @@ impl DockerManagementController {
     #[delete("/containers/{id}")]
     async fn remove_container(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
         Path(id): Path<String>,
         Query(query): Query<DockerTargetQuery>,
         ValidatedJson(body): ValidatedJson<ContainerRemoveRequestDto>,
@@ -252,7 +250,7 @@ impl DockerManagementController {
     #[get("/disk-usage")]
     async fn disk_usage(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
         Query(query): Query<DockerTargetQuery>,
     ) -> Result<Json<serde_json::Value>, ApiError> {
         self.service
@@ -265,7 +263,7 @@ impl DockerManagementController {
     #[post("/prune")]
     async fn prune(
         &self,
-        RequirePermission(_, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
         Query(query): Query<DockerTargetQuery>,
         ValidatedJson(body): ValidatedJson<DockerPruneRequestDto>,
     ) -> Result<Json<DockerPruneResponseDto>, ApiError> {

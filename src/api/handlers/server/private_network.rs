@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanRead, Server};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -6,9 +7,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 use super::error::{ApiError, map_sqlx_error};
 use crate::{
     api::dto::server::{PrivateNetworkHealthDto, ServerPrivateNetworkDto, UpdatePrivateNetworkDto},
-    core::middleware::permission::{
-        RequirePermission, ServerCreatePermission, ServerReadPermission,
-    },
+    core::middleware::permission::RequirePermission,
     services::server::ServerPrivateNetworkService,
 };
 
@@ -25,7 +24,7 @@ impl ServerPrivateNetworkController {
     #[get]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<Option<ServerPrivateNetworkDto>>, ApiError> {
         self.service
@@ -38,7 +37,7 @@ impl ServerPrivateNetworkController {
     #[put]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
         Json(body): Json<UpdatePrivateNetworkDto>,
     ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
@@ -52,7 +51,7 @@ impl ServerPrivateNetworkController {
     #[delete]
     async fn disable(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -65,7 +64,7 @@ impl ServerPrivateNetworkController {
     #[post("/setup")]
     async fn setup(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
         self.service
@@ -78,7 +77,7 @@ impl ServerPrivateNetworkController {
     #[get("/health")]
     async fn health(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<PrivateNetworkHealthDto>, ApiError> {
         self.service
@@ -91,7 +90,7 @@ impl ServerPrivateNetworkController {
     #[post("/repair")]
     async fn repair(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
         self.service
@@ -104,7 +103,7 @@ impl ServerPrivateNetworkController {
     #[post("/re-setup")]
     async fn re_setup(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
         self.service
@@ -117,7 +116,7 @@ impl ServerPrivateNetworkController {
     #[post("/rotate-keys")]
     async fn rotate_keys(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<Json<ServerPrivateNetworkDto>, ApiError> {
         self.service
@@ -130,7 +129,7 @@ impl ServerPrivateNetworkController {
     #[post("/teardown")]
     async fn teardown(
         &self,
-        RequirePermission(_claims, _): RequirePermission<ServerCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
         Path(server_id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service

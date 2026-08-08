@@ -1,13 +1,9 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanRead};
 use crate::{
     api::dto::application::security::{
         ApplicationSecurityResponseDto, UpsertApplicationSecurityDto,
     },
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::application::security::SecurityService,
 };
 use auto_route::controller;
@@ -25,7 +21,7 @@ impl SecurityController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<ApplicationSecurityResponseDto>>, ApiError> {
         self.service
@@ -37,7 +33,7 @@ impl SecurityController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(application_id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpsertApplicationSecurityDto>,
     ) -> Result<(StatusCode, Json<ApplicationSecurityResponseDto>), ApiError> {
@@ -50,7 +46,7 @@ impl SecurityController {
     #[put("/{id}")]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path((application_id, id)): Path<(i64, i64)>,
         ValidatedJson(body): ValidatedJson<UpsertApplicationSecurityDto>,
     ) -> Result<Json<ApplicationSecurityResponseDto>, ApiError> {
@@ -63,7 +59,7 @@ impl SecurityController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path((application_id, id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
         match self.service.delete(application_id, id).await {

@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanRead, CanWrite, Traefik};
 use auto_route::controller;
 use axum::{Json, extract::Query, http::StatusCode};
 use std::sync::Arc;
@@ -9,9 +10,7 @@ use crate::{
         TraefikRequestsStatusDto, TraefikStatsLogsQueryDto, TraefikStatsLogsResponseDto,
         TraefikToggleRequestsDto, TraefikVersionDto, TraefikWriteFileDto, UpdateTraefikVersionDto,
     },
-    core::middleware::permission::{
-        RequirePermission, TraefikReadPermission, TraefikWritePermission,
-    },
+    core::middleware::permission::RequirePermission,
     services::traefik::TraefikService,
 };
 
@@ -30,7 +29,7 @@ impl TraefikController {
     #[get("/files")]
     async fn list_files(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<Vec<TraefikFileNodeDto>>, ApiError> {
         let files = self
@@ -44,7 +43,7 @@ impl TraefikController {
     #[get("/files/tree")]
     async fn list_file_tree(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<Vec<TraefikFileTreeNodeDto>>, ApiError> {
         let files = self
@@ -58,7 +57,7 @@ impl TraefikController {
     #[get("/files/content")]
     async fn read_file_content(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<TraefikFileContentDto>, ApiError> {
         let path = params.path.ok_or_else(|| {
@@ -80,7 +79,7 @@ impl TraefikController {
     #[put("/files/content")]
     async fn write_file_content(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
         Json(body): Json<TraefikWriteFileDto>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -94,7 +93,7 @@ impl TraefikController {
     #[get("/health")]
     async fn check_health(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<TraefikHealthResponseDto>, ApiError> {
         let health = self
@@ -109,7 +108,7 @@ impl TraefikController {
     #[get("/requests/status")]
     async fn get_requests_status(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<TraefikRequestsStatusDto>, ApiError> {
         let status = self
@@ -124,7 +123,7 @@ impl TraefikController {
     #[post("/requests/toggle")]
     async fn toggle_requests(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
         Json(body): Json<TraefikToggleRequestsDto>,
     ) -> Result<Json<bool>, ApiError> {
         let res = self
@@ -139,7 +138,7 @@ impl TraefikController {
     #[get("/requests/logs")]
     async fn read_stats_logs(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikStatsLogsQueryDto>,
     ) -> Result<Json<TraefikStatsLogsResponseDto>, ApiError> {
         let logs = self
@@ -154,7 +153,7 @@ impl TraefikController {
     #[get("/version")]
     async fn version(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
         Query(params): Query<TraefikFileQueryDto>,
     ) -> Result<Json<TraefikVersionDto>, ApiError> {
         self.service
@@ -167,7 +166,7 @@ impl TraefikController {
     #[post("/version")]
     async fn update_version(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
         Json(body): Json<UpdateTraefikVersionDto>,
     ) -> Result<Json<TraefikVersionDto>, ApiError> {
         self.service
@@ -180,7 +179,7 @@ impl TraefikController {
     #[post("/middlewares/render")]
     async fn render_middleware(
         &self,
-        RequirePermission(_claims, _): RequirePermission<TraefikWritePermission>,
+        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
         Json(body): Json<StructuredMiddlewareDto>,
     ) -> Result<Json<StructuredMiddlewareResponseDto>, ApiError> {
         TraefikService::structured_middleware(body)

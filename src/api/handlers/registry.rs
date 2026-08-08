@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -14,12 +15,7 @@ use crate::{
         RegistryTagsDto, RegistryUsageDto, RotateRegistryCredentialsDto, TestRegistryDto,
     },
     core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::registry::RegistryService,
 };
 
@@ -44,7 +40,7 @@ impl RegistryController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
     ) -> Result<Json<Vec<RegistryResponseDto>>, ApiError> {
         if let Some(CacheEnum::RegistriesList(cached)) =
             self.cache.get(&CacheKey::RegistriesList).await
@@ -70,7 +66,7 @@ impl RegistryController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<RegistryResponseDto>, ApiError> {
         self.service
@@ -84,7 +80,7 @@ impl RegistryController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateRegistryDto>,
     ) -> Result<(StatusCode, Json<RegistryResponseDto>), ApiError> {
         let created = self
@@ -102,7 +98,7 @@ impl RegistryController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchRegistryDto>,
     ) -> Result<Json<RegistryResponseDto>, ApiError> {
@@ -121,7 +117,7 @@ impl RegistryController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
@@ -133,7 +129,7 @@ impl RegistryController {
     #[post("/test")]
     async fn test_registry(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<TestRegistryDto>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -146,7 +142,7 @@ impl RegistryController {
     #[post("/{id}/test")]
     async fn test_saved_registry(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -159,7 +155,7 @@ impl RegistryController {
     #[get("/{id}/repositories")]
     async fn repositories(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<RegistryRepositoriesDto>, ApiError> {
         self.service
@@ -172,7 +168,7 @@ impl RegistryController {
     #[get("/{id}/tags")]
     async fn tags(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<RegistryTagsQuery>,
     ) -> Result<Json<RegistryTagsDto>, ApiError> {
@@ -187,7 +183,7 @@ impl RegistryController {
     #[post("/{id}/rotate-credentials")]
     async fn rotate_credentials(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         Json(body): Json<RotateRegistryCredentialsDto>,
     ) -> Result<Json<RegistryResponseDto>, ApiError> {
@@ -202,7 +198,7 @@ impl RegistryController {
     #[get("/{id}/usage")]
     async fn usage(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<Vec<RegistryUsageDto>>, ApiError> {
         self.service

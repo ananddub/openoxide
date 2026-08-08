@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Database};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -8,13 +9,7 @@ use crate::{
         CreateDestinationDto, DestinationResponseDto, PatchDestinationDto, TestDestinationDto,
     },
     core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{
-        permission::{
-            DatabaseCreatePermission, DatabaseDeletePermission, DatabaseReadPermission,
-            RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::destination::DestinationService,
 };
 
@@ -34,7 +29,7 @@ impl DestinationController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
     ) -> Result<Json<Vec<DestinationResponseDto>>, ApiError> {
         if let Some(CacheEnum::DestinationsList(cached)) =
             self.cache.get(&CacheKey::DestinationsList).await
@@ -66,7 +61,7 @@ impl DestinationController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
         Path(id): Path<String>,
     ) -> Result<Json<DestinationResponseDto>, ApiError> {
         self.service
@@ -80,7 +75,7 @@ impl DestinationController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateDestinationDto>,
     ) -> Result<(StatusCode, Json<DestinationResponseDto>), ApiError> {
         let created = self
@@ -98,7 +93,7 @@ impl DestinationController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
         Path(id): Path<String>,
         ValidatedJson(body): ValidatedJson<PatchDestinationDto>,
     ) -> Result<Json<DestinationResponseDto>, ApiError> {
@@ -117,7 +112,7 @@ impl DestinationController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanDelete>,
         Path(id): Path<String>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(&id).await.map_err(map_sqlx_error)?;
@@ -129,7 +124,7 @@ impl DestinationController {
     #[post("/test")]
     async fn test_destination(
         &self,
-        RequirePermission(_claims, _): RequirePermission<DatabaseCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
         ValidatedJson(body): ValidatedJson<TestDestinationDto>,
     ) -> Result<StatusCode, ApiError> {
         self.service

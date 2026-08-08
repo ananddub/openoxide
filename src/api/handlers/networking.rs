@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -8,10 +9,7 @@ use crate::{
         CdnPurgeDto, CdnPurgeResponseDto, DomainDiagnosticDto, DomainDiagnosticResponseDto,
         RootNetworkDto, RootNetworkStatusDto,
     },
-    core::middleware::{
-        permission::{AppCreatePermission, AppReadPermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::networking::{CdnPurgeService, NetworkDiagnosticService, RootNetworkService},
 };
 
@@ -40,7 +38,7 @@ impl NetworkingController {
     #[post("/cdn/purge")]
     async fn purge_cdn(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CdnPurgeDto>,
     ) -> Result<Json<CdnPurgeResponseDto>, ApiError> {
         self.cdn.purge(body).await.map(Json).map_err(map_error)
@@ -49,7 +47,7 @@ impl NetworkingController {
     #[post("/domains/diagnose")]
     async fn diagnose_domain(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<DomainDiagnosticDto>,
     ) -> Json<DomainDiagnosticResponseDto> {
         Json(self.diagnostics.diagnose(body).await)
@@ -58,7 +56,7 @@ impl NetworkingController {
     #[post("/root-network/diagnose")]
     async fn diagnose_root_network(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Json(body): Json<RootNetworkDto>,
     ) -> Result<Json<RootNetworkStatusDto>, ApiError> {
         self.root_network
@@ -71,7 +69,7 @@ impl NetworkingController {
     #[post("/root-network/repair")]
     async fn repair_root_network(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Json(body): Json<RootNetworkDto>,
     ) -> Result<Json<RootNetworkStatusDto>, ApiError> {
         self.root_network

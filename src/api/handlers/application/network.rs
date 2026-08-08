@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -8,10 +9,7 @@ use crate::{
         application::network::{ApplicationNetworksResponseDto, UpdateApplicationNetworksDto},
         database_network::DatabaseNetworkResponseDto,
     },
-    core::middleware::{
-        permission::{AppCreatePermission, AppReadPermission, RequirePermission},
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::application::network::ApplicationNetworkService,
 };
 
@@ -30,7 +28,7 @@ impl ApplicationNetworkController {
     #[get]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<ApplicationNetworksResponseDto>, ApiError> {
         self.service
@@ -52,7 +50,7 @@ impl ApplicationNetworkController {
     #[put]
     async fn update(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(application_id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpdateApplicationNetworksDto>,
     ) -> Result<Json<ApplicationNetworksResponseDto>, ApiError> {

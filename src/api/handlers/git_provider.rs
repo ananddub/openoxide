@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanRead};
 use auto_route::controller;
 use axum::{
     Json,
@@ -13,12 +14,7 @@ use crate::{
         GitProviderResponseDto, OAuthCallbackDto, RepositoryReferenceQueryDto,
         WebhookRepositoryDto, WebhookSecretResponseDto,
     },
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::git_provider::{
         CreateProvider, GitProviderService, ProviderCredentials, UpdateProvider,
     },
@@ -39,7 +35,7 @@ impl GitProviderController {
     #[get]
     async fn list(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
     ) -> Result<Json<Vec<GitProviderResponseDto>>, ApiError> {
         self.service
             .list()
@@ -51,7 +47,7 @@ impl GitProviderController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<GitProviderResponseDto>, ApiError> {
         self.service
@@ -65,7 +61,7 @@ impl GitProviderController {
     #[post("/github")]
     async fn create_github(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateGithubProviderDto>,
     ) -> Result<(StatusCode, Json<CreatedGitProviderResponseDto>), ApiError> {
         self.create(CreateProvider {
@@ -86,7 +82,7 @@ impl GitProviderController {
     #[post("/gitlab")]
     async fn create_gitlab(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateGitlabProviderDto>,
     ) -> Result<(StatusCode, Json<CreatedGitProviderResponseDto>), ApiError> {
         self.create(CreateProvider {
@@ -109,7 +105,7 @@ impl GitProviderController {
     #[post("/gitea")]
     async fn create_gitea(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateGiteaProviderDto>,
     ) -> Result<(StatusCode, Json<CreatedGitProviderResponseDto>), ApiError> {
         self.create(CreateProvider {
@@ -132,7 +128,7 @@ impl GitProviderController {
     #[post("/bitbucket")]
     async fn create_bitbucket(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateBitbucketProviderDto>,
     ) -> Result<(StatusCode, Json<CreatedGitProviderResponseDto>), ApiError> {
         self.create(CreateProvider {
@@ -152,7 +148,7 @@ impl GitProviderController {
     #[put("/{id}/github")]
     async fn update_github(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<CreateGithubProviderDto>,
     ) -> Result<Json<GitProviderResponseDto>, ApiError> {
@@ -177,7 +173,7 @@ impl GitProviderController {
     #[put("/{id}/gitlab")]
     async fn update_gitlab(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<CreateGitlabProviderDto>,
     ) -> Result<Json<GitProviderResponseDto>, ApiError> {
@@ -204,7 +200,7 @@ impl GitProviderController {
     #[put("/{id}/gitea")]
     async fn update_gitea(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<CreateGiteaProviderDto>,
     ) -> Result<Json<GitProviderResponseDto>, ApiError> {
@@ -231,7 +227,7 @@ impl GitProviderController {
     #[put("/{id}/bitbucket")]
     async fn update_bitbucket(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<CreateBitbucketProviderDto>,
     ) -> Result<Json<GitProviderResponseDto>, ApiError> {
@@ -255,7 +251,7 @@ impl GitProviderController {
     #[post("/{id}/webhook-secret/rotate")]
     async fn rotate_secret(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
     ) -> Result<Json<WebhookSecretResponseDto>, ApiError> {
         self.service
@@ -268,7 +264,7 @@ impl GitProviderController {
     #[post("/{id}/test")]
     async fn test_connection(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -281,7 +277,7 @@ impl GitProviderController {
     #[get("/{id}/repositories")]
     async fn repositories(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<Vec<crate::utils::provider::discovery::RepositoryInfo>>, ApiError> {
         self.service
@@ -294,7 +290,7 @@ impl GitProviderController {
     #[get("/{id}/branches")]
     async fn branches(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<RepositoryReferenceQueryDto>,
     ) -> Result<Json<Vec<crate::utils::provider::discovery::GitReferenceInfo>>, ApiError> {
@@ -308,7 +304,7 @@ impl GitProviderController {
     #[get("/{id}/tags")]
     async fn tags(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<RepositoryReferenceQueryDto>,
     ) -> Result<Json<Vec<crate::utils::provider::discovery::GitReferenceInfo>>, ApiError> {
@@ -322,7 +318,7 @@ impl GitProviderController {
     #[get("/{id}/authorize")]
     async fn authorize(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
     ) -> Result<Json<crate::utils::provider::oauth::AuthorizationInfo>, ApiError> {
         self.service
@@ -354,7 +350,7 @@ impl GitProviderController {
     #[post("/{id}/disconnect")]
     async fn disconnect(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
@@ -367,7 +363,7 @@ impl GitProviderController {
     #[get("/{id}/collaborator-permission")]
     async fn collaborator_permission(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<CollaboratorPermissionQueryDto>,
     ) -> Result<Json<crate::utils::provider::discovery::CollaboratorPermission>, ApiError> {
@@ -381,7 +377,7 @@ impl GitProviderController {
     #[get("/{id}/webhook/status")]
     async fn webhook_status(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
         Query(query): Query<WebhookRepositoryDto>,
     ) -> Result<Json<Option<crate::utils::provider::discovery::ProviderWebhookInfo>>, ApiError>
@@ -396,7 +392,7 @@ impl GitProviderController {
     #[post("/{id}/webhook/install")]
     async fn install_webhook(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<WebhookRepositoryDto>,
     ) -> Result<Json<crate::utils::provider::discovery::ProviderWebhookInfo>, ApiError> {
@@ -410,7 +406,7 @@ impl GitProviderController {
     #[post("/{id}/webhook/recreate")]
     async fn recreate_webhook(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<WebhookRepositoryDto>,
     ) -> Result<Json<crate::utils::provider::discovery::ProviderWebhookInfo>, ApiError> {
@@ -424,7 +420,7 @@ impl GitProviderController {
     #[delete("/{id}/webhook")]
     async fn remove_webhook(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
         Query(query): Query<WebhookRepositoryDto>,
     ) -> Result<StatusCode, ApiError> {
@@ -438,7 +434,7 @@ impl GitProviderController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service

@@ -1,3 +1,4 @@
+use crate::core::middleware::permission::{Application, CanCreate, CanDelete, CanRead};
 use std::sync::Arc;
 
 use auto_route::controller;
@@ -6,12 +7,7 @@ use axum::{Json, extract::Path, http::StatusCode};
 use crate::{
     api::dto::domain::{CreateDomainDto, DomainResponseDto, PatchDomainDto},
     core::cache::{AppStateCache, CacheKey},
-    core::middleware::{
-        permission::{
-            AppCreatePermission, AppDeletePermission, AppReadPermission, RequirePermission,
-        },
-        validator::ValidatedJson,
-    },
+    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::domain::DomainService,
 };
 
@@ -31,7 +27,7 @@ impl DomainController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<DomainResponseDto>, ApiError> {
         self.service
@@ -45,7 +41,7 @@ impl DomainController {
     #[get("/application/{application_id}")]
     async fn list_by_application(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(application_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
         let items = self
@@ -62,7 +58,7 @@ impl DomainController {
     #[get("/compose/{compose_id}")]
     async fn list_by_compose(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
         Path(compose_id): Path<i64>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
         let items = self
@@ -79,7 +75,7 @@ impl DomainController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateDomainDto>,
     ) -> Result<(StatusCode, Json<DomainResponseDto>), ApiError> {
         let app_id = body.application_id;
@@ -106,7 +102,7 @@ impl DomainController {
     #[patch("/{id}")]
     async fn patch(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppCreatePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<PatchDomainDto>,
     ) -> Result<Json<DomainResponseDto>, ApiError> {
@@ -125,7 +121,7 @@ impl DomainController {
     #[delete("/{id}")]
     async fn delete(
         &self,
-        RequirePermission(_claims, _): RequirePermission<AppDeletePermission>,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDelete>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
