@@ -10,3 +10,8 @@ errors.txt
 errors2.txt
 errors3.txt
 /src/utils/tmp
+node_modules/
+target/
+dist/
+build/
+.venv/
