@@ -44,6 +44,7 @@ libc = "0.2"
 tracing-subscriber = "0.3.23"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }
 sha2 = "0.10"
+hmac = "0.12"
 dashmap = "6.2.1"
 moka = { version = "0.12", features = ["future"] }
 dotenvy = "0.15.7"
@@ -58,6 +59,7 @@ tokio-cron-scheduler = "0.13"
 croner = "2.2"
 paste = "1.0"
 reqwest = { version = "0.13.4", features = ["json", "query", "form"] }
+rig-core = "0.41.0"
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder", "hostname"] }
 totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
 notify = "8.1.0"

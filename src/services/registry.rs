@@ -4,10 +4,23 @@ use crate::{
     db::repository::registries::RegistryRepository,
 };
 use auto_di::singleton;
+use serde::Deserialize;
 use std::sync::Arc;
 
 pub struct RegistryService {
     repo_reg: Arc<RegistryRepository>,
+}
+
+#[derive(Deserialize)]
+struct RepositoryCatalogResponse {
+    #[serde(default)]
+    repositories: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct RepositoryTagsResponse {
+    #[serde(default)]
+    tags: Vec<String>,
 }
 
 #[singleton]
@@ -141,7 +154,7 @@ impl RegistryService {
             .await
             .map_err(|error| error.to_string())?;
         let url = api_url(&registry.registry_url, "/v2/_catalog?n=1000");
-        let value: serde_json::Value = reqwest::Client::new()
+        let value: RepositoryCatalogResponse = reqwest::Client::new()
             .get(url)
             .basic_auth(&registry.username, Some(&registry.password))
             .send()
@@ -152,13 +165,7 @@ impl RegistryService {
             .json()
             .await
             .map_err(|error| error.to_string())?;
-        Ok(value
-            .get("repositories")
-            .and_then(|value| value.as_array())
-            .into_iter()
-            .flatten()
-            .filter_map(|value| value.as_str().map(str::to_owned))
-            .collect())
+        Ok(value.repositories)
     }
 
     pub async fn tags(&self, id: i64, repository: &str) -> Result<Vec<String>, String> {
@@ -173,7 +180,7 @@ impl RegistryService {
             &registry.registry_url,
             &format!("/v2/{repository}/tags/list"),
         );
-        let value: serde_json::Value = reqwest::Client::new()
+        let value: RepositoryTagsResponse = reqwest::Client::new()
             .get(url)
             .basic_auth(&registry.username, Some(&registry.password))
             .send()
@@ -184,13 +191,7 @@ impl RegistryService {
             .json()
             .await
             .map_err(|error| error.to_string())?;
-        Ok(value
-            .get("tags")
-            .and_then(|value| value.as_array())
-            .into_iter()
-            .flatten()
-            .filter_map(|value| value.as_str().map(str::to_owned))
-            .collect())
+        Ok(value.tags)
     }
 
     pub async fn rotate_credentials(

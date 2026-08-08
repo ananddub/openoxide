@@ -1,74 +1,62 @@
-use reqwest::{Client, Response, Url};
+use reqwest::Url;
+use rig_core::{
+    client::{CompletionClient, ModelListingClient, Nothing},
+    completion::{AssistantContent, CompletionModel},
+    providers::{anthropic, gemini, ollama, openai},
+};
 use serde_json::{Value, json};
-use std::time::Duration;
 
 use super::{AiProviderConfig, AiProviderKind};
 
-#[derive(Clone)]
-pub struct AiClient {
-    http: Client,
-}
-
-impl Default for AiClient {
-    fn default() -> Self {
-        Self {
-            http: Client::builder()
-                .connect_timeout(Duration::from_secs(10))
-                .timeout(Duration::from_secs(90))
-                .build()
-                .expect("AI HTTP client configuration is valid"),
-        }
-    }
-}
+#[derive(Clone, Default)]
+pub struct AiClient;
 
 impl AiClient {
     pub async fn discover_models(&self, config: &AiProviderConfig) -> Result<Vec<String>, String> {
         let base = validate_base_url(config)?;
-        let response = match config.kind() {
-            AiProviderKind::Ollama => self.http.get(format!("{base}/api/tags")).send().await,
+        let list = match config.kind() {
+            AiProviderKind::Ollama => {
+                ollama::Client::builder()
+                    .api_key(Nothing)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?
+                    .list_models()
+                    .await
+            }
             AiProviderKind::Gemini => {
-                self.http
-                    .get(format!("{base}/models"))
-                    .query(&[("key", config.api_key.as_str())])
-                    .send()
+                gemini::Client::builder()
+                    .api_key(&config.api_key)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?
+                    .list_models()
                     .await
             }
             AiProviderKind::Anthropic => {
-                self.http
-                    .get(join_api_path(&base, "models"))
-                    .header("x-api-key", &config.api_key)
-                    .header("anthropic-version", "2023-06-01")
-                    .send()
+                anthropic::Client::builder()
+                    .api_key(&config.api_key)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?
+                    .list_models()
                     .await
             }
             AiProviderKind::OpenAi | AiProviderKind::OpenAiCompatible => {
-                self.http
-                    .get(join_api_path(&base, "models"))
-                    .bearer_auth(&config.api_key)
-                    .send()
+                openai::Client::builder()
+                    .api_key(&config.api_key)
+                    .base_url(openai_base_url(&base))
+                    .build()
+                    .map_err(rig_error)?
+                    .list_models()
                     .await
             }
         }
-        .map_err(|error| format!("AI provider request failed: {error}"))?;
+        .map_err(rig_error)?;
 
-        let value = response_json(response).await?;
-        let values = value
-            .get("data")
-            .or_else(|| value.get("models"))
-            .and_then(Value::as_array)
-            .or_else(|| value.as_array())
-            .ok_or_else(|| "AI provider returned an unsupported models response".to_string())?;
-
-        let mut models = values
+        let mut models = list
             .iter()
-            .filter_map(|model| {
-                model
-                    .get("id")
-                    .or_else(|| model.get("name"))
-                    .or_else(|| model.get("model"))
-                    .and_then(Value::as_str)
-                    .map(|name| name.trim_start_matches("models/").to_string())
-            })
+            .map(|model| model.id.trim_start_matches("models/").to_string())
             .collect::<Vec<_>>();
         models.sort();
         models.dedup();
@@ -111,65 +99,94 @@ impl AiClient {
         json_only: bool,
     ) -> Result<String, String> {
         let base = validate_base_url(config)?;
-        let response = match config.kind() {
+        let prompt = if json_only {
+            format!("Return only valid JSON without markdown fences.\n\n{prompt}")
+        } else {
+            prompt.to_string()
+        };
+
+        match config.kind() {
             AiProviderKind::Anthropic => {
-                self.http
-                    .post(join_api_path(&base, "messages"))
-                    .header("x-api-key", &config.api_key)
-                    .header("anthropic-version", "2023-06-01")
-                    .json(&json!({
-                        "model": config.model,
-                        "max_tokens": 8192,
-                        "messages": [{"role": "user", "content": prompt}]
-                    }))
-                    .send()
-                    .await
+                let client = anthropic::Client::builder()
+                    .api_key(&config.api_key)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?;
+                complete_with_model(client.completion_model(&config.model), prompt, None).await
             }
             AiProviderKind::Gemini => {
-                let model = config.model.trim_start_matches("models/");
-                self.http
-                    .post(format!("{base}/models/{model}:generateContent"))
-                    .query(&[("key", config.api_key.as_str())])
-                    .json(&json!({"contents": [{"parts": [{"text": prompt}]}]}))
-                    .send()
-                    .await
+                let client = gemini::Client::builder()
+                    .api_key(&config.api_key)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?;
+                complete_with_model(
+                    client.completion_model(config.model.trim_start_matches("models/")),
+                    prompt,
+                    None,
+                )
+                .await
             }
             AiProviderKind::Ollama => {
-                let mut body = json!({
-                    "model": config.model,
-                    "stream": false,
-                    "messages": [{"role": "user", "content": prompt}]
-                });
-                if json_only {
-                    body["format"] = Value::String("json".into());
-                }
-                self.http
-                    .post(format!("{base}/api/chat"))
-                    .json(&body)
-                    .send()
-                    .await
+                let client = ollama::Client::builder()
+                    .api_key(Nothing)
+                    .base_url(&base)
+                    .build()
+                    .map_err(rig_error)?;
+                let params = json_only.then(|| json!({"format": "json"}));
+                complete_with_model(client.completion_model(&config.model), prompt, params).await
             }
             AiProviderKind::OpenAi | AiProviderKind::OpenAiCompatible => {
-                let mut body = json!({
-                    "model": config.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.2
-                });
-                if json_only && config.kind() == AiProviderKind::OpenAi {
-                    body["response_format"] = json!({"type": "json_object"});
-                }
-                self.http
-                    .post(join_api_path(&base, "chat/completions"))
-                    .bearer_auth(&config.api_key)
-                    .json(&body)
-                    .send()
-                    .await
+                let client = openai::CompletionsClient::builder()
+                    .api_key(&config.api_key)
+                    .base_url(openai_base_url(&base))
+                    .build()
+                    .map_err(rig_error)?;
+                let params = (json_only && config.kind() == AiProviderKind::OpenAi)
+                    .then(|| json!({"response_format": {"type": "json_object"}}));
+                complete_with_model(client.completion_model(&config.model), prompt, params).await
             }
         }
-        .map_err(|error| format!("AI provider request failed: {error}"))?;
+    }
+}
 
-        let value = response_json(response).await?;
-        extract_text(config.kind(), &value)
+async fn complete_with_model<M: CompletionModel>(
+    model: M,
+    prompt: String,
+    additional_params: Option<Value>,
+) -> Result<String, String> {
+    let mut request = model
+        .completion_request(prompt)
+        .temperature(0.2)
+        .max_tokens(8192);
+    if let Some(params) = additional_params {
+        request = request.additional_params(params);
+    }
+    let response = model.completion(request.build()).await.map_err(rig_error)?;
+    let text = response
+        .choice
+        .iter()
+        .filter_map(|content| match content {
+            AssistantContent::Text(text) => Some(text.text.as_str()),
+            _ => None,
+        })
+        .collect::<String>();
+    if text.trim().is_empty() {
+        Err("AI provider response did not contain generated text".into())
+    } else {
+        Ok(text)
+    }
+}
+
+fn rig_error(error: impl std::fmt::Display) -> String {
+    format!("AI provider request failed: {error}")
+}
+
+fn openai_base_url(base: &str) -> String {
+    if base.ends_with("/v1") {
+        base.to_string()
+    } else {
+        format!("{base}/v1")
     }
 }
 
@@ -191,35 +208,6 @@ fn join_api_path(base: &str, path: &str) -> String {
     } else {
         format!("{base}/v1/{path}")
     }
-}
-
-async fn response_json(response: Response) -> Result<Value, String> {
-    let status = response.status();
-    let body = response
-        .text()
-        .await
-        .map_err(|error| format!("could not read AI provider response: {error}"))?;
-    if !status.is_success() {
-        let short = body.chars().take(2_000).collect::<String>();
-        return Err(format!("AI provider returned {status}: {short}"));
-    }
-    serde_json::from_str(&body)
-        .map_err(|error| format!("AI provider returned invalid response JSON: {error}"))
-}
-
-fn extract_text(kind: AiProviderKind, value: &Value) -> Result<String, String> {
-    let text = match kind {
-        AiProviderKind::Anthropic => value.pointer("/content/0/text").and_then(Value::as_str),
-        AiProviderKind::Gemini => value
-            .pointer("/candidates/0/content/parts/0/text")
-            .and_then(Value::as_str),
-        AiProviderKind::Ollama => value.pointer("/message/content").and_then(Value::as_str),
-        AiProviderKind::OpenAi | AiProviderKind::OpenAiCompatible => value
-            .pointer("/choices/0/message/content")
-            .and_then(Value::as_str),
-    };
-    text.map(str::to_string)
-        .ok_or_else(|| "AI provider response did not contain generated text".into())
 }
 
 fn strip_json_fence(text: &str) -> &str {

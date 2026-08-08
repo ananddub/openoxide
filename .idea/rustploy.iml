@@ -32,6 +32,25 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/os/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/rustploy_os/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/sh_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/db/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/services/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/utils/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/crates/websocket/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/app/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/builder/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/db/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/global/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/queue/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/services/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/test-support/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/utils/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/websocket/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route/target" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route_inventory/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

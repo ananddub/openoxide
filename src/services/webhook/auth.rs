@@ -1,49 +1,41 @@
-use sha2::{Digest, Sha256};
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+
+type HmacSha256 = Hmac<Sha256>;
 
 pub fn verify_hmac_sha256(secret: &[u8], body: &[u8], signature: &str) -> bool {
     let signature = signature.strip_prefix("sha256=").unwrap_or(signature);
     let Some(expected) = decode_hex(signature) else {
         return false;
     };
-    constant_time_eq(&hmac_sha256(secret, body), &expected)
+    HmacSha256::new_from_slice(secret).is_ok_and(|mut mac| {
+        mac.update(body);
+        mac.verify_slice(&expected).is_ok()
+    })
 }
 
 pub fn sign_hmac_sha256(secret: &[u8], body: &[u8]) -> String {
-    hmac_sha256(secret, body)
+    let mut mac = HmacSha256::new_from_slice(secret).expect("HMAC accepts keys of any size");
+    mac.update(body);
+    mac.finalize()
+        .into_bytes()
         .into_iter()
         .map(|byte| format!("{byte:02x}"))
         .collect()
 }
 
 pub fn verify_token(expected: &str, received: Option<&str>) -> bool {
-    received.is_some_and(|received| constant_time_eq(expected.as_bytes(), received.as_bytes()))
-}
+    received.is_some_and(|received| {
+        let mut expected_mac =
+            HmacSha256::new_from_slice(expected.as_bytes()).expect("HMAC accepts keys of any size");
+        expected_mac.update(b"rustploy-token-verification");
+        let expected_tag = expected_mac.finalize().into_bytes();
 
-fn hmac_sha256(secret: &[u8], body: &[u8]) -> Vec<u8> {
-    const BLOCK: usize = 64;
-    let mut key = if secret.len() > BLOCK {
-        Sha256::digest(secret).to_vec()
-    } else {
-        secret.to_vec()
-    };
-    key.resize(BLOCK, 0);
-
-    let mut inner_pad = [0x36_u8; BLOCK];
-    let mut outer_pad = [0x5c_u8; BLOCK];
-    for (index, byte) in key.iter().enumerate() {
-        inner_pad[index] ^= byte;
-        outer_pad[index] ^= byte;
-    }
-
-    let inner = Sha256::new()
-        .chain_update(inner_pad)
-        .chain_update(body)
-        .finalize();
-    Sha256::new()
-        .chain_update(outer_pad)
-        .chain_update(inner)
-        .finalize()
-        .to_vec()
+        let mut received_mac =
+            HmacSha256::new_from_slice(received.as_bytes()).expect("HMAC accepts keys of any size");
+        received_mac.update(b"rustploy-token-verification");
+        received_mac.verify_slice(&expected_tag).is_ok()
+    })
 }
 
 fn decode_hex(value: &str) -> Option<Vec<u8>> {
@@ -59,14 +51,4 @@ fn decode_hex(value: &str) -> Option<Vec<u8>> {
             Some(((high << 4) | low) as u8)
         })
         .collect()
-}
-
-fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
-    if left.len() != right.len() {
-        return false;
-    }
-    left.iter()
-        .zip(right)
-        .fold(0_u8, |diff, (left, right)| diff | (left ^ right))
-        == 0
 }

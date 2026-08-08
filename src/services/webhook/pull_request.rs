@@ -1,104 +1,221 @@
-use serde_json::Value;
+use serde::Deserialize;
 
 use super::types::{GitProviderKind, PullRequestEvent};
+
+#[derive(Deserialize)]
+struct RepositoryOwner {
+    login: Option<String>,
+    username: Option<String>,
+    nickname: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct Repository {
+    name: String,
+    owner: RepositoryOwner,
+}
+
+#[derive(Deserialize)]
+struct GithubRepo {
+    name: String,
+    owner: RepositoryOwner,
+}
+
+#[derive(Deserialize)]
+struct GithubRef {
+    #[serde(rename = "ref")]
+    branch: String,
+    sha: Option<String>,
+    repo: Option<GithubRepo>,
+}
+
+#[derive(Deserialize)]
+struct GithubPullRequest {
+    head: GithubRef,
+    base: GithubRef,
+    user: RepositoryOwner,
+}
+
+#[derive(Deserialize)]
+struct GithubPayload {
+    action: Option<String>,
+    number: i64,
+    repository: Repository,
+    pull_request: GithubPullRequest,
+}
+
+#[derive(Deserialize)]
+struct GitlabProject {
+    path: String,
+    path_with_namespace: String,
+}
+
+#[derive(Deserialize)]
+struct GitlabUser {
+    username: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct GitlabCommit {
+    id: String,
+}
+
+#[derive(Deserialize)]
+struct GitlabAttributes {
+    iid: i64,
+    action: Option<String>,
+    state: Option<String>,
+    source_branch: String,
+    target_branch: String,
+    last_commit: Option<GitlabCommit>,
+}
+
+#[derive(Deserialize)]
+struct GitlabPayload {
+    project: GitlabProject,
+    source: Option<GitlabProject>,
+    user: Option<GitlabUser>,
+    object_attributes: GitlabAttributes,
+}
+
+#[derive(Deserialize)]
+struct BitbucketBranch {
+    name: String,
+}
+
+#[derive(Deserialize)]
+struct BitbucketCommit {
+    hash: String,
+}
+
+#[derive(Deserialize)]
+struct BitbucketRepo {
+    name: String,
+    full_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct BitbucketSide {
+    branch: BitbucketBranch,
+    commit: Option<BitbucketCommit>,
+    repository: Option<BitbucketRepo>,
+}
+
+#[derive(Deserialize)]
+struct BitbucketPullRequest {
+    id: i64,
+    source: BitbucketSide,
+    destination: BitbucketSide,
+    author: RepositoryOwner,
+}
+
+#[derive(Deserialize)]
+struct BitbucketPayload {
+    repository: Repository,
+    pullrequest: BitbucketPullRequest,
+}
 
 pub(super) fn parse(
     provider: GitProviderKind,
     event_name: &str,
     body: &[u8],
 ) -> Result<PullRequestEvent, String> {
-    let value: Value = serde_json::from_slice(body)
-        .map_err(|error| format!("invalid pull request payload: {error}"))?;
     match provider {
-        GitProviderKind::Github | GitProviderKind::Gitea => github_like(provider, &value),
-        GitProviderKind::Gitlab => gitlab(&value),
-        GitProviderKind::Bitbucket => bitbucket(event_name, &value),
+        GitProviderKind::Github | GitProviderKind::Gitea => github_like(provider, body),
+        GitProviderKind::Gitlab => gitlab(body),
+        GitProviderKind::Bitbucket => bitbucket(event_name, body),
     }
 }
 
-fn github_like(provider: GitProviderKind, value: &Value) -> Result<PullRequestEvent, String> {
-    let pull = value
-        .get("pull_request")
-        .ok_or("pull request data is missing")?;
+fn github_like(provider: GitProviderKind, body: &[u8]) -> Result<PullRequestEvent, String> {
+    let payload: GithubPayload = decode(body)?;
     Ok(PullRequestEvent {
         provider,
-        owner: text(value, "/repository/owner/login")
-            .or_else(|| text(value, "/repository/owner/username"))
-            .ok_or("repository owner is missing")?,
-        repository: text(value, "/repository/name").ok_or("repository name is missing")?,
-        number: value
-            .get("number")
-            .and_then(Value::as_i64)
-            .map(|number| number.to_string())
-            .ok_or("pull request number is missing")?,
-        action: text(value, "/action").unwrap_or_else(|| "updated".into()),
-        source_branch: text(pull, "/head/ref").ok_or("source branch is missing")?,
-        source_owner: text(pull, "/head/repo/owner/login")
-            .or_else(|| text(pull, "/head/repo/owner/username")),
-        source_repository: text(pull, "/head/repo/name"),
-        target_branch: text(pull, "/base/ref").ok_or("target branch is missing")?,
-        commit: text(pull, "/head/sha"),
-        author: text(pull, "/user/login").or_else(|| text(pull, "/user/username")),
+        owner: owner_name(&payload.repository.owner).ok_or("repository owner is missing")?,
+        repository: payload.repository.name,
+        number: payload.number.to_string(),
+        action: payload.action.unwrap_or_else(|| "updated".into()),
+        source_branch: payload.pull_request.head.branch,
+        source_owner: payload
+            .pull_request
+            .head
+            .repo
+            .as_ref()
+            .and_then(|repo| owner_name(&repo.owner)),
+        source_repository: payload.pull_request.head.repo.map(|repo| repo.name),
+        target_branch: payload.pull_request.base.branch,
+        commit: payload.pull_request.head.sha,
+        author: owner_name(&payload.pull_request.user),
     })
 }
 
-fn gitlab(value: &Value) -> Result<PullRequestEvent, String> {
-    let attrs = value
-        .get("object_attributes")
-        .ok_or("merge request attributes are missing")?;
+fn gitlab(body: &[u8]) -> Result<PullRequestEvent, String> {
+    let payload: GitlabPayload = decode(body)?;
+    let owner =
+        namespace(&payload.project.path_with_namespace).ok_or("project namespace is missing")?;
     Ok(PullRequestEvent {
         provider: GitProviderKind::Gitlab,
-        owner: text(value, "/project/path_with_namespace")
-            .and_then(|name| name.rsplit_once('/').map(|(owner, _)| owner.to_owned()))
-            .ok_or("project namespace is missing")?,
-        repository: text(value, "/project/path").ok_or("project path is missing")?,
-        number: attrs
-            .get("iid")
-            .and_then(Value::as_i64)
-            .map(|number| number.to_string())
-            .ok_or("merge request number is missing")?,
-        action: text(attrs, "/action")
-            .or_else(|| text(attrs, "/state"))
+        owner,
+        repository: payload.project.path,
+        number: payload.object_attributes.iid.to_string(),
+        action: payload
+            .object_attributes
+            .action
+            .or(payload.object_attributes.state)
             .unwrap_or_else(|| "update".into()),
-        source_branch: text(attrs, "/source_branch").ok_or("source branch is missing")?,
-        source_owner: text(value, "/source/path_with_namespace")
-            .and_then(|name| name.rsplit_once('/').map(|(owner, _)| owner.to_owned())),
-        source_repository: text(value, "/source/path"),
-        target_branch: text(attrs, "/target_branch").ok_or("target branch is missing")?,
-        commit: text(attrs, "/last_commit/id"),
-        author: text(value, "/user/username"),
+        source_branch: payload.object_attributes.source_branch,
+        source_owner: payload
+            .source
+            .as_ref()
+            .and_then(|source| namespace(&source.path_with_namespace)),
+        source_repository: payload.source.map(|source| source.path),
+        target_branch: payload.object_attributes.target_branch,
+        commit: payload
+            .object_attributes
+            .last_commit
+            .map(|commit| commit.id),
+        author: payload.user.and_then(|user| user.username),
     })
 }
 
-fn bitbucket(event_name: &str, value: &Value) -> Result<PullRequestEvent, String> {
-    let pull = value
-        .get("pullrequest")
-        .ok_or("pull request data is missing")?;
+fn bitbucket(event_name: &str, body: &[u8]) -> Result<PullRequestEvent, String> {
+    let payload: BitbucketPayload = decode(body)?;
+    let pull = payload.pullrequest;
     Ok(PullRequestEvent {
         provider: GitProviderKind::Bitbucket,
-        owner: text(value, "/repository/owner/username")
-            .or_else(|| text(value, "/repository/owner/nickname"))
-            .ok_or("repository owner is missing")?,
-        repository: text(value, "/repository/name").ok_or("repository name is missing")?,
-        number: pull
-            .get("id")
-            .and_then(Value::as_i64)
-            .map(|number| number.to_string())
-            .ok_or("pull request number is missing")?,
+        owner: owner_name(&payload.repository.owner).ok_or("repository owner is missing")?,
+        repository: payload.repository.name,
+        number: pull.id.to_string(),
         action: event_name
             .strip_prefix("pullrequest:")
             .unwrap_or("updated")
             .to_owned(),
-        source_branch: text(pull, "/source/branch/name").ok_or("source branch is missing")?,
-        source_owner: text(pull, "/source/repository/full_name")
-            .and_then(|name| name.rsplit_once('/').map(|(owner, _)| owner.to_owned())),
-        source_repository: text(pull, "/source/repository/name"),
-        target_branch: text(pull, "/destination/branch/name").ok_or("target branch is missing")?,
-        commit: text(pull, "/source/commit/hash"),
-        author: text(pull, "/author/username").or_else(|| text(pull, "/author/nickname")),
+        source_branch: pull.source.branch.name,
+        source_owner: pull
+            .source
+            .repository
+            .as_ref()
+            .and_then(|repo| repo.full_name.as_deref())
+            .and_then(namespace),
+        source_repository: pull.source.repository.map(|repo| repo.name),
+        target_branch: pull.destination.branch.name,
+        commit: pull.source.commit.map(|commit| commit.hash),
+        author: owner_name(&pull.author),
     })
 }
 
-fn text(value: &Value, pointer: &str) -> Option<String> {
-    value.pointer(pointer)?.as_str().map(str::to_owned)
+fn decode<T: for<'de> Deserialize<'de>>(body: &[u8]) -> Result<T, String> {
+    serde_json::from_slice(body).map_err(|error| format!("invalid pull request payload: {error}"))
+}
+
+fn owner_name(owner: &RepositoryOwner) -> Option<String> {
+    owner
+        .login
+        .clone()
+        .or_else(|| owner.username.clone())
+        .or_else(|| owner.nickname.clone())
+}
+
+fn namespace(name: &str) -> Option<String> {
+    name.rsplit_once('/').map(|(owner, _)| owner.to_owned())
 }

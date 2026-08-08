@@ -4,6 +4,7 @@ use super::types::{GitProviderKind, GitTrigger, PushEvent};
 
 #[derive(Deserialize)]
 struct Payload {
+    ref_type: String,
     #[serde(rename = "ref")]
     reference: String,
     repository: Repository,
@@ -24,13 +25,11 @@ struct Owner {
 }
 
 pub(super) fn parse_create(provider: GitProviderKind, body: &[u8]) -> Result<PushEvent, String> {
-    let value: serde_json::Value =
+    let payload: Payload =
         serde_json::from_slice(body).map_err(|error| format!("invalid tag payload: {error}"))?;
-    if value.get("ref_type").and_then(|value| value.as_str()) != Some("tag") {
+    if payload.ref_type != "tag" {
         return Err("create event is not a tag".into());
     }
-    let payload: Payload =
-        serde_json::from_value(value).map_err(|error| format!("invalid tag payload: {error}"))?;
     let owner = payload
         .repository
         .owner
