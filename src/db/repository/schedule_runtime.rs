@@ -140,6 +140,18 @@ impl ScheduleRuntimeRepository {
         {
             tracing::warn!(execution_id = id, %error, "could not write schedule execution log file");
         }
+        if let Err(error) = crate::services::schedule::file_log::append(
+            &format!("schedule-{schedule_id}-execution-{id}"),
+            Some(id),
+            status.as_str(),
+            message,
+            stdout,
+            stderr,
+        )
+        .await
+        {
+            tracing::warn!(execution_id = id, %error, "could not write per-execution schedule log file");
+        }
         Ok(())
     }
 
@@ -147,5 +159,20 @@ impl ScheduleRuntimeRepository {
         sqlx::query_as!(ScheduleExecution,
             r#"SELECT id AS "id!: i64", schedule_id AS "schedule_id!: i64", organization_id, trigger_kind AS "trigger_kind!: String", status AS "status!: String", attempt AS "attempt!: i64", scheduled_at AS "scheduled_at!: i64", started_at AS "started_at!: i64", finished_at, message, stdout, stderr FROM schedule_executions WHERE schedule_id=? ORDER BY started_at DESC LIMIT ?"#,
             schedule_id, limit.clamp(1, 500)).fetch_all(self.pool.as_ref()).await
+    }
+
+    pub async fn execution_exists(
+        &self,
+        schedule_id: i64,
+        execution_id: i64,
+    ) -> sqlx::Result<bool> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM schedule_executions WHERE id=? AND schedule_id=?",
+        )
+        .bind(execution_id)
+        .bind(schedule_id)
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        Ok(count != 0)
     }
 }

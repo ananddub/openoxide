@@ -289,6 +289,30 @@ impl ScheduleController {
         });
         Ok(Sse::new(Box::pin(stream)))
     }
+
+    #[get("/{id}/executions/{execution_id}/logs")]
+    async fn execution_logs(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path((id, execution_id)): Path<(i64, i64)>,
+    ) -> Result<Json<ScheduleLogDto>, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        let belongs = self
+            .service
+            .repo_runtime
+            .execution_exists(id, execution_id)
+            .await
+            .map_err(map_sqlx_error)?;
+        if !belongs {
+            return Err((StatusCode::NOT_FOUND, "schedule execution not found".into()));
+        }
+        let content = crate::services::schedule::file_log::read(&format!(
+            "schedule-{id}-execution-{execution_id}"
+        ))
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        Ok(Json(ScheduleLogDto { content }))
+    }
 }
 
 fn map_sqlx_error(error: sqlx::Error) -> ApiError {

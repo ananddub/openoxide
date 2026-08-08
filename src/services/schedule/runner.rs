@@ -30,6 +30,7 @@ struct RegisteredScheduleJob {
     job_id: Uuid,
     cron_expression: String,
     enabled: i64,
+    timezone: String,
 }
 
 #[singleton]
@@ -168,6 +169,14 @@ impl ScheduleRunner {
             };
             let key = format!("schedule:{schedule_id}");
             let cron_expression = normalize_cron_expression(&schedule.cron_expression);
+            let timezone_name = schedule.timezone.as_deref().unwrap_or("UTC");
+            let timezone = match timezone_name.parse::<chrono_tz::Tz>() {
+                Ok(timezone) => timezone,
+                Err(error) => {
+                    tracing::error!(schedule_id, timezone = timezone_name, %error, "invalid schedule timezone, skipping");
+                    continue;
+                }
+            };
             if let Err(error) = self
                 .service
                 .recover_missed(schedule_id, &cron_expression)
@@ -178,6 +187,7 @@ impl ScheduleRunner {
             let should_replace = current.get(&key).is_none_or(|registered| {
                 registered.cron_expression != cron_expression
                     || registered.enabled != schedule.enabled
+                    || registered.timezone != timezone_name
             });
             if !should_replace {
                 continue;
@@ -187,31 +197,35 @@ impl ScheduleRunner {
             }
 
             let service = Arc::clone(&self.service);
-            let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
-                let service = Arc::clone(&service);
-                Box::pin(async move {
-                    let result = service
-                        .run_scheduled(
-                            schedule_id,
-                            crate::services::schedule::types::ScheduleTriggerKind::Cron,
-                            chrono::Utc::now().timestamp(),
-                        )
-                        .await;
-                    match result {
-                        Ok(result) => tracing::info!(
-                            schedule_id,
-                            action = %result.action,
-                            deployment_id = ?result.deployment_id,
-                            "scheduled job executed"
-                        ),
-                        Err(error) => tracing::error!(
-                            schedule_id,
-                            error = %error,
-                            "scheduled job failed"
-                        ),
-                    }
-                })
-            }) {
+            let job = match Job::new_async_tz(
+                cron_expression.as_str(),
+                timezone,
+                move |_job_id, _lock| {
+                    let service = Arc::clone(&service);
+                    Box::pin(async move {
+                        let result = service
+                            .run_scheduled(
+                                schedule_id,
+                                crate::services::schedule::types::ScheduleTriggerKind::Cron,
+                                chrono::Utc::now().timestamp(),
+                            )
+                            .await;
+                        match result {
+                            Ok(result) => tracing::info!(
+                                schedule_id,
+                                action = %result.action,
+                                deployment_id = ?result.deployment_id,
+                                "scheduled job executed"
+                            ),
+                            Err(error) => tracing::error!(
+                                schedule_id,
+                                error = %error,
+                                "scheduled job failed"
+                            ),
+                        }
+                    })
+                },
+            ) {
                 Ok(j) => j,
                 Err(error) => {
                     tracing::error!(schedule_id, cron_expression = %cron_expression, error = %error, "invalid cron expression for schedule, skipping");
@@ -230,6 +244,7 @@ impl ScheduleRunner {
                     job_id,
                     cron_expression,
                     enabled: schedule.enabled,
+                    timezone: timezone_name.to_owned(),
                 },
             );
             tracing::info!(schedule_id, "schedule job registered successfully");
@@ -324,6 +339,7 @@ impl ScheduleRunner {
                     job_id,
                     cron_expression,
                     enabled: backup.enabled,
+                    timezone: "UTC".to_owned(),
                 },
             );
             tracing::info!(backup_id, "database backup job registered successfully");
@@ -416,6 +432,7 @@ impl ScheduleRunner {
                     job_id,
                     cron_expression,
                     enabled: backup.enabled,
+                    timezone: "UTC".to_owned(),
                 },
             );
             tracing::info!(backup_id, "volume backup job registered successfully");
