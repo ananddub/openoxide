@@ -9,13 +9,14 @@ use axum::{
 
 use crate::{
     api::dto::permission::{
-        AssignPermissionGroupDto, PermissionGroupDto, PermissionPolicyDto, ReplaceUserPoliciesDto,
-        SavePermissionGroupDto,
+        AcceptOrganizationInviteDto, AssignPermissionGroupDto, CreateOrganizationInviteDto,
+        OrganizationInviteDto, OrganizationMemberDto, PermissionGroupDto, PermissionPolicyDto,
+        ReplaceUserPoliciesDto, SavePermissionGroupDto, UpdateMemberRoleDto,
     },
     core::middleware::{
         permission::{
-            CanCreate, CanDelete, CanRead, CanUpdate, Groups, Members, PermissionOrganization,
-            RequirePermission,
+            CanCreate, CanDelete, CanRead, CanUpdate, Groups, Invitation, Members,
+            PermissionOrganization, RequirePermission,
         },
         validator::ValidatedJson,
     },
@@ -94,10 +95,11 @@ impl PermissionGroupController {
         &self,
         RequirePermission(_, _): RequirePermission<Groups, CanDelete>,
         Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        claims: crate::utils::jwt::claim::Claims,
         Path(group_id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.service
-            .delete_group(organization_id, group_id)
+            .delete_group(claims.user.user_id, organization_id, group_id)
             .await
             .map(|()| StatusCode::NO_CONTENT)
             .map_err(map_error)
@@ -113,6 +115,121 @@ impl PermissionGroupController {
     ) -> Result<StatusCode, ApiError> {
         self.service
             .assign_group(claims.user.user_id, organization_id, user_id, body.group_id)
+            .await
+            .map(|()| StatusCode::NO_CONTENT)
+            .map_err(map_error)
+    }
+
+    #[get("/members")]
+    async fn members(
+        &self,
+        RequirePermission(_, _): RequirePermission<Members, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+    ) -> Result<Json<Vec<OrganizationMemberDto>>, ApiError> {
+        self.service
+            .list_members(organization_id)
+            .await
+            .map(|members| {
+                members
+                    .into_iter()
+                    .map(|member| OrganizationMemberDto {
+                        id: member.id,
+                        user_id: member.user_id,
+                        organization_id: member.organization_id,
+                        role: member.role,
+                        created_at: member.created_at,
+                        updated_at: member.updated_at,
+                    })
+                    .collect()
+            })
+            .map(Json)
+            .map_err(map_error)
+    }
+
+    #[put("/members/{user_id}/role")]
+    async fn update_member_role(
+        &self,
+        RequirePermission(claims, _): RequirePermission<Members, CanUpdate>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(user_id): Path<i64>,
+        ValidatedJson(body): ValidatedJson<UpdateMemberRoleDto>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .update_member_role(claims.user.user_id, organization_id, user_id, body.role)
+            .await
+            .map(|()| StatusCode::NO_CONTENT)
+            .map_err(map_error)
+    }
+
+    #[delete("/members/{user_id}")]
+    async fn remove_member(
+        &self,
+        RequirePermission(claims, _): RequirePermission<Members, CanDelete>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(user_id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .remove_member(claims.user.user_id, organization_id, user_id)
+            .await
+            .map(|()| StatusCode::NO_CONTENT)
+            .map_err(map_error)
+    }
+
+    #[get("/invites")]
+    async fn invites(
+        &self,
+        RequirePermission(_, _): RequirePermission<Invitation, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+    ) -> Result<Json<Vec<OrganizationInviteDto>>, ApiError> {
+        self.service
+            .list_invites(organization_id)
+            .await
+            .map(|items| items.into_iter().map(OrganizationInviteDto::from).collect())
+            .map(Json)
+            .map_err(map_error)
+    }
+
+    #[post("/invites")]
+    async fn invite(
+        &self,
+        RequirePermission(claims, _): RequirePermission<Invitation, CanCreate>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        ValidatedJson(body): ValidatedJson<CreateOrganizationInviteDto>,
+    ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
+        let token = self
+            .service
+            .create_invite(claims.user.user_id, organization_id, body)
+            .await
+            .map_err(map_error)?;
+        Ok((
+            StatusCode::CREATED,
+            Json(serde_json::json!({ "token": token })),
+        ))
+    }
+
+    #[post("/invites/accept")]
+    async fn accept_invite(
+        &self,
+        claims: crate::utils::jwt::claim::Claims,
+        Json(body): Json<AcceptOrganizationInviteDto>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .accept_invite(claims.user.user_id, body.token)
+            .await
+            .map(|()| StatusCode::NO_CONTENT)
+            .map_err(map_error)
+    }
+
+    #[delete("/invites/{invite_id}")]
+    async fn cancel_invite(
+        &self,
+        RequirePermission(_, _): RequirePermission<Invitation, CanDelete>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        claims: crate::utils::jwt::claim::Claims,
+        Path(invite_id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .cancel_invite(claims.user.user_id, organization_id, invite_id)
             .await
             .map(|()| StatusCode::NO_CONTENT)
             .map_err(map_error)

@@ -11,4 +11,15 @@ CREATE INDEX IF NOT EXISTS idx_org_members_group ON organization_members(group_i
 
 INSERT OR IGNORE INTO policy(action) VALUES
     ('group:read'), ('group:create'), ('group:update'), ('group:delete'),
-    ('member:read'), ('member:update');
+    ('member:read'), ('member:update'), ('member:create'), ('member:delete'),
+    ('invitation:read'), ('invitation:create'), ('invitation:delete'), ('invitation:cancel'), ('deployment:read'),
+    ('deployment:create'), ('deployment:cancel'), ('backup:read'), ('backup:create'),
+    ('backup:update'), ('backup:delete'), ('backup:restore'), ('volume_backup:read'),
+    ('volume_backup:create'), ('volume_backup:update'), ('volume_backup:delete'),
+    ('volume_backup:restore'), ('schedule:read'), ('schedule:create'), ('schedule:update'),
+    ('schedule:delete'), ('notification:read'), ('notification:create'),
+    ('notification:update'), ('notification:delete'), ('certificate:read'),
+    ('certificate:create'), ('certificate:update'), ('certificate:delete'),
+    ('registry:read'), ('registry:create'), ('registry:delete'), ('ssh_key:read'),
+    ('ssh_key:create'), ('ssh_key:delete'), ('logs:read'), ('monitoring:read'),
+    ('audit_log:read'), ('workspace:update');

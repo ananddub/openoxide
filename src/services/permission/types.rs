@@ -16,6 +16,19 @@ define_resources! {
     Users => "users",
     Groups => "group",
     Members => "member",
+    Invitation => "invitation",
+    Deployment => "deployment",
+    Backup => "backup",
+    VolumeBackup => "volume_backup",
+    Schedule => "schedule",
+    Notification => "notification",
+    Certificate => "certificate",
+    Registry => "registry",
+    SshKey => "ssh_key",
+    Logs => "logs",
+    Monitoring => "monitoring",
+    AuditLog => "audit_log",
+    Workspace => "workspace",
     Traefik => "traefik",
     Alert => "alert",
 }
@@ -33,6 +46,8 @@ define_operations! {
     CanDeploy => "deploy",
     CanMonitor => "monitor",
     CanWrite => "write",
+    CanCancel => "cancel",
+    CanRestore => "restore",
 }
 
 string_enum! {

@@ -32,7 +32,7 @@ impl PreviewDeploymentService {
         let targets = self
             .previews
             .matching_targets(
-                event.provider.as_str(),
+                event.provider,
                 &event.owner,
                 &event.repository,
                 &event.target_branch,
@@ -106,7 +106,7 @@ impl PreviewDeploymentService {
         let target = self
             .previews
             .matching_targets(
-                event.provider.as_str(),
+                event.provider,
                 &event.owner,
                 &event.repository,
                 &event.target_branch,

@@ -20,7 +20,7 @@ impl GitProviderService {
             .create(&GitProvider {
                 id: None,
                 name: input.name,
-                provider_type: provider_type(&input.credentials).into(),
+                provider_type: provider_type(&input.credentials).to_string(),
                 shared: i64::from(input.shared),
                 created_at: now,
                 updated_at: now,
@@ -43,7 +43,7 @@ impl GitProviderService {
             .get_by_id(id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
-        if current.provider_type != provider_type(&input.credentials) {
+        if current.provider_type != provider_type(&input.credentials).as_str() {
             return Err(sqlx::Error::Protocol(
                 "Git provider type cannot be changed".into(),
             ));
@@ -299,12 +299,13 @@ impl GitProviderService {
     }
 }
 
-fn provider_type(credentials: &ProviderCredentials) -> &'static str {
+fn provider_type(credentials: &ProviderCredentials) -> crate::utils::provider::GitProviderType {
+    use crate::utils::provider::GitProviderType;
     match credentials {
-        ProviderCredentials::Github { .. } => "GITHUB",
-        ProviderCredentials::Gitlab { .. } => "GITLAB",
-        ProviderCredentials::Gitea { .. } => "GITEA",
-        ProviderCredentials::Bitbucket { .. } => "BITBUCKET",
+        ProviderCredentials::Github { .. } => GitProviderType::Github,
+        ProviderCredentials::Gitlab { .. } => GitProviderType::Gitlab,
+        ProviderCredentials::Gitea { .. } => GitProviderType::Gitea,
+        ProviderCredentials::Bitbucket { .. } => GitProviderType::Bitbucket,
     }
 }
 

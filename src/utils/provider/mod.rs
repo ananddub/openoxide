@@ -3,7 +3,7 @@ pub use custom::CustomClient;
 pub use gitea::GiteaClient;
 pub use github::GithubClient;
 pub use gitlab::GitlabClient;
-pub use types::{CloneProtocol, WebhookEvent};
+pub use types::{CloneProtocol, GitProviderType, WebhookEvent};
 
 pub mod bitbucket;
 pub mod client;

@@ -9,6 +9,29 @@ pub struct AuditLogRepository {
 
 #[singleton]
 impl AuditLogRepository {
+    pub async fn list_filtered(
+        &self,
+        organization_id: i64,
+        action: Option<&str>,
+        resource_type: Option<&str>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<AuditLog>, sqlx::Error> {
+        sqlx::query_as::<_, AuditLog>(
+            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE organization_id = ? AND (? IS NULL OR action = ?) AND (? IS NULL OR resource_type = ?) ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+        )
+        .bind(organization_id).bind(action).bind(action).bind(resource_type).bind(resource_type).bind(limit.clamp(1, 500)).bind(offset.max(0)).fetch_all(self.pool.as_ref()).await
+    }
+
+    pub async fn count_filtered(
+        &self,
+        organization_id: i64,
+        action: Option<&str>,
+        resource_type: Option<&str>,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar("SELECT COUNT(*) FROM audit_logs WHERE organization_id = ? AND (? IS NULL OR action = ?) AND (? IS NULL OR resource_type = ?)")
+            .bind(organization_id).bind(action).bind(action).bind(resource_type).bind(resource_type).fetch_one(self.pool.as_ref()).await
+    }
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
     }

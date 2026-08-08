@@ -30,6 +30,33 @@ impl PermissionGroupRepository {
         Self { pool }
     }
 
+    pub async fn seed_organization_defaults(&self, organization_id: i64) -> sqlx::Result<i64> {
+        let mut tx = self.pool.begin().await?;
+        let existing: Option<i64> = sqlx::query_scalar(
+            "SELECT id FROM groups WHERE organization_id = ? AND name = 'Organization Admin'",
+        )
+        .bind(organization_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+        if let Some(id) = existing {
+            tx.commit().await?;
+            return Ok(id);
+        }
+        let admin = sqlx::query("INSERT INTO groups (name, is_system, organization_id) VALUES ('Organization Admin', 1, ?)")
+            .bind(organization_id).execute(&mut *tx).await?.last_insert_rowid();
+        let policies: Vec<i64> = sqlx::query_scalar("SELECT id FROM policy WHERE action LIKE '%:read' OR action LIKE '%:create' OR action LIKE '%:update' OR action LIKE '%:delete'")
+            .fetch_all(&mut *tx).await?;
+        for policy in policies {
+            sqlx::query("INSERT OR IGNORE INTO group_policy (group_id, policy_id) VALUES (?, ?)")
+                .bind(admin)
+                .bind(policy)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(admin)
+    }
+
     pub async fn list_groups(&self, organization_id: i64) -> sqlx::Result<Vec<PermissionGroupRow>> {
         sqlx::query_as(
             "SELECT id, name, is_system != 0 AS is_system, organization_id, created_at, updated_at FROM groups WHERE organization_id IS NULL OR organization_id = ? ORDER BY is_system DESC, name",
@@ -150,6 +177,16 @@ impl PermissionGroupRepository {
     }
 
     pub async fn delete_group(&self, organization_id: i64, group_id: i64) -> sqlx::Result<bool> {
+        let assigned: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM organization_members WHERE organization_id = ? AND group_id = ?)",
+        )
+        .bind(organization_id)
+        .bind(group_id)
+        .fetch_one(self.pool.as_ref())
+        .await?;
+        if assigned {
+            return Ok(false);
+        }
         Ok(
             sqlx::query(
                 "DELETE FROM groups WHERE id = ? AND organization_id = ? AND is_system = 0",

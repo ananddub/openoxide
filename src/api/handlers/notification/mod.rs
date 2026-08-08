@@ -84,10 +84,10 @@ impl NotificationController {
     #[get("/delivery-history/organization/{organization_id}")]
     async fn delivery_history(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<NotificationDeliveryAttemptDto>>, ApiError> {
-        verify_scope(claims.user.group_id, organization_id)?;
+        verify_scope(permission.organization_id(), organization_id)?;
         self.delivery
             .list(organization_id, 200)
             .await
@@ -98,11 +98,11 @@ impl NotificationController {
     #[post("/bindings/organization/{organization_id}")]
     async fn create_binding(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanCreate>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanCreate>,
         Path(organization_id): Path<i64>,
         Json(body): Json<CreateNotificationBindingDto>,
     ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
-        verify_scope(claims.user.group_id, organization_id)?;
+        verify_scope(permission.organization_id(), organization_id)?;
         self.repo
             .get_by_id_for_organization(body.notification_id, organization_id)
             .await
@@ -124,10 +124,10 @@ impl NotificationController {
     #[get("/bindings/organization/{organization_id}")]
     async fn bindings(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanRead>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<NotificationResourceBindingDto>>, ApiError> {
-        verify_scope(claims.user.group_id, organization_id)?;
+        verify_scope(permission.organization_id(), organization_id)?;
         self.delivery
             .bindings(organization_id)
             .await
@@ -138,10 +138,10 @@ impl NotificationController {
     #[delete("/bindings/{id}/organization/{organization_id}")]
     async fn delete_binding(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanDelete>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanDelete>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
-        verify_scope(claims.user.group_id, organization_id)?;
+        verify_scope(permission.organization_id(), organization_id)?;
         if self
             .delivery
             .delete_binding(id, organization_id)

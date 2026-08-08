@@ -7,10 +7,12 @@ use super::GitProviderService;
 
 impl GitProviderService {
     pub async fn authorization(&self, id: i64) -> Result<AuthorizationInfo, String> {
+        use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
         let state = self.oauth_state(id).await?;
-        match provider.provider_type.as_str() {
-            "GITHUB" => {
+        let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
+        match provider_kind {
+            Some(GitProviderType::Github) => {
                 let app_name = self
                     .github_item(id)
                     .await?
@@ -26,10 +28,10 @@ impl GitProviderService {
                     state,
                 })
             }
-            "GITLAB" => Ok(self
+            Some(GitProviderType::Gitlab) => Ok(self
                 .oauth
                 .authorization_url(&self.gitlab_oauth_config(id).await?, &state)),
-            "GITEA" => Ok(self
+            Some(GitProviderType::Gitea) => Ok(self
                 .oauth
                 .authorization_url(&self.gitea_oauth_config(id).await?, &state)),
             _ => Err("This provider does not support browser authorization".into()),
@@ -43,10 +45,12 @@ impl GitProviderService {
         code: Option<&str>,
         installation_id: Option<&str>,
     ) -> Result<GitProviderView, String> {
+        use crate::utils::provider::GitProviderType;
         self.verify_oauth_state(id, state).await?;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        match provider.provider_type.as_str() {
-            "GITHUB" => {
+        let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
+        match provider_kind {
+            Some(GitProviderType::Github) => {
                 let installation_id = installation_id
                     .filter(|value| !value.trim().is_empty())
                     .ok_or("GitHub installation ID is required")?;
@@ -59,7 +63,7 @@ impl GitProviderService {
                     return Err("GitHub configuration not found".into());
                 }
             }
-            "GITLAB" => {
+            Some(GitProviderType::Gitlab) => {
                 let tokens = self
                     .oauth
                     .exchange_code(
@@ -77,7 +81,7 @@ impl GitProviderService {
                     .await
                     .map_err(|error| error.to_string())?;
             }
-            "GITEA" => {
+            Some(GitProviderType::Gitea) => {
                 let tokens = self
                     .oauth
                     .exchange_code(
@@ -102,13 +106,15 @@ impl GitProviderService {
     }
 
     pub async fn disconnect(&self, id: i64) -> Result<(), String> {
+        use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        let changed = match provider.provider_type.as_str() {
-            "GITHUB" => self.github.disconnect(id).await,
-            "GITLAB" => self.gitlab.disconnect(id).await,
-            "GITEA" => self.gitea.disconnect(id).await,
-            "BITBUCKET" => self.bitbucket.disconnect(id).await,
-            _ => return Err("Unsupported Git provider".into()),
+        let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
+        let changed = match provider_kind {
+            Some(GitProviderType::Github) => self.github.disconnect(id).await,
+            Some(GitProviderType::Gitlab) => self.gitlab.disconnect(id).await,
+            Some(GitProviderType::Gitea) => self.gitea.disconnect(id).await,
+            Some(GitProviderType::Bitbucket) => self.bitbucket.disconnect(id).await,
+            None => return Err("Unsupported Git provider".into()),
         }
         .map_err(|error| error.to_string())?;
         changed

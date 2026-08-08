@@ -62,6 +62,7 @@ impl ApplicationBuilder {
         self.ctx.emit(BuilderEvent::Building).await;
         self.build_image(spec, cancel).await?;
         self.ctx.emit(BuilderEvent::ImageReady).await;
+        let deployed_image = self.distribute_image(spec, cancel).await?;
 
         self.ctx.cancelled(cancel)?;
         let paths = rustploy_paths();
@@ -74,7 +75,9 @@ impl ApplicationBuilder {
         }
 
         let stack_file = format!("{app_dir}/stack.yml");
-        let stack_yaml = serde_yaml::to_string(&stack_spec(spec)).map_err(|e| {
+        let mut deployed_spec = spec.clone();
+        deployed_spec.image = deployed_image.clone();
+        let stack_yaml = serde_yaml::to_string(&stack_spec(&deployed_spec)).map_err(|e| {
             crate::utils::exec::ExecError::Json(serde_json::Error::io(std::io::Error::other(e)))
         })?;
 
@@ -132,7 +135,7 @@ impl ApplicationBuilder {
         self.ctx.emit(BuilderEvent::Deployed).await;
         Ok(DeploymentResult {
             app_name: spec.app_name.clone(),
-            image: spec.image.clone(),
+            image: deployed_image,
             service_name: spec.service_name(),
             stack_file,
         })

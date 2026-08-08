@@ -42,10 +42,10 @@ impl AlertRuleController {
     #[get("/organization/{organization_id}")]
     async fn list(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanMonitor>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<AlertRuleResponseDto>>, ApiError> {
-        verify_organization(claims.user.group_id, organization_id)?;
+        verify_organization(permission.organization_id(), organization_id)?;
         let rules = self
             .service
             .list_rules(organization_id)
@@ -71,10 +71,10 @@ impl AlertRuleController {
     #[get("/events/organization/{organization_id}")]
     async fn events(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanMonitor>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
         Path(organization_id): Path<i64>,
     ) -> Result<Json<Vec<AlertEventResponseDto>>, ApiError> {
-        if claims.user.group_id != organization_id {
+        if permission.organization_id() != organization_id {
             return Err((
                 StatusCode::FORBIDDEN,
                 "organization does not match authenticated scope".into(),
@@ -95,10 +95,10 @@ impl AlertRuleController {
     #[get("/{id}/organization/{organization_id}")]
     async fn get(
         &self,
-        RequirePermission(claims, _): RequirePermission<Server, CanMonitor>,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<Json<AlertRuleResponseDto>, ApiError> {
-        verify_organization(claims.user.group_id, organization_id)?;
+        verify_organization(permission.organization_id(), organization_id)?;
         let rule = self
             .service
             .get_rule(id, organization_id)
@@ -114,10 +114,10 @@ impl AlertRuleController {
     #[post]
     async fn create(
         &self,
-        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
         ValidatedJson(body): ValidatedJson<CreateAlertRuleDto>,
     ) -> Result<(StatusCode, Json<AlertRuleResponseDto>), ApiError> {
-        verify_organization(claims.user.group_id, body.organization_id)?;
+        verify_organization(permission.organization_id(), body.organization_id)?;
         let organization_id = body.organization_id;
         let id = self
             .service
@@ -140,11 +140,11 @@ impl AlertRuleController {
     #[put("/{id}/organization/{organization_id}")]
     async fn update(
         &self,
-        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
         Path((id, organization_id)): Path<(i64, i64)>,
         ValidatedJson(body): ValidatedJson<UpdateAlertRuleDto>,
     ) -> Result<Json<AlertRuleResponseDto>, ApiError> {
-        verify_organization(claims.user.group_id, organization_id)?;
+        verify_organization(permission.organization_id(), organization_id)?;
         // Confirms the rule belongs to this organization before writing.
         self.service
             .get_rule(id, organization_id)
@@ -172,10 +172,10 @@ impl AlertRuleController {
     #[delete("/{id}/organization/{organization_id}")]
     async fn delete(
         &self,
-        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
         Path((id, organization_id)): Path<(i64, i64)>,
     ) -> Result<StatusCode, ApiError> {
-        verify_organization(claims.user.group_id, organization_id)?;
+        verify_organization(permission.organization_id(), organization_id)?;
         let removed = self
             .service
             .delete_rule(id, organization_id)
@@ -225,12 +225,12 @@ impl AlertRuleController {
     #[post("/events/{event_id}/acknowledge")]
     async fn acknowledge_event(
         &self,
-        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
+        RequirePermission(claims, permission): RequirePermission<Alert, CanWrite>,
         Path(event_id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         if self
             .lifecycle
-            .acknowledge(event_id, claims.user.group_id, claims.user.user_id)
+            .acknowledge(event_id, permission.organization_id(), claims.user.user_id)
             .await
             .map_err(|error| internal(error.to_string()))?
         {
@@ -243,13 +243,13 @@ impl AlertRuleController {
     #[post("/events/{event_id}/silence")]
     async fn silence_event(
         &self,
-        RequirePermission(claims, _): RequirePermission<Alert, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
         Path(event_id): Path<i64>,
         Json(body): Json<crate::api::dto::monitoring::SilenceAlertDto>,
     ) -> Result<StatusCode, ApiError> {
         if self
             .lifecycle
-            .silence(event_id, claims.user.group_id, body.until)
+            .silence(event_id, permission.organization_id(), body.until)
             .await
             .map_err(|error| internal(error.to_string()))?
         {

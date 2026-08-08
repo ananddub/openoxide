@@ -40,6 +40,10 @@ pub struct DockerManagementController {
 
 #[controller("/docker")]
 impl DockerManagementController {
+    fn new(service: Arc<DockerManagementService>) -> Self {
+        Self { service }
+    }
+
     #[post("/containers/{id}/files")]
     async fn upload_container_file(
         &self,
@@ -104,9 +108,6 @@ impl DockerManagementController {
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
         );
         Ok(response)
-    }
-    fn new(service: Arc<DockerManagementService>) -> Self {
-        Self { service }
     }
 
     #[get("/containers")]

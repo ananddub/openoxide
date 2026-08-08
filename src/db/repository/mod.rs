@@ -121,6 +121,8 @@ pub mod jwt_tokens;
 pub mod libsql;
 pub mod mariadb;
 pub mod mongo;
+pub use monitoring_agents::{MonitoringAgentRepository, MonitoringAgentStatus};
+pub mod monitoring_agents;
 pub mod monitoring_lifecycle;
 pub mod mount;
 pub mod mysql;

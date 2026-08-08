@@ -62,3 +62,43 @@ pub enum CloneProtocol {
     Https,
     Ssh,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum GitProviderType {
+    Github,
+    Gitlab,
+    Gitea,
+    Bitbucket,
+}
+
+impl GitProviderType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Github => "GITHUB",
+            Self::Gitlab => "GITLAB",
+            Self::Gitea => "GITEA",
+            Self::Bitbucket => "BITBUCKET",
+        }
+    }
+}
+
+impl std::str::FromStr for GitProviderType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "GITHUB" => Ok(Self::Github),
+            "GITLAB" => Ok(Self::Gitlab),
+            "GITEA" => Ok(Self::Gitea),
+            "BITBUCKET" => Ok(Self::Bitbucket),
+            other => Err(format!("Unknown provider type: {other}")),
+        }
+    }
+}
+
+impl std::fmt::Display for GitProviderType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}

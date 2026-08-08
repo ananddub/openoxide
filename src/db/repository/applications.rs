@@ -749,6 +749,18 @@ impl ApplicationRepository {
         .await
     }
 
+    pub async fn belongs_to_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM applications a JOIN environments e ON e.id=a.environment_id JOIN projects p ON p.id=e.project_id WHERE a.id=? AND p.organization_id=?)")
+            .bind(id)
+            .bind(organization_id)
+            .fetch_one(self.pool.as_ref())
+            .await
+    }
+
     pub async fn get_spec_row(&self, application_id: i64) -> Result<AppRow, sqlx::Error> {
         sqlx::query_as::<_, AppRow>(
             r#"SELECT

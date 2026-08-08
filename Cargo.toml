@@ -27,7 +27,7 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 validator = { version = "0.20", features = ["derive"] }
 axum = { version = "0.8.9", features = ["multipart", "macros"] }
-sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "macros", "chrono", "uuid"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "macros", "migrate", "chrono", "uuid", "json"] }
 sqlx-gen = { version = "0.5.8", default-features = false }
 chrono = { version = "0.4.45", features = ["serde"] }
 chrono-tz = "0.10.4"
@@ -59,8 +59,9 @@ tokio-util = "0.7.11"
 tokio-cron-scheduler = "0.13"
 croner = "2.2"
 paste = "1.0"
-reqwest = { version = "0.13.4", features = ["json", "query", "form"] }
-rig-core = "0.41.0"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "query", "form", "rustls-no-provider"] }
+rig-core = { version = "0.41.0", default-features = false, features = ["derive", "reqwest"] }
+rustls = { version = "0.23.42", default-features = false, features = ["ring", "std", "tls12"] }
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder", "hostname"] }
 totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
 notify = "8.1.0"

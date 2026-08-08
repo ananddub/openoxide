@@ -3,8 +3,10 @@ mod extractor;
 mod rules;
 
 pub use crate::services::permission::{
-    Alert, Application, CanCreate, CanDelete, CanDeploy, CanMonitor, CanRead, CanUpdate, CanWrite,
-    Database, Environment, Groups, Members, Organization, Project, Server, Traefik, Users,
+    Alert, Application, AuditLog, Backup, CanCancel, CanCreate, CanDelete, CanDeploy, CanMonitor,
+    CanRead, CanRestore, CanUpdate, CanWrite, Certificate, Database, Deployment, Environment,
+    Groups, Invitation, Logs, Members, Monitoring, Notification, Organization, Project, Registry,
+    Schedule, Server, SshKey, Traefik, Users, VolumeBackup, Workspace,
 };
 pub use extractor::{PermissionOrganization, RequirePermission};
 

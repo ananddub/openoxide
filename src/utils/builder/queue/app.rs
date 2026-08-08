@@ -236,6 +236,47 @@ impl BuilderQueue {
             return;
         }
 
+        // Keep rollback images available to other swarm nodes when a registry is configured.
+        if let Some(auth) = &spec.image_registry {
+            let remote_image = if auth.registry.trim().is_empty() {
+                versioned_image.clone()
+            } else {
+                format!(
+                    "{}/{}",
+                    auth.registry.trim_end_matches('/'),
+                    versioned_image
+                )
+            };
+            let distribution = async {
+                docker
+                    .system()
+                    .login()
+                    .registry(&auth.registry)
+                    .username(&auth.username)
+                    .password(&auth.password)
+                    .run()
+                    .await?;
+                if remote_image != versioned_image {
+                    docker
+                        .images()
+                        .tag(&versioned_image, &remote_image)
+                        .run()
+                        .await?;
+                }
+                docker.images().push(&remote_image).run().await
+            }
+            .await;
+            let _ = docker
+                .system()
+                .logout()
+                .registry(&auth.registry)
+                .run()
+                .await;
+            if let Err(error) = distribution {
+                tracing::warn!(%error, image = %remote_image, "rollback image push failed; local rollback retained");
+            }
+        }
+
         tracing::info!(
             source_image = image,
             versioned_image = %versioned_image,

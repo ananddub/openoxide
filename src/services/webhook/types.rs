@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum GitProviderKind {
     Github,
     Gitlab,
@@ -13,6 +13,20 @@ impl GitProviderKind {
             Self::Gitlab => "gitlab",
             Self::Gitea => "gitea",
             Self::Bitbucket => "bitbucket",
+        }
+    }
+}
+
+impl std::str::FromStr for GitProviderKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "github" => Ok(Self::Github),
+            "gitlab" => Ok(Self::Gitlab),
+            "gitea" => Ok(Self::Gitea),
+            "bitbucket" => Ok(Self::Bitbucket),
+            other => Err(format!("unsupported Git provider: {other}")),
         }
     }
 }

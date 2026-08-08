@@ -57,7 +57,10 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             format!("{}:latest", app.app_name)
         };
         let source = match source {
-            SourceSpec::Docker { image, .. } => SourceSpec::Docker { image, registry },
+            SourceSpec::Docker { image, .. } => SourceSpec::Docker {
+                image,
+                registry: registry.clone(),
+            },
             other => other,
         };
         let work_directory = rustploy_paths().application_code(&app.app_name);
@@ -162,6 +165,11 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             build,
             work_directory,
             image,
+            image_registry: if app.source_type == "DOCKER" {
+                None
+            } else {
+                registry
+            },
             environment,
             build_args: parse_env(app.build_args.as_deref().unwrap_or("")),
             build_secrets: parse_env(app.build_secrets.as_deref().unwrap_or("")),

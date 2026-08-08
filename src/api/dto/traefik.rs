@@ -79,6 +79,7 @@ pub struct TraefikStatsLogsQueryDto {
     pub page: Option<usize>,
     pub page_size: Option<usize>,
     pub search: Option<String>,
+    pub status: Option<u16>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Object)]

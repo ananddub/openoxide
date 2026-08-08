@@ -616,6 +616,10 @@ impl TraefikService {
                     .and_then(|s| s.as_u64())
                     .unwrap_or(200) as u16;
 
+                if query.status.is_some_and(|expected| expected != status) {
+                    continue;
+                }
+
                 let duration_ns = v.get("Duration").and_then(|s| s.as_f64()).unwrap_or(0.0);
                 let duration_ms = duration_ns / 1_000_000.0;
 

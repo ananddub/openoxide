@@ -352,6 +352,7 @@ pub(crate) mod tests {
             build: None,
             work_directory: "/tmp/api".into(),
             image: "api:1".into(),
+            image_registry: None,
             environment: BTreeMap::from([("PORT".into(), "3000".into())]),
             build_args: BTreeMap::new(),
             build_secrets: BTreeMap::new(),

@@ -199,6 +199,7 @@ pub struct ApplicationSpec {
     pub build: Option<BuildStrategy>,
     pub work_directory: String,
     pub image: String,
+    pub image_registry: Option<RegistryAuth>,
     pub environment: BTreeMap<String, String>,
     pub build_args: BTreeMap<String, String>,
     pub build_secrets: BTreeMap<String, String>,

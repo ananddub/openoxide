@@ -3,6 +3,20 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
+fn db_kind_to_table(kind: &str) -> Result<&'static str, sqlx::Error> {
+    use std::str::FromStr;
+    let db_kind = crate::services::database::types::DatabaseKind::from_str(kind)
+        .map_err(|e| sqlx::Error::Protocol(format!("{e:?}")))?;
+    Ok(match db_kind {
+        crate::services::database::types::DatabaseKind::Postgres => "postgres_dbs",
+        crate::services::database::types::DatabaseKind::Mysql => "mysql_dbs",
+        crate::services::database::types::DatabaseKind::Mariadb => "mariadb_dbs",
+        crate::services::database::types::DatabaseKind::Mongo => "mongo_dbs",
+        crate::services::database::types::DatabaseKind::Redis => "redis_dbs",
+        crate::services::database::types::DatabaseKind::Libsql => "libsql_dbs",
+    })
+}
+
 pub struct DeploymentRepository {
     pool: Arc<SqlitePool>,
 }
@@ -361,19 +375,7 @@ impl DeploymentRepository {
                 .execute(&mut *tx)
                 .await?;
         } else if let (Some(resource_id), Some(kind)) = (database_id, database_kind) {
-            let table = match kind.to_ascii_lowercase().as_str() {
-                "postgres" => "postgres_dbs",
-                "mysql" => "mysql_dbs",
-                "mariadb" => "mariadb_dbs",
-                "mongo" => "mongo_dbs",
-                "redis" => "redis_dbs",
-                "libsql" => "libsql_dbs",
-                _ => {
-                    return Err(sqlx::Error::Protocol(format!(
-                        "invalid database kind: {kind}"
-                    )));
-                }
-            };
+            let table = db_kind_to_table(kind)?;
             let query = format!("UPDATE {table} SET app_status=? WHERE id=?");
             sqlx::query(sqlx::AssertSqlSafe(query))
                 .bind(resource_status)
@@ -412,21 +414,13 @@ impl DeploymentRepository {
         Ok(())
     }
 
-    pub async fn set_database_status(
+    pub async fn update_database_status(
         &self,
         id: i64,
         db_kind: &str,
         status: &str,
     ) -> Result<(), sqlx::Error> {
-        let table_name = match db_kind {
-            "postgres" => "postgres_dbs",
-            "mysql" => "mysql_dbs",
-            "mariadb" => "mariadb_dbs",
-            "mongo" => "mongo_dbs",
-            "redis" => "redis_dbs",
-            "libsql" => "libsql_dbs",
-            _ => return Ok(()),
-        };
+        let Ok(table_name) = db_kind_to_table(db_kind) else { return Ok(()) };
         let query_str = format!("UPDATE {} SET app_status = ? WHERE id = ?", table_name);
         sqlx::query(sqlx::AssertSqlSafe(&*query_str))
             .bind(status)
@@ -441,15 +435,7 @@ impl DeploymentRepository {
         db_id: i64,
         kind: &str,
     ) -> Result<(Option<i64>, i64, i64, Option<String>, Option<String>), sqlx::Error> {
-        let table = match kind {
-            "postgres" => "postgres_dbs",
-            "mysql" => "mysql_dbs",
-            "mariadb" => "mariadb_dbs",
-            "mongo" => "mongo_dbs",
-            "redis" => "redis_dbs",
-            "libsql" => "libsql_dbs",
-            _ => return Err(sqlx::Error::Protocol(format!("unknown db kind: {}", kind))),
-        };
+        let table = db_kind_to_table(kind)?;
         let query_str = format!(
             "SELECT d.server_id, d.environment_id, e.project_id, d.memory_limit, d.cpu_limit
              FROM {} d
@@ -503,15 +489,7 @@ impl DeploymentRepository {
         database_id: i64,
         kind: &str,
     ) -> Result<i64, sqlx::Error> {
-        let table = match kind {
-            "postgres" => "postgres_dbs",
-            "mysql" => "mysql_dbs",
-            "mariadb" => "mariadb_dbs",
-            "mongo" => "mongo_dbs",
-            "redis" => "redis_dbs",
-            "libsql" => "libsql_dbs",
-            _ => return Err(sqlx::Error::Protocol(format!("unknown db kind: {kind}"))),
-        };
+        let table = db_kind_to_table(kind)?;
 
         let query_str = format!(
             "SELECT p.organization_id
@@ -532,15 +510,7 @@ impl DeploymentRepository {
         db_id: i64,
         kind: &str,
     ) -> Result<String, sqlx::Error> {
-        let table = match kind {
-            "postgres" => "postgres_dbs",
-            "mysql" => "mysql_dbs",
-            "mariadb" => "mariadb_dbs",
-            "mongo" => "mongo_dbs",
-            "redis" => "redis_dbs",
-            "libsql" => "libsql_dbs",
-            _ => return Err(sqlx::Error::Protocol(format!("unknown db kind: {}", kind))),
-        };
+        let table = db_kind_to_table(kind)?;
         let query_str = format!("SELECT app_name FROM {} WHERE id = ?", table);
         sqlx::query_scalar::<_, String>(sqlx::AssertSqlSafe(&*query_str))
             .bind(db_id)

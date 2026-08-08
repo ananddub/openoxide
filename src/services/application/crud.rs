@@ -4,6 +4,22 @@ use crate::core::cache::{CacheEnum, CacheKey};
 use super::{ApplicationRecord, ApplicationService, queries::generate_app_name};
 
 impl ApplicationService {
+    pub async fn ensure_organization_access(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
+        if self
+            .repo_app
+            .belongs_to_organization(id, organization_id)
+            .await?
+        {
+            Ok(())
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ApplicationRecord> {
         let key = CacheKey::Application(id);
         let res = self

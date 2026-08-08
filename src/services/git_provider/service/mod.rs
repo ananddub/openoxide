@@ -71,8 +71,10 @@ impl GitProviderService {
             .as_deref()
             .and_then(|id| id.parse().ok())
             .unwrap_or_default();
-        let configured = match row.provider_type.as_str() {
-            "GITHUB" => self
+        use crate::utils::provider::GitProviderType;
+        let provider_kind: Option<GitProviderType> = row.provider_type.parse().ok();
+        let configured = match provider_kind {
+            Some(GitProviderType::Github) => self
                 .github
                 .get_by_git_provider_id(id)
                 .await?
@@ -81,22 +83,22 @@ impl GitProviderService {
                         && item.github_installation_id.is_some()
                         && item.github_private_key.is_some()
                 }),
-            "GITLAB" => self
+            Some(GitProviderType::Gitlab) => self
                 .gitlab
                 .get_by_git_provider_id(id)
                 .await?
                 .is_some_and(|item| item.access_token.is_some()),
-            "GITEA" => self
+            Some(GitProviderType::Gitea) => self
                 .gitea
                 .get_by_git_provider_id(id)
                 .await?
                 .is_some_and(|item| item.access_token.is_some()),
-            "BITBUCKET" => self
+            Some(GitProviderType::Bitbucket) => self
                 .bitbucket
                 .get_by_git_provider_id(id)
                 .await?
                 .is_some_and(|item| item.api_token.is_some() || item.app_password.is_some()),
-            _ => false,
+            None => false,
         };
         Ok(GitProviderView {
             id,

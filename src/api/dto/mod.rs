@@ -1,6 +1,7 @@
 pub mod ai;
 pub mod alert_rule;
 pub mod application;
+pub mod audit;
 pub mod auth;
 pub mod backup;
 pub mod certificate;
@@ -26,5 +27,6 @@ pub mod server;
 pub mod settings;
 pub mod ssh_key;
 pub mod swarm;
+pub mod system;
 pub mod tag;
 pub mod traefik;

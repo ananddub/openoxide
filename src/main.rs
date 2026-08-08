@@ -7,6 +7,12 @@ use tokio::net::TcpListener;
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
+    // reqwest is built with rustls-no-provider so the binary can use the
+    // smaller ring backend instead of pulling in AWS-LC. Install it before
+    // constructing any HTTP client.
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("rustls crypto provider should only be installed once");
     init_logs();
 
     // 1. Core dump suppression (RLIMIT_CORE = 0) so crashes never dump key memory to disk

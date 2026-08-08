@@ -75,4 +75,43 @@ impl OrganizationInviteRepository {
             .await?;
         Ok(())
     }
+
+    pub async fn list_pending_for_organization(
+        &self,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<OrganizationInvite>> {
+        sqlx::query_as!(
+            OrganizationInvite,
+            r#"SELECT id AS "id?: i64", email AS "email: String", role AS "role?: String", status AS "status?: String", token AS "token: String", group_id AS "group_id: i64", organization_id AS "organization_id: i64", invited_by AS "invited_by: i64", expired_at AS "expired_at: i64", created_at AS "created_at: i64" FROM organization_invites WHERE organization_id = ? AND status = 'PENDING' AND expired_at > unixepoch() ORDER BY created_at DESC"#,
+            organization_id
+        ).fetch_all(self.pool.as_ref()).await
+    }
+
+    pub async fn find_pending_by_token(
+        &self,
+        token_hash: &str,
+    ) -> sqlx::Result<Option<OrganizationInvite>> {
+        sqlx::query_as!(
+            OrganizationInvite,
+            r#"SELECT id AS "id?: i64", email AS "email: String", role AS "role?: String", status AS "status?: String", token AS "token: String", group_id AS "group_id: i64", organization_id AS "organization_id: i64", invited_by AS "invited_by: i64", expired_at AS "expired_at: i64", created_at AS "created_at: i64" FROM organization_invites WHERE token = ? AND status = 'PENDING' AND expired_at > unixepoch()"#,
+            token_hash
+        ).fetch_optional(self.pool.as_ref()).await
+    }
+
+    pub async fn set_status(&self, id: i64, status: &str) -> sqlx::Result<bool> {
+        Ok(sqlx::query(
+            "UPDATE organization_invites SET status = ? WHERE id = ? AND status = 'PENDING'",
+        )
+        .bind(status)
+        .bind(id)
+        .execute(self.pool.as_ref())
+        .await?
+        .rows_affected()
+            > 0)
+    }
+
+    pub async fn purge_expired(&self) -> sqlx::Result<u64> {
+        Ok(sqlx::query("UPDATE organization_invites SET status = 'REJECTED' WHERE status = 'PENDING' AND expired_at <= unixepoch()")
+            .execute(self.pool.as_ref()).await?.rows_affected())
+    }
 }

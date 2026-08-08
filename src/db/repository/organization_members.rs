@@ -32,6 +32,46 @@ impl OrganizationMemberRepository {
         .await
     }
 
+    pub async fn list_for_organization(
+        &self,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<OrganizationMember>> {
+        sqlx::query_as!(
+            OrganizationMember,
+            r#"SELECT id AS "id?: i64", role AS "role?: String", user_id AS "user_id: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM organization_members WHERE organization_id = ? ORDER BY created_at ASC, id ASC"#,
+            organization_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn update_role(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+        role: &str,
+    ) -> sqlx::Result<bool> {
+        Ok(sqlx::query("UPDATE organization_members SET role = ?, updated_at = unixepoch() WHERE user_id = ? AND organization_id = ?")
+            .bind(role)
+            .bind(user_id)
+            .bind(organization_id)
+            .execute(self.pool.as_ref())
+            .await?
+            .rows_affected() > 0)
+    }
+
+    pub async fn remove_member(&self, user_id: i64, organization_id: i64) -> sqlx::Result<bool> {
+        Ok(sqlx::query(
+            "DELETE FROM organization_members WHERE user_id = ? AND organization_id = ?",
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .execute(self.pool.as_ref())
+        .await?
+        .rows_affected()
+            > 0)
+    }
+
     pub async fn get_all(&self) -> Result<Vec<OrganizationMember>, sqlx::Error> {
         sqlx::query_as!(
             OrganizationMember,
@@ -102,6 +142,39 @@ impl OrganizationMemberRepository {
         )
         .execute(&mut **tx)
         .await?;
+        Ok(())
+    }
+
+    pub async fn add_member_with_group_in_transaction(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        role: &str,
+        user_id: i64,
+        organization_id: i64,
+        group_id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO organization_members (role, user_id, organization_id, group_id) VALUES (?, ?, ?, ?)",
+        )
+        .bind(role)
+        .bind(user_id)
+        .bind(organization_id)
+        .bind(group_id)
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn add_member_with_group(
+        &self,
+        role: &str,
+        user_id: i64,
+        organization_id: i64,
+        group_id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("INSERT INTO organization_members (role, user_id, organization_id, group_id) VALUES (?, ?, ?, ?)")
+            .bind(role).bind(user_id).bind(organization_id).bind(group_id)
+            .execute(self.pool.as_ref()).await?;
         Ok(())
     }
 }

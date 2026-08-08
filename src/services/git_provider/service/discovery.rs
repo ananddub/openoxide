@@ -48,9 +48,14 @@ impl GitProviderService {
     }
 
     pub(super) async fn access(&self, id: i64) -> Result<ProviderAccess, String> {
+        use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        match provider.provider_type.as_str() {
-            "GITHUB" => {
+        let provider_kind: GitProviderType = provider
+            .provider_type
+            .parse()
+            .map_err(|_| format!("Unsupported Git provider: {}", provider.provider_type))?;
+        match provider_kind {
+            GitProviderType::Github => {
                 let item = self.github_item(id).await?;
                 Ok(ProviderAccess::GithubApp {
                     app_id: item.github_app_id.ok_or("GitHub App ID is required")?,
@@ -62,7 +67,7 @@ impl GitProviderService {
                         .ok_or("GitHub private key is required")?,
                 })
             }
-            "GITLAB" => {
+            GitProviderType::Gitlab => {
                 let item = self
                     .gitlab
                     .get_by_git_provider_id(id)
@@ -74,7 +79,7 @@ impl GitProviderService {
                     token: item.access_token.ok_or("GitLab access token is required")?,
                 })
             }
-            "GITEA" => {
+            GitProviderType::Gitea => {
                 let item = self
                     .gitea
                     .get_by_git_provider_id(id)
@@ -86,7 +91,7 @@ impl GitProviderService {
                     token: item.access_token.ok_or("Gitea access token is required")?,
                 })
             }
-            "BITBUCKET" => {
+            GitProviderType::Bitbucket => {
                 let item = self
                     .bitbucket
                     .get_by_git_provider_id(id)
@@ -99,7 +104,6 @@ impl GitProviderService {
                     api_token: item.api_token,
                 })
             }
-            _ => Err("Unsupported Git provider".into()),
         }
     }
 }

@@ -6,13 +6,14 @@ use sqlx::SqlitePool;
 use crate::{
     api::dto::organization::{CreateOrganizationDto, PatchOrganizationDto},
     db::models::organization::Organization,
-    repository::{OrganizationMemberRepository, OrganizationRepository},
+    repository::{OrganizationMemberRepository, OrganizationRepository, PermissionGroupRepository},
 };
 
 pub struct OrganizationService {
     db: Arc<SqlitePool>,
     repo_org: Arc<OrganizationRepository>,
     repo_member: Arc<OrganizationMemberRepository>,
+    repo_permissions: Arc<PermissionGroupRepository>,
 }
 
 #[singleton]
@@ -21,11 +22,13 @@ impl OrganizationService {
         db: Arc<SqlitePool>,
         repo_org: Arc<OrganizationRepository>,
         repo_member: Arc<OrganizationMemberRepository>,
+        repo_permissions: Arc<PermissionGroupRepository>,
     ) -> Self {
         Self {
             db,
             repo_org,
             repo_member,
+            repo_permissions,
         }
     }
 
@@ -66,6 +69,9 @@ impl OrganizationService {
             .await?;
 
         tx.commit().await?;
+        self.repo_permissions
+            .seed_organization_defaults(org_id)
+            .await?;
         Ok(organization)
     }
 
@@ -136,6 +142,9 @@ mod tests {
             .unwrap();
         sqlx::query("CREATE TABLE organization (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, logo TEXT, slug TEXT NOT NULL UNIQUE, owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
         sqlx::query("CREATE TABLE organization_members (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT DEFAULT 'MEMBER', user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, is_system INTEGER NOT NULL DEFAULT 0, organization_id INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL UNIQUE) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE group_policy (group_id INTEGER NOT NULL, policy_id INTEGER NOT NULL, UNIQUE(group_id, policy_id)) STRICT").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO users (id) VALUES (7)")
             .execute(&pool)
             .await
@@ -146,6 +155,7 @@ mod tests {
             db: db.clone(),
             repo_org: Arc::new(OrganizationRepository::new(db.clone())),
             repo_member: Arc::new(OrganizationMemberRepository::new(db.clone())),
+            repo_permissions: Arc::new(PermissionGroupRepository::new(db.clone())),
         };
 
         let organization = service

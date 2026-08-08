@@ -66,9 +66,13 @@ impl ApplicationController {
     #[get("/{id}")]
     async fn get(
         &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<ApplicationResponseDto>, ApiError> {
+        self.service
+            .ensure_organization_access(id, permission.organization_id())
+            .await
+            .map_err(map_sqlx_error)?;
         self.service
             .get_by_id(id)
             .await

@@ -93,13 +93,10 @@ impl PreviewDeploymentController {
 }
 
 fn event(body: CreatePreviewDeploymentDto) -> Result<PullRequestEvent, ApiError> {
-    let provider = match body.provider.to_ascii_lowercase().as_str() {
-        "github" => GitProviderKind::Github,
-        "gitlab" => GitProviderKind::Gitlab,
-        "gitea" => GitProviderKind::Gitea,
-        "bitbucket" => GitProviderKind::Bitbucket,
-        _ => return Err((StatusCode::BAD_REQUEST, "unsupported Git provider".into())),
-    };
+    let provider: GitProviderKind = body
+        .provider
+        .parse()
+        .map_err(|e: String| (StatusCode::BAD_REQUEST, e))?;
     Ok(PullRequestEvent {
         provider,
         owner: body.owner,

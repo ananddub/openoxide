@@ -77,10 +77,12 @@ impl GitProviderService {
     }
 
     async fn validate_webhook_callback(&self, id: i64, callback_url: &str) -> Result<(), String> {
+        use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        let (kind, child_id) = match provider.provider_type.as_str() {
-            "GITHUB" => ("github", self.github_item(id).await?.id),
-            "GITLAB" => (
+        let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
+        let (kind, child_id) = match provider_kind {
+            Some(GitProviderType::Github) => ("github", self.github_item(id).await?.id),
+            Some(GitProviderType::Gitlab) => (
                 "gitlab",
                 self.gitlab
                     .get_by_git_provider_id(id)
@@ -88,7 +90,7 @@ impl GitProviderService {
                     .map_err(|error| error.to_string())?
                     .and_then(|item| item.id),
             ),
-            "GITEA" => (
+            Some(GitProviderType::Gitea) => (
                 "gitea",
                 self.gitea
                     .get_by_git_provider_id(id)
@@ -96,7 +98,7 @@ impl GitProviderService {
                     .map_err(|error| error.to_string())?
                     .and_then(|item| item.id),
             ),
-            "BITBUCKET" => (
+            Some(GitProviderType::Bitbucket) => (
                 "bitbucket",
                 self.bitbucket
                     .get_by_git_provider_id(id)
@@ -104,7 +106,7 @@ impl GitProviderService {
                     .map_err(|error| error.to_string())?
                     .and_then(|item| item.id),
             ),
-            _ => return Err("Unsupported Git provider".into()),
+            None => return Err("Unsupported Git provider".into()),
         };
         let expected = format!(
             "/public/webhooks/{kind}/{}",

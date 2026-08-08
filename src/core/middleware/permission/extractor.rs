@@ -13,7 +13,18 @@ use super::{
     error::{PermissionRejection, denied, evaluation, internal, no_organization},
 };
 
-pub struct RequirePermission<R, O>(pub Claims, pub PhantomData<(R, O)>)
+pub struct PermissionContext<R, O> {
+    organization_id: i64,
+    marker: PhantomData<(R, O)>,
+}
+
+impl<R, O> PermissionContext<R, O> {
+    pub fn organization_id(&self) -> i64 {
+        self.organization_id
+    }
+}
+
+pub struct RequirePermission<R, O>(pub Claims, pub PermissionContext<R, O>)
 where
     R: PermissionResource + Allows<O>,
     O: PermissionOperation;
@@ -64,6 +75,12 @@ where
         parts
             .extensions
             .insert(PermissionOrganization(organization_id));
-        Ok(Self(claims, PhantomData))
+        Ok(Self(
+            claims,
+            PermissionContext {
+                organization_id,
+                marker: PhantomData,
+            },
+        ))
     }
 }

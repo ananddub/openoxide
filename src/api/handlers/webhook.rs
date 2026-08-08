@@ -68,13 +68,9 @@ impl WebhookController {
 }
 
 fn parse_provider(value: &str) -> Result<GitProviderKind, ApiError> {
-    match value.to_ascii_lowercase().as_str() {
-        "github" => Ok(GitProviderKind::Github),
-        "gitlab" => Ok(GitProviderKind::Gitlab),
-        "gitea" => Ok(GitProviderKind::Gitea),
-        "bitbucket" => Ok(GitProviderKind::Bitbucket),
-        _ => Err((StatusCode::NOT_FOUND, "unsupported Git provider".into())),
-    }
+    value
+        .parse()
+        .map_err(|e: String| (StatusCode::NOT_FOUND, e))
 }
 
 fn event_header<'a>(

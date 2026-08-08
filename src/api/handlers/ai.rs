@@ -36,10 +36,10 @@ impl AiController {
     #[get("/settings")]
     async fn list_settings(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
     ) -> Result<Json<Vec<AiSettingResponseDto>>, ApiError> {
         self.service
-            .list_settings(claims.user.group_id)
+            .list_settings(permission.organization_id())
             .await
             .map(|items| Json(items.into_iter().map(Into::into).collect()))
             .map_err(map_error)
@@ -48,11 +48,11 @@ impl AiController {
     #[get("/settings/{id}")]
     async fn get_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiSettingResponseDto>, ApiError> {
         self.service
-            .get_setting(id, claims.user.group_id)
+            .get_setting(id, permission.organization_id())
             .await
             .map(Into::into)
             .map(Json)
@@ -62,11 +62,11 @@ impl AiController {
     #[post("/settings")]
     async fn create_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
         ValidatedJson(body): ValidatedJson<CreateAiSettingDto>,
     ) -> Result<(StatusCode, Json<AiSettingResponseDto>), ApiError> {
         self.service
-            .create_setting(claims.user.group_id, body.into())
+            .create_setting(permission.organization_id(), body.into())
             .await
             .map(Into::into)
             .map(Json)
@@ -77,12 +77,12 @@ impl AiController {
     #[put("/settings/{id}")]
     async fn update_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<UpdateAiSettingDto>,
     ) -> Result<Json<AiSettingResponseDto>, ApiError> {
         self.service
-            .update_setting(id, claims.user.group_id, body.into())
+            .update_setting(id, permission.organization_id(), body.into())
             .await
             .map(Into::into)
             .map(Json)
@@ -92,12 +92,12 @@ impl AiController {
     #[delete("/settings/{id}")]
     async fn delete_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<Organization, CanWrite>,
+        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         match self
             .service
-            .delete_setting(id, claims.user.group_id)
+            .delete_setting(id, permission.organization_id())
             .await
             .map_err(map_error)?
         {
@@ -109,11 +109,11 @@ impl AiController {
     #[get("/settings/{id}/models")]
     async fn setting_models(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiModelsResponseDto>, ApiError> {
         self.service
-            .discover_setting_models(id, claims.user.group_id)
+            .discover_setting_models(id, permission.organization_id())
             .await
             .map(|models| Json(AiModelsResponseDto { models }))
             .map_err(map_error)
@@ -122,11 +122,11 @@ impl AiController {
     #[post("/settings/{id}/test")]
     async fn test_setting(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiConnectionResponseDto>, ApiError> {
         self.service
-            .test_setting(id, claims.user.group_id)
+            .test_setting(id, permission.organization_id())
             .await
             .map(|()| {
                 Json(AiConnectionResponseDto {
@@ -171,11 +171,11 @@ impl AiController {
     #[get("/generations")]
     async fn list_generations(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Query(query): Query<AiGenerationListQueryDto>,
     ) -> Result<Json<Vec<AiGenerationResponseDto>>, ApiError> {
         self.service
-            .list_generations(claims.user.group_id, query.limit.unwrap_or(50))
+            .list_generations(permission.organization_id(), query.limit.unwrap_or(50))
             .await
             .map(|items| Json(items.into_iter().map(Into::into).collect()))
             .map_err(map_error)
@@ -184,13 +184,13 @@ impl AiController {
     #[post("/generations")]
     async fn generate(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanCreate>,
+        RequirePermission(claims, permission): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<GenerateComposeDto>,
     ) -> Result<(StatusCode, Json<AiGenerationResponseDto>), ApiError> {
         self.service
             .generate(
                 body.ai_setting_id,
-                claims.user.group_id,
+                permission.organization_id(),
                 claims.user.user_id,
                 body.request,
             )
@@ -204,11 +204,11 @@ impl AiController {
     #[get("/generations/{id}")]
     async fn get_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         Path(id): Path<i64>,
     ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
         self.service
-            .get_generation(id, claims.user.group_id)
+            .get_generation(id, permission.organization_id())
             .await
             .map(Into::into)
             .map(Json)
@@ -218,12 +218,12 @@ impl AiController {
     #[put("/generations/{id}/review")]
     async fn review_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanCreate>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanCreate>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<ReviewAiGenerationDto>,
     ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
         self.service
-            .review_generation(id, claims.user.group_id, body.output)
+            .review_generation(id, permission.organization_id(), body.output)
             .await
             .map(Into::into)
             .map(Json)
@@ -233,12 +233,12 @@ impl AiController {
     #[post("/generations/{id}/deploy")]
     async fn deploy_generation(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanDeploy>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanDeploy>,
         Path(id): Path<i64>,
         ValidatedJson(body): ValidatedJson<DeployAiGenerationDto>,
     ) -> Result<(StatusCode, Json<AiDeploymentResponseDto>), ApiError> {
         self.service
-            .deploy_generation(id, claims.user.group_id, body.into())
+            .deploy_generation(id, permission.organization_id(), body.into())
             .await
             .map(|result| {
                 Json(AiDeploymentResponseDto {
@@ -254,7 +254,7 @@ impl AiController {
     #[post("/logs/analyze")]
     async fn analyze_logs(
         &self,
-        RequirePermission(claims, _): RequirePermission<Application, CanRead>,
+        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
         ValidatedJson(body): ValidatedJson<AnalyzeLogsDto>,
     ) -> Result<Json<AnalyzeLogsResponseDto>, ApiError> {
         let context = match body.context {
@@ -262,7 +262,12 @@ impl AiController {
             AiLogContextDto::Runtime => AiLogContext::Runtime,
         };
         self.service
-            .analyze_logs(body.ai_setting_id, claims.user.group_id, context, body.logs)
+            .analyze_logs(
+                body.ai_setting_id,
+                permission.organization_id(),
+                context,
+                body.logs,
+            )
             .await
             .map(|analysis| Json(AnalyzeLogsResponseDto { analysis }))
             .map_err(map_error)
