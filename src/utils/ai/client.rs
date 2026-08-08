@@ -202,14 +202,6 @@ fn validate_base_url(config: &AiProviderConfig) -> Result<String, String> {
     Ok(base)
 }
 
-fn join_api_path(base: &str, path: &str) -> String {
-    if base.ends_with("/v1") || base.ends_with("/v1beta") {
-        format!("{base}/{path}")
-    } else {
-        format!("{base}/v1/{path}")
-    }
-}
-
 fn strip_json_fence(text: &str) -> &str {
     let trimmed = text.trim();
     if let Some(without_open) = trimmed.strip_prefix("```json") {

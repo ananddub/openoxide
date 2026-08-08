@@ -5,7 +5,8 @@ use crate::services::deployment::DeploymentService;
 
 pub fn start(service: Arc<DeploymentService>, policies: Arc<BackgroundPolicyRepository>) {
     tokio::spawn(async move {
-        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(30));
+        tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut last_run_minute = None;
         loop {

@@ -139,6 +139,7 @@ impl ScheduleService {
     }
 
     pub async fn create(&self, input: CreateScheduleDto) -> sqlx::Result<Schedule> {
+        validate_cron_expression(&input.cron_expression)?;
         let shell_type = normalize_shell_type(input.shell_type.as_deref())?;
         let schedule_type = if let Some(st) = input
             .schedule_type
@@ -201,6 +202,7 @@ impl ScheduleService {
         let name = input.name.unwrap_or(current.name);
         let description = input.description.or(current.description);
         let cron_expression = input.cron_expression.unwrap_or(current.cron_expression);
+        validate_cron_expression(&cron_expression)?;
         let app_name = input.app_name.unwrap_or(current.app_name);
         let service_name = input.service_name.or(current.service_name);
         let shell_type = match input.shell_type {
@@ -1416,6 +1418,24 @@ impl ScheduleService {
 
         Ok(())
     }
+}
+
+fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
+    let expression = value.trim();
+    let normalized = if expression.split_whitespace().count() == 5 {
+        format!("0 {expression}")
+    } else {
+        expression.to_owned()
+    };
+    if normalized.split_whitespace().count() != 6 {
+        return Err(sqlx::Error::Protocol(
+            "cron expression must contain 5 or 6 fields".into(),
+        ));
+    }
+    croner::Cron::new(&normalized)
+        .parse()
+        .map(|_| ())
+        .map_err(|error| sqlx::Error::Protocol(format!("invalid cron expression: {error}")))
 }
 
 fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {

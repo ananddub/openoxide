@@ -8,7 +8,7 @@ use std::{
 
 use auto_di::singleton;
 use dashmap::{DashMap, DashSet};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
@@ -21,6 +21,7 @@ pub struct ScheduleRunner {
     scheduler: Mutex<Option<Arc<JobScheduler>>>,
     jobs: DashMap<String, RegisteredScheduleJob>,
     in_flight: DashSet<String>,
+    backup_slots: Arc<Semaphore>,
     started: AtomicBool,
 }
 
@@ -39,6 +40,13 @@ impl ScheduleRunner {
             scheduler: Mutex::new(None),
             jobs: DashMap::new(),
             in_flight: DashSet::new(),
+            backup_slots: Arc::new(Semaphore::new(
+                std::env::var("BACKGROUND_BACKUP_CONCURRENCY")
+                    .ok()
+                    .and_then(|value| value.parse::<usize>().ok())
+                    .unwrap_or(2)
+                    .max(1),
+            )),
             started: AtomicBool::new(false),
         }
     }
@@ -179,20 +187,9 @@ impl ScheduleRunner {
             }
 
             let service = Arc::clone(&self.service);
-            let in_flight = self.in_flight.clone();
-            let key_clone = key.clone();
             let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
-                let in_flight = in_flight.clone();
-                let key_str = key_clone.clone();
                 Box::pin(async move {
-                    if !in_flight.insert(key_str.clone()) {
-                        tracing::warn!(
-                            key_str,
-                            "schedule skipped because previous run is still active"
-                        );
-                        return;
-                    }
                     let result = service
                         .run_scheduled(
                             schedule_id,
@@ -200,7 +197,6 @@ impl ScheduleRunner {
                             chrono::Utc::now().timestamp(),
                         )
                         .await;
-                    in_flight.remove(&key_str);
                     match result {
                         Ok(result) => tracing::info!(
                             schedule_id,
@@ -259,10 +255,12 @@ impl ScheduleRunner {
             let service = Arc::clone(&self.service);
             let in_flight = self.in_flight.clone();
             let key_clone = key.clone();
+            let backup_slots = Arc::clone(&self.backup_slots);
             let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
                 let in_flight = in_flight.clone();
                 let key_str = key_clone.clone();
+                let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
                     if !in_flight.insert(key_str.clone()) {
                         tracing::warn!(
@@ -271,6 +269,10 @@ impl ScheduleRunner {
                         );
                         return;
                     }
+                    let Ok(_permit) = backup_slots.acquire_owned().await else {
+                        in_flight.remove(&key_str);
+                        return;
+                    };
                     let result = service.run_database_backup(backup_id).await;
                     in_flight.remove(&key_str);
                     match result {
@@ -328,10 +330,12 @@ impl ScheduleRunner {
             let service = Arc::clone(&self.service);
             let in_flight = self.in_flight.clone();
             let key_clone = key.clone();
+            let backup_slots = Arc::clone(&self.backup_slots);
             let job = match Job::new_async(cron_expression.as_str(), move |_job_id, _lock| {
                 let service = Arc::clone(&service);
                 let in_flight = in_flight.clone();
                 let key_str = key_clone.clone();
+                let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
                     if !in_flight.insert(key_str.clone()) {
                         tracing::warn!(
@@ -340,6 +344,10 @@ impl ScheduleRunner {
                         );
                         return;
                     }
+                    let Ok(_permit) = backup_slots.acquire_owned().await else {
+                        in_flight.remove(&key_str);
+                        return;
+                    };
                     let result = service.run_volume_backup(backup_id).await;
                     in_flight.remove(&key_str);
                     match result {

@@ -5,7 +5,8 @@ use crate::services::backup::PanelBackupService;
 
 pub fn start(service: Arc<PanelBackupService>, policies: Arc<BackgroundPolicyRepository>) {
     tokio::spawn(async move {
-        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(30));
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut last_run_minute = None;
         loop {

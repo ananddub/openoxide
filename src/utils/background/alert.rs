@@ -4,6 +4,7 @@ use crate::services::alert::{AlertService, service::EVALUATION_INTERVAL_SECS};
 
 pub fn start(service: Arc<AlertService>) {
     tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(
             EVALUATION_INTERVAL_SECS as u64,
         ));
