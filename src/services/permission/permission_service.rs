@@ -1,9 +1,9 @@
 use auto_di::singleton;
-use sqlx::SqlitePool;
 use std::sync::Arc;
 
 use crate::db::repository::{
-    GroupRepository, ResourceAccessRepository, UserPolicyRepository, UserRepository,
+    GroupRepository, OrganizationMemberRepository, PermissionCompatibilityRepository,
+    ResourceAccessRepository, UserPolicyRepository, UserRepository,
 };
 use crate::services::permission::types::{PolicyAction, ResourceType, UserRole};
 
@@ -12,7 +12,8 @@ pub struct PermissionService {
     group_repo: Arc<GroupRepository>,
     resource_access_repo: Arc<ResourceAccessRepository>,
     user_policy_repo: Arc<UserPolicyRepository>,
-    pool: Arc<SqlitePool>,
+    member_repo: Arc<OrganizationMemberRepository>,
+    compatibility_repo: Arc<PermissionCompatibilityRepository>,
 }
 
 #[singleton]
@@ -22,24 +23,21 @@ impl PermissionService {
         group_repo: Arc<GroupRepository>,
         resource_access_repo: Arc<ResourceAccessRepository>,
         user_policy_repo: Arc<UserPolicyRepository>,
-        pool: Arc<SqlitePool>,
+        member_repo: Arc<OrganizationMemberRepository>,
+        compatibility_repo: Arc<PermissionCompatibilityRepository>,
     ) -> Self {
         Self {
             user_repo,
             group_repo,
             resource_access_repo,
             user_policy_repo,
-            pool,
+            member_repo,
+            compatibility_repo,
         }
     }
 
     pub async fn resolve_organization(&self, user_id: i64) -> Result<Option<i64>, sqlx::Error> {
-        sqlx::query_scalar(
-            "SELECT organization_id FROM organization_members WHERE user_id=? ORDER BY id LIMIT 1",
-        )
-        .bind(user_id)
-        .fetch_optional(self.pool.as_ref())
-        .await
+        self.member_repo.first_organization_id(user_id).await
     }
 
     /// Check if user has permission for a specific PolicyAction
@@ -58,25 +56,17 @@ impl PermissionService {
             }
         }
 
-        let member_role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM organization_members WHERE user_id=? AND organization_id=?",
-        )
-        .bind(user_id)
-        .bind(org_id)
-        .fetch_optional(self.pool.as_ref())
-        .await?;
+        let member_role = self.member_repo.role(user_id, org_id).await?;
 
         if member_role.is_none() {
             return Ok(false);
         }
 
-        let legacy = sqlx::query_scalar::<_, i64>(
-            "SELECT EXISTS(SELECT 1 FROM permission_legacy_full_access WHERE user_id=?)",
-        )
-        .bind(user_id)
-        .fetch_one(self.pool.as_ref())
-        .await?;
-        if legacy != 0 {
+        if self
+            .compatibility_repo
+            .has_legacy_full_access(user_id)
+            .await?
+        {
             return Ok(true);
         }
 

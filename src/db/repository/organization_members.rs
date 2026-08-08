@@ -13,6 +13,25 @@ impl OrganizationMemberRepository {
         Self { pool }
     }
 
+    pub async fn first_organization_id(&self, user_id: i64) -> sqlx::Result<Option<i64>> {
+        sqlx::query_scalar(
+            "SELECT organization_id FROM organization_members WHERE user_id=? ORDER BY id LIMIT 1",
+        )
+        .bind(user_id)
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn role(&self, user_id: i64, organization_id: i64) -> sqlx::Result<Option<String>> {
+        sqlx::query_scalar(
+            "SELECT role FROM organization_members WHERE user_id=? AND organization_id=?",
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .fetch_optional(self.pool.as_ref())
+        .await
+    }
+
     pub async fn get_all(&self) -> Result<Vec<OrganizationMember>, sqlx::Error> {
         sqlx::query_as!(
             OrganizationMember,
