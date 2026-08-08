@@ -6,6 +6,11 @@ use crate::services::schedule::types::{
 };
 use crate::{db::models::schedules::Schedule, services::schedule::ScheduleRunResult};
 
+#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+pub struct ScheduleLogDto {
+    pub content: String,
+}
+
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateScheduleDto {
     #[validate(length(min = 1, max = 255))]

@@ -1,12 +1,17 @@
 use std::sync::Arc;
 
 use auto_route::controller;
+use axum::response::sse::{Event, Sse};
 use axum::{Json, extract::Path, http::StatusCode};
+use futures::StreamExt;
+use std::{convert::Infallible, pin::Pin};
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::{
     api::dto::schedule::{
-        CreateScheduleDto, PatchScheduleDto, ScheduleExecutionDto, ScheduleResponseDto,
-        ScheduleRunResponseDto, ScheduleRuntimePolicyDto, UpdateScheduleRuntimePolicyDto,
+        CreateScheduleDto, PatchScheduleDto, ScheduleExecutionDto, ScheduleLogDto,
+        ScheduleResponseDto, ScheduleRunResponseDto, ScheduleRuntimePolicyDto,
+        UpdateScheduleRuntimePolicyDto,
     },
     core::cache::{AppStateCache, CacheKey},
     core::middleware::{
@@ -20,6 +25,8 @@ use crate::{
 };
 
 type ApiError = (StatusCode, String);
+type ScheduleLogStream = Pin<Box<dyn futures::Stream<Item = Result<Event, Infallible>> + Send>>;
+type ScheduleLogSse = Sse<ScheduleLogStream>;
 
 pub struct ScheduleController {
     service: Arc<ScheduleService>,
@@ -253,6 +260,34 @@ impl ScheduleController {
             .await
             .map(|rows| Json(rows.into_iter().map(Into::into).collect()))
             .map_err(map_sqlx_error)
+    }
+
+    #[get("/{id}/logs")]
+    async fn logs(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<ScheduleLogDto>, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        let content = crate::services::schedule::file_log::read(&format!("schedule-{id}"))
+            .await
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+        Ok(Json(ScheduleLogDto { content }))
+    }
+
+    #[get("/{id}/logs/stream", sse = ScheduleLogDto)]
+    async fn logs_stream(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<AppReadPermission>,
+        Path(id): Path<i64>,
+    ) -> Result<ScheduleLogSse, ApiError> {
+        self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
+        let receiver = crate::services::schedule::file_log::subscribe(&format!("schedule-{id}"));
+        let stream = BroadcastStream::new(receiver).filter_map(|item| async move {
+            item.ok()
+                .map(|entry| Ok(Event::default().event("log").data(entry)))
+        });
+        Ok(Sse::new(Box::pin(stream)))
     }
 }
 
