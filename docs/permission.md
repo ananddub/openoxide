@@ -278,3 +278,9 @@ RequirePermission<Invitation, CanCreate>
 - Treat `DENY` as stronger than any grant.
 - Do not let a member assign actions they do not already possess.
 - Return `403` for a valid request lacking permission and `401` for missing/invalid authentication.
+
+## How the implementation was made safe
+
+The main multi-organization risk is checking only a user's role and forgetting the organization or resource being requested. Rustploy fixes that at two layers: `RequirePermission` establishes one canonical organization context, and handlers/services verify that the target resource belongs to that organization.
+
+The second risk is privilege delegation. Group and policy mutations go through `PermissionGroupService`, which loads the actor's effective actions and rejects any requested group or override that is not a subset. Repository methods constrain organization-owned groups and protect system groups. Audit events are emitted after successful permission, member, and invite changes.
