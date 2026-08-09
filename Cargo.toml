@@ -11,6 +11,7 @@ members = [
     "crates/auto/socket",
     "crates/sh_macros",
     "crates/os",
+    "crates/queue",
     "agent",
 ]
 
@@ -20,6 +21,7 @@ auto-di = "0.6.0"
 auto_route = { version = "0.2.1", path = "crates/auto/route" }
 sh_macros = { path = "crates/sh_macros" }
 os = { path = "crates/os" }
+queue = { path = "crates/queue" }
 auto_socket = { version = "0.1.0", path = "crates/auto/socket" }
 serde = { version = "1.0", features = ["derive"] }
 axum-extra = { version = "0.12.6", features = ["typed-header"] }
