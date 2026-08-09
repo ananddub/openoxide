@@ -1,48 +1,14 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum GitProviderKind {
-    Github,
-    Gitlab,
-    Gitea,
-    Bitbucket,
-}
+use os::string_enum;
 
-impl GitProviderKind {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Github => "github",
-            Self::Gitlab => "gitlab",
-            Self::Gitea => "gitea",
-            Self::Bitbucket => "bitbucket",
-        }
-    }
-}
+pub type GitProviderKind = crate::utils::provider::GitProviderType;
 
-impl std::str::FromStr for GitProviderKind {
-    type Err = String;
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum GitTrigger {
+        default = Push;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_ascii_lowercase().as_str() {
-            "github" => Ok(Self::Github),
-            "gitlab" => Ok(Self::Gitlab),
-            "gitea" => Ok(Self::Gitea),
-            "bitbucket" => Ok(Self::Bitbucket),
-            other => Err(format!("unsupported Git provider: {other}")),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GitTrigger {
-    Push,
-    Tag,
-}
-
-impl GitTrigger {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Push => "PUSH",
-            Self::Tag => "TAG",
-        }
+        Push => "PUSH",
+        Tag => "TAG",
     }
 }
 

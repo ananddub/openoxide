@@ -28,6 +28,14 @@ macro_rules! string_enum {
             }
         }
 
+        impl std::str::FromStr for $name {
+            type Err = String;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Self::from_str(s).ok_or_else(|| format!("Invalid {}: {s}", stringify!($name)))
+            }
+        }
+
         impl From<String> for $name {
             fn from(value: String) -> Self {
                 Self::from_str(&value).unwrap_or(Self::$default)

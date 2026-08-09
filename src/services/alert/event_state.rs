@@ -1,8 +1,6 @@
 use os::string_enum;
 use serde::{Deserialize, Serialize};
 
-use super::AlertParseError;
-
 string_enum! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -16,15 +14,6 @@ string_enum! {
     }
 }
 
-use std::str::FromStr;
-
-impl FromStr for AlertEventState {
-    type Err = AlertParseError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::from_str(value).ok_or_else(|| AlertParseError::EventState(value.to_owned()))
-    }
-}
 
 #[cfg(test)]
 mod tests {
