@@ -188,12 +188,29 @@ impl ShellIR {
                     .join("\n");
                 let mut out = format!("if {}; then\n{}", cond_str, indent(&then_str));
                 if let Some(eb) = else_branch {
-                    let else_str = eb
-                        .iter()
-                        .map(|s| s.to_bash())
-                        .collect::<Vec<_>>()
-                        .join("\n");
-                    out.push_str(&format!("\nelse\n{}", indent(&else_str)));
+                    // Preserve Rust's `else if` as a shell `elif` chain.
+                    // Without this, the generic block renderer emits nested
+                    // `else { if ... }`, which is valid but unnecessarily
+                    // deep and makes generated setup scripts hard to read.
+                    if eb.len() == 1 {
+                        if let ShellIR::If { .. } = &eb[0] {
+                            let else_if = eb[0].to_bash();
+                            let else_if = else_if.strip_prefix("if ").unwrap_or(&else_if);
+                            let else_if = else_if.strip_suffix("\nfi").unwrap_or(else_if);
+                            out.push_str("\nelif ");
+                            out.push_str(else_if);
+                        } else {
+                            let else_str = eb[0].to_bash();
+                            out.push_str(&format!("\nelse\n{}", indent(&else_str)));
+                        }
+                    } else {
+                        let else_str = eb
+                            .iter()
+                            .map(|s| s.to_bash())
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        out.push_str(&format!("\nelse\n{}", indent(&else_str)));
+                    }
                 }
                 out.push_str("\nfi");
                 out

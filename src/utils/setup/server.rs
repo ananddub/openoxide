@@ -909,4 +909,32 @@ mod tests {
         let status = child.wait().expect("wait for sh -n");
         assert!(status.success(), "generated script failed sh -n");
     }
+
+    #[test]
+    fn generated_deploy_setup_uses_flat_elif_chains() {
+        let setup = ServerSetup::new_local(SetupConfig::default());
+        let script = setup.compile_oneshot_script(true);
+
+        println!("\n===== GENERATED DEPLOY SERVER SETUP =====\n{script}");
+
+        assert!(script.contains("elif test \"$_rustploy_arch\" '=' 'arm64'; then"));
+        assert!(!script.contains("else\n  if test \"$_rustploy_arch\" '=' 'arm64'; then"));
+    }
+
+    #[test]
+    fn generated_build_server_setup_stops_before_deploy_only_steps() {
+        let mut config = SetupConfig::default();
+        config.build_server = true;
+        let setup = ServerSetup::new_local(config);
+        let script = setup.compile_oneshot_script(true);
+
+        println!("\n===== GENERATED BUILD SERVER SETUP =====\n{script}");
+
+        assert!(script.contains("https://get.docker.com"));
+        assert!(script.contains("https://nixpacks.com/install.sh"));
+        assert!(!script.contains("docker swarm init"));
+        assert!(!script.contains("docker network create --driver overlay"));
+        assert!(!script.contains("traefik:v"));
+        assert!(!script.contains("dubeyanand/rustploy-monitor:latest"));
+    }
 }

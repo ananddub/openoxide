@@ -989,6 +989,22 @@ fn test_sh_macro_sudo() {
 }
 
 #[test]
+fn sh_macro_compiles_else_if_as_elif() {
+    let script = ScriptPipeline::new()
+        .cmd(sh!(if cmd("test", "a", "=", "b") {
+            echo("first");
+        } else if cmd("test", "a", "=", "c") {
+            echo("second");
+        } else {
+            echo("fallback");
+        }))
+        .compile();
+
+    assert!(script.contains("elif test 'a' '=' 'c'; then"));
+    assert!(!script.contains("else\n  if test 'a' '=' 'c'; then"));
+}
+
+#[test]
 fn test_sh_macro_capture_success_failure() {
     use super::sh;
     let script_ir = sh!(
