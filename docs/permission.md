@@ -1,281 +1,280 @@
-# Rustploy Permission & Access Control Architecture
+# Rustploy permissions
 
-This document provides a comprehensive guide to the Permission System in Rustploy, combining **Role-Based Access Control (RBAC)** with **Fine-Grained Per-User & Resource-Level Overrides (ABAC)**.
+Rustploy uses organization-scoped, typed permission checks. A request is allowed only when the authenticated user belongs to the selected organization and has the action required by the route.
 
----
+The system has three separate concepts:
 
-## 1. System Architecture Overview
+1. **Membership** — which organizations the user belongs to.
+2. **Permission groups** — reusable collections of policy actions assigned to members.
+3. **Explicit user policies** — `GRANT` or `DENY` exceptions for one member.
 
-Rustploy uses a multi-tenant RBAC system with per-user override layers:
+Resource-level access (`resource_access`) is a separate repository/API primitive for item scoping. It is not automatically applied by the route extractor; a service that needs item-level restrictions must call `PermissionService::check_resource_access` explicitly.
 
-```
-                               ┌──────────────┐
-                               │    users     │ (Global User Accounts)
-                               └──────┬───────┘
-                                      │ (1:N)
-                                      ▼
-                           ┌─────────────────────┐
-                           │ organization_members│ ◄── Primary Junction (User + Org + Group)
-                           └──────────┬──────────┘
-             (1:N Organization)       │ (N:1 Group Assignment)
-                     ┌────────────────┴────────────────┐
-                     ▼                                 ▼
-            ┌────────────────┐                   ┌───────────┐
-            │  organization  │                   │  groups   │ (Roles: Admin, Dev, Viewer)
-            └────────────────┘                   └─────┬─────┘
-                                                       │ (1:N)
-                                                       ▼
-                                             ┌──────────────────┐
-                                             │   group_policy   │ ◄── Group-Policy Mapping
-                                             └─────────┬────────┘
-                                                 (N:1) │
-                                                       ▼
-                                                  ┌────────┐
-                                                  │ policy │ (Actions: 'applications:read', etc.)
-                                                  └────────┘
+## Architecture at a glance
 
- ┌─────────────────┐             ┌─────────────────┐
- │   user_policy   │ ◄───────────┤ resource_access │ (Direct Per-User Overrides)
- └─────────────────┘             └─────────────────┘
- (Action DENY/GRANT)             (Item-Level Scoping)
+```mermaid
+flowchart LR
+    U[User] --> M[Organization membership]
+    O[Organization] --> M
+    M --> R{Member role}
+    R -->|OWNER| PO[Platform-wide access]
+    R -->|ADMIN| OA[Organization-wide access]
+    R -->|MEMBER| G[Assigned permission group]
+
+    G --> GP[Group policies]
+    GP --> P[Canonical actions]
+    P --> E[Effective permission set]
+
+    U --> UP[User policy overrides]
+    UP -->|GRANT| E
+    UP -->|DENY removes action| E
+
+    E --> A[Route action allowed]
+    U --> RA[Resource access rows]
+    RA --> I[Optional item-level check]
 ```
 
----
+In short: membership selects the organization, the role chooses the evaluation path, groups provide reusable permissions, and user policies add or remove exceptions.
 
-## 2. Database Schema & Tables
+## Request flow
 
-### 2.1 Core Entities
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Guard as RequirePermission
+    participant JWT as Claims extractor
+    participant Service as PermissionService
+    participant Repository
+    participant Handler
 
-#### `users`
-Represents individual user accounts across the system.
-- `id` (INTEGER PRIMARY KEY)
-- `email` (TEXT UNIQUE)
-- `password_hash` (TEXT)
-- `is_owner` (INTEGER): `1` for Super Admin / Owner (bypasses all permission checks).
-
-#### `organization`
-Multi-tenant workspace container.
-- `id` (INTEGER PRIMARY KEY)
-- `name` (TEXT UNIQUE)
-- `slug` (TEXT UNIQUE)
-- `owner_id` (INTEGER REFERENCES users(id))
-
----
-
-### 2.2 Role-Based Access Control (RBAC) Tables
-
-#### `groups`
-Defines roles/permission groups.
-- `id` (INTEGER PRIMARY KEY)
-- `name` (TEXT NOT NULL)
-- `is_system` (INTEGER DEFAULT 0): `1` for locked system roles (e.g. `Organization Admin`).
-- `organization_id` (INTEGER NULLABLE REFERENCES organization(id)): NULL for global system groups, non-NULL for organization-custom groups.
-
-#### `policy`
-Master catalog of granular system permissions.
-- `id` (INTEGER PRIMARY KEY)
-- `action` (TEXT NOT NULL UNIQUE): Formatted as `<resource>:<operation>` (e.g. `applications:read`, `servers:delete`).
-
-#### `group_policy`
-Junction table linking Roles/Groups to Policies.
-- `group_id` (INTEGER REFERENCES groups(id))
-- `policy_id` (INTEGER REFERENCES policy(id))
-- `UNIQUE(group_id, policy_id)`
-
-#### `organization_members`
-Main user assignment table mapping a User to an Organization with a specific Group/Role.
-- `id` (INTEGER PRIMARY KEY)
-- `user_id` (INTEGER REFERENCES users(id))
-- `organization_id` (INTEGER REFERENCES organization(id))
-- `group_id` (INTEGER REFERENCES groups(id))
-- `role` (TEXT DEFAULT 'MEMBER')
-
----
-
-### 2.3 Per-User Override Tables (ABAC)
-
-#### `user_policy`
-Direct action-level overrides assigned specifically to a single user, overriding their group rules.
-- `id` (INTEGER PRIMARY KEY)
-- `user_id` (INTEGER REFERENCES users(id))
-- `org_id` (INTEGER REFERENCES organization(id))
-- `policy_id` (INTEGER REFERENCES policy(id))
-- `effect` (TEXT NOT NULL): `'GRANT'` (Add extra permission) or `'DENY'` (Strictly block permission).
-- `UNIQUE(user_id, org_id, policy_id)`
-
-#### `resource_access`
-Item-level access controls restricting or allowing access to specific resources.
-- `id` (INTEGER PRIMARY KEY)
-- `user_id` (INTEGER REFERENCES users(id))
-- `org_id` (INTEGER REFERENCES organization(id))
-- `resource_type` (TEXT): e.g. `'PROJECT'`, `'SERVER'`, `'ENVIRONMENT'`.
-- `resource_id` (INTEGER): Specific database ID of the target resource.
-
----
-
-## 3. Effective Permission Evaluation Algorithm
-
-When a user executes an API request, their effective permissions are computed using the following CTE SQL evaluation:
-
-```sql
-WITH overrides AS (
-    -- Fetch direct user overrides for the current Organization
-    SELECT p.action, up.effect
-    FROM user_policy up
-    JOIN policy p ON p.id = up.policy_id
-    WHERE up.user_id = ? AND up.org_id = ?
-)
-SELECT DISTINCT action FROM (
-    -- 1. Base permissions from assigned Organization Group/Role
-    SELECT p.action
-    FROM organization_members om
-    JOIN group_policy gp ON gp.group_id = om.group_id
-    JOIN policy p ON p.id = gp.policy_id
-    WHERE om.user_id = ? AND om.organization_id = ?
-    
-    UNION ALL
-    
-    -- 2. Include extra GRANT overrides
-    SELECT action FROM overrides WHERE effect = 'GRANT'
-)
--- 3. Exclude DENY overrides (DENY overrides take absolute precedence!)
-WHERE action NOT IN (SELECT action FROM overrides WHERE effect = 'DENY')
-ORDER BY action;
+    Client->>Guard: Request + JWT + optional x-organization-id
+    Guard->>JWT: Authenticate request
+    JWT-->>Guard: user_id
+    Guard->>Service: Resolve organization
+    Service->>Repository: Read organization membership
+    Repository-->>Service: organization_id / no membership
+    Service-->>Guard: selected organization_id
+    Guard->>Service: check_permission(user, org, resource:operation)
+    Service->>Repository: Role + group + user policies
+    Repository-->>Service: Effective permissions
+    alt permission exists
+        Service-->>Guard: Allowed
+        Guard->>Handler: Claims + typed PermissionContext
+        Handler-->>Client: Response
+    else permission missing
+        Service-->>Guard: Denied
+        Guard-->>Client: 403 Forbidden
+    end
 ```
 
----
+The implementation lives in:
 
-## 4. Permission Resolution Precedence Rules
+- `src/core/middleware/permission/` — typed route guard and rejection mapping.
+- `src/services/permission/` — permission resolution and group/delegation rules.
+- `src/db/repository/` — all permission SQL.
+- `src/api/handlers/permission.rs` — group, member, invite and policy APIs.
 
-When determining if a user is allowed to perform an action:
+## Typed route guards
 
-1. **Super Admin / Server Owner (`users.is_owner = 1`)**:
-   - **Result**: `ALLOW` immediately. Bypasses all group and policy checks.
-2. **`DENY` Override (`user_policy.effect = 'DENY'`)**:
-   - **Result**: `BLOCK`. Takes precedence over group permissions and `GRANT` overrides.
-3. **`GRANT` Override (`user_policy.effect = 'GRANT'`)**:
-   - **Result**: `ALLOW`. Grants permission even if the user's Group role lacks it.
-4. **Group Role Permissions (`organization_members` -> `groups` -> `group_policy`)**:
-   - **Result**: Standard role-based access.
-5. **Default Fallback**:
-   - **Result**: `BLOCK` (HTTP 403 Forbidden).
-
----
-
-## 5. Dedicated Per-User Overrides (ABAC Deep Dive)
-
-Per-user permissions allow administrators to bypass group roles and assign granular exceptions or item-level restrictions to specific users.
-
-```
-                  ┌──────────────────────┐
-                  │    users (User ID)   │
-                  └──────────┬───────────┘
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-┌───────────────────────┐         ┌───────────────────────┐
-│      user_policy      │         │    resource_access    │
-│───────────────────────│         │───────────────────────│
-│ user_id: 5            │         │ user_id: 5            │
-│ org_id: 1             │         │ org_id: 1             │
-│ policy_id: 10         │         │ resource_type:        │
-│ effect: 'DENY'        │         │   'PROJECT'           │
-└───────────────────────┘         │ resource_id: 42       │
-                                  └───────────────────────┘
-  (Action-Level Exception)           (Resource-Level Scoping)
-```
-
-### 5.1 Action-Level Per-User Overrides (`user_policy`)
-
-#### A. Granting Extra Permission (`GRANT`)
-If a user belongs to a `Viewer` group, but needs specific access to deploy applications:
-```rust
-user_policy_repo.upsert(user_id, org_id, policy_id, "GRANT").await?;
-```
-- **SQL Executed**:
-  ```sql
-  INSERT INTO user_policy (user_id, org_id, policy_id, effect)
-  VALUES (?, ?, ?, 'GRANT')
-  ON CONFLICT(user_id, org_id, policy_id) DO UPDATE SET effect = 'GRANT';
-  ```
-
-#### B. Revoking Permission (`DENY`)
-If an `Admin` user should be blocked from deleting servers:
-```rust
-user_policy_repo.upsert(user_id, org_id, policy_id, "DENY").await?;
-```
-- **SQL Executed**:
-  ```sql
-  INSERT INTO user_policy (user_id, org_id, policy_id, effect)
-  VALUES (?, ?, ?, 'DENY')
-  ON CONFLICT(user_id, org_id, policy_id) DO UPDATE SET effect = 'DENY';
-  ```
-
----
-
-### 5.2 Resource-Level Per-User Scoping (`resource_access`)
-
-Restricts a user's visibility so they can only view or manage specific items (e.g., Project #42 or Server #205).
-
-#### A. Granting Specific Resource Access
-```rust
-resource_access_repo.grant_access(user_id, org_id, "PROJECT", 42).await?;
-```
-- **SQL Executed**:
-  ```sql
-  INSERT INTO resource_access (user_id, org_id, resource_type, resource_id)
-  VALUES (?, ?, 'PROJECT', 42);
-  ```
-
-#### B. Checking Resource Access in Services
-```rust
-let allowed = resource_access_repo.check_access(user_id, org_id, "PROJECT", 42).await?;
-if !allowed {
-    return Err(PermissionError::Forbidden("Access to project 42 denied"));
-}
-```
-
----
-
-### 5.3 Real-World Evaluation Matrix Example
-
-Assume **User: Rahul (User ID: 5)** belongs to the **Developer** Group in **Org ID: 1**:
-
-| Action / Resource | Group Role (Developer) | `user_policy` Override | `resource_access` Scope | Final Resolved Access |
-| :--- | :--- | :--- | :--- | :--- |
-| `applications:read` | ✅ ALLOW | *(None)* | All Projects | ✅ **ALLOWED** |
-| `servers:delete` | ❌ BLOCKED | *(None)* | N/A | ❌ **BLOCKED** |
-| `servers:reboot` | ✅ ALLOW | ❌ **`DENY`** | N/A | ❌ **BLOCKED (DENY Override Wins)** |
-| `billing:view` | ❌ BLOCKED | ✅ **`GRANT`** | N/A | ✅ **ALLOWED (GRANT Override Wins)** |
-| `project:access` | ✅ ALLOW | *(None)* | Only `PROJECT #42` | 🔒 **RESTRICTED to Project 42 Only** |
-
----
-
-## 6. Code Integration & Middleware Guards
-
-### 6.1 Route Guard Usage in Axum Controllers
-
-Endpoints require permissions using Axum extractor guards:
+Routes declare permissions at compile time:
 
 ```rust
-#[get("/server/{id}")]
-async fn get_server_metrics(
-    &self,
-    RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-    Path(id): Path<i64>,
-) -> Result<Json<Value>, ApiError> {
-    // Permission guard automatically verified:
-    // 1. JWT Claims & Auth token
-    // 2. Resolved Organization ID
-    // 3. Checked action "server:monitor"
-}
+use crate::core::middleware::permission::{CanDeploy, RequirePermission, Application};
+
+RequirePermission<Application, CanDeploy>
 ```
 
-### 6.2 Axum Extractor Flow (`src/core/middleware/permission/extractor.rs`)
+This resolves to the canonical action:
 
-1. Extract `Claims` from JWT Authorization header.
-2. Resolve `x-organization-id` header or fallback to user's primary organization.
-3. Format Policy Action string: `PolicyAction::new(Resource::NAME, Operation::NAME)` -> `"server:monitor"`.
-4. Call `PermissionService::check_permission(user_id, org_id, action)`.
-5. If allowed, inject `PermissionOrganization(org_id)` into request extensions and proceed.
-6. If denied, abort immediately with `HTTP 403 Forbidden ("Permission Denied: server:monitor")`.
+```text
+app:deploy
+```
+
+The resource and operation must be registered in `src/services/permission/types.rs`, and the pair must be permitted in `src/core/middleware/permission/rules.rs`:
+
+```rust
+allow!(Application: CanRead, CanCreate, CanUpdate, CanDelete, CanDeploy, CanMonitor);
+```
+
+Therefore invalid combinations fail at compile time instead of becoming unprotected string-based routes.
+
+## Organization selection
+
+The extractor first checks the `x-organization-id` request header. If it is absent, it uses `PermissionService::resolve_organization`, which returns the user's first organization membership.
+
+The organization ID is placed into request extensions as `PermissionOrganization` and is also available from the typed context:
+
+```rust
+RequirePermission(_claims, permission): RequirePermission<Server, CanRead>
+let organization_id = permission.organization_id();
+```
+
+Handlers that access a resource by ID must still verify that resource belongs to this organization. The permission guard authenticates the action; it does not infer ownership of arbitrary IDs.
+
+## Permission resolution
+
+`PermissionService::check_permission` evaluates permissions in this order:
+
+1. **Platform owner** — a user with role `OWNER` is allowed globally.
+2. **Membership** — the user must be a member of the requested organization.
+3. **Legacy compatibility** — users in `permission_legacy_full_access` retain temporary full access.
+4. **Organization admin** — a member with role `ADMIN` is allowed all actions.
+5. **Group and user policies** — `GroupRepository::get_user_final_permissions` returns the effective action set.
+6. **Default deny** — missing actions return `403 Forbidden`.
+
+```mermaid
+flowchart TD
+    S([Check permission]) --> P{Platform OWNER?}
+    P -->|Yes| ALLOW[Allow]
+    P -->|No| M{Organization member?}
+    M -->|No| DENY[Deny]
+    M -->|Yes| L{Legacy full access?}
+    L -->|Yes| ALLOW
+    L -->|No| A{Role ADMIN?}
+    A -->|Yes| ALLOW
+    A -->|No| MR{Role MEMBER?}
+    MR -->|No| DENY
+    MR -->|Yes| EP[Calculate group and user policies]
+    EP --> UD{Explicit DENY?}
+    UD -->|Yes| DENY
+    UD -->|No| UG{Group or user GRANT?}
+    UG -->|Yes| ALLOW
+    UG -->|No| DENY
+```
+
+The effective group query combines policies assigned through `organization_members → group_policy → policy` with direct user overrides. A `DENY` action is removed after grants are collected, so it wins over a group grant.
+
+```text
+group GRANT + user GRANT = allowed
+group GRANT + user DENY  = denied
+group missing + user GRANT = allowed
+group missing + no override = denied
+```
+
+## Database model
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORGANIZATION_MEMBERS : belongs_to
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBERS : contains
+    GROUPS ||--o{ ORGANIZATION_MEMBERS : assigned_to
+    GROUPS ||--o{ GROUP_POLICY : contains
+    POLICY ||--o{ GROUP_POLICY : mapped_by
+    USERS ||--o{ USER_POLICY : overrides
+    ORGANIZATION ||--o{ USER_POLICY : scopes
+    POLICY ||--o{ USER_POLICY : targets
+    USERS ||--o{ RESOURCE_ACCESS : receives
+    ORGANIZATION ||--o{ RESOURCE_ACCESS : scopes
+
+    ORGANIZATION_MEMBERS {
+        integer user_id
+        integer organization_id
+        integer group_id
+        text role
+    }
+    POLICY {
+        integer id
+        text action
+    }
+    USER_POLICY {
+        integer user_id
+        integer org_id
+        integer policy_id
+        text effect
+    }
+    RESOURCE_ACCESS {
+        integer user_id
+        integer org_id
+        text resource_type
+        integer resource_id
+    }
+```
+
+Important tables:
+
+- `organization_members` — one membership per user and organization; stores role and assigned group.
+- `groups` — system or organization-owned permission groups.
+- `policy` — canonical action catalog such as `server:read` and `app:deploy`.
+- `group_policy` — many-to-many group/action mapping.
+- `user_policy` — explicit `GRANT`/`DENY` action overrides.
+- `resource_access` — optional item-level grants.
+- `permission_legacy_full_access` — compatibility allow-list for older users.
+
+All SQL is repository-owned. Services call repositories and do not query these tables directly.
+
+## Groups and delegation
+
+An organization can create custom groups and assign policies to them. System groups are protected and cannot be edited or deleted as normal organization groups.
+
+When a member creates a group, invites a user, assigns a group, or replaces user policies, `PermissionGroupService` verifies that the requested actions are a subset of the actor's effective permissions. This prevents privilege escalation:
+
+```mermaid
+flowchart LR
+    AP[Actor effective actions] --> C{Requested actions are a subset?}
+    RP[Requested group or user policies] --> C
+    C -->|Yes| SAVE[Save assignment]
+    C -->|No| ESC[403 escalation rejected]
+    SAVE --> AUDIT[Write audit event]
+```
+
+```text
+Actor permissions: app:read, app:deploy
+Requested group:  app:read, app:deploy   ✅ allowed
+Requested group:  server:delete           ❌ rejected
+```
+
+Relevant service error:
+
+```text
+permission delegation exceeds the actor's permissions
+```
+
+The owner/admin policy APIs also write audit events for group, member, policy and invitation changes.
+
+## Resource-level access
+
+Use resource access when an action is valid generally but must be restricted to selected items:
+
+```rust
+let allowed = permission_service
+    .check_resource_access(user_id, organization_id, ResourceType::Server, server_id)
+    .await?;
+```
+
+Platform owners bypass this check. Other users need a matching row in `resource_access`. A service should perform this check after the route permission guard and before mutating or returning the specific resource.
+
+## API examples
+
+The permission controller exposes operations for:
+
+- listing available policies and groups;
+- creating, updating and deleting organization groups;
+- assigning a group to an organization member;
+- replacing a member's direct `GRANT`/`DENY` policies;
+- creating, listing, cancelling and accepting organization invitations.
+
+Every endpoint is itself protected with a typed permission, for example:
+
+```rust
+RequirePermission<Groups, CanCreate>
+RequirePermission<Members, CanUpdate>
+RequirePermission<Invitation, CanCreate>
+```
+
+## Adding a new permission
+
+1. Add the resource or operation to `src/services/permission/types.rs`.
+2. Add valid resource/operation pairs to `src/core/middleware/permission/rules.rs`.
+3. Insert the action into a migration under `db/migrations/` and mirror the current schema under `db/schema/`.
+4. Protect the route with `RequirePermission<Resource, Operation>`.
+5. Add organization ownership checks for any resource ID in the request.
+6. Add tests for owner, admin, group grant, explicit deny, missing membership and cross-organization access.
+
+## Security rules
+
+- Never trust an organization ID from the URL/body without comparing it to the permission context.
+- Never use a user's legacy/global group ID as the organization scope.
+- Keep permission SQL in repositories.
+- Treat `DENY` as stronger than any grant.
+- Do not let a member assign actions they do not already possess.
+- Return `403` for a valid request lacking permission and `401` for missing/invalid authentication.
