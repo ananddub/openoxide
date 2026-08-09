@@ -117,10 +117,9 @@ Handlers that access a resource by ID must still verify that resource belongs to
 
 1. **Platform owner** — a user with role `OWNER` is allowed globally.
 2. **Membership** — the user must be a member of the requested organization.
-3. **Legacy compatibility** — users in `permission_legacy_full_access` retain temporary full access.
-4. **Organization admin** — a member with role `ADMIN` is allowed all actions.
-5. **Group and user policies** — `GroupRepository::get_user_final_permissions` returns the effective action set.
-6. **Default deny** — missing actions return `403 Forbidden`.
+3. **Organization admin** — a member with role `ADMIN` is allowed all actions in that organization.
+4. **Member policies** — a `MEMBER` receives permissions from assigned group policies and direct user overrides.
+5. **Default deny** — missing actions return `403 Forbidden`.
 
 ```mermaid
 flowchart TD
@@ -128,9 +127,7 @@ flowchart TD
     P -->|Yes| ALLOW[Allow]
     P -->|No| M{Organization member?}
     M -->|No| DENY[Deny]
-    M -->|Yes| L{Legacy full access?}
-    L -->|Yes| ALLOW
-    L -->|No| A{Role ADMIN?}
+    M -->|Yes| A{Role ADMIN?}
     A -->|Yes| ALLOW
     A -->|No| MR{Role MEMBER?}
     MR -->|No| DENY
@@ -198,7 +195,6 @@ Important tables:
 - `group_policy` — many-to-many group/action mapping.
 - `user_policy` — explicit `GRANT`/`DENY` action overrides.
 - `resource_access` — optional item-level grants.
-- `permission_legacy_full_access` — compatibility allow-list for older users.
 
 All SQL is repository-owned. Services call repositories and do not query these tables directly.
 
@@ -273,7 +269,7 @@ RequirePermission<Invitation, CanCreate>
 ## Security rules
 
 - Never trust an organization ID from the URL/body without comparing it to the permission context.
-- Never use a user's legacy/global group ID as the organization scope.
+- Never use a user's global/default group ID as the organization scope; use the organization membership record.
 - Keep permission SQL in repositories.
 - Treat `DENY` as stronger than any grant.
 - Do not let a member assign actions they do not already possess.
@@ -284,3 +280,17 @@ RequirePermission<Invitation, CanCreate>
 The main multi-organization risk is checking only a user's role and forgetting the organization or resource being requested. Rustploy fixes that at two layers: `RequirePermission` establishes one canonical organization context, and handlers/services verify that the target resource belongs to that organization.
 
 The second risk is privilege delegation. Group and policy mutations go through `PermissionGroupService`, which loads the actor's effective actions and rejects any requested group or override that is not a subset. Repository methods constrain organization-owned groups and protect system groups. Audit events are emitted after successful permission, member, and invite changes.
+
+## Legacy access removal
+
+The temporary `permission_legacy_full_access` compatibility bypass has been removed. Existing users no longer receive implicit full access merely because their account predates permission enforcement.
+
+Migration `0044_remove_legacy_permission_access.sql` removes the compatibility table from upgraded databases. After this migration, every authorization decision follows the same explicit rules:
+
+```text
+platform OWNER
+    OR organization ADMIN
+    OR MEMBER with an effective granted action
+```
+
+This makes permission behavior predictable and prevents an old account from silently bypassing organization policies.

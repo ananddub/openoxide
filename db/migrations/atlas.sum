@@ -1,4 +1,4 @@
-h1:ngA2Qgu5TQsZJ3BjBMYCnLQCWZZK+ATlvVAm4v7BEyY=
+h1:44JetSkTKCGWN4obFR0BNU5vLGco8H/QXkNBYSs90dE=
 0001_initial.sql h1:F3W1L3w4LNfG1mRMavOXQsoYxu78Z3tIt1GEJeE+H30=
 0002_schedule_action.sql h1:EZ0IABextrgUejhihIHSqFv3rYAHRpE0JmmcU6znFUA=
 0003_deployment_queue.sql h1:P2KB/aCC3fIGylfjEIWd5VgunoTNeVMxb0+LcsSThpI=
@@ -42,3 +42,4 @@ h1:ngA2Qgu5TQsZJ3BjBMYCnLQCWZZK+ATlvVAm4v7BEyY=
 0041_database_resource_view.sql h1:dLK/pLSqkrwubqF4I3XAuaKA12aeU/wHtADW2YWK2/Y=
 0042_permission_enforcement.sql h1:39XOYJeVi4A6iypXRgU6Nb0LvKq5avMpbAU1V+G0GNM=
 0043_permission_groups.sql h1:wSkRG5Z6d9EWxAJ3aX4Wf1ZN7WawHByDXdqs6RZ1Rks=
+0044_remove_legacy_permission_access.sql h1:5RZOwYqemFDPSqb2LTlXTcv/VDsQQ1IgP6N6PDIXLEA=

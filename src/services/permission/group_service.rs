@@ -642,12 +642,7 @@ impl PermissionGroupService {
         actor_id: i64,
         organization_id: i64,
     ) -> Result<bool, sqlx::Error> {
-        if self.permission_service.is_platform_owner(actor_id).await?
-            || self
-                .permission_service
-                .has_legacy_full_access(actor_id)
-                .await?
-        {
+        if self.permission_service.is_platform_owner(actor_id).await? {
             return Ok(true);
         }
         Ok(matches!(

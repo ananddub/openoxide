@@ -2,8 +2,8 @@ use auto_di::singleton;
 use std::sync::Arc;
 
 use crate::db::repository::{
-    GroupRepository, OrganizationMemberRepository, PermissionCompatibilityRepository,
-    ResourceAccessRepository, UserPolicyRepository, UserRepository,
+    GroupRepository, OrganizationMemberRepository, ResourceAccessRepository, UserPolicyRepository,
+    UserRepository,
 };
 use crate::services::permission::types::{PolicyAction, ResourceType, UserRole};
 
@@ -13,7 +13,6 @@ pub struct PermissionService {
     resource_access_repo: Arc<ResourceAccessRepository>,
     user_policy_repo: Arc<UserPolicyRepository>,
     member_repo: Arc<OrganizationMemberRepository>,
-    compatibility_repo: Arc<PermissionCompatibilityRepository>,
 }
 
 #[singleton]
@@ -27,19 +26,12 @@ impl PermissionService {
             .is_some_and(|role| UserRole::from(role.as_str()) == UserRole::Owner))
     }
 
-    pub async fn has_legacy_full_access(&self, user_id: i64) -> Result<bool, sqlx::Error> {
-        self.compatibility_repo
-            .has_legacy_full_access(user_id)
-            .await
-    }
-
     pub fn new(
         user_repo: Arc<UserRepository>,
         group_repo: Arc<GroupRepository>,
         resource_access_repo: Arc<ResourceAccessRepository>,
         user_policy_repo: Arc<UserPolicyRepository>,
         member_repo: Arc<OrganizationMemberRepository>,
-        compatibility_repo: Arc<PermissionCompatibilityRepository>,
     ) -> Self {
         Self {
             user_repo,
@@ -47,7 +39,6 @@ impl PermissionService {
             resource_access_repo,
             user_policy_repo,
             member_repo,
-            compatibility_repo,
         }
     }
 
@@ -71,14 +62,6 @@ impl PermissionService {
 
         if member_role.is_none() {
             return Ok(false);
-        }
-
-        if self
-            .compatibility_repo
-            .has_legacy_full_access(user_id)
-            .await?
-        {
-            return Ok(true);
         }
 
         match member_role.as_deref() {
