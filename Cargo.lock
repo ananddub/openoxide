@@ -3856,6 +3856,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustploy-todo-test"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "futures",
+ "html-macro",
+ "html-rt",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
