@@ -45,14 +45,14 @@ impl TodoController {
                             @for todo in self.load_todos().await["todos"] {
                                 <div class="flex items-center gap-2 p-3">
                                     @if todo.done {
-                                        <span class="flex-1 text-gray-400 line-through">{&todo.title}</span>
-                                    } @else {
-                                        <span class="flex-1">{&todo.title}</span>
-                                    }
-                                    @if todo.done {
                                         <input type="checkbox" checked on:change={self.toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark undone" />
                                     } @else {
                                         <input type="checkbox" on:change={self.toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark done" />
+                                    }
+                                    @if todo.done {
+                                        <span class="flex-1 text-gray-400 line-through">{&todo.title}</span>
+                                    } @else {
+                                        <span class="flex-1">{&todo.title}</span>
                                     }
                                     <button type="button" on:click={self.delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
                                 </div>
