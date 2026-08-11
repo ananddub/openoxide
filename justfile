@@ -122,6 +122,10 @@ db-gen:
 run:
     cargo run
 
+# Run the standalone reactive Todo integration test app
+todo-dev:
+    cargo run -p rustploy-todo-test
+
 # Run the React frontend dev server
 web:
     cd web/rustploy_react && bun run dev
