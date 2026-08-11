@@ -32,6 +32,7 @@ pub async fn connect() -> SqlitePool {
 
 fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
     let pending = Arc::new(Mutex::new(Vec::<String>::new()));
+    let runtime = tokio::runtime::Handle::current();
     let writes = Arc::clone(&pending);
     handle.set_preupdate_hook(move |change| {
         if let Ok(mut tables) = writes.lock() {
@@ -39,17 +40,69 @@ fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
         }
     });
     let commits = Arc::clone(&pending);
+    let commit_runtime = runtime.clone();
     handle.set_commit_hook(move || {
-        if let Ok(mut tables) = commits.lock() {
+        let tables = if let Ok(mut tables) = commits.lock() {
             tables.sort_unstable();
             tables.dedup();
-            html_rt::publish_table_changes(std::mem::take(&mut *tables));
+            std::mem::take(&mut *tables)
+        } else {
+            Vec::new()
+        };
+
+        if !tables.is_empty() {
+            commit_runtime.spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                html_rt::publish_table_changes(tables);
+            });
         }
-        false
+
+        true
     });
     handle.set_rollback_hook(move || {
         if let Ok(mut tables) = pending.lock() {
             tables.clear();
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::{Connection, SqliteConnection};
+    use std::time::Duration;
+
+    #[tokio::test]
+    async fn committed_write_is_visible_before_reactive_notification() {
+        let mut connection = SqliteConnection::connect("sqlite::memory:").await.unwrap();
+        sqlx::query(
+            "CREATE TABLE todos (id INTEGER PRIMARY KEY, title TEXT NOT NULL, done INTEGER NOT NULL)",
+        )
+        .execute(&mut connection)
+        .await
+        .unwrap();
+
+        {
+            let mut handle = connection.lock_handle().await.unwrap();
+            install_hooks(&mut handle);
+        }
+
+        let mut changes = html_rt::subscribe_table_changes();
+        sqlx::query("INSERT INTO todos (id, title, done) VALUES (1, 'test', 0)")
+            .execute(&mut connection)
+            .await
+            .unwrap();
+
+        let tables = tokio::time::timeout(Duration::from_secs(1), changes.recv())
+            .await
+            .expect("reactive notification timed out")
+            .expect("reactive channel closed");
+        assert!(tables.iter().any(|table| table == "todos"));
+
+        let done: i64 = sqlx::query_scalar("SELECT done FROM todos WHERE id = 1")
+            .fetch_one(&mut connection)
+            .await
+            .unwrap();
+        assert_eq!(done, 0);
+    }
 }
