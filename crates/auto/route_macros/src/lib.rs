@@ -567,11 +567,12 @@ fn expand_controller(
 
         let mut inputs = function.sig.inputs.iter();
         match inputs.next() {
-            Some(FnArg::Receiver(receiver)) if receiver.reference.is_some() => {}
+            Some(FnArg::Receiver(receiver))
+                if receiver.reference.is_some() || receiver.colon_token.is_some() => {}
             _ => {
                 return Err(syn::Error::new_spanned(
                     &function.sig,
-                    "controller route methods must take &self as their first argument",
+                    "controller route methods must take &self or self: Arc<Self> as their first argument",
                 ));
             }
         }
