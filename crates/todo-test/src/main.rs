@@ -1,5 +1,6 @@
 mod controller;
 mod db;
+mod icons;
 mod models;
 mod sse;
 

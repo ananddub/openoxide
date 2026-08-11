@@ -1,3 +1,4 @@
+use crate::icons;
 use crate::models::NewTodo;
 use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
@@ -47,9 +48,9 @@ impl TodoController {
                                         <span class="flex-1">{&todo.title}</span>
                                     }
                                     @if todo.done {
-                                        <button type="button" on:click={Self::toggle(todo.id)} class="rounded border px-2 py-1 text-lg leading-none text-green-600" title="Mark undone">"☑"</button>
+                                        <button type="button" on:click={Self::toggle(todo.id)} class="rounded border p-2 text-green-600" title="Mark undone">{icons::square_check()}</button>
                                     } @else {
-                                        <button type="button" on:click={Self::toggle(todo.id)} class="rounded border px-2 py-1 text-lg leading-none text-gray-500" title="Mark done">"☐"</button>
+                                        <button type="button" on:click={Self::toggle(todo.id)} class="rounded border p-2 text-gray-500" title="Mark done">{icons::square()}</button>
                                     }
                                     <button type="button" on:click={Self::delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
                                 </div>
