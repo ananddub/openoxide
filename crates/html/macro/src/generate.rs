@@ -49,8 +49,13 @@ fn unwrap_some_pat(pat: &syn::Pat) -> syn::Pat {
     pat.clone()
 }
 
-/// Transform `Self::method` or `Controller::method` to `Self::__PATH_method`
-fn transform_on_method(method: &syn::Expr) -> syn::Expr {
+/// Resolve `Self::method` and `Self::method(arg)` into the generated route path.
+fn transform_route(method: &syn::Expr) -> TokenStream {
+    let (method, args) = match method {
+        syn::Expr::Call(call) => (&*call.func, call.args.iter().collect::<Vec<_>>()),
+        method => (method, Vec::new()),
+    };
+
     if let syn::Expr::Path(expr_path) = method {
         if expr_path.path.segments.len() > 1 {
             let mut new_path = expr_path.clone();
@@ -61,10 +66,23 @@ fn transform_on_method(method: &syn::Expr) -> syn::Expr {
                         syn::Ident::new(&format!("__PATH_{}", ident_str), last_seg.ident.span());
                 }
             }
-            return syn::Expr::Path(new_path);
+            if args.is_empty() {
+                return quote! { #new_path };
+            }
+            return quote! {{
+                let mut __route = (#new_path).to_owned();
+                #(
+                    if let (::std::option::Option::Some(__start), ::std::option::Option::Some(__end)) =
+                        (__route.find('{'), __route.find('}'))
+                    {
+                        __route.replace_range(__start..=__end, &::std::format!("{}", #args));
+                    }
+                )*
+                __route
+            }};
         }
     }
-    method.clone()
+    quote! { #method }
 }
 
 pub fn generate(nodes: Nodes, out: &Ident) -> TokenStream {
@@ -147,15 +165,22 @@ fn gen_attr(attr: Attr, b: &mut Builder, out: &Ident) {
                     b.push_raw(name_str);
                     b.push_raw("=\"");
                     b.flush();
-                    b.tokens.extend(quote! {
-                        ::html_rt::macro_private::render_to!(&(#expr), &mut #out);
-                    });
+                    if name_str == "action" {
+                        let route = transform_route(&expr);
+                        b.tokens.extend(quote! {
+                            ::html_rt::macro_private::render_to!(&(#route), &mut #out);
+                        });
+                    } else {
+                        b.tokens.extend(quote! {
+                            ::html_rt::macro_private::render_to!(&(#expr), &mut #out);
+                        });
+                    }
                     b.push_raw("\"");
                 }
             }
         }
         AttrKind::On { event, method } => {
-            let resolved_method = transform_on_method(&method);
+            let resolved_method = transform_route(&method);
             b.flush();
             b.tokens.extend(quote! {
                 #out.push_str(&format!(" data-on:{}=\"@post('", #event));
