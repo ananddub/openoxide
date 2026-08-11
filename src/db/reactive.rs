@@ -74,7 +74,7 @@ pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
             .map(|mut changes| std::mem::take(&mut *changes))
             .unwrap_or_default();
         event_bus().publish(changes);
-        true
+        false
     });
 
     handle.set_rollback_hook(move || {

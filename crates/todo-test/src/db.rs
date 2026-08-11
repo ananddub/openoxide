@@ -45,7 +45,7 @@ fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
             tables.dedup();
             html_rt::publish_table_changes(std::mem::take(&mut *tables));
         }
-        true
+        false
     });
     handle.set_rollback_hook(move || {
         if let Ok(mut tables) = pending.lock() {
