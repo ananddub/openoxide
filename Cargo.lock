@@ -3859,10 +3859,13 @@ dependencies = [
 name = "rustploy-todo-test"
 version = "0.1.0"
 dependencies = [
+ "auto-di",
+ "auto_route",
  "axum 0.8.9",
  "futures",
  "html-macro",
  "html-rt",
+ "poem-openapi",
  "serde",
  "serde_json",
  "sqlx",
