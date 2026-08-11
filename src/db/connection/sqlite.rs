@@ -20,6 +20,13 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
 
     let pool = SqlitePoolOptions::new()
         .max_connections(25)
+        .after_connect(|connection, _metadata| {
+            Box::pin(async move {
+                let mut handle = connection.lock_handle().await?;
+                crate::db::reactive::install_hooks(&mut handle);
+                Ok(())
+            })
+        })
         .connect_with(options)
         .await
         .expect("Failed to connect to SQLite database");

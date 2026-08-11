@@ -611,6 +611,13 @@ fn expand_controller(
         ));
     }
 
+    // ── PATH constants: __PATH_restart = "/apps/restart" ──────────────────────
+    let path_const_names: Vec<_> = routes
+        .iter()
+        .map(|r| format_ident!("__PATH_{}", r.handler))
+        .collect();
+    let path_const_values: Vec<_> = routes.iter().map(|r| &r.path).collect();
+
     let registrations = routes.iter().map(|route| {
         let method = &route.method;
         let handler = &route.handler;
@@ -702,6 +709,15 @@ fn expand_controller(
 
     Ok(quote! {
         #managed_impl
+
+        // ── PATH constants for html! on:click={Self::method} ──────────────────
+        #[allow(non_upper_case_globals)]
+        impl #self_ty {
+            #(
+                #[doc(hidden)]
+                pub const #path_const_names: &'static str = #path_const_values;
+            )*
+        }
 
         #[doc(hidden)]
         #[allow(non_snake_case)]

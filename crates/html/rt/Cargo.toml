@@ -1,0 +1,13 @@
+[package]
+name = "html-rt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+itoa = "1"
+tokio = { version = "1", features = ["sync"] }
+uuid = { version = "1", features = ["v4"] }
+axum = { version = "0.8", optional = true, default-features = false }
+
+[features]
+axum = ["dep:axum"]
