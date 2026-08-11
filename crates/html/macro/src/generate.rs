@@ -202,18 +202,20 @@ fn gen_attr(attr: Attr, b: &mut Builder, out: &Ident) {
         }
         AttrKind::Signals(pairs) => {
             b.flush();
-            let mut keys = Vec::new();
-            let mut vals = Vec::new();
-            for (k, v) in pairs {
-                keys.push(format!("\\\"{}\\\":{{}}", k));
-                vals.push(v);
+            b.tokens
+                .extend(quote! { #out.push_str(" data-signals=\"{"); });
+            for (index, (key, value)) in pairs.into_iter().enumerate() {
+                let prefix = if index == 0 {
+                    format!("&quot;{}&quot;:", key)
+                } else {
+                    format!(",&quot;{}&quot;:", key)
+                };
+                b.tokens.extend(quote! {
+                    #out.push_str(#prefix);
+                    ::html_rt::macro_private::push_json_attr_value(&mut #out, &(#value));
+                });
             }
-            let inner = keys.join(",");
-            let fmt_str = format!(" data-signals=\"{{{{{}}}}}\"", inner);
-
-            b.tokens.extend(quote! {
-                #out.push_str(&format!(#fmt_str, #(#vals),*));
-            });
+            b.tokens.extend(quote! { #out.push_str("}\""); });
         }
     }
 }

@@ -337,6 +337,11 @@ pub mod macro_private {
 
     pub use render_to;
 
+    pub fn push_json_attr_value<T: serde::Serialize>(buffer: &mut String, value: &T) {
+        let json = serde_json::to_string(value).expect("signal value must serialize");
+        crate::escape::escape_to_string(&json, buffer);
+    }
+
     pub struct ChooseRenderOrDisplay<T>(pub T);
 
     pub struct ViaRenderTag;

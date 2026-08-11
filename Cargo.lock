@@ -1791,6 +1791,8 @@ version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
  "itoa",
+ "serde",
+ "serde_json",
  "tokio",
  "uuid",
 ]

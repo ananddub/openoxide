@@ -1,6 +1,6 @@
 use crate::models::NewTodo;
 use auto_route::controller;
-use axum::{Form, extract::Path, http::StatusCode, response::IntoResponse};
+use axum::{Json, extract::Path, http::StatusCode};
 use html_macro::html;
 use html_rt::Markup;
 use sqlx::SqlitePool;
@@ -30,14 +30,14 @@ impl TodoController {
                     <script src="https://cdn.tailwindcss.com"></script>
                     <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
                 </head>
-                <body class="bg-white text-gray-900">
+                <body class="bg-white text-gray-900" signals={ title: "" }>
                     <main class="mx-auto max-w-xl px-4 py-10">
                         <h1 class="text-2xl font-semibold">"Todo"</h1>
                         <p class="mb-6 mt-1 text-sm text-gray-500">"Reactive SQLite + SSE test"</p>
-                        <form method="post" action={Self::create} class="mb-6 flex gap-2">
-                            <input name="title" required placeholder="New todo" class="min-w-0 flex-1 rounded border px-3 py-2 outline-none focus:border-blue-500" />
-                            <button class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"Add"</button>
-                        </form>
+                        <div class="mb-6 flex gap-2">
+                            <input bind:title="" placeholder="New todo" class="min-w-0 flex-1 rounded border px-3 py-2 outline-none focus:border-blue-500" />
+                            <button type="button" on:click={Self::create} class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"+ Add"</button>
+                        </div>
                         <div class="divide-y rounded border">
                             @for todo in load_todos(pool.clone()).await["todos"] {
                                 <div class="flex items-center gap-2 p-3">
@@ -46,7 +46,7 @@ impl TodoController {
                                     } @else {
                                         <span class="flex-1">{&todo.title}</span>
                                     }
-                                    <button type="button" on:click={Self::toggle(todo.id)} class="rounded border px-2 py-1 text-sm">"Toggle"</button>
+                                    <button type="button" on:click={Self::toggle(todo.id)} class="rounded border px-2 py-1 text-sm" title="Mark complete">"✓"</button>
                                     <button type="button" on:click={Self::delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
                                 </div>
                             }
@@ -58,12 +58,14 @@ impl TodoController {
     }
 
     #[post]
-    async fn create(&self, Form(todo): Form<NewTodo>) -> impl IntoResponse {
-        let _ = sqlx::query("INSERT INTO todos(title) VALUES (?)")
-            .bind(todo.title.trim())
-            .execute(&self.pool)
-            .await;
-        redirect()
+    async fn create(&self, Json(todo): Json<NewTodo>) -> StatusCode {
+        if !todo.title.trim().is_empty() {
+            let _ = sqlx::query("INSERT INTO todos(title) VALUES (?)")
+                .bind(todo.title.trim())
+                .execute(&self.pool)
+                .await;
+        }
+        StatusCode::NO_CONTENT
     }
 
     #[post("/{id}/toggle")]
@@ -90,11 +92,4 @@ async fn load_todos(pool: SqlitePool) -> Vec<crate::models::Todo> {
         .fetch_all(&pool)
         .await
         .unwrap_or_default()
-}
-
-fn redirect() -> impl IntoResponse {
-    (
-        StatusCode::SEE_OTHER,
-        [(axum::http::header::LOCATION, "/todo")],
-    )
 }
