@@ -29,8 +29,11 @@ impl TodoController {
                     <title>"Rustploy Todo"</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                     <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
+                    <script>{html_rt::PreEscaped(NAV_SCRIPT)}</script>
                 </head>
                 <body class="bg-white text-gray-900" signals={ title: "" }>
+                    <div id="app">
+                        {navbar("home")}
                     <main class="mx-auto max-w-xl px-4 py-10">
                         <h1 class="text-2xl font-semibold">"Todo"</h1>
                         <p class="mb-6 mt-1 text-sm text-gray-500">"Reactive SQLite + SSE test"</p>
@@ -56,6 +59,32 @@ impl TodoController {
                             }
                         </div>
                     </main>
+                    </div>
+                </body>
+            </html>
+        }
+    }
+
+    #[get("/about")]
+    async fn about(&self) -> Markup {
+        html! {
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                    <title>"About · Rustploy Todo"</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <script>{html_rt::PreEscaped(NAV_SCRIPT)}</script>
+                </head>
+                <body class="bg-white text-gray-900">
+                    <div id="app">
+                        {navbar("about")}
+                        <main class="mx-auto max-w-xl px-4 py-10">
+                            <h1 class="text-2xl font-semibold">"About"</h1>
+                            <p class="mt-3 text-gray-600">"This page tests flicker-free navigation with real auto_route endpoints."</p>
+                        </main>
+                    </div>
                 </body>
             </html>
         }
@@ -88,6 +117,33 @@ impl TodoController {
             .execute(&self.pool)
             .await;
         StatusCode::NO_CONTENT
+    }
+}
+
+const NAV_SCRIPT: &str = r#"
+document.addEventListener('click', async event => {
+  const link = event.target.closest('a[data-nav]');
+  if (!link || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  event.preventDefault();
+  const response = await fetch(link.href, {headers: {'x-rustploy-navigation': 'true'}});
+  const documentNext = new DOMParser().parseFromString(await response.text(), 'text/html');
+  const appNext = documentNext.querySelector('#app');
+  if (appNext) {
+    document.querySelector('#app').replaceWith(appNext);
+    history.pushState({}, '', link.href);
+  }
+});
+addEventListener('popstate', () => location.reload());
+"#;
+
+fn navbar(active: &str) -> Markup {
+    html! {
+        <nav class="border-b">
+            <div class="mx-auto flex max-w-xl gap-5 px-4 py-3 text-sm">
+                <a data-nav href={TodoController::page} class={if active == "home" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"Home"</a>
+                <a data-nav href={TodoController::about} class={if active == "about" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"About"</a>
+            </div>
+        </nav>
     }
 }
 

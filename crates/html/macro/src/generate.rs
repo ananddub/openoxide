@@ -165,7 +165,7 @@ fn gen_attr(attr: Attr, b: &mut Builder, out: &Ident) {
                     b.push_raw(name_str);
                     b.push_raw("=\"");
                     b.flush();
-                    if name_str == "action" {
+                    if name_str == "action" || name_str == "href" {
                         let route = transform_route(&expr);
                         b.tokens.extend(quote! {
                             ::html_rt::macro_private::render_to!(&(#route), &mut #out);
