@@ -33,13 +33,13 @@ impl TodoController {
                 </head>
                 <body class="bg-white text-gray-900" signals={ title: "" }>
                     <div id="app">
-                        {navbar("home")}
+                        {self.navbar("home")}
                     <main class="mx-auto max-w-xl px-4 py-10">
                         <h1 class="text-2xl font-semibold">"Todo"</h1>
                         <p class="mb-6 mt-1 text-sm text-gray-500">"Reactive SQLite + SSE test"</p>
                         <div class="mb-6 flex gap-2">
                             <input bind:title="" placeholder="New todo" class="min-w-0 flex-1 rounded border px-3 py-2 outline-none focus:border-blue-500" />
-                            <button type="button" on:click={Self::create} class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"+ Add"</button>
+                            <button type="button" on:click={self.create} class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"+ Add"</button>
                         </div>
                         <div class="divide-y rounded border">
                             @for todo in self.load_todos().await["todos"] {
@@ -50,11 +50,11 @@ impl TodoController {
                                         <span class="flex-1">{&todo.title}</span>
                                     }
                                     @if todo.done {
-                                        <input type="checkbox" checked on:change={Self::toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark undone" />
+                                        <input type="checkbox" checked on:change={self.toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark undone" />
                                     } @else {
-                                        <input type="checkbox" on:change={Self::toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark done" />
+                                        <input type="checkbox" on:change={self.toggle(todo.id)} class="h-4 w-4 cursor-pointer" title="Mark done" />
                                     }
-                                    <button type="button" on:click={Self::delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
+                                    <button type="button" on:click={self.delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
                                 </div>
                             }
                         </div>
@@ -79,7 +79,7 @@ impl TodoController {
                 </head>
                 <body class="bg-white text-gray-900">
                     <div id="app">
-                        {navbar("about")}
+                        {self.navbar("about")}
                         <main class="mx-auto max-w-xl px-4 py-10">
                             <h1 class="text-2xl font-semibold">"About"</h1>
                             <p class="mt-3 text-gray-600">"This page tests flicker-free navigation with real auto_route endpoints."</p>
@@ -125,6 +125,17 @@ impl TodoController {
             .await
             .unwrap_or_default()
     }
+
+    fn navbar(&self, active: &str) -> Markup {
+        html! {
+            <nav class="border-b">
+                <div class="mx-auto flex max-w-xl gap-5 px-4 py-3 text-sm">
+                    <a data-nav href={self.page} class={if active == "home" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"Home"</a>
+                    <a data-nav href={self.about} class={if active == "about" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"About"</a>
+                </div>
+            </nav>
+        }
+    }
 }
 
 const NAV_SCRIPT: &str = r#"
@@ -142,14 +153,3 @@ document.addEventListener('click', async event => {
 });
 addEventListener('popstate', () => location.reload());
 "#;
-
-fn navbar(active: &str) -> Markup {
-    html! {
-        <nav class="border-b">
-            <div class="mx-auto flex max-w-xl gap-5 px-4 py-3 text-sm">
-                <a data-nav href={TodoController::page} class={if active == "home" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"Home"</a>
-                <a data-nav href={TodoController::about} class={if active == "about" { "font-semibold text-blue-600" } else { "text-gray-600" }} >"About"</a>
-            </div>
-        </nav>
-    }
-}

@@ -51,10 +51,27 @@ fn unwrap_some_pat(pat: &syn::Pat) -> syn::Pat {
 
 /// Resolve `Self::method` and `Self::method(arg)` into the generated route path.
 fn transform_route(method: &syn::Expr) -> TokenStream {
-    let (method, args) = match method {
-        syn::Expr::Call(call) => (&*call.func, call.args.iter().collect::<Vec<_>>()),
-        method => (method, Vec::new()),
+    let (method, args, instance_method) = match method {
+        syn::Expr::Call(call) => (&*call.func, call.args.iter().collect::<Vec<_>>(), None),
+        syn::Expr::MethodCall(call) => (
+            method,
+            call.args.iter().collect::<Vec<_>>(),
+            Some(call.method.clone()),
+        ),
+        syn::Expr::Field(field) => {
+            let ident = match &field.member {
+                syn::Member::Named(ident) => Some(ident.clone()),
+                _ => None,
+            };
+            (method, Vec::new(), ident)
+        }
+        method => (method, Vec::new(), None),
     };
+
+    if let Some(method_ident) = instance_method {
+        let path_ident = syn::Ident::new(&format!("__PATH_{}", method_ident), method_ident.span());
+        return route_with_args(quote! { Self::#path_ident }, &args);
+    }
 
     if let syn::Expr::Path(expr_path) = method {
         if expr_path.path.segments.len() > 1 {
@@ -66,23 +83,28 @@ fn transform_route(method: &syn::Expr) -> TokenStream {
                         syn::Ident::new(&format!("__PATH_{}", ident_str), last_seg.ident.span());
                 }
             }
-            if args.is_empty() {
-                return quote! { #new_path };
-            }
-            return quote! {{
-                let mut __route = (#new_path).to_owned();
-                #(
-                    if let (::std::option::Option::Some(__start), ::std::option::Option::Some(__end)) =
-                        (__route.find('{'), __route.find('}'))
-                    {
-                        __route.replace_range(__start..=__end, &::std::format!("{}", #args));
-                    }
-                )*
-                __route
-            }};
+            return route_with_args(quote! { #new_path }, &args);
         }
     }
     quote! { #method }
+}
+
+fn route_with_args(path: TokenStream, args: &[&syn::Expr]) -> TokenStream {
+    if args.is_empty() {
+        path
+    } else {
+        quote! {{
+            let mut __route = (#path).to_owned();
+            #(
+                if let (::std::option::Option::Some(__start), ::std::option::Option::Some(__end)) =
+                    (__route.find('{'), __route.find('}'))
+                {
+                    __route.replace_range(__start..=__end, &::std::format!("{}", #args));
+                }
+            )*
+            __route
+        }}
+    }
 }
 
 pub fn generate(nodes: Nodes, out: &Ident) -> TokenStream {
