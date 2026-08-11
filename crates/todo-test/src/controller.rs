@@ -42,7 +42,7 @@ impl TodoController {
                             <button type="button" on:click={Self::create} class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"+ Add"</button>
                         </div>
                         <div class="divide-y rounded border">
-                            @for todo in load_todos(pool.clone()).await["todos"] {
+                            @for todo in Self::load_todos(pool.clone()).await["todos"] {
                                 <div class="flex items-center gap-2 p-3">
                                     @if todo.done {
                                         <span class="flex-1 text-gray-400 line-through">{&todo.title}</span>
@@ -118,6 +118,13 @@ impl TodoController {
             .await;
         StatusCode::NO_CONTENT
     }
+
+    async fn load_todos(pool: SqlitePool) -> Vec<crate::models::Todo> {
+        sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
+            .fetch_all(&pool)
+            .await
+            .unwrap_or_default()
+    }
 }
 
 const NAV_SCRIPT: &str = r#"
@@ -145,11 +152,4 @@ fn navbar(active: &str) -> Markup {
             </div>
         </nav>
     }
-}
-
-async fn load_todos(pool: SqlitePool) -> Vec<crate::models::Todo> {
-    sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
-        .fetch_all(&pool)
-        .await
-        .unwrap_or_default()
 }
