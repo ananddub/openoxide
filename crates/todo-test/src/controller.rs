@@ -29,29 +29,24 @@ impl TodoController {
                     <title>"Rustploy Todo"</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                 </head>
-                <body class="min-h-screen bg-slate-950 text-slate-100">
-                    <main class="mx-auto max-w-2xl px-4 py-12">
-                        <div class="mb-8">
-                            <p class="mb-2 text-sm font-medium uppercase tracking-widest text-cyan-400">"Rustploy demo"</p>
-                            <h1 class="text-4xl font-bold tracking-tight">"Reactive Todo"</h1>
-                            <p class="mt-3 text-slate-400">"SQLite changes automatically patch this list over SSE."</p>
-                        </div>
-                        <form method="post" action={Self::create} class="mb-8 flex gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-xl">
-                            <input name="title" required placeholder="What needs to be done?" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none ring-cyan-500 placeholder:text-slate-600 focus:ring-2" />
-                            <button class="rounded-xl bg-cyan-400 px-5 font-semibold text-slate-950 transition hover:bg-cyan-300">"Add todo"</button>
+                <body class="bg-white text-gray-900">
+                    <main class="mx-auto max-w-xl px-4 py-10">
+                        <h1 class="text-2xl font-semibold">"Todo"</h1>
+                        <p class="mb-6 mt-1 text-sm text-gray-500">"Reactive SQLite + SSE test"</p>
+                        <form method="post" action={Self::create} class="mb-6 flex gap-2">
+                            <input name="title" required placeholder="New todo" class="min-w-0 flex-1 rounded border px-3 py-2 outline-none focus:border-blue-500" />
+                            <button class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">"Add"</button>
                         </form>
-                        <div class="space-y-3">
+                        <div class="divide-y rounded border">
                             @for todo in load_todos(pool.clone()).await["todos"] {
-                                <div class="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-4 shadow-lg">
+                                <div class="flex items-center gap-2 p-3">
                                     @if todo.done {
-                                        <span class="flex-1 text-slate-500 line-through">{&todo.title}</span>
-                                        <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-400">"done"</span>
+                                        <span class="flex-1 text-gray-400 line-through">{&todo.title}</span>
                                     } @else {
-                                        <span class="flex-1 text-slate-100">{&todo.title}</span>
-                                        <span class="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-400">"open"</span>
+                                        <span class="flex-1">{&todo.title}</span>
                                     }
-                                    <form method="post" action={Self::toggle(todo.id)}><button class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">"Toggle"</button></form>
-                                    <form method="post" action={Self::delete(todo.id)}><button class="rounded-lg px-3 py-2 text-sm text-rose-400 hover:bg-rose-400/10">"Delete"</button></form>
+                                    <form method="post" action={Self::toggle(todo.id)}><button class="rounded border px-2 py-1 text-sm">"Toggle"</button></form>
+                                    <form method="post" action={Self::delete(todo.id)}><button class="px-2 py-1 text-sm text-red-600">"Delete"</button></form>
                                 </div>
                             }
                         </div>
