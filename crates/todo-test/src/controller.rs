@@ -28,6 +28,7 @@ impl TodoController {
                     <meta name="viewport" content="width=device-width, initial-scale=1" />
                     <title>"Rustploy Todo"</title>
                     <script src="https://cdn.tailwindcss.com"></script>
+                    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
                 </head>
                 <body class="bg-white text-gray-900">
                     <main class="mx-auto max-w-xl px-4 py-10">
@@ -45,8 +46,8 @@ impl TodoController {
                                     } @else {
                                         <span class="flex-1">{&todo.title}</span>
                                     }
-                                    <form method="post" action={Self::toggle(todo.id)}><button class="rounded border px-2 py-1 text-sm">"Toggle"</button></form>
-                                    <form method="post" action={Self::delete(todo.id)}><button class="px-2 py-1 text-sm text-red-600">"Delete"</button></form>
+                                    <button type="button" on:click={Self::toggle(todo.id)} class="rounded border px-2 py-1 text-sm">"Toggle"</button>
+                                    <button type="button" on:click={Self::delete(todo.id)} class="px-2 py-1 text-sm text-red-600">"Delete"</button>
                                 </div>
                             }
                         </div>
@@ -66,21 +67,21 @@ impl TodoController {
     }
 
     #[post("/{id}/toggle")]
-    async fn toggle(&self, Path(id): Path<i64>) -> impl IntoResponse {
+    async fn toggle(&self, Path(id): Path<i64>) -> StatusCode {
         let _ = sqlx::query("UPDATE todos SET done = NOT done WHERE id = ?")
             .bind(id)
             .execute(&self.pool)
             .await;
-        redirect()
+        StatusCode::NO_CONTENT
     }
 
     #[post("/{id}/delete")]
-    async fn delete(&self, Path(id): Path<i64>) -> impl IntoResponse {
+    async fn delete(&self, Path(id): Path<i64>) -> StatusCode {
         let _ = sqlx::query("DELETE FROM todos WHERE id = ?")
             .bind(id)
             .execute(&self.pool)
             .await;
-        redirect()
+        StatusCode::NO_CONTENT
     }
 }
 
