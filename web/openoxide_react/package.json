@@ -54,6 +54,7 @@
 		"zustand": "^5.0.14"
 	},
 	"devDependencies": {
+		"@openoxide/vite": "file:../../crates/auto/vite",
 		"@babel/core": "^8.0.1",
 		"@rolldown/plugin-babel": "^0.2.3",
 		"@tailwindcss/vite": "^4.3.3",

@@ -4,11 +4,17 @@ import {tanstackRouter} from '@tanstack/router-plugin/vite';
 import viteReact, {reactCompilerPreset} from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 import {defineConfig} from 'vite';
+import {openoxide} from '@openoxide/vite';
 import {routes} from './src/routes';
 
 const config = defineConfig({
 	resolve: {tsconfigPaths: true},
 	plugins: [
+		openoxide({
+			manifestPath: '../../Cargo.toml',
+			manifestBin: 'openoxide-live-manifest',
+			declarations: 'src/openoxide-live.generated.d.ts',
+		}),
 		devtools(),
 		tailwindcss(),
 		tanstackRouter({
