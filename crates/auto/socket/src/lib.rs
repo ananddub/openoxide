@@ -7,12 +7,21 @@ use std::{
 };
 
 use auto_di::{BoxFuture, Container, DiError};
-use serde::Serialize;
-use socketioxide::{SocketIo, extract::SocketRef};
+use serde::{Deserialize, Serialize};
+use socketioxide::{
+    SocketIo,
+    extract::{Data, SocketRef},
+};
 
 pub use auto_socket_macros::{auto_socket, on};
 
 static SOCKET_IO: OnceLock<SocketIo> = OnceLock::new();
+
+#[derive(Debug, Deserialize)]
+struct LiveSubscription {
+    endpoint: String,
+    args: serde_json::Value,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum PublishError {
@@ -43,6 +52,16 @@ where
             event,
             marker: PhantomData,
         }
+    }
+
+    pub async fn publish<A: Serialize>(self, args: A, data: T) -> Result<(), PublishError> {
+        let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
+        let args = serde_json::to_value(args)?;
+        let room = format!("{}:{args}", self.endpoint);
+        if let Some(namespace) = io.of(self.namespace) {
+            namespace.to(room).emit(self.event, &data).await?;
+        }
+        Ok(())
     }
 
     /// Emits this endpoint's typed payload to one explicitly selected socket.
@@ -102,6 +121,18 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
         io.ns(namespace, move |socket: SocketRef| {
             let registrars = registrars.clone();
             async move {
+                socket.on(
+                    "live:subscribe",
+                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
+                        socket.join(format!("{}:{}", subscription.endpoint, subscription.args));
+                    },
+                );
+                socket.on(
+                    "live:unsubscribe",
+                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
+                        socket.leave(format!("{}:{}", subscription.endpoint, subscription.args));
+                    },
+                );
                 for registrar in registrars {
                     registrar(socket.clone());
                 }

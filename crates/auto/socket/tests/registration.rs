@@ -53,6 +53,8 @@ fn generates_typed_live_handles_for_live_and_outbound_on() {
     let presence = chat_live::presence();
     assert_eq!(presence.endpoint(), "ChatSocket::presence");
     let _broadcast = presence.broadcast(Status { online: true });
+
+    let _publish = chat_live::status().publish((7_i64, "mobile"), Status { online: true });
 }
 
 #[on("ping", namespace = "/chat")]

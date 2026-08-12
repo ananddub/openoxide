@@ -124,11 +124,16 @@ server_live::metrics()
 server_live::alerts()
     .broadcast(alerts)
     .await?;
+
+server_live::metrics()
+    .publish((server_id, region), metrics)
+    .await?;
 ```
 
 The `#[auto_socket]` namespace is the group. The method return type determines the payload accepted
 by both operations. `emit` requires an explicit `SocketRef` and targets only that client;
-`broadcast` requires no socket and sends the payload to every client connected to the namespace.
+`broadcast` requires no socket and sends the payload to every client connected to the namespace;
+`publish` accepts any serializable parameter tuple/object and targets its matching room.
 
 ## License
 
