@@ -1,4 +1,4 @@
-use crate::models::{NewTodo, Todo};
+use crate::models::{ActivityEvent, MetricSample, NewTodo, Todo};
 use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 use sqlx::SqlitePool;
@@ -24,6 +24,59 @@ impl TodoController {
                 .await
                 .unwrap_or_default(),
         )
+    }
+
+    #[get("/metrics")]
+    #[live("metrics", strategy = latest)]
+    async fn current_metrics(&self) -> Json<MetricSample> {
+        Json(MetricSample {
+            sequence: 0,
+            value: 0,
+        })
+    }
+
+    #[get("/activity")]
+    #[live("activity", strategy = stream, capacity = 32)]
+    async fn activity_feed(&self) -> Json<ActivityEvent> {
+        Json(ActivityEvent {
+            sequence: 0,
+            message: "ready".into(),
+        })
+    }
+
+    #[post("/demo/latest")]
+    async fn latest_demo(&self) -> StatusCode {
+        for sequence in 1..=100 {
+            let sample = MetricSample {
+                sequence,
+                value: sequence * 10,
+            };
+            let Ok(publisher) = TodoController::metrics() else {
+                return StatusCode::SERVICE_UNAVAILABLE;
+            };
+            if publisher.publish(sample).await.is_err() {
+                return StatusCode::SERVICE_UNAVAILABLE;
+            }
+        }
+        StatusCode::NO_CONTENT
+    }
+
+    #[post("/demo/stream")]
+    async fn stream_demo(&self) -> StatusCode {
+        for sequence in 1..=20 {
+            let event = ActivityEvent {
+                sequence,
+                message: format!("ordered event {sequence}"),
+            };
+            let Ok(publisher) = TodoController::activity() else {
+                return StatusCode::SERVICE_UNAVAILABLE;
+            };
+            if publisher.publish(event).await.is_err() {
+                return StatusCode::SERVICE_UNAVAILABLE;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(60)).await;
+        }
+        StatusCode::NO_CONTENT
     }
 
     #[post("")]

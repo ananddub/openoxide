@@ -1,19 +1,35 @@
-use openoxide_todo_test::{controller::TodoController, models::Todo};
+use openoxide_todo_test::{
+    controller::TodoController,
+    models::{ActivityEvent, MetricSample, Todo},
+};
 
 fn main() {
     let subscription = TodoController::todos_subscription().expect("generate live subscription");
-    let hook = format!("use{}", pascal_case(subscription.client_name()));
+    let metrics = TodoController::metrics_subscription().expect("generate metrics subscription");
+    let activity = TodoController::activity_subscription().expect("generate activity subscription");
     println!(
         "{}",
         serde_json::json!({
-            "types": [{"name": "Todo", "definition": Todo::TYPESCRIPT}],
+            "types": [
+                {"name": "Todo", "definition": Todo::TYPESCRIPT},
+                {"name": "MetricSample", "definition": MetricSample::TYPESCRIPT},
+                {"name": "ActivityEvent", "definition": ActivityEvent::TYPESCRIPT}
+            ],
             "endpoints": [{
-                "hook": hook,
+                "hook": format!("use{}", pascal_case(subscription.client_name())),
                 "namespace": subscription.namespace(),
                 "endpoint": subscription.endpoint(),
                 "event": subscription.event(),
                 "parameters": "",
                 "result": "Todo[]"
+            }, {
+                "hook": format!("use{}", pascal_case(metrics.client_name())),
+                "namespace": metrics.namespace(), "endpoint": metrics.endpoint(), "event": metrics.event(),
+                "parameters": "", "result": "MetricSample"
+            }, {
+                "hook": format!("use{}", pascal_case(activity.client_name())),
+                "namespace": activity.namespace(), "endpoint": activity.endpoint(), "event": activity.event(),
+                "parameters": "", "result": "ActivityEvent"
             }]
         })
     );
