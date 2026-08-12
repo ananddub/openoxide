@@ -253,12 +253,16 @@ fn expand_socket_impl(
             _ => quote!((#(#names),*)),
         };
         let event_handler = format_ident!("{}_event", handler);
+        let subscription = format_ident!("{}_subscription", handler);
         quote! {
             pub fn #handler(#(#arguments),*) -> ::std::result::Result<::auto_socket::LivePublisher<#return_type>, ::auto_socket::PublishError> {
                 ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name).room(#args)
             }
             pub fn #event_handler() -> ::auto_socket::LivePublisher<#return_type> {
                 ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name)
+            }
+            pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_socket::LiveSubscription<#return_type>, ::auto_socket::PublishError> {
+                ::auto_socket::LiveSubscription::new(#namespace, #endpoint, #event_name, #args)
             }
         }
     });

@@ -128,6 +128,14 @@ server_live::alerts_event()
 server_live::metrics(server_id)
     .publish(metrics)
     .await?;
+
+// Generated typed client metadata (usable by a Rust/WASM client or a code generator).
+let subscription = server_live::metrics_subscription(server_id)?;
+transport.emit("live:subscribe", subscription.message())?;
+transport.on(subscription.event(), move |json| {
+    let metrics: Metrics = subscription.decode(json)?;
+    // update client state
+});
 ```
 
 The `#[auto_socket]` namespace is the group. The method return type determines the payload accepted

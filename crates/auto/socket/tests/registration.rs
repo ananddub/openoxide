@@ -13,7 +13,7 @@ struct Message {
 
 struct ChatSocket;
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Status {
     online: bool,
 }
@@ -56,6 +56,16 @@ fn generates_typed_live_handles_for_live_and_outbound_on() {
 
     let _publish = status.publish(Status { online: true });
     assert_eq!(chat_live::status_event().endpoint(), "ChatSocket::status");
+
+    let subscription = chat_live::status_subscription(7).unwrap();
+    assert_eq!(subscription.namespace(), "/chat");
+    assert_eq!(subscription.endpoint(), "ChatSocket::status");
+    assert_eq!(subscription.event(), "status");
+    assert_eq!(subscription.args(), &serde_json::json!([7]));
+    let decoded = subscription
+        .decode(serde_json::json!({ "online": true }))
+        .unwrap();
+    assert!(decoded.online);
 }
 
 #[on("ping", namespace = "/chat")]

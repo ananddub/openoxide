@@ -681,6 +681,7 @@ fn expand_controller(
             _ => quote!((#(#names),*)),
         };
         let event_handler = format_ident!("{}_event", handler);
+        let subscription = format_ident!("{}_subscription", handler);
         Some(quote! {
             pub fn #handler(#(#arguments),*)
                 -> ::std::result::Result<
@@ -698,6 +699,9 @@ fn expand_controller(
                 ::auto_route::__private::auto_socket::LivePublisher::new(
                     "/_rustploy/live", #endpoint, #event,
                 )
+            }
+            pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
+                ::auto_route::__private::auto_socket::LiveSubscription::new("/_rustploy/live", #endpoint, #event, #args)
             }
         })
     });
