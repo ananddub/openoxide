@@ -73,6 +73,10 @@ fn generates_typed_live_publish_handle() {
             .client_name(),
         "server_status"
     );
+    assert_eq!(
+        DefaultLiveController::server_status().unwrap().endpoint(),
+        "DefaultLiveController::status"
+    );
 }
 
 struct UserController {

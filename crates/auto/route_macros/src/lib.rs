@@ -683,6 +683,29 @@ fn expand_controller(
         .unwrap_or(&controller_name)
         .to_ascii_lowercase();
     let live_module_ident = format_ident!("{}_live", module_name);
+    let controller_publishers = routes.iter().filter_map(|route| {
+        let event = route.live_event.as_ref()?;
+        let client_name = route.live_client_name.as_ref()?;
+        let return_type = route.live_return_type.as_ref()?;
+        let handler = &route.handler;
+        if client_name.value() == handler.to_string() {
+            return None;
+        }
+        let endpoint = format!("{type_ident}::{handler}");
+        let arguments = route.argument_types.iter().enumerate().map(|(index, ty)| {
+            let name = format_ident!("arg_{index}");
+            let public_ty = live_argument_type(ty);
+            quote!(#name: #public_ty)
+        }).collect::<Vec<_>>();
+        let names = (0..route.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let args = match names.len() { 0 => quote!(::std::vec::Vec::<()>::new()), 1 => { let n = &names[0]; quote!((#n,)) }, _ => quote!((#(#names),*)) };
+        let publisher = format_ident!("{}", client_name.value());
+        Some(quote! {
+            pub fn #publisher(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LivePublisher<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
+                ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).room(#args)
+            }
+        })
+    }).collect::<Vec<_>>();
     let live_handles = routes.iter().filter_map(|route| {
         let event = route.live_event.as_ref()?;
         let client_name = route.live_client_name.as_ref()?;
@@ -843,6 +866,10 @@ fn expand_controller(
 
     Ok(quote! {
         #managed_impl
+
+        impl #self_ty {
+            #(#controller_publishers)*
+        }
 
         pub mod #live_module_ident {
             use super::*;

@@ -18,7 +18,12 @@ impl TodoController {
     #[get("")]
     #[live("todos")]
     async fn list(&self) -> Json<Vec<Todo>> {
-        Json(load_todos(&self.pool).await)
+        Json(
+            sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
+                .fetch_all(&self.pool)
+                .await
+                .unwrap_or_default(),
+        )
     }
 
     #[post("")]
@@ -68,16 +73,13 @@ impl TodoController {
     }
 
     async fn publish_todos(&self) {
-        let todos = load_todos(&self.pool).await;
-        if let Ok(publisher) = todo_live::list() {
+        let todos = sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default();
+
+        if let Ok(publisher) = TodoController::todos() {
             let _ = publisher.publish(todos).await;
         }
     }
-}
-
-pub async fn load_todos(pool: &SqlitePool) -> Vec<Todo> {
-    sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
-        .fetch_all(pool)
-        .await
-        .unwrap_or_default()
 }
