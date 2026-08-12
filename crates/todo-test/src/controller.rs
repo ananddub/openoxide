@@ -16,7 +16,7 @@ impl TodoController {
     }
 
     #[get("")]
-    #[live("todos")]
+    #[live("todos", table = "todos")]
     async fn list(&self) -> Json<Vec<Todo>> {
         Json(
             sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")

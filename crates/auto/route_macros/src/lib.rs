@@ -302,7 +302,39 @@ struct Route {
     params: Vec<OpenApiParam>,
     live_event: Option<LitStr>,
     live_client_name: Option<LitStr>,
+    live_table: Option<LitStr>,
     live_return_type: Option<Type>,
+}
+
+struct LiveOptions {
+    client_name: Option<LitStr>,
+    table: Option<LitStr>,
+}
+
+impl Parse for LiveOptions {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let mut client_name = None;
+        let mut table = None;
+        while !input.is_empty() {
+            if input.peek(LitStr) {
+                client_name = Some(input.parse()?);
+            } else {
+                let key: Ident = input.parse()?;
+                input.parse::<Token![=]>()?;
+                let value: LitStr = input.parse()?;
+                if key == "table" {
+                    table = Some(value);
+                } else {
+                    return Err(syn::Error::new_spanned(key, "unknown #[live] option"));
+                }
+            }
+            if input.is_empty() {
+                break;
+            }
+            input.parse::<Token![,]>()?;
+        }
+        Ok(Self { client_name, table })
+    }
 }
 
 struct ModuleRoute {
@@ -550,6 +582,7 @@ fn expand_controller(
         let mut is_live = false;
         let mut live_event = None;
         let mut live_client_name = None;
+        let mut live_table = None;
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
@@ -557,13 +590,11 @@ fn expand_controller(
                 match &attribute.meta {
                     Meta::Path(_) => {}
                     Meta::List(_) => {
-                        live_client_name =
-                            Some(attribute.parse_args::<LitStr>().map_err(|_| {
-                                syn::Error::new_spanned(
-                                    &attribute,
-                                    "expected #[live] or #[live(\"client_name\")]",
-                                )
-                            })?);
+                        let options = attribute.parse_args::<LiveOptions>().map_err(|error| {
+                            syn::Error::new_spanned(&attribute, error.to_string())
+                        })?;
+                        live_client_name = options.client_name;
+                        live_table = options.table;
                     }
                     Meta::NameValue(_) => {
                         return Err(syn::Error::new_spanned(
@@ -659,6 +690,7 @@ fn expand_controller(
             argument_types,
             live_event,
             live_client_name,
+            live_table,
             live_return_type,
         });
     }
@@ -869,6 +901,46 @@ fn expand_controller(
         quote! {}
     };
 
+    let live_refresh_registrations = routes.iter().filter_map(|route| {
+        let table = route.live_table.as_ref()?;
+        let event = route.live_event.as_ref()?;
+        let return_type = route.live_return_type.as_ref()?;
+        let handler = &route.handler;
+        if !route.argument_types.is_empty() {
+            return Some(syn::Error::new_spanned(
+                handler,
+                "table-backed #[live] currently requires a zero-argument controller method",
+            ).to_compile_error());
+        }
+        let endpoint = format!("{type_ident}::{handler}");
+        let refresh_factory = format_ident!("__auto_route_live_refresh_{}_{}", type_ident, handler);
+        Some(quote! {
+            #[doc(hidden)]
+            #[allow(non_snake_case)]
+            fn #refresh_factory<'a>(
+                container: &'a ::auto_route::__private::auto_di::Container,
+            ) -> ::auto_route::__private::auto_di::BoxFuture<'a, ::std::result::Result<::std::sync::Arc<dyn Fn() -> ::auto_route::__private::auto_di::BoxFuture<'static, ()> + Send + Sync + 'static>, ::auto_route::__private::auto_di::DiError>> {
+                ::std::boxed::Box::pin(async move {
+                    let controller = container.resolve::<#self_ty>().await?;
+                    let refresh: ::std::sync::Arc<dyn Fn() -> ::auto_route::__private::auto_di::BoxFuture<'static, ()> + Send + Sync + 'static> = ::std::sync::Arc::new(move || {
+                        let controller = ::std::sync::Arc::clone(&controller);
+                        let future: ::auto_route::__private::auto_di::BoxFuture<'static, ()> = ::std::boxed::Box::pin(async move {
+                            let ::auto_route::__private::axum::Json(data): ::auto_route::__private::axum::Json<#return_type> = controller.#handler().await;
+                            if let Ok(publisher) = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).room(::std::vec::Vec::<()>::new()) {
+                                let _ = publisher.publish(data).await;
+                            }
+                        });
+                        future
+                    });
+                    Ok(refresh)
+                })
+            }
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(#table, #refresh_factory)
+            }
+        })
+    }).collect::<Vec<_>>();
+
     Ok(quote! {
         #managed_impl
 
@@ -882,6 +954,7 @@ fn expand_controller(
         }
 
         #live_socket_registration
+        #(#live_refresh_registrations)*
 
         // ── PATH constants for html! on:click={Self::method} ──────────────────
         #[allow(non_upper_case_globals)]

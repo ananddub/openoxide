@@ -47,6 +47,7 @@ impl DbEventBus {
             tables.sort_unstable();
             tables.dedup();
             html_rt::publish_table_changes(tables);
+            auto_socket::notify_table_changes(changes.iter().map(|change| change.table.as_str()));
             let _ = self.sender.send(DbChangeSet { changes });
         }
     }
