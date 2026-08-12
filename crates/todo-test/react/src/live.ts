@@ -18,14 +18,16 @@ export function useTodos(initial: Todo[]) {
     };
     const disconnect = () => setConnected(false);
     const update = (message: Update<Todo[]>) => {
-      if (message.endpoint === subscription.endpoint && JSON.stringify(message.args) === '[]') setTodos(message.data);
+      if (message.endpoint === subscription.endpoint && JSON.stringify(message.args) === '[]') {
+        setTodos(message.data);
+      }
     };
     socket.on('connect', subscribe);
     socket.on('disconnect', disconnect);
     socket.on('live:update', update);
     if (socket.connected) subscribe();
     return () => {
-      socket.emit('live:unsubscribe', subscription);
+      if (socket.connected) socket.emit('live:unsubscribe', subscription);
       socket.off('connect', subscribe);
       socket.off('disconnect', disconnect);
       socket.off('live:update', update);
