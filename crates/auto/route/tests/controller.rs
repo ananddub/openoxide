@@ -43,7 +43,8 @@ impl ServerController {
 #[test]
 fn generates_typed_live_publish_handle() {
     let publisher = server_live::metrics(7).expect("live publisher");
-    let _future = publisher.publish(Metrics { cpu: 42 });
+    assert_eq!(publisher.endpoint(), "ServerController::metrics");
+    assert_eq!(publisher.arguments(), &serde_json::json!([7]));
 }
 
 struct UserController {

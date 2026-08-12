@@ -693,6 +693,7 @@ fn expand_controller(
                 >
             {
                 ::auto_route::__private::auto_socket::LivePublisher::new(
+                    "/_rustploy/live",
                     #endpoint,
                     #event,
                     #args_expr,

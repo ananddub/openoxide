@@ -7,21 +7,12 @@ use std::{
 };
 
 use auto_di::{BoxFuture, Container, DiError};
-use serde::{Deserialize, Serialize};
-use socketioxide::{
-    SocketIo,
-    extract::{Data, SocketRef},
-};
+use serde::Serialize;
+use socketioxide::{SocketIo, extract::SocketRef};
 
 pub use auto_socket_macros::{auto_socket, on};
 
 static SOCKET_IO: OnceLock<SocketIo> = OnceLock::new();
-
-#[derive(Debug, Deserialize)]
-struct LiveSubscription {
-    endpoint: String,
-    args: serde_json::Value,
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum PublishError {
@@ -61,15 +52,12 @@ where
         })
     }
 
-    pub async fn publish(self, data: T) -> Result<(), PublishError> {
-        let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-        let room = live_room(self.endpoint, &self.args)?;
-        if let Some(namespace) = io.of(self.namespace) {
-            namespace.to(room).emit(self.event, &data).await?;
-        }
-        Ok(())
+    /// Emits this endpoint's typed payload to one explicitly selected socket.
+    pub fn emit(self, socket: &SocketRef, data: T) -> Result<(), socketioxide::SendError> {
+        socket.emit(self.event, &data)
     }
 
+    /// Broadcasts this endpoint's typed payload to every client in its socket group.
     pub async fn broadcast(self, data: T) -> Result<(), PublishError> {
         let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
         if let Some(namespace) = io.of(self.namespace) {
@@ -77,11 +65,14 @@ where
         }
         Ok(())
     }
-}
 
-#[doc(hidden)]
-pub fn live_room(endpoint: &str, args: &serde_json::Value) -> Result<String, serde_json::Error> {
-    Ok(format!("{endpoint}:{}", serde_json::to_string(args)?))
+    pub fn endpoint(&self) -> &'static str {
+        self.endpoint
+    }
+
+    pub fn arguments(&self) -> &serde_json::Value {
+        &self.args
+    }
 }
 
 #[doc(hidden)]
@@ -122,22 +113,6 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
         io.ns(namespace, move |socket: SocketRef| {
             let registrars = registrars.clone();
             async move {
-                socket.on(
-                    "live:subscribe",
-                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
-                        if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
-                            socket.join(room);
-                        }
-                    },
-                );
-                socket.on(
-                    "live:unsubscribe",
-                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
-                        if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
-                            socket.leave(room);
-                        }
-                    },
-                );
                 for registrar in registrars {
                     registrar(socket.clone());
                 }

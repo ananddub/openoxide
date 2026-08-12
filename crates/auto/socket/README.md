@@ -119,13 +119,16 @@ impl ServerSocket {
 }
 
 server_live::metrics(server_id)?
-    .publish(metrics)
+    .emit(&socket, metrics)?;
+
+server_live::alerts(server_id)?
+    .broadcast(alerts)
     .await?;
 ```
 
-The `#[auto_socket]` namespace is the group. Generated function arguments identify the exact room,
-and the method return type determines the payload accepted by `publish`. `broadcast` sends the same
-typed payload to all clients connected to that namespace.
+The `#[auto_socket]` namespace is the group. The method return type determines the payload accepted
+by both operations. `emit` requires an explicit `SocketRef` and targets only that client;
+`broadcast` requires no socket and sends the payload to every client connected to the namespace.
 
 ## License
 
