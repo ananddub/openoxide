@@ -51,6 +51,10 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/test-support/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/utils/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/websocket/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/html/macro/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/html/macro/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/html/rt/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/todo-test/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route/target" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route_inventory/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

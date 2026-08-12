@@ -14,7 +14,6 @@ string_enum! {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
