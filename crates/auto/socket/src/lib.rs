@@ -29,7 +29,6 @@ pub struct LivePublisher<T> {
     namespace: &'static str,
     endpoint: &'static str,
     event: &'static str,
-    args: serde_json::Value,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -37,19 +36,13 @@ impl<T> LivePublisher<T>
 where
     T: Serialize,
 {
-    pub fn new<A: Serialize>(
-        namespace: &'static str,
-        endpoint: &'static str,
-        event: &'static str,
-        args: A,
-    ) -> Result<Self, PublishError> {
-        Ok(Self {
+    pub fn new(namespace: &'static str, endpoint: &'static str, event: &'static str) -> Self {
+        Self {
             namespace,
             endpoint,
             event,
-            args: serde_json::to_value(args)?,
             marker: PhantomData,
-        })
+        }
     }
 
     /// Emits this endpoint's typed payload to one explicitly selected socket.
@@ -68,10 +61,6 @@ where
 
     pub fn endpoint(&self) -> &'static str {
         self.endpoint
-    }
-
-    pub fn arguments(&self) -> &serde_json::Value {
-        &self.args
     }
 }
 

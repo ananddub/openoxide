@@ -118,10 +118,10 @@ impl ServerSocket {
     }
 }
 
-server_live::metrics(server_id)?
+server_live::metrics()
     .emit(&socket, metrics)?;
 
-server_live::alerts(server_id)?
+server_live::alerts()
     .broadcast(alerts)
     .await?;
 ```

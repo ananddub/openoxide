@@ -674,17 +674,6 @@ fn expand_controller(
                 quote!(#name: #public_ty)
             })
             .collect::<Vec<_>>();
-        let argument_names = (0..route.argument_types.len())
-            .map(|index| format_ident!("arg_{index}"))
-            .collect::<Vec<_>>();
-        let args_expr = match argument_names.len() {
-            0 => quote! { () },
-            1 => {
-                let arg = &argument_names[0];
-                quote! { (#arg,) }
-            }
-            _ => quote! { (#(#argument_names),*) },
-        };
         Some(quote! {
             pub fn #handler(#(#arguments),*)
                 -> ::std::result::Result<
@@ -692,12 +681,11 @@ fn expand_controller(
                     ::auto_route::__private::auto_socket::PublishError,
                 >
             {
-                ::auto_route::__private::auto_socket::LivePublisher::new(
+                ::std::result::Result::Ok(::auto_route::__private::auto_socket::LivePublisher::new(
                     "/_rustploy/live",
                     #endpoint,
                     #event,
-                    #args_expr,
-                )
+                ))
             }
         })
     });
