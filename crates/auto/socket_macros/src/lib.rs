@@ -48,6 +48,7 @@ struct LiveEvent {
     name: LitStr,
     handler: Ident,
     return_type: Type,
+    argument_types: Vec<Type>,
 }
 
 fn expand_socket_module(
@@ -210,6 +211,7 @@ fn expand_socket_impl(
                 name,
                 handler: function.sig.ident.clone(),
                 return_type,
+                argument_types,
             });
         } else {
             let attribute = on_attribute.expect("inbound event has #[on]");
@@ -240,8 +242,22 @@ fn expand_socket_impl(
         let event_name = &event.name;
         let return_type = &event.return_type;
         let endpoint = format!("{type_ident}::{handler}");
+        let arguments = event.argument_types.iter().enumerate().map(|(index, ty)| {
+            let name = format_ident!("arg_{index}");
+            quote!(#name: #ty)
+        }).collect::<Vec<_>>();
+        let names = (0..event.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let args = match names.len() {
+            0 => quote!(()),
+            1 => { let n = &names[0]; quote!((#n,)) },
+            _ => quote!((#(#names),*)),
+        };
+        let event_handler = format_ident!("{}_event", handler);
         quote! {
-            pub fn #handler() -> ::auto_socket::LivePublisher<#return_type> {
+            pub fn #handler(#(#arguments),*) -> ::std::result::Result<::auto_socket::LivePublisher<#return_type>, ::auto_socket::PublishError> {
+                ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name).room(#args)
+            }
+            pub fn #event_handler() -> ::auto_socket::LivePublisher<#return_type> {
                 ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name)
             }
         }

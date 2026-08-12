@@ -47,14 +47,15 @@ impl ChatSocket {
 
 #[test]
 fn generates_typed_live_handles_for_live_and_outbound_on() {
-    let status = chat_live::status();
+    let status = chat_live::status(7).unwrap();
     assert_eq!(status.endpoint(), "ChatSocket::status");
 
-    let presence = chat_live::presence();
+    let presence = chat_live::presence(7).unwrap();
     assert_eq!(presence.endpoint(), "ChatSocket::presence");
-    let _broadcast = presence.broadcast(Status { online: true });
+    let _broadcast = chat_live::presence_event().broadcast(Status { online: true });
 
-    let _publish = chat_live::status().publish((7_i64, "mobile"), Status { online: true });
+    let _publish = status.publish(Status { online: true });
+    assert_eq!(chat_live::status_event().endpoint(), "ChatSocket::status");
 }
 
 #[on("ping", namespace = "/chat")]

@@ -31,6 +31,8 @@ pub enum PublishError {
     Serialize(#[from] serde_json::Error),
     #[error("failed to publish socket event: {0}")]
     Broadcast(#[from] socketioxide::BroadcastError),
+    #[error("live publisher requires endpoint room arguments")]
+    MissingRoomArguments,
 }
 
 /// A type-safe handle for publishing a live endpoint result.
@@ -38,6 +40,7 @@ pub struct LivePublisher<T> {
     namespace: &'static str,
     endpoint: &'static str,
     event: &'static str,
+    room_args: Option<serde_json::Value>,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -50,13 +53,19 @@ where
             namespace,
             endpoint,
             event,
+            room_args: None,
             marker: PhantomData,
         }
     }
 
-    pub async fn publish<A: Serialize>(self, args: A, data: T) -> Result<(), PublishError> {
+    pub fn room<A: Serialize>(mut self, args: A) -> Result<Self, PublishError> {
+        self.room_args = Some(serde_json::to_value(args)?);
+        Ok(self)
+    }
+
+    pub async fn publish(self, data: T) -> Result<(), PublishError> {
         let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-        let args = serde_json::to_value(args)?;
+        let args = self.room_args.ok_or(PublishError::MissingRoomArguments)?;
         let room = format!("{}:{args}", self.endpoint);
         if let Some(namespace) = io.of(self.namespace) {
             namespace.to(room).emit(self.event, &data).await?;
