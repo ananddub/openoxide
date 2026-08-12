@@ -249,7 +249,7 @@ TodoController::todos()?
 | --- | --- | --- |
 | `sqlite` | A committed matching table change reruns the endpoint; parallel refreshes are coalesced | CRUD lists and database dashboards |
 | `publish` | Every `.publish(data).await` directly emits the supplied payload | Normal application events and already-computed data |
-| `latest` | Publishing replaces any queued value; the transport sends the newest available state | CPU, RAM, progress and current status |
+| `latest` | Publishing replaces any queued value, retains the current value in memory, and sends it immediately to new subscribers | CPU, RAM, progress and current status |
 | `stream` | Publishing enters a bounded ordered queue, applies backpressure, and can retain a bounded replay window | Logs, terminal output and ordered job events |
 
 Defaults keep common declarations short:

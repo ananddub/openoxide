@@ -412,8 +412,20 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                     move |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
                         let room = format!("{}:{}", subscription.endpoint, subscription.args);
                         let history_key = format!("{namespace}:{}:{}", subscription.endpoint, subscription.args);
+                        let latest = LATEST_CHANNELS
+                            .get_or_init(Default::default)
+                            .lock()
+                            .ok()
+                            .and_then(|channels| {
+                                channels
+                                    .get(&history_key)
+                                    .map(|sender| sender.borrow().clone())
+                            });
                         if let Ok(histories) = STREAM_HISTORY.get_or_init(Default::default).lock() {
                             socket.join(room);
+                            if let Some(latest) = latest {
+                                let _ = socket.emit("live:update", &latest);
+                            }
                             if let Some(history) = histories.get(&history_key) {
                                 for event in &history.events {
                                     let _ = socket.emit("live:update", event);
@@ -421,6 +433,9 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                             }
                         } else {
                             socket.join(room);
+                            if let Some(latest) = latest {
+                                let _ = socket.emit("live:update", &latest);
+                            }
                         }
                     },
                 );
