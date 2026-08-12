@@ -35,6 +35,7 @@ pub enum PublishError {
 
 /// A type-safe handle for publishing a live endpoint result.
 pub struct LivePublisher<T> {
+    namespace: &'static str,
     endpoint: &'static str,
     event: &'static str,
     args: serde_json::Value,
@@ -46,11 +47,13 @@ where
     T: Serialize,
 {
     pub fn new<A: Serialize>(
+        namespace: &'static str,
         endpoint: &'static str,
         event: &'static str,
         args: A,
     ) -> Result<Self, PublishError> {
         Ok(Self {
+            namespace,
             endpoint,
             event,
             args: serde_json::to_value(args)?,
@@ -61,7 +64,7 @@ where
     pub async fn publish(self, data: T) -> Result<(), PublishError> {
         let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
         let room = live_room(self.endpoint, &self.args)?;
-        if let Some(namespace) = io.of("/_rustploy/live") {
+        if let Some(namespace) = io.of(self.namespace) {
             namespace.to(room).emit(self.event, &data).await?;
         }
         Ok(())
@@ -69,14 +72,15 @@ where
 
     pub async fn broadcast(self, data: T) -> Result<(), PublishError> {
         let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-        if let Some(namespace) = io.of("/_rustploy/live") {
+        if let Some(namespace) = io.of(self.namespace) {
             namespace.emit(self.event, &data).await?;
         }
         Ok(())
     }
 }
 
-fn live_room(endpoint: &str, args: &serde_json::Value) -> Result<String, serde_json::Error> {
+#[doc(hidden)]
+pub fn live_room(endpoint: &str, args: &serde_json::Value) -> Result<String, serde_json::Error> {
     Ok(format!("{endpoint}:{}", serde_json::to_string(args)?))
 }
 
@@ -118,31 +122,28 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
         io.ns(namespace, move |socket: SocketRef| {
             let registrars = registrars.clone();
             async move {
+                socket.on(
+                    "live:subscribe",
+                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
+                        if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
+                            socket.join(room);
+                        }
+                    },
+                );
+                socket.on(
+                    "live:unsubscribe",
+                    |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
+                        if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
+                            socket.leave(room);
+                        }
+                    },
+                );
                 for registrar in registrars {
                     registrar(socket.clone());
                 }
             }
         });
     }
-
-    io.ns("/_rustploy/live", |socket: SocketRef| async move {
-        socket.on(
-            "live:subscribe",
-            |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
-                if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
-                    socket.join(room);
-                }
-            },
-        );
-        socket.on(
-            "live:unsubscribe",
-            |socket: SocketRef, Data(subscription): Data<LiveSubscription>| async move {
-                if let Ok(room) = live_room(&subscription.endpoint, &subscription.args) {
-                    socket.leave(room);
-                }
-            },
-        );
-    });
 
     Ok(())
 }

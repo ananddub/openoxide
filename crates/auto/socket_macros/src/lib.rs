@@ -1,7 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    FnArg, Ident, ImplItem, Item, ItemFn, ItemImpl, ItemMod, LitStr, PatType, Token, Type,
+    FnArg, GenericArgument, Ident, ImplItem, Item, ItemFn, ItemImpl, ItemMod, LitStr, PatType,
+    PathArguments, ReturnType, Token, Type,
     parse::{Parse, ParseStream},
     parse_macro_input,
 };
@@ -41,6 +42,13 @@ struct Event {
     name: LitStr,
     handler: Ident,
     argument_types: Vec<Type>,
+}
+
+struct LiveEvent {
+    name: LitStr,
+    handler: Ident,
+    argument_types: Vec<Type>,
+    return_type: Type,
 }
 
 fn expand_socket_module(
@@ -148,16 +156,20 @@ fn expand_socket_impl(
     let type_ident = type_ident(&self_ty)?;
     let factory = format_ident!("__auto_socket_factory_{}", type_ident);
     let mut events = Vec::new();
+    let mut live_events = Vec::new();
 
     for item in &mut item_impl.items {
         let ImplItem::Fn(function) = item else {
             continue;
         };
         let mut on_attributes = Vec::new();
+        let mut has_live = false;
         let mut retained = Vec::new();
         for attribute in std::mem::take(&mut function.attrs) {
             if attribute.path().is_ident("on") {
                 on_attributes.push(attribute);
+            } else if attribute.path().is_ident("live") {
+                has_live = true;
             } else {
                 retained.push(attribute);
             }
@@ -170,9 +182,10 @@ fn expand_socket_impl(
                 "a socket method can have only one #[on] attribute",
             ));
         }
-        let Some(attribute) = on_attributes.pop() else {
+        let on_attribute = on_attributes.pop();
+        if !has_live && on_attribute.is_none() {
             continue;
-        };
+        }
         validate_async(&function.sig)?;
 
         let mut inputs = function.sig.inputs.iter();
@@ -187,23 +200,76 @@ fn expand_socket_impl(
             }
         }
         let argument_types = typed_arguments(inputs)?;
-        events.push(Event {
-            name: attribute.parse_args::<LitStr>()?,
-            handler: function.sig.ident.clone(),
-            argument_types,
-        });
+        let is_inbound = argument_types.iter().any(is_socket_argument);
+        if has_live || !is_inbound {
+            let return_type = live_return_type(&function.sig.output)?;
+            let name = match on_attribute {
+                Some(attribute) => attribute.parse_args::<LitStr>()?,
+                None => LitStr::new(&function.sig.ident.to_string(), function.sig.ident.span()),
+            };
+            live_events.push(LiveEvent {
+                name,
+                handler: function.sig.ident.clone(),
+                argument_types,
+                return_type,
+            });
+        } else {
+            let attribute = on_attribute.expect("inbound event has #[on]");
+            events.push(Event {
+                name: attribute.parse_args::<LitStr>()?,
+                handler: function.sig.ident.clone(),
+                argument_types,
+            });
+        }
     }
 
-    if events.is_empty() {
+    if events.is_empty() && live_events.is_empty() {
         return Err(syn::Error::new_spanned(
             &item_impl.self_ty,
-            "socket handler contains no #[on] methods",
+            "socket handler contains no #[on] or #[live] methods",
         ));
     }
 
     let registrations = events.iter().map(event_registration);
+    let controller_name = type_ident.to_string();
+    let module_name = controller_name
+        .strip_suffix("Socket")
+        .unwrap_or(&controller_name)
+        .to_ascii_lowercase();
+    let live_module = format_ident!("{}_live", module_name);
+    let live_handles = live_events.iter().map(|event| {
+        let handler = &event.handler;
+        let event_name = &event.name;
+        let return_type = &event.return_type;
+        let endpoint = format!("{type_ident}::{handler}");
+        let arguments = event
+            .argument_types
+            .iter()
+            .enumerate()
+            .map(|(index, ty)| {
+                let name = format_ident!("arg_{index}");
+                quote!(#name: #ty)
+            })
+            .collect::<Vec<_>>();
+        let names = (0..event.argument_types.len())
+            .map(|index| format_ident!("arg_{index}"))
+            .collect::<Vec<_>>();
+        quote! {
+            pub fn #handler(#(#arguments),*) -> ::std::result::Result<
+                ::auto_socket::LivePublisher<#return_type>,
+                ::auto_socket::PublishError,
+            > {
+                ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name, (#(#names,)*))
+            }
+        }
+    });
     Ok(quote! {
         #item_impl
+
+        pub mod #live_module {
+            use super::*;
+            #(#live_handles)*
+        }
 
         #[doc(hidden)]
         #[allow(non_snake_case)]
@@ -335,6 +401,43 @@ fn validate_async(signature: &syn::Signature) -> syn::Result<()> {
         ));
     }
     Ok(())
+}
+
+fn is_socket_argument(ty: &Type) -> bool {
+    let Type::Path(path) = ty else {
+        return false;
+    };
+    path.path
+        .segments
+        .last()
+        .is_some_and(|segment| matches!(segment.ident.to_string().as_str(), "SocketRef" | "Data"))
+}
+
+fn live_return_type(output: &ReturnType) -> syn::Result<Type> {
+    let ReturnType::Type(_, ty) = output else {
+        return Err(syn::Error::new_spanned(
+            output,
+            "#[live] methods must return a value",
+        ));
+    };
+    Ok(wrapper_inner_type(ty, &["Json", "Result", "Option"]).unwrap_or_else(|| (**ty).clone()))
+}
+
+fn wrapper_inner_type(ty: &Type, wrappers: &[&str]) -> Option<Type> {
+    let Type::Path(path) = ty else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    if !wrappers.iter().any(|wrapper| segment.ident == *wrapper) {
+        return None;
+    }
+    arguments.args.iter().find_map(|argument| match argument {
+        GenericArgument::Type(inner) => Some(inner.clone()),
+        _ => None,
+    })
 }
 
 fn typed_arguments<'a>(inputs: impl Iterator<Item = &'a FnArg>) -> syn::Result<Vec<Type>> {

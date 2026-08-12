@@ -95,17 +95,26 @@ Registrations sharing a namespace are grouped so Socketioxide installs each name
 
 ## Typed live publishing
 
-Controllers marked with `#[live]` and an explicit outgoing `#[on("event:name")]` generate
-type-safe backend publishers:
+An `#[auto_socket]` group can mix traditional inbound events with typed live outputs. `#[live]`
+uses the method name as its event; `#[on("event:name")]` uses the developer's exact event name.
+The macro distinguishes inbound handlers by their `SocketRef`/`Data<T>` arguments.
 
 ```rust,ignore
-#[controller("/servers")]
-impl ServerController {
-    #[get("/{server_id}/metrics")]
+#[auto_socket("/servers")]
+impl ServerSocket {
     #[live]
-    #[on("metrics:update")]
-    async fn metrics(&self, Path(server_id): Path<i64>) -> Json<Metrics> {
-        Json(self.service.metrics(server_id).await)
+    async fn metrics(&self, server_id: i64) -> Metrics {
+        self.service.metrics(server_id).await
+    }
+
+    #[on("alerts:update")]
+    async fn alerts(&self, server_id: i64) -> Vec<Alert> {
+        self.service.alerts(server_id).await
+    }
+
+    #[on("input")]
+    async fn input(&self, socket: SocketRef, Data(input): Data<Input>) {
+        // Existing inbound event handling remains unchanged.
     }
 }
 
@@ -114,9 +123,9 @@ server_live::metrics(server_id)?
     .await?;
 ```
 
-The generated function arguments identify the exact live subscription and the endpoint response
-type determines the payload accepted by `publish`. `broadcast` sends the same typed payload to all
-clients connected to the Rustploy live namespace.
+The `#[auto_socket]` namespace is the group. Generated function arguments identify the exact room,
+and the method return type determines the payload accepted by `publish`. `broadcast` sends the same
+typed payload to all clients connected to that namespace.
 
 ## License
 

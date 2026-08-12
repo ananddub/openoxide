@@ -1,6 +1,6 @@
 use auto_di::{Container, singleton};
 use auto_socket::{auto_socket, on, register};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use socketioxide::{
     SocketIo,
     extract::{Data, SocketRef},
@@ -13,6 +13,11 @@ struct Message {
 
 struct ChatSocket;
 
+#[derive(Clone, Serialize)]
+struct Status {
+    online: bool,
+}
+
 #[singleton]
 #[auto_socket("/chat")]
 impl ChatSocket {
@@ -24,6 +29,30 @@ impl ChatSocket {
     async fn message(&self, _socket: SocketRef, Data(message): Data<Message>) {
         let _ = message.text;
     }
+
+    #[live]
+    async fn status(&self, user_id: i64) -> Status {
+        Status {
+            online: user_id > 0,
+        }
+    }
+
+    #[on("presence:update")]
+    async fn presence(&self, user_id: i64) -> Status {
+        Status {
+            online: user_id > 0,
+        }
+    }
+}
+
+#[test]
+fn generates_typed_live_handles_for_live_and_outbound_on() {
+    let _status = chat_live::status(7)
+        .unwrap()
+        .publish(Status { online: true });
+    let _presence = chat_live::presence(7)
+        .unwrap()
+        .publish(Status { online: true });
 }
 
 #[on("ping", namespace = "/chat")]
@@ -47,7 +76,7 @@ async fn groups_impl_and_standalone_events_into_one_namespace() {
     register(&io, &container).await.unwrap();
 
     let namespaces = io.nsps();
-    assert_eq!(namespaces.len(), 4);
+    assert_eq!(namespaces.len(), 3);
     assert!(
         namespaces
             .iter()
@@ -62,10 +91,5 @@ async fn groups_impl_and_standalone_events_into_one_namespace() {
         namespaces
             .iter()
             .any(|namespace| namespace.ns_path() == "/room")
-    );
-    assert!(
-        namespaces
-            .iter()
-            .any(|namespace| namespace.ns_path() == "/_rustploy/live")
     );
 }
