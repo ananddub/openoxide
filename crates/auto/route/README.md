@@ -108,6 +108,37 @@ Every controller and standalone route submits a small factory to a compile-time 
 
 Supported method attributes: `get`, `post`, `put`, `delete`, `patch`, `options`, and `head`.
 
+## Typed live routes
+
+A controller route can also become a typed live endpoint:
+
+```rust,ignore
+#[get("")]
+#[live("todos", table = "todos")]
+async fn list(&self) -> Json<Vec<Todo>> {
+    Json(self.repository.list().await)
+}
+```
+
+The alias `todos` generates controller-centric handles:
+
+```rust,ignore
+TodoController::todos()?.publish(todos).await?;
+let subscription = TodoController::todos_subscription()?;
+```
+
+For results depending on several SQLite tables:
+
+```rust,ignore
+#[live("dashboard", tables = ["users", "projects", "deployments"])]
+```
+
+Committed writes to any declared table automatically execute a zero-argument `Json<T>` live route once and publish its result to all subscribers. Mutation routes only perform their database write; they do not manually refresh or publish the live query.
+
+Automatic table-backed refresh currently requires a zero-argument controller method returning `Json<T>`. Parameterized live endpoints retain typed explicit publishing.
+
+See [Typed realtime endpoints](../../../docs/realtime.md) for setup, runtime behavior, React hook generation, deduplication, and constraints.
+
 ## License
 
 MIT

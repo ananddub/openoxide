@@ -161,6 +161,8 @@ The raw process invocation required to launch a binary belongs inside the releva
 
 OpenOxide uses SQLite through SQLx.
 
+For typed React live hooks and automatic refresh after committed SQLite writes, see [Typed realtime endpoints](docs/realtime.md).
+
 - Runtime migrations live in `db/migrations` and must remain append-only after release.
 - `db/schema` represents the current expected schema.
 - Compile-time SQLx macros use the database configured by `DATABASE_URL`.

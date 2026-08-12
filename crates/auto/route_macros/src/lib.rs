@@ -940,11 +940,6 @@ fn expand_controller(
         }
         let endpoint = format!("{type_ident}::{handler}");
         let refresh_factory = format_ident!("__auto_route_live_refresh_{}_{}", type_ident, handler);
-        let registrations = tables.into_iter().map(|table| quote! {
-            ::auto_route::__private::inventory::submit! {
-                ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(#table, #refresh_factory)
-            }
-        });
         vec![quote! {
             #[doc(hidden)]
             #[allow(non_snake_case)]
@@ -966,7 +961,12 @@ fn expand_controller(
                     Ok(refresh)
                 })
             }
-            #(#registrations)*
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(
+                    &[#(#tables),*],
+                    #refresh_factory,
+                )
+            }
         }]
     }).collect::<Vec<_>>().into_iter().flatten().collect::<Vec<_>>();
 
