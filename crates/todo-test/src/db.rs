@@ -1,3 +1,4 @@
+use crate::{controller::TodoController, models::Todo};
 use sqlx::{
     SqlitePool,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -27,7 +28,39 @@ pub async fn connect() -> SqlitePool {
         .expect("failed to open todo database");
     sqlx::query("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, done INTEGER NOT NULL DEFAULT 0)")
         .execute(&pool).await.expect("failed to create todos table");
+    spawn_live_refresh(pool.clone());
     pool
+}
+
+/// Keeps the `todos` live endpoint synchronized with committed SQLite writes.
+/// One process-wide listener performs one refresh query per coalesced commit;
+/// Socket.IO then fans that single payload out to every subscribed client.
+fn spawn_live_refresh(pool: SqlitePool) {
+    tokio::spawn(async move {
+        let mut changes = html_rt::subscribe_table_changes();
+        while let Ok(tables) = changes.recv().await {
+            if !tables.iter().any(|table| table == "todos") {
+                continue;
+            }
+
+            // Collapse a burst of commits before reading the final visible state.
+            while let Ok(next) = changes.try_recv() {
+                if !next.iter().any(|table| table == "todos") {
+                    continue;
+                }
+            }
+
+            let todos: Vec<Todo> =
+                sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
+                    .fetch_all(&pool)
+                    .await
+                    .unwrap_or_default();
+
+            if let Ok(publisher) = TodoController::todos() {
+                let _ = publisher.publish(todos).await;
+            }
+        }
+    });
 }
 
 fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {

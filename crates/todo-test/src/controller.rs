@@ -40,7 +40,6 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        self.publish_todos().await;
         StatusCode::CREATED
     }
 
@@ -54,7 +53,6 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        self.publish_todos().await;
         StatusCode::NO_CONTENT
     }
 
@@ -68,18 +66,6 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        self.publish_todos().await;
         StatusCode::NO_CONTENT
-    }
-
-    async fn publish_todos(&self) {
-        let todos = sqlx::query_as("SELECT id, title, done FROM todos ORDER BY id DESC")
-            .fetch_all(&self.pool)
-            .await
-            .unwrap_or_default();
-
-        if let Ok(publisher) = TodoController::todos() {
-            let _ = publisher.publish(todos).await;
-        }
     }
 }
