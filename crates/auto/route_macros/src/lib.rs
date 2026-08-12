@@ -304,6 +304,8 @@ struct Route {
     live_client_name: Option<LitStr>,
     live_table: Option<LitStr>,
     live_tables: Vec<LitStr>,
+    live_strategy: LiveStrategy,
+    live_capacity: Option<syn::LitInt>,
     live_return_type: Option<Type>,
 }
 
@@ -311,6 +313,16 @@ struct LiveOptions {
     client_name: Option<LitStr>,
     table: Option<LitStr>,
     tables: Vec<LitStr>,
+    strategy: Option<LiveStrategy>,
+    capacity: Option<syn::LitInt>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum LiveStrategy {
+    Sqlite,
+    Publish,
+    Latest,
+    Stream,
 }
 
 impl Parse for LiveOptions {
@@ -318,6 +330,8 @@ impl Parse for LiveOptions {
         let mut client_name = None;
         let mut table = None;
         let mut tables = Vec::new();
+        let mut strategy = None;
+        let mut capacity = None;
         while !input.is_empty() {
             if input.peek(LitStr) {
                 client_name = Some(input.parse()?);
@@ -337,6 +351,22 @@ impl Parse for LiveOptions {
                         }
                         content.parse::<Token![,]>()?;
                     }
+                } else if key == "strategy" {
+                    let value: Ident = input.parse()?;
+                    strategy = Some(match value.to_string().as_str() {
+                        "sqlite" => LiveStrategy::Sqlite,
+                        "publish" => LiveStrategy::Publish,
+                        "latest" => LiveStrategy::Latest,
+                        "stream" => LiveStrategy::Stream,
+                        _ => {
+                            return Err(syn::Error::new_spanned(
+                                value,
+                                "strategy must be sqlite, publish, latest, or stream",
+                            ));
+                        }
+                    });
+                } else if key == "capacity" {
+                    capacity = Some(input.parse()?);
                 } else {
                     return Err(syn::Error::new_spanned(key, "unknown #[live] option"));
                 }
@@ -350,6 +380,8 @@ impl Parse for LiveOptions {
             client_name,
             table,
             tables,
+            strategy,
+            capacity,
         })
     }
 }
@@ -601,6 +633,8 @@ fn expand_controller(
         let mut live_client_name = None;
         let mut live_table = None;
         let mut live_tables = Vec::new();
+        let mut live_strategy = None;
+        let mut live_capacity = None;
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
@@ -614,6 +648,8 @@ fn expand_controller(
                         live_client_name = options.client_name;
                         live_table = options.table;
                         live_tables = options.tables;
+                        live_strategy = options.strategy;
+                        live_capacity = options.capacity;
                     }
                     Meta::NameValue(_) => {
                         return Err(syn::Error::new_spanned(
@@ -691,6 +727,30 @@ fn expand_controller(
                 function.sig.ident.span(),
             ));
         }
+        let has_live_tables = live_table.is_some() || !live_tables.is_empty();
+        let live_strategy = live_strategy.unwrap_or(if has_live_tables {
+            LiveStrategy::Sqlite
+        } else {
+            LiveStrategy::Publish
+        });
+        if live_strategy == LiveStrategy::Sqlite && !has_live_tables {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "strategy = sqlite requires table or tables",
+            ));
+        }
+        if live_strategy != LiveStrategy::Sqlite && has_live_tables {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "table/tables can only be used with strategy = sqlite",
+            ));
+        }
+        if live_capacity.is_some() && live_strategy != LiveStrategy::Stream {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "capacity is only valid with strategy = stream",
+            ));
+        }
         let route_options = marker_options(&attribute)?;
         let route_path = route_options.path.value();
         let full_path = join_paths(&controller_options.path.value(), &route_path);
@@ -711,6 +771,8 @@ fn expand_controller(
             live_client_name,
             live_table,
             live_tables,
+            live_strategy,
+            live_capacity,
             live_return_type,
         });
     }
@@ -735,6 +797,21 @@ fn expand_controller(
         .unwrap_or(&controller_name)
         .to_ascii_lowercase();
     let live_module_ident = format_ident!("{}_live", module_name);
+    let strategy_tokens = |route: &Route| match route.live_strategy {
+        LiveStrategy::Sqlite => quote!(::auto_route::__private::auto_socket::LiveStrategy::Sqlite),
+        LiveStrategy::Publish => {
+            quote!(::auto_route::__private::auto_socket::LiveStrategy::Publish)
+        }
+        LiveStrategy::Latest => quote!(::auto_route::__private::auto_socket::LiveStrategy::Latest),
+        LiveStrategy::Stream => {
+            let capacity = route
+                .live_capacity
+                .as_ref()
+                .map(|value| quote!(#value))
+                .unwrap_or_else(|| quote!(256usize));
+            quote!(::auto_route::__private::auto_socket::LiveStrategy::Stream { capacity: #capacity })
+        }
+    };
     let controller_publishers = routes.iter().filter_map(|route| {
         let event = route.live_event.as_ref()?;
         let client_name = route.live_client_name.as_ref()?;
@@ -753,9 +830,10 @@ fn expand_controller(
         let args = match names.len() { 0 => quote!(::std::vec::Vec::<()>::new()), 1 => { let n = &names[0]; quote!((#n,)) }, _ => quote!((#(#names),*)) };
         let publisher = format_ident!("{}", client_name.value());
         let subscription = format_ident!("{}_subscription", client_name.value());
+        let strategy = strategy_tokens(route);
         Some(quote! {
             pub fn #publisher(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LivePublisher<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
-                ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).room(#args)
+                ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy).room(#args)
             }
 
             pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
@@ -787,6 +865,7 @@ fn expand_controller(
         };
         let event_handler = format_ident!("{}_event", handler);
         let subscription = format_ident!("{}_subscription", handler);
+        let strategy = strategy_tokens(route);
         Some(quote! {
             pub fn #handler(#(#arguments),*)
                 -> ::std::result::Result<
@@ -798,12 +877,12 @@ fn expand_controller(
                     "/_openoxide/live",
                     #endpoint,
                     #event,
-                ).room(#args)
+                ).strategy(#strategy).room(#args)
             }
             pub fn #event_handler() -> ::auto_route::__private::auto_socket::LivePublisher<#return_type> {
                 ::auto_route::__private::auto_socket::LivePublisher::new(
                     "/_openoxide/live", #endpoint, #event,
-                )
+                ).strategy(#strategy)
             }
             pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
                 ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #client_name, #args)
@@ -939,6 +1018,7 @@ fn expand_controller(
             ).to_compile_error()];
         }
         let endpoint = format!("{type_ident}::{handler}");
+        let strategy = strategy_tokens(route);
         let refresh_factory = format_ident!("__auto_route_live_refresh_{}_{}", type_ident, handler);
         vec![quote! {
             #[doc(hidden)]
@@ -952,7 +1032,7 @@ fn expand_controller(
                         let controller = ::std::sync::Arc::clone(&controller);
                         let future: ::auto_route::__private::auto_di::BoxFuture<'static, ()> = ::std::boxed::Box::pin(async move {
                             let ::auto_route::__private::axum::Json(data): ::auto_route::__private::axum::Json<#return_type> = controller.#handler().await;
-                            if let Ok(publisher) = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).room(::std::vec::Vec::<()>::new()) {
+                            if let Ok(publisher) = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy).room(::std::vec::Vec::<()>::new()) {
                                 let _ = publisher.publish(data).await;
                             }
                         });

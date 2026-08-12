@@ -53,6 +53,18 @@ impl DefaultLiveController {
     async fn status(&self) -> Json<Metrics> {
         Json(Metrics { cpu: 1 })
     }
+
+    #[get("/latest")]
+    #[live("latest_status", strategy = latest)]
+    async fn latest(&self) -> Json<Metrics> {
+        Json(Metrics { cpu: 2 })
+    }
+
+    #[get("/stream")]
+    #[live("status_stream", strategy = stream, capacity = 64)]
+    async fn stream(&self) -> Json<Metrics> {
+        Json(Metrics { cpu: 3 })
+    }
 }
 
 #[test]
@@ -82,6 +94,14 @@ fn generates_typed_live_publish_handle() {
             .unwrap()
             .client_name(),
         "server_status"
+    );
+    assert_eq!(
+        DefaultLiveController::latest_status().unwrap().endpoint(),
+        "DefaultLiveController::latest"
+    );
+    assert_eq!(
+        DefaultLiveController::status_stream().unwrap().endpoint(),
+        "DefaultLiveController::stream"
     );
 }
 

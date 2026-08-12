@@ -20,6 +20,20 @@ pub use auto_socket_macros::{auto_socket, on};
 
 static SOCKET_IO: OnceLock<SocketIo> = OnceLock::new();
 static LIVE_REFRESHERS: OnceLock<Vec<ResolvedLiveRefresher>> = OnceLock::new();
+static LATEST_CHANNELS: OnceLock<
+    std::sync::Mutex<HashMap<String, tokio::sync::watch::Sender<serde_json::Value>>>,
+> = OnceLock::new();
+static STREAM_CHANNELS: OnceLock<
+    std::sync::Mutex<HashMap<String, tokio::sync::mpsc::Sender<serde_json::Value>>>,
+> = OnceLock::new();
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LiveStrategy {
+    Publish,
+    Sqlite,
+    Latest,
+    Stream { capacity: usize },
+}
 
 type LiveRefresher = Arc<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync + 'static>;
 
@@ -54,6 +68,7 @@ pub struct LivePublisher<T> {
     endpoint: &'static str,
     event: &'static str,
     room_args: Option<serde_json::Value>,
+    strategy: LiveStrategy,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -130,6 +145,7 @@ where
             endpoint,
             event,
             room_args: None,
+            strategy: LiveStrategy::Publish,
             marker: PhantomData,
         }
     }
@@ -139,24 +155,23 @@ where
         Ok(self)
     }
 
+    pub fn strategy(mut self, strategy: LiveStrategy) -> Self {
+        self.strategy = strategy;
+        self
+    }
+
     pub async fn publish(self, data: T) -> Result<(), PublishError> {
-        let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
         let args = self.room_args.ok_or(PublishError::MissingRoomArguments)?;
-        let room = format!("{}:{args}", self.endpoint);
-        if let Some(namespace) = io.of(self.namespace) {
-            namespace
-                .to(room)
-                .emit(
-                    "live:update",
-                    &serde_json::json!({
-                        "endpoint": self.endpoint,
-                        "args": args,
-                        "data": data,
-                    }),
-                )
-                .await?;
+        let message = serde_json::json!({"endpoint": self.endpoint, "args": args, "data": data});
+        match self.strategy {
+            LiveStrategy::Publish | LiveStrategy::Sqlite => {
+                emit_room(self.namespace, self.endpoint, message).await
+            }
+            LiveStrategy::Latest => publish_latest(self.namespace, self.endpoint, message),
+            LiveStrategy::Stream { capacity } => {
+                publish_stream(self.namespace, self.endpoint, message, capacity).await
+            }
         }
-        Ok(())
     }
 
     /// Emits this endpoint's typed payload to one explicitly selected socket.
@@ -184,6 +199,83 @@ where
     pub fn endpoint(&self) -> &'static str {
         self.endpoint
     }
+}
+
+async fn emit_room(
+    namespace: &'static str,
+    endpoint: &'static str,
+    message: serde_json::Value,
+) -> Result<(), PublishError> {
+    let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
+    let room = format!("{}:{}", endpoint, message["args"]);
+    if let Some(socket_namespace) = io.of(namespace) {
+        socket_namespace
+            .to(room)
+            .emit("live:update", &message)
+            .await?;
+    }
+    Ok(())
+}
+
+fn publish_latest(
+    namespace: &'static str,
+    endpoint: &'static str,
+    message: serde_json::Value,
+) -> Result<(), PublishError> {
+    SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
+    let key = format!("{namespace}:{endpoint}:{}", message["args"]);
+    let channels = LATEST_CHANNELS.get_or_init(Default::default);
+    let mut channels = channels
+        .lock()
+        .expect("latest live channel registry poisoned");
+    if let Some(sender) = channels.get(&key) {
+        sender.send_replace(message);
+        return Ok(());
+    }
+    let (sender, mut receiver) = tokio::sync::watch::channel(message);
+    channels.insert(key, sender);
+    tokio::spawn(async move {
+        loop {
+            let value = receiver.borrow_and_update().clone();
+            let _ = emit_room(namespace, endpoint, value).await;
+            if receiver.changed().await.is_err() {
+                break;
+            }
+        }
+    });
+    Ok(())
+}
+
+async fn publish_stream(
+    namespace: &'static str,
+    endpoint: &'static str,
+    message: serde_json::Value,
+    capacity: usize,
+) -> Result<(), PublishError> {
+    SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
+    let key = format!("{namespace}:{endpoint}:{}", message["args"]);
+    let sender = {
+        let channels = STREAM_CHANNELS.get_or_init(Default::default);
+        let mut channels = channels
+            .lock()
+            .expect("stream live channel registry poisoned");
+        if let Some(sender) = channels.get(&key) {
+            sender.clone()
+        } else {
+            let (sender, mut receiver) = tokio::sync::mpsc::channel(capacity.max(1));
+            channels.insert(key, sender.clone());
+            tokio::spawn(async move {
+                while let Some(value) = receiver.recv().await {
+                    let _ = emit_room(namespace, endpoint, value).await;
+                }
+            });
+            sender
+        }
+    };
+    sender
+        .send(message)
+        .await
+        .map_err(|_| PublishError::NotRegistered)
 }
 
 #[doc(hidden)]

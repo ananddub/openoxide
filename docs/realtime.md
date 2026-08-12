@@ -234,6 +234,35 @@ TodoController::todos()?
     .await?;
 ```
 
+## Delivery strategies
+
+`#[live]` supports compile-time checked delivery strategies:
+
+```rust
+#[live("todos", strategy = sqlite, table = "todos")]
+#[live("metrics", strategy = latest)]
+#[live("logs", strategy = stream, capacity = 512)]
+#[live("status", strategy = publish)]
+```
+
+| Strategy | Behavior | Intended data |
+| --- | --- | --- |
+| `sqlite` | A committed matching table change reruns the endpoint; parallel refreshes are coalesced | CRUD lists and database dashboards |
+| `publish` | Every `.publish(data).await` directly emits the supplied payload | Normal application events and already-computed data |
+| `latest` | Publishing replaces any queued value; the transport sends the newest available state | CPU, RAM, progress and current status |
+| `stream` | Publishing enters a bounded ordered queue and applies backpressure when full | Logs, terminal output and ordered job events |
+
+Defaults keep common declarations short:
+
+```rust
+#[live("todos", table = "todos")] // strategy = sqlite
+#[live("status")]                 // strategy = publish
+```
+
+`stream` defaults to a capacity of 256 when `capacity` is omitted. `capacity` is rejected for every other strategy. `table` and `tables` are accepted only by `sqlite`, and explicitly choosing `sqlite` without a table is a compile error.
+
+The strategy changes server delivery behavior only. React still consumes the same generated hook and `live:update` protocol.
+
 Target one socket:
 
 ```rust
