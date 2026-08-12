@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     marker::PhantomData,
     sync::{
         Arc, OnceLock,
@@ -26,13 +26,19 @@ static LATEST_CHANNELS: OnceLock<
 static STREAM_CHANNELS: OnceLock<
     std::sync::Mutex<HashMap<String, tokio::sync::mpsc::Sender<serde_json::Value>>>,
 > = OnceLock::new();
+static STREAM_HISTORY: OnceLock<std::sync::Mutex<HashMap<String, StreamHistory>>> = OnceLock::new();
+
+struct StreamHistory {
+    limit: usize,
+    events: VecDeque<serde_json::Value>,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LiveStrategy {
     Publish,
     Sqlite,
     Latest,
-    Stream { capacity: usize },
+    Stream { capacity: usize, replay: usize },
 }
 
 type LiveRefresher = Arc<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync + 'static>;
@@ -168,8 +174,8 @@ where
                 emit_room(self.namespace, self.endpoint, message).await
             }
             LiveStrategy::Latest => publish_latest(self.namespace, self.endpoint, message),
-            LiveStrategy::Stream { capacity } => {
-                publish_stream(self.namespace, self.endpoint, message, capacity).await
+            LiveStrategy::Stream { capacity, replay } => {
+                publish_stream(self.namespace, self.endpoint, message, capacity, replay).await
             }
         }
     }
@@ -251,9 +257,25 @@ async fn publish_stream(
     endpoint: &'static str,
     message: serde_json::Value,
     capacity: usize,
+    replay: usize,
 ) -> Result<(), PublishError> {
     SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
     let key = format!("{namespace}:{endpoint}:{}", message["args"]);
+    if replay > 0 {
+        let histories = STREAM_HISTORY.get_or_init(Default::default);
+        let mut histories = histories.lock().expect("stream history registry poisoned");
+        let history = histories
+            .entry(key.clone())
+            .or_insert_with(|| StreamHistory {
+                limit: replay,
+                events: VecDeque::with_capacity(replay),
+            });
+        history.limit = replay;
+        while history.events.len() >= history.limit {
+            history.events.pop_front();
+        }
+        history.events.push_back(message.clone());
+    }
     let sender = {
         let channels = STREAM_CHANNELS.get_or_init(Default::default);
         let mut channels = channels
@@ -387,8 +409,19 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
             async move {
                 socket.on(
                     "live:subscribe",
-                    |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
-                        socket.join(format!("{}:{}", subscription.endpoint, subscription.args));
+                    move |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
+                        let room = format!("{}:{}", subscription.endpoint, subscription.args);
+                        let history_key = format!("{namespace}:{}:{}", subscription.endpoint, subscription.args);
+                        if let Ok(histories) = STREAM_HISTORY.get_or_init(Default::default).lock() {
+                            socket.join(room);
+                            if let Some(history) = histories.get(&history_key) {
+                                for event in &history.events {
+                                    let _ = socket.emit("live:update", event);
+                                }
+                            }
+                        } else {
+                            socket.join(room);
+                        }
                     },
                 );
                 socket.on(

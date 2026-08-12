@@ -36,7 +36,7 @@ impl TodoController {
     }
 
     #[get("/activity")]
-    #[live("activity", strategy = stream, capacity = 32)]
+    #[live("activity", strategy = stream, capacity = 32, replay = 10)]
     async fn activity_feed(&self) -> Json<ActivityEvent> {
         Json(ActivityEvent {
             sequence: 0,

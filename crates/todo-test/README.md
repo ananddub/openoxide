@@ -62,7 +62,7 @@ const {data: todos, loading, connected} = useTodos();
 The page also exercises the non-SQLite strategies:
 
 - **Burst 100 metrics** uses `strategy = latest` and should settle on sample `#100`.
-- **Stream 20 events** uses `strategy = stream, capacity = 32` and visibly advances from event `#1` through `#20` in order.
+- **Stream 20 events** uses `strategy = stream, capacity = 32, replay = 10`, visibly advances from event `#1` through `#20`, and gives a newly opened tab the last 10 events.
 - Creating, toggling, or deleting a Todo uses `strategy = sqlite` implicitly and updates every open tab without a manual publish call.
 
 See [the complete realtime guide](../../docs/realtime.md).

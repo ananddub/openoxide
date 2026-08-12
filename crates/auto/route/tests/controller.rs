@@ -61,7 +61,7 @@ impl DefaultLiveController {
     }
 
     #[get("/stream")]
-    #[live("status_stream", strategy = stream, capacity = 64)]
+    #[live("status_stream", strategy = stream, capacity = 64, replay = 10)]
     async fn stream(&self) -> Json<Metrics> {
         Json(Metrics { cpu: 3 })
     }

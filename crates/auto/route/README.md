@@ -141,11 +141,11 @@ Delivery can be selected explicitly:
 
 ```rust,ignore
 #[live("metrics", strategy = latest)]
-#[live("logs", strategy = stream, capacity = 512)]
+#[live("logs", strategy = stream, capacity = 512, replay = 50)]
 #[live("status", strategy = publish)]
 ```
 
-`latest` coalesces queued state updates. `stream` preserves order through a bounded queue and applies async backpressure. A table declaration defaults to `sqlite`; an endpoint without tables defaults to `publish`.
+`latest` coalesces queued state updates. `stream` preserves order through a bounded queue, applies async backpressure, and can replay a bounded in-memory history to newly joined sockets. A table declaration defaults to `sqlite`; an endpoint without tables defaults to `publish`.
 
 See [Typed realtime endpoints](../../../docs/realtime.md) for setup, runtime behavior, React hook generation, deduplication, and constraints.
 

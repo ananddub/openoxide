@@ -306,6 +306,7 @@ struct Route {
     live_tables: Vec<LitStr>,
     live_strategy: LiveStrategy,
     live_capacity: Option<syn::LitInt>,
+    live_replay: Option<syn::LitInt>,
     live_return_type: Option<Type>,
 }
 
@@ -315,6 +316,7 @@ struct LiveOptions {
     tables: Vec<LitStr>,
     strategy: Option<LiveStrategy>,
     capacity: Option<syn::LitInt>,
+    replay: Option<syn::LitInt>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -332,6 +334,7 @@ impl Parse for LiveOptions {
         let mut tables = Vec::new();
         let mut strategy = None;
         let mut capacity = None;
+        let mut replay = None;
         while !input.is_empty() {
             if input.peek(LitStr) {
                 client_name = Some(input.parse()?);
@@ -367,6 +370,8 @@ impl Parse for LiveOptions {
                     });
                 } else if key == "capacity" {
                     capacity = Some(input.parse()?);
+                } else if key == "replay" {
+                    replay = Some(input.parse()?);
                 } else {
                     return Err(syn::Error::new_spanned(key, "unknown #[live] option"));
                 }
@@ -382,6 +387,7 @@ impl Parse for LiveOptions {
             tables,
             strategy,
             capacity,
+            replay,
         })
     }
 }
@@ -635,6 +641,7 @@ fn expand_controller(
         let mut live_tables = Vec::new();
         let mut live_strategy = None;
         let mut live_capacity = None;
+        let mut live_replay = None;
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
@@ -650,6 +657,7 @@ fn expand_controller(
                         live_tables = options.tables;
                         live_strategy = options.strategy;
                         live_capacity = options.capacity;
+                        live_replay = options.replay;
                     }
                     Meta::NameValue(_) => {
                         return Err(syn::Error::new_spanned(
@@ -751,6 +759,20 @@ fn expand_controller(
                 "capacity is only valid with strategy = stream",
             ));
         }
+        if live_replay.is_some() && live_strategy != LiveStrategy::Stream {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "replay is only valid with strategy = stream",
+            ));
+        }
+        if let Some(replay) = &live_replay {
+            if replay.base10_parse::<usize>()? > 10_000 {
+                return Err(syn::Error::new_spanned(
+                    replay,
+                    "stream replay cannot exceed 10000 events",
+                ));
+            }
+        }
         let route_options = marker_options(&attribute)?;
         let route_path = route_options.path.value();
         let full_path = join_paths(&controller_options.path.value(), &route_path);
@@ -773,6 +795,7 @@ fn expand_controller(
             live_tables,
             live_strategy,
             live_capacity,
+            live_replay,
             live_return_type,
         });
     }
@@ -809,7 +832,12 @@ fn expand_controller(
                 .as_ref()
                 .map(|value| quote!(#value))
                 .unwrap_or_else(|| quote!(256usize));
-            quote!(::auto_route::__private::auto_socket::LiveStrategy::Stream { capacity: #capacity })
+            let replay = route
+                .live_replay
+                .as_ref()
+                .map(|value| quote!(#value))
+                .unwrap_or_else(|| quote!(0usize));
+            quote!(::auto_route::__private::auto_socket::LiveStrategy::Stream { capacity: #capacity, replay: #replay })
         }
     };
     let controller_publishers = routes.iter().filter_map(|route| {
