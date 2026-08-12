@@ -49,7 +49,7 @@ impl DefaultLiveController {
     }
 
     #[get("")]
-    #[live("server_status")]
+    #[live("server_status", tables = ["servers", "metrics"])]
     async fn status(&self) -> Json<Metrics> {
         Json(Metrics { cpu: 1 })
     }

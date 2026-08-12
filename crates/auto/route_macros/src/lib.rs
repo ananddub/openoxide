@@ -303,27 +303,40 @@ struct Route {
     live_event: Option<LitStr>,
     live_client_name: Option<LitStr>,
     live_table: Option<LitStr>,
+    live_tables: Vec<LitStr>,
     live_return_type: Option<Type>,
 }
 
 struct LiveOptions {
     client_name: Option<LitStr>,
     table: Option<LitStr>,
+    tables: Vec<LitStr>,
 }
 
 impl Parse for LiveOptions {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let mut client_name = None;
         let mut table = None;
+        let mut tables = Vec::new();
         while !input.is_empty() {
             if input.peek(LitStr) {
                 client_name = Some(input.parse()?);
             } else {
                 let key: Ident = input.parse()?;
                 input.parse::<Token![=]>()?;
-                let value: LitStr = input.parse()?;
                 if key == "table" {
+                    let value: LitStr = input.parse()?;
                     table = Some(value);
+                } else if key == "tables" {
+                    let content;
+                    syn::bracketed!(content in input);
+                    while !content.is_empty() {
+                        tables.push(content.parse::<LitStr>()?);
+                        if content.is_empty() {
+                            break;
+                        }
+                        content.parse::<Token![,]>()?;
+                    }
                 } else {
                     return Err(syn::Error::new_spanned(key, "unknown #[live] option"));
                 }
@@ -333,7 +346,11 @@ impl Parse for LiveOptions {
             }
             input.parse::<Token![,]>()?;
         }
-        Ok(Self { client_name, table })
+        Ok(Self {
+            client_name,
+            table,
+            tables,
+        })
     }
 }
 
@@ -583,6 +600,7 @@ fn expand_controller(
         let mut live_event = None;
         let mut live_client_name = None;
         let mut live_table = None;
+        let mut live_tables = Vec::new();
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
@@ -595,6 +613,7 @@ fn expand_controller(
                         })?;
                         live_client_name = options.client_name;
                         live_table = options.table;
+                        live_tables = options.tables;
                     }
                     Meta::NameValue(_) => {
                         return Err(syn::Error::new_spanned(
@@ -691,6 +710,7 @@ fn expand_controller(
             live_event,
             live_client_name,
             live_table,
+            live_tables,
             live_return_type,
         });
     }
@@ -901,20 +921,31 @@ fn expand_controller(
         quote! {}
     };
 
-    let live_refresh_registrations = routes.iter().filter_map(|route| {
-        let table = route.live_table.as_ref()?;
-        let event = route.live_event.as_ref()?;
-        let return_type = route.live_return_type.as_ref()?;
+    let live_refresh_registrations = routes.iter().flat_map(|route| {
+        let mut tables = route.live_tables.clone();
+        if let Some(table) = route.live_table.clone() {
+            tables.push(table);
+        }
+        if tables.is_empty() {
+            return Vec::new();
+        }
+        let Some(event) = route.live_event.as_ref() else { return Vec::new(); };
+        let Some(return_type) = route.live_return_type.as_ref() else { return Vec::new(); };
         let handler = &route.handler;
         if !route.argument_types.is_empty() {
-            return Some(syn::Error::new_spanned(
+            return vec![syn::Error::new_spanned(
                 handler,
                 "table-backed #[live] currently requires a zero-argument controller method",
-            ).to_compile_error());
+            ).to_compile_error()];
         }
         let endpoint = format!("{type_ident}::{handler}");
         let refresh_factory = format_ident!("__auto_route_live_refresh_{}_{}", type_ident, handler);
-        Some(quote! {
+        let registrations = tables.into_iter().map(|table| quote! {
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(#table, #refresh_factory)
+            }
+        });
+        vec![quote! {
             #[doc(hidden)]
             #[allow(non_snake_case)]
             fn #refresh_factory<'a>(
@@ -935,11 +966,9 @@ fn expand_controller(
                     Ok(refresh)
                 })
             }
-            ::auto_route::__private::inventory::submit! {
-                ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(#table, #refresh_factory)
-            }
-        })
-    }).collect::<Vec<_>>();
+            #(#registrations)*
+        }]
+    }).collect::<Vec<_>>().into_iter().flatten().collect::<Vec<_>>();
 
     Ok(quote! {
         #managed_impl
