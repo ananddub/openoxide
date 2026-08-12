@@ -1,4 +1,4 @@
-# Rustploy Notification Service Architecture
+# OpenOxide Notification Service Architecture
 
 ```text
 ┌─ NOTIFICATIONS ───────────────────────────────────────────┐
@@ -16,7 +16,7 @@ flowchart LR
   D --> H[Delivery history]
 ```
 
-Rustploy features a high-performance, multi-channel **Notification Engine** designed to dispatch event-driven alerts, deployment updates, and monitoring warnings across 13 different communication channels.
+OpenOxide features a high-performance, multi-channel **Notification Engine** designed to dispatch event-driven alerts, deployment updates, and monitoring warnings across 13 different communication channels.
 
 ---
 

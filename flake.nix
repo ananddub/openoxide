@@ -86,9 +86,9 @@
             };
 
             shellHook = ''
-              export RUSTPLOY_TOOL_HOME="''${RUSTPLOY_TOOL_HOME:-$HOME/.cache/rustploy-tools}"
-              mkdir -p "$RUSTPLOY_TOOL_HOME/bin"
-              export PATH="$RUSTPLOY_TOOL_HOME/bin:/usr/local/bin:$PATH:$HOME/.cargo/bin"
+              export OPENOXIDE_TOOL_HOME="''${OPENOXIDE_TOOL_HOME:-$HOME/.cache/openoxide-tools}"
+              mkdir -p "$OPENOXIDE_TOOL_HOME/bin"
+              export PATH="$OPENOXIDE_TOOL_HOME/bin:/usr/local/bin:$PATH:$HOME/.cargo/bin"
               export BUILDKIT_HOST=docker-container://buildkit
               export DOCKER_API_VERSION=1.41
 
@@ -98,9 +98,9 @@
                 docker run --privileged -d --name buildkit --restart always moby/buildkit > /dev/null
               fi
 
-              echo "Rustploy dev shell ready."
+              echo "OpenOxide dev shell ready."
               echo "Build tools: docker, pack/Paketo, nixpacks, railpack, heroku."
-              echo "If any optional tool is missing, run: rustploy_ensure_build_tools"
+              echo "If any optional tool is missing, run: openoxide_ensure_build_tools"
             '';
           };
         }

@@ -48,7 +48,7 @@ impl NotificationService {
         let client = Client::builder()
             .timeout(Duration::from_secs(10))
             .connect_timeout(Duration::from_secs(5))
-            .user_agent(concat!("Rustploy/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("OpenOxide/", env!("CARGO_PKG_VERSION")))
             .build()
             .unwrap_or_default();
 

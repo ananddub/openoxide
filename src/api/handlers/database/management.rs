@@ -59,7 +59,7 @@ impl DatabaseManagementController {
             .await
             .map_err(super::map_sqlx_error)?;
         Ok(Json(DatabaseArchiveDto {
-            format: "rustploy.database+json".into(),
+            format: "openoxide.database+json".into(),
             schema_version: i64::from(bundle.schema_version),
             archive: serde_json::to_string_pretty(&bundle)
                 .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?,

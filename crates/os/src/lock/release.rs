@@ -27,7 +27,7 @@ impl<'a> LockReleaseBuilder<'a> {
     fn script(&self) -> Vec<crate::exec::script::ShellIR> {
         let lock_dir = self.lock_dir.as_str();
         let name = self.name.as_str();
-        sh!(cmd("rmdir", word![dynamic!(lock_dir), "/rustploy_lock_", dynamic!(name)]);)
+        sh!(cmd("rmdir", word![dynamic!(lock_dir), "/openoxide_lock_", dynamic!(name)]);)
     }
 }
 

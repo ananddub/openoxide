@@ -414,7 +414,7 @@ impl DatabaseService {
         }
         if record.detach_rustploy_network != 0 && record.network_ids == "[]" {
             warnings
-                .push("database is detached from rustploy-network without another network".into());
+                .push("database is detached from openoxide-network without another network".into());
         }
         if record.external_port.is_some() {
             warnings.push("database is exposed on a host port".into());

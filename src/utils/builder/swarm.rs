@@ -4,7 +4,7 @@ use crate::utils::{
 };
 use tokio_util::sync::CancellationToken;
 
-pub(crate) const RUSTPLOY_NETWORK: &str = "rustploy-network";
+pub(crate) const OPENOXIDE_NETWORK: &str = "openoxide-network";
 
 pub(crate) async fn ensure_swarm_manager(
     executor: &CommandExecutor,

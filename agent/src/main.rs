@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         refresh_rate = config.refresh_rate,
         grpc_port = config.grpc_port,
         panel = %config.panel_url,
-        "starting rustploy monitor agent"
+        "starting openoxide monitor agent"
     );
 
     let store = Arc::new(Store::init(&config.database_url).await?);

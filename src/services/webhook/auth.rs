@@ -28,12 +28,12 @@ pub fn verify_token(expected: &str, received: Option<&str>) -> bool {
     received.is_some_and(|received| {
         let mut expected_mac =
             HmacSha256::new_from_slice(expected.as_bytes()).expect("HMAC accepts keys of any size");
-        expected_mac.update(b"rustploy-token-verification");
+        expected_mac.update(b"openoxide-token-verification");
         let expected_tag = expected_mac.finalize().into_bytes();
 
         let mut received_mac =
             HmacSha256::new_from_slice(received.as_bytes()).expect("HMAC accepts keys of any size");
-        received_mac.update(b"rustploy-token-verification");
+        received_mac.update(b"openoxide-token-verification");
         received_mac.verify_slice(&expected_tag).is_ok()
     })
 }

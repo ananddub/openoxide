@@ -1,6 +1,6 @@
-# Rustploy
+# OpenOxide
 
-Rustploy is a self-hosted deployment and infrastructure control panel written in Rust, with a React dashboard and a standalone Rust monitoring agent. It manages applications, Docker Compose projects, databases, domains, certificates, backups, remote servers, private networking, notifications, schedules, logs, and container operations from one panel.
+OpenOxide is a self-hosted deployment and infrastructure control panel written in Rust, with a React dashboard and a standalone Rust monitoring agent. It manages applications, Docker Compose projects, databases, domains, certificates, backups, remote servers, private networking, notifications, schedules, logs, and container operations from one panel.
 
 The repository is organized as a Rust workspace. Reusable operating-system and command integrations live in dedicated crates, while the panel keeps API, business, persistence, and background-runtime responsibilities separate.
 
@@ -29,7 +29,7 @@ The repository is organized as a Rust workspace. Reusable operating-system and c
 React dashboard
     │ HTTP / OpenAPI / SSE / Socket.IO
     ▼
-Rustploy panel (Axum + Tokio)
+OpenOxide panel (Axum + Tokio)
     ├── API handlers and DTOs
     ├── business services
     ├── SQLx repositories and SQLite
@@ -72,7 +72,7 @@ The intended responsibility boundaries are:
 ## Workspace layout
 
 ```text
-rustploy/
+openoxide/
 ├── agent/                       # Standalone monitoring agent
 ├── crates/
 │   ├── os/                      # Typed OS, Docker, Git, SSH and WireGuard facade
@@ -104,7 +104,7 @@ rustploy/
 │   │   ├── setup/               # Remote server setup/audit workflows
 │   │   └── traefik/             # Traefik configuration builders
 │   └── websocket/               # Terminal and streaming socket handlers
-├── web/rustploy_react/          # React 19 dashboard
+├── web/openoxide_react/          # React 19 dashboard
 ├── Dockerfile                   # Panel image definition
 ├── Dockerfile.monitor           # Static monitoring-agent image
 ├── docker-compose.monitor.yml   # Monitoring-agent deployment example
@@ -159,7 +159,7 @@ The raw process invocation required to launch a binary belongs inside the releva
 
 ## Database and migrations
 
-Rustploy uses SQLite through SQLx.
+OpenOxide uses SQLite through SQLx.
 
 - Runtime migrations live in `db/migrations` and must remain append-only after release.
 - `db/schema` represents the current expected schema.
@@ -262,9 +262,9 @@ Create a local `.env` file. Do not commit production secrets.
 | `BUILD_MEMORY_LIMIT` | `4G` | Default build memory limit |
 | `BUILD_CPU_LIMIT` | `4` | Default build CPU limit |
 | `METRICS_TOKEN` | empty | Shared monitoring-agent secret; empty disables authenticated ingestion |
-| `RUSTPLOY_PUBLIC_URL` | unset | Public URL used in email/reset links |
-| `RUSTPLOY_SERVER_URL` | `http://127.0.0.1:4000` in agent-related flows | URL agents and remote setup use to reach the panel |
-| `TRAEFIK_BASE_PATH` | Rustploy data path + `/traefik` | Traefik configuration root |
+| `OPENOXIDE_PUBLIC_URL` | unset | Public URL used in email/reset links |
+| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` in agent-related flows | URL agents and remote setup use to reach the panel |
+| `TRAEFIK_BASE_PATH` | OpenOxide data path + `/traefik` | Traefik configuration root |
 | `DEPLOYMENT_PER_SERVER_CONCURRENCY` | code default | Parallel deployments allowed per server |
 | `DEPLOYMENT_QUEUE_MAX_SIZE` | code default | Maximum queued deployment count |
 | `JWT_ACCESS_SECRET` | application fallback/config | Access-token signing secret |
@@ -283,7 +283,7 @@ Production must use strong, different application/JWT secrets and a non-empty `M
 | `GRPC_PORT` | `50051` | Historical-query gRPC port |
 | `REFRESH_RATE` | `60` | Collection interval in seconds |
 | `RETENTION_DAYS` | `7` | Local metric retention |
-| `RUSTPLOY_SERVER_URL` | `http://127.0.0.1:4000` | Panel URL |
+| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Panel URL |
 | `METRICS_TOKEN` | required | Must match the panel token |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker API socket |
 | `COLLECTION_MODE` | `auto` | `auto`, `cgroup`, or `stream` |
@@ -324,7 +324,7 @@ If not using Nix, install:
 ```bash
 export DATABASE_URL="sqlite://$(pwd)/data/db.sqlite3"
 export METRICS_TOKEN="development-monitoring-token"
-cargo run -p rustploy
+cargo run -p openoxide
 ```
 
 The panel listens on `http://localhost:4000` unless `HOST` or `PORT` is changed.
@@ -338,12 +338,12 @@ just dev
 ### React dashboard
 
 ```bash
-cd web/rustploy_react
+cd web/openoxide_react
 bun install
 bun run dev
 ```
 
-The Vite development server listens on `http://localhost:3001`. Its current proxy target is configured in `web/rustploy_react/vite.config.ts`; update that target for your local panel when required.
+The Vite development server listens on `http://localhost:3001`. Its current proxy target is configured in `web/openoxide_react/vite.config.ts`; update that target for your local panel when required.
 
 Useful frontend commands:
 
@@ -360,7 +360,7 @@ bun run gen:api
 ```bash
 export SERVER_ID=1
 export METRICS_TOKEN="development-monitoring-token"
-export RUSTPLOY_SERVER_URL="http://127.0.0.1:4000"
+export OPENOXIDE_SERVER_URL="http://127.0.0.1:4000"
 cargo run -p agent
 ```
 
@@ -394,9 +394,9 @@ cargo test --lib wireguard -- --nocapture
 Build release artifacts:
 
 ```bash
-cargo build --release -p rustploy
+cargo build --release -p openoxide
 cargo build --release -p agent
-docker build -f Dockerfile.monitor -t rustploy-monitor:latest .
+docker build -f Dockerfile.monitor -t openoxide-monitor:latest .
 ```
 
 The root release profile optimizes for small binaries using size optimization, LTO, one codegen unit, abort-on-panic, and symbol stripping.
@@ -405,11 +405,11 @@ The root release profile optimizes for small binaries using size optimization, L
 
 The monitoring image is a static musl binary copied into a `scratch` image. It needs access to the Docker socket, cgroups for the scalable collector, persistent storage for its SQLite database, and network reachability to the panel.
 
-`docker-compose.monitor.yml` uses host networking, so `RUSTPLOY_SERVER_URL=http://127.0.0.1:4000` reaches a panel running on the same host and `GRPC_PORT` binds directly to the host.
+`docker-compose.monitor.yml` uses host networking, so `OPENOXIDE_SERVER_URL=http://127.0.0.1:4000` reaches a panel running on the same host and `GRPC_PORT` binds directly to the host.
 
-The panel image needs persistent database/data storage and Docker socket access. Docker socket access is equivalent to high privilege over the Docker host; only run Rustploy on trusted infrastructure and protect the panel with authentication and network controls.
+The panel image needs persistent database/data storage and Docker socket access. Docker socket access is equivalent to high privilege over the Docker host; only run OpenOxide on trusted infrastructure and protect the panel with authentication and network controls.
 
-> The root `Dockerfile` still references the previous frontend directory (`web/rustploy`). The active dashboard is `web/rustploy_react`; align the frontend build stage before using that Dockerfile for a production panel image.
+> The root `Dockerfile` still references the previous frontend directory (`web/openoxide`). The active dashboard is `web/openoxide_react`; align the frontend build stage before using that Dockerfile for a production panel image.
 
 ## Development rules
 

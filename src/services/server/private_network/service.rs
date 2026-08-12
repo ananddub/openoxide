@@ -459,7 +459,7 @@ impl ServerPrivateNetworkService {
             != PrivateNetworkConnectionMode::ManagedWireguard
         {
             return Err(sqlx::Error::Protocol(
-                "key rotation is only available for Rustploy-managed WireGuard".into(),
+                "key rotation is only available for OpenOxide-managed WireGuard".into(),
             ));
         }
         Ok(())

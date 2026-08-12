@@ -122,13 +122,13 @@ impl ServerLifecycleService {
     pub async fn backup(&self, server_id: i64) -> sqlx::Result<ServerBackupDto> {
         let executor = self.executor(server_id).await?;
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
-        let path = format!("/tmp/rustploy-server-{server_id}-{timestamp}.tar.gz");
+        let path = format!("/tmp/openoxide-server-{server_id}-{timestamp}.tar.gz");
         OsCli::new(&executor)
             .archive(&path)
             .tar()
             .create()
             .ignore_failed_reads()
-            .entry("/etc/rustploy")
+            .entry("/etc/openoxide")
             .entry("/etc/docker")
             .run()
             .await

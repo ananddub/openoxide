@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn walk_builder_supports_multiple_roots_names_and_printf() {
         let executor = CommandExecutor::Local(LocalExecutor::new());
-        let command = DirWalkBuilder::new(&executor, "/etc/rustploy/traefik".to_string())
+        let command = DirWalkBuilder::new(&executor, "/etc/openoxide/traefik".to_string())
             .also("/etc/traefik")
             .max_depth(3)
             .type_file()
@@ -154,7 +154,7 @@ mod tests {
             .ignore_errors()
             .build_str();
 
-        assert!(command.contains("find '/etc/rustploy/traefik' '/etc/traefik'"));
+        assert!(command.contains("find '/etc/openoxide/traefik' '/etc/traefik'"));
         assert!(command.contains("\\( -name '*.yml' -o -name '*.yaml' -o -name '*.json' \\)"));
         assert!(command.contains("-printf '%p\t%s\t%T@\n'"));
         assert!(command.ends_with(" 2>/dev/null || true"));

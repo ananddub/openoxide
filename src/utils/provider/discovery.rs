@@ -64,7 +64,7 @@ impl Default for ProviderDiscovery {
     fn default() -> Self {
         Self {
             client: Client::builder()
-                .user_agent("rustploy")
+                .user_agent("openoxide")
                 .build()
                 .expect("valid HTTP client"),
         }
@@ -287,7 +287,7 @@ impl ProviderDiscovery {
                 self.json(self.client.post(format!("{}/api/v4/projects/{project}/hooks", trim(base_url))).header("PRIVATE-TOKEN", token).json(&serde_json::json!({"url":callback_url,"token":secret,"push_events":true,"tag_push_events":true,"merge_requests_events":true,"enable_ssl_verification":true}))).await?
             }
             ProviderAccess::Gitea { base_url, token } => self.json(self.client.post(format!("{}/api/v1/repos/{owner}/{repo}/hooks", trim(base_url))).bearer_auth(token).json(&serde_json::json!({"type":"gitea","active":true,"events":["push","pull_request"],"config":{"url":callback_url,"content_type":"json","secret":secret}}))).await?,
-            ProviderAccess::Bitbucket { .. } => self.json(authenticate_bitbucket(self.client.post(format!("https://api.bitbucket.org/2.0/repositories/{owner}/{repo}/hooks")).json(&serde_json::json!({"description":"rustploy-webhook","url":callback_url,"active":true,"secret":secret,"events":["repo:push","repo:refs_changed","pullrequest:created","pullrequest:updated","pullrequest:fulfilled","pullrequest:rejected"]})), access)).await?,
+            ProviderAccess::Bitbucket { .. } => self.json(authenticate_bitbucket(self.client.post(format!("https://api.bitbucket.org/2.0/repositories/{owner}/{repo}/hooks")).json(&serde_json::json!({"description":"openoxide-webhook","url":callback_url,"active":true,"secret":secret,"events":["repo:push","repo:refs_changed","pullrequest:created","pullrequest:updated","pullrequest:fulfilled","pullrequest:rejected"]})), access)).await?,
         };
         parse_webhook(&value).ok_or_else(|| "provider returned an invalid webhook response".into())
     }

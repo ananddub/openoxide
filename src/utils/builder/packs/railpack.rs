@@ -104,7 +104,7 @@ impl<'a> RailpackPrepareBuilder<'a> {
 
     pub async fn run(self, cancel: &CancellationToken) -> ExecResult<ExecOutput> {
         let docker = DockerCli::from_executor(self.executor.clone());
-        let name = "rustploy_buildkit".to_string();
+        let name = "openoxide_buildkit".to_string();
         let cointainer = docker
             .containers()
             .ps()
@@ -137,7 +137,7 @@ impl<'a> RailpackPrepareBuilder<'a> {
         cancel: &CancellationToken,
     ) -> ExecResult<ExecOutput> {
         let docker = DockerCli::from_executor(self.executor.clone());
-        let name = "rustploy_buildkit".to_string();
+        let name = "openoxide_buildkit".to_string();
         let cointainer = docker
             .containers()
             .ps()

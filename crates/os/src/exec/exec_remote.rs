@@ -637,7 +637,7 @@ struct RemoteCancelJob {
 impl RemoteCancelJob {
     fn new() -> Self {
         Self {
-            pid_file: format!("/tmp/rustploy-ssh-job-{}.pid", Uuid::new_v4()),
+            pid_file: format!("/tmp/openoxide-ssh-job-{}.pid", Uuid::new_v4()),
         }
     }
 

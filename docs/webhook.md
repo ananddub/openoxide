@@ -1,4 +1,4 @@
-# Rustploy Webhook Engine Architecture
+# OpenOxide Webhook Engine Architecture
 
 ```text
 ┌─ WEBHOOK ─────────────────────────────────────────────────┐
@@ -102,7 +102,7 @@ Parses raw JSON payload into normalized Rust structs:
 
 ## 5. How webhook processing avoids unsafe deployments
 
-The raw request is provider-specific only at the boundary. The handler extracts event/signature headers, verifies the stored webhook secret against the exact request body, and normalizes accepted events into Rustploy's internal push/pull-request representation.
+The raw request is provider-specific only at the boundary. The handler extracts event/signature headers, verifies the stored webhook secret against the exact request body, and normalizes accepted events into OpenOxide's internal push/pull-request representation.
 
 Only after signature validation does the service look up applications/Compose projects by provider, repository, and branch. A match enqueues the normal deployment operation; it never calls Docker directly from the HTTP request. Duplicate or irrelevant events therefore do not bypass queue/concurrency rules.
 

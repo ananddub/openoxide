@@ -184,12 +184,13 @@ impl PermissionGroupService {
         organization_id: i64,
         actor_id: i64,
     ) {
-        let action = std::env::var("RUSTPLOY_PUBLIC_URL")
+        let action = std::env::var("OPENOXIDE_PUBLIC_URL")
+            .or_else(|_| std::env::var("RUSTPLOY_PUBLIC_URL"))
             .ok()
             .map(|base| format!("{}/accept-invite?token={token}", base.trim_end_matches('/')))
             .unwrap_or_else(|| format!("Invite token: {token}"));
         let message = NotificationMessage::new(
-            "You have been invited to Rustploy",
+            "You have been invited to OpenOxide",
             format!(
                 "You have been invited to join organization {organization_id}.\n\nAccept this invitation within 7 days:\n{action}"
             ),

@@ -1,4 +1,4 @@
-# Rustploy AI Service Architecture
+# OpenOxide AI Service Architecture
 
 ```text
 ┌─ AI REQUEST ─────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ flowchart LR
   V --> D[Compose deployment]
 ```
 
-Rustploy provides a multi-provider, organization-scoped **AI Engine** designed to generate Docker Compose stacks, diagnose build/runtime errors, and perform one-click AI application deployments.
+OpenOxide provides a multi-provider, organization-scoped **AI Engine** designed to generate Docker Compose stacks, diagnose build/runtime errors, and perform one-click AI application deployments.
 
 ---
 
@@ -99,7 +99,7 @@ Before any AI output is accepted:
 
 ## 3. Multi-Provider Support (`AiProviderKind`)
 
-Rustploy automatically detects provider types based on URL patterns:
+OpenOxide automatically detects provider types based on URL patterns:
 
 - **OpenAI**: `https://api.openai.com` (`gpt-4o`, `gpt-4o-mini`).
 - **Anthropic**: `https://api.anthropic.com` (`claude-3-5-sonnet`, `claude-3-haiku`).
@@ -172,7 +172,7 @@ Stores historical prompt outputs and deployment tracking.
 
 ## 8. How the AI layer is implemented
 
-Rustploy uses Rig as the provider abstraction rather than hand-writing each raw completion protocol. `AiClient` selects the configured provider/base URL/model and builds the corresponding Rig client. Organization-scoped settings and generations are read/written through repositories.
+OpenOxide uses Rig as the provider abstraction rather than hand-writing each raw completion protocol. `AiClient` selects the configured provider/base URL/model and builds the corresponding Rig client. Organization-scoped settings and generations are read/written through repositories.
 
 Model output is treated as untrusted text. Compose extraction removes prose/code fences, parses YAML, validates service structure and exposed ports, and only then hands the suggestion to `ComposeService`. Deploying an AI suggestion therefore uses the same permission, persistence, queue, remote execution, logging, and cancellation path as a manually authored Compose project.
 

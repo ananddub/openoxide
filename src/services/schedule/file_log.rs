@@ -25,7 +25,7 @@ pub fn subscribe(key: &str) -> broadcast::Receiver<String> {
 
 pub async fn read(key: &str) -> io::Result<String> {
     match tokio::fs::read_to_string(
-        crate::utils::paths::rustploy_paths().schedule_log_file(&sanitize(key)),
+        crate::utils::paths::openoxide_paths().schedule_log_file(&sanitize(key)),
     )
     .await
     {
@@ -43,7 +43,7 @@ pub async fn append(
     stdout: Option<&str>,
     stderr: Option<&str>,
 ) -> io::Result<()> {
-    let paths = crate::utils::paths::rustploy_paths();
+    let paths = crate::utils::paths::openoxide_paths();
     create_dir_all(paths.schedule_logs()).await?;
     let mut file = OpenOptions::new()
         .create(true)

@@ -17,7 +17,7 @@ impl ComposeService {
                 let mut record = ComposeRecord::from(project);
 
                 if record.compose_file.trim().is_empty() {
-                    let paths = crate::utils::paths::RustployPaths::from_env();
+                    let paths = crate::utils::paths::OpenOxidePaths::from_env();
                     let clean_path = record.compose_path.trim_start_matches("./");
                     let file_path_1 =
                         format!("{}/{}", paths.compose_source(&record.app_name), clean_path);

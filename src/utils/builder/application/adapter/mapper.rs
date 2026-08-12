@@ -11,7 +11,7 @@ use crate::utils::builder::spec::{
 };
 use crate::utils::builder::spec::{RegistryAuth, ResourceSpec};
 use crate::utils::git::GitProviderBuilder;
-use crate::utils::paths::rustploy_paths;
+use crate::utils::paths::openoxide_paths;
 use std::collections::BTreeMap;
 
 pub struct AppRowWithRelations {
@@ -63,14 +63,14 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             },
             other => other,
         };
-        let work_directory = rustploy_paths().application_code(&app.app_name);
+        let work_directory = openoxide_paths().application_code(&app.app_name);
         let domain_specs = domains
             .into_iter()
             .map(domain)
             .collect::<Result<Vec<_>, _>>()?;
         let mount_specs = mounts
             .into_iter()
-            .map(|m| mount_spec(m, &rustploy_paths().application_files(&app.app_name)))
+            .map(|m| mount_spec(m, &openoxide_paths().application_files(&app.app_name)))
             .collect::<Result<Vec<_>, _>>()?;
         let patch_specs = patches
             .into_iter()

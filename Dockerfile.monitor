@@ -8,7 +8,7 @@ FROM rust:alpine AS builder
 
 RUN apk add --no-cache musl-dev gcc build-base ca-certificates
 
-WORKDIR /usr/src/rustploy
+WORKDIR /usr/src/openoxide
 
 COPY Cargo.toml Cargo.lock ./
 COPY agent ./agent
@@ -25,7 +25,7 @@ RUN cargo build --release --target x86_64-unknown-linux-musl -p agent && \
 # scratch: nothing to attack, nothing to patch. The binary is self-contained.
 FROM scratch
 
-COPY --from=builder /usr/src/rustploy/target/x86_64-unknown-linux-musl/release/agent /agent
+COPY --from=builder /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/agent /agent
 
 # HTTPS to the panel needs CA roots. webpki-roots is compiled into reqwest, so
 # /etc/ssl/certs is not required; keep a copy for anything that reads them.

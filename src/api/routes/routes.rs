@@ -74,7 +74,7 @@ pub async fn router_init(sock: Arc<Socket>) -> Router<()> {
         .merge(auto_route::openapi_routes("/openapi.json", "/swagger-ui"))
         .merge(auto_route::scalar_routes("/scalar", "/openapi.json"))
         .route(
-            "/_rustploy/html/events/:session",
+            "/_openoxide/html/events/:session",
             axum::routing::get(html_events),
         )
         .layer(middleware::from_fn(request_duration_middleware))

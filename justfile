@@ -85,7 +85,7 @@ query-gen:
 db-gen:
     #!/usr/bin/env bash
     set -euo pipefail
-    DB_URL="${DATABASE_URL:-sqlite:///run/media/das/SSD/Devloper/rustploy/data/db.sqlite3}"
+    DB_URL="${DATABASE_URL:-sqlite:///run/media/das/SSD/Devloper/openoxide/data/db.sqlite3}"
 
     echo ">> Generating entities from $DB_URL ..."
     sqlx-gen generate entities \
@@ -124,33 +124,33 @@ run:
 
 # Run the standalone reactive Todo integration test app
 todo-dev:
-    cargo run -p rustploy-todo-test
+    cargo run -p openoxide-todo-test
 
 todo-react:
     cd crates/todo-test/react && bun run dev
 
 # Run the React frontend dev server
 web:
-    cd web/rustploy_react && bun run dev
+    cd web/openoxide_react && bun run dev
 
 dev:
-    sudo pkill rustploy || true
+    sudo pkill openoxide || true
     cargo watch -x check -x run
-# Build standalone rustploy_monitor binary
+# Build standalone openoxide_monitor binary
 build-monitor:
-    cargo build --release -p rustploy_monitor
+    cargo build --release -p openoxide_monitor
 
-# Run standalone rustploy_monitor binary locally
+# Run standalone openoxide_monitor binary locally
 run-monitor:
-    cargo run -p rustploy_monitor
+    cargo run -p openoxide_monitor
 
 # Run the monitoring agent's test suite
 test-monitor:
-    cargo test -p rustploy_monitor
+    cargo test -p openoxide_monitor
 
-# Build standalone rustploy_monitor Docker image
+# Build standalone openoxide_monitor Docker image
 docker-build-monitor:
-    docker build -f Dockerfile.monitor -t rustploy-monitor:latest .
+    docker build -f Dockerfile.monitor -t openoxide-monitor:latest .
 
 # Start the monitoring agent as a container
 up-monitor:

@@ -60,7 +60,8 @@ impl Config {
             grpc_port: parse_var("GRPC_PORT", 50051u16)?,
             refresh_rate: parse_var("REFRESH_RATE", 60u64)?,
             retention_days: parse_var("RETENTION_DAYS", 7i64)?,
-            panel_url: env::var("RUSTPLOY_SERVER_URL")
+            panel_url: env::var("OPENOXIDE_SERVER_URL")
+                .or_else(|_| env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| "http://127.0.0.1:4000".to_string()),
             metrics_token: env::var("METRICS_TOKEN").unwrap_or_default(),
             docker_socket: env::var("DOCKER_SOCKET")
@@ -107,7 +108,7 @@ impl Config {
 
         if !self.panel_url.starts_with("http://") && !self.panel_url.starts_with("https://") {
             return Err(format!(
-                "RUSTPLOY_SERVER_URL must start with http:// or https://, got {:?}",
+                "OPENOXIDE_SERVER_URL must start with http:// or https://, got {:?}",
                 self.panel_url
             ));
         }

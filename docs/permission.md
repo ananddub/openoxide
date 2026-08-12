@@ -1,6 +1,6 @@
-# Rustploy permissions
+# OpenOxide permissions
 
-Rustploy uses organization-scoped, typed permission checks. A request is allowed only when the authenticated user belongs to the selected organization and has the action required by the route.
+OpenOxide uses organization-scoped, typed permission checks. A request is allowed only when the authenticated user belongs to the selected organization and has the action required by the route.
 
 The system has three separate concepts:
 
@@ -277,7 +277,7 @@ RequirePermission<Invitation, CanCreate>
 
 ## How the implementation was made safe
 
-The main multi-organization risk is checking only a user's role and forgetting the organization or resource being requested. Rustploy fixes that at two layers: `RequirePermission` establishes one canonical organization context, and handlers/services verify that the target resource belongs to that organization.
+The main multi-organization risk is checking only a user's role and forgetting the organization or resource being requested. OpenOxide fixes that at two layers: `RequirePermission` establishes one canonical organization context, and handlers/services verify that the target resource belongs to that organization.
 
 The second risk is privilege delegation. Group and policy mutations go through `PermissionGroupService`, which loads the actor's effective actions and rejects any requested group or override that is not a subset. Repository methods constrain organization-owned groups and protect system groups. Audit events are emitted after successful permission, member, and invite changes.
 

@@ -1,4 +1,4 @@
-# Rustploy Scheduled Cron Job Engine Architecture
+# OpenOxide Scheduled Cron Job Engine Architecture
 
 ```text
 ┌─ SCHEDULE ─────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ flowchart LR
   X --> H[Execution history + logs]
 ```
 
-The **Schedule Service** in Rustploy provides automated cron job scheduling, missed execution policies (`SKIP`, `RUN_ONCE`), concurrency handling (`ALLOW`, `FORBID`, `REPLACE`), and scheduled backup/deployment execution.
+The **Schedule Service** in OpenOxide provides automated cron job scheduling, missed execution policies (`SKIP`, `RUN_ONCE`), concurrency handling (`ALLOW`, `FORBID`, `REPLACE`), and scheduled backup/deployment execution.
 
 ---
 

@@ -1,4 +1,4 @@
-# Rustploy Database Service Architecture
+# OpenOxide Database Service Architecture
 
 ```text
 ┌─ DATABASE ────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ flowchart LR
   S --> BR[Backup / restore]
 ```
 
-The **Database Service** in Rustploy provides automated provisioning, lifecycle management, user credential generation, and networking for 6 managed database engines (`POSTGRES`, `MYSQL`, `MARIADB`, `MONGO`, `REDIS`, `LIBSQL`).
+The **Database Service** in OpenOxide provides automated provisioning, lifecycle management, user credential generation, and networking for 6 managed database engines (`POSTGRES`, `MYSQL`, `MARIADB`, `MONGO`, `REDIS`, `LIBSQL`).
 
 ---
 
@@ -51,7 +51,7 @@ The Database Service operates through 5 distinct execution phases:
 ```
 [1. Provision Req]  ──► Engine Type Select ──► Password/User Auto-Gen ──► DB Record Created
                              │
-[2. Storage Alloc]  ──► Docker Volume Attachment (`rustploy_db_data`) ──► Host Port Mapping
+[2. Storage Alloc]  ──► Docker Volume Attachment (`openoxide_db_data`) ──► Host Port Mapping
                              │
 [3. Container Run]  ──► Engine Environment Injection (POSTGRES_PASSWORD, MYSQL_ROOT_PASSWORD)
                              │
@@ -66,7 +66,7 @@ The Database Service operates through 5 distinct execution phases:
 3. Writes primary metadata into engine-specific database tables (`postgres_dbs`, `mysql_dbs`, etc.).
 
 ### Phase 2: Storage Allocation & Port Mapping (`management.rs`)
-1. Provisions named Docker volumes persistent across database container restarts (`rustploy-postgres-data:/var/lib/postgresql/data`).
+1. Provisions named Docker volumes persistent across database container restarts (`openoxide-postgres-data:/var/lib/postgresql/data`).
 2. Configures host port mappings and external access toggles.
 
 ### Phase 3: Container Environment Injection & Boot (`remote.rs`)

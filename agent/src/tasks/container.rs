@@ -180,11 +180,11 @@ fn to_metric_row(sample: &ContainerSample) -> ContainerMetricRow {
         block_write_mb: block_write_bytes as f64 / 1_048_576.0,
         application_id: sample
             .labels
-            .get("com.rustploy.application-id")
+            .get("com.openoxide.application-id")
             .and_then(|v| v.parse().ok()),
         compose_id: sample
             .labels
-            .get("com.rustploy.compose-id")
+            .get("com.openoxide.compose-id")
             .and_then(|v| v.parse().ok()),
     }
 }

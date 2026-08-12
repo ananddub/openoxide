@@ -58,7 +58,7 @@ impl DatabaseService {
         let db_user = input
             .database_user
             .clone()
-            .unwrap_or_else(|| "rustploy".into());
+            .unwrap_or_else(|| "openoxide".into());
         let db_password = input
             .database_password
             .clone()

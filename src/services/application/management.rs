@@ -117,7 +117,7 @@ impl ApplicationService {
         let affected = self.repo_deploy.delete_finished_for_application(id).await?;
 
         for deployment_id in deployment_ids {
-            let path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
+            let path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
             match tokio::fs::remove_file(&path).await {
                 Ok(()) => {}
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}

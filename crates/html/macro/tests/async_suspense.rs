@@ -28,7 +28,7 @@ async fn test_async_if_let_some_slot_generated() {
         html_str
     );
 
-    assert!(html_str.contains("/_rustploy/html/events/"));
+    assert!(html_str.contains("/_openoxide/html/events/"));
 }
 
 #[tokio::test]
@@ -52,7 +52,7 @@ async fn test_async_for_simple() {
         html_str
     );
 
-    assert!(html_str.contains("/_rustploy/html/events/"));
+    assert!(html_str.contains("/_openoxide/html/events/"));
 }
 
 #[tokio::test]
@@ -82,5 +82,5 @@ async fn test_async_table_hint_indexing() {
     let html_str = markup.0;
     assert!(html_str.contains("id=\"__slot_"));
 
-    assert!(html_str.contains("/_rustploy/html/events/"));
+    assert!(html_str.contains("/_openoxide/html/events/"));
 }

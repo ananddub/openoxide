@@ -1,5 +1,5 @@
 use crate::utils::builder::spec::BuilderEvent;
-use crate::utils::paths::rustploy_paths;
+use crate::utils::paths::openoxide_paths;
 use std::io;
 use tokio::fs::{File, OpenOptions, create_dir_all};
 use tokio::io::AsyncWriteExt;
@@ -28,7 +28,7 @@ pub struct DeploymentLog {
 impl DeploymentLog {
     /// Opens or creates the deployment log file: {base}/logs/deployments/{deployment_id}.log
     pub async fn open(deployment_id: i64) -> io::Result<Self> {
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let dir = paths.deployment_logs();
         create_dir_all(&dir).await?;
         let path = paths.deployment_log_file(deployment_id);
@@ -139,7 +139,7 @@ mod tests {
         tokio::fs::create_dir_all(&workspace_tmp).await.unwrap();
 
         unsafe {
-            env::set_var("RUSTPLOY_BASE_PATH", workspace_tmp.to_str().unwrap());
+            env::set_var("OPENOXIDE_BASE_PATH", workspace_tmp.to_str().unwrap());
         }
 
         let deployment_id = 9999;
@@ -166,7 +166,7 @@ mod tests {
         assert!(content.contains("[ERROR] Some build error"));
 
         unsafe {
-            env::remove_var("RUSTPLOY_BASE_PATH");
+            env::remove_var("OPENOXIDE_BASE_PATH");
         }
         let _ = tokio::fs::remove_dir_all(&workspace_tmp).await;
     }

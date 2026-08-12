@@ -37,7 +37,7 @@ impl<'a> LockAcquireBuilder<'a> {
         let sleep_seconds = self.sleep_seconds.to_string();
         sh!(while cmd(
             "mkdir",
-            word![dynamic!(lock_dir), "/rustploy_lock_", dynamic!(name)]
+            word![dynamic!(lock_dir), "/openoxide_lock_", dynamic!(name)]
         )
         .stderr(crate::exec::script::dsl::OutputTarget::Null)
         .failure()

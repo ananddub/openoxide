@@ -6,7 +6,7 @@ use crate::{
     repository::ServerRepository,
     utils::{
         exec::{CommandExecutor, LocalExecutor},
-        paths::rustploy_paths,
+        paths::openoxide_paths,
         upload::{
             MAX_UPLOAD_BYTES, extract_zip, sanitize_zip, stream_multipart_file, upload_via_rclone,
         },
@@ -51,7 +51,7 @@ impl ApplicationService {
             build_path
         };
 
-        let destination = rustploy_paths().application_code(&application.app_name);
+        let destination = openoxide_paths().application_code(&application.app_name);
         match application.server_id {
             None => {
                 extract_zip(
@@ -66,7 +66,7 @@ impl ApplicationService {
                     .await
                     .map_err(|error| format!("failed to resolve server repository: {error}"))?;
                 let remote_archive = format!(
-                    "/tmp/rustploy-application-upload-{}.zip",
+                    "/tmp/openoxide-application-upload-{}.zip",
                     uuid::Uuid::new_v4()
                 );
                 let remote =

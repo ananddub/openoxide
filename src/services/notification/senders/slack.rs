@@ -34,7 +34,7 @@ pub async fn send_slack(
     if let Some(url) = &msg.url {
         blocks.push(json!({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": format!("<{url}|Open in Rustploy>")}
+            "text": {"type": "mrkdwn", "text": format!("<{url}|Open in OpenOxide>")}
         }));
     }
 

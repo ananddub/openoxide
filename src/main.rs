@@ -1,6 +1,8 @@
 use auto_di::resolve;
 use axum::Router;
-use rustploy::{core::config::Config, core::logs::init_logs, utils::background::BackgroundManager};
+use openoxide::{
+    core::config::Config, core::logs::init_logs, utils::background::BackgroundManager,
+};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -26,7 +28,7 @@ async fn main() {
     }
 
     // 2. Orphaned agent socket cleanup on server boot
-    rustploy::utils::ssh::agent::sweep_orphaned_agent_sockets();
+    openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
 
     let service: Arc<Router> = resolve::<Router<()>>().await.unwrap();
     BackgroundManager::start_all()

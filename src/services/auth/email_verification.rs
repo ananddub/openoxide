@@ -36,12 +36,13 @@ impl AuthService {
                 chrono::Utc::now().timestamp() + 24 * 60 * 60,
             )
             .await?;
-        let action = std::env::var("RUSTPLOY_PUBLIC_URL")
+        let action = std::env::var("OPENOXIDE_PUBLIC_URL")
+            .or_else(|_| std::env::var("RUSTPLOY_PUBLIC_URL"))
             .ok()
             .map(|base| format!("{}/verify-email?token={token}", base.trim_end_matches('/')))
             .unwrap_or_else(|| format!("Email verification token: {token}"));
         let message = NotificationMessage::new(
-            "Verify your Rustploy email",
+            "Verify your OpenOxide email",
             format!("Verify this email address within 24 hours:\n\n{action}"),
         );
 

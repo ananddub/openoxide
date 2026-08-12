@@ -1,4 +1,4 @@
-# Rustploy Application Service Architecture
+# OpenOxide Application Service Architecture
 
 ```text
 ┌─ APPLICATION ─────────────────────────────────────────────┐
@@ -18,7 +18,7 @@ flowchart LR
   S --> R[Rollback history]
 ```
 
-The **Application Service** is the central component in Rustploy responsible for managing single-container workloads, source code build configurations, networking, routing, storage mounts, and deployment rollbacks.
+The **Application Service** is the central component in OpenOxide responsible for managing single-container workloads, source code build configurations, networking, routing, storage mounts, and deployment rollbacks.
 
 ---
 
@@ -76,8 +76,8 @@ When a deployment is triggered:
 3. **Immutable Digest Capture**: Captures the exact `sha256:digest` hash of the built image and records it in `deployments.image_digest` for version history tracking.
 
 ### Phase 3: Container Launch & Network Binding (`remote.rs` & `operations.rs`)
-1. **Network Attachment**: Container joins Rustploy's internal Docker Mesh Network (`rustploy-network`).
-2. **Environment & Volume Injection**: Attaches persistent Docker volumes (`rustploy-data:/app/data`) and injects decrypted environment variables (`DATABASE_URL`, `JWT_SECRET`).
+1. **Network Attachment**: Container joins OpenOxide's internal Docker Mesh Network (`openoxide-network`).
+2. **Environment & Volume Injection**: Attaches persistent Docker volumes (`openoxide-data:/app/data`) and injects decrypted environment variables (`DATABASE_URL`, `JWT_SECRET`).
 3. **Container Boot**: Launches container via Docker API with `RestartPolicy::Always`.
 
 ### Phase 4: Dynamic Traefik Reverse Proxy Routing (`traefik.rs`)
@@ -103,7 +103,7 @@ If a new release causes issues or crashes in production:
 - Configures publish modes (`Ingress` mesh vs `Host` direct).
 
 ### 3.2 Storage Mounts (`mount.rs`)
-- **Volume Mounts**: Named Docker volumes persistent across container restarts (`rustploy-data:/app/data`).
+- **Volume Mounts**: Named Docker volumes persistent across container restarts (`openoxide-data:/app/data`).
 - **Bind Mounts**: Direct host file/directory mounts.
 
 ### 3.3 Traefik Middlewares (`middleware.rs`)
@@ -141,7 +141,7 @@ Primary application record.
 
 ## 5. Application Deployment & Rollback Sequence
 
-## 6. How Rustploy solves application deployment
+## 6. How OpenOxide solves application deployment
 
 Configuration is persisted before execution: the application repository owns the base row while ports, mounts, domains, environment variables, and middleware remain in their own repositories. `ApplicationService` coordinates those repositories and never embeds their SQL.
 

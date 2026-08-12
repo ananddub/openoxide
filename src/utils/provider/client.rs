@@ -10,7 +10,7 @@ impl ProviderClient {
     pub fn new(token: Option<String>) -> Self {
         Self {
             client: Client::builder()
-                .user_agent("rustploy-builder")
+                .user_agent("openoxide-builder")
                 .build()
                 .unwrap_or_default(),
             token,

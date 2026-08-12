@@ -192,7 +192,7 @@ fn totp(secret: &str, account: &str) -> Result<TOTP, AuthError> {
         1,
         30,
         bytes,
-        Some("Rustploy".into()),
+        Some("OpenOxide".into()),
         account.into(),
     )
     .map_err(|_| AuthError::Internal)

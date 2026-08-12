@@ -52,7 +52,7 @@ impl ApplicationService {
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
 
-        let log_path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
+        let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
         self.repo_deploy
             .update_log_path(deployment_id, &log_path)
             .await?;

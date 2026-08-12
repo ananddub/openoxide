@@ -23,7 +23,8 @@ impl AuthService {
             )
             .await?;
 
-        let action = std::env::var("RUSTPLOY_PUBLIC_URL")
+        let action = std::env::var("OPENOXIDE_PUBLIC_URL")
+            .or_else(|_| std::env::var("RUSTPLOY_PUBLIC_URL"))
             .ok()
             .map(|base| {
                 format!(
@@ -33,7 +34,7 @@ impl AuthService {
             })
             .unwrap_or_else(|| format!("Password reset token: {token}"));
         let message = NotificationMessage::new(
-            "Reset your Rustploy password",
+            "Reset your OpenOxide password",
             format!(
                 "A password reset was requested for your account. Use this within 30 minutes:\n\n{action}\n\nIf you did not request this, ignore this message."
             ),

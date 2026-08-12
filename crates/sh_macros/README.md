@@ -1,6 +1,6 @@
-# Rustploy Shell Scripting Macro (`sh!`)
+# OpenOxide Shell Scripting Macro (`sh!`)
 
-`rustploy_sh_macros` is a powerful procedural macro DSL (`sh!`) that compiles clean, type-safe, Rust-like syntax into a robust, POSIX-compliant Bash shell script representation (`ShellIR`). The macro guarantees variable scope checking and structure validation at compile-time, protecting against command injection vulnerabilities and shell scripting bugs.
+`openoxide_sh_macros` is a powerful procedural macro DSL (`sh!`) that compiles clean, type-safe, Rust-like syntax into a robust, POSIX-compliant Bash shell script representation (`ShellIR`). The macro guarantees variable scope checking and structure validation at compile-time, protecting against command injection vulnerabilities and shell scripting bugs.
 
 ---
 
@@ -232,7 +232,7 @@ The DSL natively translates package manager method calls dynamically or statical
 This example checks if Docker is available, fetches the latest container configuration, parses port parameters, updates setup scripts, and starts the service.
 
 ```rust
-use rustploy_sh_macros::sh;
+use openoxide_sh_macros::sh;
 use crate::utils::os::OsCli;
 use crate::utils::exec::CommandExecutor;
 

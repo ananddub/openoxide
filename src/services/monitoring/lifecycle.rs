@@ -67,7 +67,7 @@ impl MonitoringLifecycleService {
             .map_err(sqlx::Error::Protocol)?;
         DockerCli::from_remote_executor(executor)
             .containers()
-            .restart("rustploy-monitor")
+            .restart("openoxide-monitor")
             .run()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
@@ -88,7 +88,7 @@ impl MonitoringLifecycleService {
         let docker = DockerCli::from_remote_executor(executor.clone());
         let _ = docker
             .containers()
-            .rm("rustploy-monitor")
+            .rm("openoxide-monitor")
             .force()
             .run()
             .await;
@@ -97,7 +97,9 @@ impl MonitoringLifecycleService {
         config.monitoring_token = Some(token);
         config.monitoring_retention_days = policy.retention_days;
         config.monitoring_panel_url = Some(
-            std::env::var("RUSTPLOY_SERVER_URL").unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
+            std::env::var("OPENOXIDE_SERVER_URL")
+                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
         );
         ServerSetup::new_remote(executor, config)
             .ensure_monitoring()

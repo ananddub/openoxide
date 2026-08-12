@@ -10,7 +10,7 @@ use crate::api::dto::traefik::{
 };
 use crate::utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor};
 use crate::utils::os::OsCli;
-use crate::utils::paths::rustploy_paths;
+use crate::utils::paths::openoxide_paths;
 
 pub struct TraefikService;
 
@@ -25,7 +25,7 @@ impl TraefikService {
             .ok()
             .map(|v| v.trim().trim_end_matches('/').to_string())
             .filter(|v| !v.is_empty())
-            .unwrap_or_else(|| format!("{}/traefik", rustploy_paths().base))
+            .unwrap_or_else(|| format!("{}/traefik", openoxide_paths().base))
     }
 
     async fn get_executor(&self, server_id: Option<i64>) -> Result<CommandExecutor, String> {
@@ -316,7 +316,7 @@ impl TraefikService {
         let executor = self.get_executor(server_id).await?;
         let inspect = crate::utils::docker::DockerCli::from_executor(executor)
             .containers()
-            .inspect("rustploy-traefik")
+            .inspect("openoxide-traefik")
             .await
             .map_err(|error| error.to_string())?;
         Ok(TraefikVersionDto {
@@ -348,7 +348,7 @@ impl TraefikService {
             .map_err(|error| error.to_string())?;
         let _ = docker
             .containers()
-            .rm("rustploy-traefik")
+            .rm("openoxide-traefik")
             .force()
             .run()
             .await;
@@ -766,7 +766,7 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn sanitize_write_path_keeps_relative_paths_inside_rustploy_traefik_base() {
+    fn sanitize_write_path_keeps_relative_paths_inside_openoxide_traefik_base() {
         let path = TraefikService::sanitize_write_path("dynamic/middlewares.yml").unwrap();
         assert!(path.starts_with(TraefikService::get_traefik_base_path()));
         assert!(path.ends_with(Path::new("dynamic/middlewares.yml")));

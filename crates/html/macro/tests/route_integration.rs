@@ -1,5 +1,5 @@
 /// Route Integration Test
-/// Tests html! macro with the exact pattern used in rustploy controllers
+/// Tests html! macro with the exact pattern used in openoxide controllers
 /// Runs a real axum server and makes HTTP requests to it.
 use axum::{extract::Path, response::IntoResponse, routing::get, Router};
 use html_macro::html;
@@ -189,5 +189,5 @@ async fn test_async_patch_received() {
     };
 
     assert!(markup.0.contains("__slot_"));
-    assert!(markup.0.contains("/_rustploy/html/events/"));
+    assert!(markup.0.contains("/_openoxide/html/events/"));
 }

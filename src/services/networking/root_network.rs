@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     api::dto::networking::RootNetworkStatusDto,
     utils::{
-        builder::swarm::{RUSTPLOY_NETWORK, ensure_overlay_network, ensure_swarm_manager},
+        builder::swarm::{OPENOXIDE_NETWORK, ensure_overlay_network, ensure_swarm_manager},
         docker::DockerCli,
         exec::{CommandExecutor, LocalExecutor},
     },
@@ -25,10 +25,10 @@ impl RootNetworkService {
 
     pub async fn diagnose(&self, server_id: Option<i64>) -> Result<RootNetworkStatusDto, String> {
         let docker = DockerCli::from_executor(self.executor(server_id).await?);
-        match docker.networks().inspect(RUSTPLOY_NETWORK).await {
+        match docker.networks().inspect(OPENOXIDE_NETWORK).await {
             Ok(network) => Ok(status_from_network(network, false)),
             Err(error) => Ok(RootNetworkStatusDto {
-                name: RUSTPLOY_NETWORK.into(),
+                name: OPENOXIDE_NETWORK.into(),
                 exists: false,
                 healthy: false,
                 repaired: false,
@@ -44,7 +44,7 @@ impl RootNetworkService {
     pub async fn repair(&self, server_id: Option<i64>) -> Result<RootNetworkStatusDto, String> {
         let executor = self.executor(server_id).await?;
         let docker = DockerCli::from_executor(executor.clone());
-        if let Ok(network) = docker.networks().inspect(RUSTPLOY_NETWORK).await {
+        if let Ok(network) = docker.networks().inspect(OPENOXIDE_NETWORK).await {
             let healthy = is_healthy(&network);
             if healthy {
                 return Ok(status_from_network(network, false));
@@ -57,7 +57,7 @@ impl RootNetworkService {
             }
             docker
                 .networks()
-                .rm(RUSTPLOY_NETWORK)
+                .rm(OPENOXIDE_NETWORK)
                 .run()
                 .await
                 .map_err(|error| format!("could not remove invalid root network: {error}"))?;
@@ -67,12 +67,12 @@ impl RootNetworkService {
         ensure_swarm_manager(&executor, &docker, &cancel)
             .await
             .map_err(|error| error.to_string())?;
-        ensure_overlay_network(&docker, RUSTPLOY_NETWORK, &cancel)
+        ensure_overlay_network(&docker, OPENOXIDE_NETWORK, &cancel)
             .await
             .map_err(|error| error.to_string())?;
         let network = docker
             .networks()
-            .inspect(RUSTPLOY_NETWORK)
+            .inspect(OPENOXIDE_NETWORK)
             .await
             .map_err(|error| format!("could not verify repaired root network: {error}"))?;
         Ok(status_from_network(network, true))

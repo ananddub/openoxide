@@ -236,7 +236,7 @@ impl ComposeManagementService {
         let deployment_ids = self.deployments.list_finished_ids_for_compose(id).await?;
         let affected = self.deployments.delete_finished_for_compose(id).await?;
         for deployment_id in deployment_ids {
-            let path = crate::utils::paths::rustploy_paths().deployment_log_file(deployment_id);
+            let path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
             if let Err(error) = tokio::fs::remove_file(path).await
                 && error.kind() != std::io::ErrorKind::NotFound
             {

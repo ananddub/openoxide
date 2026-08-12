@@ -1,4 +1,4 @@
-# Rustploy Background Queue & Scheduler Architecture
+# OpenOxide Background Queue & Scheduler Architecture
 
 ```text
 ┌─ BACKGROUND ──────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ flowchart LR
   W --> H[Execution history]
 ```
 
-This document details the Background Queue Engine and Cron Scheduler built into Rustploy.
+This document details the Background Queue Engine and Cron Scheduler built into OpenOxide.
 
 ---
 

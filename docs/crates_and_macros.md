@@ -1,8 +1,8 @@
-# Rustploy Custom Crates & Macro System Architecture
+# OpenOxide Custom Crates & Macro System Architecture
 
 ```text
 ┌─ WORKSPACE ───────────────────────────────────────────────┐
-│ rustploy app ──► crates/os ──► typed command builders      │
+│ openoxide app ──► crates/os ──► typed command builders      │
 │      │             │                                        │
 │      ├─ auto/route ─► controller registration               │
 │      ├─ auto/socket ─► realtime socket registration          │
@@ -13,7 +13,7 @@
 
 ```mermaid
 flowchart TD
-  APP[rustploy application] --> OS[crates/os]
+  APP[openoxide application] --> OS[crates/os]
   APP --> ROUTE[auto route]
   APP --> SOCKET[auto socket]
   APP --> SH[sh_macros]
@@ -22,14 +22,14 @@ flowchart TD
   AGENT[agent binary] --> STORE[Agent-local Store]
 ```
 
-This document details the custom workspace crates, procedural macros, and declarative macro DSLs built specifically for Rustploy.
+This document details the custom workspace crates, procedural macros, and declarative macro DSLs built specifically for OpenOxide.
 
 ---
 
 ## 1. Custom Workspace Crates
 
 ```
-Rustploy Workspace Root
+OpenOxide Workspace Root
 ├── src/                          ► Core API, Handlers, Services, Repositories
 ├── crates/
 │   ├── auto/

@@ -1,14 +1,15 @@
-const DEFAULT_BASE_PATH: &str = "/etc/rustploy";
-const BASE_PATH_ENV: &str = "RUSTPLOY_BASE_PATH";
+const DEFAULT_BASE_PATH: &str = "/etc/openoxide";
+const BASE_PATH_ENV: &str = "OPENOXIDE_BASE_PATH";
 
 #[derive(Clone, Debug)]
-pub struct RustployPaths {
+pub struct OpenOxidePaths {
     pub base: String,
 }
 
-impl RustployPaths {
+impl OpenOxidePaths {
     pub fn from_env() -> Self {
         let base = std::env::var(BASE_PATH_ENV)
+            .or_else(|_| std::env::var("RUSTPLOY_BASE_PATH"))
             .ok()
             .map(|value| value.trim().trim_end_matches('/').to_owned())
             .filter(|value| !value.is_empty())
@@ -73,6 +74,6 @@ impl RustployPaths {
     }
 }
 
-pub fn rustploy_paths() -> RustployPaths {
-    RustployPaths::from_env()
+pub fn openoxide_paths() -> OpenOxidePaths {
+    OpenOxidePaths::from_env()
 }

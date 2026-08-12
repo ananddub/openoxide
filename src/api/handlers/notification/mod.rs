@@ -440,8 +440,8 @@ impl NotificationController {
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
             .ok_or((StatusCode::NOT_FOUND, "notification not found".into()))?;
         let msg = NotificationMessage::new(
-            "Rustploy Test Notification",
-            "Test dispatch from Rustploy Notification Manager",
+            "OpenOxide Test Notification",
+            "Test dispatch from OpenOxide Notification Manager",
         )
         .level(NotificationLevel::Info)
         .field("Status", "Operational")

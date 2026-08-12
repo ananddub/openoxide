@@ -69,5 +69,8 @@ impl<'a> TemporaryPemFiles<'a> {
 }
 
 fn temporary_path(kind: &str) -> String {
-    format!("/tmp/rustploy-{kind}-{}.pem", uuid::Uuid::new_v4().simple())
+    format!(
+        "/tmp/openoxide-{kind}-{}.pem",
+        uuid::Uuid::new_v4().simple()
+    )
 }

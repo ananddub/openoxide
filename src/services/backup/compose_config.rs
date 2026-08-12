@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     api::dto::backup::PanelBackupResponseDto, repository::BackupExecutionRepository,
-    services::compose::management::ComposeTransferService, utils::paths::rustploy_paths,
+    services::compose::management::ComposeTransferService, utils::paths::openoxide_paths,
 };
 
 pub struct ComposeConfigBackupService {
@@ -33,7 +33,7 @@ impl ComposeConfigBackupService {
         let bundle = self.transfer.export(compose_id, include_secrets).await?;
         let bytes = serde_json::to_vec_pretty(&bundle)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        let output_dir = format!("{}/backups/compose", rustploy_paths().base);
+        let output_dir = format!("{}/backups/compose", openoxide_paths().base);
         tokio::fs::create_dir_all(&output_dir)
             .await
             .map_err(sqlx::Error::Io)?;

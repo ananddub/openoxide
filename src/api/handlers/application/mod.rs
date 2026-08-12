@@ -101,7 +101,7 @@ impl ApplicationController {
             )
         })?;
         Ok(Json(ApplicationExportArchiveDto {
-            format: "rustploy.application+json".into(),
+            format: "openoxide.application+json".into(),
             schema_version: i64::from(bundle.schema_version),
             archive,
         }))

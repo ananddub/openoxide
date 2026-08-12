@@ -4,13 +4,13 @@
 # secret the panel expects, before starting.
 
 services:
-  rustploy-monitor:
+  openoxide-monitor:
     # Pulls the published image by default. Use `--build` to run local changes.
     build:
       context: .
       dockerfile: Dockerfile.monitor
-    image: dubeyanand/rustploy-monitor:${MONITOR_TAG:-latest}
-    container_name: rustploy_monitor
+    image: dubeyanand/openoxide-monitor:${MONITOR_TAG:-latest}
+    container_name: openoxide_monitor
     restart: unless-stopped
     # Host networking: the agent reports on the host, so sharing its network
     # stack is the honest model — and it sidesteps host firewalls that block
@@ -35,15 +35,15 @@ services:
       GRPC_PORT: "50051"
       REFRESH_RATE: "60"
       RETENTION_DAYS: "7"
-      RUSTPLOY_SERVER_URL: "http://127.0.0.1:4000"
+      OPENOXIDE_SERVER_URL: "http://127.0.0.1:4000"
       METRICS_TOKEN: "change_me"
-      RUST_LOG: "rustploy_monitor=info"
+      RUST_LOG: "openoxide_monitor=info"
       # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
       # of containers. Set to "stream" for per-second freshness and network I/O
       # on hosts with only a handful of containers.
       COLLECTION_MODE: "auto"
       # Narrow what gets collected on a busy host. Patterns are exact unless
-      # they use *, so "*buildkit*" is needed to match "rustploy_buildkit".
+      # they use *, so "*buildkit*" is needed to match "openoxide_buildkit".
       # INCLUDE_CONTAINERS: "prod-*"
       # EXCLUDE_CONTAINERS: "*buildkit*"
       # Samples per stored row. 1 stores everything; raise it on dense hosts to

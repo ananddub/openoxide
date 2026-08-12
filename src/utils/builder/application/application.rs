@@ -4,7 +4,7 @@ use crate::utils::builder::spec::{ApplicationSpec, BuilderEvent, DeploymentResul
 use crate::utils::builder::swarm::{ensure_overlay_network, ensure_swarm_manager};
 use crate::utils::{
     exec::{CommandExecutor, ExecResult},
-    paths::rustploy_paths,
+    paths::openoxide_paths,
 };
 use os::pipeline;
 use tokio_util::sync::CancellationToken;
@@ -65,7 +65,7 @@ impl ApplicationBuilder {
         let deployed_image = self.distribute_image(spec, cancel).await?;
 
         self.ctx.cancelled(cancel)?;
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let app_dir = paths.application_dir(&spec.app_name);
 
         self.prepare_file_mounts(spec, cancel).await?;

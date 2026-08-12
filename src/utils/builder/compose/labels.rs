@@ -9,7 +9,7 @@ use crate::utils::{
 use serde_yaml::{Mapping, Value};
 use tokio_util::sync::CancellationToken;
 
-const TRAEFIK_NETWORK: &str = "rustploy-network";
+const TRAEFIK_NETWORK: &str = "openoxide-network";
 
 pub(super) async fn write_labeled_compose(
     builder: &ComposeBuilder,
@@ -316,9 +316,9 @@ services:
         inject_domain_labels(&mut doc, &spec(ComposeRuntime::Stack)).unwrap();
         let out = serde_yaml::to_string(&doc).unwrap();
         assert!(out.contains("traefik.enable=true"));
-        assert!(out.contains("traefik.docker.network=rustploy-network"));
+        assert!(out.contains("traefik.docker.network=openoxide-network"));
         assert!(out.contains("traefik.http.routers.site-1.tls.certresolver=letsencrypt"));
-        assert!(out.contains("rustploy-network"));
+        assert!(out.contains("openoxide-network"));
     }
 
     #[test]
@@ -333,7 +333,7 @@ services:
         .unwrap();
         inject_domain_labels(&mut doc, &spec(ComposeRuntime::Compose)).unwrap();
         let out = serde_yaml::to_string(&doc).unwrap();
-        assert!(out.contains("traefik.docker.network=rustploy-network"));
+        assert!(out.contains("traefik.docker.network=openoxide-network"));
         assert!(out.contains("traefik.http.services.site-1.loadbalancer.server.port=3000"));
     }
 

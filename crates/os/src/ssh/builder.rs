@@ -373,7 +373,7 @@ impl SshBuilder {
                     self.username.hash(&mut hasher);
                     self.port.unwrap_or(22).hash(&mut hasher);
                     let hash_val = hasher.finish();
-                    PathBuf::from(format!("/tmp/rustploy-ssh-{:x}", hash_val))
+                    PathBuf::from(format!("/tmp/openoxide-ssh-{:x}", hash_val))
                 }
             };
             Self::push_option(&mut args, "ControlPath", &resolved_path.to_string_lossy());
@@ -495,7 +495,7 @@ impl SshBuilder {
                 // The askpass script holds the password in plaintext, so it is
                 // written to RAM-backed storage for the same reason as the key.
                 let script = format!("#!/bin/sh\necho {}\n", quote(password));
-                let temp_file = write_secret("rustploy-ssh-askpass-", script.as_bytes(), 0o700)?;
+                let temp_file = write_secret("openoxide-ssh-askpass-", script.as_bytes(), 0o700)?;
 
                 temp_askpass_file = Some(temp_file);
             }
@@ -561,7 +561,7 @@ mod tests {
             }
         }
         let mut f = tempfile::Builder::new()
-            .prefix("rustploy-test-key-")
+            .prefix("openoxide-test-key-")
             .tempfile()
             .unwrap();
         f.write_all(b"dummy ssh key data").unwrap();
@@ -586,8 +586,8 @@ mod tests {
         );
 
         // 1. Create a dummy local file to transfer
-        let test_file_path = "/tmp/rustploy-test-rclone.txt";
-        std::fs::write(test_file_path, "Hello from rustploy via rclone!").unwrap();
+        let test_file_path = "/tmp/openoxide-test-rclone.txt";
+        std::fs::write(test_file_path, "Hello from openoxide via rclone!").unwrap();
 
         // 2. Define source (local file) and destination (remote SFTP server via SSH auth)
         let src = RcloneTarget::Local {
@@ -634,7 +634,7 @@ mod tests {
         // 5. Verify the file exists and has correct content on the remote server
         match ssh.run("cat", &["/tmp/rclone-uploaded.txt"]).await {
             Ok(v) => {
-                assert_eq!(v.stdout.trim(), "Hello from rustploy via rclone!");
+                assert_eq!(v.stdout.trim(), "Hello from openoxide via rclone!");
                 println!(
                     "Remote file verification: stdout={:?}, err={:?}, status={:?}",
                     v.stdout, v.stderr, v.status
@@ -830,13 +830,13 @@ mod tests {
     /// would leave a window where the key is world-readable.
     #[test]
     fn secrets_are_created_with_restrictive_permissions() {
-        let key = write_secret("rustploy-test-key-", b"secret", 0o600).unwrap();
+        let key = write_secret("openoxide-test-key-", b"secret", 0o600).unwrap();
         assert_eq!(
             std::fs::metadata(&key).unwrap().permissions().mode() & 0o777,
             0o600
         );
 
-        let script = write_secret("rustploy-test-askpass-", b"#!/bin/sh\n", 0o700).unwrap();
+        let script = write_secret("openoxide-test-askpass-", b"#!/bin/sh\n", 0o700).unwrap();
         assert_eq!(
             std::fs::metadata(&script).unwrap().permissions().mode() & 0o777,
             0o700
@@ -847,7 +847,7 @@ mod tests {
     #[test]
     fn a_secret_is_removed_when_dropped() {
         let path = {
-            let secret = write_secret("rustploy-test-drop-", b"x", 0o600).unwrap();
+            let secret = write_secret("openoxide-test-drop-", b"x", 0o600).unwrap();
             secret.to_path_buf()
         };
 

@@ -17,7 +17,7 @@ impl LocalExecutor {
     }
 
     /// Runs commands through `sudo -n` without making the parent process root.
-    /// The host must grant the Rustploy user narrowly scoped NOPASSWD rules.
+    /// The host must grant the OpenOxide user narrowly scoped NOPASSWD rules.
     pub fn with_non_interactive_sudo(mut self) -> Self {
         self.non_interactive_sudo = true;
         self

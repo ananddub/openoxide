@@ -138,7 +138,7 @@ impl BuilderQueue {
         // Apply/ensure the shared build cgroup is present with resolved limits
         let mut cgroup = None;
         if mem_limit.is_some() || cpu_limit.is_some() {
-            let mut builder = CgroupBuilder::new("rustploy-build", executor.clone());
+            let mut builder = CgroupBuilder::new("openoxide-build", executor.clone());
             if let Some(mem) = mem_limit {
                 builder = builder.memory(mem);
             }

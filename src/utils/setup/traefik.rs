@@ -13,7 +13,7 @@ providers:
     watch: true
     network: "{}"
   file:
-    directory: /etc/rustploy/traefik/dynamic
+    directory: /etc/openoxide/traefik/dynamic
     watch: true
 entryPoints:
   web:
@@ -31,7 +31,7 @@ certificatesResolvers:
   letsencrypt:
     acme:
       email: "{}"
-      storage: /etc/rustploy/traefik/dynamic/acme.json
+      storage: /etc/openoxide/traefik/dynamic/acme.json
       httpChallenge:
         entryPoint: web
 "#,
@@ -62,7 +62,7 @@ mod tests {
         config.http_port = 8080;
         config.acme_email = "ops@example.com".into();
         let yaml = static_config(&config);
-        assert!(yaml.contains("network: \"rustploy-network\""));
+        assert!(yaml.contains("network: \"openoxide-network\""));
         assert!(yaml.contains("address: \":8080\""));
         assert!(yaml.contains("email: \"ops@example.com\""));
         assert!(default_middlewares().contains("redirect-to-https"));

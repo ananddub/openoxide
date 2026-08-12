@@ -1,4 +1,4 @@
-# Rustploy Deployment Engine Architecture
+# OpenOxide Deployment Engine Architecture
 
 ```text
 ┌─ DEPLOYMENT ──────────────────────────────────────────────┐
@@ -18,7 +18,7 @@ flowchart LR
   D --> H[History / rollback]
 ```
 
-Rustploy features an asynchronous, queue-backed **Deployment Engine** responsible for building Docker images, managing Docker Compose stacks, deploying databases, and streaming real-time deployment logs.
+OpenOxide features an asynchronous, queue-backed **Deployment Engine** responsible for building Docker images, managing Docker Compose stacks, deploying databases, and streaming real-time deployment logs.
 
 ---
 

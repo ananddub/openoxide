@@ -56,7 +56,7 @@ impl MonitoringController {
     async fn status_index(&self) -> Result<Json<MonitoringStatusResponseDto>, ApiError> {
         Ok(Json(MonitoringStatusResponseDto {
             status: "ok".into(),
-            service: "rustploy monitoring service".into(),
+            service: "openoxide monitoring service".into(),
             endpoints: vec![
                 "/monitoring/server/{id}".into(),
                 "/monitoring/containers/{id}".into(),
@@ -280,7 +280,7 @@ impl MonitoringController {
             .next()
             .ok_or((StatusCode::NOT_FOUND, "no metrics available".into()))?;
         Ok(format!(
-            "# TYPE rustploy_server_cpu_percent gauge\nrustploy_server_cpu_percent{{server_id=\"{}\"}} {}\n# TYPE rustploy_server_memory_used_bytes gauge\nrustploy_server_memory_used_bytes{{server_id=\"{}\"}} {}\n# TYPE rustploy_server_disk_used_bytes gauge\nrustploy_server_disk_used_bytes{{server_id=\"{}\"}} {}\n",
+            "# TYPE openoxide_server_cpu_percent gauge\nopenoxide_server_cpu_percent{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_memory_used_bytes gauge\nopenoxide_server_memory_used_bytes{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_disk_used_bytes gauge\nopenoxide_server_disk_used_bytes{{server_id=\"{}\"}} {}\n",
             id, metric.cpu, id, metric.mem_used, id, metric.disk_used
         ))
     }

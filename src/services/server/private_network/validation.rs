@@ -63,9 +63,9 @@ pub(super) fn validate(input: &UpdatePrivateNetworkDto) -> sqlx::Result<()> {
 
 fn validate_dns_name(value: Option<&str>) -> sqlx::Result<()> {
     let Some(value) = value else { return Ok(()) };
-    if value.len() > 253 || !value.to_ascii_lowercase().ends_with(".rustploy.internal") {
+    if value.len() > 253 || !value.to_ascii_lowercase().ends_with(".openoxide.internal") {
         return Err(sqlx::Error::Protocol(
-            "private DNS name must end with .rustploy.internal".into(),
+            "private DNS name must end with .openoxide.internal".into(),
         ));
     }
     if value.split('.').any(|label| {

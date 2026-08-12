@@ -389,8 +389,8 @@ impl DomainService {
                 }
             }
             ComposeType::DockerCompose => {
-                use crate::utils::paths::rustploy_paths;
-                let paths = rustploy_paths();
+                use crate::utils::paths::openoxide_paths;
+                let paths = openoxide_paths();
                 let env_file = format!(
                     "{}/{app_name}/.env",
                     paths.compose_dir("").trim_end_matches('/')

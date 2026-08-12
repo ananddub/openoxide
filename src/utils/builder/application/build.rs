@@ -117,7 +117,7 @@ impl ApplicationBuilder {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_millis();
-                let name = format!("rustploy_buildkit_{}_{}", spec.app_name, timestamp);
+                let name = format!("openoxide_buildkit_{}_{}", spec.app_name, timestamp);
 
                 let cli = RailpackCli::new(&self.ctx.executor);
                 cli.if_not_exist_install().await?;
@@ -206,7 +206,7 @@ impl ApplicationBuilder {
             builder = builder.build_arg(key.clone(), value.clone());
         }
 
-        let secret_dir = format!("/tmp/rustploy-secrets-{}", spec.app_name);
+        let secret_dir = format!("/tmp/openoxide-secrets-{}", spec.app_name);
         if !spec.build_secrets.is_empty() {
             crate::utils::os::OsCli::new(&self.ctx.executor)
                 .dir(&secret_dir)
@@ -268,7 +268,7 @@ impl ApplicationBuilder {
         );
         self.ctx
             .write_file_cancelled(
-                &format!("{}/Dockerfile.rustploy", spec.work_directory),
+                &format!("{}/Dockerfile.openoxide", spec.work_directory),
                 dockerfile.as_bytes(),
                 cancel,
             )
@@ -286,7 +286,7 @@ impl ApplicationBuilder {
         let build_cmd = images
             .build(spec.work_directory.clone())
             .tag(spec.image.clone())
-            .dockerfile(format!("{}/Dockerfile.rustploy", spec.work_directory))
+            .dockerfile(format!("{}/Dockerfile.openoxide", spec.work_directory))
             .cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };

@@ -141,7 +141,7 @@ impl ComposeManagementController {
         let archive = serde_json::to_string_pretty(&bundle)
             .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
         Ok(Json(ComposeArchiveDto {
-            format: "rustploy.compose+json".into(),
+            format: "openoxide.compose+json".into(),
             schema_version: i64::from(bundle.schema_version),
             archive,
         }))

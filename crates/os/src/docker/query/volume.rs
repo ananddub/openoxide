@@ -141,14 +141,14 @@ mod tests {
             .opt("type", "nfs")
             .opt("o", "addr=10.0.0.1,rw")
             .opt("device", ":/exports/data")
-            .label("managed-by", "rustploy")
+            .label("managed-by", "openoxide")
             .build_args();
 
         assert!(args.contains(&"--driver".to_string()));
         assert!(args.contains(&"local".to_string()));
         assert!(args.contains(&"type=nfs".to_string()));
         assert!(args.contains(&"o=addr=10.0.0.1,rw".to_string()));
-        assert!(args.contains(&"managed-by=rustploy".to_string()));
+        assert!(args.contains(&"managed-by=openoxide".to_string()));
         assert_eq!(args.last(), Some(&"nfs-data".to_string()));
     }
 }

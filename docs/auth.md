@@ -1,4 +1,4 @@
-# Rustploy Authentication & Session Security Architecture
+# OpenOxide Authentication & Session Security Architecture
 
 ```text
 ┌─ AUTH ────────────────────────────────────────────────────┐

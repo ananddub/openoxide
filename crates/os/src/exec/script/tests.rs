@@ -755,8 +755,8 @@ fn test_sh_macro_mvp_deploy_dsl() {
         .join("\n");
     assert!(bash.contains("while ss '-tuln' | grep '-q' \":${port} \"; do"));
     assert!(bash.contains("ss '-tuln' | grep '-q' \":8080 \""));
-    assert!(bash.contains("while ! mkdir \"/tmp/rustploy_lock_deploy\" 2> /dev/null; do"));
-    assert!(bash.contains("rmdir \"/tmp/rustploy_lock_deploy\""));
+    assert!(bash.contains("while ! mkdir \"/tmp/openoxide_lock_deploy\" 2> /dev/null; do"));
+    assert!(bash.contains("rmdir \"/tmp/openoxide_lock_deploy\""));
     assert!(bash.contains("start=$(date '+%s')"));
     assert!(bash.contains("ln -sf 'v2' 'current'"));
     assert!(bash.contains("mount '--bind' 'src' 'tgt'"));
@@ -792,7 +792,7 @@ fn test_pipeline_and_sh_unification() {
     );
 
     let compiled = p.compile();
-    assert!(compiled.contains("while ! mkdir \"/tmp/rustploy_lock_my_deploy_lock\""));
+    assert!(compiled.contains("while ! mkdir \"/tmp/openoxide_lock_my_deploy_lock\""));
     assert!(compiled.contains("while ss '-tuln' | grep '-q' \":${port} \"; do"));
     assert!(compiled.contains("echo 'deploying now'"));
 }
@@ -843,7 +843,7 @@ fn test_rust_dsl_api_usage() {
     assert!(
         lock_acq
             .build_str()
-            .contains("while ! mkdir \"/tmp/rustploy_lock_deploy\" 2> /dev/null; do")
+            .contains("while ! mkdir \"/tmp/openoxide_lock_deploy\" 2> /dev/null; do")
     );
     assert!(health.build_str().contains("start=$(date '+%s')"));
     assert!(sym.build_str().contains("ln -sf 'v2' 'current'"));

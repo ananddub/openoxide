@@ -132,7 +132,7 @@ pub async fn resolve_database_networks(
 ) -> ExecResult<(Vec<String>, BTreeMap<String, ExternalNetwork>)> {
     let mut names = BTreeSet::new();
     if detach_rustploy_network == 0 {
-        names.insert(super::super::swarm::RUSTPLOY_NETWORK.to_string());
+        names.insert(super::super::swarm::OPENOXIDE_NETWORK.to_string());
     }
 
     if let Some(raw) = network_ids {
@@ -273,7 +273,7 @@ impl DatabaseBuilder {
         self.ctx.cancelled(cancel)?;
 
         // 2. Prepare workspace & write stack compose file
-        let db_dir = format!("/tmp/rustploy-db-{}", app_name);
+        let db_dir = format!("/tmp/openoxide-db-{}", app_name);
         let stack_file_path = format!("{}/stack.yml", db_dir);
 
         // 3. Ensure Swarm and Network
@@ -281,7 +281,7 @@ impl DatabaseBuilder {
             .await?;
         super::super::swarm::ensure_overlay_network(
             &self.ctx.docker,
-            super::super::swarm::RUSTPLOY_NETWORK,
+            super::super::swarm::OPENOXIDE_NETWORK,
             cancel,
         )
         .await?;

@@ -1,9 +1,9 @@
-# Rustploy reactive Todo test
+# OpenOxide reactive Todo test
 
 Run from the repository root:
 
 ```bash
-nix develop -c cargo run -p rustploy-todo-test
+nix develop -c cargo run -p openoxide-todo-test
 ```
 
 Open `http://127.0.0.1:3100/todo` in two browser tabs. The app uses the real

@@ -45,7 +45,7 @@ impl DockerManagementService {
                 .map_err(error),
             Some(server_id) => {
                 let remote_path = format!(
-                    "/tmp/rustploy-container-upload-{}-{filename}",
+                    "/tmp/openoxide-container-upload-{}-{filename}",
                     uuid::Uuid::new_v4()
                 );
                 let remote = crate::utils::upload::upload_via_rclone(

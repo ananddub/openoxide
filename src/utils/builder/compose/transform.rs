@@ -196,13 +196,13 @@ fn randomize_root(root: &mut Mapping, suffix: &str) {
         for service in services.values_mut().filter_map(Value::as_mapping_mut) {
             suffix_service_refs(service, suffix);
             suffix_named_volumes(service, suffix);
-            suffix_resource_refs(service, "networks", suffix, Some("rustploy-network"));
+            suffix_resource_refs(service, "networks", suffix, Some("openoxide-network"));
             suffix_resource_refs(service, "configs", suffix, None);
             suffix_resource_refs(service, "secrets", suffix, None);
         }
     }
     rename_root_mapping(root, "volumes", suffix, None);
-    rename_root_mapping(root, "networks", suffix, Some("rustploy-network"));
+    rename_root_mapping(root, "networks", suffix, Some("openoxide-network"));
     rename_root_mapping(root, "configs", suffix, None);
     rename_root_mapping(root, "secrets", suffix, None);
 }
@@ -431,7 +431,7 @@ services:
   api:
     depends_on: [db]
     volumes: [data:/data]
-    networks: [backend, rustploy-network]
+    networks: [backend, openoxide-network]
     configs: [app-config]
     secrets: [db-password]
   db:
@@ -440,7 +440,7 @@ volumes:
   data: {}
 networks:
   backend: {}
-  rustploy-network:
+  openoxide-network:
     external: true
 configs:
   app-config: {file: ./app.conf}
@@ -455,7 +455,7 @@ secrets:
         assert!(output.contains("db-abc123"));
         assert!(output.contains("data-abc123:/data"));
         assert!(output.contains("backend-abc123"));
-        assert!(output.contains("rustploy-network"));
+        assert!(output.contains("openoxide-network"));
         assert!(output.contains("app-config-abc123"));
         assert!(output.contains("db-password-abc123"));
     }

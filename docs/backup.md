@@ -1,4 +1,4 @@
-# Rustploy Backup & Disaster Recovery Architecture
+# OpenOxide Backup & Disaster Recovery Architecture
 
 ```text
 ┌─ BACKUP ──────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ flowchart LR
   H --> R[Validated restore]
 ```
 
-The **Backup Service** in Rustploy provides automated scheduled database dumps (`pg_dump`, `mysqldump`, `mongodump`), volume archive snapshots, S3 / S3-compatible cloud storage uploads, and one-click database/volume restores.
+The **Backup Service** in OpenOxide provides automated scheduled database dumps (`pg_dump`, `mysqldump`, `mongodump`), volume archive snapshots, S3 / S3-compatible cloud storage uploads, and one-click database/volume restores.
 
 ---
 
@@ -97,7 +97,7 @@ Invokes native database dump commands inside target container / remote server no
 
 - **`Database`**: Database dumps for Postgres, MySQL, MariaDB, Mongo, Redis, LibSQL.
 - **`Volume`**: Persistent Docker Volume tarball snapshots.
-- **`Panel`**: Complete Rustploy Panel SQLite database & system config backups.
+- **`Panel`**: Complete OpenOxide Panel SQLite database & system config backups.
 - **`ComposeConfig`**: Multi-container Compose YAML stack definitions & environment backups.
 
 ---

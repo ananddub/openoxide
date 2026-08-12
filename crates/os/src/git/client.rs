@@ -497,8 +497,8 @@ mod tests {
     //         let path = dir.path().to_string_lossy().into_owned();
     //         let git = GitCli::new_local().with_repository(path);
     //         git.init(&[]).await.unwrap();
-    //         git.config(&["user.name", "Rustploy Test"]).await.unwrap();
-    //         git.config(&["user.email", "test@rustploy.local"])
+    //         git.config(&["user.name", "OpenOxide Test"]).await.unwrap();
+    //         git.config(&["user.email", "test@openoxide.local"])
     //             .await
     //             .unwrap();
     //         std::fs::write(dir.path().join("hello.txt"), "hello").unwrap();

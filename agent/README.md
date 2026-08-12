@@ -1,7 +1,7 @@
-# Rustploy Monitor
+# OpenOxide Monitor
 
-`rustploy_monitor` is the host-side monitoring agent for Rustploy. One agent
-runs on every Docker server managed by the Rustploy panel. It collects host and
+`openoxide_monitor` is the host-side monitoring agent for OpenOxide. One agent
+runs on every Docker server managed by the OpenOxide panel. It collects host and
 container telemetry, keeps the only durable metric history on that node, and
 exposes an authenticated gRPC API for panel metric and log queries.
 
@@ -13,7 +13,7 @@ authentication, storage, deployment, and troubleshooting model.
 ```text
 Docker host
 ┌──────────────────────────────────────────────────────────────┐
-│ rustploy_monitor                                             │
+│ openoxide_monitor                                             │
 │                                                              │
 │  Host collector ───────────────┐                             │
 │  Container collector ──────────┼── Local SQLite history      │
@@ -23,7 +23,7 @@ Docker host
 └─────────────────────────────────────────────────────────┼────┘
                                                           │
                                                           ▼
-                                            Rustploy panel
+                                            OpenOxide panel
                                             ┌───────────────┐
                                             │ authentication│
                                             │ query proxy   │
@@ -38,7 +38,7 @@ The agent performs four main jobs:
 2. Collect CPU, memory, network, and block-I/O metrics for Docker containers.
 3. Persist readings in its own SQLite database and periodically remove expired
    history.
-4. Serve authenticated gRPC metric/log requests from the Rustploy panel.
+4. Serve authenticated gRPC metric/log requests from the OpenOxide panel.
 
 The agent is the single metric store. The panel keeps configuration, agent
 identity and alert history, and pulls raw metrics only when needed.
@@ -82,7 +82,7 @@ sqlite3 data/db.sqlite3 \
   'SELECT id, name, ip_address, server_status FROM servers ORDER BY id;'
 ```
 
-In normal product usage, use the ID shown or returned by the Rustploy server
+In normal product usage, use the ID shown or returned by the OpenOxide server
 API/UI rather than accessing SQLite directly.
 
 ## Authentication
@@ -168,7 +168,7 @@ collects:
 - network received/transmitted totals when stream mode is used
 - block read/write totals
 - container ID and display name
-- optional Rustploy application or compose resource identity
+- optional OpenOxide application or compose resource identity
 
 Samples are stored only on the remote agent. The panel reads them on demand
 through the authenticated `GetContainerMetrics` gRPC method.
@@ -208,8 +208,8 @@ Container metrics can include `application_id` or `compose_id`. In stream mode,
 the agent reads these Docker labels when present:
 
 ```text
-com.rustploy.application-id=<application database id>
-com.rustploy.compose-id=<compose project database id>
+com.openoxide.application-id=<application database id>
+com.openoxide.compose-id=<compose project database id>
 ```
 
 An unattributed container sends zero for both IDs. It is still stored and shown
@@ -218,7 +218,7 @@ as a server/container metric, but resource-specific alert rules ignore it.
 Important current behavior: cgroup collection identifies containers through
 cgroup data and does not currently enrich every row with Docker labels. Use
 stream mode when label-based resource attribution and network metrics are
-required. Deployment definitions must also apply the corresponding Rustploy
+required. Deployment definitions must also apply the corresponding OpenOxide
 label for attribution to work.
 
 ## Collection modes
@@ -364,14 +364,14 @@ network/VPN is still recommended for remote hosts.
 | `GRPC_PORT` | `50051` | Authenticated metric/log gRPC port. |
 | `REFRESH_RATE` | `60` | Seconds between polling and push cycles. Must be greater than zero. |
 | `RETENTION_DAYS` | `7` | Agent-local raw history retention. |
-| `RUSTPLOY_SERVER_URL` | `http://127.0.0.1:4000` | Reachable base URL of the Rustploy panel. |
+| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Reachable base URL of the OpenOxide panel. |
 | `METRICS_TOKEN` | none | Required agent secret. Must match a per-server or panel migration token. |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker Engine Unix socket. |
 | `COLLECTION_MODE` | `auto` | `auto`, `cgroup`, or `stream`. |
 | `INCLUDE_CONTAINERS` | empty | Comma-separated include patterns. Empty includes all. |
 | `EXCLUDE_CONTAINERS` | empty | Comma-separated exclusion patterns. |
 | `ROLLUP_SAMPLES` | `1` | Samples per average/peak rollup window. |
-| `RUST_LOG` | `rustploy_monitor=info` | Rust tracing filter. |
+| `RUST_LOG` | `openoxide_monitor=info` | Rust tracing filter. |
 
 Invalid critical configuration causes startup to fail with a clear message.
 The agent requires a non-empty metrics token, a positive server ID, a valid
@@ -383,7 +383,7 @@ URL.
 The published image is:
 
 ```text
-dubeyanand/rustploy-monitor:latest
+dubeyanand/openoxide-monitor:latest
 ```
 
 It is built as a static musl binary in a `scratch` image. It contains no shell
@@ -393,9 +393,9 @@ Example compose service:
 
 ```yaml
 services:
-  rustploy-monitor:
-    image: dubeyanand/rustploy-monitor:latest
-    container_name: rustploy_monitor
+  openoxide-monitor:
+    image: dubeyanand/openoxide-monitor:latest
+    container_name: openoxide_monitor
     restart: unless-stopped
     network_mode: host
     volumes:
@@ -404,7 +404,7 @@ services:
       - monitor_data:/app/data
     environment:
       SERVER_ID: "5"
-      RUSTPLOY_SERVER_URL: "http://127.0.0.1:4000"
+      OPENOXIDE_SERVER_URL: "http://127.0.0.1:4000"
       METRICS_TOKEN: "replace-with-a-random-secret"
       MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
       GRPC_PORT: "50051"
@@ -431,7 +431,7 @@ Start and inspect:
 
 ```bash
 docker compose -f docker-compose.monitor.yml up -d --force-recreate
-docker logs --tail=100 rustploy_monitor
+docker logs --tail=100 openoxide_monitor
 ```
 
 ## Running from source
@@ -448,9 +448,9 @@ Or directly:
 
 ```bash
 SERVER_ID=5 \
-RUSTPLOY_SERVER_URL=http://127.0.0.1:4000 \
+OPENOXIDE_SERVER_URL=http://127.0.0.1:4000 \
 METRICS_TOKEN='replace-with-a-random-secret' \
-cargo run -p rustploy_monitor
+cargo run -p openoxide_monitor
 ```
 
 ## Expected logs
@@ -458,7 +458,7 @@ cargo run -p rustploy_monitor
 Healthy startup resembles:
 
 ```text
-starting rustploy monitor agent server_id=5 refresh_rate=60 grpc_port=50051
+starting openoxide monitor agent server_id=5 refresh_rate=60 grpc_port=50051
 metric store initialized url="sqlite:///app/data/monitor.db"
 gRPC query server listening addr=0.0.0.0:50051
 collecting container metrics mode="cgroup" filter=all containers
@@ -503,9 +503,9 @@ Verify:
 Inspect container configuration without printing the secret itself:
 
 ```bash
-docker inspect rustploy_monitor \
+docker inspect openoxide_monitor \
   --format '{{range .Config.Env}}{{println .}}{{end}}' |
-  grep -E '^(SERVER_ID|RUSTPLOY_SERVER_URL)='
+  grep -E '^(SERVER_ID|OPENOXIDE_SERVER_URL)='
 ```
 
 ### HTTP `500` immediately after authentication
@@ -537,8 +537,8 @@ Mount `/sys/fs/cgroup` read-only and verify the host uses cgroup v2. With
 Ensure:
 
 - `COLLECTION_MODE=stream` is used when Docker-label attribution is needed.
-- Containers/services carry `com.rustploy.application-id` or
-  `com.rustploy.compose-id`.
+- Containers/services carry `com.openoxide.application-id` or
+  `com.openoxide.compose-id`.
 - The label value is a valid positive database ID.
 
 ### Database migration duplicate-column error in the panel
@@ -551,7 +551,7 @@ reconcile `_sqlx_migrations` only when every migration object already exists.
 ## Source layout
 
 ```text
-rustploy_monitor/src/
+openoxide_monitor/src/
 ├── main.rs             startup, task lifecycle, graceful shutdown
 ├── config.rs           environment parsing and validation
 ├── context.rs          shared task dependencies

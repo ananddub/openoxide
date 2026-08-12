@@ -267,7 +267,7 @@ impl ServerSetup {
         );
         let dynamic_mount = Mount::bind(
             &self.config.paths.traefik_dynamic,
-            "/etc/rustploy/traefik/dynamic",
+            "/etc/openoxide/traefik/dynamic",
         );
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
 
@@ -297,7 +297,7 @@ impl ServerSetup {
 
     pub async fn ensure_monitoring(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
-        let name = "rustploy-monitor";
+        let name = "openoxide-monitor";
         if docker.container(name).inspect().await.is_ok() {
             if self.config.monitoring_server_id.is_some() {
                 // Recreate so a setup run cannot keep stale SERVER_ID/token env.
@@ -341,7 +341,7 @@ impl ServerSetup {
         ) {
             create = create
                 .env("SERVER_ID", server_id.to_string())
-                .env("RUSTPLOY_SERVER_URL", panel_url)
+                .env("OPENOXIDE_SERVER_URL", panel_url)
                 .env("METRICS_TOKEN", token)
                 .env("MONITOR_DATABASE_URL", "sqlite:///data/monitor.db")
                 .env("REFRESH_RATE", "10")
@@ -349,7 +349,7 @@ impl ServerSetup {
                     "RETENTION_DAYS",
                     self.config.monitoring_retention_days.to_string(),
                 )
-                .mount(Mount::volume("rustploy-monitor-data", "/data"));
+                .mount(Mount::volume("openoxide-monitor-data", "/data"));
         }
         create.run().await?;
         Ok(())
@@ -557,7 +557,7 @@ impl ServerSetup {
     }
 
     fn append_directory_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
-        steps.extend(sh!(info!("Creating Rustploy directories");));
+        steps.extend(sh!(info!("Creating OpenOxide directories");));
         for path in self.config.paths.all() {
             steps.extend(sh!(
                 os.dir(path).create().parents(true);
@@ -589,7 +589,7 @@ impl ServerSetup {
                 info!("Checking Docker Swarm");
                 if !docker.swarm().active() {
                     info!("Initializing Docker Swarm");
-                    let _rustploy_vpn_addr = capture_stdout! {
+                    let _openoxide_vpn_addr = capture_stdout! {
                         pipe![
                             cmd("ip", "-4", "-o", "addr", "show"),
                             grep!("-E", "^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)"),
@@ -597,15 +597,15 @@ impl ServerSetup {
                             head!("-n", "1")
                         ];
                     };
-                    if cmd("test", "-n", _rustploy_vpn_addr) {
+                    if cmd("test", "-n", _openoxide_vpn_addr) {
                         info!("Using VPN/overlay interface for swarm advertise address");
                         docker
                             .swarm()
                             .init()
-                            .advertise_addr(_rustploy_vpn_addr)
+                            .advertise_addr(_openoxide_vpn_addr)
                             .listen_addr("0.0.0.0:2377");
                     } else {
-                        let _rustploy_cgnat_addr = capture_stdout! {
+                        let _openoxide_cgnat_addr = capture_stdout! {
                             pipe![
                                 cmd("ip", "-4", "-o", "addr", "show"),
                                 grep!("-oE", "([0-9]+\\.){3}[0-9]+"),
@@ -613,15 +613,15 @@ impl ServerSetup {
                                 head!("-n", "1")
                             ];
                         };
-                        if cmd("test", "-n", _rustploy_cgnat_addr) {
+                        if cmd("test", "-n", _openoxide_cgnat_addr) {
                             info!("Using CGNAT-range VPN address for swarm advertise address");
                             docker
                                 .swarm()
                                 .init()
-                                .advertise_addr(_rustploy_cgnat_addr)
+                                .advertise_addr(_openoxide_cgnat_addr)
                                 .listen_addr("0.0.0.0:2377");
                         } else {
-                            let _rustploy_advertise_addr = capture_stdout! {
+                            let _openoxide_advertise_addr = capture_stdout! {
                                 pipe![
                                     cmd("hostname", "-I"),
                                     awk! {
@@ -638,7 +638,7 @@ impl ServerSetup {
                             docker
                                 .swarm()
                                 .init()
-                                .advertise_addr(_rustploy_advertise_addr)
+                                .advertise_addr(_openoxide_advertise_addr)
                                 .listen_addr("0.0.0.0:2377");
                         }
                     }
@@ -651,14 +651,14 @@ impl ServerSetup {
         let network_name = self.config.network_name.as_str();
 
         steps.extend(sh!(
-            info!("Checking Rustploy Docker network");
+            info!("Checking OpenOxide Docker network");
             if !docker
                 .networks()
                 .inspect_cmd(network_name)
                 .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
-                info!("Creating Rustploy Docker network");
+                info!("Creating OpenOxide Docker network");
                 docker
                     .networks()
                     .create(network_name)
@@ -706,7 +706,7 @@ impl ServerSetup {
         );
         let dynamic_mount = Mount::bind(
             &self.config.paths.traefik_dynamic,
-            "/etc/rustploy/traefik/dynamic",
+            "/etc/openoxide/traefik/dynamic",
         );
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
         steps.extend(sh!(
@@ -751,33 +751,33 @@ impl ServerSetup {
     }
 
     fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
-        let name = "rustploy-monitor";
+        let name = "openoxide-monitor";
         let image = monitoring_image();
 
         steps.extend(sh!(
-            info!("Checking Rustploy monitor container");
+            info!("Checking OpenOxide monitor container");
             if docker
                 .containers()
                 .inspect_cmd(name)
                 .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
-                info!("Starting existing Rustploy monitor container");
+                info!("Starting existing OpenOxide monitor container");
                 docker.container(name).start();
             } else {
-                let _rustploy_arch = capture_stdout! {
+                let _openoxide_arch = capture_stdout! {
                     cmd("uname", "-m");
                 };
-                if cmd("test", _rustploy_arch, "=", "aarch64") {
-                    echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                if cmd("test", _openoxide_arch, "=", "aarch64") {
+                    echo("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
                         .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
-                } else if cmd("test", _rustploy_arch, "=", "arm64") {
-                    echo("Skipping rustploy monitor on ARM64; image has no arm64 manifest")
+                } else if cmd("test", _openoxide_arch, "=", "arm64") {
+                    echo("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
                         .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 } else {
-                    info!("Pulling Rustploy monitor image");
+                    info!("Pulling OpenOxide monitor image");
                     docker.images().pull(image);
-                    info!("Creating Rustploy monitor container");
+                    info!("Creating OpenOxide monitor container");
                     docker
                         .containers()
                         .create(image)
@@ -789,12 +789,12 @@ impl ServerSetup {
                             "/var/run/docker.sock",
                         ))
                         .env("SERVER_ID", self.config.monitoring_server_id.unwrap_or(0).to_string())
-                        .env("RUSTPLOY_SERVER_URL", self.config.monitoring_panel_url.clone().unwrap_or_default())
+                        .env("OPENOXIDE_SERVER_URL", self.config.monitoring_panel_url.clone().unwrap_or_default())
                         .env("METRICS_TOKEN", self.config.monitoring_token.clone().unwrap_or_default())
                         .env("MONITOR_DATABASE_URL", "sqlite:///app/data/monitor.db")
                         .env("REFRESH_RATE", "10")
                         .env("RETENTION_DAYS", self.config.monitoring_retention_days.to_string())
-                        .mount(Mount::volume("rustploy-monitor-data", "/app/data"))
+                        .mount(Mount::volume("openoxide-monitor-data", "/app/data"))
                         .publish(Port::tcp(50051, 50051));
                 }
             }
@@ -803,7 +803,7 @@ impl ServerSetup {
 }
 
 fn monitoring_image() -> &'static str {
-    "dubeyanand/rustploy-monitor:latest"
+    "dubeyanand/openoxide-monitor:latest"
 }
 
 fn monitoring_image_unsupported(architecture: &str) -> bool {
@@ -843,29 +843,31 @@ mod tests {
         assert!(script.contains("echo '[INFO] Checking Traefik container'"));
         assert!(script.contains("Removing directory created at Traefik config file path"));
         assert!(script.contains("https://get.docker.com"));
-        assert!(script.contains("env 'bash' \"$_rustploy_installer\""));
+        assert!(script.contains("env 'bash' \"$_openoxide_installer\""));
         assert!(script.contains("https://nixpacks.com/install.sh"));
-        assert!(script.contains("'NIXPACKS_VERSION=1.41.0' 'bash' \"$_rustploy_installer\""));
-        assert!(script.contains("_rustploy_pack_url="));
+        assert!(script.contains("'NIXPACKS_VERSION=1.41.0' 'bash' \"$_openoxide_installer\""));
+        assert!(script.contains("_openoxide_pack_url="));
         assert!(script.contains(
-            "_rustploy_vpn_addr=$(ip '-4' '-o' 'addr' 'show' | grep '-E' '^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)' | grep '-oE' '([0-9]+\\.){3}[0-9]+' | head '-n' '1')"
+            "_openoxide_vpn_addr=$(ip '-4' '-o' 'addr' 'show' | grep '-E' '^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)' | grep '-oE' '([0-9]+\\.){3}[0-9]+' | head '-n' '1')"
         ));
-        assert!(script.contains("test '-n' \"$_rustploy_vpn_addr\""));
-        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_vpn_addr"));
-        assert!(script.contains("test '-n' \"$_rustploy_cgnat_addr\""));
-        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_cgnat_addr"));
+        assert!(script.contains("test '-n' \"$_openoxide_vpn_addr\""));
+        assert!(script.contains("docker swarm init --advertise-addr $_openoxide_vpn_addr"));
+        assert!(script.contains("test '-n' \"$_openoxide_cgnat_addr\""));
+        assert!(script.contains("docker swarm init --advertise-addr $_openoxide_cgnat_addr"));
         assert!(script.contains("^100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\."));
         assert!(script.contains("hostname '-I' | awk"));
         assert!(
-            script.contains("[ -z \"$_rustploy_advertise_addr\" ] && _rustploy_advertise_addr=")
+            script.contains("[ -z \"$_openoxide_advertise_addr\" ] && _openoxide_advertise_addr=")
         );
         assert!(!script.contains("https://ifconfig.io"));
-        assert!(script.contains("docker swarm init --advertise-addr $_rustploy_advertise_addr"));
-        assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
+        assert!(script.contains("docker swarm init --advertise-addr $_openoxide_advertise_addr"));
+        assert!(script.contains("docker network create --driver overlay --attachable openoxide"));
         assert!(script.contains("traefik:v"));
-        assert!(script.contains("dubeyanand/rustploy-monitor:latest"));
+        assert!(script.contains("dubeyanand/openoxide-monitor:latest"));
         assert!(script.contains("uname '-m'"));
-        assert!(script.contains("Skipping rustploy monitor on ARM64; image has no arm64 manifest"));
+        assert!(
+            script.contains("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
+        );
     }
 
     #[test]
@@ -883,7 +885,7 @@ mod tests {
         assert!(!script.contains("https://get.docker.com"));
         assert!(!script.contains("https://nixpacks.com/install.sh"));
         assert!(script.contains("docker swarm init"));
-        assert!(script.contains("docker network create --driver overlay --attachable rustploy"));
+        assert!(script.contains("docker network create --driver overlay --attachable openoxide"));
     }
 
     #[test]
@@ -917,8 +919,8 @@ mod tests {
 
         println!("\n===== GENERATED DEPLOY SERVER SETUP =====\n{script}");
 
-        assert!(script.contains("elif test \"$_rustploy_arch\" '=' 'arm64'; then"));
-        assert!(!script.contains("else\n  if test \"$_rustploy_arch\" '=' 'arm64'; then"));
+        assert!(script.contains("elif test \"$_openoxide_arch\" '=' 'arm64'; then"));
+        assert!(!script.contains("else\n  if test \"$_openoxide_arch\" '=' 'arm64'; then"));
     }
 
     #[test]
@@ -935,6 +937,6 @@ mod tests {
         assert!(!script.contains("docker swarm init"));
         assert!(!script.contains("docker network create --driver overlay"));
         assert!(!script.contains("traefik:v"));
-        assert!(!script.contains("dubeyanand/rustploy-monitor:latest"));
+        assert!(!script.contains("dubeyanand/openoxide-monitor:latest"));
     }
 }

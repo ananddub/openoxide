@@ -83,9 +83,9 @@ impl Default for SetupConfig {
     fn default() -> Self {
         Self {
             build_server: false,
-            paths: SetupPaths::new(crate::utils::paths::rustploy_paths().base),
-            network_name: "rustploy-network".into(),
-            traefik_name: "rustploy-traefik".into(),
+            paths: SetupPaths::new(crate::utils::paths::openoxide_paths().base),
+            network_name: "openoxide-network".into(),
+            traefik_name: "openoxide-traefik".into(),
             traefik_version: "3.6.7".into(),
             http_port: 80,
             https_port: 443,
@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn default_paths_are_namespaced_and_complete() {
         let config = SetupConfig::default();
-        let expected_base = crate::utils::paths::rustploy_paths().base;
+        let expected_base = crate::utils::paths::openoxide_paths().base;
         assert_eq!(config.paths.base, expected_base);
         assert_eq!(config.paths.all().len(), 14);
         assert!(
@@ -116,6 +116,6 @@ mod tests {
                 .certificates
                 .starts_with(&format!("{expected_base}/traefik/dynamic"))
         );
-        assert_eq!(config.network_name, "rustploy-network");
+        assert_eq!(config.network_name, "openoxide-network");
     }
 }

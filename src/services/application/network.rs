@@ -72,7 +72,7 @@ impl ApplicationNetworkService {
         }
         if input.detach_rustploy_network && resolved.is_empty() {
             return Err(sqlx::Error::Protocol(
-                "at least one network is required when the Rustploy network is detached".into(),
+                "at least one network is required when the OpenOxide network is detached".into(),
             ));
         }
         let serialized = serde_json::to_string(

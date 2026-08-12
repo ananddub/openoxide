@@ -1,4 +1,4 @@
-# Rustploy Git Provider Integration Architecture
+# OpenOxide Git Provider Integration Architecture
 
 ```text
 ┌─ GIT PROVIDER ────────────────────────────────────────────┐

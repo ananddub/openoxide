@@ -124,7 +124,7 @@ impl<'a> BitbucketWebhookBuilder<'a> {
         let event_strings: Vec<&str> = self.events.iter().map(|e| e.as_bitbucket_event()).collect();
 
         let payload = serde_json::json!({
-            "description": "rustploy-webhook",
+            "description": "openoxide-webhook",
             "url": target_url,
             "active": self.active,
             "events": if event_strings.is_empty() { vec!["repo:push"] } else { event_strings },

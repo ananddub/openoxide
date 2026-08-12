@@ -199,7 +199,7 @@ impl AlertRuleController {
     ) -> Result<Json<TestNotificationResponseDto>, ApiError> {
         let message = NotificationMessage::new(
             "Test alert",
-            "This is a test from Rustploy. If you can read it, alerts will reach you.",
+            "This is a test from OpenOxide. If you can read it, alerts will reach you.",
         )
         .level(NotificationLevel::Info)
         .field("Source", "alert configuration test");

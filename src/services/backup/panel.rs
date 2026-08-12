@@ -11,7 +11,7 @@ use crate::{
     utils::{
         exec::{CommandExecutor, LocalExecutor},
         os::OsCli,
-        paths::rustploy_paths,
+        paths::openoxide_paths,
     },
 };
 
@@ -36,13 +36,13 @@ impl PanelBackupService {
     }
 
     pub async fn create(&self) -> sqlx::Result<PanelBackupResponseDto> {
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let output_dir = format!("{}/backups/panel", paths.base);
         tokio::fs::create_dir_all(&output_dir)
             .await
             .map_err(io_error)?;
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
-        let archive = format!("{output_dir}/rustploy-panel-{timestamp}.tar.gz");
+        let archive = format!("{output_dir}/openoxide-panel-{timestamp}.tar.gz");
         let staging = tempfile::tempdir().map_err(io_error)?;
         let snapshot = staging.path().join("db.sqlite3");
         let snapshot_string = snapshot.to_string_lossy().into_owned();
@@ -62,7 +62,7 @@ impl PanelBackupService {
                 .execute(self.db.as_ref())
                 .await?;
             let manifest = serde_json::json!({
-                "format": "rustploy.panel.v1",
+                "format": "openoxide.panel.v1",
                 "created_at": chrono::Utc::now().timestamp(),
                 "database_url": redact_database_url(&self.config.database_url),
             });
@@ -179,7 +179,7 @@ impl PanelBackupService {
                 "panel archive does not contain db.sqlite3".into(),
             ));
         }
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let restore_id = uuid::Uuid::new_v4().simple().to_string();
         let staging = format!("{}/backups/restore-staging/{restore_id}", paths.base);
         tokio::fs::create_dir_all(&staging)
@@ -217,7 +217,7 @@ impl PanelBackupService {
         if restore_id.is_empty() || !restore_id.chars().all(|c| c.is_ascii_hexdigit()) {
             return Err(sqlx::Error::Protocol("invalid restore id".into()));
         }
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let pending = format!("{}/backups/panel-restore.pending.json", paths.base);
         if let Ok(bytes) = tokio::fs::read(&pending).await
             && let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes)
@@ -242,7 +242,7 @@ impl PanelBackupService {
         &self,
         recovery_database: &str,
     ) -> sqlx::Result<StagePanelRestoreDto> {
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let database = Path::new(recovery_database);
         let allowed_parent = Path::new(&paths.base);
         if !database.is_absolute()
@@ -252,7 +252,7 @@ impl PanelBackupService {
                 .is_some_and(|name| name.to_string_lossy().contains(".pre-restore-"))
         {
             return Err(sqlx::Error::Protocol(
-                "recovery database must be a Rustploy pre-restore snapshot".into(),
+                "recovery database must be a OpenOxide pre-restore snapshot".into(),
             ));
         }
         let bytes = tokio::fs::read(database).await.map_err(io_error)?;
@@ -278,10 +278,10 @@ impl PanelBackupService {
 
 fn validate_local_archive_path(value: &str) -> sqlx::Result<()> {
     let path = Path::new(value);
-    let backup_root = format!("{}/backups", rustploy_paths().base);
+    let backup_root = format!("{}/backups", openoxide_paths().base);
     if !path.is_absolute() || !path.starts_with(&backup_root) || !value.ends_with(".tar.gz") {
         return Err(sqlx::Error::Protocol(
-            "archive must be a .tar.gz file inside the Rustploy backup directory".into(),
+            "archive must be a .tar.gz file inside the OpenOxide backup directory".into(),
         ));
     }
     Ok(())

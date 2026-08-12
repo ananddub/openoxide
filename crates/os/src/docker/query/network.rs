@@ -188,11 +188,11 @@ mod tests {
     #[test]
     fn network_create_builds_overlay_swarm_args() {
         let cli = fake();
-        let args = NetworkCreate::new(&cli, "rustploy-network")
+        let args = NetworkCreate::new(&cli, "openoxide-network")
             .driver(crate::docker::NetworkDriver::Overlay)
             .attachable()
             .scope(crate::docker::NetworkScope::Swarm)
-            .label("managed-by", "rustploy")
+            .label("managed-by", "openoxide")
             .opt("encrypted", "")
             .build_args();
 
@@ -201,7 +201,7 @@ mod tests {
         assert!(args.contains(&"--attachable".to_string()));
         assert!(args.contains(&"--scope".to_string()));
         assert!(args.contains(&"swarm".to_string()));
-        assert!(args.contains(&"managed-by=rustploy".to_string()));
-        assert_eq!(args.last(), Some(&"rustploy-network".to_string()));
+        assert!(args.contains(&"managed-by=openoxide".to_string()));
+        assert_eq!(args.last(), Some(&"openoxide-network".to_string()));
     }
 }

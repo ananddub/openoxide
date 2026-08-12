@@ -91,7 +91,7 @@ async fn test_multiple_async_slots_uniqueness() {
     assert!(html_str.contains("id=\"__slot_"), "Slot div missing");
 
     assert_eq!(html_str.matches("id=\"__slot_").count(), 3);
-    assert!(html_str.contains("/_rustploy/html/events/"));
+    assert!(html_str.contains("/_openoxide/html/events/"));
 }
 
 // ── Test 2: HTML Escaping Safety ──────────────────────────────────────────────

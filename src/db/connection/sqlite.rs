@@ -53,7 +53,7 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
 }
 
 async fn persist_failed_restore(error: &str) {
-    let paths = crate::utils::paths::rustploy_paths();
+    let paths = crate::utils::paths::openoxide_paths();
     let marker = format!("{}/backups/panel-restore.pending.json", paths.base);
     let Ok(bytes) = tokio::fs::read(&marker).await else {
         return;
@@ -79,7 +79,7 @@ struct PendingPanelRestore {
 }
 
 async fn apply_pending_panel_restore(database_url: &str) -> Result<(), String> {
-    let paths = crate::utils::paths::rustploy_paths();
+    let paths = crate::utils::paths::openoxide_paths();
     let marker = format!("{}/backups/panel-restore.pending.json", paths.base);
     let marker_bytes = match tokio::fs::read(&marker).await {
         Ok(value) => value,

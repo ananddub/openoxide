@@ -1,4 +1,4 @@
-# Rustploy Docker Compose Service Architecture
+# OpenOxide Docker Compose Service Architecture
 
 ```text
 ┌─ COMPOSE ─────────────────────────────────────────────────┐
@@ -16,7 +16,7 @@ flowchart LR
   D --> T[Traefik routing]
 ```
 
-The **Compose Service** in Rustploy provides multi-container stack orchestrations, handling `docker-compose.yml` parsing, resource modifications, Git synchronization, and stack lifecycle management.
+The **Compose Service** in OpenOxide provides multi-container stack orchestrations, handling `docker-compose.yml` parsing, resource modifications, Git synchronization, and stack lifecycle management.
 
 ---
 
@@ -68,8 +68,8 @@ The Compose Service executes through 5 distinct async execution phases:
 2. Validates compose syntax (services, volumes, networks, environment files).
 
 ### Phase 3: Spec Transformation (`management/`)
-Before execution, Rustploy transforms the raw `docker-compose.yml`:
-1. **Network Attachment**: Injects internal Docker mesh network (`rustploy-network`).
+Before execution, OpenOxide transforms the raw `docker-compose.yml`:
+1. **Network Attachment**: Injects internal Docker mesh network (`openoxide-network`).
 2. **Traefik Label Injection**: Automatically generates dynamic Traefik routing labels (`traefik.http.routers.<service>.rule=Host(...)`) for exposed web services.
 3. **Volume & Env Injection**: Injects decrypted environment variables and persistent volume paths.
 
@@ -105,9 +105,9 @@ Primary Docker Compose project record.
 
 ## 4. Execution Sequence Diagram
 
-## 5. How Rustploy solves Compose deployment
+## 5. How OpenOxide solves Compose deployment
 
-Compose source and runtime state are kept separate. The source layer fetches or accepts YAML, parsing/management applies Rustploy-owned environment, mounts, networks, domains, configs, and secrets, and the operation layer sends the final specification to the selected server.
+Compose source and runtime state are kept separate. The source layer fetches or accepts YAML, parsing/management applies OpenOxide-owned environment, mounts, networks, domains, configs, and secrets, and the operation layer sends the final specification to the selected server.
 
 Every lifecycle action (`deploy`, `redeploy`, `stop`, `start`, `remove`, `cancel`) passes through `ComposeService` and the shared queue/state machinery. This prevents API handlers and schedules from implementing slightly different Compose behavior. Multi-service routing is derived from the stored domain/service mapping rather than guessed from container names.
 

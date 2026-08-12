@@ -29,7 +29,7 @@ pub fn html(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         #stmts
         if #out.contains("id=\"__slot_") {
             #out.push_str(&::std::format!(
-                "<script>new EventSource('/_rustploy/html/events/{}').onmessage=e=>{{const p=JSON.parse(e.data),n=document.getElementById(p.slot);if(n)n.outerHTML=p.html}}</script>",
+                "<script>new EventSource('/_openoxide/html/events/{}').onmessage=e=>{{const p=JSON.parse(e.data),n=document.getElementById(p.slot);if(n)n.outerHTML=p.html}}</script>",
                 __html_session_id
             ));
         }

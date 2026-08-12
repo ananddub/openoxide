@@ -1,4 +1,4 @@
-# Rustploy Monitoring & Metrics Service Architecture
+# OpenOxide Monitoring & Metrics Service Architecture
 
 ```text
 ┌─ MONITORING ──────────────────────────────────────────────┐
@@ -44,7 +44,7 @@ The **Monitoring Service** handles remote agent token authentication, gRPC metri
                                         ▼
                             ┌───────────────────────┐
                             │ Remote Monitoring     │
-                            │ Agent (rustploy-monitor)│
+                            │ Agent (openoxide-monitor)│
                             └───────────────────────┘
 ```
 
@@ -57,7 +57,7 @@ The Monitoring Engine operates through a 5-phase execution pipeline:
 ```
 [1. Token Gen]      ──► Server Token Generated (`rma_...`) ──► DB `monitoring_agents` Save
                              │
-[2. Agent Launch]   ──► Deploy `rustploy-monitor` container with `METRICS_TOKEN` Env
+[2. Agent Launch]   ──► Deploy `openoxide-monitor` container with `METRICS_TOKEN` Env
                              │
 [3. gRPC Connection]──► Tonic channel to the resolved server host on port `50051` + `x-metrics-token`
                              │
@@ -72,7 +72,7 @@ The Monitoring Engine operates through a 5-phase execution pipeline:
 
 ### Phase 2: Remote Agent Container Launch (`setup/server.rs`)
 1. Provisions the remote VPS node over SSH.
-2. Launches `rustploy-monitor` container on port `50051` passing `SERVER_ID` and `METRICS_TOKEN` environment variables.
+2. Launches `openoxide-monitor` container on port `50051` passing `SERVER_ID` and `METRICS_TOKEN` environment variables.
 
 ### Phase 3: Authenticated gRPC Client Request (`monitoring_service.rs`)
 1. The panel resolves the server host, preferring its configured active private-network host when available.

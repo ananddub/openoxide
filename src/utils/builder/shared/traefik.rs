@@ -8,7 +8,7 @@ use crate::utils::traefik::{
 };
 use std::collections::{BTreeMap, HashMap};
 
-const TRAEFIK_NETWORK: &str = "rustploy-network";
+const TRAEFIK_NETWORK: &str = "openoxide-network";
 
 pub struct SharedDomain {
     pub key: String,

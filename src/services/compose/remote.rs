@@ -5,7 +5,7 @@ use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
 use auto_di::resolve;
 
 pub(crate) fn deployment_pid_file(deployment_id: i64) -> String {
-    format!("/tmp/rustploy-deployment-{deployment_id}.pid")
+    format!("/tmp/openoxide-deployment-{deployment_id}.pid")
 }
 
 pub(crate) async fn remote_executor(

@@ -1,4 +1,4 @@
-# Rustploy Ephemeral Preview Deployments Architecture
+# OpenOxide Ephemeral Preview Deployments Architecture
 
 ```text
 ┌─ PREVIEW ─────────────────────────────────────────────────┐

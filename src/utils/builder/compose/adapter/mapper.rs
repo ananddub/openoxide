@@ -6,7 +6,7 @@ use crate::utils::git::GitProviderBuilder;
 use crate::{
     db::models::{domains::Domain, mounts::Mount, patches::Patch},
     utils::builder::env::generate_env_app,
-    utils::paths::rustploy_paths,
+    utils::paths::openoxide_paths,
 };
 
 pub struct ComposeRowWithRelations {
@@ -63,7 +63,7 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
         let mounts = data.mounts;
         let patches = data.patches;
         let service_networks = data.service_networks;
-        let paths = rustploy_paths();
+        let paths = openoxide_paths();
         let app_dir = paths.compose_dir(&compose.app_name);
         Ok(ComposeSpec {
             app_name: compose.app_name.clone(),

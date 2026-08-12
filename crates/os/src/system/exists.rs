@@ -45,7 +45,7 @@ mod tests {
                 .is_ok()
         );
         assert!(
-            CommandExistsBuilder::new(&executor, "rustploy-command-that-does-not-exist")
+            CommandExistsBuilder::new(&executor, "openoxide-command-that-does-not-exist")
                 .run()
                 .await
                 .is_err()

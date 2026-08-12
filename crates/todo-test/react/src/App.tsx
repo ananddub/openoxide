@@ -1,5 +1,5 @@
 import {FormEvent, useEffect, useState} from 'react';
-import {type Todo, useTodos} from 'virtual:rustploy-live';
+import {type Todo, useTodos} from 'virtual:openoxide-live';
 
 async function mutate(path: string, method = 'POST', body?: unknown) {
   const response = await fetch(path, {method, headers: body ? {'content-type': 'application/json'} : undefined, body: body ? JSON.stringify(body) : undefined});

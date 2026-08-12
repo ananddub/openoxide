@@ -83,7 +83,7 @@ impl BuilderContext {
         self.executor
             .run_with_stdin_cancelled(
                 "sh",
-                ["-c", "umask 077; cat > \"$1\"", "rustploy-write", path],
+                ["-c", "umask 077; cat > \"$1\"", "openoxide-write", path],
                 content,
                 cancel,
             )

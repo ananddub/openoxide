@@ -162,10 +162,10 @@ pub(crate) fn application_traefik_labels(app: &ApplicationSpec) -> Vec<String> {
     let traefik_network = app
         .networks
         .iter()
-        .find(|network| network.as_str() == crate::utils::builder::swarm::RUSTPLOY_NETWORK)
+        .find(|network| network.as_str() == crate::utils::builder::swarm::OPENOXIDE_NETWORK)
         .or_else(|| app.networks.first())
         .map(String::as_str)
-        .unwrap_or(crate::utils::builder::swarm::RUSTPLOY_NETWORK);
+        .unwrap_or(crate::utils::builder::swarm::OPENOXIDE_NETWORK);
     let traefik_map = crate::utils::builder::shared::traefik::build_traefik_labels_for_network(
         &app.app_name,
         &shared_domains,
@@ -359,7 +359,7 @@ pub(crate) mod tests {
             command: None,
             args: vec![],
             replicas: 2,
-            networks: vec!["rustploy-network".into()],
+            networks: vec!["openoxide-network".into()],
             mounts: vec![MountSpec {
                 kind: MountKind::Volume,
                 source: "api-data".into(),
@@ -387,7 +387,7 @@ pub(crate) mod tests {
     fn stack_yaml_contains_reconciled_deployment_config() {
         let yaml = serde_yaml::to_string(&stack_spec(&spec())).unwrap();
         assert!(yaml.contains("replicas: 2"));
-        assert!(yaml.contains("rustploy-network"));
+        assert!(yaml.contains("openoxide-network"));
         assert!(yaml.contains("node.role==worker"));
         assert!(yaml.contains("failure_action: rollback"));
         assert!(yaml.contains("source: api-data"));

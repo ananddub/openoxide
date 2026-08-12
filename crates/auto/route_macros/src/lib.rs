@@ -690,18 +690,18 @@ fn expand_controller(
                 >
             {
                 ::auto_route::__private::auto_socket::LivePublisher::new(
-                    "/_rustploy/live",
+                    "/_openoxide/live",
                     #endpoint,
                     #event,
                 ).room(#args)
             }
             pub fn #event_handler() -> ::auto_route::__private::auto_socket::LivePublisher<#return_type> {
                 ::auto_route::__private::auto_socket::LivePublisher::new(
-                    "/_rustploy/live", #endpoint, #event,
+                    "/_openoxide/live", #endpoint, #event,
                 )
             }
             pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
-                ::auto_route::__private::auto_socket::LiveSubscription::new("/_rustploy/live", #endpoint, #event, #args)
+                ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #args)
             }
         })
     });
@@ -809,7 +809,7 @@ fn expand_controller(
                 })
             }
             ::auto_route::__private::inventory::submit! {
-                ::auto_route::__private::auto_socket::SocketDescriptor::new("/_rustploy/live", #live_factory)
+                ::auto_route::__private::auto_socket::SocketDescriptor::new("/_openoxide/live", #live_factory)
             }
         }
     } else {

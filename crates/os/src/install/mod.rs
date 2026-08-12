@@ -33,7 +33,7 @@ impl<'a> ShellInstallerBuilder<'a> {
     pub async fn run(self) -> ExecResult<()> {
         let temporary = self
             .executor
-            .run("mktemp", ["-t", "rustploy-installer.XXXXXX"])
+            .run("mktemp", ["-t", "openoxide-installer.XXXXXX"])
             .await?
             .stdout_trimmed()
             .to_owned();
@@ -73,17 +73,17 @@ impl IntoCommand for ShellInstallerBuilder<'_> {
             .map(|value| shell_single_quote(&value))
             .collect::<Vec<_>>();
         env_args.push(shell_single_quote(&self.shell));
-        env_args.push("\"$_rustploy_installer\"".to_owned());
+        env_args.push("\"$_openoxide_installer\"".to_owned());
         env_args.extend(self.arguments.iter().map(|arg| shell_single_quote(arg)));
 
         format!(
-            "_rustploy_installer=$(mktemp -t rustploy-installer.XXXXXX)\n\
-if curl -fsSL {} -o \"$_rustploy_installer\" && env {}; then\n\
-    rm -f \"$_rustploy_installer\"\n\
+            "_openoxide_installer=$(mktemp -t openoxide-installer.XXXXXX)\n\
+if curl -fsSL {} -o \"$_openoxide_installer\" && env {}; then\n\
+    rm -f \"$_openoxide_installer\"\n\
 else\n\
-    _rustploy_status=$?\n\
-    rm -f \"$_rustploy_installer\"\n\
-    exit \"$_rustploy_status\"\n\
+    _openoxide_status=$?\n\
+    rm -f \"$_openoxide_installer\"\n\
+    exit \"$_openoxide_status\"\n\
 fi",
             shell_word(&self.url),
             env_args.join(" ")
@@ -145,7 +145,7 @@ impl<'a> TarballInstallerBuilder<'a> {
     pub async fn run(self) -> ExecResult<()> {
         let archive = self
             .executor
-            .run("mktemp", ["-t", "rustploy-archive.XXXXXX"])
+            .run("mktemp", ["-t", "openoxide-archive.XXXXXX"])
             .await?
             .stdout_trimmed()
             .to_owned();
@@ -176,7 +176,7 @@ impl IntoCommand for TarballInstallerBuilder<'_> {
     fn build_str(&self) -> String {
         let mut tar_args = vec![
             "-xzf".to_owned(),
-            "\"$_rustploy_archive\"".to_owned(),
+            "\"$_openoxide_archive\"".to_owned(),
             "-C".to_owned(),
             shell_single_quote(&self.destination),
             "--no-same-owner".to_owned(),
@@ -184,13 +184,13 @@ impl IntoCommand for TarballInstallerBuilder<'_> {
         tar_args.extend(self.members.iter().map(|member| shell_single_quote(member)));
 
         format!(
-            "_rustploy_archive=$(mktemp -t rustploy-archive.XXXXXX)\n\
-if curl -fsSL {} -o \"$_rustploy_archive\" && tar {}; then\n\
-    rm -f \"$_rustploy_archive\"\n\
+            "_openoxide_archive=$(mktemp -t openoxide-archive.XXXXXX)\n\
+if curl -fsSL {} -o \"$_openoxide_archive\" && tar {}; then\n\
+    rm -f \"$_openoxide_archive\"\n\
 else\n\
-    _rustploy_status=$?\n\
-    rm -f \"$_rustploy_archive\"\n\
-    exit \"$_rustploy_status\"\n\
+    _openoxide_status=$?\n\
+    rm -f \"$_openoxide_archive\"\n\
+    exit \"$_openoxide_status\"\n\
 fi",
             shell_word(&self.url),
             tar_args.join(" ")
@@ -206,22 +206,22 @@ impl IntoCommand for PackInstallerBuilder<'_> {
         );
         let tarball = TarballInstallerBuilder {
             executor: self.executor,
-            url: "$_rustploy_pack_url".to_owned(),
+            url: "$_openoxide_pack_url".to_owned(),
             destination: self.destination.clone(),
             members: vec!["pack".to_owned()],
         };
 
         let mut steps = sh!(
-            let _rustploy_pack_arch = capture_stdout! {
+            let _openoxide_pack_arch = capture_stdout! {
                 cmd("uname", "-m");
             };
-            let _rustploy_pack_suffix = "";
-            if cmd("test", _rustploy_pack_arch, "=", "aarch64") {
-                let _rustploy_pack_suffix = "-arm64";
-            } else if cmd("test", _rustploy_pack_arch, "=", "arm64") {
-                let _rustploy_pack_suffix = "-arm64";
+            let _openoxide_pack_suffix = "";
+            if cmd("test", _openoxide_pack_arch, "=", "aarch64") {
+                let _openoxide_pack_suffix = "-arm64";
+            } else if cmd("test", _openoxide_pack_arch, "=", "arm64") {
+                let _openoxide_pack_suffix = "-arm64";
             }
-            let _rustploy_pack_url = word![rust!(url_prefix), _rustploy_pack_suffix, ".tgz"];
+            let _openoxide_pack_url = word![rust!(url_prefix), _openoxide_pack_suffix, ".tgz"];
         );
         steps.push(ShellIR::Raw(tarball.build_str()));
         steps.build_str()

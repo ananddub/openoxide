@@ -4,7 +4,7 @@ use crate::api::dto::compose::{
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
 use crate::core::cache::CacheKey;
-use crate::utils::paths::rustploy_paths;
+use crate::utils::paths::openoxide_paths;
 use std::env::temp_dir;
 use upload::{TempFileGuard, sanitize_zip, save_multipart_to_file};
 
@@ -147,7 +147,7 @@ impl ComposeService {
         sanitize_zip(&upload_zip, &clean_zip).await?;
 
         // 4. Deploy — local or remote
-        let dest_path = rustploy_paths().compose_source(&project.app_name);
+        let dest_path = openoxide_paths().compose_source(&project.app_name);
         match project.server_id {
             None => {
                 local::deploy_zip_locally(&clean_zip, &dest_path).await?;

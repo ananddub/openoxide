@@ -277,7 +277,7 @@ mod tests {
     #[test]
     fn builds_typed_query_arguments() {
         let executor = CommandExecutor::Local(LocalExecutor::new());
-        let args = DigBuilder::new(&executor, DnsName::new("pi.rustploy.internal").unwrap())
+        let args = DigBuilder::new(&executor, DnsName::new("pi.openoxide.internal").unwrap())
             .server(IpAddr::V4(Ipv4Addr::new(10, 91, 0, 1)))
             .port(DigPort::new(5353).unwrap())
             .record_type(DigRecordType::Aaaa)
@@ -300,7 +300,7 @@ mod tests {
                 "+short",
                 "+nocmd",
                 "+ttlid",
-                "pi.rustploy.internal",
+                "pi.openoxide.internal",
                 "AAAA",
                 "IN"
             ]

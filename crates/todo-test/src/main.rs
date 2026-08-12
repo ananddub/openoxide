@@ -1,4 +1,4 @@
-use rustploy_todo_test::{POOL, db};
+use openoxide_todo_test::{POOL, db};
 
 #[tokio::main]
 async fn main() {

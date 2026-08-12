@@ -193,7 +193,8 @@ impl ServerController {
             )
         })?;
         config.monitoring_panel_url = Some(
-            std::env::var("RUSTPLOY_SERVER_URL")
+            std::env::var("OPENOXIDE_SERVER_URL")
+                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
         );
         config.monitoring_token =
@@ -254,7 +255,8 @@ impl ServerController {
             )
         })?;
         config.monitoring_panel_url = Some(
-            std::env::var("RUSTPLOY_SERVER_URL")
+            std::env::var("OPENOXIDE_SERVER_URL")
+                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
         );
         config.monitoring_token =
