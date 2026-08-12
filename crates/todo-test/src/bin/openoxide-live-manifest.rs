@@ -1,7 +1,7 @@
-use openoxide_todo_test::{controller::todo_live, models::Todo};
+use openoxide_todo_test::{controller::TodoController, models::Todo};
 
 fn main() {
-    let subscription = todo_live::list_subscription().expect("generate live subscription");
+    let subscription = TodoController::todos_subscription().expect("generate live subscription");
     let hook = format!("use{}", pascal_case(subscription.client_name()));
     println!(
         "{}",

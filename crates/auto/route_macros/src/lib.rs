@@ -700,9 +700,14 @@ fn expand_controller(
         let names = (0..route.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
         let args = match names.len() { 0 => quote!(::std::vec::Vec::<()>::new()), 1 => { let n = &names[0]; quote!((#n,)) }, _ => quote!((#(#names),*)) };
         let publisher = format_ident!("{}", client_name.value());
+        let subscription = format_ident!("{}_subscription", client_name.value());
         Some(quote! {
             pub fn #publisher(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LivePublisher<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
                 ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).room(#args)
+            }
+
+            pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
+                ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #client_name, #args)
             }
         })
     }).collect::<Vec<_>>();
