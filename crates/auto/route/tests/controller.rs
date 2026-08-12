@@ -9,13 +9,42 @@ use axum::{
 };
 use futures_util::stream;
 use http_body_util::BodyExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{convert::Infallible, pin::Pin};
 use tower::ServiceExt;
 
 type TestEventStream = Pin<Box<dyn futures_util::Stream<Item = Result<Event, Infallible>> + Send>>;
 type TestSse = Sse<TestEventStream>;
+
+#[derive(Clone, Debug, Serialize, poem_openapi::Object)]
+struct Metrics {
+    cpu: u64,
+}
+
+struct ServerController;
+
+#[controller("/servers")]
+impl ServerController {
+    fn new() -> Self {
+        Self
+    }
+
+    #[get("/{server_id}/metrics")]
+    #[live]
+    #[on("metrics:update")]
+    async fn metrics(&self, Path(server_id): Path<i64>) -> Json<Metrics> {
+        Json(Metrics {
+            cpu: server_id as u64,
+        })
+    }
+}
+
+#[test]
+fn generates_typed_live_publish_handle() {
+    let publisher = server_live::metrics(7).expect("live publisher");
+    let _future = publisher.publish(Metrics { cpu: 42 });
+}
 
 struct UserController {
     prefix: String,

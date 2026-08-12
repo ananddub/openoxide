@@ -13,6 +13,7 @@ categories = ["web-programming", "asynchronous"]
 [dependencies]
 auto-di = "0.6.0"
 auto_route_macros = { version = "0.2.1", path = "../route_macros" }
+auto_socket = { version = "0.1.0", path = "../socket" }
 axum = "0.8.9"
 inventory = "0.3.24"
 poem-openapi = { version = "5.1.16", features = ["swagger-ui"] }

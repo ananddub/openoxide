@@ -382,6 +382,7 @@ fn swagger_ui_html() -> String {
 #[doc(hidden)]
 pub mod __private {
     pub use auto_di;
+    pub use auto_socket;
     pub use axum;
     pub use inventory;
     pub use poem_openapi;

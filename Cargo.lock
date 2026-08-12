@@ -215,6 +215,7 @@ version = "0.2.1"
 dependencies = [
  "auto-di",
  "auto_route_macros",
+ "auto_socket",
  "axum 0.8.9",
  "futures-util",
  "http-body-util",
@@ -245,7 +246,9 @@ dependencies = [
  "axum 0.8.9",
  "inventory",
  "serde",
+ "serde_json",
  "socketioxide",
+ "thiserror",
  "tokio",
 ]
 

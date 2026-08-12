@@ -47,7 +47,7 @@ async fn groups_impl_and_standalone_events_into_one_namespace() {
     register(&io, &container).await.unwrap();
 
     let namespaces = io.nsps();
-    assert_eq!(namespaces.len(), 3);
+    assert_eq!(namespaces.len(), 4);
     assert!(
         namespaces
             .iter()
@@ -62,5 +62,10 @@ async fn groups_impl_and_standalone_events_into_one_namespace() {
         namespaces
             .iter()
             .any(|namespace| namespace.ns_path() == "/room")
+    );
+    assert!(
+        namespaces
+            .iter()
+            .any(|namespace| namespace.ns_path() == "/_rustploy/live")
     );
 }

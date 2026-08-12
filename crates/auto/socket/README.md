@@ -93,6 +93,31 @@ async fn main() {
 
 Registrations sharing a namespace are grouped so Socketioxide installs each namespace once. Handler objects are singleton values resolved by `auto-di`.
 
+## Typed live publishing
+
+Controllers marked with `#[live]` and an explicit outgoing `#[on("event:name")]` generate
+type-safe backend publishers:
+
+```rust,ignore
+#[controller("/servers")]
+impl ServerController {
+    #[get("/{server_id}/metrics")]
+    #[live]
+    #[on("metrics:update")]
+    async fn metrics(&self, Path(server_id): Path<i64>) -> Json<Metrics> {
+        Json(self.service.metrics(server_id).await)
+    }
+}
+
+server_live::metrics(server_id)?
+    .publish(metrics)
+    .await?;
+```
+
+The generated function arguments identify the exact live subscription and the endpoint response
+type determines the payload accepted by `publish`. `broadcast` sends the same typed payload to all
+clients connected to the Rustploy live namespace.
+
 ## License
 
 MIT

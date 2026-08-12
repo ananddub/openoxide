@@ -2,8 +2,8 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
     Attribute, Expr, FnArg, GenericArgument, Ident, ImplItem, Item, ItemFn, ItemImpl, ItemMod, Lit,
-    LitStr, PatType, PathArguments, ReturnType, Token, Type, parse::Parse, parse::ParseStream,
-    parse_macro_input, spanned::Spanned,
+    LitStr, Meta, PatType, PathArguments, ReturnType, Token, Type, parse::Parse,
+    parse::ParseStream, parse_macro_input, spanned::Spanned,
 };
 
 const METHODS: &[&str] = &["get", "post", "put", "delete", "patch", "options", "head"];
@@ -300,6 +300,8 @@ struct Route {
     request_body: Option<RequestBody>,
     response_body: Option<ResponseBody>,
     params: Vec<OpenApiParam>,
+    live_event: Option<LitStr>,
+    live_return_type: Option<Type>,
 }
 
 struct ModuleRoute {
@@ -544,9 +546,20 @@ fn expand_controller(
 
         let mut route_attributes = Vec::new();
         let mut retained_attributes = Vec::new();
+        let mut is_live = false;
+        let mut live_event = None;
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
+            } else if attribute.path().is_ident("live") {
+                if !matches!(attribute.meta, Meta::Path(_)) {
+                    return Err(syn::Error::new_spanned(&attribute, "use #[live]"));
+                }
+                is_live = true;
+            } else if attribute.path().is_ident("on") {
+                live_event = Some(attribute.parse_args::<LitStr>().map_err(|_| {
+                    syn::Error::new_spanned(&attribute, "expected #[on(\"event:name\")]")
+                })?);
             } else {
                 retained_attributes.push(attribute);
             }
@@ -562,6 +575,19 @@ fn expand_controller(
         let Some((attribute, method)) = route_attributes.pop() else {
             continue;
         };
+
+        if is_live && live_event.is_none() {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "#[live] routes require an explicit #[on(\"event:name\")]",
+            ));
+        }
+        if !is_live && live_event.is_some() {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "controller #[on] requires #[live]",
+            ));
+        }
 
         validate_route_signature(&function.sig, "controller route methods")?;
 
@@ -586,6 +612,12 @@ fn expand_controller(
                 )),
             })
             .collect::<syn::Result<Vec<_>>>()?;
+        let live_return_type = match &function.sig.output {
+            ReturnType::Type(_, ty) if is_live => {
+                Some(wrapper_inner_type(ty, &["Json"]).unwrap_or_else(|| (**ty).clone()))
+            }
+            _ => None,
+        };
         let route_options = marker_options(&attribute)?;
         let route_path = route_options.path.value();
         let full_path = join_paths(&controller_options.path.value(), &route_path);
@@ -602,6 +634,8 @@ fn expand_controller(
                 .or_else(|| infer_response_body(&function.sig.output)),
             params: infer_params(&full_path, &argument_types),
             argument_types,
+            live_event,
+            live_return_type,
         });
     }
 
@@ -618,6 +652,54 @@ fn expand_controller(
         .map(|r| format_ident!("__PATH_{}", r.handler))
         .collect();
     let path_const_values: Vec<_> = routes.iter().map(|r| &r.path).collect();
+
+    let controller_name = type_ident.to_string();
+    let module_name = controller_name
+        .strip_suffix("Controller")
+        .unwrap_or(&controller_name)
+        .to_ascii_lowercase();
+    let live_module_ident = format_ident!("{}_live", module_name);
+    let live_handles = routes.iter().filter_map(|route| {
+        let event = route.live_event.as_ref()?;
+        let return_type = route.live_return_type.as_ref()?;
+        let handler = &route.handler;
+        let endpoint = format!("{type_ident}::{handler}");
+        let arguments = route
+            .argument_types
+            .iter()
+            .enumerate()
+            .map(|(index, ty)| {
+                let name = format_ident!("arg_{index}");
+                let public_ty = live_argument_type(ty);
+                quote!(#name: #public_ty)
+            })
+            .collect::<Vec<_>>();
+        let argument_names = (0..route.argument_types.len())
+            .map(|index| format_ident!("arg_{index}"))
+            .collect::<Vec<_>>();
+        let args_expr = match argument_names.len() {
+            0 => quote! { () },
+            1 => {
+                let arg = &argument_names[0];
+                quote! { (#arg,) }
+            }
+            _ => quote! { (#(#argument_names),*) },
+        };
+        Some(quote! {
+            pub fn #handler(#(#arguments),*)
+                -> ::std::result::Result<
+                    ::auto_route::__private::auto_socket::LivePublisher<#return_type>,
+                    ::auto_route::__private::auto_socket::PublishError,
+                >
+            {
+                ::auto_route::__private::auto_socket::LivePublisher::new(
+                    #endpoint,
+                    #event,
+                    #args_expr,
+                )
+            }
+        })
+    });
 
     let registrations = routes.iter().map(|route| {
         let method = &route.method;
@@ -710,6 +792,11 @@ fn expand_controller(
 
     Ok(quote! {
         #managed_impl
+
+        pub mod #live_module_ident {
+            use super::*;
+            #(#live_handles)*
+        }
 
         // ── PATH constants for html! on:click={Self::method} ──────────────────
         #[allow(non_upper_case_globals)]
@@ -915,6 +1002,10 @@ fn wrapper_inner_type(ty: &Type, wrappers: &[&str]) -> Option<Type> {
         }
         _ => None,
     }
+}
+
+fn live_argument_type(ty: &Type) -> Type {
+    wrapper_inner_type(ty, &["Path", "Query", "Json", "Form"]).unwrap_or_else(|| ty.clone())
 }
 
 fn string_type() -> Type {
