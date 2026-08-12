@@ -125,21 +125,39 @@ where
         let args = self.room_args.ok_or(PublishError::MissingRoomArguments)?;
         let room = format!("{}:{args}", self.endpoint);
         if let Some(namespace) = io.of(self.namespace) {
-            namespace.to(room).emit(self.event, &data).await?;
+            namespace
+                .to(room)
+                .emit(
+                    "live:update",
+                    &serde_json::json!({
+                        "endpoint": self.endpoint,
+                        "args": args,
+                        "data": data,
+                    }),
+                )
+                .await?;
         }
         Ok(())
     }
 
     /// Emits this endpoint's typed payload to one explicitly selected socket.
     pub fn emit(self, socket: &SocketRef, data: T) -> Result<(), socketioxide::SendError> {
-        socket.emit(self.event, &data)
+        socket.emit(
+            "live:update",
+            &serde_json::json!({"endpoint": self.endpoint, "args": self.room_args, "data": data}),
+        )
     }
 
     /// Broadcasts this endpoint's typed payload to every client in its socket group.
     pub async fn broadcast(self, data: T) -> Result<(), PublishError> {
         let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
         if let Some(namespace) = io.of(self.namespace) {
-            namespace.emit(self.event, &data).await?;
+            namespace
+                .emit(
+                    "live:update",
+                    &serde_json::json!({"endpoint": self.endpoint, "args": self.room_args, "data": data}),
+                )
+                .await?;
         }
         Ok(())
     }
