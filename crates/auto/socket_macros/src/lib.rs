@@ -262,7 +262,7 @@ fn expand_socket_impl(
                 ::auto_socket::LivePublisher::new(#namespace, #endpoint, #event_name)
             }
             pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_socket::LiveSubscription<#return_type>, ::auto_socket::PublishError> {
-                ::auto_socket::LiveSubscription::new(#namespace, #endpoint, #event_name, #args)
+                ::auto_socket::LiveSubscription::new(#namespace, #endpoint, #event_name, stringify!(#handler), #args)
             }
         }
     });

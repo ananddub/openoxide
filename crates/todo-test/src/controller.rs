@@ -16,7 +16,7 @@ impl TodoController {
     }
 
     #[get("")]
-    #[live]
+    #[live("todos")]
     async fn list(&self) -> Json<Vec<Todo>> {
         Json(load_todos(&self.pool).await)
     }

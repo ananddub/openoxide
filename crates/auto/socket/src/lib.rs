@@ -49,6 +49,7 @@ pub struct LiveSubscription<T> {
     namespace: &'static str,
     endpoint: &'static str,
     event: &'static str,
+    client_name: &'static str,
     args: serde_json::Value,
     marker: PhantomData<fn() -> T>,
 }
@@ -64,12 +65,14 @@ impl<T> LiveSubscription<T> {
         namespace: &'static str,
         endpoint: &'static str,
         event: &'static str,
+        client_name: &'static str,
         args: A,
     ) -> Result<Self, PublishError> {
         Ok(Self {
             namespace,
             endpoint,
             event,
+            client_name,
             args: serde_json::to_value(args)?,
             marker: PhantomData,
         })
@@ -83,6 +86,9 @@ impl<T> LiveSubscription<T> {
     }
     pub fn event(&self) -> &'static str {
         self.event
+    }
+    pub fn client_name(&self) -> &'static str {
+        self.client_name
     }
     pub fn args(&self) -> &serde_json::Value {
         &self.args

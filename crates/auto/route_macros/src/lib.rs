@@ -301,6 +301,7 @@ struct Route {
     response_body: Option<ResponseBody>,
     params: Vec<OpenApiParam>,
     live_event: Option<LitStr>,
+    live_client_name: Option<LitStr>,
     live_return_type: Option<Type>,
 }
 
@@ -548,12 +549,28 @@ fn expand_controller(
         let mut retained_attributes = Vec::new();
         let mut is_live = false;
         let mut live_event = None;
+        let mut live_client_name = None;
         for attribute in std::mem::take(&mut function.attrs) {
             if let Some(method) = route_method(&attribute) {
                 route_attributes.push((attribute, method));
             } else if attribute.path().is_ident("live") {
-                if !matches!(attribute.meta, Meta::Path(_)) {
-                    return Err(syn::Error::new_spanned(&attribute, "use #[live]"));
+                match &attribute.meta {
+                    Meta::Path(_) => {}
+                    Meta::List(_) => {
+                        live_client_name =
+                            Some(attribute.parse_args::<LitStr>().map_err(|_| {
+                                syn::Error::new_spanned(
+                                    &attribute,
+                                    "expected #[live] or #[live(\"client_name\")]",
+                                )
+                            })?);
+                    }
+                    Meta::NameValue(_) => {
+                        return Err(syn::Error::new_spanned(
+                            &attribute,
+                            "expected #[live] or #[live(\"client_name\")]",
+                        ));
+                    }
                 }
                 is_live = true;
             } else if attribute.path().is_ident("on") {
@@ -618,6 +635,12 @@ fn expand_controller(
                 function.sig.ident.span(),
             ));
         }
+        if is_live && live_client_name.is_none() {
+            live_client_name = Some(LitStr::new(
+                &function.sig.ident.to_string(),
+                function.sig.ident.span(),
+            ));
+        }
         let route_options = marker_options(&attribute)?;
         let route_path = route_options.path.value();
         let full_path = join_paths(&controller_options.path.value(), &route_path);
@@ -635,6 +658,7 @@ fn expand_controller(
             params: infer_params(&full_path, &argument_types),
             argument_types,
             live_event,
+            live_client_name,
             live_return_type,
         });
     }
@@ -661,6 +685,7 @@ fn expand_controller(
     let live_module_ident = format_ident!("{}_live", module_name);
     let live_handles = routes.iter().filter_map(|route| {
         let event = route.live_event.as_ref()?;
+        let client_name = route.live_client_name.as_ref()?;
         let return_type = route.live_return_type.as_ref()?;
         let handler = &route.handler;
         let endpoint = format!("{type_ident}::{handler}");
@@ -701,7 +726,7 @@ fn expand_controller(
                 )
             }
             pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
-                ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #args)
+                ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #client_name, #args)
             }
         })
     });

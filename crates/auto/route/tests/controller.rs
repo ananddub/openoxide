@@ -49,7 +49,7 @@ impl DefaultLiveController {
     }
 
     #[get("")]
-    #[live]
+    #[live("server_status")]
     async fn status(&self) -> Json<Metrics> {
         Json(Metrics { cpu: 1 })
     }
@@ -60,8 +60,18 @@ fn generates_typed_live_publish_handle() {
     let publisher = server_live::metrics(7).expect("live publisher");
     assert_eq!(publisher.endpoint(), "ServerController::metrics");
     assert_eq!(
+        server_live::metrics_subscription(7).unwrap().client_name(),
+        "metrics"
+    );
+    assert_eq!(
         defaultlive_live::status().unwrap().endpoint(),
         "DefaultLiveController::status"
+    );
+    assert_eq!(
+        defaultlive_live::status_subscription()
+            .unwrap()
+            .client_name(),
+        "server_status"
     );
 }
 
