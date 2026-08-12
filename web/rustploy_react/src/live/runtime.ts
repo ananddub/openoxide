@@ -33,25 +33,26 @@ function socketFor(namespace: string) {
 	socket = io(namespace, {path: '/socket.io', transports: ['websocket', 'polling']});
 	socket.on('connect', () => {
 		for (const entry of entries.values()) {
-			if (entry.endpoint.namespace === namespace) socket?.emit('live:subscribe', subscribeMessage(entry.endpoint));
+			if (entry.endpoint.namespace === namespace) socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
 		}
 	});
-		socket.on('live:update', (update: LiveUpdate) => {
+	socket.on('live:update', (update: LiveUpdate) => {
 		const key = `${namespace}:${update.endpoint}:${JSON.stringify(update.args)}`;
 		const matching = entries.get(key)
 			? [entries.get(key)!]
 			: update.args == null
 				? [...entries.values()].filter((entry) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === update.endpoint)
 				: [];
-		for (const entry of matching) try {
-			const value = entry.endpoint.parse ? entry.endpoint.parse(update.data) : update.data;
-			entry.value = value;
-			entry.hasValue = true;
-			entry.version++;
-			for (const notify of entry.listeners) notify(value);
-		} catch {
-			// A generated runtime validator can surface this through the hook's error state.
-		}
+		for (const entry of matching) {
+			try {
+				const value = entry.endpoint.parse ? entry.endpoint.parse(update.data) : update.data;
+				entry.value = value;
+				entry.hasValue = true;
+				entry.version++;
+				for (const notify of entry.listeners) notify(value);
+			} catch {
+				// A generated runtime validator can surface this through the hook's error state.
+			}
 		}
 	});
 	sockets.set(namespace, socket);
