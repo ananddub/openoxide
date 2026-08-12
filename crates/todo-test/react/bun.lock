@@ -5,6 +5,7 @@
     "": {
       "name": "rustploy-todo-react-test",
       "dependencies": {
+        "@rustploy/vite": "file:../../auto/vite",
         "@vitejs/plugin-react": "latest",
         "react": "latest",
         "react-dom": "latest",
@@ -50,6 +51,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.3", "", { "os": "win32", "cpu": "x64" }, "sha512-ekcqMMkI2PlhYnfzQnB/cEdYUVVJViWvoUyLrbzgDoi3Snfc1mVBwdnc306ufA5ejy8JSPjT2RlW1nQSjW7efg=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@rustploy/vite": ["@rustploy/vite@file:../../auto/vite", { "peerDependencies": { "react": ">=18", "socket.io-client": ">=4", "vite": ">=5" } }],
 
     "@socket.io/component-emitter": ["@socket.io/component-emitter@3.1.2", "", {}, "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="],
 
