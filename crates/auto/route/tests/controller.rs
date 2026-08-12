@@ -40,10 +40,29 @@ impl ServerController {
     }
 }
 
+struct DefaultLiveController;
+
+#[controller("/default-live")]
+impl DefaultLiveController {
+    fn new() -> Self {
+        Self
+    }
+
+    #[get("")]
+    #[live]
+    async fn status(&self) -> Json<Metrics> {
+        Json(Metrics { cpu: 1 })
+    }
+}
+
 #[test]
 fn generates_typed_live_publish_handle() {
     let publisher = server_live::metrics(7).expect("live publisher");
     assert_eq!(publisher.endpoint(), "ServerController::metrics");
+    assert_eq!(
+        defaultlive_live::status().unwrap().endpoint(),
+        "DefaultLiveController::status"
+    );
 }
 
 struct UserController {

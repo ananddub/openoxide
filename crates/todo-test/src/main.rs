@@ -1,12 +1,4 @@
-mod controller;
-mod db;
-mod models;
-mod socket;
-
-use sqlx::SqlitePool;
-use std::sync::OnceLock;
-
-pub static POOL: OnceLock<SqlitePool> = OnceLock::new();
+use rustploy_todo_test::{POOL, db};
 
 #[tokio::main]
 async fn main() {
@@ -21,9 +13,7 @@ async fn main() {
         .expect("failed to register sockets");
     let app = app.layer(socket_layer);
     let address = std::env::var("TODO_ADDRESS").unwrap_or_else(|_| "127.0.0.1:3100".into());
-    let listener = tokio::net::TcpListener::bind(&address)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(&address).await.unwrap();
     println!("Todo API: http://{address}/api/todos");
     println!("React app: cd crates/todo-test/react && bun run dev");
     axum::serve(listener, app).await.unwrap();

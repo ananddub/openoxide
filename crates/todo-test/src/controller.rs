@@ -1,7 +1,4 @@
-use crate::{
-    models::{NewTodo, Todo},
-    socket::publish_todos,
-};
+use crate::models::{NewTodo, Todo};
 use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 use sqlx::SqlitePool;
@@ -19,6 +16,7 @@ impl TodoController {
     }
 
     #[get("")]
+    #[live]
     async fn list(&self) -> Json<Vec<Todo>> {
         Json(load_todos(&self.pool).await)
     }
@@ -37,7 +35,7 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        publish_todos(&self.pool).await;
+        self.publish_todos().await;
         StatusCode::CREATED
     }
 
@@ -51,7 +49,7 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        publish_todos(&self.pool).await;
+        self.publish_todos().await;
         StatusCode::NO_CONTENT
     }
 
@@ -65,8 +63,15 @@ impl TodoController {
         {
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
-        publish_todos(&self.pool).await;
+        self.publish_todos().await;
         StatusCode::NO_CONTENT
+    }
+
+    async fn publish_todos(&self) {
+        let todos = load_todos(&self.pool).await;
+        if let Ok(publisher) = todo_live::list() {
+            let _ = publisher.publish(todos).await;
+        }
     }
 }
 

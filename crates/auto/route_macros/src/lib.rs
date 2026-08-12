@@ -576,12 +576,6 @@ fn expand_controller(
             continue;
         };
 
-        if is_live && live_event.is_none() {
-            return Err(syn::Error::new_spanned(
-                &function.sig,
-                "#[live] routes require an explicit #[on(\"event:name\")]",
-            ));
-        }
         if !is_live && live_event.is_some() {
             return Err(syn::Error::new_spanned(
                 &function.sig,
@@ -618,6 +612,12 @@ fn expand_controller(
             }
             _ => None,
         };
+        if is_live && live_event.is_none() {
+            live_event = Some(LitStr::new(
+                &function.sig.ident.to_string(),
+                function.sig.ident.span(),
+            ));
+        }
         let route_options = marker_options(&attribute)?;
         let route_path = route_options.path.value();
         let full_path = join_paths(&controller_options.path.value(), &route_path);
@@ -794,6 +794,27 @@ fn expand_controller(
             #item_impl
         }
     };
+    let live_socket_registration = if routes.iter().any(|route| route.live_event.is_some()) {
+        let live_factory = format_ident!("__auto_route_live_factory_{}", type_ident);
+        quote! {
+            #[doc(hidden)]
+            #[allow(non_snake_case)]
+            fn #live_factory<'a>(
+                _container: &'a ::auto_route::__private::auto_di::Container,
+            ) -> ::auto_route::__private::auto_di::BoxFuture<'a, ::std::result::Result<::auto_route::__private::auto_socket::SocketRegistrar, ::auto_route::__private::auto_di::DiError>> {
+                ::std::boxed::Box::pin(async move {
+                    let registrar: ::auto_route::__private::auto_socket::SocketRegistrar =
+                        ::std::sync::Arc::new(|_socket| {});
+                    Ok(registrar)
+                })
+            }
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::SocketDescriptor::new("/_rustploy/live", #live_factory)
+            }
+        }
+    } else {
+        quote! {}
+    };
 
     Ok(quote! {
         #managed_impl
@@ -802,6 +823,8 @@ fn expand_controller(
             use super::*;
             #(#live_handles)*
         }
+
+        #live_socket_registration
 
         // ── PATH constants for html! on:click={Self::method} ──────────────────
         #[allow(non_upper_case_globals)]

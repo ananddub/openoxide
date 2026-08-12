@@ -1,5 +1,5 @@
 import {FormEvent, useEffect, useState} from 'react';
-import {type Todo, useTodos} from './live';
+import {type Todo, useTodos} from './generated/todo-live';
 
 async function mutate(path: string, method = 'POST', body?: unknown) {
   const response = await fetch(path, {method, headers: body ? {'content-type': 'application/json'} : undefined, body: body ? JSON.stringify(body) : undefined});
@@ -16,7 +16,9 @@ export function App() {
 }
 
 function TodoApp({initial, title, setTitle}: {initial: Todo[]; title: string; setTitle: (value: string) => void}) {
-  const {todos, connected} = useTodos(initial);
+  const live = useTodos();
+  const todos = live.data ?? initial;
+  const connected = live.connected;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!title.trim()) return;
