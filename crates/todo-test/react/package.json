@@ -1,0 +1,8 @@
+{
+  "name": "rustploy-todo-react-test",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "vite --host 127.0.0.1 --port 3101", "build": "tsc && vite build"},
+  "dependencies": {"@vitejs/plugin-react": "latest", "vite": "latest", "typescript": "latest", "react": "latest", "react-dom": "latest", "socket.io-client": "^4.8.3"},
+  "devDependencies": {"@types/react": "latest", "@types/react-dom": "latest"}
+}

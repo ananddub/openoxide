@@ -16,3 +16,8 @@ errors3.txt
 *.db-shm
 *.db-wal
 *.sqlite3
+
+# Standalone Todo React test runtime artifacts
+/crates/todo-test/react/node_modules/
+/crates/todo-test/react/dist/
+/crates/todo-test/react/.vite/

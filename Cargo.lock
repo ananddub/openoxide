@@ -3866,6 +3866,7 @@ version = "0.1.0"
 dependencies = [
  "auto-di",
  "auto_route",
+ "auto_socket",
  "axum 0.8.9",
  "futures",
  "html-macro",
@@ -3873,6 +3874,7 @@ dependencies = [
  "poem-openapi",
  "serde",
  "serde_json",
+ "socketioxide",
  "sqlx",
  "tokio",
 ]

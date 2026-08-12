@@ -1,7 +1,7 @@
 mod controller;
 mod db;
 mod models;
-mod sse;
+mod socket;
 
 use sqlx::SqlitePool;
 use std::sync::OnceLock;
@@ -15,9 +15,16 @@ async fn main() {
     let app = auto_route::routes()
         .await
         .expect("failed to build auto routes");
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3100")
+    let (socket_layer, io) = socketioxide::SocketIo::new_layer();
+    auto_socket::register_global(&io)
+        .await
+        .expect("failed to register sockets");
+    let app = app.layer(socket_layer);
+    let address = std::env::var("TODO_ADDRESS").unwrap_or_else(|_| "127.0.0.1:3100".into());
+    let listener = tokio::net::TcpListener::bind(&address)
         .await
         .unwrap();
-    println!("Todo test app: http://127.0.0.1:3100/todo");
+    println!("Todo API: http://{address}/api/todos");
+    println!("React app: cd crates/todo-test/react && bun run dev");
     axum::serve(listener, app).await.unwrap();
 }

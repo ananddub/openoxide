@@ -126,6 +126,9 @@ run:
 todo-dev:
     cargo run -p rustploy-todo-test
 
+todo-react:
+    cd crates/todo-test/react && bun run dev
+
 # Run the React frontend dev server
 web:
     cd web/rustploy_react && bun run dev

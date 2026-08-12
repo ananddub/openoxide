@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 axum = "0.8.9"
 auto-di = "0.6.0"
+auto_socket = { path = "../auto/socket" }
 auto_route = { path = "../auto/route" }
 futures = "0.3.32"
 html-macro = { path = "../html/macro" }
@@ -15,3 +16,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "sqlite-preupdate-hook", "macros"] }
 tokio = { version = "1", features = ["full"] }
+socketioxide = "0.18.4"

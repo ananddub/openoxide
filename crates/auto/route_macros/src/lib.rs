@@ -676,7 +676,7 @@ fn expand_controller(
             .collect::<Vec<_>>();
         let names = (0..route.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
         let args = match names.len() {
-            0 => quote!(()),
+            0 => quote!(::std::vec::Vec::<()>::new()),
             1 => { let n = &names[0]; quote!((#n,)) },
             _ => quote!((#(#names),*)),
         };
