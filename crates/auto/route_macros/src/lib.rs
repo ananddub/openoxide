@@ -747,6 +747,12 @@ fn expand_controller(
                 "strategy = sqlite requires table or tables",
             ));
         }
+        if live_strategy == LiveStrategy::Sqlite && argument_types.iter().any(is_live_auth_type) {
+            return Err(syn::Error::new_spanned(
+                &function.sig,
+                "authenticated sqlite live endpoints require per-user refresh support; use strategy = publish for now",
+            ));
+        }
         if live_strategy != LiveStrategy::Sqlite && has_live_tables {
             return Err(syn::Error::new_spanned(
                 &function.sig,
@@ -851,20 +857,22 @@ fn expand_controller(
         let endpoint = format!("{type_ident}::{handler}");
         let arguments = route.argument_types.iter().enumerate().map(|(index, ty)| {
             let name = format_ident!("arg_{index}");
-            let public_ty = live_argument_type(ty);
-            quote!(#name: #public_ty)
+            if is_live_auth_type(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
         }).collect::<Vec<_>>();
-        let names = (0..route.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let claims = route.argument_types.iter().enumerate().find(|(_, ty)| is_live_auth_type(ty)).map(|(index, ty)| (format_ident!("arg_{index}"), ty));
         let args = match names.len() { 0 => quote!(::std::vec::Vec::<()>::new()), 1 => { let n = &names[0]; quote!((#n,)) }, _ => quote!((#(#names),*)) };
+        let scope = claims.map(|(claims, ty)| { let user_id = live_auth_user_id(&claims, ty); quote!(.user(#user_id)) }).unwrap_or_default();
+        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
         let publisher = format_ident!("{}", client_name.value());
         let subscription = format_ident!("{}_subscription", client_name.value());
         let strategy = strategy_tokens(route);
         Some(quote! {
             pub fn #publisher(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LivePublisher<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
-                ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy).room(#args)
+                ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy)#scope.room(#args)
             }
 
-            pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
+            pub fn #subscription(#(#client_arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
                 ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #client_name, #args)
             }
         })
@@ -881,11 +889,13 @@ fn expand_controller(
             .enumerate()
             .map(|(index, ty)| {
                 let name = format_ident!("arg_{index}");
-                let public_ty = live_argument_type(ty);
-                quote!(#name: #public_ty)
+                if is_live_auth_type(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
             })
             .collect::<Vec<_>>();
-        let names = (0..route.argument_types.len()).map(|index| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let claims = route.argument_types.iter().enumerate().find(|(_, ty)| is_live_auth_type(ty)).map(|(index, ty)| (format_ident!("arg_{index}"), ty));
+        let scope = claims.map(|(claims, ty)| { let user_id = live_auth_user_id(&claims, ty); quote!(.user(#user_id)) }).unwrap_or_default();
+        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
         let args = match names.len() {
             0 => quote!(::std::vec::Vec::<()>::new()),
             1 => { let n = &names[0]; quote!((#n,)) },
@@ -905,14 +915,14 @@ fn expand_controller(
                     "/_openoxide/live",
                     #endpoint,
                     #event,
-                ).strategy(#strategy).room(#args)
+                ).strategy(#strategy)#scope.room(#args)
             }
             pub fn #event_handler() -> ::auto_route::__private::auto_socket::LivePublisher<#return_type> {
                 ::auto_route::__private::auto_socket::LivePublisher::new(
                     "/_openoxide/live", #endpoint, #event,
                 ).strategy(#strategy)
             }
-            pub fn #subscription(#(#arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
+            pub fn #subscription(#(#client_arguments),*) -> ::std::result::Result<::auto_route::__private::auto_socket::LiveSubscription<#return_type>, ::auto_route::__private::auto_socket::PublishError> {
                 ::auto_route::__private::auto_socket::LiveSubscription::new("/_openoxide/live", #endpoint, #event, #client_name, #args)
             }
         })
@@ -1077,6 +1087,32 @@ fn expand_controller(
             }
         }]
     }).collect::<Vec<_>>().into_iter().flatten().collect::<Vec<_>>();
+    let live_access_registrations = routes.iter().filter_map(|route| {
+        let handler = &route.handler;
+        let endpoint = format!("{type_ident}::{handler}");
+        if let Some((resource, operation)) = route.argument_types.iter().find_map(permission_types)
+        {
+            let resource = quote!(stringify!(#resource));
+            let operation = quote!(stringify!(#operation));
+            return Some(quote! {
+                ::auto_route::__private::inventory::submit! {
+                    ::auto_route::__private::auto_socket::LiveAccessDescriptor::permission(
+                        #endpoint,
+                        #resource,
+                        #operation,
+                    )
+                }
+            });
+        }
+        if !route.argument_types.iter().any(is_claims_type) {
+            return None;
+        }
+        Some(quote! {
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::LiveAccessDescriptor::authenticated(#endpoint)
+            }
+        })
+    });
 
     Ok(quote! {
         #managed_impl
@@ -1092,6 +1128,7 @@ fn expand_controller(
 
         #live_socket_registration
         #(#live_refresh_registrations)*
+        #(#live_access_registrations)*
 
         // ── PATH constants for html! on:click={Self::method} ──────────────────
         #[allow(non_upper_case_globals)]
@@ -1301,6 +1338,42 @@ fn wrapper_inner_type(ty: &Type, wrappers: &[&str]) -> Option<Type> {
 
 fn live_argument_type(ty: &Type) -> Type {
     wrapper_inner_type(ty, &["Path", "Query", "Json", "Form"]).unwrap_or_else(|| ty.clone())
+}
+
+fn is_claims_type(ty: &Type) -> bool {
+    matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "Claims"))
+}
+
+fn is_permission_type(ty: &Type) -> bool {
+    matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "RequirePermission"))
+}
+
+fn permission_types(ty: &Type) -> Option<(&Type, &Type)> {
+    let Type::Path(path) = ty else { return None };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "RequirePermission" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let mut types = arguments.args.iter().filter_map(|argument| match argument {
+        GenericArgument::Type(ty) => Some(ty),
+        _ => None,
+    });
+    Some((types.next()?, types.next()?))
+}
+
+fn is_live_auth_type(ty: &Type) -> bool {
+    is_claims_type(ty) || is_permission_type(ty)
+}
+
+fn live_auth_user_id(name: &Ident, ty: &Type) -> proc_macro2::TokenStream {
+    if is_permission_type(ty) {
+        quote!(#name.0.user.user_id)
+    } else {
+        quote!(#name.user.user_id)
+    }
 }
 
 fn string_type() -> Type {

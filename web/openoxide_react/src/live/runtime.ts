@@ -22,6 +22,14 @@ type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
 const sockets = new Map<string, Socket>();
 const entries = new Map<string, Entry>();
 
+function accessToken() {
+	try {
+		return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token as string | undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
 	return `${endpoint.namespace}:${endpoint.endpoint}:${JSON.stringify(endpoint.args)}`;
 }
@@ -30,7 +38,11 @@ function socketFor(namespace: string) {
 	let socket = sockets.get(namespace);
 	if (socket) return socket;
 
-	socket = io(namespace, {path: '/socket.io', transports: ['websocket', 'polling']});
+	socket = io(namespace, {
+		path: '/socket.io',
+		transports: ['websocket', 'polling'],
+		auth: callback => callback({token: accessToken()}),
+	});
 	socket.on('connect', () => {
 		for (const entry of entries.values()) {
 			if (entry.endpoint.namespace === namespace) socket.emit('live:subscribe', subscribeMessage(entry.endpoint));

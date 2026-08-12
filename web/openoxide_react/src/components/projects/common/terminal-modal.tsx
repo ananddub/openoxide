@@ -190,7 +190,15 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			const targetPort = window.location.port && window.location.port !== '4000' ? '4000' : window.location.port;
 			const socketUrl = `${window.location.protocol}//${window.location.hostname}${targetPort ? `:${targetPort}` : ''}`;
 
-			const socket = io(`${socketUrl}/terminal`, {path: '/socket.io', transports: ['websocket', 'polling']});
+			let token: string | undefined;
+			try {
+				token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
+			} catch {}
+			const socket = io(`${socketUrl}/terminal`, {
+				path: '/socket.io',
+				transports: ['websocket', 'polling'],
+				auth: {token},
+			});
 			socketRef.current = socket;
 
 			socket.on('connect', () => {

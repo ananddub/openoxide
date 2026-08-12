@@ -309,3 +309,36 @@ let app = app.layer(socket_layer);
 ```
 
 The application SQLite pool installs `crate::db::reactive::install_hooks` in `after_connect`, ensuring every pooled connection participates in committed-change detection.
+
+## Authentication and parameter-driven scope
+
+The main OpenOxide backend configures an `AuthService` adapter for Socket.IO. The generated React runtime reads `openoxide-auth-session`, sends its access token in the Socket.IO handshake, and reconnects with the current token.
+
+Controller parameters determine whether a live endpoint is private:
+
+```rust
+#[live("notifications", strategy = latest)]
+async fn notifications(&self, claims: Claims) -> Json<Vec<Notification>> {
+    Json(self.repository.for_user(claims.user.user_id).await)
+}
+```
+
+`Claims` is injected by the server and is not part of the React hook arguments:
+
+```tsx
+const notifications = useNotifications();
+```
+
+Server publishing requires the verified claims value and targets only that user's room:
+
+```rust
+NotificationController::notifications(&claims)?
+    .publish(notifications)
+    .await?;
+```
+
+`RequirePermission<Resource, Operation>` is also treated as a server-only parameter. Before joining the room, the live runtime resolves the user's organization and calls the existing `PermissionService`. A denied or failed check does not join the room and receives no latest/replay payload.
+
+Public endpoints without `Claims` or `RequirePermission` retain an unscoped room. Authenticated rooms use an internal `user:<id>:<endpoint>:<args>` key, so equal client arguments from different users cannot collide.
+
+Authenticated `strategy = sqlite` endpoints are currently rejected at compile time because correct refresh requires executing the query once per subscribed user identity. Use an explicit authenticated `publish`/`latest`/`stream` endpoint until the per-user SQLite resolver registry is added.

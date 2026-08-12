@@ -13,7 +13,7 @@ use auto_di::{BoxFuture, Container, DiError};
 use serde::{Deserialize, Serialize};
 use socketioxide::{
     SocketIo,
-    extract::{Data, SocketRef},
+    extract::{Data, SocketRef, TryData},
 };
 
 pub use auto_socket_macros::{auto_socket, on};
@@ -27,6 +27,54 @@ static STREAM_CHANNELS: OnceLock<
     std::sync::Mutex<HashMap<String, tokio::sync::mpsc::Sender<serde_json::Value>>>,
 > = OnceLock::new();
 static STREAM_HISTORY: OnceLock<std::sync::Mutex<HashMap<String, StreamHistory>>> = OnceLock::new();
+static AUTHENTICATOR: OnceLock<LiveAuthenticator> = OnceLock::new();
+static AUTHORIZER: OnceLock<LiveAuthorizer> = OnceLock::new();
+static ACCESS_ENDPOINTS: OnceLock<HashMap<&'static str, Option<(&'static str, &'static str)>>> =
+    OnceLock::new();
+
+type LiveAuthenticator =
+    Arc<dyn Fn(String) -> BoxFuture<'static, Result<LiveIdentity, String>> + Send + Sync>;
+type LiveAuthorizer = Arc<
+    dyn Fn(LiveIdentity, &'static str, &'static str) -> BoxFuture<'static, Result<bool, String>>
+        + Send
+        + Sync,
+>;
+
+#[derive(Clone, Debug)]
+pub struct LiveIdentity {
+    pub user_id: i64,
+    pub organization_id: Option<i64>,
+}
+
+pub fn set_authorizer<F, Fut>(authorize: F) -> Result<(), &'static str>
+where
+    F: Fn(LiveIdentity, &'static str, &'static str) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = Result<bool, String>> + Send + 'static,
+{
+    AUTHORIZER
+        .set(Arc::new(move |identity, resource, operation| {
+            Box::pin(authorize(identity, resource, operation))
+        }))
+        .map_err(|_| "live authorizer already configured")
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct LiveConnectAuth {
+    token: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+struct SocketIdentity(LiveIdentity);
+
+pub fn set_authenticator<F, Fut>(authenticate: F) -> Result<(), &'static str>
+where
+    F: Fn(String) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = Result<LiveIdentity, String>> + Send + 'static,
+{
+    AUTHENTICATOR
+        .set(Arc::new(move |token| Box::pin(authenticate(token))))
+        .map_err(|_| "live authenticator already configured")
+}
 
 struct StreamHistory {
     limit: usize,
@@ -56,6 +104,17 @@ struct LiveSubscriptionRequest {
     args: serde_json::Value,
 }
 
+fn scoped_room(
+    identity: Option<&LiveIdentity>,
+    endpoint: &str,
+    args: &serde_json::Value,
+) -> String {
+    match identity {
+        Some(identity) => format!("user:{}:{endpoint}:{args}", identity.user_id),
+        None => format!("{endpoint}:{args}"),
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum PublishError {
     #[error("auto_socket has not been registered")]
@@ -75,6 +134,7 @@ pub struct LivePublisher<T> {
     event: &'static str,
     room_args: Option<serde_json::Value>,
     strategy: LiveStrategy,
+    identity: Option<LiveIdentity>,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -152,6 +212,7 @@ where
             event,
             room_args: None,
             strategy: LiveStrategy::Publish,
+            identity: None,
             marker: PhantomData,
         }
     }
@@ -166,16 +227,25 @@ where
         self
     }
 
+    pub fn user(mut self, user_id: i64) -> Self {
+        self.identity = Some(LiveIdentity {
+            user_id,
+            organization_id: None,
+        });
+        self
+    }
+
     pub async fn publish(self, data: T) -> Result<(), PublishError> {
         let args = self.room_args.ok_or(PublishError::MissingRoomArguments)?;
         let message = serde_json::json!({"endpoint": self.endpoint, "args": args, "data": data});
+        let room = scoped_room(self.identity.as_ref(), self.endpoint, &message["args"]);
         match self.strategy {
             LiveStrategy::Publish | LiveStrategy::Sqlite => {
-                emit_room(self.namespace, self.endpoint, message).await
+                emit_room(self.namespace, room, message).await
             }
-            LiveStrategy::Latest => publish_latest(self.namespace, self.endpoint, message),
+            LiveStrategy::Latest => publish_latest(self.namespace, room, message),
             LiveStrategy::Stream { capacity, replay } => {
-                publish_stream(self.namespace, self.endpoint, message, capacity, replay).await
+                publish_stream(self.namespace, room, message, capacity, replay).await
             }
         }
     }
@@ -209,11 +279,10 @@ where
 
 async fn emit_room(
     namespace: &'static str,
-    endpoint: &'static str,
+    room: String,
     message: serde_json::Value,
 ) -> Result<(), PublishError> {
     let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-    let room = format!("{}:{}", endpoint, message["args"]);
     if let Some(socket_namespace) = io.of(namespace) {
         socket_namespace
             .to(room)
@@ -225,11 +294,11 @@ async fn emit_room(
 
 fn publish_latest(
     namespace: &'static str,
-    endpoint: &'static str,
+    room: String,
     message: serde_json::Value,
 ) -> Result<(), PublishError> {
     SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-    let key = format!("{namespace}:{endpoint}:{}", message["args"]);
+    let key = format!("{namespace}:{room}");
     let channels = LATEST_CHANNELS.get_or_init(Default::default);
     let mut channels = channels
         .lock()
@@ -243,7 +312,7 @@ fn publish_latest(
     tokio::spawn(async move {
         loop {
             let value = receiver.borrow_and_update().clone();
-            let _ = emit_room(namespace, endpoint, value).await;
+            let _ = emit_room(namespace, room.clone(), value).await;
             if receiver.changed().await.is_err() {
                 break;
             }
@@ -254,13 +323,13 @@ fn publish_latest(
 
 async fn publish_stream(
     namespace: &'static str,
-    endpoint: &'static str,
+    room: String,
     message: serde_json::Value,
     capacity: usize,
     replay: usize,
 ) -> Result<(), PublishError> {
     SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
-    let key = format!("{namespace}:{endpoint}:{}", message["args"]);
+    let key = format!("{namespace}:{room}");
     if replay > 0 {
         let histories = STREAM_HISTORY.get_or_init(Default::default);
         let mut histories = histories.lock().expect("stream history registry poisoned");
@@ -288,7 +357,7 @@ async fn publish_stream(
             channels.insert(key, sender.clone());
             tokio::spawn(async move {
                 while let Some(value) = receiver.recv().await {
-                    let _ = emit_room(namespace, endpoint, value).await;
+                    let _ = emit_room(namespace, room.clone(), value).await;
                 }
             });
             sender
@@ -340,6 +409,31 @@ impl LiveRefreshDescriptor {
 
 inventory::collect!(LiveRefreshDescriptor);
 
+#[doc(hidden)]
+pub struct LiveAccessDescriptor {
+    endpoint: &'static str,
+    permission: Option<(&'static str, &'static str)>,
+}
+impl LiveAccessDescriptor {
+    pub const fn authenticated(endpoint: &'static str) -> Self {
+        Self {
+            endpoint,
+            permission: None,
+        }
+    }
+    pub const fn permission(
+        endpoint: &'static str,
+        resource: &'static str,
+        operation: &'static str,
+    ) -> Self {
+        Self {
+            endpoint,
+            permission: Some((resource, operation)),
+        }
+    }
+}
+inventory::collect!(LiveAccessDescriptor);
+
 /// Refreshes every live endpoint affected by committed table changes.
 /// Each registered endpoint resolver runs once, independent of subscriber count.
 pub fn notify_table_changes<'a>(tables: impl IntoIterator<Item = &'a str>) {
@@ -383,6 +477,12 @@ pub fn notify_table_changes<'a>(tables: impl IntoIterator<Item = &'a str>) {
 /// Resolves socket handler objects and registers each namespace exactly once.
 pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiError> {
     let _ = SOCKET_IO.set(io.clone());
+    let _ = ACCESS_ENDPOINTS.set(
+        inventory::iter::<LiveAccessDescriptor>
+            .into_iter()
+            .map(|item| (item.endpoint, item.permission))
+            .collect(),
+    );
     let mut namespaces: HashMap<&'static str, Vec<SocketRegistrar>> = HashMap::new();
     let mut refreshers = Vec::new();
 
@@ -404,14 +504,35 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
     }
 
     for (namespace, registrars) in namespaces {
-        io.ns(namespace, move |socket: SocketRef| {
+        io.ns(namespace, move |socket: SocketRef, TryData(auth): TryData<LiveConnectAuth>| {
             let registrars = registrars.clone();
             async move {
+                if let Some(authenticator) = AUTHENTICATOR.get() {
+                    let Some(token) = auth.ok().and_then(|auth| auth.token) else {
+                        let _ = socket.clone().disconnect();
+                        return;
+                    };
+                    match authenticator(token).await {
+                        Ok(identity) => { socket.extensions.insert(SocketIdentity(identity)); }
+                        Err(_) => { let _ = socket.clone().disconnect(); return; }
+                    }
+                }
                 socket.on(
                     "live:subscribe",
                     move |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
-                        let room = format!("{}:{}", subscription.endpoint, subscription.args);
-                        let history_key = format!("{namespace}:{}:{}", subscription.endpoint, subscription.args);
+                        let access = ACCESS_ENDPOINTS.get().and_then(|endpoints| endpoints.get(subscription.endpoint.as_str())).copied();
+                        let identity = access.is_some().then(|| socket.extensions.get::<SocketIdentity>().map(|value| value.0)).flatten();
+                        let Some(identity) = identity.or_else(|| access.is_none().then(|| LiveIdentity { user_id: 0, organization_id: None })) else { return };
+                        if let Some(Some((resource, operation))) = access {
+                            let Some(authorizer) = AUTHORIZER.get() else { return };
+                            match authorizer(identity.clone(), resource, operation).await {
+                                Ok(true) => {}
+                                _ => return,
+                            }
+                        }
+                        let scoped_identity = access.is_some().then_some(&identity);
+                        let room = scoped_room(scoped_identity, &subscription.endpoint, &subscription.args);
+                        let history_key = format!("{namespace}:{room}");
                         let latest = LATEST_CHANNELS
                             .get_or_init(Default::default)
                             .lock()
@@ -442,7 +563,9 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                 socket.on(
                     "live:unsubscribe",
                     |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
-                        socket.leave(format!("{}:{}", subscription.endpoint, subscription.args));
+                        let requires_auth = ACCESS_ENDPOINTS.get().is_some_and(|endpoints| endpoints.contains_key(subscription.endpoint.as_str()));
+                        let identity = requires_auth.then(|| socket.extensions.get::<SocketIdentity>().map(|value| value.0)).flatten();
+                        socket.leave(scoped_room(identity.as_ref(), &subscription.endpoint, &subscription.args));
                     },
                 );
                 for registrar in registrars {

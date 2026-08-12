@@ -30,6 +30,10 @@ export const ${endpoint.hook} = createLiveHook(${JSON.stringify(endpoint)});`).j
 import {useEffect, useMemo, useState} from 'react';
 import {io} from 'socket.io-client';
 const sockets = new Map();
+function accessToken() {
+  try { return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; }
+  catch { return undefined; }
+}
 function createLiveHook(metadata) {
   return (...args) => {
     const key = JSON.stringify(args);
@@ -38,7 +42,7 @@ function createLiveHook(metadata) {
     const [connected, setConnected] = useState(false);
     useEffect(() => {
       let socket = sockets.get(endpoint.namespace);
-      if (!socket) { socket = io(endpoint.namespace, {path: '/socket.io'}); sockets.set(endpoint.namespace, socket); }
+      if (!socket) { socket = io(endpoint.namespace, {path: '/socket.io', auth: cb => cb({token: accessToken()})}); sockets.set(endpoint.namespace, socket); }
       const subscription = {endpoint: endpoint.endpoint, args};
       const subscribe = () => { setConnected(true); socket.emit('live:subscribe', subscription); };
       const disconnect = () => setConnected(false);

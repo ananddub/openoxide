@@ -42,6 +42,29 @@ impl ServerController {
 
 struct DefaultLiveController;
 
+#[derive(Clone)]
+struct TestUser {
+    user_id: i64,
+}
+
+#[derive(Clone)]
+struct Claims {
+    user: TestUser,
+}
+
+impl<S: Send + Sync> axum::extract::FromRequestParts<S> for Claims {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(
+        _parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        Ok(Self {
+            user: TestUser { user_id: 42 },
+        })
+    }
+}
+
 #[controller("/default-live")]
 impl DefaultLiveController {
     fn new() -> Self {
@@ -64,6 +87,12 @@ impl DefaultLiveController {
     #[live("status_stream", strategy = stream, capacity = 64, replay = 10)]
     async fn stream(&self) -> Json<Metrics> {
         Json(Metrics { cpu: 3 })
+    }
+
+    #[get("/private")]
+    #[live("private_status", strategy = latest)]
+    async fn private(&self, _claims: Claims) -> Json<Metrics> {
+        Json(Metrics { cpu: 4 })
     }
 }
 
@@ -102,6 +131,21 @@ fn generates_typed_live_publish_handle() {
     assert_eq!(
         DefaultLiveController::status_stream().unwrap().endpoint(),
         "DefaultLiveController::stream"
+    );
+    let claims = Claims {
+        user: TestUser { user_id: 42 },
+    };
+    assert_eq!(
+        DefaultLiveController::private_status(&claims)
+            .unwrap()
+            .endpoint(),
+        "DefaultLiveController::private"
+    );
+    assert_eq!(
+        DefaultLiveController::private_status_subscription()
+            .unwrap()
+            .args(),
+        &serde_json::json!([])
     );
 }
 
