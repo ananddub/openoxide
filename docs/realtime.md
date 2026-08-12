@@ -123,6 +123,89 @@ Rapid commits are guarded per endpoint. If a resolver is already running, anothe
 
 ## React usage
 
+### Vite generation setup
+
+Install and configure the plugin:
+
+```ts
+// vite.config.ts
+import react from '@vitejs/plugin-react';
+import {defineConfig} from 'vite';
+import {openoxide} from '@openoxide/vite';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    openoxide({
+      manifestPath: '../Cargo.toml',
+      manifestBin: 'openoxide-live-manifest',
+      declarations: 'src/openoxide-live.generated.d.ts',
+    }),
+  ],
+});
+```
+
+All options are optional. Without `manifestPath`, the plugin walks upward from the Vite root and uses the nearest `Cargo.toml`.
+
+The paths mean:
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `manifestPath` | Cargo manifest containing the generator binary; relative to the Vite root | nearest parent `Cargo.toml` |
+| `manifestBin` | Rust binary that prints the live JSON manifest to stdout | `openoxide-live-manifest` |
+| `declarations` | Generated TypeScript declaration path, relative to the Vite root | `src/openoxide-live.generated.d.ts` |
+
+At Vite startup the plugin executes:
+
+```text
+cargo run --quiet --manifest-path <manifestPath> --bin <manifestBin>
+```
+
+The binary must print a JSON manifest. The plugin then creates two client outputs:
+
+```text
+virtual:openoxide-live
+    generated runtime module held in Vite memory
+
+src/openoxide-live.generated.d.ts
+    generated TypeScript types written to disk
+```
+
+There is intentionally no generated `live.ts` runtime file. Application code imports the virtual module:
+
+```tsx
+import {type Todo, useTodos} from 'virtual:openoxide-live';
+```
+
+The declaration file should be included by the application's `tsconfig.json` through its normal `src` include. Do not edit it manually.
+
+Example generator binary:
+
+```rust
+// src/bin/openoxide-live-manifest.rs
+use crate::{controller::TodoController, models::Todo};
+
+fn main() {
+    let subscription = TodoController::todos_subscription()
+        .expect("generate todos subscription");
+
+    println!("{}", serde_json::json!({
+        "types": [{
+            "name": "Todo",
+            "definition": Todo::TYPESCRIPT
+        }],
+        "endpoints": [{
+            "hook": "useTodos",
+            "namespace": subscription.namespace(),
+            "endpoint": subscription.endpoint(),
+            "event": subscription.event(),
+            "parameters": "",
+            "result": "Todo[]"
+        }]
+    }));
+}
+```
+
 The Vite plugin reads the generated live manifest and creates a typed hook:
 
 ```tsx

@@ -34,6 +34,17 @@ bun install
 bun run dev
 ```
 
+The React Vite config points generation at the Todo Rust crate:
+
+```ts
+openoxide({
+  manifestPath: '../Cargo.toml',
+  declarations: 'src/openoxide-live.generated.d.ts',
+})
+```
+
+The runtime hooks are imported from `virtual:openoxide-live`; only their TypeScript declarations are written to disk.
+
 Open `http://127.0.0.1:3101` in two tabs. Creating, toggling, or deleting in one tab publishes the updated typed todo list to both tabs without refetching.
 
 Expected server behavior for two or more tabs:

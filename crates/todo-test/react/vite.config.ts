@@ -3,7 +3,13 @@ import {defineConfig} from 'vite';
 import {openoxide} from '@openoxide/vite';
 
 export default defineConfig({
-  plugins: [react(), openoxide()],
+  plugins: [
+    react(),
+    openoxide({
+      manifestPath: '../Cargo.toml',
+      declarations: 'src/openoxide-live.generated.d.ts',
+    }),
+  ],
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:3100',
