@@ -31,6 +31,9 @@ static AUTHENTICATOR: OnceLock<LiveAuthenticator> = OnceLock::new();
 static AUTHORIZER: OnceLock<LiveAuthorizer> = OnceLock::new();
 static ACCESS_ENDPOINTS: OnceLock<HashMap<&'static str, Option<(&'static str, &'static str)>>> =
     OnceLock::new();
+static SUBSCRIPTION_REFRESH_GATES: OnceLock<
+    std::sync::Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+> = OnceLock::new();
 
 type LiveAuthenticator =
     Arc<dyn Fn(String) -> BoxFuture<'static, Result<LiveIdentity, String>> + Send + Sync>;
@@ -486,6 +489,17 @@ async fn refresh_for_subscription(endpoint: &str) {
         return;
     };
     for entry in refreshers.iter().filter(|entry| entry.endpoint == endpoint) {
+        let gate = {
+            let gates = SUBSCRIPTION_REFRESH_GATES.get_or_init(Default::default);
+            let mut gates = gates
+                .lock()
+                .expect("subscription refresh registry poisoned");
+            gates
+                .entry(endpoint.to_owned())
+                .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+                .clone()
+        };
+        let _guard = gate.lock().await;
         (entry.refresh)().await;
     }
 }
@@ -549,6 +563,9 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                         }
                         let scoped_identity = access.is_some().then_some(&identity);
                         let room = scoped_room(scoped_identity, &subscription.endpoint, &subscription.args);
+                        // Join before refreshing so the initial snapshot cannot
+                        // race past a newly connected subscriber.
+                        socket.join(room.clone());
                         // Populate a fresh snapshot before joining.  For the
                         // fixed-room SQLite endpoints this invokes the same
                         // deduplicated refresher used by commit notifications.
@@ -564,7 +581,6 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                                     .map(|sender| sender.borrow().clone())
                             });
                         if let Ok(histories) = STREAM_HISTORY.get_or_init(Default::default).lock() {
-                            socket.join(room);
                             if let Some(latest) = latest {
                                 let _ = socket.emit("live:update", &latest);
                             }
@@ -574,7 +590,6 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                                 }
                             }
                         } else {
-                            socket.join(room);
                             if let Some(latest) = latest {
                                 let _ = socket.emit("live:update", &latest);
                             }
