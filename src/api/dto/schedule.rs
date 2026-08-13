@@ -6,7 +6,7 @@ use crate::services::schedule::types::{
 };
 use crate::{db::models::schedules::Schedule, services::schedule::ScheduleRunResult};
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ScheduleLogDto {
     pub content: String,
 }
@@ -64,7 +64,7 @@ pub struct PatchScheduleDto {
     pub organization_id: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ScheduleResponseDto {
     pub id: Option<i64>,
     pub name: String,
@@ -147,7 +147,7 @@ pub struct UpdateScheduleRuntimePolicyDto {
     pub notify_on_failure: bool,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ScheduleRuntimePolicyDto {
     pub schedule_id: i64,
     pub retry_count: i64,
@@ -161,7 +161,7 @@ pub struct ScheduleRuntimePolicyDto {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ScheduleExecutionDto {
     pub id: i64,
     pub schedule_id: i64,

@@ -11,6 +11,7 @@ import {
 } from '#/components/ui/dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {$api} from '#/api/query';
+import {useRemoteServerList} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
@@ -34,8 +35,8 @@ export function CreateComposeDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/compose');
-	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers') as any;
-	const serversList = Array.isArray(rawServers) ? rawServers : [];
+	const {data: rawServers} = useRemoteServerList();
+	const serversList = rawServers ?? [];
 
 	useEffect(() => {
 		if (isOpen) {

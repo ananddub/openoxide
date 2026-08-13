@@ -58,6 +58,10 @@ fn register_namespace(io: &SocketIo, namespace: &'static str, registrars: Vec<So
                 for registrar in registrars {
                     registrar(socket.clone());
                 }
+                // Namespace handlers are installed asynchronously after the
+                // Socket.IO `connect` packet.  Let clients safely wait until
+                // their events are bound instead of losing the first emit.
+                let _ = socket.emit("socket:ready", &serde_json::json!({"namespace": namespace}));
             }
         },
     );
@@ -122,6 +126,7 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
                 &request.endpoint,
                 &request.args,
             );
+            tracing::info!(endpoint = %request.endpoint, room = %room, "live subscription accepted");
             socket.join(room.clone());
             let mut subscriptions = socket
                 .extensions
@@ -131,9 +136,19 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
             let first = subscriptions.insert(room.clone());
             socket.extensions.insert(SocketSubscriptions(subscriptions));
             if first {
-                retain(namespace, &room, &request);
+                retain(
+                    namespace,
+                    &room,
+                    &request,
+                    access.is_some().then_some(identity.clone()),
+                );
             }
-            refresh_subscription(&request.endpoint).await;
+            refresh_subscription(
+                &request.endpoint,
+                request.args.clone(),
+                access.is_some().then_some(identity),
+            )
+            .await;
             replay(&socket, namespace, &room);
         },
     );

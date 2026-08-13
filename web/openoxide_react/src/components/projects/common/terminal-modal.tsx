@@ -110,6 +110,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		if (!open) return;
 		let term: Terminal | null = null;
 		let fitAddon: FitAddon | null = null;
+		let socket: Socket | null = null;
 
 		const timer = setTimeout(() => {
 			if (!termRef.current) return;
@@ -187,47 +188,70 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			setStatus('connecting');
 			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-			const targetPort = window.location.port && window.location.port !== '4000' ? '4000' : window.location.port;
-			const socketUrl = `${window.location.protocol}//${window.location.hostname}${targetPort ? `:${targetPort}` : ''}`;
-
 			let token: string | undefined;
 			try {
 				token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
 			} catch {}
-			const socket = io(`${socketUrl}/terminal`, {
+			const currentSocket = io('/terminal', {
 				path: '/socket.io',
 				transports: ['websocket', 'polling'],
-				auth: {token},
+				auth: callback => {
+					let currentToken = token;
+					try {
+						currentToken = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
+					} catch {}
+					callback({token: currentToken});
+				},
 			});
-			socketRef.current = socket;
+			socket = currentSocket;
+			socketRef.current = currentSocket;
 
-			socket.on('connect', () => {
+			const startTerminal = () => {
+				if ((currentSocket as any).data?.terminalStarted) return;
+				(currentSocket as any).data = (currentSocket as any).data || {};
+				(currentSocket as any).data.terminalStarted = true;
 				setStatus('connected');
-				term?.writeln(`\x1b[32mSocket connected to ${socketUrl}. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
+				term?.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
 				if (isRemoteServer && serverId) {
-					socket.emit('server:start', {server_id: serverId, command: shell});
+					currentSocket.emit('server:start', {server_id: serverId, command: shell});
 				} else {
-					socket.emit('docker:start', {container: targetContainer, shell});
+					currentSocket.emit('docker:start', {container: targetContainer, shell});
 				}
+			};
+			currentSocket.on('connect', () => {
+				// The backend installs namespace handlers asynchronously. If the
+				// ready event is unavailable (older backend), retain a short fallback.
+				setStatus('connected');
+				currentSocket.once('socket:ready', startTerminal);
+				window.setTimeout(() => {
+					if (socketRef.current === currentSocket) startTerminal();
+				}, 250);
 			});
-			socket.on('started', (data: any) => {
+			currentSocket.on('socket:ready', () => {});
+			currentSocket.on('connect_error', (error: Error) => {
+				if (socketRef.current !== currentSocket) return;
+				setStatus('error');
+				term?.writeln(`\r\n\x1b[31mTerminal connection failed: ${error.message}\x1b[0m\r\n`);
+			});
+			currentSocket.on('started', (data: any) => {
 				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
 				term?.focus();
 				const helper = termRef.current?.querySelector('textarea');
 				if (helper) helper.focus();
 			});
-			socket.on('output', (evt: {data: string}) => { if (evt?.data) term?.write(evt.data); });
-			socket.on('error', (err: any) => {
+			currentSocket.on('output', (evt: {data: string}) => { if (evt?.data) term?.write(evt.data); });
+			currentSocket.on('error', (err: any) => {
 				term?.writeln(`\r\n\x1b[31mError: ${typeof err === 'string' ? err : err?.message || 'Error'}\x1b[0m\r\n`);
 				setStatus('error');
 			});
-			socket.on('exit', (evt: {code: number}) => {
+			currentSocket.on('exit', (evt: {code: number}) => {
 				term?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
 				setStatus('disconnected');
 			});
-			socket.on('disconnect', () => {
+			currentSocket.on('disconnect', reason => {
+				if (socketRef.current !== currentSocket) return;
 				setStatus('disconnected');
-				term?.writeln('\r\n\x1b[31mSocket disconnected.\x1b[0m\r\n');
+				term?.writeln(`\r\n\x1b[31mSocket disconnected (${reason}).\x1b[0m\r\n`);
 			});
 
 			term.onData(data => {
@@ -252,9 +276,12 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		return () => {
 			clearTimeout(timer);
 			window.removeEventListener('resize', handleResize);
-			if (socketRef.current) {
-				socketRef.current.emit('stop');
-				socketRef.current.disconnect();
+			if (socket) {
+				socket.emit('stop');
+				socket.disconnect();
+			}
+			if (socketRef.current === socket) {
+				socketRef.current = null;
 			}
 			if (term) term.dispose();
 			termInstanceRef.current = null;

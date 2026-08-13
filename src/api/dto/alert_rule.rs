@@ -85,7 +85,7 @@ impl UpdateAlertRuleDto {
     }
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AlertRuleResponseDto {
     pub id: i64,
     pub name: String,
@@ -133,7 +133,7 @@ pub struct TestNotificationResponseDto {
     pub message: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AlertEventResponseDto {
     pub id: i64,
     pub alert_rule_id: i64,

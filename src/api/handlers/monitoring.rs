@@ -24,7 +24,7 @@ use std::sync::Arc;
 
 type ApiError = (StatusCode, String);
 
-#[derive(Clone, Debug, Serialize, Deserialize, Object)]
+#[derive(Clone, Debug, Serialize, Deserialize, Object, ts_rs::TS)]
 pub struct ContainerQueryParam {
     #[serde(rename = "appName")]
     pub app_name: Option<String>,
@@ -145,6 +145,7 @@ impl MonitoringController {
     }
 
     #[get("/agents/{server_id}/status")]
+    #[live(table = "monitoring_agents")]
     async fn agent_status(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
@@ -176,6 +177,7 @@ impl MonitoringController {
     }
 
     #[get("/policy/{organization_id}")]
+    #[live(table = "monitoring_policy")]
     async fn policy(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
@@ -313,6 +315,7 @@ impl MonitoringController {
     }
 
     #[get("/maintenance/{organization_id}")]
+    #[live(table = "monitoring_maintenance_windows")]
     async fn maintenance_windows(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,

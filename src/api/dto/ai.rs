@@ -55,7 +55,7 @@ impl From<UpdateAiSettingDto> for AiSettingUpdate {
     }
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiSettingResponseDto {
     pub id: i64,
     pub name: String,
@@ -146,7 +146,7 @@ impl From<DeployAiGenerationDto> for AiDeployInput {
     }
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiGenerationResponseDto {
     pub id: i64,
     pub ai_setting_id: i64,
@@ -204,7 +204,7 @@ pub struct AnalyzeLogsResponseDto {
     pub analysis: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiGenerationListQueryDto {
     pub limit: Option<i64>,
 }

@@ -35,6 +35,9 @@ export function ServiceCard({
 
 	const getStatusDotColor = (status: string) => {
 		const s = status?.toLowerCase() || '';
+		if (s.includes('stopping') || s.includes('cancelling')) {
+			return 'bg-orange-500 animate-pulse';
+		}
 		if (s.includes('running') || s.includes('active') || s.includes('healthy') || s.includes('up')) {
 			return 'bg-emerald-500';
 		}

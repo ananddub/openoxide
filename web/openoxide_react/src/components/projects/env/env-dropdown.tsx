@@ -14,13 +14,13 @@ interface EnvDropdownProps {
 }
 
 export function EnvDropdown({envs, selectedId, onSelect, onCreateNew}: EnvDropdownProps) {
-	const selectedEnv = envs.find(e => e.id === selectedId);
+	const selectedEnv = envs.find(e => Number(e.id) === Number(selectedId));
 	const label = selectedEnv
 		? (selectedEnv.is_default ? `${selectedEnv.name} (Default)` : selectedEnv.name)
 		: 'Select Environment';
 
-	const hasSelectedEnv = envs.some(e => e.id === selectedId);
-	const selectValue = hasSelectedEnv && selectedId ? String(selectedId) : 'none';
+	const hasSelectedEnv = envs.some(e => Number(e.id) === Number(selectedId));
+	const selectValue = hasSelectedEnv && selectedId !== null ? String(selectedId) : 'none';
 
 	return (
 		<div className="flex items-center gap-1">

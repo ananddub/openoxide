@@ -5,7 +5,7 @@ use crate::services::compose::{ComposeOperationResult, ComposeRecord};
 
 pub mod management;
 
-#[derive(Debug, Clone, Validate, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Validate, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ComposeServiceNetworkDto {
     #[validate(length(min = 1, max = 255))]
     pub service_name: String,
@@ -113,7 +113,7 @@ pub struct PatchComposeRawSourceDto {
     pub compose_file: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ComposeResponseDto {
     pub id: i64,
     pub name: String,

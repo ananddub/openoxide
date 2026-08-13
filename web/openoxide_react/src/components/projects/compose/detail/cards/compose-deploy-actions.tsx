@@ -7,6 +7,7 @@ interface ComposeDeployActionsProps {
 	isProcessing: boolean;
 	isBuilding: boolean;
 	isRunning: boolean;
+	composeStatus?: string;
 	activeLoading: any;
 	onAction: (action: ActionType) => void;
 	onOpenTerminal?: () => void;
@@ -16,19 +17,24 @@ export function ComposeDeployActions({
 	isProcessing,
 	isBuilding,
 	isRunning,
+	composeStatus,
 	activeLoading,
 	onAction,
 	onOpenTerminal,
 }: ComposeDeployActionsProps) {
+	const st = (composeStatus || '').toUpperCase();
+	const isStoppingOrCancelling = st === 'STOPPING' || st === 'CANCELLING' || activeLoading === 'stop' || activeLoading === 'cancel';
+	const isDisabled = isProcessing || isBuilding || isStoppingOrCancelling;
+
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-4">
 			<div className="flex flex-wrap items-center gap-2">
 				{/* Deploy */}
 				<Button
 					onClick={() => onAction('deploy')}
-					disabled={isProcessing || isBuilding}
+					disabled={isDisabled}
 					size="sm"
-					className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
+					className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{activeLoading === 'deploy' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
 					{activeLoading === 'deploy' ? 'Deploying...' : 'Deploy'}
@@ -37,10 +43,10 @@ export function ComposeDeployActions({
 				{/* Reload */}
 				<Button
 					onClick={() => onAction('reload')}
-					disabled={isProcessing || isBuilding}
+					disabled={isDisabled}
 					variant="outline"
 					size="sm"
-					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
+					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{activeLoading === 'reload' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
 					{activeLoading === 'reload' ? 'Reloading...' : 'Reload'}
@@ -49,25 +55,35 @@ export function ComposeDeployActions({
 				{/* Rebuild */}
 				<Button
 					onClick={() => onAction('rebuild')}
-					disabled={isProcessing || isBuilding}
+					disabled={isDisabled}
 					variant="outline"
 					size="sm"
-					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
+					className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{activeLoading === 'rebuild' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}
 					{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
 				</Button>
 
-				{/* 4-State Dynamic Action Button: Stopping (Stop Loading), Cancel (Deploy Building), Stop (Running), Start (Stopped) */}
-				{activeLoading === 'stop' ? (
+				{/* 4-State Dynamic Action Button: Stopping, Cancelling, Stop (Running), Start (Stopped) */}
+				{activeLoading === 'stop' || st === 'STOPPING' ? (
 					<Button
 						disabled
 						variant="outline"
 						size="sm"
-						className="border-border text-destructive font-semibold flex items-center gap-1.5 h-9 rounded-lg opacity-80"
+						className="border-border text-destructive font-semibold flex items-center gap-1.5 h-9 rounded-lg opacity-80 cursor-not-allowed"
 					>
 						<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
 						Stopping...
+					</Button>
+				) : activeLoading === 'cancel' || st === 'CANCELLING' ? (
+					<Button
+						disabled
+						variant="outline"
+						size="sm"
+						className="border-destructive/50 text-destructive font-bold flex items-center gap-1.5 h-9 rounded-lg px-4 opacity-80 cursor-not-allowed"
+					>
+						<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+						Cancelling...
 					</Button>
 				) : isBuilding ? (
 					<Button
@@ -83,7 +99,7 @@ export function ComposeDeployActions({
 				) : isRunning ? (
 					<Button
 						onClick={() => onAction('stop')}
-						disabled={isProcessing}
+						disabled={isDisabled}
 						variant="destructive"
 						size="sm"
 						className="h-9 px-4 text-xs font-semibold gap-1.5 rounded-lg flex items-center cursor-pointer"
@@ -94,7 +110,7 @@ export function ComposeDeployActions({
 				) : (
 					<Button
 						onClick={() => onAction('start')}
-						disabled={isProcessing}
+						disabled={isDisabled}
 						variant="outline"
 						size="sm"
 						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg cursor-pointer"
@@ -108,9 +124,10 @@ export function ComposeDeployActions({
 				{onOpenTerminal && (
 					<Button
 						onClick={onOpenTerminal}
+						disabled={isDisabled || !isRunning}
 						variant="outline"
 						size="sm"
-						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg ml-auto sm:ml-0"
+						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg ml-auto sm:ml-0 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						<Terminal className="w-4 h-4" />
 						Terminal

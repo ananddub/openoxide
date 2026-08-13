@@ -7,11 +7,14 @@ export type LiveResult<T> = {
 	error: Error | undefined;
 };
 
+const safeStringify = (val: unknown) =>
+	JSON.stringify(val, (_key, value) => (typeof value === 'bigint' ? value.toString() : value));
+
 export function useLive<TArgs extends readonly unknown[], TData>(
 	createEndpoint: (...args: TArgs) => LiveEndpoint<TArgs, TData>,
 	...args: TArgs
 ): LiveResult<TData> {
-	const argsKey = JSON.stringify(args);
+	const argsKey = safeStringify(args);
 	const endpoint = useMemo(() => createEndpoint(...args), [createEndpoint, argsKey]);
 	const [result, setResult] = useState<LiveResult<TData>>({data: undefined, loading: true, error: undefined});
 

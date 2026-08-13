@@ -123,7 +123,7 @@ impl From<SetupOutcome> for SetupOutcomeDto {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Object)]
+#[derive(Clone, Debug, Serialize, Object, ts_rs::TS)]
 pub struct ServerConnectionResponseDto {
     pub connected: bool,
     pub reused_sessions: usize,
@@ -186,7 +186,7 @@ pub struct PatchRemoteServerDto {
     pub build_cpu_limit: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct RemoteServerResponseDto {
     pub id: i64,
     pub name: String,
@@ -254,7 +254,7 @@ pub struct MigrateServerDependenciesDto {
     pub target_server_id: i64,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ServerDependencyMigrationDto {
     pub migration_id: String,
     pub status: String,
@@ -354,7 +354,7 @@ impl RemoteServerStatusDto {
 // Server Management & Private Network DTOs
 use poem_openapi::Enum;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, Object, ts_rs::TS)]
 pub struct ServerCleanupPolicyDto {
     pub containers: bool,
     pub images: bool,
@@ -384,7 +384,7 @@ pub struct UpdateServerManagementDto {
     pub gpu_enabled: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Object)]
+#[derive(Debug, Clone, Serialize, Object, ts_rs::TS)]
 pub struct ServerManagementDto {
     pub server_id: i64,
     pub maintenance_mode: bool,
@@ -402,7 +402,7 @@ pub struct ServerActionResultDto {
     pub stderr: String,
 }
 
-#[derive(Debug, Clone, Serialize, Object)]
+#[derive(Debug, Clone, Serialize, Object, ts_rs::TS)]
 pub struct ServerCleanupExecutionDto {
     pub id: i64,
     pub server_id: i64,
@@ -425,7 +425,7 @@ pub struct ServerBackupDto {
     pub created_at: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum, ts_rs::TS)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ServerConnectionModeDto {
@@ -434,7 +434,7 @@ pub enum ServerConnectionModeDto {
     ExternalPrivateNetwork,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum, ts_rs::TS)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkProviderDto {
@@ -445,7 +445,7 @@ pub enum PrivateNetworkProviderDto {
     Custom,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum, ts_rs::TS)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkStatusDto {
@@ -455,7 +455,7 @@ pub enum PrivateNetworkStatusDto {
     Failed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum, ts_rs::TS)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkHealthStatusDto {
@@ -466,7 +466,7 @@ pub enum PrivateNetworkHealthStatusDto {
     ConfigDrift,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum, ts_rs::TS)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PrivateNetworkRotationStateDto {
@@ -490,7 +490,7 @@ pub struct UpdatePrivateNetworkDto {
     pub routes: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Object)]
+#[derive(Debug, Clone, Serialize, Object, ts_rs::TS)]
 pub struct ServerPrivateNetworkDto {
     pub server_id: i64,
     pub connection_mode: ServerConnectionModeDto,
@@ -514,7 +514,7 @@ pub struct ServerPrivateNetworkDto {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Object)]
+#[derive(Debug, Clone, Serialize, Object, ts_rs::TS)]
 pub struct PrivateNetworkHealthDto {
     pub status: PrivateNetworkHealthStatusDto,
     pub interface_exists: bool,

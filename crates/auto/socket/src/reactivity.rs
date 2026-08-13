@@ -3,51 +3,22 @@ use crate::{
     rooms::ACTIVE_LIVE_ROOMS,
     state::{LIVE_REFRESHERS, SOCKET_IO, SUBSCRIPTION_REFRESH_GATES},
 };
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::Arc;
 
 pub fn notify_table_changes<'a>(tables: impl IntoIterator<Item = &'a str>) {
     let changed = tables.into_iter().collect::<std::collections::HashSet<_>>();
-    if let Some(refreshers) = LIVE_REFRESHERS.get() {
-        for entry in refreshers {
-            if !entry.tables.iter().any(|table| changed.contains(table)) {
-                continue;
-            }
-            entry.pending.store(true, Ordering::Release);
-            if entry.running.swap(true, Ordering::AcqRel) {
-                continue;
-            }
-            let refresh = entry.refresh.clone();
-            let running = entry.running.clone();
-            let pending = entry.pending.clone();
-            tokio::spawn(async move {
-                loop {
-                    pending.store(false, Ordering::Release);
-                    refresh().await;
-                    if pending.load(Ordering::Acquire) {
-                        continue;
-                    }
-                    running.store(false, Ordering::Release);
-                    if !pending.load(Ordering::Acquire)
-                        || running
-                            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                            .is_err()
-                    {
-                        break;
-                    }
-                }
-            });
-        }
-    }
-    invalidate_rooms(&changed);
+    tracing::info!(tables = ?changed, "live table notification received");
+    refresh_or_invalidate_rooms(&changed);
 }
 
-fn invalidate_rooms(changed: &std::collections::HashSet<&str>) {
+fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
     let affected = inventory::iter::<LiveTableDescriptor>
         .into_iter()
         .filter(|entry| entry.tables.iter().any(|table| changed.contains(table)))
         .map(|entry| entry.endpoint)
         .collect::<std::collections::HashSet<_>>();
     if affected.is_empty() {
+        tracing::info!("live table notification has no matching endpoint");
         return;
     }
     let rooms = ACTIVE_LIVE_ROOMS
@@ -61,11 +32,21 @@ fn invalidate_rooms(changed: &std::collections::HashSet<&str>) {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    tracing::info!(endpoints = ?affected, rooms = rooms.len(), "live rooms selected for refresh");
     tokio::spawn(async move {
         let Some(io) = SOCKET_IO.get() else {
             return;
         };
         for room in rooms {
+            if let Some(refresher) = LIVE_REFRESHERS
+                .get()
+                .and_then(|items| items.iter().find(|item| item.endpoint == room.endpoint))
+            {
+                tracing::info!(endpoint = room.endpoint, room = %room.room, args = ?room.args, "refreshing live room");
+                (refresher.refresh)(room.args.clone(), room.identity.clone()).await;
+                tracing::info!(endpoint = room.endpoint, room = %room.room, "live room refresh completed");
+                continue;
+            }
             if let Some(namespace) = io.of(room.namespace) {
                 let _ = namespace
                     .to(room.room)
@@ -79,7 +60,11 @@ fn invalidate_rooms(changed: &std::collections::HashSet<&str>) {
     });
 }
 
-pub(crate) async fn refresh_subscription(endpoint: &str) {
+pub(crate) async fn refresh_subscription(
+    endpoint: &str,
+    args: serde_json::Value,
+    identity: Option<crate::LiveIdentity>,
+) {
     let Some(refreshers) = LIVE_REFRESHERS.get() else {
         return;
     };
@@ -95,6 +80,6 @@ pub(crate) async fn refresh_subscription(endpoint: &str) {
                 .clone()
         };
         let _guard = gate.lock().await;
-        (entry.refresh)().await;
+        (entry.refresh)(args.clone(), identity.clone()).await;
     }
 }

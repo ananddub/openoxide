@@ -13,8 +13,13 @@ import '#/styles/index.css';
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
+		const session = localStorage.getItem('openoxide-auth-session');
+		if (!session || session === 'undefined') {
+			useAuthStore.getState().logout();
+			return;
+		}
 		try {
-			const {data: res} = await client.GET('/auth/whoami');
+			const {data: res, response} = await client.GET('/auth/whoami');
 			if (res) {
 				useAuthStore.getState().setAuth({
 					id: res.user_id,
@@ -22,8 +27,8 @@ export const Route = createRootRoute({
 					firstName: res.first_name,
 					lastName: res.last_name,
 				});
-			} else {
-				// useAuthStore.getState().logout();
+			} else if (response.status === 401) {
+				useAuthStore.getState().logout();
 			}
 		} catch (error) {
 			console.error('Failed to authenticate session:', error);

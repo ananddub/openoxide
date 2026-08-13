@@ -32,26 +32,26 @@ pub struct AiSettingView {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiEnvironmentVariable {
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiDomain {
     pub host: String,
     pub port: i64,
     pub service_name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiGeneratedFile {
     pub file_path: String,
     pub content: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiComposeSuggestion {
     pub id: String,
     pub name: String,
@@ -66,7 +66,7 @@ pub struct AiComposeSuggestion {
     pub config_files: Vec<AiGeneratedFile>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AiGenerationOutput {
     pub suggestions: Vec<AiComposeSuggestion>,
 }

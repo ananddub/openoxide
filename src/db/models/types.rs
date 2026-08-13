@@ -275,6 +275,9 @@ pub enum DeploymentsStatusEnum {
     #[sqlx(rename = "ERROR")]
     Error,
 
+    #[sqlx(rename = "CANCELLING")]
+    Cancelling,
+
     #[sqlx(rename = "CANCELLED")]
     Cancelled,
 }

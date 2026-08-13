@@ -109,6 +109,13 @@ impl ComposeService {
 
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
+        let _ = self
+            .repo_compose
+            .update_status(id, ComposeStatus::Stopping.as_str())
+            .await;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Compose(id))
+            .await;
 
         if let Ok(queue) = resolve::<BuilderQueue>().await {
             let _ = queue.cancel_queued_compose(id).await;

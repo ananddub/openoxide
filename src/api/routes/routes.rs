@@ -4,8 +4,10 @@ use std::time::Instant;
 use auto_di::singleton;
 use axum::{
     Router,
+    body::{Body, HttpBody, to_bytes},
     extract::Path,
     extract::Request,
+    http::header::CONTENT_TYPE,
     middleware::{self, Next},
     response::sse::{Event, Sse},
     response::{IntoResponse, Response},
@@ -24,22 +26,28 @@ async fn request_duration_middleware(req: Request, next: Next) -> Response {
     let latency = start.elapsed();
     let status = response.status();
 
-    if status.is_server_error() {
-        tracing::error!(
-            method = %method,
-            uri = %uri,
-            status = status.as_u16(),
-            elapsed = ?latency,
-            "HTTP Request failed (SERVER ERROR)"
-        );
-    } else if status.is_client_error() {
-        tracing::warn!(
-            method = %method,
-            uri = %uri,
-            status = status.as_u16(),
-            elapsed = ?latency,
-            "HTTP Request failed (CLIENT ERROR)"
-        );
+    if status.is_client_error() || status.is_server_error() {
+        let (response, error_detail) = error_response_detail(response).await;
+        if status.is_server_error() {
+            tracing::error!(
+                method = %method,
+                uri = %uri,
+                status = status.as_u16(),
+                elapsed = ?latency,
+                error = %error_detail,
+                "HTTP Request failed (SERVER ERROR)"
+            );
+        } else {
+            tracing::warn!(
+                method = %method,
+                uri = %uri,
+                status = status.as_u16(),
+                elapsed = ?latency,
+                error = %error_detail,
+                "HTTP Request failed (CLIENT ERROR)"
+            );
+        }
+        return response;
     } else if latency.as_millis() >= 1000 {
         tracing::warn!(
             method = %method,
@@ -61,6 +69,79 @@ async fn request_duration_middleware(req: Request, next: Next) -> Response {
     response
 }
 
+const MAX_LOGGED_ERROR_BODY: usize = 64 * 1024;
+
+async fn error_response_detail(response: Response) -> (Response, String) {
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_owned();
+    let size = response.body().size_hint().upper();
+    if size.is_none_or(|size| size > MAX_LOGGED_ERROR_BODY as u64) {
+        return (
+            response,
+            "response body unavailable or too large".to_owned(),
+        );
+    }
+
+    let (parts, body) = response.into_parts();
+    match to_bytes(body, MAX_LOGGED_ERROR_BODY).await {
+        Ok(bytes) => {
+            let detail = format_error_body(&bytes, &content_type);
+            (Response::from_parts(parts, Body::from(bytes)), detail)
+        }
+        Err(error) => (
+            Response::from_parts(parts, Body::empty()),
+            format!("failed to read error response body: {error}"),
+        ),
+    }
+}
+
+fn format_error_body(bytes: &[u8], content_type: &str) -> String {
+    if bytes.is_empty() {
+        return "empty response body".to_owned();
+    }
+    if content_type.contains("json") {
+        if let Ok(mut value) = serde_json::from_slice::<serde_json::Value>(bytes) {
+            redact_sensitive_json(&mut value);
+            return value.to_string();
+        }
+    }
+    String::from_utf8_lossy(bytes).into_owned()
+}
+
+fn redact_sensitive_json(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(items) => {
+            for (key, value) in items {
+                let key = key.to_ascii_lowercase();
+                if [
+                    "password",
+                    "token",
+                    "secret",
+                    "authorization",
+                    "private_key",
+                ]
+                .iter()
+                .any(|name| key.contains(name))
+                {
+                    *value = serde_json::Value::String("[REDACTED]".to_owned());
+                } else {
+                    redact_sensitive_json(value);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for value in items {
+                redact_sensitive_json(value);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[singleton]
 pub async fn router_init(sock: Arc<Socket>) -> Router<()> {
     let cors = CorsLayer::new()
@@ -74,7 +155,7 @@ pub async fn router_init(sock: Arc<Socket>) -> Router<()> {
         .merge(auto_route::openapi_routes("/openapi.json", "/swagger-ui"))
         .merge(auto_route::scalar_routes("/scalar", "/openapi.json"))
         .route(
-            "/_openoxide/html/events/:session",
+            "/_openoxide/html/events/{session}",
             axum::routing::get(html_events),
         )
         .layer(middleware::from_fn(request_duration_middleware))

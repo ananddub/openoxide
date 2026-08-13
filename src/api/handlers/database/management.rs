@@ -30,6 +30,7 @@ impl DatabaseManagementController {
     }
 
     #[get("/{kind}/{id}/dependencies")]
+    #[live(tables = ["postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs", "deployments", "schedules", "backups"])]
     async fn dependencies(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

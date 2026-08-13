@@ -31,7 +31,7 @@ pub struct StagePanelRestoreDto {
     pub pending_marker: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PanelRestoreStatusDto {
     pub restore_id: String,
     pub status: String,
@@ -92,14 +92,14 @@ pub struct BackupIntegrityDto {
     pub size_bytes: i64,
 }
 
-#[derive(Debug, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct BackupExecutionQueryDto {
     pub backup_kind: Option<crate::services::backup::types::BackupKind>,
     pub backup_id: Option<i64>,
     pub limit: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct BackupExecutionResponseDto {
     pub id: i64,
     pub backup_kind: crate::services::backup::types::BackupKind,
@@ -180,7 +180,7 @@ pub struct PatchBackupDto {
     pub enabled: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct BackupResponseDto {
     pub id: i64,
     pub app_name: String,
@@ -273,7 +273,7 @@ pub struct PatchVolumeBackupDto {
     pub enabled: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct VolumeBackupResponseDto {
     pub id: i64,
     pub name: String,

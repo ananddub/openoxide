@@ -1,6 +1,6 @@
 import {useState, useCallback} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {$api} from '#/api/query';
+import {useSshKeyList} from 'virtual:openoxide-live';
 import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
 import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
@@ -19,13 +19,11 @@ function SshKeysPage() {
 	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<SshKeyResponse | null>(null);
 
 	const {
-		data: rawSshKeys = [],
-		isLoading,
-		refetch,
-		isRefetching,
-	} = $api.useQuery('get', '/ssh-keys');
+		data: rawSshKeys,
+		loading: isLoading,
+	} = useSshKeyList();
 
-	const sshKeys = Array.isArray(rawSshKeys) ? (rawSshKeys as SshKeyResponse[]) : [];
+	const sshKeys = Array.isArray(rawSshKeys ?? []) ? ((rawSshKeys ?? []) as unknown as SshKeyResponse[]) : [];
 
 	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
 	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);
@@ -40,8 +38,8 @@ function SshKeysPage() {
 		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12">
 			<SshKeysHeader
 				onOpenAdd={handleOpenAdd}
-				onRefresh={refetch}
-				isRefetching={isRefetching}
+				onRefresh={() => {}}
+				isRefetching={false}
 				keys={sshKeys}
 			/>
 
@@ -56,7 +54,7 @@ function SshKeysPage() {
 				<CreateKeyModal
 					isOpen={isAddOpen}
 					onClose={handleCloseAdd}
-					onSuccess={refetch}
+					onSuccess={() => {}}
 				/>
 			)}
 
@@ -73,7 +71,7 @@ function SshKeysPage() {
 					isOpen={!!selectedKeyForDelete}
 					sshKey={selectedKeyForDelete}
 					onClose={handleCloseDelete}
-					onSuccess={refetch}
+					onSuccess={() => {}}
 				/>
 			)}
 		</div>

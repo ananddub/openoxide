@@ -2,7 +2,7 @@ use poem_openapi::{Enum, Object};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Clone, Serialize, Object)]
+#[derive(Debug, Clone, Serialize, Object, ts_rs::TS)]
 pub struct SettingsResponseDto {
     pub id: i64,
     pub server_ip: Option<String>,

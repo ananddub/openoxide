@@ -45,7 +45,7 @@ pub struct PatchDomainDto {
     pub certificate_type: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DomainResponseDto {
     pub id: i64,
     pub host: String,

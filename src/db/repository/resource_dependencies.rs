@@ -2,7 +2,7 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
-#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object)]
+#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ResourceDependencyCounts {
     pub active_deployments: i64,
     pub deployments: i64,
@@ -25,13 +25,13 @@ impl ResourceDependencyCounts {
     }
 }
 
-#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object)]
+#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct CertificateDependencyCounts {
     pub renewals: i64,
     pub running_renewals: i64,
 }
 
-#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object)]
+#[derive(Clone, Debug, Default, serde::Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct NetworkDependencyCounts {
     pub applications: i64,
     pub compose_services: i64,

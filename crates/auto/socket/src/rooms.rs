@@ -19,12 +19,18 @@ pub(crate) struct ActiveLiveRoom {
     pub(crate) room: String,
     pub(crate) endpoint: String,
     pub(crate) args: serde_json::Value,
+    pub(crate) identity: Option<LiveIdentity>,
     subscribers: usize,
 }
 #[derive(Clone, Debug, Default)]
 pub(crate) struct SocketSubscriptions(pub(crate) HashSet<String>);
 
-pub(crate) fn retain(namespace: &'static str, room: &str, request: &LiveSubscriptionRequest) {
+pub(crate) fn retain(
+    namespace: &'static str,
+    room: &str,
+    request: &LiveSubscriptionRequest,
+    identity: Option<LiveIdentity>,
+) {
     let mut rooms = ACTIVE_LIVE_ROOMS
         .get_or_init(Default::default)
         .lock()
@@ -37,6 +43,7 @@ pub(crate) fn retain(namespace: &'static str, room: &str, request: &LiveSubscrip
             room: room.to_owned(),
             endpoint: request.endpoint.clone(),
             args: request.args.clone(),
+            identity,
             subscribers: 1,
         });
 }

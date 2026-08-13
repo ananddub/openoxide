@@ -1,8 +1,12 @@
 import {useMemo} from 'react';
-import {$api} from '#/api/query';
 import {useAuthStore} from '#/stores/auth-store';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
+import {
+	useProjectListByOrganization,
+	useDeploymentList,
+	useDeploymentRunning,
+} from 'virtual:openoxide-live';
 
 export function useHomeStats() {
 	const user = useAuthStore(state => state.user);
@@ -11,34 +15,30 @@ export function useHomeStats() {
 
 	// Fetch Projects using active organization context
 	const orgId = activeOrg?.id || 1;
-	const {data: rawProjects = [], isLoading: isProjectsLoading} = $api.useQuery(
-		'get',
-		'/projects/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: orgId,
-				},
-			},
-		}
-	);
+	const {data: rawProjects, loading: isProjectsLoading} = useProjectListByOrganization(BigInt(orgId));
 
 	// Fetch real backend deployments history (/deployments)
-	const {data: rawDeployments = [], isLoading: isDeploymentsLoading} = $api.useQuery('get', '/deployments', {
-		params: {
-			query: {
-				query: {limit: 50},
-			},
-		},
+	const {data: rawDeployments, loading: isDeploymentsLoading} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 50n,
+		offset: null,
 	});
 
 	// Fetch active running deployments (/deployments/running)
-	const {data: rawRunning = [], isLoading: isRunningLoading} = $api.useQuery('get', '/deployments/running', {
-		params: {
-			query: {
-				query: {limit: 50},
-			},
-		},
+	const {data: rawRunning, loading: isRunningLoading} = useDeploymentRunning({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 50n,
+		offset: null,
 	});
 
 	// Totals & Status Calculations

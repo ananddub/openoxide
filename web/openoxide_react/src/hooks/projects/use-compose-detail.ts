@@ -4,99 +4,54 @@ import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
+import {
+	useComposeGet,
+	useDomainListByCompose,
+	useScheduleListByCompose,
+	useBackupListVolumeBackups,
+	useDeploymentList,
+} from 'virtual:openoxide-live';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
 
-	// 1. Central Compose Query
-	const {
-		data: compose,
-		isLoading: isLoadingCompose,
-		refetch: refetchCompose,
-	} = $api.useQuery(
-		'get',
-		'/compose/{id}',
-		{
-			params: {path: {id: composeId}},
-		},
-		{
-			refetchInterval: 3000,
-		}
-	);
+	// 1. Central Compose Query — live push replaces refetchInterval:3000
+	const {data: compose, loading: isLoadingCompose} = useComposeGet(BigInt(composeId));
 
 	// 2. Central Domains Query
-	const {
-		data: rawDomains = [],
-		isLoading: isLoadingDomains,
-		refetch: refetchDomains,
-	} = $api.useQuery(
-		'get',
-		'/domains/compose/{compose_id}',
-		{
-			params: {path: {compose_id: composeId}},
-			enabled: !!composeId,
-		} as any
-	);
+	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));
 
 	// 3. Central Schedules Query
-	const {
-		data: rawSchedules = [],
-		isLoading: isLoadingSchedules,
-		refetch: refetchSchedules,
-	} = $api.useQuery(
-		'get',
-		'/schedules/compose/{compose_id}',
-		{
-			params: {path: {compose_id: composeId}},
-			enabled: !!composeId,
-		} as any
-	);
+	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByCompose(BigInt(composeId));
 
-	// 4. Central Backups Query
-	const {
-		data: rawBackups = [],
-		isLoading: isLoadingBackups,
-		refetch: refetchBackups,
-	} = $api.useQuery(
-		'get',
-		'/backups/volume',
-		{
-			params: {query: {compose_id: composeId}},
-			enabled: !!composeId,
-		} as any
-	);
+	// 4. Central Backups Query — filter locally by compose_id
+	const {data: rawBackupsAll, loading: isLoadingBackups} = useBackupListVolumeBackups();
 
 	// 5. Central Deployments Query
-	const {
-		data: rawDeployments = [],
-		isLoading: isLoadingDeployments,
-		refetch: refetchDeployments,
-	} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {query: {compose_id: composeId}},
-			enabled: !!composeId,
-		} as any
-	);
+	const {data: rawDeployments, loading: isLoadingDeployments} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: BigInt(composeId),
+		database_id: null,
+		server_id: null,
+		limit: null,
+		offset: null,
+	});
 
 	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
 	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
 	const backups = useMemo(() => {
-		const all = Array.isArray(rawBackups) ? rawBackups : [];
+		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
 		return all.filter((b: any) => b.compose_id === composeId);
-	}, [rawBackups, composeId]);
+	}, [rawBackupsAll, composeId]);
 	const deployments = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
 
 	// 6. Central Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(composeId, 'compose');
 
+	// Live hooks auto-push updates — only trigger monitoring refresh
 	const refetchAll = () => {
-		refetchCompose();
-		refetchDomains();
-		refetchSchedules();
-		refetchBackups();
-		refetchDeployments();
 		monitoring.triggerRefresh();
 	};
 
@@ -131,7 +86,7 @@ export function useComposeDetail(composeId: number) {
 				await cancelMutation.mutateAsync({params: {path: {id: composeId}}});
 				toast.success('Compose action cancelled');
 			}
-			refetchAll();
+			// Live hooks auto-push updated data — no manual refetch needed
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -149,11 +104,11 @@ export function useComposeDetail(composeId: number) {
 		isLoadingSchedules,
 		isLoadingBackups,
 		isLoadingDeployments,
-		refetch: refetchCompose,
-		refetchDomains,
-		refetchSchedules,
-		refetchBackups,
-		refetchDeployments,
+		refetch: () => {},
+		refetchDomains: () => {},
+		refetchSchedules: () => {},
+		refetchBackups: () => {},
+		refetchDeployments: () => {},
 		refetchAll,
 		activeTab,
 		setActiveTab,

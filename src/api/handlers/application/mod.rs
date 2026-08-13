@@ -531,6 +531,7 @@ impl ApplicationController {
     }
 
     #[get("/{id}/dependencies")]
+    #[live(tables = ["applications", "deployments", "domains", "mounts", "patches", "schedules", "backups", "preview_deployments", "application_middlewares", "ports", "redirects", "security"])]
     async fn dependencies(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

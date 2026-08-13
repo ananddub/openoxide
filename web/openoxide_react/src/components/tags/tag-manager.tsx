@@ -14,6 +14,7 @@ import {
 	CardTitle,
 } from '#/components/ui/card';
 import {$api} from '#/api/query';
+import {useTagListAll} from 'virtual:openoxide-live';
 import {HandleTag} from './handle-tag';
 
 interface TagItem {
@@ -24,11 +25,11 @@ interface TagItem {
 
 export const TagManager = () => {
 	const [searchQuery, setSearchQuery] = useState('');
-	const {data: rawTags = [], isLoading, refetch} = $api.useQuery('get', '/tags' as any, {});
+	const {data: rawTags, loading: isLoading} = useTagListAll();
 	const deleteMutation = $api.useMutation('delete', '/tags/{id}' as any);
 
 	const tags: TagItem[] = useMemo(() => {
-		return Array.isArray(rawTags) ? (rawTags as TagItem[]) : [];
+		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];
 	}, [rawTags]);
 
 	const filteredTags = useMemo(() => {
@@ -57,7 +58,7 @@ export const TagManager = () => {
 					</div>
 
 					<div className="flex items-center gap-3">
-						<HandleTag onSuccess={refetch} />
+						<HandleTag onSuccess={() => {}} />
 					</div>
 				</CardHeader>
 
@@ -87,7 +88,7 @@ export const TagManager = () => {
 							<span className="text-xs text-muted-foreground max-w-sm">
 								Create color-coded tags to easily search, filter, and organize your applications.
 							</span>
-							<HandleTag onSuccess={refetch} />
+							<HandleTag onSuccess={() => {}} />
 						</div>
 					) : filteredTags.length === 0 ? (
 						<div className="flex flex-col items-center gap-2 min-h-[20vh] justify-center text-center text-muted-foreground">
@@ -110,7 +111,7 @@ export const TagManager = () => {
 										)}
 									</div>
 									<div className="flex items-center gap-1">
-										<HandleTag tagId={tag.id} tagData={tag} onSuccess={refetch} />
+										<HandleTag tagId={tag.id} tagData={tag} onSuccess={() => {}} />
 										<DialogAction
 											title="Delete Tag"
 											description={`Are you sure you want to delete the tag "${tag.name}"? This will remove the tag from all projects. This action cannot be undone.`}
@@ -120,7 +121,6 @@ export const TagManager = () => {
 													params: {path: {id: tag.id}},
 												})
 													.then(async () => {
-														refetch();
 														toast.success('Tag deleted successfully');
 													})
 													.catch(() => {

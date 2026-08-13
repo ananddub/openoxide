@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! backup_enum {
     ($name:ident { $($variant:ident => $value:literal),+ $(,)? }) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
         #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
         #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
         pub enum $name { $($variant),+ }

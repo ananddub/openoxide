@@ -96,8 +96,8 @@ function ProjectsPage() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 					{filteredAndSortedProjects.map(project => (
 						<ProjectCard
-							key={project.id}
-							project={project}
+							key={String(project.id)}
+							project={project as unknown as any}
 							onDelete={id => setDeletingId(id)}
 						/>
 					))}

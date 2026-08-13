@@ -51,7 +51,7 @@ impl UpsertApplicationPortDto {
     }
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationPortResponseDto {
     pub id: i64,
     pub published_port: i64,

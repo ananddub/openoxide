@@ -8,7 +8,9 @@ mod openapi;
 mod openapi_descriptors;
 mod router;
 
-pub use client::{LiveClientArgumentDescriptor, LiveClientRouteDescriptor, live_client_manifest};
+pub use client::{
+    LiveClientArgumentDescriptor, LiveClientRouteDescriptor, live_client_manifest, ts_decl, ts_name,
+};
 pub use docs::{openapi_routes, scalar_routes};
 pub use openapi::{AutoRouteOpenApi, openapi_json, openapi_spec};
 pub use openapi_descriptors::{
@@ -23,4 +25,5 @@ pub mod __private {
     pub use axum;
     pub use inventory;
     pub use poem_openapi;
+    pub use serde_json;
 }

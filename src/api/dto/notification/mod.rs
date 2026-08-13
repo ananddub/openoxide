@@ -32,7 +32,7 @@ impl NotificationResourceType {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct NotificationDeliveryAttemptDto {
     pub id: i64,
     pub notification_id: i64,
@@ -48,7 +48,7 @@ pub struct NotificationDeliveryAttemptDto {
     pub finished_at: Option<i64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct NotificationResourceBindingDto {
     pub id: i64,
     pub notification_id: i64,

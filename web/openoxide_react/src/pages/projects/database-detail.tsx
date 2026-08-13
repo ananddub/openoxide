@@ -90,7 +90,7 @@ function DatabaseDetailPage() {
 		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
 			<DatabaseHeader
 				id={id}
-				database={database}
+				database={database as any}
 				detectedKind={detectedKind || 'postgres'}
 				actionLoading={actionLoading}
 				isBuilding={isBuilding}
@@ -105,7 +105,7 @@ function DatabaseDetailPage() {
 			<div className="w-full">
 				{activeTab === 'General' && (
 					<DatabaseGeneralTab
-						database={database}
+						database={database as any}
 						actionLoading={actionLoading}
 						isBuilding={isBuilding}
 						onAction={handleAction}

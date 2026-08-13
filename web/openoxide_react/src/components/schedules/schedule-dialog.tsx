@@ -8,7 +8,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/c
 import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
-import {$api} from '#/api/query';
+import {useProjectListByOrganization} from 'virtual:openoxide-live';
 import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleDialogProps {
@@ -43,20 +43,7 @@ export function ScheduleDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
-	const {data: projectsList} = $api.useQuery(
-		'get',
-		'/projects/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: activeOrg?.id || 0,
-				},
-			},
-		},
-		{
-			enabled: activeOrg !== null,
-		},
-	);
+	const {data: projectsList} = useProjectListByOrganization(BigInt(activeOrg?.id ?? 0));
 
 	const allApplications = useMemo(() => {
 		if (!Array.isArray(projectsList)) return [];

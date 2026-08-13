@@ -307,6 +307,7 @@ impl ServerController {
     }
 
     #[get("/{id}/sessions")]
+    #[live(table = "servers")]
     async fn sessions(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,

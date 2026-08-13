@@ -173,7 +173,7 @@ pub struct UpsertComposePatchDto {
     pub content: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ComposePatchResponseDto {
     pub id: i64,
     pub patch_type: String,

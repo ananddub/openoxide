@@ -1,10 +1,11 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useMemo} from 'react';
 import {useQueryClient, useMutationState} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {ComposeConfirmDialog} from './cards/compose-confirm-dialog';
 import {ComposeDeployActions} from './cards/compose-deploy-actions';
+import {useDeploymentList} from 'virtual:openoxide-live';
 
 interface ComposeDeployCardProps {
 	compose: any;
@@ -20,23 +21,19 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 
 	const queryClient = useQueryClient();
 
-	// 1. Fetch compose deployments query (2s native interval)
-	const {data: rawEvents = []} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					compose_id: compose?.id || 0,
-					limit: 20,
-				} as any,
-			},
-		},
-		{
-			enabled: !!compose?.id,
-			refetchInterval: 2000,
-		}
-	);
+	// 1. Fetch compose deployments query via live WebSocket hook
+	const {data: rawDeployments} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: BigInt(compose?.id || 0),
+		database_id: null,
+		server_id: null,
+		limit: 20n,
+		offset: null,
+	});
+
+	const events = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
 
 	// 2. Track any pending compose mutation automatically via TanStack Query useMutationState
 	const pendingMutationAction = useMutationState({
@@ -46,8 +43,6 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 			return meta?.actionName as ActionType | undefined;
 		},
 	})[0];
-
-	const events = Array.isArray(rawEvents) ? rawEvents : [];
 
 	const hasActiveDeployment = (events || []).some((e: any) => {
 		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
@@ -140,6 +135,7 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 				isProcessing={isProcessing}
 				isBuilding={isBuilding}
 				isRunning={isRunning}
+				composeStatus={compose?.compose_status}
 				activeLoading={activeLoading || pendingMutationAction}
 				onAction={executeAction}
 				onOpenTerminal={onOpenTerminal}

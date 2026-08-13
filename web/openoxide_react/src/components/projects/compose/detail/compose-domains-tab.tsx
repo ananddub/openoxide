@@ -1,11 +1,11 @@
 import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {Globe, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {useComposeGet, useDomainListByCompose} from 'virtual:openoxide-live';
 import {ComposeDomainModal} from './domains/compose-domain-modal';
 import {ComposeDomainsTable} from './domains/compose-domains-table';
 
@@ -52,15 +52,11 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 };
 
 export function ComposeDomainsTab({composeId, compose: passedCompose, domains: passedDomains, isLoading: passedIsLoading}: ComposeDomainsTabProps) {
-	const queryClient = useQueryClient();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingDomain, setEditingDomain] = useState<any | null>(null);
 
 	// Fetch compose details if not passed
-	const {data: rawCompose} = $api.useQuery('get', '/compose/{id}', {
-		params: {path: {id: composeId}},
-		enabled: !passedCompose,
-	});
+	const {data: rawCompose} = useComposeGet(BigInt(composeId));
 	const compose = passedCompose || rawCompose;
 
 	const availableServices = useMemo(() => {
@@ -70,13 +66,10 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
 	// Real-time domains query for compose stack (fallback if not passed from parent)
-	const {data: rawDomains = [], isLoading: innerIsLoading} = $api.useQuery('get', '/domains/compose/{compose_id}', {
-		params: {path: {compose_id: composeId}},
-		enabled: !passedDomains && !!composeId,
-	});
+	const {data: rawDomains, loading: innerLoading} = useDomainListByCompose(BigInt(composeId));
 
-	const domains = passedDomains ?? (Array.isArray(rawDomains) ? rawDomains : []);
-	const isLoading = passedIsLoading ?? innerIsLoading;
+	const domains = passedDomains ?? (rawDomains ?? []);
+	const isLoading = passedIsLoading ?? innerLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
@@ -116,7 +109,7 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 				});
 				toast.success('Compose domain route added');
 			}
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -126,7 +119,7 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Compose domain route deleted');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}

@@ -12,7 +12,7 @@ pub enum DockerLogStream {
     Stderr,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DeploymentListQuery {
     pub status: Option<String>,
     pub state: Option<String>,
@@ -24,7 +24,7 @@ pub struct DeploymentListQuery {
     pub offset: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DeploymentResponseDto {
     pub id: Option<i64>,
     pub title: String,
@@ -71,7 +71,7 @@ impl From<Deployment> for DeploymentResponseDto {
     }
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ActiveDeploymentDto {
     pub kind: String,
     pub id: i64,
@@ -109,7 +109,7 @@ pub struct DockerLogQuery {
     pub stream: Option<DockerLogStream>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct LogSearchQuery {
     pub query: Option<String>,
     pub limit: Option<usize>,

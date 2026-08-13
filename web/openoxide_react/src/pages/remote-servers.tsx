@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
+import {useRemoteServerList, useSshKeyList} from 'virtual:openoxide-live';
 import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
@@ -11,7 +12,7 @@ import {PrivateNetworkModal} from '#/components/remote-servers/private-network';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
-import type {RemoteServerResponse} from '#/types/api-helpers';
+import type {RemoteServerResponse, SshKeyResponse} from '#/types/api-helpers';
 
 export const Route = createFileRoute('/_app/remote-servers')({
 	component: RemoteServersPage,
@@ -26,16 +27,14 @@ function RemoteServersPage() {
 	const [privateNetworkServer, setPrivateNetworkServer] = useState<RemoteServerResponse | null>(null);
 
 	const {
-		data: rawServers = [],
-		isLoading: isServersLoading,
-		refetch,
-		isRefetching,
-	} = $api.useQuery('get', '/remote-servers');
+		data: rawServers,
+		loading: isServersLoading,
+	} = useRemoteServerList();
 
-	const {data: rawSshKeys = []} = $api.useQuery('get', '/ssh-keys');
+	const {data: rawSshKeys} = useSshKeyList();
 
-	const servers = Array.isArray(rawServers) ? (rawServers as RemoteServerResponse[]) : [];
-	const sshKeys = Array.isArray(rawSshKeys) ? rawSshKeys : [];
+	const servers = Array.isArray(rawServers ?? []) ? ((rawServers ?? []) as unknown as RemoteServerResponse[]) : [];
+	const sshKeys = Array.isArray(rawSshKeys ?? []) ? ((rawSshKeys ?? []) as unknown as SshKeyResponse[]) : [];
 
 	const activateMutation = $api.useMutation('post', '/remote-servers/{id}/activate');
 	const deactivateMutation = $api.useMutation('post', '/remote-servers/{id}/deactivate');
@@ -54,7 +53,7 @@ function RemoteServersPage() {
 				});
 				toast.success(`Server "${server.name}" activated`);
 			}
-			refetch();
+
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -67,8 +66,8 @@ function RemoteServersPage() {
 					setEditingServer(null);
 					setIsCreateOpen(true);
 				}}
-				onRefresh={refetch}
-				isRefetching={isRefetching}
+				onRefresh={() => {}}
+				isRefetching={false}
 				servers={servers}
 			/>
 
@@ -95,7 +94,7 @@ function RemoteServersPage() {
 					setIsCreateOpen(false);
 					setEditingServer(null);
 				}}
-				onSuccess={refetch}
+				onSuccess={() => {}}
 			/>
 
 			<SetupServerModal isOpen={!!setupServer} server={setupServer} onClose={() => setSetupServer(null)} />
@@ -104,7 +103,7 @@ function RemoteServersPage() {
 				isOpen={!!deletingServer}
 				server={deletingServer}
 				onClose={() => setDeletingServer(null)}
-				onSuccess={refetch}
+				onSuccess={() => {}}
 			/>
 
 			<TerminalModal

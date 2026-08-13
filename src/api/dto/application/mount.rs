@@ -16,7 +16,7 @@ pub struct UpsertApplicationMountDto {
     pub mount_path: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationMountResponseDto {
     pub id: i64,
     pub mount_type: String,

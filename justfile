@@ -120,7 +120,7 @@ db-gen:
     echo ">> Done!"
 
 run:
-    cargo run
+    cargo run --bin openoxide
 
 # Run the standalone reactive Todo integration test app
 todo-dev:
@@ -133,9 +133,21 @@ todo-react:
 web:
     cd web/openoxide_react && bun run dev
 
+# Generate typed React live hooks/declarations from Rust #[live] endpoints
+live-gen:
+    nix develop -c node crates/auto/vite/src/generate.js \
+        web/openoxide_react \
+        ../../Cargo.toml \
+        src/openoxide-live.generated.d.ts \
+        openoxide-live-manifest
+
+# Generate all frontend code produced from the Rust backend
+web-gen: live-gen
+    cd web/openoxide_react && bun run gen:routes
+
 dev:
     sudo pkill openoxide || true
-    cargo watch -x check -x run
+    cargo watch -x check -x 'run --bin openoxide'
 # Build standalone openoxide_monitor binary
 build-monitor:
     cargo build --release -p openoxide_monitor

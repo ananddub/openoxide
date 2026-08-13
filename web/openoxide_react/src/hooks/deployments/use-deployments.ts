@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
+import {useDeploymentList} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {components} from '#/types/api';
@@ -11,7 +12,7 @@ export type SortKey = 'created_at' | 'title' | 'status';
 const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
 
 export function useDeployments() {
-	const [refreshing, setRefreshing] = React.useState(false);
+	const [refreshing] = React.useState(false);
 
 	// Filters and sorting state
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -31,31 +32,17 @@ export function useDeployments() {
 
 	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
 
-	// Fetch deployments from backend
-	const {
-		data: deployments,
-		isLoading,
-		refetch,
-	} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					query: {
-						limit: 100,
-					},
-				},
-			},
-		},
-		{
-			refetchInterval: (query) => {
-				const data = query.state.data as Deployment[] | undefined;
-				const hasActive = data?.some(d => !FINAL_STATES.includes((d.status || '').toUpperCase()));
-				return hasActive ? 1000 : 4000;
-			},
-		},
-	);
+	// Fetch deployments from backend (live — auto-updates via WebSocket)
+	const {data: deployments, loading: isLoading} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 100n,
+		offset: null,
+	});
 
 	const activeQueue = React.useMemo(() => {
 		if (!deployments) return [];
@@ -65,16 +52,8 @@ export function useDeployments() {
 		});
 	}, [deployments]);
 
-	const handleRefresh = async () => {
-		setRefreshing(true);
-		try {
-			await refetch();
-			toast.success('Deployments list updated');
-		} catch {
-			toast.error('Failed to update deployments');
-		} finally {
-			setRefreshing(false);
-		}
+	const handleRefresh = () => {
+		toast.success('Deployments list is live and auto-updating');
 	};
 
 	const handleCancelDeployment = async (id: number) => {
@@ -87,7 +66,7 @@ export function useDeployments() {
 				},
 			});
 			toast.success('Deployment cancellation requested');
-			refetch();
+			// Live hook auto-updates via WebSocket — no manual refetch needed
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -108,10 +87,11 @@ export function useDeployments() {
 			const status = d.status.toUpperCase();
 			const matchesStatus =
 				statusFilter === 'all' ||
-				(statusFilter === 'running' && status === 'RUNNING') ||
+				(statusFilter === 'running' && (status === 'RUNNING' || status === 'CANCELLING')) ||
 				(statusFilter === 'queued' && status === 'QUEUED') ||
 				(statusFilter === 'done' && status === 'DONE') ||
-				(statusFilter === 'error' && status === 'ERROR');
+				(statusFilter === 'error' && status === 'ERROR') ||
+				(statusFilter === 'cancelled' && (status === 'CANCELLED' || status === 'CANCELLING'));
 
 			const hasApp = d.application_id !== null && d.application_id !== undefined;
 			const hasCompose = d.compose_id !== null && d.compose_id !== undefined;
@@ -129,7 +109,9 @@ export function useDeployments() {
 		// 2. Sorting
 		return [...result].sort((a, b) => {
 			if (sortBy === 'created_at') {
-				return sortDir === 'desc' ? b.created_at - a.created_at : a.created_at - b.created_at;
+				return sortDir === 'desc'
+					? Number(b.created_at || 0) - Number(a.created_at || 0)
+					: Number(a.created_at || 0) - Number(b.created_at || 0);
 			}
 			if (sortBy === 'title') {
 				return sortDir === 'desc' ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title);

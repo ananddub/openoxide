@@ -1,18 +1,16 @@
-import {useState} from 'react';
-import {Rocket, RefreshCw, Hammer, Play, X, Ban, Terminal} from 'lucide-react';
+import {useState, useMemo} from 'react';
+import {Rocket, RefreshCw, Hammer, Play, Ban, Terminal, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {$api} from '#/api/query';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {useDeploymentList} from 'virtual:openoxide-live';
 
 interface DeploySettingsCardProps {
 	app: any;
-	handleAction: (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel') => Promise<void>;
+	handleAction: (action: any) => Promise<void>;
 	onUpdated?: () => void;
 }
 
 type ActionType = 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel' | 'stop';
-
-const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
 
 export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySettingsCardProps) {
 	const [autoDeploy, setAutoDeploy] = useState(app.auto_deploy !== false);
@@ -20,34 +18,21 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 	const [showTerminal, setShowTerminal] = useState(false);
 	
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(null);
-	const [activeLoading, setActiveLoading] = useState<ActionType | null>(null);
+	const [activeLoading, setActiveLoading] = useState<string | null>(null);
 
-	// Fetch deployments query to detect active building state
-	const {data: events = [], refetch} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					application_id: app.id,
-					limit: 20,
-				} as any,
-			},
-		},
-		{
-			enabled: !!app?.id,
-			refetchInterval: (query) => {
-				const data = query.state.data as any[] | undefined;
-				const hasActive = data?.some(e => {
-					if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
-					const s = (e.status || '').toUpperCase();
-					const st = (e.state || '').toUpperCase();
-					return !FINAL_STATES.includes(s) && !FINAL_STATES.includes(st);
-				});
-				return hasActive ? 3000 : false;
-			},
-		}
-	);
+	// Fetch deployments query via live WebSocket hook
+	const {data: rawDeployments} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: BigInt(app?.id || 0),
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 20n,
+		offset: null,
+	});
+
+	const events = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
 
 	const hasActiveDeployment = (events || []).some((e: any) => {
 		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
@@ -63,8 +48,7 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 		setConfirmAction(null);
 		setActiveLoading(action);
 		try {
-			await handleAction(action as any);
-			await refetch();
+			await handleAction(action);
 			onUpdated?.();
 		} finally {
 			setActiveLoading(null);
@@ -89,7 +73,9 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 		return 'Are you sure you want to cancel the active deployment build?';
 	};
 
-	const isProcessing = activeLoading !== null;
+	const rawAppStatus = (app?.app_status || '').toUpperCase();
+	const isStoppingOrCancelling = rawAppStatus === 'STOPPING' || rawAppStatus === 'CANCELLING' || activeLoading === 'stop' || activeLoading === 'cancel';
+	const isProcessing = activeLoading !== null || isStoppingOrCancelling;
 
 	return (
 		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4 shadow-sm">
@@ -131,8 +117,28 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 						{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
 					</Button>
 
-					{/* 3-State Action Button: Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
-					{isBuilding ? (
+					{/* 4-State Action Button: Stopping, Cancelling, Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
+					{activeLoading === 'stop' || (app?.app_status || '').toUpperCase() === 'STOPPING' ? (
+						<Button
+							disabled
+							variant="outline"
+							size="sm"
+							className="border-border text-destructive font-semibold flex items-center gap-1.5 h-9 rounded-lg opacity-80 cursor-not-allowed"
+						>
+							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+							Stopping...
+						</Button>
+					) : activeLoading === 'cancel' || (app?.app_status || '').toUpperCase() === 'CANCELLING' ? (
+						<Button
+							disabled
+							variant="outline"
+							size="sm"
+							className="border-destructive/50 text-destructive font-bold flex items-center gap-1.5 h-9 rounded-lg px-4 opacity-80 cursor-not-allowed"
+						>
+							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+							Cancelling...
+						</Button>
+					) : isBuilding ? (
 						<Button
 							onClick={() => executeAction('cancel')}
 							disabled={activeLoading === 'cancel'}
@@ -169,9 +175,10 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 					{/* Terminal Access Button */}
 					<Button
 						onClick={() => setShowTerminal(true)}
+						disabled={isProcessing || !isRunning}
 						variant="outline"
 						size="sm"
-						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg"
+						className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						<Terminal className="w-4 h-4 text-primary" /> Open Terminal
 					</Button>

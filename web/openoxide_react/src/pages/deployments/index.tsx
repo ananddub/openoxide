@@ -131,10 +131,10 @@ function DeploymentsPage() {
 									<TableBody>
 										{filteredAndSorted.map(d => (
 											<DeploymentItem
-												key={d.id}
-												deployment={d}
-												onViewLogs={setSelectedDeployment}
-												onViewError={setErrorDetailDeployment}
+												key={String(d.id)}
+												deployment={d as any}
+												onViewLogs={setSelectedDeployment as any}
+												onViewError={setErrorDetailDeployment as any}
 												onCancel={handleCancelDeployment}
 											/>
 										))}
@@ -223,7 +223,7 @@ function DeploymentsPage() {
 												<TableCell className="text-xs text-muted-foreground font-mono">
 													<span className="flex items-center gap-1">
 														<Clock className="w-3 h-3 text-muted-foreground" />
-														{new Date((d.created_at || 0) * 1000).toLocaleTimeString()}
+														{new Date(Number(d.created_at || 0) * 1000).toLocaleTimeString()}
 													</span>
 												</TableCell>
 												<TableCell className="text-right">
@@ -231,7 +231,7 @@ function DeploymentsPage() {
 														<Button
 															size="sm"
 															variant="outline"
-															onClick={() => setSelectedDeployment(d)}
+															onClick={() => setSelectedDeployment(d as any)}
 															className="h-7 text-xs border-border text-foreground hover:bg-muted px-2 rounded-lg font-semibold flex items-center gap-1">
 															<Terminal className="w-3 h-3" /> Stream Logs
 														</Button>
@@ -239,7 +239,7 @@ function DeploymentsPage() {
 															<Button
 																size="sm"
 																variant="outline"
-																onClick={() => setCancelingId(d.id!)}
+																onClick={() => setCancelingId(Number(d.id!))}
 																className="h-7 text-xs text-destructive border-destructive/20 hover:bg-destructive/10 px-2.5 rounded-lg font-semibold flex items-center gap-1">
 																<XCircle className="w-3.5 h-3.5" /> Cancel Build
 															</Button>

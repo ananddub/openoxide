@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::repository::PreviewDeploymentRow;
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PreviewDeploymentView {
     pub id: i64,
     pub base_application_id: i64,

@@ -8,41 +8,25 @@ import {
 } from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
-import {$api} from '#/api/query';
+import { useProjectGet, useApplicationGet, useComposeGet, usePostgresGet } from 'virtual:openoxide-live';
 
 function ProjectNameBreadcrumb({ id }: { id: number }) {
-	const { data: project } = $api.useQuery(
-		'get',
-		'/projects/{id}',
-		{ params: { path: { id } } }
-	);
+	const { data: project } = useProjectGet(BigInt(id));
 	return <>{project?.name || 'Loading...'}</>;
 }
 
 function AppNameBreadcrumb({ id }: { id: number }) {
-	const { data: app } = $api.useQuery(
-		'get',
-		'/applications/{id}',
-		{ params: { path: { id } } }
-	);
+	const { data: app } = useApplicationGet(BigInt(id));
 	return <>{app?.name || app?.app_name || 'Loading...'}</>;
 }
 
 function ComposeNameBreadcrumb({ id }: { id: number }) {
-	const { data: compose } = $api.useQuery(
-		'get',
-		'/compose/{id}',
-		{ params: { path: { id } } }
-	);
+	const { data: compose } = useComposeGet(BigInt(id));
 	return <>{compose?.name || compose?.app_name || 'Loading...'}</>;
 }
 
 function DatabaseNameBreadcrumb({ id }: { id: number }) {
-	const { data: postgresDb } = $api.useQuery(
-		'get',
-		'/postgres/{id}',
-		{ params: { path: { id } } }
-	);
+	const { data: postgresDb } = usePostgresGet(BigInt(id));
 	return <>{postgresDb?.name || postgresDb?.database_name || postgresDb?.app_name || `Database #${id}`}</>;
 }
 

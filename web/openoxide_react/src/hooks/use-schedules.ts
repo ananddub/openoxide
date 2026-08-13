@@ -4,6 +4,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {components} from '#/types/api';
+import {useScheduleListByOrganization, useRemoteServerList} from 'virtual:openoxide-live';
 
 export type Schedule = components['schemas']['ScheduleResponseDto'];
 
@@ -13,28 +14,11 @@ export function useSchedules() {
 	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 	const [editingSchedule, setEditingSchedule] = React.useState<Schedule | null>(null);
 
-	// Fetch schedules
-	const {
-		data: schedules,
-		isLoading,
-		refetch,
-	} = $api.useQuery(
-		'get',
-		'/schedules/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: activeOrg?.id ?? 0,
-				},
-			},
-		},
-		{
-			enabled: !!activeOrg?.id,
-		},
-	);
+	// Fetch schedules — pass 0n when no org; live hook returns undefined which falls back to []
+	const {data: schedules, loading} = useScheduleListByOrganization(BigInt(activeOrg?.id ?? 0));
 
 	// Fetch remote servers to let user link a schedule to a server
-	const {data: servers} = $api.useQuery('get', '/remote-servers', {}, {enabled: !!activeOrg?.id});
+	const {data: servers} = useRemoteServerList();
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -52,7 +36,6 @@ export function useSchedules() {
 				},
 			});
 			toast.success('Schedule deleted successfully');
-			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -72,7 +55,6 @@ export function useSchedules() {
 				},
 			});
 			toast.success(`Schedule ${schedule.enabled ? 'paused' : 'resumed'} successfully`);
-			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -105,8 +87,8 @@ export function useSchedules() {
 	};
 
 	const filteredSchedules = React.useMemo(() => {
-		if (!schedules) return [];
-		return schedules.filter(s => {
+		const list = schedules ?? [];
+		return list.filter(s => {
 			const query = searchQuery.toLowerCase();
 			return (
 				s.name.toLowerCase().includes(query) ||
@@ -118,10 +100,10 @@ export function useSchedules() {
 
 	return {
 		activeOrg,
-		schedules: filteredSchedules,
-		isLoading,
-		servers: servers || [],
-		refetch,
+		schedules: filteredSchedules as unknown as Schedule[],
+		isLoading: loading,
+		servers: (servers ?? []) as unknown as any[],
+		refetch: () => {},
 		searchQuery,
 		setSearchQuery,
 		isDialogOpen,

@@ -28,7 +28,7 @@ pub enum PublishError {
 pub struct LivePublisher<T> {
     namespace: &'static str,
     endpoint: &'static str,
-    event: &'static str,
+    _event: &'static str,
     room_args: Option<serde_json::Value>,
     strategy: LiveStrategy,
     identity: Option<LiveIdentity>,
@@ -39,7 +39,7 @@ impl<T: Serialize> LivePublisher<T> {
         Self {
             namespace,
             endpoint,
-            event,
+            _event: event,
             room_args: None,
             strategy: LiveStrategy::Publish,
             identity: None,
@@ -98,11 +98,32 @@ async fn emit_room(
     message: serde_json::Value,
 ) -> Result<(), PublishError> {
     let io = SOCKET_IO.get().ok_or(PublishError::NotRegistered)?;
+    let endpoint = message
+        .get("endpoint")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("unknown");
+    let args = message.get("args").cloned().unwrap_or_default();
     if let Some(socket_namespace) = io.of(namespace) {
-        socket_namespace
+        tracing::info!(namespace, room = %room, endpoint, args = ?args, "sending live update to socket room");
+        let result = socket_namespace
             .to(room)
             .emit("live:update", &message)
-            .await?;
+            .await;
+        match result {
+            Ok(()) => {
+                tracing::info!(namespace, endpoint, "live update sent to socket room");
+            }
+            Err(error) => {
+                tracing::warn!(namespace, endpoint, error = %error, "failed to send live update to socket room");
+                return Err(error.into());
+            }
+        }
+    } else {
+        tracing::warn!(
+            namespace,
+            endpoint,
+            "live socket namespace is not registered"
+        );
     }
     Ok(())
 }

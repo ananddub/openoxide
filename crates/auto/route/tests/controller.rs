@@ -17,7 +17,7 @@ use tower::ServiceExt;
 type TestEventStream = Pin<Box<dyn futures_util::Stream<Item = Result<Event, Infallible>> + Send>>;
 type TestSse = Sse<TestEventStream>;
 
-#[derive(Clone, Debug, Serialize, poem_openapi::Object)]
+#[derive(Clone, Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 struct Metrics {
     cpu: u64,
 }
@@ -179,14 +179,17 @@ fn generates_live_http_refetch_metadata() {
     assert_eq!(endpoint["arguments"][0]["names"], json!(["server_id"]));
     assert_eq!(endpoint["arguments"][1]["kind"], "query");
     assert_eq!(endpoint["arguments"][1]["index"], 1);
-    assert_eq!(endpoint["parameters"], "arg0: unknown, arg1: unknown");
+    assert_eq!(
+        endpoint["parameters"],
+        "server_id: bigint, query: { term: string, page: number | null, }"
+    );
 }
 
 struct UserController {
     prefix: String,
 }
 
-#[derive(Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 struct SearchQuery {
     term: String,
     page: Option<i32>,

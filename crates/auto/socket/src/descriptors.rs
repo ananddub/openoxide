@@ -17,33 +17,40 @@ impl SocketDescriptor {
 
 pub struct LiveRefreshDescriptor {
     pub(crate) endpoint: &'static str,
-    pub(crate) tables: &'static [&'static str],
     pub(crate) factory: for<'a> fn(
         &'a Container,
     ) -> BoxFuture<
         'a,
-        Result<std::sync::Arc<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync + 'static>, DiError>,
+        Result<
+            std::sync::Arc<
+                dyn Fn(serde_json::Value, Option<crate::LiveIdentity>) -> BoxFuture<'static, ()>
+                    + Send
+                    + Sync
+                    + 'static,
+            >,
+            DiError,
+        >,
     >,
 }
 impl LiveRefreshDescriptor {
     pub const fn new(
         endpoint: &'static str,
-        tables: &'static [&'static str],
         factory: for<'a> fn(
             &'a Container,
         ) -> BoxFuture<
             'a,
             Result<
-                std::sync::Arc<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync + 'static>,
+                std::sync::Arc<
+                    dyn Fn(serde_json::Value, Option<crate::LiveIdentity>) -> BoxFuture<'static, ()>
+                        + Send
+                        + Sync
+                        + 'static,
+                >,
                 DiError,
             >,
         >,
     ) -> Self {
-        Self {
-            endpoint,
-            tables,
-            factory,
-        }
+        Self { endpoint, factory }
     }
 }
 

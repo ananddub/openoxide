@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {useDeploymentList} from 'virtual:openoxide-live';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
 import {
 	AlertDialog,
@@ -41,30 +42,20 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
 
-	// Fetch deployments query with polling (fallback if not passed from parent)
-	const {data: rawDeployments = [], isLoading: innerIsLoading, refetch} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					compose_id: composeId,
-					limit: 50,
-				} as any,
-			},
-		},
-		{
-			enabled: !passedDeployments && !!composeId,
-			refetchInterval: (query) => {
-				const data = query.state.data as any[] | undefined;
-				const hasActive = data?.some(isBuildActive);
-				return hasActive ? 1000 : 3000;
-			},
-		}
-	);
+	// Fetch deployments via live hook (fallback if not passed from parent)
+	const {data: rawDeployments, loading: innerLoading} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: BigInt(composeId),
+		database_id: null,
+		server_id: null,
+		limit: null,
+		offset: null,
+	});
 
-	const deployments = passedDeployments ?? (Array.isArray(rawDeployments) ? rawDeployments : []);
-	const isLoading = passedIsLoading ?? innerIsLoading;
+	const deployments = passedDeployments ?? (rawDeployments ?? []);
+	const isLoading = passedIsLoading ?? innerLoading;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
 
@@ -80,7 +71,6 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		try {
 			await deployMutation.mutateAsync({params: {path: {id: composeId}}});
 			toast.success('Compose deployment triggered successfully');
-			await refetch();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -93,7 +83,6 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		try {
 			await redeployMutation.mutateAsync({params: {path: {id: composeId}}});
 			toast.success('Compose redeploy triggered successfully');
-			await refetch();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -108,7 +97,6 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		try {
 			await (cancelMutation as any).mutateAsync({params: {path: {id: composeId}}});
 			toast.success('Deployment cancellation requested');
-			await refetch();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -219,7 +207,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" onClick={() => refetch()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
+					<Button variant="outline" size="sm" disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
 						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
 					</Button>
 					<Button variant="outline" size="sm" onClick={handleRedeploy} disabled={!!activeDeployment || isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs disabled:opacity-50">

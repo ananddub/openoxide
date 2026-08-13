@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {useDestinationList} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 import {DestinationsHeader} from '#/components/destinations/destinations-header';
 import {DestinationsList} from '#/components/destinations/destinations-list';
@@ -18,8 +19,8 @@ function DestinationsPage() {
 	const [editingDestination, setEditingDestination] = useState<DestinationResponse | null>(null);
 
 	// Query destinations with safe array fallback
-	const {data: rawDestinations = [], isLoading, refetch, isRefetching} = $api.useQuery('get', '/destinations');
-	const destinations = Array.isArray(rawDestinations) ? rawDestinations : [];
+	const {data: rawDestinations, loading: isLoading} = useDestinationList();
+	const destinations = Array.isArray(rawDestinations ?? []) ? ((rawDestinations ?? []) as unknown as DestinationResponse[]) : [];
 
 	// Mutations
 	const deleteMutation = $api.useMutation('delete', '/destinations/{id}');
@@ -29,7 +30,6 @@ function DestinationsPage() {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id: String(id)}}});
 			toast.success('S3 Storage Destination deleted successfully');
-			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -68,8 +68,8 @@ function DestinationsPage() {
 					setEditingDestination(null);
 					setIsCreateOpen(true);
 				}}
-				onRefresh={refetch}
-				isRefreshing={isLoading || isRefetching}
+				onRefresh={() => {}}
+				isRefreshing={isLoading}
 			/>
 
 			{/* Destinations Grid List Component (< 200 lines) */}
@@ -85,7 +85,7 @@ function DestinationsPage() {
 			<CreateDestinationModal
 				isOpen={isCreateOpen}
 				onClose={handleModalClose}
-				onSuccess={refetch}
+				onSuccess={() => {}}
 				editingDestination={editingDestination}
 			/>
 		</div>

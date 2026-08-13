@@ -11,7 +11,7 @@ import {
 import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
-import {$api} from '#/api/query';
+import {useProjectListByOrganization} from 'virtual:openoxide-live';
 import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleCardProps {
@@ -35,20 +35,7 @@ export function ScheduleCard({
 	const isEnabled = s.enabled === 1;
 
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
-	const {data: projectsList} = $api.useQuery(
-		'get',
-		'/projects/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: activeOrg?.id || 0,
-				},
-			},
-		},
-		{
-			enabled: activeOrg !== null,
-		},
-	);
+	const {data: projectsList} = useProjectListByOrganization(BigInt(activeOrg?.id ?? 0));
 
 	// Find linked server details if any
 	const linkedServer = servers.find(srv => srv.id === s.server_id);

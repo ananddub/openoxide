@@ -23,7 +23,7 @@ pub struct PatchOrganizationDto {
     pub slug: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct OrganizationResponseDto {
     pub id: i64,
     pub name: String,

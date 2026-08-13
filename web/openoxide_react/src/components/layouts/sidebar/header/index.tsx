@@ -21,7 +21,7 @@ import {DeleteOrganization} from './del-dialog';
 import {NotificationBell} from './notification';
 import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useOrganizationListByOwner} from 'virtual:openoxide-live';
 import {useOrganizationStore} from '#/stores/organization-store';
 
 type Props = {
@@ -44,15 +44,15 @@ export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 	});
 
 	// Fetch Organizations from backend
-	const {data: orgs, isLoading} = $api.useQuery('get', '/organizations');
+	const {data: orgs, loading: isLoading} = useOrganizationListByOwner();
 	const orgList = useOrganizationStore(state => state.organizations);
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const setOrganizations = useOrganizationStore(state => state.setOrganizations);
 	const setActiveOrg = useOrganizationStore(state => state.setActiveOrg);
 
 	React.useEffect(() => {
-		if (orgs) {
-			setOrganizations(orgs);
+		if (orgs && orgs.length > 0) {
+			setOrganizations(orgs as any);
 		}
 	}, [orgs, setOrganizations]);
 

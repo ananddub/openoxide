@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
+import {useRegistryList} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {RegistryHeader} from '#/components/registry/registry-header';
@@ -29,13 +30,11 @@ function RegistryPage() {
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
 	const {
-		data: rawRegistries = [],
-		isLoading,
-		refetch,
-		isRefetching,
-	} = $api.useQuery('get', '/registries');
+		data: rawRegistries,
+		loading: isLoading,
+	} = useRegistryList();
 
-	const registries = Array.isArray(rawRegistries) ? (rawRegistries as RegistryResponse[]) : [];
+	const registries = Array.isArray(rawRegistries ?? []) ? ((rawRegistries ?? []) as unknown as RegistryResponse[]) : [];
 	const deleteMutation = $api.useMutation('delete', '/registries/{id}');
 
 	const handleOpenAdd = () => {
@@ -53,7 +52,6 @@ function RegistryPage() {
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id: deletingId}}});
 			toast.success('Registry deleted successfully');
-			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -65,8 +63,8 @@ function RegistryPage() {
 		<div className="flex flex-col gap-3 p-4 max-w-7xl mx-auto w-full">
 			<RegistryHeader
 				onAddRegistry={handleOpenAdd}
-				onRefresh={refetch}
-				isRefreshing={isLoading || isRefetching}
+				onRefresh={() => {}}
+				isRefreshing={isLoading}
 			/>
 
 			<RegistriesList
@@ -74,7 +72,7 @@ function RegistryPage() {
 				isLoading={isLoading}
 				onEdit={handleOpenEdit}
 				onDelete={id => setDeletingId(id)}
-				onRefresh={refetch}
+				onRefresh={() => {}}
 			/>
 
 			<CreateRegistryModal
@@ -83,7 +81,7 @@ function RegistryPage() {
 					setIsModalOpen(false);
 					setEditingRegistry(null);
 				}}
-				onSuccess={refetch}
+				onSuccess={() => {}}
 				initialData={editingRegistry}
 			/>
 

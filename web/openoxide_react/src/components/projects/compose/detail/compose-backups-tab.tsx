@@ -1,11 +1,11 @@
 import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {useBackupListVolumeBackups} from 'virtual:openoxide-live';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
 
@@ -51,7 +51,6 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 };
 
 export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: passedIsLoading}: ComposeBackupsTabProps) {
-	const queryClient = useQueryClient();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const availableServices = useMemo(() => {
@@ -60,20 +59,18 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time volume backups query (fallback if not passed from parent)
-	const {data: rawBackups = [], isLoading: innerIsLoading} = $api.useQuery('get', '/backups/volume', {
-		enabled: !passedBackups,
-	});
+	// Real-time volume backups live hook (fallback if not passed from parent)
+	const {data: rawBackups, loading: innerLoading} = useBackupListVolumeBackups();
 
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
 		if (passedBackups) return passedBackups;
-		const list = Array.isArray(rawBackups) ? rawBackups : [];
+		const list = rawBackups ?? [];
 		return list.filter(
 			(b: any) => b.compose_id === compose?.id || b.app_name === compose?.app_name
 		);
 	}, [passedBackups, rawBackups, compose]);
-	const isLoading = passedIsLoading ?? innerIsLoading;
+	const isLoading = passedIsLoading ?? innerLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/backups/volume');
@@ -106,7 +103,7 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 				} as any,
 			});
 			toast.success('Compose volume backup rule created successfully');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -116,7 +113,7 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume snapshot triggered successfully');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -126,7 +123,7 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		try {
 			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
 			toast.success('Volume snapshot restore initiated');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -136,7 +133,7 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume backup rule deleted');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}

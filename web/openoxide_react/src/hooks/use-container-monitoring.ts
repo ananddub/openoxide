@@ -101,10 +101,12 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 	};
 }
 
+const DISABLE_METRICS = true; // Temporary disabled as requested
+
 export function useContainerMonitoring(id: number, entityType: MonitoringEntityType = 'application') {
 	// All hooks declared unconditionally at the top — never reorder these
 	const [isLive, setIsLive] = useState(true);
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoading, setIsLoading] = useState(false);
 	const [hasError, setHasError] = useState(false);
 	const [rawStats, setRawStats] = useState<unknown>(null);
 	const [refetchTrigger, setRefetchTrigger] = useState(0);
@@ -114,7 +116,7 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 	}, []);
 
 	useEffect(() => {
-		if (!id) {
+		if (!id || DISABLE_METRICS) {
 			setIsLoading(false);
 			return;
 		}

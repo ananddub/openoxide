@@ -2,7 +2,7 @@ use auto_di::BoxFuture;
 use socketioxide::SocketIo;
 use std::{
     collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, OnceLock, atomic::AtomicBool},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 pub(crate) static SOCKET_IO: OnceLock<SocketIo> = OnceLock::new();
@@ -25,11 +25,13 @@ pub(crate) struct StreamHistory {
     pub(crate) limit: usize,
     pub(crate) events: VecDeque<serde_json::Value>,
 }
-pub(crate) type LiveRefresher = Arc<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync + 'static>;
+pub(crate) type LiveRefresher = Arc<
+    dyn Fn(serde_json::Value, Option<crate::LiveIdentity>) -> BoxFuture<'static, ()>
+        + Send
+        + Sync
+        + 'static,
+>;
 pub(crate) struct ResolvedLiveRefresher {
     pub(crate) endpoint: &'static str,
-    pub(crate) tables: &'static [&'static str],
     pub(crate) refresh: LiveRefresher,
-    pub(crate) running: Arc<AtomicBool>,
-    pub(crate) pending: Arc<AtomicBool>,
 }

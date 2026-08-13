@@ -78,7 +78,7 @@ pub struct TwoFactorSetupResponseDto {
     pub recovery_codes: Vec<String>,
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct TwoFactorStatusDto {
     pub enabled: bool,
     pub configured: bool,
@@ -103,7 +103,7 @@ pub struct PasswordResetConfirmDto {
     pub password: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AuthSessionDto {
     pub session_id: String,
     pub created_at: i64,
@@ -121,7 +121,7 @@ pub struct CreatePersonalAccessTokenDto {
     pub expires_at: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PersonalAccessTokenDto {
     pub id: i64,
     pub name: String,

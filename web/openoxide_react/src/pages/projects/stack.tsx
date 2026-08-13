@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {FolderOpen, Layers} from 'lucide-react';
-import {$api} from '#/api/query';
+import {useProjectGet, useEnvironmentListByProject} from 'virtual:openoxide-live';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
 import {StackCanvas} from '#/components/projects/stack/stack-canvas';
 
@@ -14,10 +14,11 @@ function BlueprintPage() {
 	const projectId = Number(id);
 	const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>();
 
-	const {data: project} = $api.useQuery('get', '/projects/{id}', {params: {path: {id: projectId}}});
-	const {data: envs = []} = $api.useQuery('get', '/environments/project/{project_id}', {params: {path: {project_id: projectId}}});
+	const {data: project} = useProjectGet(BigInt(projectId));
+	const {data: rawEnvs} = useEnvironmentListByProject(BigInt(projectId));
+	const envs = rawEnvs ?? [];
 
-	const envId = selectedEnvId ?? (envs[0] as any)?.id;
+	const envId = selectedEnvId !== undefined ? selectedEnvId : (envs[0] ? Number(envs[0].id) : undefined);
 
 	return (
 		<div style={{
@@ -47,7 +48,7 @@ function BlueprintPage() {
 						<Layers size={14} /> Blueprint
 					</span>
 					<span style={{color: '#30363d'}}>/</span>
-					<EnvDropdown envs={envs} selectedId={envId} onSelect={setSelectedEnvId} onCreateNew={() => {}} />
+					<EnvDropdown envs={envs} selectedId={envId ?? null} onSelect={setSelectedEnvId} onCreateNew={() => {}} />
 				</div>
 			</div>
 

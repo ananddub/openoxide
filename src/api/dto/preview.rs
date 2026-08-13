@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PreviewListQueryDto {
     pub active_only: Option<bool>,
 }

@@ -3,6 +3,7 @@ import {Cpu, HardDrive, Database, Disc, Network, Layers} from 'lucide-react';
 import {Card, CardContent, CardHeader, CardTitle} from '#/components/ui/card';
 import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
+import {useDeploymentRunning} from 'virtual:openoxide-live';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,17 +85,18 @@ export function GlobalMonitoringCards() {
 	const {data: rawDockerContainers = []} =
 		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}}, {refetchInterval: 5000});
 
-	const {data: rawRunning = []} = $api.useQuery(
-		'get',
-		'/deployments/running',
-		{params: {query: {query: {limit: 50}} as any}},
-		{refetchInterval: 5000},
-	);
+	const {data: rawRunning} = useDeploymentRunning({
+		status: null, state: null,
+		application_id: null, compose_id: null, database_id: null, server_id: null,
+		limit: 50n, offset: null,
+	});
 
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);
 
-	// SSE live stream — always on
+	// SSE live stream — disabled for now
 	useEffect(() => {
+		const DISABLE_METRICS = true;
+		if (DISABLE_METRICS) return;
 		const token = getAccessToken();
 		let isMounted = true;
 		const controller = new AbortController();

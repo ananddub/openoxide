@@ -25,7 +25,7 @@ pub struct PatchCertificateDto {
     pub server_id: Option<Option<String>>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct CertificateResponseDto {
     pub id: String,
     pub name: String,
@@ -62,7 +62,7 @@ pub struct RenewCertificateDto {
     pub private_key: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct CertificateRenewalDto {
     pub id: i64,
     pub certificate_id: i64,

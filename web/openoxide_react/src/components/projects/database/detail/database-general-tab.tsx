@@ -51,8 +51,10 @@ export function DatabaseGeneralTab({
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
 
+	const rawDbStatus = (database?.app_status || '').toUpperCase();
+	const isStoppingOrCancelling = rawDbStatus === 'STOPPING' || rawDbStatus === 'CANCELLING' || propActionLoading === 'stop' || propActionLoading === 'cancel';
 	const activeLoading = propActionLoading || null;
-	const isProcessing = activeLoading !== null;
+	const isProcessing = activeLoading !== null || isStoppingOrCancelling;
 
 	const rawStatus = (database?.app_status || '').toLowerCase();
 	const isRunning = ['running', 'done', 'healthy', 'deployed', 'success', 'up', 'active', 'ok'].includes(rawStatus);
@@ -227,7 +229,28 @@ export function DatabaseGeneralTab({
 					</Button>
 
 					{/* Lifecycle Action Buttons */}
-					{isBuilding ? (
+					{/* 4-State Action Button: Stopping, Cancelling, Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
+					{activeLoading === 'stop' || (database?.app_status || '').toUpperCase() === 'STOPPING' ? (
+						<Button
+							disabled
+							variant="outline"
+							size="sm"
+							className="border-border text-destructive font-semibold flex items-center gap-1.5 h-9 rounded-lg opacity-80"
+						>
+							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+							Stopping...
+						</Button>
+					) : activeLoading === 'cancel' || (database?.app_status || '').toUpperCase() === 'CANCELLING' ? (
+						<Button
+							disabled
+							variant="outline"
+							size="sm"
+							className="border-destructive/50 text-destructive font-bold flex items-center gap-1.5 h-9 rounded-lg px-4 opacity-80"
+						>
+							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
+							Cancelling...
+						</Button>
+					) : isBuilding ? (
 						<Button
 							onClick={() => executeActionClick('cancel')}
 							disabled={activeLoading === 'cancel'}
@@ -266,7 +289,8 @@ export function DatabaseGeneralTab({
 					<Button
 						variant="outline"
 						onClick={() => setIsTerminalOpen(true)}
-						className="h-9 px-4 text-xs font-semibold border-border hover:bg-accent text-foreground gap-2 rounded-lg">
+						disabled={isProcessing || !isRunning}
+						className="h-9 px-4 text-xs font-semibold border-border hover:bg-accent text-foreground gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
 						<Terminal className="size-4 text-primary" /> Open Terminal
 					</Button>
 				</div>

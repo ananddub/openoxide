@@ -33,6 +33,7 @@ impl GitProviderController {
     }
 
     #[get]
+    #[live(tables = ["git_providers", "github_providers", "gitlab_providers", "gitea_providers", "bitbucket_providers"])]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -45,6 +46,7 @@ impl GitProviderController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["git_providers", "github_providers", "gitlab_providers", "gitea_providers", "bitbucket_providers"])]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

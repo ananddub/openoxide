@@ -1,11 +1,11 @@
 import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {Calendar, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {useScheduleListByCompose} from 'virtual:openoxide-live';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
 
@@ -51,7 +51,6 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 };
 
 export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoading: passedIsLoading}: ComposeSchedulesTabProps) {
-	const queryClient = useQueryClient();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const availableServices = useMemo(() => {
@@ -62,18 +61,11 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 
 	// Real-time compose schedules query (fallback if not passed from parent)
 	const composeId = compose?.id;
-	const {data: rawSchedules = [], isLoading: innerIsLoading} = $api.useQuery(
-		'get',
-		'/schedules/compose/{compose_id}',
-		{
-			params: {path: {compose_id: composeId || 0}},
-			enabled: !passedSchedules && !!composeId,
-		} as any
-	);
+	const {data: rawSchedules, loading: innerLoading} = useScheduleListByCompose(BigInt(composeId ?? 0));
 
 	// Safe array normalization
-	const composeSchedules = passedSchedules ?? (Array.isArray(rawSchedules) ? rawSchedules : []);
-	const isLoading = passedIsLoading ?? innerIsLoading;
+	const composeSchedules = passedSchedules ?? (rawSchedules ?? []);
+	const isLoading = passedIsLoading ?? innerLoading;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -99,7 +91,7 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 				} as any,
 			});
 			toast.success('Compose schedule task created successfully');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -109,7 +101,7 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task executed');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -119,7 +111,7 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task deleted');
-			queryClient.invalidateQueries();
+
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}

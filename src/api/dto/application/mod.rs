@@ -177,7 +177,7 @@ pub struct PatchPreviewConfigDto {
     pub require_collaborator_permissions: bool,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationResponseDto {
     pub id: i64,
     pub name: String,
@@ -310,7 +310,7 @@ pub struct ApplicationCleanupResponseDto {
     pub affected: i64,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationRollbackResponseDto {
     pub id: i64,
     pub deployment_id: i64,

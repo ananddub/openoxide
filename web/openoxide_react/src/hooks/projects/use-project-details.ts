@@ -1,5 +1,17 @@
 import {useState, useEffect, useMemo} from 'react';
-import {$api} from '#/api/query';
+import {
+	useProjectGet,
+	useEnvironmentListByProject,
+	useRemoteServerList,
+	useApplicationListByEnvironment,
+	useComposeListByEnvironment,
+	usePostgresListByEnvironment,
+	useMysqlListByEnvironment,
+	useMariadbListByEnvironment,
+	useMongoListByEnvironment,
+	useRedisListByEnvironment,
+	useLibsqlListByEnvironment,
+} from 'virtual:openoxide-live';
 
 export function useProjectDetails(projectId: number) {
 	// Modals State
@@ -11,33 +23,43 @@ export function useProjectDetails(projectId: number) {
 	const [showCreateDatabase, setShowCreateDatabase] = useState(false);
 
 	// Queries
-	const {data: project, refetch: refetchProject} = $api.useQuery('get', '/projects/{id}', {params: {path: {id: projectId}}});
-	const {data: envs = [], refetch: refetchEnvs} = $api.useQuery('get', '/environments/project/{project_id}', {params: {path: {project_id: projectId}}});
-	const {data: servers = []} = $api.useQuery('get', '/remote-servers', {});
+	const {data: project} = useProjectGet(BigInt(projectId));
+	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
+	const {data: servers = []} = useRemoteServerList();
 
-	const [selectedEnvId, setSelectedEnvId] = useState<number | null>(null);
+	const [userSelectedEnvId, setUserSelectedEnvId] = useState<number | null>(null);
 
-	// Auto-select default/first environment
+	// Reset user selected environment choice whenever projectId changes
 	useEffect(() => {
-		if (envs.length > 0 && !selectedEnvId) {
-			const def = envs.find(e => e.is_default) || envs[0];
-			setSelectedEnvId(def.id);
+		setUserSelectedEnvId(null);
+	}, [projectId]);
+
+	// Synchronously compute active environment ID during render (0ms delay)
+	const activeEnvId = useMemo(() => {
+		if (envs.length === 0) return null;
+		if (userSelectedEnvId !== null && envs.some(e => Number(e.id) === Number(userSelectedEnvId))) {
+			return userSelectedEnvId;
 		}
-	}, [envs, selectedEnvId]);
+		const def = envs.find(e => e.is_default) || envs[0];
+		return def ? Number(def.id) : null;
+	}, [envs, userSelectedEnvId]);
 
-	const selectedEnv = useMemo(() => envs.find(e => e.id === selectedEnvId) || null, [envs, selectedEnvId]);
+	const selectedEnv = useMemo(
+		() => (activeEnvId !== null ? envs.find(e => Number(e.id) === Number(activeEnvId)) || null : null),
+		[envs, activeEnvId]
+	);
 
-	// Fetch environment services
-	const envId = selectedEnvId || 0;
-	const {data: apps = [], isLoading: isLoadingApps, refetch: refetchApps} = $api.useQuery('get', '/applications/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: composes = [], isLoading: isLoadingComposes, refetch: refetchComposes} = $api.useQuery('get', '/compose/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
+	// Fetch environment services with instant activeEnvId
+	const envId = activeEnvId || 0;
+	const {data: apps, loading: isLoadingApps} = useApplicationListByEnvironment(BigInt(envId));
+	const {data: composes, loading: isLoadingComposes} = useComposeListByEnvironment(BigInt(envId));
 
-	const {data: pgDbs = [], refetch: refetchPg} = $api.useQuery('get', '/postgres/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: myDbs = [], refetch: refetchMy} = $api.useQuery('get', '/mysql/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: mariaDbs = [], refetch: refetchMaria} = $api.useQuery('get', '/mariadb/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: mongoDbs = [], refetch: refetchMongo} = $api.useQuery('get', '/mongo/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: redisDbs = [], refetch: refetchRedis} = $api.useQuery('get', '/redis/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
-	const {data: libsqlDbs = [], refetch: refetchLibsql} = $api.useQuery('get', '/libsql/environment/{environment_id}', {params: {path: {environment_id: envId}}}, {enabled: !!envId});
+	const {data: pgDbs} = usePostgresListByEnvironment(BigInt(envId));
+	const {data: myDbs} = useMysqlListByEnvironment(BigInt(envId));
+	const {data: mariaDbs} = useMariadbListByEnvironment(BigInt(envId));
+	const {data: mongoDbs} = useMongoListByEnvironment(BigInt(envId));
+	const {data: redisDbs} = useRedisListByEnvironment(BigInt(envId));
+	const {data: libsqlDbs} = useLibsqlListByEnvironment(BigInt(envId));
 
 	const databases = useMemo(() => {
 		const list: Record<string, unknown>[] = [];
@@ -50,23 +72,11 @@ export function useProjectDetails(projectId: number) {
 		return list;
 	}, [pgDbs, myDbs, mariaDbs, mongoDbs, redisDbs, libsqlDbs]);
 
-	const handleRefresh = () => {
-		refetchProject();
-		refetchEnvs();
-		if (envId) {
-			refetchApps();
-			refetchComposes();
-			refetchPg();
-			refetchMy();
-			refetchMaria();
-			refetchMongo();
-			refetchRedis();
-			refetchLibsql();
-		}
-	};
+	// Live hooks auto-push updates — no manual refetch needed
+	const handleRefresh = () => {};
 
 	const isLoading = isLoadingApps || isLoadingComposes;
-	const totalServices = apps.length + composes.length + databases.length;
+	const totalServices = (apps ?? []).length + (composes ?? []).length + databases.length;
 
 	// Filter State
 	const [searchQuery, setSearchQuery] = useState('');
@@ -78,14 +88,14 @@ export function useProjectDetails(projectId: number) {
 		setSearchQuery('');
 		setTypeFilter('all');
 		setStatusFilter('all');
-	}, [selectedEnvId]);
+	}, [activeEnvId]);
 
 	// Filter Services Logic
 	const filteredServices = useMemo(() => {
 		const sQuery = searchQuery.toLowerCase().trim();
 
 		// Map apps
-		const mappedApps = apps.map(app => ({
+		const mappedApps = (apps ?? []).map(app => ({
 			key: `app-${app.id}`,
 			projectId,
 			type: 'APP' as const,
@@ -97,7 +107,7 @@ export function useProjectDetails(projectId: number) {
 		}));
 
 		// Map composes
-		const mappedComposes = composes.map(compose => ({
+		const mappedComposes = (composes ?? []).map(compose => ({
 			key: `compose-${compose.id}`,
 			projectId,
 			type: 'COMPOSE' as const,
@@ -171,8 +181,8 @@ export function useProjectDetails(projectId: number) {
 		project,
 		envs,
 		servers,
-		selectedEnvId,
-		setSelectedEnvId,
+		selectedEnvId: activeEnvId,
+		setSelectedEnvId: setUserSelectedEnvId,
 		selectedEnv,
 		filteredServices,
 		handleRefresh,
@@ -184,6 +194,6 @@ export function useProjectDetails(projectId: number) {
 		setTypeFilter,
 		statusFilter,
 		setStatusFilter,
-		refetchEnvs,
+		refetchEnvs: () => {},
 	};
 }

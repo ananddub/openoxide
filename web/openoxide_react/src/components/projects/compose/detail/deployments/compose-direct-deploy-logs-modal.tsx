@@ -4,7 +4,7 @@ import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {$api} from '#/api/query';
+import {useDeploymentList} from 'virtual:openoxide-live';
 
 interface ComposeDirectDeployLogsModalProps {
 	isOpen: boolean;
@@ -22,24 +22,19 @@ export function ComposeDirectDeployLogsModal({
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isConnecting, setIsConnecting] = useState(true);
 
-	// Fetch latest deployment for this compose stack
-	const {data: rawDeployments = [], isLoading: isLoadingDeployments} = $api.useQuery(
-		'get',
-		'/deployments',
-		{
-			params: {
-				query: {
-					compose_id: composeId,
-					limit: 5,
-				} as any,
-			},
-		},
-		{
-			enabled: isOpen && !!composeId,
-		}
-	);
+	// Fetch latest deployment for this compose stack via live hook
+	const {data: rawDeployments, loading: isLoadingDeployments} = useDeploymentList({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: BigInt(composeId),
+		database_id: null,
+		server_id: null,
+		limit: null,
+		offset: null,
+	});
 
-	const deployments = Array.isArray(rawDeployments) ? rawDeployments : [];
+	const deployments = rawDeployments ?? [];
 	const latestDeployment = deployments[0];
 	const latestId = latestDeployment?.id;
 

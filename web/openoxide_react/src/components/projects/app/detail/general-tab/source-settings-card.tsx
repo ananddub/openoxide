@@ -5,6 +5,7 @@ import {Input} from '#/components/ui/input';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {useSshKeyList} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 import {DropSourceForm} from './drop-source-form';
 import {
@@ -47,7 +48,7 @@ export function SourceSettingsCard({app, onUpdated}: SourceSettingsCardProps) {
 
 	const [savingSource, setSavingSource] = useState(false);
 
-	const {data: sshKeys} = $api.useQuery('get', '/ssh-keys');
+	const {data: sshKeys} = useSshKeyList();
 
 	const patchDocker = $api.useMutation('patch', '/applications/{id}/source/docker');
 	const patchGit = $api.useMutation('patch', '/applications/{id}/source/git');

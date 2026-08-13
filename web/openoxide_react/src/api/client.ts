@@ -6,6 +6,7 @@ const AUTH_STORAGE_KEY = 'openoxide-auth-session';
 
 export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+	if (import.meta.env.DEV) return '/api';
 	if (typeof window !== 'undefined' && window.location.hostname) {
 		const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
 		return `${window.location.protocol}//${host}:4000`;

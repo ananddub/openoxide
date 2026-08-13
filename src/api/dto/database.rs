@@ -5,7 +5,7 @@ use validator::Validate;
 use os::string_enum;
 
 string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
     #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum PostgresReplicationRole {
@@ -69,7 +69,7 @@ pub struct PatchDatabaseDto {
     pub detach_rustploy_network: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DatabaseResponseDto {
     pub kind: crate::services::database::DatabaseKind,
     pub id: i64,
@@ -143,7 +143,7 @@ pub struct DatabaseOperationResponseDto {
     pub operation: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DatabaseConnectionDto {
     pub kind: crate::services::database::DatabaseKind,
     pub host: String,
@@ -186,7 +186,7 @@ pub struct PostgresAdvancedConfigDto {
     pub replication_password: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PostgresAdvancedConfigResponseDto {
     pub settings: BTreeMap<String, String>,
     pub replication_role: PostgresReplicationRole,

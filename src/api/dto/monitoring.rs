@@ -85,7 +85,7 @@ pub struct MonitoringTokenResponseDto {
     pub token: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+#[derive(Clone, Debug, Deserialize, Serialize, Object, ts_rs::TS)]
 pub struct MonitoringAgentStatusDto {
     pub server_id: i64,
     pub organization_id: i64,
@@ -94,7 +94,7 @@ pub struct MonitoringAgentStatusDto {
     pub state: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+#[derive(Clone, Debug, Deserialize, Serialize, Object, ts_rs::TS)]
 pub struct MonitoringPolicyDto {
     pub organization_id: i64,
     pub desired_agent_version: Option<String>,
@@ -123,7 +123,7 @@ pub struct CreateMaintenanceWindowDto {
     pub reason: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Object)]
+#[derive(Clone, Debug, Deserialize, Serialize, Object, ts_rs::TS)]
 pub struct MaintenanceWindowDto {
     pub id: i64,
     pub organization_id: i64,

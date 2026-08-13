@@ -42,6 +42,22 @@ export function DeploymentItem({
 				</Badge>
 			);
 		}
+		if (status === 'CANCELLING') {
+			return (
+				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-amber-500 border-amber-500/30 bg-amber-500/10 gap-1.5 py-0.5">
+					<span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+					CANCELLING...
+				</Badge>
+			);
+		}
+		if (status === 'CANCELLED') {
+			return (
+				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 border-zinc-500/30 bg-zinc-500/10 gap-1.5 py-0.5">
+					<span className="size-1.5 rounded-full bg-zinc-400" />
+					CANCELLED
+				</Badge>
+			);
+		}
 		if (status === 'ERROR' || status === 'FAILED' || status === 'CRASHED') {
 			return (
 				<Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-rose-500 border-rose-500/30 bg-rose-500/10 gap-1.5 py-0.5">

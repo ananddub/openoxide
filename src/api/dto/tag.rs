@@ -14,7 +14,7 @@ pub struct UpdateTagDto {
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, Object, ts_rs::TS)]
 pub struct TagDto {
     pub id: i64,
     pub name: String,

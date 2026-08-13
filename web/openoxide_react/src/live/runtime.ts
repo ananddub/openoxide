@@ -33,8 +33,12 @@ function accessToken() {
 	}
 }
 
+function safeStringify(val: unknown) {
+	return JSON.stringify(val, (_key, value) => (typeof value === 'bigint' ? value.toString() : value));
+}
+
 function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
-	return `${endpoint.namespace}:${endpoint.endpoint}:${JSON.stringify(endpoint.args)}`;
+	return `${endpoint.namespace}:${endpoint.endpoint}:${safeStringify(endpoint.args)}`;
 }
 
 function socketFor(namespace: string) {
@@ -52,7 +56,7 @@ function socketFor(namespace: string) {
 		}
 	});
 	socket.on('live:update', (update: LiveUpdate) => {
-		const key = `${namespace}:${update.endpoint}:${JSON.stringify(update.args)}`;
+		const key = `${namespace}:${update.endpoint}:${safeStringify(update.args)}`;
 		const matching = entries.get(key)
 			? [entries.get(key)!]
 			: update.args == null
@@ -71,7 +75,7 @@ function socketFor(namespace: string) {
 		}
 	});
 	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
-		const key = `${namespace}:${invalidation.endpoint}:${JSON.stringify(invalidation.args)}`;
+		const key = `${namespace}:${invalidation.endpoint}:${safeStringify(invalidation.args)}`;
 		const entry = entries.get(key);
 		if (!entry?.endpoint.refetch) return;
 		void entry.endpoint.refetch(entry.endpoint.args).then((value) => {

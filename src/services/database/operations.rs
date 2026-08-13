@@ -113,6 +113,30 @@ impl DatabaseService {
     }
 
     pub async fn cancel_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
+        match kind {
+            DatabaseKind::Postgres => {
+                let _ = self.repo_postgres.update_status(id, "STOPPING").await;
+            }
+            DatabaseKind::Mysql => {
+                let _ = self.repo_mysql.update_status(id, "STOPPING").await;
+            }
+            DatabaseKind::Mariadb => {
+                let _ = self.repo_mariadb.update_status(id, "STOPPING").await;
+            }
+            DatabaseKind::Mongo => {
+                let _ = self.repo_mongo.update_status(id, "STOPPING").await;
+            }
+            DatabaseKind::Redis => {
+                let _ = self.repo_redis.update_status(id, "STOPPING").await;
+            }
+            DatabaseKind::Libsql => {
+                let _ = self.repo_libsql.update_status(id, "STOPPING").await;
+            }
+        }
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Database(id))
+            .await;
+
         let queue = resolve::<BuilderQueue>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;

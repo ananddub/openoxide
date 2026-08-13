@@ -7,7 +7,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import {$api} from '#/api/query';
+import {useSshKeyGet} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {Copy, Check, Eye, EyeOff, Key, Terminal, Download} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
@@ -29,20 +29,7 @@ export function ViewKeyModal({
 	const [copiedPrivate, setCopiedPrivate] = useState(false);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
-	const {data: fullKeyDetails} = $api.useQuery(
-		'get',
-		'/ssh-keys/{id}',
-		{
-			params: {
-				path: {
-					id: sshKey?.id || 0,
-				},
-			},
-		},
-		{
-			enabled: !!sshKey?.id,
-		}
-	);
+	const {data: fullKeyDetails} = useSshKeyGet(BigInt(sshKey?.id ?? 0));
 
 	const activeKey = fullKeyDetails || sshKey;
 

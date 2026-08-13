@@ -17,7 +17,7 @@ string_enum! {
     }
 }
 
-#[derive(Debug, Clone, Validate, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Validate, Serialize, Deserialize, poem_openapi::Object, ts_rs::TS)]
 pub struct MiddlewareHeaderDto {
     #[validate(length(min = 1, max = 255))]
     pub name: String,
@@ -37,7 +37,7 @@ pub struct UpsertApplicationMiddlewareDto {
     pub source_ranges: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationMiddlewareResponseDto {
     pub id: i64,
     pub application_id: i64,

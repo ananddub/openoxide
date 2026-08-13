@@ -48,7 +48,7 @@ pub struct RegistryTagsDto {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct RegistryUsageDto {
     pub resource_id: String,
     pub resource_name: String,
@@ -67,7 +67,7 @@ impl From<crate::db::repository::registries::RegistryUsage> for RegistryUsageDto
     }
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct RegistryResponseDto {
     pub id: String,
     pub registry_name: String,

@@ -9,7 +9,7 @@ pub struct UpdateApplicationNetworksDto {
     pub detach_rustploy_network: bool,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationNetworksResponseDto {
     pub application_id: i64,
     pub detach_rustploy_network: bool,

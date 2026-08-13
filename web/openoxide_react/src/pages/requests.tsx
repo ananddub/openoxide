@@ -1,6 +1,6 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {$api} from '#/api/query';
+import {useRemoteServerList} from 'virtual:openoxide-live';
 import {TraefikRequestsView} from '#/components/traefik/traefik-requests';
 import type {RemoteServerItem} from '#/components/traefik/traefik-types';
 
@@ -12,7 +12,7 @@ function RequestsPage() {
 	const [selectedServerId, setSelectedServerId] = useState<string>('local');
 
 	// Query Remote Servers list
-	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers');
+	const {data: rawServers} = useRemoteServerList();
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {

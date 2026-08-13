@@ -12,7 +12,7 @@ pub struct UpsertApplicationRedirectDto {
     pub unique_config_key: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct ApplicationRedirectResponseDto {
     pub id: i64,
     pub regex: String,

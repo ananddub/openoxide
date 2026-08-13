@@ -185,6 +185,10 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 			return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
 		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED') 
 			return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+		if (s === 'CANCELLING')
+			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
+		if (s === 'CANCELLED')
+			return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
 		if (isBuildActive(e)) 
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
 		return 'text-muted-foreground bg-muted border-border';

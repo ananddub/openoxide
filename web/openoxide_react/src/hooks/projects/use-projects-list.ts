@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
-import {useQueryClient} from '@tanstack/react-query';
+import {useProjectListByOrganization} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {useOrganizationStore} from '#/stores/organization-store';
 import {formatApiError} from '#/api/utils';
@@ -13,7 +13,6 @@ export const getTagsFromDescription = (description?: string): string[] => {
 };
 
 export function useProjectsList() {
-	const queryClient = useQueryClient();
 	const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -25,20 +24,9 @@ export function useProjectsList() {
 	// Get active organization from global layout switcher store
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
-	// Fetch Projects for the active organization
-	const {data: projects, isLoading: isLoadingProjects} = $api.useQuery(
-		'get',
-		'/projects/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: activeOrg?.id || 0,
-				},
-			},
-		},
-		{
-			enabled: activeOrg !== null,
-		},
+	// Fetch Projects for the active organization (live — auto-updates via WebSocket)
+	const {data: projects, loading: isLoadingProjects} = useProjectListByOrganization(
+		BigInt(activeOrg?.id || 0),
 	);
 
 	// Create Project Mutation
@@ -52,7 +40,7 @@ export function useProjectsList() {
 		if (!projects) return [];
 		const tagsSet = new Set<string>();
 		projects.forEach(p => {
-			getTagsFromDescription(p.description).forEach(t => tagsSet.add(t));
+			getTagsFromDescription(p.description || '').forEach(t => tagsSet.add(t));
 		});
 		return Array.from(tagsSet);
 	}, [projects]);
@@ -67,7 +55,7 @@ export function useProjectsList() {
 				project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				(project.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-			const projectTags = getTagsFromDescription(project.description);
+			const projectTags = getTagsFromDescription(project.description || '');
 			const matchesTags =
 				selectedTags.length === 0 ||
 				selectedTags.every(t => projectTags.includes(t));
@@ -77,8 +65,8 @@ export function useProjectsList() {
 
 		// 2. Sort projects
 		return [...result].sort((a, b) => {
-			if (sortBy === 'newest') return b.created_at - a.created_at;
-			if (sortBy === 'oldest') return a.created_at - b.created_at;
+			if (sortBy === 'newest') return Number(b.created_at || 0) - Number(a.created_at || 0);
+			if (sortBy === 'oldest') return Number(a.created_at || 0) - Number(b.created_at || 0);
 			if (sortBy === 'alphabetical-asc') return a.name.localeCompare(b.name);
 			if (sortBy === 'alphabetical-desc') return b.name.localeCompare(a.name);
 			return 0;
@@ -114,14 +102,7 @@ export function useProjectsList() {
 
 			toast.success('Project created successfully!');
 			setIsCreateOpen(false);
-			// Refresh projects list
-			queryClient.invalidateQueries({
-				queryKey: [
-					'get',
-					'/projects/organization/{organization_id}',
-					{params: {path: {organization_id: activeOrg.id}}},
-				],
-			});
+			// Live hook auto-updates via WebSocket — no manual refresh needed
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -142,13 +123,7 @@ export function useProjectsList() {
 			});
 
 			toast.success('Project deleted successfully');
-			queryClient.invalidateQueries({
-				queryKey: [
-					'get',
-					'/projects/organization/{organization_id}',
-					{params: {path: {organization_id: activeOrg.id}}},
-				],
-			});
+			// Live hook auto-updates via WebSocket — no manual refresh needed
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}

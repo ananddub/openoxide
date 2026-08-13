@@ -34,13 +34,13 @@ const config = defineConfig({
 		allowedHosts: true,
 		proxy: {
 			'/api': {
-				target: 'http://das.tail25b5a0.ts.net:4000',
+				target: 'http://127.0.0.1:4000',
 				changeOrigin: true,
 				secure: false,
 				rewrite: path => path.replace(/^\/api/, ''),
 			},
 			'/socket.io': {
-				target: 'http://das.tail25b5a0.ts.net:4000',
+				target: 'http://127.0.0.1:4000',
 				ws: true,
 				changeOrigin: true,
 				secure: false,

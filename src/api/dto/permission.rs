@@ -8,7 +8,7 @@ pub struct SavePermissionGroupDto {
     pub actions: Vec<String>,
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PermissionGroupDto {
     pub id: i64,
     pub name: String,
@@ -19,7 +19,7 @@ pub struct PermissionGroupDto {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct PermissionPolicyDto {
     pub id: i64,
     pub action: String,
@@ -47,7 +47,7 @@ pub struct UpdateMemberRoleDto {
     pub role: String,
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct OrganizationMemberDto {
     pub id: Option<i64>,
     pub user_id: i64,
@@ -64,7 +64,7 @@ pub struct CreateOrganizationInviteDto {
     pub group_id: i64,
 }
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct OrganizationInviteDto {
     pub id: Option<i64>,
     pub email: String,

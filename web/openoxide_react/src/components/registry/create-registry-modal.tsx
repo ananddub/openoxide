@@ -17,6 +17,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {$api} from '#/api/query';
+import {useRemoteServerList} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
@@ -43,8 +44,8 @@ export function CreateRegistryModal({
 	const [serverId, setServerId] = useState<string>('local');
 	const [isTesting, setIsTesting] = useState(false);
 
-	const {data: serversData} = $api.useQuery('get', '/remote-servers');
-	const servers = (Array.isArray(serversData) ? serversData : []) as RemoteServerResponse[];
+	const {data: serversData} = useRemoteServerList();
+	const servers = (Array.isArray(serversData) ? serversData : []) as unknown as RemoteServerResponse[];
 
 	const createMutation = $api.useMutation('post', '/registries');
 	const patchMutation = $api.useMutation('patch', '/registries/{id}');

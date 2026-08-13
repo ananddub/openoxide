@@ -535,7 +535,7 @@ impl DeploymentRepository {
 
     pub async fn request_cancel_deployment(&self, application_id: i64) -> Result<(), sqlx::Error> {
         sqlx::query!(
-            r#"UPDATE deployments SET state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE application_id = ? AND status = 'RUNNING'"#,
+            r#"UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE application_id = ? AND status = 'RUNNING'"#,
             application_id
         )
         .execute(self.pool.as_ref())
@@ -670,7 +670,7 @@ impl DeploymentRepository {
 
     pub async fn set_cancel_requested(&self, id: i64) -> Result<bool, sqlx::Error> {
         let res = sqlx::query!(
-            r#"UPDATE deployments SET state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE id = ? AND status = 'RUNNING'"#,
+            r#"UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE id = ? AND status = 'RUNNING'"#,
             id
         )
         .execute(self.pool.as_ref())

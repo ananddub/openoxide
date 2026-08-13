@@ -7,7 +7,7 @@
 	},
 	"scripts": {
 		"build": "vite build",
-		"dev": "vite dev --host localhost --port 3001",
+		"dev": "vite dev --host 0.0.0.0 --port 3001",
 		"preview": "vite preview",
 		"test": "vitest run",
 		"format": "oxfmt .",
@@ -15,6 +15,7 @@
 		"check:oxc": "oxfmt --check && oxlint",
 		"check:tsc": "tsc --noEmit",
 		"gen:routes": "tsr generate",
+		"gen:live": "node ../../crates/auto/vite/src/generate.js . ../../Cargo.toml src/openoxide-live.generated.d.ts openoxide-live-manifest",
 		"gen:api": "openapi-typescript http://das.tail25b5a0.ts.net:4000/openapi.json -o src/types/api.d.ts",
 		"prepare": "cd .. && lefthook install"
 	},

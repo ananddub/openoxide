@@ -22,6 +22,7 @@ import {
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {useTagListAll} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 
 export const Route = createFileRoute('/_app/tags')({
@@ -56,15 +57,10 @@ function MinimalTagsPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const {
-		data: rawTags = [],
-		isLoading,
-		refetch,
-		isRefetching,
-	} = $api.useQuery('get', '/tags' as any, {});
+	const { data: rawTags, loading: isLoading } = useTagListAll();
 
 	const tagsList: TagItem[] = useMemo(() => {
-		return Array.isArray(rawTags) ? (rawTags as TagItem[]) : [];
+		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];
 	}, [rawTags]);
 
 	const createMutation = $api.useMutation('post', '/tags' as any);
@@ -109,7 +105,6 @@ function MinimalTagsPage() {
 				});
 				toast.success('Tag created');
 			}
-			refetch();
 			setIsCreateOpen(false);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -125,7 +120,6 @@ function MinimalTagsPage() {
 			await deleteMutation.mutateAsync({params: {path: {id: deleteTarget.id}}});
 			toast.success('Tag removed');
 			setDeleteTarget(null);
-			refetch();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -149,15 +143,7 @@ function MinimalTagsPage() {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => refetch()}
-						disabled={isRefetching}
-						className="h-8 text-xs text-muted-foreground hover:text-foreground"
-					>
-						<RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
-					</Button>
+
 					<Button
 						size="sm"
 						onClick={handleOpenCreate}

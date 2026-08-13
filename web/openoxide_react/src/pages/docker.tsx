@@ -2,6 +2,7 @@ import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {useRemoteServerList, useDeploymentRunning} from 'virtual:openoxide-live';
 import {DockerHeader} from '#/components/docker/docker-header';
 import {DockerContainersTable} from '#/components/docker/docker-containers-table';
 import {DockerInspectModal, type GlobalContainerItem} from '#/components/docker/docker-inspect-modal';
@@ -21,7 +22,7 @@ function DockerPage() {
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
 	// Query remote servers
-	const {data: rawServers = []} = $api.useQuery('get', '/remote-servers');
+	const {data: rawServers} = useRemoteServerList();
 
 	// Real API Query for system-wide Docker containers for selected server host
 	const {data: rawDockerContainers = [], isLoading: isDockerLoading, refetch, isRefetching} = $api.useQuery(
@@ -36,20 +37,12 @@ function DockerPage() {
 		}
 	);
 
-	// Secondary query for active running deployments
-	const {data: rawRunning = [], isLoading: isRunningLoading} = $api.useQuery(
-		'get',
-		'/deployments/running',
-		{
-			params: {
-				query: {
-					query: {
-						limit: 50,
-					},
-				},
-			},
-		}
-	);
+	// Active running deployments via live hook
+	const {data: rawRunning, loading: isRunningLoading} = useDeploymentRunning({
+		status: null, state: null,
+		application_id: null, compose_id: null, database_id: null, server_id: null,
+		limit: 50n, offset: null,
+	});
 
 	// Transform API response into Dokploy-grade container items
 	const globalContainers: GlobalContainerItem[] = useMemo(() => {
@@ -140,7 +133,7 @@ function DockerPage() {
 				runningContainers={runningCount}
 				onRefresh={handleRefresh}
 				isRefreshing={isDockerLoading || isRefetching}
-				servers={Array.isArray(rawServers) ? rawServers : []}
+				servers={(Array.isArray(rawServers) ? rawServers : []) as any}
 				selectedServerId={selectedServerId}
 				onSelectServer={(id) => setSelectedServerId(id)}
 			/>

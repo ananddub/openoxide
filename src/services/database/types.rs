@@ -2,7 +2,16 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, poem_openapi::Enum,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    sqlx::Type,
+    poem_openapi::Enum,
+    ts_rs::TS,
 )]
 #[sqlx(rename_all = "lowercase")]
 #[oai(rename_all = "lowercase")]

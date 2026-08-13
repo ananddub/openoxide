@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AuditLogQueryDto {
     pub action: Option<String>,
     pub resource_type: Option<String>,
@@ -8,7 +8,7 @@ pub struct AuditLogQueryDto {
     pub offset: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AuditLogDto {
     pub id: Option<i64>,
     pub user_email: String,
@@ -23,7 +23,7 @@ pub struct AuditLogDto {
     pub created_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct AuditLogPageDto {
     pub items: Vec<AuditLogDto>,
     pub total: i64,
