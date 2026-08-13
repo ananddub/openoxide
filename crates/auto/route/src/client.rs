@@ -47,7 +47,7 @@ pub fn live_client_manifest() -> serde_json::Value {
     let endpoints = inventory::iter::<LiveClientRouteDescriptor>
         .into_iter()
         .map(|item| serde_json::json!({
-            "hook": format!("use{}", pascal_case(item.client_name)),
+            "hook": format!("use{}{}", controller_name(item.endpoint), pascal_case(item.client_name)),
             "namespace": item.namespace,
             "endpoint": item.endpoint,
             "event": item.event,
@@ -58,6 +58,15 @@ pub fn live_client_manifest() -> serde_json::Value {
         }))
         .collect::<Vec<_>>();
     serde_json::json!({"types": [], "endpoints": endpoints})
+}
+
+fn controller_name(endpoint: &str) -> String {
+    endpoint
+        .split("::")
+        .next()
+        .map(|name| name.strip_suffix("Controller").unwrap_or(name))
+        .map(pascal_case)
+        .unwrap_or_default()
 }
 
 fn pascal_case(value: &str) -> String {

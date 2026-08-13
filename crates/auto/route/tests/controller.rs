@@ -172,7 +172,7 @@ fn generates_live_http_refetch_metadata() {
         .find(|item| item["endpoint"] == "ServerController::search_metrics")
         .expect("live client endpoint");
 
-    assert_eq!(endpoint["hook"], "useMetricSearch");
+    assert_eq!(endpoint["hook"], "useServerMetricSearch");
     assert_eq!(endpoint["path"], "/servers/{server_id}/search");
     assert_eq!(endpoint["arguments"][0]["kind"], "path");
     assert_eq!(endpoint["arguments"][0]["index"], 0);
