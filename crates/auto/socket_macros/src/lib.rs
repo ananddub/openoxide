@@ -7,6 +7,9 @@ use syn::{
     parse_macro_input,
 };
 
+mod model;
+use model::{Event, LiveEvent};
+
 /// Declares an auto-di managed socket event handler group for one namespace.
 #[proc_macro_attribute]
 pub fn auto_socket(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -36,19 +39,6 @@ pub fn on(attr: TokenStream, item: TokenStream) -> TokenStream {
     expand_standalone_on(args, function)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
-}
-
-struct Event {
-    name: LitStr,
-    handler: Ident,
-    argument_types: Vec<Type>,
-}
-
-struct LiveEvent {
-    name: LitStr,
-    handler: Ident,
-    return_type: Type,
-    argument_types: Vec<Type>,
 }
 
 fn expand_socket_module(
