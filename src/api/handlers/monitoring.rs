@@ -18,13 +18,13 @@ use axum::{
     http::StatusCode,
 };
 use poem_openapi::Object;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
 
 type ApiError = (StatusCode, String);
 
-#[derive(Clone, Debug, Deserialize, Object)]
+#[derive(Clone, Debug, Serialize, Deserialize, Object)]
 pub struct ContainerQueryParam {
     #[serde(rename = "appName")]
     pub app_name: Option<String>,
@@ -65,6 +65,7 @@ impl MonitoringController {
     }
 
     #[get("/server/{id}")]
+    #[live("server_metrics", strategy = publish)]
     async fn get_server_metrics(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
@@ -83,6 +84,7 @@ impl MonitoringController {
     }
 
     #[get("/containers/{id}")]
+    #[live("container_metrics", strategy = publish)]
     async fn get_container_metrics(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,

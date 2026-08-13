@@ -95,6 +95,7 @@ impl DeploymentController {
     }
 
     #[get("/active")]
+    #[live("active_deployments", strategy = publish)]
     async fn active(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
