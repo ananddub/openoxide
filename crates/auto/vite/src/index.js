@@ -277,7 +277,10 @@ function createLiveHook(metadata) {
           console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
           publishLiveValue(fullKey, value);
           setError(undefined);
-        }).catch(setError);
+        }).catch(error => {
+          console.error('[openoxide-live] invalidation refetch failed', fullKey, error);
+          setError(error);
+        });
       };
       socket.on('socket:ready', ready); socket.on('disconnect', disconnect); socket.on('live:subscribed', subscribed); socket.on('live:update', update); socket.on('live:invalidate', invalidate);
       subscribe();

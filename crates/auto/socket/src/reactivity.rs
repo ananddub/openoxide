@@ -69,13 +69,29 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
                 continue;
             }
             if let Some(namespace) = io.of(room.namespace) {
-                let _ = namespace
+                tracing::info!(endpoint = room.endpoint, room = %room.room, args = ?room.args, "no server refresher; sending live invalidation to browser");
+                match namespace
                     .to(room.room)
                     .emit(
                         "live:invalidate",
                         &serde_json::json!({"endpoint": room.endpoint, "args": room.args}),
                     )
-                    .await;
+                    .await
+                {
+                    Ok(()) => tracing::info!(
+                        endpoint = room.endpoint,
+                        "live invalidation sent to browser"
+                    ),
+                    Err(error) => {
+                        tracing::warn!(endpoint = room.endpoint, error = %error, "live invalidation send failed")
+                    }
+                }
+            } else {
+                tracing::warn!(
+                    endpoint = room.endpoint,
+                    namespace = room.namespace,
+                    "cannot send live invalidation: namespace missing"
+                );
             }
         }
     });

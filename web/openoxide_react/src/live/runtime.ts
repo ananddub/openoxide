@@ -98,7 +98,11 @@ function socketFor(namespace: string) {
 	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
 		const key = `${namespace}:${invalidation.endpoint}:${safeStringify(invalidation.args)}`;
 		const entry = entries.get(key);
-		if (!entry?.endpoint.refetch) return;
+		if (!entry?.endpoint.refetch) {
+			console.warn('[openoxide-live] ignored invalidation without matching refetch entry', key);
+			return;
+		}
+		console.debug('[openoxide-live] invalidated', key);
 		void entry.endpoint.refetch(entry.endpoint.args).then((value) => {
 			entry.value = value;
 			entry.hasValue = true;
@@ -106,6 +110,7 @@ function socketFor(namespace: string) {
 			for (const notify of entry.listeners) notify(value);
 		}).catch((cause) => {
 			const error = cause instanceof Error ? cause : new Error(String(cause));
+			console.error('[openoxide-live] invalidation refetch failed', key, error);
 			for (const notify of entry.errorListeners) notify(error);
 		});
 	});
