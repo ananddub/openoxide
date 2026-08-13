@@ -1082,8 +1082,9 @@ fn expand_controller(
                     Ok(refresh)
                 })
             }
-            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::inventory::submit! {
                 ::auto_route::__private::auto_socket::LiveRefreshDescriptor::new(
+                    #endpoint,
                     &[#(#tables),*],
                     #refresh_factory,
                 )
