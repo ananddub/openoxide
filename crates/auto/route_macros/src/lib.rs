@@ -6,6 +6,16 @@ use syn::{
     parse::ParseStream, parse_macro_input, spanned::Spanned,
 };
 
+mod live;
+mod model;
+mod options;
+mod types;
+
+use live::*;
+use model::*;
+use options::{ControllerOptions, Docs, RouteOptions};
+use types::wrapper_inner_type;
+
 const METHODS: &[&str] = &["get", "post", "put", "delete", "patch", "options", "head"];
 
 /// Declares an Axum controller whose receiver methods can carry route markers.
@@ -56,137 +66,6 @@ fn standalone_route(method: &str, attr: TokenStream, item: TokenStream) -> Token
         Ok(tokens) => tokens.into(),
         Err(error) => error.to_compile_error().into(),
     }
-}
-
-struct RouteOptions {
-    path: LitStr,
-    sse_body: Option<Type>,
-    docs: Docs,
-}
-
-#[derive(Clone, Default)]
-struct Docs {
-    tag: Option<LitStr>,
-    tag_description: Option<LitStr>,
-    summary: Option<LitStr>,
-    description: Option<LitStr>,
-    request_description: Option<LitStr>,
-    response_description: Option<LitStr>,
-}
-
-struct ControllerOptions {
-    path: LitStr,
-    docs: Docs,
-}
-
-impl ControllerOptions {
-    fn empty() -> Self {
-        Self {
-            path: LitStr::new("", proc_macro2::Span::call_site()),
-            docs: Docs::default(),
-        }
-    }
-}
-
-impl RouteOptions {
-    fn empty() -> Self {
-        Self {
-            path: LitStr::new("", proc_macro2::Span::call_site()),
-            sse_body: None,
-            docs: Docs::default(),
-        }
-    }
-}
-
-impl Parse for ControllerOptions {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut options = ControllerOptions::empty();
-
-        let mut needs_comma = false;
-        if input.peek(LitStr) {
-            options.path = input.parse()?;
-            needs_comma = true;
-        }
-
-        while !input.is_empty() {
-            if needs_comma {
-                input.parse::<Token![,]>()?;
-                if input.is_empty() {
-                    break;
-                }
-            }
-
-            let key: Ident = input.parse()?;
-            input.parse::<Token![=]>()?;
-            parse_docs_option(&mut options.docs, key, input)?;
-            needs_comma = true;
-        }
-
-        Ok(options)
-    }
-}
-
-impl Parse for RouteOptions {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut options = RouteOptions::empty();
-
-        let mut needs_comma = false;
-        if input.peek(LitStr) {
-            options.path = input.parse()?;
-            needs_comma = true;
-        }
-
-        while !input.is_empty() {
-            if needs_comma {
-                input.parse::<Token![,]>()?;
-                if input.is_empty() {
-                    break;
-                }
-            }
-
-            let key: Ident = input.parse()?;
-            input.parse::<Token![=]>()?;
-            if key == "sse" {
-                if options.sse_body.is_some() {
-                    return Err(syn::Error::new_spanned(key, "duplicate `sse` route option"));
-                }
-                options.sse_body = Some(input.parse()?);
-            } else {
-                parse_docs_option(&mut options.docs, key, input)?;
-            }
-            needs_comma = true;
-        }
-
-        Ok(options)
-    }
-}
-
-fn parse_docs_option(docs: &mut Docs, key: Ident, input: ParseStream<'_>) -> syn::Result<()> {
-    let value: LitStr = input.parse()?;
-    match key.to_string().as_str() {
-        "tag" => set_lit(&mut docs.tag, key, value),
-        "tag_description" => set_lit(&mut docs.tag_description, key, value),
-        "summary" => set_lit(&mut docs.summary, key, value),
-        "description" | "docs" => set_lit(&mut docs.description, key, value),
-        "request_description" | "request_docs" => {
-            set_lit(&mut docs.request_description, key, value)
-        }
-        "response_description" | "response_docs" => {
-            set_lit(&mut docs.response_description, key, value)
-        }
-        _ => Err(syn::Error::new_spanned(
-            key,
-            "unsupported route option; expected `sse = Type`, `tag`, `summary`, `description`, `request_description`, or `response_description`",
-        )),
-    }
-}
-
-fn set_lit(slot: &mut Option<LitStr>, key: Ident, value: LitStr) -> syn::Result<()> {
-    if slot.is_some() {
-        return Err(syn::Error::new_spanned(key, "duplicate route option"));
-    }
-    *slot = Some(value);
-    Ok(())
 }
 
 fn expand_standalone_route(
@@ -291,25 +170,6 @@ fn expand_standalone_route(
     })
 }
 
-struct Route {
-    method: syn::Ident,
-    handler: syn::Ident,
-    path: LitStr,
-    docs: Docs,
-    argument_types: Vec<Type>,
-    request_body: Option<RequestBody>,
-    response_body: Option<ResponseBody>,
-    params: Vec<OpenApiParam>,
-    live_event: Option<LitStr>,
-    live_client_name: Option<LitStr>,
-    live_table: Option<LitStr>,
-    live_tables: Vec<LitStr>,
-    live_strategy: LiveStrategy,
-    live_capacity: Option<syn::LitInt>,
-    live_replay: Option<syn::LitInt>,
-    live_return_type: Option<Type>,
-}
-
 struct LiveOptions {
     client_name: Option<LitStr>,
     table: Option<LitStr>,
@@ -317,14 +177,6 @@ struct LiveOptions {
     strategy: Option<LiveStrategy>,
     capacity: Option<syn::LitInt>,
     replay: Option<syn::LitInt>,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum LiveStrategy {
-    Sqlite,
-    Publish,
-    Latest,
-    Stream,
 }
 
 impl Parse for LiveOptions {
@@ -390,46 +242,6 @@ impl Parse for LiveOptions {
             replay,
         })
     }
-}
-
-struct ModuleRoute {
-    method: syn::Ident,
-    handler: syn::Ident,
-    path: LitStr,
-    docs: Docs,
-    request_body: Option<RequestBody>,
-    response_body: Option<ResponseBody>,
-    params: Vec<OpenApiParam>,
-}
-
-#[derive(Clone)]
-struct RequestBody {
-    ty: Type,
-    content: RequestContent,
-}
-
-#[derive(Clone, Copy)]
-enum RequestContent {
-    Json,
-    Form,
-}
-
-#[derive(Clone)]
-enum ResponseBody {
-    Json(Type),
-    Sse(Option<Type>),
-}
-
-struct OpenApiParam {
-    name: String,
-    ty: Type,
-    source: ParamSource,
-}
-
-#[derive(Clone, Copy)]
-enum ParamSource {
-    Path,
-    Query,
 }
 
 fn expand_controller_module(
@@ -1367,83 +1179,6 @@ fn path_parameter_names(path: &str) -> Vec<String> {
             )
         })
         .collect()
-}
-
-fn wrapper_inner_type(ty: &Type, wrappers: &[&str]) -> Option<Type> {
-    match ty {
-        Type::Paren(paren) => wrapper_inner_type(&paren.elem, wrappers),
-        Type::Reference(reference) => wrapper_inner_type(&reference.elem, wrappers),
-        Type::Path(type_path) => {
-            let segment = type_path.path.segments.last()?;
-            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-                return None;
-            };
-
-            if segment.ident == "Option" {
-                return arguments.args.iter().find_map(|argument| match argument {
-                    GenericArgument::Type(ty) => wrapper_inner_type(ty, wrappers),
-                    _ => None,
-                });
-            }
-
-            if !wrappers.iter().any(|wrapper| segment.ident == wrapper) {
-                return None;
-            }
-
-            arguments.args.iter().find_map(|argument| match argument {
-                GenericArgument::Type(ty) => Some(ty.clone()),
-                _ => None,
-            })
-        }
-        _ => None,
-    }
-}
-
-fn live_argument_type(ty: &Type) -> Type {
-    wrapper_inner_type(ty, &["Path", "Query", "Json", "Form"]).unwrap_or_else(|| ty.clone())
-}
-
-fn is_claims_type(ty: &Type) -> bool {
-    matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "Claims"))
-}
-
-fn is_permission_type(ty: &Type) -> bool {
-    matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == "RequirePermission"))
-}
-
-fn permission_types(ty: &Type) -> Option<(&Type, &Type)> {
-    let Type::Path(path) = ty else { return None };
-    let segment = path.path.segments.last()?;
-    if segment.ident != "RequirePermission" {
-        return None;
-    }
-    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-        return None;
-    };
-    let mut types = arguments.args.iter().filter_map(|argument| match argument {
-        GenericArgument::Type(ty) => Some(ty),
-        _ => None,
-    });
-    Some((types.next()?, types.next()?))
-}
-
-fn is_live_auth_type(ty: &Type) -> bool {
-    is_claims_type(ty) || is_permission_type(ty)
-}
-
-fn is_live_server_arg(ty: &Type) -> bool {
-    is_live_auth_type(ty)
-        || matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| {
-            matches!(segment.ident.to_string().as_str(), "Extension" | "State" | "ConnectInfo" | "Request")
-        }))
-}
-
-fn live_auth_user_id(name: &Ident, ty: &Type) -> proc_macro2::TokenStream {
-    if is_permission_type(ty) {
-        quote!(#name.0.user.user_id)
-    } else {
-        quote!(#name.user.user_id)
-    }
 }
 
 fn string_type() -> Type {
