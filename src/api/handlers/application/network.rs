@@ -26,6 +26,7 @@ impl ApplicationNetworkController {
     }
 
     #[get]
+    #[live(table = "applications")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

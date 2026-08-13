@@ -25,6 +25,7 @@ impl ProjectController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["projects","environments"])]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
@@ -39,6 +40,7 @@ impl ProjectController {
     }
 
     #[get("/organization/{organization_id}")]
+    #[live(tables = ["projects","environments"])]
     async fn list_by_organization(
         &self,
         RequirePermission(_claims, _): RequirePermission<Project, CanRead>,

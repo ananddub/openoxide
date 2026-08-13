@@ -24,6 +24,7 @@ impl CertificateController {
     }
 
     #[get]
+    #[live(tables = ["certificates","certificate_renewals"])]
     async fn list(&self, _claims: Claims) -> Result<Json<Vec<CertificateResponseDto>>, ApiError> {
         self.service
             .list()
@@ -39,6 +40,7 @@ impl CertificateController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["certificates","certificate_renewals"])]
     async fn get(
         &self,
         _claims: Claims,
@@ -91,6 +93,7 @@ impl CertificateController {
     }
 
     #[get("/{id}/dependencies")]
+    #[live(tables = ["certificates","certificate_renewals"])]
     async fn dependencies(
         &self,
         _claims: Claims,
@@ -119,6 +122,7 @@ impl CertificateController {
     }
 
     #[get("/{id}/renewals")]
+    #[live(tables = ["certificates","certificate_renewals"])]
     async fn renewals(
         &self,
         _claims: Claims,

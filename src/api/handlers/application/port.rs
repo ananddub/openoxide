@@ -23,6 +23,7 @@ impl PortController {
     }
 
     #[get]
+    #[live(table = "ports")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

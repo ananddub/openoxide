@@ -204,7 +204,7 @@ pub struct AnalyzeLogsResponseDto {
     pub analysis: String,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, Serialize, poem_openapi::Object)]
 pub struct AiGenerationListQueryDto {
     pub limit: Option<i64>,
 }

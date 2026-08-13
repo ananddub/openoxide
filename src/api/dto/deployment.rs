@@ -12,7 +12,7 @@ pub enum DockerLogStream {
     Stderr,
 }
 
-#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object)]
 pub struct DeploymentListQuery {
     pub status: Option<String>,
     pub state: Option<String>,
@@ -109,7 +109,7 @@ pub struct DockerLogQuery {
     pub stream: Option<DockerLogStream>,
 }
 
-#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Deserialize, Serialize, poem_openapi::Object)]
 pub struct LogSearchQuery {
     pub query: Option<String>,
     pub limit: Option<usize>,

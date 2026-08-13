@@ -35,6 +35,7 @@ impl ServerManagementController {
     }
 
     #[get]
+    #[live(tables = ["server_management","server_cleanup_executions"])]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
@@ -101,6 +102,7 @@ impl ServerManagementController {
     }
 
     #[get("/cleanup/history")]
+    #[live(tables = ["server_management","server_cleanup_executions"])]
     async fn cleanup_history(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,

@@ -26,6 +26,7 @@ impl PostgresController {
     }
 
     #[get("/environment/{environment_id}")]
+    #[live(table = "postgres_dbs")]
     async fn list_by_environment(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -46,6 +47,7 @@ impl PostgresController {
     }
 
     #[get("/{id}")]
+    #[live(table = "postgres_dbs")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

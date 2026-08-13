@@ -25,6 +25,7 @@ impl AuthApiTokenController {
     }
 
     #[get]
+    #[live(table = "personal_access_tokens")]
     async fn list(&self, claims: Claims) -> Result<Json<Vec<PersonalAccessTokenDto>>, ApiError> {
         self.service
             .list_personal_access_tokens(claims.user.user_id)

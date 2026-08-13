@@ -26,6 +26,7 @@ impl OrganizationController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["organization","organization_members"])]
     async fn get(
         &self,
         _claims: Claims,
@@ -40,6 +41,7 @@ impl OrganizationController {
     }
 
     #[get]
+    #[live(tables = ["organization","organization_members"])]
     async fn list_by_owner(
         &self,
         claims: Claims,

@@ -23,6 +23,7 @@ impl EnvironmentController {
     }
 
     #[get("/{id}")]
+    #[live(table = "environments")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,
@@ -37,6 +38,7 @@ impl EnvironmentController {
     }
 
     #[get("/project/{project_id}")]
+    #[live(table = "environments")]
     async fn list_by_project(
         &self,
         RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,

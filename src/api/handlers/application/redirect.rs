@@ -19,6 +19,7 @@ impl RedirectController {
         Self { service }
     }
     #[get]
+    #[live(table = "redirects")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

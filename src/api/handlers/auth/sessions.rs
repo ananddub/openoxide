@@ -20,6 +20,7 @@ impl AuthSessionController {
     }
 
     #[get]
+    #[live(table = "jwt_tokens")]
     async fn list(&self, claims: Claims) -> Result<Json<Vec<AuthSessionDto>>, ApiError> {
         self.service
             .list_sessions(claims.user.user_id, &claims.jti)

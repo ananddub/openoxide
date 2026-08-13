@@ -25,6 +25,7 @@ impl DatabaseNetworkController {
     }
 
     #[get]
+    #[live(table = "database_networks")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -43,6 +44,7 @@ impl DatabaseNetworkController {
     }
 
     #[get("/server/{server_id}")]
+    #[live(table = "database_networks")]
     async fn list_by_server(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -62,6 +64,7 @@ impl DatabaseNetworkController {
     }
 
     #[get("/{id}")]
+    #[live(table = "database_networks")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -118,6 +121,7 @@ impl DatabaseNetworkController {
     }
 
     #[get("/{id}/dependencies")]
+    #[live(table = "database_networks")]
     async fn dependencies(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

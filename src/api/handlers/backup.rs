@@ -128,6 +128,7 @@ impl BackupController {
     }
 
     #[get("/panel/restore/{restore_id}/status")]
+    #[live(table = "backups")]
     async fn panel_restore_status(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
@@ -243,6 +244,7 @@ impl BackupController {
     }
 
     #[get("/executions")]
+    #[live(table = "backup_executions")]
     async fn list_executions(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -337,6 +339,7 @@ impl BackupController {
     }
 
     #[get("/database")]
+    #[live(table = "backups")]
     async fn list_database_backups(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -350,6 +353,7 @@ impl BackupController {
     }
 
     #[get("/database/{id}")]
+    #[live(table = "backups")]
     async fn get_database_backup(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -641,6 +645,7 @@ impl BackupController {
     }
 
     #[get("/volume")]
+    #[live(table = "volume_backups")]
     async fn list_volume_backups(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -673,6 +678,7 @@ impl BackupController {
     }
 
     #[get("/volume/{id}")]
+    #[live(table = "volume_backups")]
     async fn get_volume_backup(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

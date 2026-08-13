@@ -19,6 +19,7 @@ pub(crate) struct Route {
     pub(crate) live_capacity: Option<syn::LitInt>,
     pub(crate) live_replay: Option<syn::LitInt>,
     pub(crate) live_return_type: Option<Type>,
+    pub(crate) live_returns_result: bool,
 }
 
 pub(crate) struct ModuleRoute {

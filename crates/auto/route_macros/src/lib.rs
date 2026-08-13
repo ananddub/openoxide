@@ -538,6 +538,8 @@ fn expand_controller(
             },
             _ => None,
         };
+        let live_returns_result =
+            matches!(&function.sig.output, ReturnType::Type(_, ty) if is_result_type(ty));
         if is_live && live_event.is_none() {
             live_event = Some(LitStr::new(
                 &function.sig.ident.to_string(),
@@ -612,6 +614,7 @@ fn expand_controller(
             live_capacity,
             live_replay,
             live_return_type,
+            live_returns_result,
         });
     }
 
@@ -863,6 +866,15 @@ fn expand_controller(
         }
         let endpoint = format!("{type_ident}::{handler}");
         let strategy = strategy_tokens(route);
+        let await_handler = if route.live_returns_result {
+            quote! {
+                let ::std::result::Result::Ok(::auto_route::__private::axum::Json(data)) = controller.#handler().await else { return; };
+            }
+        } else {
+            quote! {
+                let ::auto_route::__private::axum::Json(data): ::auto_route::__private::axum::Json<#return_type> = controller.#handler().await;
+            }
+        };
         let refresh_factory = format_ident!("__auto_route_live_refresh_{}_{}", type_ident, handler);
         vec![quote! {
             #[doc(hidden)]
@@ -875,7 +887,7 @@ fn expand_controller(
                     let refresh: ::std::sync::Arc<dyn Fn() -> ::auto_route::__private::auto_di::BoxFuture<'static, ()> + Send + Sync + 'static> = ::std::sync::Arc::new(move || {
                         let controller = ::std::sync::Arc::clone(&controller);
                         let future: ::auto_route::__private::auto_di::BoxFuture<'static, ()> = ::std::boxed::Box::pin(async move {
-                            let ::auto_route::__private::axum::Json(data): ::auto_route::__private::axum::Json<#return_type> = controller.#handler().await;
+                            #await_handler
                             if let Ok(publisher) = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy).room(::std::vec::Vec::<()>::new()) {
                                 let _ = publisher.publish(data).await;
                             }
@@ -1107,6 +1119,19 @@ fn response_body_type(ty: &Type) -> Option<ResponseBody> {
             })
         }
         _ => None,
+    }
+}
+
+fn is_result_type(ty: &Type) -> bool {
+    match ty {
+        Type::Paren(paren) => is_result_type(&paren.elem),
+        Type::Reference(reference) => is_result_type(&reference.elem),
+        Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "Result"),
+        _ => false,
     }
 }
 

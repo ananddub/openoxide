@@ -27,6 +27,7 @@ impl DestinationController {
     }
 
     #[get]
+    #[live(table = "destinations")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -59,6 +60,7 @@ impl DestinationController {
     }
 
     #[get("/{id}")]
+    #[live(table = "destinations")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

@@ -22,6 +22,7 @@ impl ServerPrivateNetworkController {
     }
 
     #[get]
+    #[live(table = "server_private_networks")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
@@ -75,6 +76,7 @@ impl ServerPrivateNetworkController {
     }
 
     #[get("/health")]
+    #[live(table = "server_private_networks")]
     async fn health(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,

@@ -81,6 +81,7 @@ impl DatabaseManagementController {
     }
 
     #[get("/{kind}/{id}/connection")]
+    #[live(tables = ["postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs"])]
     async fn connection(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
@@ -121,6 +122,7 @@ impl DatabaseManagementController {
     }
 
     #[get("/postgres/{id}/advanced-config")]
+    #[live(table = "postgres_dbs")]
     async fn get_postgres_advanced_config(
         &self,
         RequirePermission(_claims, _): RequirePermission<Database, CanRead>,

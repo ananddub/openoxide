@@ -35,6 +35,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -49,6 +50,7 @@ impl ScheduleController {
     }
 
     #[get("/application/{application_id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn list_by_application(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -66,6 +68,7 @@ impl ScheduleController {
     }
 
     #[get("/compose/{compose_id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn list_by_compose(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -83,6 +86,7 @@ impl ScheduleController {
     }
 
     #[get("/database/{database_id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn list_by_database(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -92,6 +96,7 @@ impl ScheduleController {
     }
 
     #[get("/server/{server_id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn list_by_server(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -106,6 +111,7 @@ impl ScheduleController {
     }
 
     #[get("/organization/{organization_id}")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn list_by_organization(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -192,6 +198,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/runtime-policy")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn runtime_policy(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -243,6 +250,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/executions")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn executions(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -258,6 +266,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/logs")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn logs(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -271,6 +280,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/logs/stream", sse = ScheduleLogDto)]
+
     async fn logs_stream(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -286,6 +296,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/executions/{execution_id}/logs")]
+    #[live(tables = ["schedules","schedule_runtime_policies","schedule_executions"])]
     async fn execution_logs(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -310,6 +321,7 @@ impl ScheduleController {
     }
 
     #[get("/{id}/executions/{execution_id}/logs/stream", sse = ScheduleLogDto)]
+
     async fn execution_logs_stream(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

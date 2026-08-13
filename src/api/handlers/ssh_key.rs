@@ -25,6 +25,7 @@ impl SshKeyController {
     }
 
     #[get]
+    #[live(table = "ssh_keys")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
@@ -46,6 +47,7 @@ impl SshKeyController {
     }
 
     #[get("/{id}")]
+    #[live(table = "ssh_keys")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,

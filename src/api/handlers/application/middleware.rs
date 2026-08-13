@@ -19,6 +19,7 @@ impl ApplicationMiddlewareController {
         Self { service }
     }
     #[get]
+    #[live(table = "application_middlewares")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

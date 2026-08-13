@@ -36,6 +36,7 @@ impl PermissionGroupController {
     }
 
     #[get]
+    #[live(tables = ["groups","policy","group_policy","user_policy","organization_members","organization_invites"])]
     async fn list(
         &self,
         RequirePermission(_, _): RequirePermission<Groups, CanRead>,
@@ -49,6 +50,7 @@ impl PermissionGroupController {
     }
 
     #[get("/policies")]
+    #[live(tables = ["groups","policy","group_policy","user_policy","organization_members","organization_invites"])]
     async fn policies(
         &self,
         RequirePermission(_, _): RequirePermission<Groups, CanRead>,
@@ -121,6 +123,7 @@ impl PermissionGroupController {
     }
 
     #[get("/members")]
+    #[live(tables = ["groups","policy","group_policy","user_policy","organization_members","organization_invites"])]
     async fn members(
         &self,
         RequirePermission(_, _): RequirePermission<Members, CanRead>,
@@ -176,6 +179,7 @@ impl PermissionGroupController {
     }
 
     #[get("/invites")]
+    #[live(tables = ["groups","policy","group_policy","user_policy","organization_members","organization_invites"])]
     async fn invites(
         &self,
         RequirePermission(_, _): RequirePermission<Invitation, CanRead>,

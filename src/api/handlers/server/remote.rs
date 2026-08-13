@@ -26,6 +26,7 @@ impl RemoteServerController {
     }
 
     #[get]
+    #[live(tables = ["servers","server_migrations"])]
     async fn list(&self, _claims: Claims) -> Result<Json<Vec<RemoteServerResponseDto>>, ApiError> {
         self.service
             .list()
@@ -41,6 +42,7 @@ impl RemoteServerController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["servers","server_migrations"])]
     async fn get(
         &self,
         _claims: Claims,
@@ -148,6 +150,7 @@ impl RemoteServerController {
     }
 
     #[get("/migrations/{migration_id}")]
+    #[live(tables = ["servers","server_migrations"])]
     async fn migration_status(
         &self,
         _claims: Claims,

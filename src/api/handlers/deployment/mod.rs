@@ -40,6 +40,7 @@ impl DeploymentController {
     }
 
     #[get]
+    #[live(table = "deployments")]
     async fn list(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -63,6 +64,7 @@ impl DeploymentController {
     }
 
     #[get("/logs/search")]
+    #[live(table = "deployments")]
     async fn search_logs(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -109,6 +111,7 @@ impl DeploymentController {
     }
 
     #[get("/running")]
+    #[live(table = "deployments")]
     async fn running(
         &self,
         _claims: crate::utils::jwt::claim::Claims,
@@ -123,6 +126,7 @@ impl DeploymentController {
     }
 
     #[get("/{id}")]
+    #[live(table = "deployments")]
     async fn get(
         &self,
         _claims: crate::utils::jwt::claim::Claims,

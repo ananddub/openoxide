@@ -40,6 +40,7 @@ impl AlertRuleController {
     }
 
     #[get("/organization/{organization_id}")]
+    #[live(tables = ["alert_rules","alert_events"])]
     async fn list(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
@@ -69,6 +70,7 @@ impl AlertRuleController {
     }
 
     #[get("/events/organization/{organization_id}")]
+    #[live(tables = ["alert_rules","alert_events"])]
     async fn events(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
@@ -93,6 +95,7 @@ impl AlertRuleController {
     }
 
     #[get("/{id}/organization/{organization_id}")]
+    #[live(tables = ["alert_rules","alert_events"])]
     async fn get(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,

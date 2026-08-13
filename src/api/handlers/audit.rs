@@ -18,6 +18,7 @@ impl AuditController {
     }
 
     #[get]
+    #[live(table = "audit_logs")]
     async fn list(
         &self,
         RequirePermission(_claims, _permission): RequirePermission<AuditLog, CanRead>,

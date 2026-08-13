@@ -34,6 +34,7 @@ impl AiController {
     }
 
     #[get("/settings")]
+    #[live(tables = ["ai_settings","ai_generations"])]
     async fn list_settings(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
@@ -46,6 +47,7 @@ impl AiController {
     }
 
     #[get("/settings/{id}")]
+    #[live(tables = ["ai_settings","ai_generations"])]
     async fn get_setting(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
@@ -107,6 +109,7 @@ impl AiController {
     }
 
     #[get("/settings/{id}/models")]
+
     async fn setting_models(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
@@ -169,6 +172,7 @@ impl AiController {
     }
 
     #[get("/generations")]
+    #[live(tables = ["ai_settings","ai_generations"])]
     async fn list_generations(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
@@ -202,6 +206,7 @@ impl AiController {
     }
 
     #[get("/generations/{id}")]
+    #[live(tables = ["ai_settings","ai_generations"])]
     async fn get_generation(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,

@@ -23,6 +23,7 @@ impl MountController {
     }
 
     #[get]
+    #[live(table = "mounts")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

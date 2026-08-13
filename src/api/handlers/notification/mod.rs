@@ -82,6 +82,7 @@ impl NotificationController {
     }
 
     #[get("/delivery-history/organization/{organization_id}")]
+    #[live(table = "notification_delivery_attempts")]
     async fn delivery_history(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanRead>,
@@ -122,6 +123,7 @@ impl NotificationController {
     }
 
     #[get("/bindings/organization/{organization_id}")]
+    #[live(table = "notification_resource_bindings")]
     async fn bindings(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Server, CanRead>,
@@ -155,6 +157,7 @@ impl NotificationController {
     }
 
     #[get("/organization/{organization_id}")]
+    #[live(table = "notifications")]
     async fn list_by_organization(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
@@ -175,6 +178,7 @@ impl NotificationController {
     }
 
     #[get("/{id}/organization/{organization_id}")]
+    #[live(table = "notifications")]
     async fn get_by_id(
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,

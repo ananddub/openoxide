@@ -25,6 +25,7 @@ impl TagController {
     }
 
     #[get("")]
+    #[live(tables = ["tags","project_tags"])]
     async fn list_all(&self) -> Result<Json<Vec<TagDto>>, ApiError> {
         let items = self.service.list_all().await.map_err(map_sqlx_error)?;
 
@@ -32,6 +33,7 @@ impl TagController {
     }
 
     #[get("/{id}")]
+    #[live(tables = ["tags","project_tags"])]
     async fn get_by_id(&self, Path(id): Path<i64>) -> Result<Json<TagDto>, ApiError> {
         let tag = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
 
@@ -73,6 +75,7 @@ impl TagController {
     }
 
     #[get("/project/{project_id}")]
+    #[live(tables = ["tags","project_tags"])]
     async fn list_project_tags(
         &self,
         Path(project_id): Path<i64>,

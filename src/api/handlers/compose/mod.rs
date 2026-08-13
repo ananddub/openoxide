@@ -34,6 +34,7 @@ impl ComposeController {
     }
 
     #[get("/{id}")]
+    #[live(table = "compose_projects")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -48,6 +49,7 @@ impl ComposeController {
     }
 
     #[get("/environment/{environment_id}")]
+    #[live(table = "compose_projects")]
     async fn list_by_environment(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -281,6 +283,7 @@ impl ComposeController {
     }
 
     #[get("/{id}/dependencies")]
+    #[live(table = "compose_projects")]
     async fn dependencies(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

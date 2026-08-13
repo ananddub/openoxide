@@ -38,6 +38,7 @@ impl RegistryController {
     }
 
     #[get]
+    #[live(table = "registries")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -64,6 +65,7 @@ impl RegistryController {
     }
 
     #[get("/{id}")]
+    #[live(table = "registries")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -196,6 +198,7 @@ impl RegistryController {
     }
 
     #[get("/{id}/usage")]
+    #[live(table = "registries")]
     async fn usage(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

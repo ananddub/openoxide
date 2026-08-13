@@ -23,6 +23,7 @@ impl SettingsController {
     }
 
     #[get]
+    #[live(table = "settings")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,

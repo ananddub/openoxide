@@ -27,6 +27,7 @@ impl AuthTwoFactorController {
     }
 
     #[get("/status")]
+    #[live(table = "two_factor")]
     async fn status(&self, claims: Claims) -> Result<Json<TwoFactorStatusDto>, ApiError> {
         self.service
             .two_factor_status(claims.user.user_id)

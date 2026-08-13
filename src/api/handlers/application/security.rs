@@ -19,6 +19,7 @@ impl SecurityController {
         Self { service }
     }
     #[get]
+    #[live(table = "security")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

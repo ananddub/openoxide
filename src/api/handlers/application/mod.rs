@@ -64,6 +64,7 @@ impl ApplicationController {
     }
 
     #[get("/{id}")]
+    #[live(table = "applications")]
     async fn get(
         &self,
         RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
@@ -108,6 +109,7 @@ impl ApplicationController {
     }
 
     #[get("/environment/{environment_id}")]
+    #[live(table = "applications")]
     async fn list_by_environment(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -471,6 +473,7 @@ impl ApplicationController {
     }
 
     #[get("/{id}/rollbacks")]
+    #[live(table = "rollbacks")]
     async fn list_rollbacks(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

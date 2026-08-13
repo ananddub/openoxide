@@ -43,6 +43,7 @@ impl ComposePatchController {
     }
 
     #[get]
+    #[live(table = "patches")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

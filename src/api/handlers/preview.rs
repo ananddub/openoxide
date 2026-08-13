@@ -29,6 +29,7 @@ impl PreviewDeploymentController {
     }
 
     #[get]
+    #[live(table = "preview_deployments")]
     async fn list(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -42,6 +43,7 @@ impl PreviewDeploymentController {
     }
 
     #[get("/{id}")]
+    #[live(table = "preview_deployments")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,

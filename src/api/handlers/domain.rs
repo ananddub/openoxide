@@ -25,6 +25,7 @@ impl DomainController {
     }
 
     #[get("/{id}")]
+    #[live(table = "domains")]
     async fn get(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -39,6 +40,7 @@ impl DomainController {
     }
 
     #[get("/application/{application_id}")]
+    #[live(table = "domains")]
     async fn list_by_application(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
@@ -56,6 +58,7 @@ impl DomainController {
     }
 
     #[get("/compose/{compose_id}")]
+    #[live(table = "domains")]
     async fn list_by_compose(
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
