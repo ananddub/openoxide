@@ -31,6 +31,8 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
         .await
         .expect("Failed to connect to SQLite database");
 
+    crate::db::reactive::set_pool(pool.clone());
+
     sqlx::migrate!("./db/migrations/")
         .run(&pool)
         .await

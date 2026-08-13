@@ -6,6 +6,8 @@ use std::{
 use sqlx::sqlite::{PreupdateHookResult, SqliteOperation};
 use tokio::sync::broadcast;
 
+static DB_POOL: OnceLock<sqlx::SqlitePool> = OnceLock::new();
+
 tokio::task_local! {
     static REQUEST_CHANGES: Arc<Mutex<Vec<DbChangeEvent>>>;
 }
@@ -66,6 +68,28 @@ pub fn event_bus() -> &'static DbEventBus {
     BUS.get_or_init(|| DbEventBus::new(256))
 }
 
+pub fn set_pool(pool: sqlx::SqlitePool) {
+    let _ = DB_POOL.set(pool);
+}
+
+async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
+    if let Some(pool) = DB_POOL.get()
+        && let Ok(mut connection) = pool.acquire().await
+    {
+        // A committed SQLite change is not guaranteed to be visible to another
+        // connection while the commit hook itself is still running. Acquiring
+        // the write lock ensures the originating transaction has fully exited.
+        if sqlx::query("BEGIN IMMEDIATE")
+            .execute(&mut *connection)
+            .await
+            .is_ok()
+        {
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+        }
+    }
+    event_bus().publish(changes);
+}
+
 pub async fn request_scope<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
@@ -115,10 +139,7 @@ pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
                 })
                 .unwrap_or(false);
             if !queued {
-                commit_runtime.spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
-                    event_bus().publish(changes);
-                });
+                commit_runtime.spawn(publish_when_visible(changes));
             }
         }
 
