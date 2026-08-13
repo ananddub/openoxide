@@ -54,8 +54,10 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		offset: null,
 	});
 
-	const deployments = passedDeployments ?? (rawDeployments ?? []);
-	const isLoading = passedIsLoading ?? innerLoading;
+	// The tab owns the matching live subscription. Do not prefer a parent prop:
+	// doing so can mask a newer socket/refetch result during a parent render.
+	const deployments = rawDeployments ?? passedDeployments ?? [];
+	const isLoading = innerLoading && passedIsLoading !== false;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
 

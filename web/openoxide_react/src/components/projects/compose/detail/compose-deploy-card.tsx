@@ -34,6 +34,10 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 	});
 
 	const events = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
+	const deploymentRevision = useMemo(
+		() => events.map((event: any) => `${event.id}:${event.status}:${event.state}:${event.last_state_at ?? ''}`).join('|'),
+		[events],
+	);
 
 	// 2. Track any pending compose mutation automatically via TanStack Query useMutationState
 	const pendingMutationAction = useMutationState({
@@ -77,6 +81,14 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 			});
 		}
 	}, [compose, hasActiveDeployment, pendingMutationAction, isBuilding, isRunning]);
+
+	useEffect(() => {
+		console.debug('[Compose Deployments Live]', {
+			composeId: compose?.id,
+			count: events.length,
+			deployments: events.map((event: any) => ({id: event.id, status: event.status, state: event.state, lastStateAt: event.last_state_at})),
+		});
+	}, [compose?.id, deploymentRevision]);
 
 	// Mutations
 	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy');
