@@ -258,7 +258,10 @@ function createLiveHook(metadata) {
         }
       };
       const update = (message) => {
-        if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) setData(message.data);
+        if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) {
+          console.debug('[openoxide-live] received update', fullKey, {items: Array.isArray(message.data) ? message.data.length : undefined});
+          setData(message.data);
+        }
       };
       const invalidate = (message) => {
         if (message.endpoint !== endpoint.endpoint || safeStringify(message.args) !== key || !metadata.path) return;

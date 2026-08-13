@@ -918,14 +918,18 @@ fn expand_controller(
                                 &args,
                                 identity.as_ref(),
                             ).await {
+                                ::auto_route::__private::tracing::info!(endpoint = #endpoint, args = ?args, "live refresh cache hit");
                                 let publisher = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy);
                                 let publisher = if let ::std::option::Option::Some(identity) = identity { publisher.user(identity.user_id) } else { publisher };
                                 if let Ok(publisher) = publisher.room(args) {
-                                    let _ = publisher.publish(data).await;
+                                    if let Err(error) = publisher.publish(data).await {
+                                        ::auto_route::__private::tracing::warn!(endpoint = #endpoint, error = %error, "live cached publish failed");
+                                    }
                                 }
                                 return;
                             }
                             #decode_args
+                            ::auto_route::__private::tracing::info!(endpoint = #endpoint, args = ?args, "live refresh handler started");
                             #await_handler
                             if let ::std::result::Result::Ok(value) = ::auto_route::__private::serde_json::to_value(&data) {
                                 ::auto_route::__private::auto_socket::cache_live_value(
@@ -938,7 +942,11 @@ fn expand_controller(
                             let publisher = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy);
                             let publisher = if let ::std::option::Option::Some(identity) = identity { publisher.user(identity.user_id) } else { publisher };
                             if let Ok(publisher) = publisher.room(args) {
-                                let _ = publisher.publish(data).await;
+                                if let Err(error) = publisher.publish(data).await {
+                                    ::auto_route::__private::tracing::warn!(endpoint = #endpoint, error = %error, "live fresh publish failed");
+                                } else {
+                                    ::auto_route::__private::tracing::info!(endpoint = #endpoint, "live fresh publish completed");
+                                }
                             }
                         });
                         future

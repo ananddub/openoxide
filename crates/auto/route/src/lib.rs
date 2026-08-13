@@ -26,4 +26,5 @@ pub mod __private {
     pub use inventory;
     pub use poem_openapi;
     pub use serde_json;
+    pub use tracing;
 }

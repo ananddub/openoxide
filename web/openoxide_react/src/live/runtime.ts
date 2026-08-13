@@ -82,6 +82,7 @@ function socketFor(namespace: string) {
 			: update.args == null
 				? [...entries.values()].filter((entry) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === update.endpoint)
 				: [];
+		console.debug('[openoxide-live] received update', key, {matching: matching.length, items: Array.isArray(update.data) ? update.data.length : undefined});
 		for (const entry of matching) {
 			try {
 				const value = entry.endpoint.parse ? entry.endpoint.parse(update.data) : update.data;

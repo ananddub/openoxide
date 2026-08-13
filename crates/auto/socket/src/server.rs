@@ -126,7 +126,7 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
                 &request.endpoint,
                 &request.args,
             );
-            tracing::info!(endpoint = %request.endpoint, room = %room, "live subscription accepted");
+            tracing::info!(socket_id = %socket.id, endpoint = %request.endpoint, args = ?request.args, room = %room, "live subscription accepted");
             socket.join(room.clone());
             let mut subscriptions = socket
                 .extensions
@@ -154,6 +154,7 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
                 "live:subscribed",
                 &serde_json::json!({"endpoint": request.endpoint, "args": request.args}),
             );
+            tracing::info!(socket_id = %socket.id, endpoint = %request.endpoint, room = %room, "live subscription acknowledged");
         },
     );
 }
@@ -206,7 +207,8 @@ fn bind_unsubscribe(socket: &SocketRef) {
     );
 }
 fn bind_disconnect(socket: &SocketRef) {
-    socket.on_disconnect(|socket: SocketRef, _: DisconnectReason| async move {
+    socket.on_disconnect(|socket: SocketRef, reason: DisconnectReason| async move {
+        tracing::info!(socket_id = %socket.id, reason = ?reason, "live socket disconnected");
         if let Some(items) = socket.extensions.get::<SocketSubscriptions>() {
             for room in items.0 {
                 release(&room);
