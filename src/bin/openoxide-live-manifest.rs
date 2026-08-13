@@ -1,9 +1,5 @@
+use openoxide as _;
+
 fn main() {
-    println!(
-        "{}",
-        serde_json::json!({
-            "types": [],
-            "endpoints": []
-        })
-    );
+    println!("{}", auto_route::live_client_manifest());
 }

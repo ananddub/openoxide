@@ -38,6 +38,19 @@ impl ServerController {
             cpu: server_id as u64,
         })
     }
+
+    #[get("/{server_id}/search")]
+    #[live("metric_search", table = "metrics")]
+    async fn search_metrics(
+        &self,
+        _claims: Claims,
+        Path(server_id): Path<i64>,
+        Query(_query): Query<SearchQuery>,
+    ) -> Json<Metrics> {
+        Json(Metrics {
+            cpu: server_id as u64,
+        })
+    }
 }
 
 struct DefaultLiveController;
@@ -149,11 +162,31 @@ fn generates_typed_live_publish_handle() {
     );
 }
 
+#[test]
+fn generates_live_http_refetch_metadata() {
+    let manifest = auto_route::live_client_manifest();
+    let endpoint = manifest["endpoints"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["endpoint"] == "ServerController::search_metrics")
+        .expect("live client endpoint");
+
+    assert_eq!(endpoint["hook"], "useMetricSearch");
+    assert_eq!(endpoint["path"], "/servers/{server_id}/search");
+    assert_eq!(endpoint["arguments"][0]["kind"], "path");
+    assert_eq!(endpoint["arguments"][0]["index"], 0);
+    assert_eq!(endpoint["arguments"][0]["names"], json!(["server_id"]));
+    assert_eq!(endpoint["arguments"][1]["kind"], "query");
+    assert_eq!(endpoint["arguments"][1]["index"], 1);
+    assert_eq!(endpoint["parameters"], "arg0: unknown, arg1: unknown");
+}
+
 struct UserController {
     prefix: String,
 }
 
-#[derive(Deserialize, poem_openapi::Object)]
+#[derive(Deserialize, Serialize, poem_openapi::Object)]
 struct SearchQuery {
     term: String,
     page: Option<i32>,

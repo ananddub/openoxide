@@ -18,7 +18,11 @@ export function useLive<TArgs extends readonly unknown[], TData>(
 	useEffect(() => {
 		setResult({data: undefined, loading: true, error: undefined});
 		try {
-			return subscribeLive(endpoint, (data) => setResult({data, loading: false, error: undefined}));
+			return subscribeLive(
+				endpoint,
+				(data) => setResult({data, loading: false, error: undefined}),
+				(error) => setResult((current) => ({...current, loading: false, error})),
+			);
 		} catch (error) {
 			setResult({data: undefined, loading: false, error: error instanceof Error ? error : new Error(String(error))});
 		}
@@ -33,4 +37,3 @@ export function createLiveHook<TArgs extends readonly unknown[], TData>(
 	const createEndpoint = (...args: TArgs): LiveEndpoint<TArgs, TData> => ({...endpoint, args});
 	return (...args: TArgs) => useLive(createEndpoint, ...args);
 }
-

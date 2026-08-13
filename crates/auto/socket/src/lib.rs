@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use socketioxide::{
     SocketIo,
     extract::{Data, SocketRef, TryData},
+    socket::DisconnectReason,
 };
 
 pub use auto_socket_macros::{auto_socket, on};
@@ -34,6 +35,8 @@ static ACCESS_ENDPOINTS: OnceLock<HashMap<&'static str, Option<(&'static str, &'
 static SUBSCRIPTION_REFRESH_GATES: OnceLock<
     std::sync::Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
 > = OnceLock::new();
+static ACTIVE_LIVE_ROOMS: OnceLock<std::sync::Mutex<HashMap<String, ActiveLiveRoom>>> =
+    OnceLock::new();
 
 type LiveAuthenticator =
     Arc<dyn Fn(String) -> BoxFuture<'static, Result<LiveIdentity, String>> + Send + Sync>;
@@ -102,10 +105,67 @@ struct ResolvedLiveRefresher {
     pending: Arc<AtomicBool>,
 }
 
+#[doc(hidden)]
+pub struct LiveTableDescriptor {
+    endpoint: &'static str,
+    tables: &'static [&'static str],
+}
+
+impl LiveTableDescriptor {
+    pub const fn new(endpoint: &'static str, tables: &'static [&'static str]) -> Self {
+        Self { endpoint, tables }
+    }
+}
+
+inventory::collect!(LiveTableDescriptor);
+
 #[derive(Debug, Deserialize)]
 struct LiveSubscriptionRequest {
     endpoint: String,
     args: serde_json::Value,
+}
+
+#[derive(Clone, Debug)]
+struct ActiveLiveRoom {
+    namespace: &'static str,
+    room: String,
+    endpoint: String,
+    args: serde_json::Value,
+    subscribers: usize,
+}
+
+#[derive(Clone, Debug, Default)]
+struct SocketSubscriptions(std::collections::HashSet<String>);
+
+fn retain_live_room(namespace: &'static str, room: &str, subscription: &LiveSubscriptionRequest) {
+    let rooms = ACTIVE_LIVE_ROOMS.get_or_init(Default::default);
+    let mut rooms = rooms.lock().expect("active live room registry poisoned");
+    rooms
+        .entry(room.to_owned())
+        .and_modify(|active| active.subscribers += 1)
+        .or_insert_with(|| ActiveLiveRoom {
+            namespace,
+            room: room.to_owned(),
+            endpoint: subscription.endpoint.clone(),
+            args: subscription.args.clone(),
+            subscribers: 1,
+        });
+}
+
+fn release_live_room(room: &str) {
+    let rooms = ACTIVE_LIVE_ROOMS.get_or_init(Default::default);
+    let mut rooms = rooms.lock().expect("active live room registry poisoned");
+    let remove = rooms.get_mut(room).is_some_and(|active| {
+        if active.subscribers > 1 {
+            active.subscribers -= 1;
+            false
+        } else {
+            true
+        }
+    });
+    if remove {
+        rooms.remove(room);
+    }
 }
 
 fn scoped_room(
@@ -482,6 +542,42 @@ pub fn notify_table_changes<'a>(tables: impl IntoIterator<Item = &'a str>) {
             }
         });
     }
+
+    let affected = inventory::iter::<LiveTableDescriptor>
+        .into_iter()
+        .filter(|entry| entry.tables.iter().any(|table| changed.contains(table)))
+        .map(|entry| entry.endpoint)
+        .collect::<std::collections::HashSet<_>>();
+    if affected.is_empty() {
+        return;
+    }
+    let rooms = ACTIVE_LIVE_ROOMS
+        .get_or_init(Default::default)
+        .lock()
+        .map(|rooms| {
+            rooms
+                .values()
+                .filter(|room| affected.contains(room.endpoint.as_str()))
+                .cloned()
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    tokio::spawn(async move {
+        let Some(io) = SOCKET_IO.get() else {
+            return;
+        };
+        for room in rooms {
+            if let Some(namespace) = io.of(room.namespace) {
+                let _ = namespace
+                    .to(room.room)
+                    .emit(
+                        "live:invalidate",
+                        &serde_json::json!({"endpoint": room.endpoint, "args": room.args}),
+                    )
+                    .await;
+            }
+        }
+    });
 }
 
 async fn refresh_for_subscription(endpoint: &str) {
@@ -566,7 +662,16 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                         // Join before refreshing so the initial snapshot cannot
                         // race past a newly connected subscriber.
                         socket.join(room.clone());
-                        // Populate a fresh snapshot before joining.  For the
+                        let first_for_socket = {
+                            let mut subscriptions = socket.extensions.get::<SocketSubscriptions>()
+                                .map(|value| value.0)
+                                .unwrap_or_default();
+                            let inserted = subscriptions.insert(room.clone());
+                            socket.extensions.insert(SocketSubscriptions(subscriptions));
+                            inserted
+                        };
+                        if first_for_socket { retain_live_room(namespace, &room, &subscription); }
+                        // Populate a fresh snapshot after joining. For the
                         // fixed-room SQLite endpoints this invokes the same
                         // deduplicated refresher used by commit notifications.
                         refresh_for_subscription(&subscription.endpoint).await;
@@ -601,9 +706,24 @@ pub async fn register(io: &SocketIo, container: &Container) -> Result<(), DiErro
                     |socket: SocketRef, Data(subscription): Data<LiveSubscriptionRequest>| async move {
                         let requires_auth = ACCESS_ENDPOINTS.get().is_some_and(|endpoints| endpoints.contains_key(subscription.endpoint.as_str()));
                         let identity = requires_auth.then(|| socket.extensions.get::<SocketIdentity>().map(|value| value.0)).flatten();
-                        socket.leave(scoped_room(identity.as_ref(), &subscription.endpoint, &subscription.args));
+                        let room = scoped_room(identity.as_ref(), &subscription.endpoint, &subscription.args);
+                        socket.leave(room.clone());
+                        let removed = {
+                            let mut subscriptions = socket.extensions.get::<SocketSubscriptions>()
+                                .map(|value| value.0)
+                                .unwrap_or_default();
+                            let removed = subscriptions.remove(&room);
+                            socket.extensions.insert(SocketSubscriptions(subscriptions));
+                            removed
+                        };
+                        if removed { release_live_room(&room); }
                     },
                 );
+                socket.on_disconnect(|socket: SocketRef, _reason: DisconnectReason| async move {
+                    if let Some(subscriptions) = socket.extensions.get::<SocketSubscriptions>() {
+                        for room in subscriptions.0 { release_live_room(&room); }
+                    }
+                });
                 for registrar in registrars {
                     registrar(socket.clone());
                 }

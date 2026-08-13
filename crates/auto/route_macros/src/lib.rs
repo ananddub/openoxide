@@ -750,12 +750,6 @@ fn expand_controller(
                 "strategy = sqlite requires table or tables",
             ));
         }
-        if live_strategy == LiveStrategy::Sqlite && argument_types.iter().any(is_live_auth_type) {
-            return Err(syn::Error::new_spanned(
-                &function.sig,
-                "authenticated sqlite live endpoints require per-user refresh support; use strategy = publish for now",
-            ));
-        }
         if live_strategy != LiveStrategy::Sqlite && has_live_tables {
             return Err(syn::Error::new_spanned(
                 &function.sig,
@@ -1053,10 +1047,7 @@ fn expand_controller(
         let Some(return_type) = route.live_return_type.as_ref() else { return Vec::new(); };
         let handler = &route.handler;
         if !route.argument_types.is_empty() {
-            return vec![syn::Error::new_spanned(
-                handler,
-                "table-backed #[live] currently requires a zero-argument controller method",
-            ).to_compile_error()];
+            return Vec::new();
         }
         let endpoint = format!("{type_ident}::{handler}");
         let strategy = strategy_tokens(route);
@@ -1091,6 +1082,25 @@ fn expand_controller(
             }
         }]
     }).collect::<Vec<_>>().into_iter().flatten().collect::<Vec<_>>();
+    let live_table_registrations = routes.iter().filter_map(|route| {
+        let mut tables = route.live_tables.clone();
+        if let Some(table) = route.live_table.clone() {
+            tables.push(table);
+        }
+        if tables.is_empty() {
+            return None;
+        }
+        let handler = &route.handler;
+        let endpoint = format!("{type_ident}::{handler}");
+        Some(quote! {
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::__private::auto_socket::LiveTableDescriptor::new(
+                    #endpoint,
+                    &[#(#tables),*],
+                )
+            }
+        })
+    });
     let live_access_registrations = routes.iter().filter_map(|route| {
         let handler = &route.handler;
         let endpoint = format!("{type_ident}::{handler}");
@@ -1117,6 +1127,53 @@ fn expand_controller(
             }
         })
     });
+    let live_client_registrations = routes.iter().filter_map(|route| {
+        let event = route.live_event.as_ref()?;
+        let client_name = route.live_client_name.as_ref()?;
+        let handler = &route.handler;
+        let endpoint = format!("{type_ident}::{handler}");
+        let path = &route.path;
+        let path_names = path_parameter_names(&path.value())
+            .into_iter()
+            .map(|name| LitStr::new(&name, path.span()))
+            .collect::<Vec<_>>();
+        let mut public_index = 0usize;
+        let arguments = route
+            .argument_types
+            .iter()
+            .filter_map(|ty| {
+                if is_live_server_arg(ty) {
+                    return None;
+                }
+                let index = public_index;
+                public_index += 1;
+                if wrapper_inner_type(ty, &["Path"]).is_some() {
+                    return Some(quote!(::auto_route::LiveClientArgumentDescriptor::Path {
+                        index: #index,
+                        names: &[#(#path_names),*],
+                    }));
+                }
+                if wrapper_inner_type(ty, &["Query"]).is_some() {
+                    return Some(
+                        quote!(::auto_route::LiveClientArgumentDescriptor::Query { index: #index }),
+                    );
+                }
+                None
+            })
+            .collect::<Vec<_>>();
+        Some(quote! {
+            ::auto_route::__private::inventory::submit! {
+                ::auto_route::LiveClientRouteDescriptor::new(
+                    #client_name,
+                    "/_openoxide/live",
+                    #endpoint,
+                    #event,
+                    #path,
+                    &[#(#arguments),*],
+                )
+            }
+        })
+    });
 
     Ok(quote! {
         #managed_impl
@@ -1132,7 +1189,9 @@ fn expand_controller(
 
         #live_socket_registration
         #(#live_refresh_registrations)*
+        #(#live_table_registrations)*
         #(#live_access_registrations)*
+        #(#live_client_registrations)*
 
         // ── PATH constants for html! on:click={Self::method} ──────────────────
         #[allow(non_upper_case_globals)]

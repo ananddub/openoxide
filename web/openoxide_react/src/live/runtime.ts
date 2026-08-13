@@ -6,18 +6,21 @@ export type LiveEndpoint<TArgs extends readonly unknown[], TData> = {
 	event: string;
 	args: TArgs;
 	parse?: (value: unknown) => TData;
+	refetch?: (args: readonly unknown[]) => Promise<TData>;
 };
 
 type Listener<T> = (value: T) => void;
 type Entry = {
 	endpoint: LiveEndpoint<readonly unknown[], unknown>;
 	listeners: Set<Listener<unknown>>;
+	errorListeners: Set<Listener<Error>>;
 	value?: unknown;
 	hasValue: boolean;
 	version: number;
 };
 
 type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
+type LiveInvalidation = {endpoint: string; args: unknown};
 
 const sockets = new Map<string, Socket>();
 const entries = new Map<string, Entry>();
@@ -67,6 +70,20 @@ function socketFor(namespace: string) {
 			}
 		}
 	});
+	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
+		const key = `${namespace}:${invalidation.endpoint}:${JSON.stringify(invalidation.args)}`;
+		const entry = entries.get(key);
+		if (!entry?.endpoint.refetch) return;
+		void entry.endpoint.refetch(entry.endpoint.args).then((value) => {
+			entry.value = value;
+			entry.hasValue = true;
+			entry.version++;
+			for (const notify of entry.listeners) notify(value);
+		}).catch((cause) => {
+			const error = cause instanceof Error ? cause : new Error(String(cause));
+			for (const notify of entry.errorListeners) notify(error);
+		});
+	});
 	sockets.set(namespace, socket);
 	return socket;
 }
@@ -75,24 +92,44 @@ function subscribeMessage(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
 	return {endpoint: endpoint.endpoint, args: endpoint.args};
 }
 
-export function subscribeLive<T>(endpoint: LiveEndpoint<readonly unknown[], T>, listener: Listener<T>) {
+export function subscribeLive<T>(
+	endpoint: LiveEndpoint<readonly unknown[], T>,
+	listener: Listener<T>,
+	onError?: Listener<Error>,
+) {
 	const key = roomKey(endpoint);
 	let entry = entries.get(key);
 	if (!entry) {
 		const socket = socketFor(endpoint.namespace);
-		entry = {endpoint, listeners: new Set(), hasValue: false, version: 0};
+		entry = {endpoint, listeners: new Set(), errorListeners: new Set(), hasValue: false, version: 0};
 		entries.set(key, entry);
 
 		socket.emit('live:subscribe', subscribeMessage(endpoint));
+		if (endpoint.refetch) {
+			void endpoint.refetch(endpoint.args).then((value) => {
+				const current = entries.get(key);
+				if (!current) return;
+				current.value = value;
+				current.hasValue = true;
+				for (const notify of current.listeners) notify(value);
+			}).catch((cause) => {
+				const current = entries.get(key);
+				if (!current) return;
+				const error = cause instanceof Error ? cause : new Error(String(cause));
+				for (const notify of current.errorListeners) notify(error);
+			});
+		}
 	}
 
 	entry.listeners.add(listener as Listener<unknown>);
+	if (onError) entry.errorListeners.add(onError);
 	if (entry.hasValue) listener(entry.value as T);
 
 	return () => {
 		const current = entries.get(key);
 		if (!current) return;
 		current.listeners.delete(listener as Listener<unknown>);
+		if (onError) current.errorListeners.delete(onError);
 		if (current.listeners.size !== 0) return;
 
 		const socket = socketFor(endpoint.namespace);
