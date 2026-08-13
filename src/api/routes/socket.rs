@@ -8,11 +8,6 @@ pub struct Socket {
 
 #[singleton]
 pub async fn socket_init() -> Socket {
-    let _ = auto_socket::set_cache_invalidator(|tables| async move {
-        if let Ok(cache) = auto_di::resolve::<crate::core::cache::AppStateCache>().await {
-            cache.invalidate_tables(&tables).await;
-        }
-    });
     let _ = auto_socket::set_authenticator(|token| async move {
         let auth = auto_di::resolve::<crate::services::auth::AuthService>()
             .await
