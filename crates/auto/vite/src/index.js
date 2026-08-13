@@ -73,10 +73,46 @@ function safeStringify(value) {
 
 const sockets = new Map();
 const liveCache = new Map();
+const liveSubscriptions = new Map();
+const liveRequests = new Map();
+const liveListeners = new Map();
+let liveRefreshPromise;
+
+function publishLiveValue(key, value) {
+  if (value === undefined) return;
+  liveCache.set(key, value);
+  const listeners = liveListeners.get(key) ?? [];
+  console.debug('[openoxide-live] applying value', key, {listeners: listeners.size, items: Array.isArray(value) ? value.length : undefined});
+  for (const listener of listeners) listener(value);
+}
 
 function accessToken() {
   try { return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; }
   catch { return undefined; }
+}
+async function refreshAccessToken() {
+  if (liveRefreshPromise) return liveRefreshPromise;
+  liveRefreshPromise = (async () => {
+    try {
+      const session = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null');
+      const refreshToken = session?.tokens?.refresh_token;
+      if (!refreshToken) return undefined;
+      const response = await fetch(\`\${apiBaseUrl()}/auth/refresh\`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({refresh_token: refreshToken}),
+      });
+      if (!response.ok) return undefined;
+      const nextSession = await response.json();
+      localStorage.setItem('openoxide-auth-session', JSON.stringify(nextSession));
+      return nextSession?.tokens?.access_token;
+    } catch {
+      return undefined;
+    } finally {
+      liveRefreshPromise = undefined;
+    }
+  })();
+  return liveRefreshPromise;
 }
 
 function apiBaseUrl() {
@@ -114,8 +150,17 @@ function endpointUrl(metadata, args) {
 async function refetch(metadata, args) {
   if (!metadata.path) return undefined;
   const url = endpointUrl(metadata, args);
+  const request = token => fetch(url, {headers: token ? {authorization: \`Bearer \${token}\`} : {}});
   const token = accessToken();
-  const response = await fetch(url, {headers: token ? {authorization: \`Bearer \${token}\`} : {}});
+  let response = await request(token);
+  if (response.status === 401) {
+    const latestToken = accessToken();
+    if (latestToken && latestToken !== token) response = await request(latestToken);
+    if (response.status === 401) {
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) response = await request(refreshedToken);
+    }
+  }
   if (!response.ok) throw new Error(\`GET \${url} failed with \${response.status}\`);
   return response.json();
 }
@@ -129,10 +174,7 @@ function createLiveHook(metadata) {
     const [error, setError] = useState();
 
     const setData = (value) => {
-      if (value !== undefined) {
-        liveCache.set(fullKey, value);
-      }
-      setDataState(value);
+      publishLiveValue(fullKey, value);
     };
 
     useEffect(() => {
@@ -147,35 +189,107 @@ function createLiveHook(metadata) {
         setError(new Error('Authentication required for live updates'));
         return;
       }
-      let socketEntry = sockets.get(endpoint.namespace);
-      if (socketEntry && socketEntry.token !== token) {
-        socketEntry.socket.disconnect();
-        sockets.delete(endpoint.namespace);
-        socketEntry = undefined;
+      let listeners = liveListeners.get(fullKey);
+      if (!listeners) {
+        listeners = new Set();
+        liveListeners.set(fullKey, listeners);
       }
+      listeners.add(setDataState);
+      let socketEntry = sockets.get(endpoint.namespace);
       if (!socketEntry) {
         const socket = io(endpoint.namespace, {
           path: '/socket.io',
           auth: cb => cb({token: accessToken()}),
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 500,
+          reconnectionDelayMax: 5000,
         });
-        socketEntry = {socket, token};
+        socketEntry = {socket, ready: false, refreshedForToken: undefined};
+        const entry = socketEntry;
+        socket.on('connect', () => { entry.ready = false; });
+        socket.on('socket:ready', () => {
+          entry.ready = true;
+          for (const active of liveSubscriptions.values()) {
+            if (active.namespace === endpoint.namespace) socket.emit('live:subscribe', active.subscription);
+          }
+        });
+        socket.on('disconnect', reason => {
+          entry.ready = false;
+          if (reason === 'io server disconnect') socket.connect();
+        });
+        socket.on('connect_error', async () => {
+          entry.ready = false;
+          const failedToken = accessToken();
+          if (failedToken && entry.refreshedForToken !== failedToken) {
+            entry.refreshedForToken = failedToken;
+            await refreshAccessToken();
+          }
+          if (!socket.connected) socket.connect();
+        });
+        const recover = () => {
+          if (!socket.connected) socket.connect();
+        };
+        window.addEventListener('online', recover);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') recover();
+        });
         sockets.set(endpoint.namespace, socketEntry);
       }
       const socket = socketEntry.socket;
       const subscription = {endpoint: endpoint.endpoint, args};
-      const subscribe = () => { setConnected(true); socket.emit('live:subscribe', subscription); };
+      const subscribe = () => {
+        let active = liveSubscriptions.get(fullKey);
+        if (active) {
+          active.count++;
+        } else {
+          active = {namespace: endpoint.namespace, subscription, count: 1};
+          liveSubscriptions.set(fullKey, active);
+          if (socketEntry.ready) socket.emit('live:subscribe', subscription);
+        }
+        setConnected(socketEntry.ready);
+      };
       const disconnect = () => setConnected(false);
+      const ready = () => setConnected(false);
+      const subscribed = (message) => {
+        if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) {
+          setConnected(true);
+          setError(undefined);
+        }
+      };
       const update = (message) => {
         if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) setData(message.data);
       };
       const invalidate = (message) => {
         if (message.endpoint !== endpoint.endpoint || safeStringify(message.args) !== key || !metadata.path) return;
-        refetch(metadata, args).then(value => { setData(value); setError(undefined); }).catch(setError);
+        console.debug('[openoxide-live] invalidated', fullKey);
+        let request = liveRequests.get(fullKey);
+        if (!request) {
+          request = refetch(metadata, args).finally(() => {
+            if (liveRequests.get(fullKey) === request) liveRequests.delete(fullKey);
+          });
+          liveRequests.set(fullKey, request);
+        }
+        request.then(value => {
+          console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
+          publishLiveValue(fullKey, value);
+          setError(undefined);
+        }).catch(setError);
       };
-      socket.on('connect', subscribe); socket.on('disconnect', disconnect); socket.on('live:update', update); socket.on('live:invalidate', invalidate);
-      if (socket.connected) subscribe();
+      socket.on('socket:ready', ready); socket.on('disconnect', disconnect); socket.on('live:subscribed', subscribed); socket.on('live:update', update); socket.on('live:invalidate', invalidate);
+      subscribe();
       if (metadata.path) invalidate(subscription);
-      return () => { if (socket.connected) socket.emit('live:unsubscribe', subscription); socket.off('connect', subscribe); socket.off('disconnect', disconnect); socket.off('live:update', update); socket.off('live:invalidate', invalidate); };
+      return () => {
+        const listeners = liveListeners.get(fullKey);
+        listeners?.delete(setDataState);
+        if (listeners?.size === 0) liveListeners.delete(fullKey);
+        const active = liveSubscriptions.get(fullKey);
+        if (active && --active.count === 0) {
+          liveSubscriptions.delete(fullKey);
+          if (socketEntry.ready) socket.emit('live:unsubscribe', subscription);
+        }
+        socket.off('socket:ready', ready); socket.off('disconnect', disconnect); socket.off('live:subscribed', subscribed); socket.off('live:update', update); socket.off('live:invalidate', invalidate);
+      };
     }, [endpoint, key, fullKey]);
     return {data, connected, loading: data === undefined, error};
   };

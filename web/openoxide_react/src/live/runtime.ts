@@ -19,10 +19,12 @@ type Entry = {
 	version: number;
 };
 
+type SocketEntry = {socket: Socket; ready: boolean};
+
 type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
 type LiveInvalidation = {endpoint: string; args: unknown};
 
-const sockets = new Map<string, Socket>();
+const sockets = new Map<string, SocketEntry>();
 const entries = new Map<string, Entry>();
 
 function accessToken() {
@@ -42,18 +44,36 @@ function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
 }
 
 function socketFor(namespace: string) {
-	let socket = sockets.get(namespace);
-	if (socket) return socket;
+	let existing = sockets.get(namespace);
+	if (existing) return existing;
 
-	socket = io(namespace, {
+	const socket = io(namespace, {
 		path: '/socket.io',
 		transports: ['websocket', 'polling'],
 		auth: callback => callback({token: accessToken()}),
+		reconnection: true,
+		reconnectionAttempts: Infinity,
+		reconnectionDelay: 500,
+		reconnectionDelayMax: 5000,
 	});
-	socket.on('connect', () => {
+	const socketEntry: SocketEntry = {socket, ready: false};
+	socket.on('connect', () => { socketEntry.ready = false; });
+	socket.on('socket:ready', () => {
+		socketEntry.ready = true;
 		for (const entry of entries.values()) {
 			if (entry.endpoint.namespace === namespace) socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
 		}
+	});
+	socket.on('disconnect', reason => {
+		socketEntry.ready = false;
+		if (reason === 'io server disconnect') socket.connect();
+	});
+	const recover = () => {
+		if (!socket.connected) socket.connect();
+	};
+	window.addEventListener('online', recover);
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'visible') recover();
 	});
 	socket.on('live:update', (update: LiveUpdate) => {
 		const key = `${namespace}:${update.endpoint}:${safeStringify(update.args)}`;
@@ -88,8 +108,8 @@ function socketFor(namespace: string) {
 			for (const notify of entry.errorListeners) notify(error);
 		});
 	});
-	sockets.set(namespace, socket);
-	return socket;
+	sockets.set(namespace, socketEntry);
+	return socketEntry;
 }
 
 function subscribeMessage(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
@@ -104,11 +124,11 @@ export function subscribeLive<T>(
 	const key = roomKey(endpoint);
 	let entry = entries.get(key);
 	if (!entry) {
-		const socket = socketFor(endpoint.namespace);
+		const socketEntry = socketFor(endpoint.namespace);
 		entry = {endpoint, listeners: new Set(), errorListeners: new Set(), hasValue: false, version: 0};
 		entries.set(key, entry);
 
-		socket.emit('live:subscribe', subscribeMessage(endpoint));
+		if (socketEntry.ready) socketEntry.socket.emit('live:subscribe', subscribeMessage(endpoint));
 		if (endpoint.refetch) {
 			void endpoint.refetch(endpoint.args).then((value) => {
 				const current = entries.get(key);
@@ -136,8 +156,8 @@ export function subscribeLive<T>(
 		if (onError) current.errorListeners.delete(onError);
 		if (current.listeners.size !== 0) return;
 
-		const socket = socketFor(endpoint.namespace);
-		socket.emit('live:unsubscribe', subscribeMessage(endpoint));
+		const socketEntry = socketFor(endpoint.namespace);
+		if (socketEntry.ready) socketEntry.socket.emit('live:unsubscribe', subscribeMessage(endpoint));
 		entries.delete(key);
 	};
 }

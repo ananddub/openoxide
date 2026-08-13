@@ -1,7 +1,14 @@
-use std::sync::{Arc, Mutex, OnceLock};
+use std::{
+    future::Future,
+    sync::{Arc, Mutex, OnceLock},
+};
 
 use sqlx::sqlite::{PreupdateHookResult, SqliteOperation};
 use tokio::sync::broadcast;
+
+tokio::task_local! {
+    static REQUEST_CHANGES: Arc<Mutex<Vec<DbChangeEvent>>>;
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DbChangeOperation {
@@ -59,6 +66,20 @@ pub fn event_bus() -> &'static DbEventBus {
     BUS.get_or_init(|| DbEventBus::new(256))
 }
 
+pub async fn request_scope<F, T>(future: F) -> T
+where
+    F: Future<Output = T>,
+{
+    let changes = Arc::new(Mutex::new(Vec::new()));
+    let result = REQUEST_CHANGES.scope(Arc::clone(&changes), future).await;
+    let changes = changes
+        .lock()
+        .map(|mut changes| std::mem::take(&mut *changes))
+        .unwrap_or_default();
+    event_bus().publish(changes);
+    result
+}
+
 pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
     let pending = Arc::new(Mutex::new(Vec::<DbChangeEvent>::new()));
     let runtime = tokio::runtime::Handle::current();
@@ -78,14 +99,27 @@ pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
             .map(|mut changes| std::mem::take(&mut *changes))
             .unwrap_or_default();
 
-        // SQLx maps `true` to SQLite's zero return value, which allows the
-        // commit. The hook runs before sqlite3_step() has fully completed, so
-        // defer publication until the committed rows are visible to readers.
+        // SQLx maps `true` to SQLite's zero return value, which allows commit.
+        // HTTP requests batch their changes until the handler (including its
+        // cache invalidation) has completed. Background writes have no request
+        // scope, so retain a small visibility defer for those only.
         if !changes.is_empty() {
-            commit_runtime.spawn(async move {
-                tokio::time::sleep(std::time::Duration::from_millis(5)).await;
-                event_bus().publish(changes);
-            });
+            let queued = REQUEST_CHANGES
+                .try_with(|request_changes| {
+                    if let Ok(mut request_changes) = request_changes.lock() {
+                        request_changes.extend(changes.iter().cloned());
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .unwrap_or(false);
+            if !queued {
+                commit_runtime.spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                    event_bus().publish(changes);
+                });
+            }
         }
 
         true

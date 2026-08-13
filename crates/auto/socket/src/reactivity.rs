@@ -1,7 +1,10 @@
 use crate::{
     LiveTableDescriptor,
     rooms::ACTIVE_LIVE_ROOMS,
-    state::{LIVE_REFRESHERS, SOCKET_IO, SUBSCRIPTION_REFRESH_GATES},
+    state::{
+        CACHE_INVALIDATOR, LIVE_ENDPOINT_CACHE, LIVE_REFRESHERS, SOCKET_IO,
+        SUBSCRIPTION_REFRESH_GATES,
+    },
 };
 use std::sync::Arc;
 
@@ -33,7 +36,25 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
         })
         .unwrap_or_default();
     tracing::info!(endpoints = ?affected, rooms = rooms.len(), "live rooms selected for refresh");
+    let changed_tables = changed
+        .iter()
+        .map(|table| (*table).to_owned())
+        .collect::<Vec<_>>();
     tokio::spawn(async move {
+        if let Some(cache) = LIVE_ENDPOINT_CACHE.get() {
+            for endpoint in &affected {
+                let needle = format!(":{endpoint}:");
+                let _ = cache.invalidate_entries_if(move |key, _| key.contains(&needle));
+            }
+            cache.run_pending_tasks().await;
+        }
+        if let Some(invalidate) = CACHE_INVALIDATOR.get() {
+            invalidate(changed_tables).await;
+        }
+        tracing::info!(
+            rooms = rooms.len(),
+            "live cache invalidation completed before refresh"
+        );
         let Some(io) = SOCKET_IO.get() else {
             return;
         };
@@ -58,6 +79,58 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
             }
         }
     });
+}
+
+fn endpoint_cache() -> &'static moka::future::Cache<String, serde_json::Value> {
+    LIVE_ENDPOINT_CACHE.get_or_init(|| {
+        moka::future::Cache::builder()
+            .max_capacity(10_000)
+            .time_to_live(std::time::Duration::from_secs(600))
+            .support_invalidation_closures()
+            .build()
+    })
+}
+
+fn endpoint_cache_key(
+    endpoint: &str,
+    args: &serde_json::Value,
+    identity: Option<&crate::LiveIdentity>,
+) -> String {
+    format!(
+        "user:{}:{endpoint}:{args}",
+        identity.map_or(0, |identity| identity.user_id)
+    )
+}
+
+pub async fn cache_live_value(
+    endpoint: &str,
+    args: &serde_json::Value,
+    identity: Option<&crate::LiveIdentity>,
+    value: serde_json::Value,
+) {
+    endpoint_cache()
+        .insert(endpoint_cache_key(endpoint, args, identity), value)
+        .await;
+}
+
+pub async fn cached_live_value(
+    endpoint: &str,
+    args: &serde_json::Value,
+    identity: Option<&crate::LiveIdentity>,
+) -> Option<serde_json::Value> {
+    endpoint_cache()
+        .get(&endpoint_cache_key(endpoint, args, identity))
+        .await
+}
+
+pub fn set_cache_invalidator<F, Fut>(invalidate: F) -> Result<(), &'static str>
+where
+    F: Fn(Vec<String>) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = ()> + Send + 'static,
+{
+    CACHE_INVALIDATOR
+        .set(Arc::new(move |tables| Box::pin(invalidate(tables))))
+        .map_err(|_| "live cache invalidator is already configured")
 }
 
 pub(crate) async fn refresh_subscription(

@@ -913,8 +913,28 @@ fn expand_controller(
                     let refresh: ::std::sync::Arc<dyn Fn(::auto_route::__private::serde_json::Value, ::std::option::Option<::auto_route::__private::auto_socket::LiveIdentity>) -> ::auto_route::__private::auto_di::BoxFuture<'static, ()> + Send + Sync + 'static> = ::std::sync::Arc::new(move |args, identity| {
                         let controller = ::std::sync::Arc::clone(&controller);
                         let future: ::auto_route::__private::auto_di::BoxFuture<'static, ()> = ::std::boxed::Box::pin(async move {
+                            if let ::std::option::Option::Some(data) = ::auto_route::__private::auto_socket::cached_live_value(
+                                #endpoint,
+                                &args,
+                                identity.as_ref(),
+                            ).await {
+                                let publisher = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy);
+                                let publisher = if let ::std::option::Option::Some(identity) = identity { publisher.user(identity.user_id) } else { publisher };
+                                if let Ok(publisher) = publisher.room(args) {
+                                    let _ = publisher.publish(data).await;
+                                }
+                                return;
+                            }
                             #decode_args
                             #await_handler
+                            if let ::std::result::Result::Ok(value) = ::auto_route::__private::serde_json::to_value(&data) {
+                                ::auto_route::__private::auto_socket::cache_live_value(
+                                    #endpoint,
+                                    &args,
+                                    identity.as_ref(),
+                                    value,
+                                ).await;
+                            }
                             let publisher = ::auto_route::__private::auto_socket::LivePublisher::new("/_openoxide/live", #endpoint, #event).strategy(#strategy);
                             let publisher = if let ::std::option::Option::Some(identity) = identity { publisher.user(identity.user_id) } else { publisher };
                             if let Ok(publisher) = publisher.room(args) {

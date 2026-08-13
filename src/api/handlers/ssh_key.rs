@@ -6,7 +6,6 @@ use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
     api::dto::ssh_key::{CreateSshKeyDto, GenerateSshKeyDto, PatchSshKeyDto, SshKeyResponseDto},
-    core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::ssh_key::SshKeyService,
 };
@@ -15,13 +14,12 @@ type ApiError = (StatusCode, String);
 
 pub struct SshKeyController {
     service: Arc<SshKeyService>,
-    cache: Arc<AppStateCache>,
 }
 
 #[controller("/ssh-keys")]
 impl SshKeyController {
-    fn new(service: Arc<SshKeyService>, cache: Arc<AppStateCache>) -> Self {
-        Self { service, cache }
+    fn new(service: Arc<SshKeyService>) -> Self {
+        Self { service }
     }
 
     #[get]
@@ -30,17 +28,13 @@ impl SshKeyController {
         &self,
         RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
     ) -> Result<Json<Vec<SshKeyResponseDto>>, ApiError> {
-        if let Some(CacheEnum::SshKeysList(cached)) = self.cache.get(&CacheKey::SshKeysList).await {
-            return Ok(Json(
-                cached.into_iter().map(SshKeyResponseDto::from).collect(),
-            ));
-        }
-
         let items = self.service.list().await.map_err(map_sqlx_error)?;
-        self.cache
-            .insert(CacheKey::SshKeysList, CacheEnum::SshKeysList(items.clone()))
-            .await;
-
+        tracing::info!(
+            source = "database",
+            count = items.len(),
+            ids = ?items.iter().filter_map(|item| item.id).collect::<Vec<_>>(),
+            "ssh key list resolved"
+        );
         Ok(Json(
             items.into_iter().map(SshKeyResponseDto::from).collect(),
         ))
@@ -75,7 +69,6 @@ impl SshKeyController {
             .map(|key| (StatusCode::CREATED, Json(key)))
             .map_err(map_sqlx_error)?;
 
-        self.cache.invalidate(&CacheKey::SshKeysList).await;
         Ok(created)
     }
 
@@ -93,7 +86,6 @@ impl SshKeyController {
             .map(|key| (StatusCode::CREATED, Json(key)))
             .map_err(map_sqlx_error)?;
 
-        self.cache.invalidate(&CacheKey::SshKeysList).await;
         Ok(generated)
     }
 
@@ -126,7 +118,6 @@ impl SshKeyController {
             .map(Json)
             .map_err(map_sqlx_error)?;
 
-        self.cache.invalidate(&CacheKey::SshKeysList).await;
         Ok(updated)
     }
 
@@ -152,7 +143,6 @@ impl SshKeyController {
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
 
-        self.cache.invalidate(&CacheKey::SshKeysList).await;
         Ok(StatusCode::NO_CONTENT)
     }
 }

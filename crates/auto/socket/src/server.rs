@@ -150,6 +150,10 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
             )
             .await;
             replay(&socket, namespace, &room);
+            let _ = socket.emit(
+                "live:subscribed",
+                &serde_json::json!({"endpoint": request.endpoint, "args": request.args}),
+            );
         },
     );
 }

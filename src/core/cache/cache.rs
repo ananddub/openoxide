@@ -25,6 +25,7 @@ where
         let inner = Cache::builder()
             .max_capacity(1000)
             .time_to_live(Duration::from_mins(10))
+            .support_invalidation_closures()
             .build();
 
         Self { inner }
@@ -57,6 +58,17 @@ where
     /// Clear all entries from the cache.
     pub async fn invalidate_all(&self) {
         self.inner.invalidate_all();
+    }
+
+    pub fn invalidate_entries_if(
+        &self,
+        predicate: impl Fn(&K, &V) -> bool + Send + Sync + 'static,
+    ) {
+        let _ = self.inner.invalidate_entries_if(predicate);
+    }
+
+    pub async fn run_pending_tasks(&self) {
+        self.inner.run_pending_tasks().await;
     }
 
     /// Get current estimated entry count in cache.
@@ -105,6 +117,60 @@ impl AppStateCache {
 
     pub async fn invalidate_all(&self) {
         self.inner.invalidate_all().await;
+    }
+
+    pub async fn invalidate_tables(&self, tables: &[String]) {
+        let tables = tables
+            .iter()
+            .cloned()
+            .collect::<std::collections::HashSet<_>>();
+
+        // Fixed cache keys use direct awaited invalidation. This avoids
+        // predicate-maintenance timing for the common list endpoints.
+        if tables.contains("servers") {
+            self.invalidate(&CacheKey::ServersList).await;
+        }
+        if tables.contains("ssh_keys") {
+            self.invalidate(&CacheKey::SshKeysList).await;
+        }
+        if tables.contains("destinations") {
+            self.invalidate(&CacheKey::DestinationsList).await;
+        }
+        if tables.contains("registries") {
+            self.invalidate(&CacheKey::RegistriesList).await;
+        }
+        if tables.contains("volume_backups") {
+            self.invalidate(&CacheKey::VolumeBackups).await;
+        }
+
+        let invalidated_tables = tables.clone();
+        self.inner.invalidate_entries_if(move |key, _| {
+            use CacheKey::*;
+            match key {
+                Application(_) => invalidated_tables.contains("applications"),
+                Compose(_) => invalidated_tables.contains("compose_projects"),
+                Database(_) => [
+                    "postgres_dbs",
+                    "mysql_dbs",
+                    "mariadb_dbs",
+                    "mongo_dbs",
+                    "redis_dbs",
+                    "libsql_dbs",
+                ]
+                .iter()
+                .any(|table| invalidated_tables.contains(*table)),
+                ProjectsList(_) => invalidated_tables.contains("projects"),
+                EnvironmentsProject(_) => invalidated_tables.contains("environments"),
+                ServersList | SshKeysList | DestinationsList | RegistriesList | VolumeBackups => {
+                    false
+                }
+                SchedulesCompose(_) | SchedulesApp(_) => invalidated_tables.contains("schedules"),
+                DomainsCompose(_) | DomainsApp(_) => invalidated_tables.contains("domains"),
+                SwarmInfo(_) | SwarmNodes(_) => false,
+            }
+        });
+        self.inner.run_pending_tasks().await;
+        tracing::info!(tables = ?tables, "live table caches invalidated");
     }
 
     pub fn entry_count(&self) -> u64 {

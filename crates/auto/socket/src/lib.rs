@@ -18,7 +18,9 @@ pub use descriptors::{
     SocketRegistrar,
 };
 pub use publisher::{LivePublisher, LiveStrategy, PublishError};
-pub use reactivity::notify_table_changes;
+pub use reactivity::{
+    cache_live_value, cached_live_value, notify_table_changes, set_cache_invalidator,
+};
 pub use server::{register, register_global};
 pub use subscription::{LiveSubscription, LiveSubscriptionMessage};
 

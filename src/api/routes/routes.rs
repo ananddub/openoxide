@@ -21,7 +21,7 @@ async fn request_duration_middleware(req: Request, next: Next) -> Response {
     let method = req.method().clone();
     let uri = req.uri().clone();
 
-    let response = next.run(req).await;
+    let response = crate::db::reactive::request_scope(next.run(req)).await;
 
     let latency = start.elapsed();
     let status = response.status();
