@@ -124,6 +124,13 @@ function apiBaseUrl() {
   }
   return 'http://127.0.0.1:4000';
 }
+function socketBaseUrl() {
+  if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+  // Avoid Vite proxy failures for Socket.IO's polling/upgrade transport.
+  // Production keeps a relative URL so the deployed reverse proxy remains in control.
+  if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
+  return '';
+}
 function endpointUrl(metadata, args) {
   let path = metadata.path;
   const query = new URLSearchParams();
@@ -197,7 +204,7 @@ function createLiveHook(metadata) {
       listeners.add(setDataState);
       let socketEntry = sockets.get(endpoint.namespace);
       if (!socketEntry) {
-        const socket = io(endpoint.namespace, {
+        const socket = io(\`\${socketBaseUrl()}\${endpoint.namespace}\`, {
           path: '/socket.io',
           auth: cb => cb({token: accessToken()}),
           reconnection: true,

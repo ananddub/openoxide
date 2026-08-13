@@ -43,11 +43,19 @@ function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
 	return `${endpoint.namespace}:${endpoint.endpoint}:${safeStringify(endpoint.args)}`;
 }
 
+function socketBaseUrl() {
+	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+	// In development connect directly to Axum: Vite's proxy can return 502
+	// during Socket.IO polling/upgrade reconnects.
+	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
+	return '';
+}
+
 function socketFor(namespace: string) {
 	let existing = sockets.get(namespace);
 	if (existing) return existing;
 
-	const socket = io(namespace, {
+	const socket = io(`${socketBaseUrl()}${namespace}`, {
 		path: '/socket.io',
 		transports: ['websocket', 'polling'],
 		auth: callback => callback({token: accessToken()}),
