@@ -39,7 +39,7 @@ pub struct PanelRestoreStatusDto {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct BackupFilesQueryDto {
     pub destination_id: i64,
     pub prefix: Option<String>,
@@ -51,7 +51,7 @@ pub struct DownloadBackupFileDto {
     pub object_key: String,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct RetentionPreviewQueryDto {
     pub destination_id: i64,
     pub prefix: Option<String>,
@@ -92,7 +92,7 @@ pub struct BackupIntegrityDto {
     pub size_bytes: i64,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct BackupExecutionQueryDto {
     pub backup_kind: Option<crate::services::backup::types::BackupKind>,
     pub backup_id: Option<i64>,

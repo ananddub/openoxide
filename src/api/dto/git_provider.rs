@@ -86,13 +86,13 @@ pub struct WebhookSecretResponseDto {
     pub webhook_secret: String,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct RepositoryReferenceQueryDto {
     pub owner: String,
     pub repository: String,
 }
 
-#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Validate, Serialize, Deserialize, poem_openapi::Object)]
 pub struct WebhookRepositoryDto {
     pub owner: String,
     pub repository: String,
@@ -100,7 +100,7 @@ pub struct WebhookRepositoryDto {
     pub callback_url: String,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct OAuthCallbackDto {
     pub code: Option<String>,
     pub state: String,
@@ -108,7 +108,7 @@ pub struct OAuthCallbackDto {
     pub setup_action: Option<String>,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct CollaboratorPermissionQueryDto {
     pub owner: String,
     pub repository: String,

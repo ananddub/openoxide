@@ -4,7 +4,7 @@ use serde_json::Value;
 use crate::db::models::deployments::Deployment;
 use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
 
-#[derive(Debug, Clone, Copy, Default, Deserialize, poem_openapi::Enum)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, poem_openapi::Enum)]
 pub enum DockerLogStream {
     #[default]
     All,
@@ -12,7 +12,7 @@ pub enum DockerLogStream {
     Stderr,
 }
 
-#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
 pub struct DeploymentListQuery {
     pub status: Option<String>,
     pub state: Option<String>,
@@ -98,7 +98,7 @@ impl From<ActiveDeploySnapshot> for ActiveDeploymentDto {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
 pub struct DockerLogQuery {
     pub server_id: Option<i64>,
     pub tail: Option<usize>,
@@ -109,7 +109,7 @@ pub struct DockerLogQuery {
     pub stream: Option<DockerLogStream>,
 }
 
-#[derive(Debug, Clone, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize, Deserialize, poem_openapi::Object)]
 pub struct LogSearchQuery {
     pub query: Option<String>,
     pub limit: Option<usize>,

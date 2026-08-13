@@ -717,12 +717,25 @@ fn expand_controller(
                 )),
             })
             .collect::<syn::Result<Vec<_>>>()?;
-        let live_return_type = match &function.sig.output {
-            ReturnType::Type(_, ty) if is_live => {
-                Some(wrapper_inner_type(ty, &["Json"]).unwrap_or_else(|| (**ty).clone()))
-            }
-            _ => None,
+        // Every JSON-producing GET is a live query by default.  This keeps the
+        // ordinary HTTP endpoint exactly as it is while giving the generated
+        // client/runtime a typed subscription identity.  Things which must not
+        // become live (downloads, redirects and SSE) do not have a JSON
+        // response body, so they stay ordinary GET routes.
+        //
+        // `response_body_type` deliberately looks through `Result`/`Option`;
+        // using it here is important because the live payload is `T`, not
+        // `Result<Json<T>, ApiError>`.
+        let json_return_type = match &function.sig.output {
+            ReturnType::Type(_, ty) => match response_body_type(ty) {
+                Some(ResponseBody::Json(inner)) => Some(inner),
+                _ => None,
+            },
+            ReturnType::Default => None,
         };
+        let auto_live_get = method.to_string() == "get" && json_return_type.is_some();
+        is_live |= auto_live_get;
+        let live_return_type = if is_live { json_return_type } else { None };
         if is_live && live_event.is_none() {
             live_event = Some(LitStr::new(
                 &function.sig.ident.to_string(),
@@ -857,13 +870,13 @@ fn expand_controller(
         let endpoint = format!("{type_ident}::{handler}");
         let arguments = route.argument_types.iter().enumerate().map(|(index, ty)| {
             let name = format_ident!("arg_{index}");
-            if is_live_auth_type(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
+            if is_live_server_arg(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
         }).collect::<Vec<_>>();
-        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_server_arg(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
         let claims = route.argument_types.iter().enumerate().find(|(_, ty)| is_live_auth_type(ty)).map(|(index, ty)| (format_ident!("arg_{index}"), ty));
         let args = match names.len() { 0 => quote!(::std::vec::Vec::<()>::new()), 1 => { let n = &names[0]; quote!((#n,)) }, _ => quote!((#(#names),*)) };
         let scope = claims.map(|(claims, ty)| { let user_id = live_auth_user_id(&claims, ty); quote!(.user(#user_id)) }).unwrap_or_default();
-        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
+        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_server_arg(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
         let publisher = format_ident!("{}", client_name.value());
         let subscription = format_ident!("{}_subscription", client_name.value());
         let strategy = strategy_tokens(route);
@@ -889,13 +902,13 @@ fn expand_controller(
             .enumerate()
             .map(|(index, ty)| {
                 let name = format_ident!("arg_{index}");
-                if is_live_auth_type(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
+                if is_live_server_arg(ty) { quote!(#name: &#ty) } else { let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }
             })
             .collect::<Vec<_>>();
-        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
+        let names = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_server_arg(ty)).map(|(index, _)| format_ident!("arg_{index}")).collect::<Vec<_>>();
         let claims = route.argument_types.iter().enumerate().find(|(_, ty)| is_live_auth_type(ty)).map(|(index, ty)| (format_ident!("arg_{index}"), ty));
         let scope = claims.map(|(claims, ty)| { let user_id = live_auth_user_id(&claims, ty); quote!(.user(#user_id)) }).unwrap_or_default();
-        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_auth_type(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
+        let client_arguments = route.argument_types.iter().enumerate().filter(|(_, ty)| !is_live_server_arg(ty)).map(|(index, ty)| { let name = format_ident!("arg_{index}"); let public_ty = live_argument_type(ty); quote!(#name: #public_ty) }).collect::<Vec<_>>();
         let args = match names.len() {
             0 => quote!(::std::vec::Vec::<()>::new()),
             1 => { let n = &names[0]; quote!((#n,)) },
@@ -1366,6 +1379,18 @@ fn permission_types(ty: &Type) -> Option<(&Type, &Type)> {
 
 fn is_live_auth_type(ty: &Type) -> bool {
     is_claims_type(ty) || is_permission_type(ty)
+}
+
+/// Request-context extractors are supplied by Axum, never by the browser.
+/// They must not become part of the stable live room key (and many are not
+/// serializable in the first place).
+fn is_live_server_arg(ty: &Type) -> bool {
+    if is_live_auth_type(ty) {
+        return true;
+    }
+    matches!(ty, Type::Path(path) if path.path.segments.last().is_some_and(|segment| {
+        matches!(segment.ident.to_string().as_str(), "Extension" | "State" | "ConnectInfo" | "Request")
+    }))
 }
 
 fn live_auth_user_id(name: &Ident, ty: &Type) -> proc_macro2::TokenStream {

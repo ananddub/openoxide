@@ -220,7 +220,7 @@ pub struct DatabaseExportBundleDto {
     pub detach_rustploy_network: i64,
 }
 
-#[derive(Debug, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
 pub struct DatabaseExportQueryDto {
     pub include_secrets: Option<bool>,
 }

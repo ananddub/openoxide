@@ -9,12 +9,12 @@ use sqlx::SqlitePool;
 
 use crate::utils::git::GitCli;
 
-#[derive(Deserialize, poem_openapi::Object)]
+#[derive(Serialize, Deserialize, poem_openapi::Object)]
 pub struct BranchQuery {
     pub query: String,
 }
 
-#[derive(Deserialize, poem_openapi::Object)]
+#[derive(Serialize, Deserialize, poem_openapi::Object)]
 pub struct DomainQuery {
     pub name: String,
 }
