@@ -6,7 +6,7 @@ use crate::db::models::{
     mounts::Mount, patches::Patch, ports::Port, redirects::Redirect, security::Security,
 };
 
-#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, poem_openapi::Object)]
 pub struct ApplicationExportQueryDto {
     #[serde(default)]
     pub include_secrets: bool,

@@ -54,7 +54,7 @@ pub struct ComposeExportBundleDto {
     pub patches: Vec<Patch>,
 }
 
-#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, poem_openapi::Object)]
 pub struct ComposeExportQueryDto {
     #[serde(default)]
     pub include_secrets: bool,

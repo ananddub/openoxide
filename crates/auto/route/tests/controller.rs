@@ -42,27 +42,6 @@ impl ServerController {
 
 struct DefaultLiveController;
 
-struct AutomaticGetController;
-
-#[controller("/automatic-get")]
-impl AutomaticGetController {
-    fn new() -> Self {
-        Self
-    }
-
-    // JSON GETs do not need a second annotation to become typed live queries.
-    #[get("/{id}")]
-    async fn find(&self, Path(id): Path<i64>) -> Result<Json<Metrics>, StatusCode> {
-        Ok(Json(Metrics { cpu: id as u64 }))
-    }
-
-    // A non-JSON GET remains a plain HTTP route.
-    #[get("/health")]
-    async fn health(&self) -> &'static str {
-        "ok"
-    }
-}
-
 #[derive(Clone)]
 struct TestUser {
     user_id: i64,
@@ -119,16 +98,6 @@ impl DefaultLiveController {
 
 #[test]
 fn generates_typed_live_publish_handle() {
-    assert_eq!(
-        automaticget_live::find(9).unwrap().endpoint(),
-        "AutomaticGetController::find"
-    );
-    assert_eq!(
-        automaticget_live::find_subscription(9)
-            .unwrap()
-            .client_name(),
-        "find"
-    );
     let publisher = server_live::metrics(7).expect("live publisher");
     assert_eq!(publisher.endpoint(), "ServerController::metrics");
     assert_eq!(

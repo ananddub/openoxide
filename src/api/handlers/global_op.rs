@@ -9,7 +9,7 @@ use axum::{
     http::{HeaderValue, Response, StatusCode, header},
 };
 use poem_openapi::Object;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     api::dto::global_op::{
@@ -23,7 +23,7 @@ use crate::{
 
 type ApiError = (StatusCode, String);
 
-#[derive(Debug, Serialize, Deserialize, Object)]
+#[derive(Debug, Deserialize, Object)]
 struct DockerTargetQuery {
     server_id: Option<i64>,
 }

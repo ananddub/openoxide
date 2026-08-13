@@ -7,7 +7,7 @@ use axum::{
     extract::{Path, Query},
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     api::dto::registry::{
@@ -21,7 +21,7 @@ use crate::{
 
 type ApiError = (StatusCode, String);
 
-#[derive(Debug, Serialize, Deserialize, poem_openapi::Object)]
+#[derive(Debug, Deserialize, poem_openapi::Object)]
 struct RegistryTagsQuery {
     repository: String,
 }
