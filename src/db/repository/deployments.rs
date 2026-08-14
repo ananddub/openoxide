@@ -870,7 +870,8 @@ impl DeploymentRepository {
     pub async fn recover_stale_application_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE applications SET app_status = 'ERROR'
-             WHERE EXISTS (
+             WHERE app_status IN ('QUEUED', 'STARTING', 'STOPPING', 'CANCELLING')
+                OR EXISTS (
                  SELECT 1 FROM deployments d
                  WHERE d.application_id = applications.id
                    AND d.state = 'RECOVERED_AFTER_RESTART'
@@ -888,7 +889,8 @@ impl DeploymentRepository {
     pub async fn recover_stale_compose_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE compose_projects SET compose_status = 'ERROR'
-             WHERE EXISTS (
+             WHERE compose_status IN ('QUEUED', 'STARTING', 'STOPPING', 'CANCELLING')
+                OR EXISTS (
                  SELECT 1 FROM deployments d
                  WHERE d.compose_id = compose_projects.id
                    AND d.state = 'RECOVERED_AFTER_RESTART'
@@ -914,7 +916,8 @@ impl DeploymentRepository {
         ] {
             let query_str = format!(
                 "UPDATE {table} SET app_status = 'ERROR'
-                 WHERE EXISTS (
+                 WHERE app_status IN ('QUEUED', 'STARTING', 'STOPPING', 'CANCELLING')
+                    OR EXISTS (
                      SELECT 1 FROM deployments d
                      WHERE d.database_id = {table}.id
                        AND lower(d.database_kind) = '{kind}'
