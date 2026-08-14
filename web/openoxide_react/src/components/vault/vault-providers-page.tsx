@@ -422,12 +422,12 @@ export function VaultProvidersPage() {
 								variant="secondary"
 								disabled={isTestingModal}
 								onClick={handleTestModalConnection}
-								className="h-9 text-xs font-semibold gap-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+								className="h-10 text-xs font-semibold gap-1.5 px-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
 							>
 								{isTestingModal && <RefreshCw className="size-3.5 animate-spin" />}
 								Test Connection
 							</Button>
-							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5 px-6">
+							<Button type="submit" disabled={isSubmitting} className="h-10 text-xs font-semibold gap-1.5 px-6">
 								{isSubmitting && <RefreshCw className="size-3.5 animate-spin" />}
 								{editingProvider ? 'Update' : 'Create'}
 							</Button>
