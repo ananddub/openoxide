@@ -255,7 +255,15 @@ impl AuthService {
             .get_by_id(user_id)
             .await?
             .ok_or(AuthError::InvalidToken)?;
-        subject_from_user(&user)
+        Ok(JwtSubject {
+            user_id: user.id.ok_or(AuthError::Internal)?,
+            email: user.email.clone(),
+            first_name: user.first_name.clone(),
+            last_name: user.last_name.clone(),
+            avatar: user.avatar,
+            role: user.role,
+            group_id: user.group_id,
+        })
     }
 
     async fn issue_token_pair(&self, subject: &JwtSubject) -> Result<TokenPair, AuthError> {
@@ -346,12 +354,18 @@ impl AuthService {
 }
 
 pub(super) fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
+    let avatar = if user.avatar.starts_with("data:") {
+        "custom".to_string()
+    } else {
+        user.avatar.clone()
+    };
+
     Ok(JwtSubject {
         user_id: user.id.ok_or(AuthError::Internal)?,
         email: user.email.clone(),
         first_name: user.first_name.clone(),
         last_name: user.last_name.clone(),
-        avatar: user.avatar.clone(),
+        avatar,
         role: user.role.clone(),
         group_id: user.group_id,
     })
