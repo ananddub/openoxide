@@ -10,6 +10,7 @@ import {
 	ShieldCheck,
 } from 'lucide-react';
 import {$api} from '#/api/query';
+import {client} from '#/api/client';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Badge} from '#/components/ui/badge';
@@ -174,15 +175,53 @@ export function UsersManagementPage() {
 
 		setIsSubmitting(true);
 		try {
-			await inviteMutation.mutateAsync({
-				body: {
-					email: formEmail.trim(),
-					role: formRole.toUpperCase(),
-					group_id: 1,
-				},
-			} as any);
+			if (createMode === 'credentials') {
+				if (!formPassword || formPassword.length < 8) {
+					toast.error('Password must be at least 8 characters long');
+					setIsSubmitting(false);
+					return;
+				}
+				// 1. Create account via signup
+				const signupRes = await client.POST('/auth/signup' as any, {
+					body: {
+						email: formEmail.trim(),
+						password: formPassword,
+					},
+				} as any);
 
-			toast.success('Invitation sent successfully');
+				if (signupRes.error) {
+					throw signupRes.error;
+				}
+
+				const createdUser = signupRes.data?.user;
+				if (createdUser && createdUser.user_id) {
+					// 2. Set organization role
+					await updateRoleMutation.mutateAsync({
+						params: {
+							path: {
+								user_id: createdUser.user_id,
+							},
+						},
+						body: {
+							role: formRole.toUpperCase(),
+						},
+					} as any);
+				}
+
+				toast.success('User account created successfully');
+			} else {
+				// Send Email Invitation
+				await inviteMutation.mutateAsync({
+					body: {
+						email: formEmail.trim(),
+						role: formRole.toUpperCase(),
+						group_id: 1,
+					},
+				} as any);
+
+				toast.success('Invitation sent successfully');
+			}
+
 			refetchInvites();
 			refetchMembers();
 			setIsCreateOpen(false);
