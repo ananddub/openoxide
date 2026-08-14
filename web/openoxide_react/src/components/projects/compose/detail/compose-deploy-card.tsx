@@ -51,7 +51,7 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 	const hasActiveDeployment = (events || []).some((e: any) => {
 		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
 		const s = (e.status || e.state || '').toUpperCase();
-		return ['QUEUED', 'BUILDING', 'STARTING', 'DEPLOYING', 'PREPARING', 'PENDING'].includes(s);
+		return ['QUEUED', 'RUNNING', 'BUILDING', 'STARTING', 'DEPLOYING', 'PREPARING', 'PENDING'].includes(s);
 	});
 
 	const [actionInFlight, setActionInFlight] = useState<ActionType | null>(null);

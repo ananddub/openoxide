@@ -33,7 +33,7 @@ const isBuildActive = (e: any) => {
 	const s = (e.status || '').toUpperCase();
 	const st = (e.state || '').toUpperCase();
 	if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
-	const activeKeywords = ['BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING', 'GIT', 'DOCKER'];
+	const activeKeywords = ['RUNNING', 'BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING', 'GIT', 'DOCKER'];
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
