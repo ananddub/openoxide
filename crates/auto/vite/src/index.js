@@ -91,6 +91,15 @@ const liveListeners = new Map();
 let liveRefreshPromise;
 let liveRefreshRetryAfter = 0;
 let liveRefreshRetryToken;
+const activeOrganizationStorageKey = 'openoxide-active-organization-id';
+const organizationChangedEvent = 'openoxide:organization-changed';
+
+function activeOrganizationId() {
+  const value = localStorage.getItem(activeOrganizationStorageKey);
+  if (!value) return undefined;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : undefined;
+}
 
 function publishLiveValue(key, value) {
   if (value === undefined) return;
@@ -207,14 +216,17 @@ function endpointUrl(metadata, args) {
   const suffix = query.toString();
   return \`\${apiBaseUrl()}\${path}\${suffix ? \`?\${suffix}\` : ''}\`;
 }
-async function refetch(metadata, args) {
+async function refetch(metadata, args, organizationId) {
   if (!metadata.path) return undefined;
   const endpoint = new URL(endpointUrl(metadata, args), window.location.origin);
   endpoint.searchParams.set('_live', Date.now() + '-' + Math.random().toString(36).slice(2));
   const url = endpoint.toString();
   const request = token => fetch(url, {
     cache: 'no-store',
-    headers: token ? {authorization: \`Bearer \${token}\`} : {},
+    headers: {
+      ...(token ? {authorization: \`Bearer \${token}\`} : {}),
+      ...(organizationId ? {'x-organization-id': String(organizationId)} : {}),
+    },
   });
   const token = accessToken();
   let response = await request(token);
@@ -232,7 +244,8 @@ async function refetch(metadata, args) {
 function createLiveHook(metadata) {
   return (...args) => {
     const key = safeStringify(args);
-    const fullKey = \`\${metadata.namespace}:\${metadata.endpoint}:\${key}\`;
+    const [organizationId, setOrganizationId] = useState(activeOrganizationId);
+    const fullKey = \`\${organizationId ?? 'default'}:\${metadata.namespace}:\${metadata.endpoint}:\${key}\`;
     const endpoint = useMemo(() => ({...metadata, args}), [key]);
     const [data, setDataState] = useState(() => liveCache.get(fullKey));
     const [connected, setConnected] = useState(false);
@@ -243,10 +256,19 @@ function createLiveHook(metadata) {
     };
 
     useEffect(() => {
+      const organizationChanged = event => {
+        const id = Number(event?.detail);
+        setOrganizationId(Number.isSafeInteger(id) && id > 0 ? id : undefined);
+      };
+      window.addEventListener(organizationChangedEvent, organizationChanged);
+      return () => window.removeEventListener(organizationChangedEvent, organizationChanged);
+    }, []);
+
+    useEffect(() => {
       const cached = liveCache.get(fullKey);
-      if (cached !== undefined) {
-        setDataState(cached);
-      }
+      setDataState(cached);
+      setError(undefined);
+      setConnected(false);
 
       const token = accessToken();
       if (!token) {
@@ -326,7 +348,7 @@ function createLiveHook(metadata) {
           setConnected(true);
           setError(undefined);
           if (metadata.path) {
-            queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
+            queueLiveRefetch(fullKey, () => refetch(metadata, args, organizationId), value => {
               console.debug('[openoxide-live] resubscribed and hydrated', fullKey, {items: Array.isArray(value) ? value.length : undefined});
               publishLiveValue(fullKey, value);
             }, cause => {
@@ -345,7 +367,7 @@ function createLiveHook(metadata) {
       const invalidate = (message) => {
         if (!matchesLiveInvalidation(endpoint.endpoint, args, message) || !metadata.path) return;
         console.debug('[openoxide-live] invalidated', fullKey);
-        queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
+        queueLiveRefetch(fullKey, () => refetch(metadata, args, organizationId), value => {
           console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
           publishLiveValue(fullKey, value);
           setError(undefined);
@@ -368,7 +390,7 @@ function createLiveHook(metadata) {
         }
         socket.off('socket:ready', ready); socket.off('disconnect', disconnect); socket.off('live:subscribed', subscribed); socket.off('live:update', update); socket.off('live:invalidate', invalidate);
       };
-    }, [endpoint, key, fullKey]);
+    }, [endpoint, key, fullKey, organizationId]);
     return {data, connected, loading: data === undefined && !error, error};
   };
 }

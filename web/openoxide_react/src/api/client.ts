@@ -1,6 +1,7 @@
 import createFetchClient, {type Middleware} from 'openapi-fetch';
 import type {paths} from '#/types/api.d.ts';
 import {useAuthStore} from '#/stores/auth-store';
+import {getActiveOrganizationId} from '#/stores/organization-context';
 
 const AUTH_STORAGE_KEY = 'openoxide-auth-session';
 
@@ -21,6 +22,13 @@ let refreshPromise: Promise<string | null> | null = null;
 let refreshRetryAfter = 0;
 let refreshRetryToken = '';
 const REFRESH_RETRY_COOLDOWN_MS = 15_000;
+
+export function applyOrganizationHeader(request: Request) {
+	const organizationId = getActiveOrganizationId();
+	if (organizationId && !request.url.includes('/organizations')) {
+		request.headers.set('X-Organization-Id', String(organizationId));
+	}
+}
 
 export async function refreshAccessToken(): Promise<string | null> {
 	if (refreshPromise) return refreshPromise;
@@ -95,6 +103,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 const authMiddleware: Middleware = {
 	async onRequest({request}) {
+		applyOrganizationHeader(request);
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 		if (sessionRaw && sessionRaw !== 'undefined') {
 			try {
