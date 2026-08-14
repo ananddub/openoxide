@@ -21,7 +21,7 @@ export function AppSidebarFooter({isCollapsed}: Props) {
 			{/* Version Footer */}
 			{!isCollapsed && (
 				<div className="flex flex-col gap-0.5 px-3 text-center text-[10px] text-muted-foreground/60 select-none">
-					<div>Goploy Self-Hosted</div>
+					<div>OpenOxide Self-Hosted</div>
 					<div className="text-[9px] opacity-70">Version v0.1.0</div>
 				</div>
 			)}

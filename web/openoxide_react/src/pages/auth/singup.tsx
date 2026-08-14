@@ -11,7 +11,7 @@ function RouteComponent() {
 		<Wrapper>
 			<Header
 				title="Create an account"
-				subtitle="Start managing your servers and deploying with GoPloy"
+				subtitle="Start managing your servers and deploying with OpenOxide"
 			/>
 			<SignUpForm />
 			<div className="mt-6 text-center text-sm text-muted-foreground">

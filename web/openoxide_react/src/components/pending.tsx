@@ -26,7 +26,7 @@ export const RootPending = () => (
 			{/* Loading Text & Description */}
 			<div className="flex flex-col items-center gap-1.5 text-center select-none">
 				<h2 className="text-sm font-semibold tracking-wide text-foreground">
-					GoPloy
+					OpenOxide
 				</h2>
 				<p
 					className="animate-pulse font-mono text-[11px] font-medium text-muted-foreground/80"

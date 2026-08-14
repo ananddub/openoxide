@@ -8,7 +8,7 @@ export const AuthLeftPanel = () => (
 		<div className="relative z-10 flex items-center gap-2">
 			<Logo className="size-8" />
 			<span className="text-lg font-bold tracking-tight text-foreground">
-				GoPloy
+				OpenOxide
 			</span>
 		</div>
 		{/* Center Content Section */}
@@ -24,7 +24,7 @@ export const AuthLeftPanel = () => (
 			</div>
 			{/* 3. Small description */}
 			<p className="text-sm leading-relaxed text-muted-foreground">
-				GoPloy is the self-hosted developer platform that puts you in full
+				OpenOxide is the self-hosted developer platform that puts you in full
 				control. Build, deploy, and manage your applications and Docker
 				containers on your own servers.
 			</p>

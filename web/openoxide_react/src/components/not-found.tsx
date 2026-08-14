@@ -62,7 +62,7 @@ export const NotFound = () => {
 						<Link to="/" className="flex flex-row items-center gap-2">
 							<Logo className="size-8" />
 							<span className="text-base font-semibold tracking-tight">
-								Goploy
+								OpenOxide
 							</span>
 						</Link>
 					</nav>

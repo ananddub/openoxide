@@ -36,15 +36,15 @@ export function UpdateServerButton({isCollapsed}: Props) {
 			setStep('Applying database migrations...');
 			await new Promise(r => setTimeout(r, 1000));
 
-			setStep('Starting Goploy v0.1.1...');
+			setStep('Starting OpenOxide v0.1.1...');
 			await new Promise(r => setTimeout(r, 1200));
 
-			toast.success('Goploy updated to v0.1.1 successfully!');
+			toast.success('OpenOxide updated to v0.1.1 successfully!');
 			setUpdateAvailable(false);
 			setIsOpen(false);
 		} catch (err) {
 			console.log(err);
-			toast.error('Failed to update Goploy');
+			toast.error('Failed to update OpenOxide');
 		} finally {
 			setIsUpdating(false);
 			setStep('');
@@ -77,10 +77,10 @@ export function UpdateServerButton({isCollapsed}: Props) {
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-emerald-500">
 							<ArrowUpCircle className="size-5" />
-							Update Goploy Server
+							Update OpenOxide Server
 						</DialogTitle>
 						<DialogDescription>
-							A new version of Goploy is available. Would you like to
+							A new version of OpenOxide is available. Would you like to
 							update from <strong>v0.1.0</strong> to{' '}
 							<strong>v0.1.1</strong>?
 						</DialogDescription>
