@@ -23,6 +23,7 @@ import {
 	Bell,
 	BookIcon,
 	CircleHelp,
+	Globe,
 } from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
 
@@ -88,6 +89,7 @@ export const MENU: Menu = {
 		},
 		{title: 'Registry', icon: Package, to: '/registry'},
 		{title: 'Vault Providers', icon: KeyRound, to: '/vault'},
+		{title: 'DNS Providers', icon: Globe, to: '/dns'},
 		{title: 'S3 Destinations', icon: Database, to: '/destinations'},
 		{title: 'Certificates', icon: ShieldCheck, to: '/settings/certificates'},
 		{title: 'Notifications', icon: Bell, to: '/settings/notifications'},

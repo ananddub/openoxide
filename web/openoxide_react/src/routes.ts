@@ -25,6 +25,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('swarm', 'swarm.tsx'),
 		route('registry', 'registry.tsx'),
 		route('vault', 'vault.tsx'),
+		route('dns', 'dns.tsx'),
 		route('traefik', 'traefik.tsx'),
 		route('requests', 'requests.tsx'),
 		route('tags', 'tags.tsx'),
