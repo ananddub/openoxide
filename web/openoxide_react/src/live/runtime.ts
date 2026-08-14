@@ -20,12 +20,46 @@ type Entry = {
 };
 
 type SocketEntry = {socket: Socket; ready: boolean};
+type RefetchState = {running: boolean; pending: boolean};
 
 type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
 type LiveInvalidation = {endpoint: string; args: unknown};
 
 const sockets = new Map<string, SocketEntry>();
 const entries = new Map<string, Entry>();
+const refetches = new Map<string, RefetchState>();
+
+function queueRefetch(key: string, entry: Entry) {
+	if (!entry.endpoint.refetch) return;
+	let state = refetches.get(key);
+	if (!state) {
+		state = {running: false, pending: false};
+		refetches.set(key, state);
+	}
+	state.pending = true;
+	if (state.running) return;
+	state.running = true;
+	void (async () => {
+		try {
+			while (state.pending) {
+				state.pending = false;
+				try {
+					const value = await entry.endpoint.refetch!(entry.endpoint.args);
+					entry.value = value;
+					entry.hasValue = true;
+					entry.version++;
+					for (const notify of entry.listeners) notify(value);
+				} catch (cause) {
+					const error = cause instanceof Error ? cause : new Error(String(cause));
+					for (const notify of entry.errorListeners) notify(error);
+				}
+			}
+		} finally {
+			state.running = false;
+			if (!state.pending) refetches.delete(key);
+		}
+	})();
+}
 
 function accessToken() {
 	try {
@@ -83,17 +117,7 @@ function socketFor(namespace: string) {
 		const entry = entries.get(key);
 		if (!entry) return;
 		console.debug('[openoxide-live] resubscribed', key);
-		entry.endpoint.refetch?.(entry.endpoint.args).then((value) => {
-			console.debug('[openoxide-live] resubscribed and hydrated', key, {items: Array.isArray(value) ? value.length : undefined});
-			entry.value = value;
-			entry.hasValue = true;
-			entry.version++;
-			for (const notify of entry.listeners) notify(value);
-		}).catch((cause) => {
-			const error = cause instanceof Error ? cause : new Error(String(cause));
-			console.error('[openoxide-live] resubscribe hydration failed', key, error);
-			for (const notify of entry.errorListeners) notify(error);
-		});
+		queueRefetch(key, entry);
 	});
 	socket.on('disconnect', reason => {
 		socketEntry.ready = false;
@@ -134,16 +158,7 @@ function socketFor(namespace: string) {
 			return;
 		}
 		console.debug('[openoxide-live] invalidated', key);
-		void entry.endpoint.refetch(entry.endpoint.args).then((value) => {
-			entry.value = value;
-			entry.hasValue = true;
-			entry.version++;
-			for (const notify of entry.listeners) notify(value);
-		}).catch((cause) => {
-			const error = cause instanceof Error ? cause : new Error(String(cause));
-			console.error('[openoxide-live] invalidation refetch failed', key, error);
-			for (const notify of entry.errorListeners) notify(error);
-		});
+		queueRefetch(key, entry);
 	});
 	sockets.set(namespace, socketEntry);
 	return socketEntry;

@@ -88,6 +88,29 @@ function publishLiveValue(key, value) {
   for (const listener of listeners) listener(value);
 }
 
+function queueLiveRefetch(key, request, onValue, onError) {
+  let state = liveRequests.get(key);
+  if (!state) {
+    state = {running: false, pending: false};
+    liveRequests.set(key, state);
+  }
+  state.pending = true;
+  if (state.running) return;
+  state.running = true;
+  void (async () => {
+    try {
+      while (state.pending) {
+        state.pending = false;
+        try { onValue(await request()); }
+        catch (error) { onError(error); }
+      }
+    } finally {
+      state.running = false;
+      if (!state.pending) liveRequests.delete(key);
+    }
+  })();
+}
+
 function accessToken() {
   try { return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; }
   catch { return undefined; }
@@ -266,17 +289,10 @@ function createLiveHook(metadata) {
           setConnected(true);
           setError(undefined);
           if (metadata.path) {
-            let request = liveRequests.get(fullKey);
-            if (!request) {
-              request = refetch(metadata, args).finally(() => {
-                if (liveRequests.get(fullKey) === request) liveRequests.delete(fullKey);
-              });
-              liveRequests.set(fullKey, request);
-            }
-            request.then(value => {
+            queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
               console.debug('[openoxide-live] resubscribed and hydrated', fullKey, {items: Array.isArray(value) ? value.length : undefined});
               publishLiveValue(fullKey, value);
-            }).catch(cause => {
+            }, cause => {
               console.error('[openoxide-live] resubscribe hydration failed', fullKey, cause);
               setError(cause);
             });
@@ -292,18 +308,11 @@ function createLiveHook(metadata) {
       const invalidate = (message) => {
         if (message.endpoint !== endpoint.endpoint || safeStringify(message.args) !== key || !metadata.path) return;
         console.debug('[openoxide-live] invalidated', fullKey);
-        let request = liveRequests.get(fullKey);
-        if (!request) {
-          request = refetch(metadata, args).finally(() => {
-            if (liveRequests.get(fullKey) === request) liveRequests.delete(fullKey);
-          });
-          liveRequests.set(fullKey, request);
-        }
-        request.then(value => {
+        queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
           console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
           publishLiveValue(fullKey, value);
           setError(undefined);
-        }).catch(error => {
+        }, error => {
           console.error('[openoxide-live] invalidation refetch failed', fullKey, error);
           setError(error);
         });
