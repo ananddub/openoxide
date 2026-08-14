@@ -69,14 +69,25 @@ function accessToken() {
 	}
 }
 
-function safeStringify(val: unknown) {
-	return JSON.stringify(val, (_key, value) =>
-		typeof value === 'bigint'
-			? value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)
-				? Number(value)
-				: value.toString()
-			: value,
-	);
+function canonicalize(value: unknown): unknown {
+	if (typeof value === 'bigint') {
+		return value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)
+			? Number(value)
+			: value.toString();
+	}
+	if (Array.isArray(value)) return value.map(canonicalize);
+	if (value && typeof value === 'object') {
+		return Object.fromEntries(
+			Object.keys(value as Record<string, unknown>)
+				.sort()
+				.map(key => [key, canonicalize((value as Record<string, unknown>)[key])]),
+		);
+	}
+	return value;
+}
+
+function safeStringify(value: unknown) {
+	return JSON.stringify(canonicalize(value));
 }
 
 function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {

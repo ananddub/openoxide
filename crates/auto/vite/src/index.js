@@ -67,10 +67,19 @@ if (typeof BigInt !== 'undefined' && !BigInt.prototype.toJSON) {
   };
 }
 
+function canonicalize(value) {
+  if (typeof value === 'bigint') {
+    return value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(value) : value.toString();
+  }
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalize(value[key])]));
+  }
+  return value;
+}
+
 function safeStringify(value) {
-  return JSON.stringify(value, (_key, val) => typeof val === 'bigint'
-    ? (val <= BigInt(Number.MAX_SAFE_INTEGER) && val >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(val) : val.toString())
-    : val);
+  return JSON.stringify(canonicalize(value));
 }
 
 const sockets = new Map();
