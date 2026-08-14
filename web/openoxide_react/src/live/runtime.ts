@@ -97,7 +97,9 @@ function socketFor(namespace: string) {
 
 	const socket = io(`${socketBaseUrl()}${namespace}`, {
 		path: '/socket.io',
-		transports: ['websocket'],
+		transports: ['websocket', 'polling'],
+		tryAllTransports: true,
+		upgrade: false,
 		auth: callback => callback({token: accessToken()}),
 		reconnection: true,
 		reconnectionAttempts: Infinity,
@@ -122,6 +124,9 @@ function socketFor(namespace: string) {
 	socket.on('disconnect', reason => {
 		socketEntry.ready = false;
 		if (reason === 'io server disconnect') socket.connect();
+	});
+	socket.on('connect_error', error => {
+		console.error('[openoxide-live] socket connection failed', namespace, error);
 	});
 	const recover = () => {
 		if (!socket.connected) socket.connect();

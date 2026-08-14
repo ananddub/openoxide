@@ -231,7 +231,9 @@ function createLiveHook(metadata) {
       if (!socketEntry) {
         const socket = io(\`\${socketBaseUrl()}\${endpoint.namespace}\`, {
           path: '/socket.io',
-          transports: ['websocket'],
+          transports: ['websocket', 'polling'],
+          tryAllTransports: true,
+          upgrade: false,
           auth: cb => cb({token: accessToken()}),
           reconnection: true,
           reconnectionAttempts: Infinity,
@@ -251,8 +253,9 @@ function createLiveHook(metadata) {
           entry.ready = false;
           if (reason === 'io server disconnect') socket.connect();
         });
-        socket.on('connect_error', async () => {
+        socket.on('connect_error', async error => {
           entry.ready = false;
+          console.error('[openoxide-live] socket connection failed', endpoint.namespace, error);
           const failedToken = accessToken();
           if (failedToken && entry.refreshedForToken !== failedToken) {
             entry.refreshedForToken = failedToken;
