@@ -1,0 +1,29 @@
+#![allow(unused_attributes)]
+
+use serde::{Deserialize, Serialize};
+use sqlx_gen::SqlxGen;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::FromRow, SqlxGen)]
+#[sqlx_gen(kind = "table", schema = "main", table = "vault_providers")]
+pub struct VaultProvider {
+    #[sqlx_gen(primary_key, sql_type = "INTEGER")]
+    pub id: Option<i64>,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub name: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub provider_type: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub api_url: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub auth_token: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub namespace: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub config_json: Option<String>,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub organization_id: i64,
+    #[sqlx_gen(sql_type = "INTEGER", column_default = "unixepoch()")]
+    pub created_at: i64,
+    #[sqlx_gen(sql_type = "INTEGER", column_default = "unixepoch()")]
+    pub updated_at: i64,
+}

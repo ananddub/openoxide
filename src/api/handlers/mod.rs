@@ -31,4 +31,5 @@ pub mod swarm;
 pub mod system;
 pub mod tag;
 pub mod traefik;
+pub mod vault;
 pub mod webhook;

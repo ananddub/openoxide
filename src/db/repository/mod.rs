@@ -85,6 +85,7 @@ pub use tags::TagRepository;
 pub use two_factor::TwoFactorRepository;
 pub use user_policy::UserPolicyRepository;
 pub use users::UserRepository;
+pub use vault_providers::VaultProviderRepository;
 pub use volume_backups::VolumeBackupRepository;
 pub use webhooks::{WebhookRepository, WebhookResource};
 
@@ -171,5 +172,6 @@ pub mod tags;
 pub mod two_factor;
 pub mod user_policy;
 pub mod users;
+pub mod vault_providers;
 pub mod volume_backups;
 pub mod webhooks;

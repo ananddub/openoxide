@@ -73,4 +73,5 @@ pub mod two_factor;
 pub mod types;
 pub mod user_policy;
 pub mod users;
+pub mod vault_providers;
 pub mod volume_backups;
