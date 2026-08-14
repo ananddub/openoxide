@@ -33,18 +33,18 @@ pub(super) fn validate(input: &UpdatePrivateNetworkDto) -> sqlx::Result<()> {
             let cidr = input.tunnel_address.as_deref().ok_or_else(|| {
                 sqlx::Error::Protocol("managed WireGuard requires tunnel_address".into())
             })?;
-            let endpoint = input.endpoint.as_deref().ok_or_else(|| {
-                sqlx::Error::Protocol("managed WireGuard requires endpoint".into())
-            })?;
+            let endpoint = input.endpoint.as_deref().unwrap_or("").trim();
             let (_, _, expected_host) = tunnel_addresses(cidr)?;
             if input.private_host.as_deref() != Some(expected_host.as_str()) {
                 return Err(sqlx::Error::Protocol(format!(
                     "private_host must be {expected_host} for tunnel {cidr}"
                 )));
             }
-            // The public endpoint can be NAT/port-forwarded to a different
-            // local WireGuard listen port. Validate both independently.
-            endpoint_port(endpoint)?;
+            // If endpoint is explicitly provided, validate its host and port.
+            // If empty, STUN auto-discovery will discover it automatically during setup.
+            if !endpoint.is_empty() {
+                endpoint_port(endpoint)?;
+            }
         }
         ServerConnectionModeDto::ExternalPrivateNetwork => {
             if provider == PrivateNetworkProviderDto::Wireguard {

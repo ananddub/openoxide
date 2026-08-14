@@ -266,17 +266,16 @@ export function PrivateNetworkModal({
 						<>
 							<div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
 								OpenOxide installs and manages kernel WireGuard on the
-								panel and remote server. The remote server must be able to
-								reach the public endpoint over UDP. Its public port may
-								differ from the panel's local listen port when NAT or port
-								forwarding is used.
+								panel and remote server. Built-in STUN auto-discovery will
+								automatically resolve and hole-punch the public endpoint over UDP.
+								You can leave the endpoint blank for auto-discovery or enter a specific IP/domain.
 							</div>
 							<div className="grid gap-3 sm:grid-cols-2">
-								<Field label="Panel public endpoint">
+								<Field label="Panel public endpoint (Auto / Optional)">
 									<Input
 										value={endpoint}
 										onChange={event => setEndpoint(event.target.value)}
-										placeholder="panel.example.com:51820"
+										placeholder="Auto STUN or 192.168.1.8:51820"
 									/>
 								</Field>
 								<Field label="Tunnel network">
