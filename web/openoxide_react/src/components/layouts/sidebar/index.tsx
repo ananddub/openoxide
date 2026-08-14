@@ -46,6 +46,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 								render={
 									<Link
 										to={item.to as any}
+										preload="intent"
 										resetScroll={false}
 										onClick={e => {
 											// Prevent browser focus scrollJump inside sidebar container
