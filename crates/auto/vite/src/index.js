@@ -72,6 +72,7 @@ export const ${endpoint.hook} = createLiveHook(${JSON.stringify(endpoint)});`,
 import {useEffect, useMemo, useState} from 'react';
 import {io} from 'socket.io-client';
 import {liveArgsKey, matchesLiveInvalidation} from '@openoxide/vite/live-key';
+import {createLiveRequestQueue} from '@openoxide/vite/live-request';
 
 if (typeof BigInt !== 'undefined' && !BigInt.prototype.toJSON) {
   BigInt.prototype.toJSON = function () {
@@ -85,9 +86,11 @@ function safeStringify(value) {
 
 const sockets = new Map();
 const liveCache = new Map();
+const liveErrors = new Map();
 const liveSubscriptions = new Map();
-const liveRequests = new Map();
+const liveConsumers = new Map();
 const liveListeners = new Map();
+const liveErrorListeners = new Map();
 let liveRefreshPromise;
 let liveRefreshRetryAfter = 0;
 let liveRefreshRetryToken;
@@ -109,28 +112,24 @@ function publishLiveValue(key, value) {
   for (const listener of listeners) listener(value);
 }
 
-function queueLiveRefetch(key, request, onValue, onError) {
-  let state = liveRequests.get(key);
-  if (!state) {
-    state = {running: false, pending: false};
-    liveRequests.set(key, state);
-  }
-  state.pending = true;
-  if (state.running) return;
-  state.running = true;
-  void (async () => {
-    try {
-      while (state.pending) {
-        state.pending = false;
-        try { onValue(await request()); }
-        catch (error) { onError(error); }
-      }
-    } finally {
-      state.running = false;
-      if (!state.pending) liveRequests.delete(key);
-    }
-  })();
+function publishLiveError(key, error) {
+  if (error === undefined) liveErrors.delete(key);
+  else liveErrors.set(key, error);
+  const listeners = liveErrorListeners.get(key) ?? [];
+  for (const listener of listeners) listener(error);
 }
+
+const queueLiveRefetch = createLiveRequestQueue({
+  onValue(key, value, reason) {
+    console.debug('[openoxide-live] HTTP value received', key, {reason, items: Array.isArray(value) ? value.length : undefined});
+    publishLiveValue(key, value);
+    publishLiveError(key, undefined);
+  },
+  onError(key, error, reason) {
+    console.error('[openoxide-live] HTTP request failed', key, {reason, error});
+    publishLiveError(key, error);
+  },
+});
 
 function accessToken() {
   try { return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; }
@@ -188,9 +187,13 @@ function apiBaseUrl() {
 }
 function socketBaseUrl() {
   if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
-  // Avoid Vite proxy failures for Socket.IO's polling/upgrade transport.
-  // Production keeps a relative URL so the deployed reverse proxy remains in control.
-  if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
+  if (import.meta.env.DEV) {
+    if (typeof window !== 'undefined' && window.location.hostname) {
+      const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+      return \`\${window.location.protocol}//\${host}:4000\`;
+    }
+    return 'http://127.0.0.1:4000';
+  }
   return '';
 }
 function endpointUrl(metadata, args) {
@@ -249,10 +252,11 @@ function createLiveHook(metadata) {
     const endpoint = useMemo(() => ({...metadata, args}), [key]);
     const [data, setDataState] = useState(() => liveCache.get(fullKey));
     const [connected, setConnected] = useState(false);
-    const [error, setError] = useState();
+    const [error, setError] = useState(() => liveErrors.get(fullKey));
 
     const setData = (value) => {
       publishLiveValue(fullKey, value);
+      publishLiveError(fullKey, undefined);
     };
 
     useEffect(() => {
@@ -267,21 +271,35 @@ function createLiveHook(metadata) {
     useEffect(() => {
       const cached = liveCache.get(fullKey);
       setDataState(cached);
-      setError(undefined);
+      setError(liveErrors.get(fullKey));
       setConnected(false);
 
-      const token = accessToken();
-      if (!token) {
-        setConnected(false);
-        setError(new Error('Authentication required for live updates'));
-        return;
-      }
       let listeners = liveListeners.get(fullKey);
       if (!listeners) {
         listeners = new Set();
         liveListeners.set(fullKey, listeners);
       }
       listeners.add(setDataState);
+      let errorListeners = liveErrorListeners.get(fullKey);
+      if (!errorListeners) {
+        errorListeners = new Set();
+        liveErrorListeners.set(fullKey, errorListeners);
+      }
+      errorListeners.add(setError);
+
+      const consumerCount = liveConsumers.get(fullKey) ?? 0;
+      liveConsumers.set(fullKey, consumerCount + 1);
+      if (metadata.path && consumerCount === 0) {
+        // HTTP is the primary data path. Start it before opening/subscribing the
+        // socket so a disconnected realtime server never blocks page rendering.
+        queueLiveRefetch(
+          fullKey,
+          () => refetch(metadata, args, organizationId),
+          \`mount:\${fullKey}\`,
+          'initial',
+        );
+      }
+
       let socketEntry = sockets.get(endpoint.namespace);
       if (!socketEntry) {
         const socket = io(\`\${socketBaseUrl()}\${endpoint.namespace}\`, {
@@ -296,11 +314,12 @@ function createLiveHook(metadata) {
           reconnectionDelayMax: 30000,
           randomizationFactor: 0.5,
         });
-        socketEntry = {socket, ready: false, refreshedForToken: undefined};
+        socketEntry = {socket, ready: false, readyGeneration: 0, refreshedForToken: undefined};
         const entry = socketEntry;
         socket.on('connect', () => { entry.ready = false; });
         socket.on('socket:ready', () => {
           entry.ready = true;
+          entry.readyGeneration++;
           for (const active of liveSubscriptions.values()) {
             if (active.namespace === endpoint.namespace) socket.emit('live:subscribe', active.subscription);
           }
@@ -329,6 +348,7 @@ function createLiveHook(metadata) {
         sockets.set(endpoint.namespace, socketEntry);
       }
       const socket = socketEntry.socket;
+      const initialReadyGeneration = socketEntry.readyGeneration;
       const subscription = {endpoint: endpoint.endpoint, args};
       const subscribe = () => {
         let active = liveSubscriptions.get(fullKey);
@@ -346,15 +366,16 @@ function createLiveHook(metadata) {
       const subscribed = (message) => {
         if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) {
           setConnected(true);
-          setError(undefined);
-          if (metadata.path) {
-            queueLiveRefetch(fullKey, () => refetch(metadata, args, organizationId), value => {
-              console.debug('[openoxide-live] resubscribed and hydrated', fullKey, {items: Array.isArray(value) ? value.length : undefined});
-              publishLiveValue(fullKey, value);
-            }, cause => {
-              console.error('[openoxide-live] resubscribe hydration failed', fullKey, cause);
-              setError(cause);
-            });
+          // The first acknowledgement must not duplicate the initial HTTP load.
+          // After a real reconnect, perform one catch-up request for changes that
+          // may have happened while the socket was unavailable.
+          if (metadata.path && socketEntry.readyGeneration > Math.max(1, initialReadyGeneration)) {
+            queueLiveRefetch(
+              fullKey,
+              () => refetch(metadata, args, organizationId),
+              \`reconnect:\${socketEntry.readyGeneration}\`,
+              'reconnect',
+            );
           }
         }
       };
@@ -367,22 +388,25 @@ function createLiveHook(metadata) {
       const invalidate = (message) => {
         if (!matchesLiveInvalidation(endpoint.endpoint, args, message) || !metadata.path) return;
         console.debug('[openoxide-live] invalidated', fullKey);
-        queueLiveRefetch(fullKey, () => refetch(metadata, args, organizationId), value => {
-          console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
-          publishLiveValue(fullKey, value);
-          setError(undefined);
-        }, error => {
-          console.error('[openoxide-live] invalidation refetch failed', fullKey, error);
-          setError(error);
-        });
+        queueLiveRefetch(
+          fullKey,
+          () => refetch(metadata, args, organizationId),
+          message,
+          'invalidation',
+        );
       };
       socket.on('socket:ready', ready); socket.on('disconnect', disconnect); socket.on('live:subscribed', subscribed); socket.on('live:update', update); socket.on('live:invalidate', invalidate);
       subscribe();
-      if (metadata.path) invalidate(subscription);
       return () => {
         const listeners = liveListeners.get(fullKey);
         listeners?.delete(setDataState);
         if (listeners?.size === 0) liveListeners.delete(fullKey);
+        const errorListeners = liveErrorListeners.get(fullKey);
+        errorListeners?.delete(setError);
+        if (errorListeners?.size === 0) liveErrorListeners.delete(fullKey);
+        const consumerCount = liveConsumers.get(fullKey) ?? 1;
+        if (consumerCount <= 1) liveConsumers.delete(fullKey);
+        else liveConsumers.set(fullKey, consumerCount - 1);
         const active = liveSubscriptions.get(fullKey);
         if (active && --active.count === 0) {
           liveSubscriptions.delete(fullKey);
