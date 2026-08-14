@@ -295,7 +295,7 @@ export function UsersManagementPage() {
 							activeTab === 'users' ? 'bg-card text-foreground shadow-2xs border border-border/60' : 'text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						Active Users ({allUsers.length})
+						Active Users ({users.length})
 					</button>
 					<button
 						type="button"
