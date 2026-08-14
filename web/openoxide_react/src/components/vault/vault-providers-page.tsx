@@ -231,24 +231,23 @@ export function VaultProvidersPage() {
 														variant="outline"
 														size="sm"
 														onClick={() => copyReferenceSyntax(provider)}
-														className="h-8 text-xs font-medium gap-1 px-2.5"
+														className="h-8 text-xs font-medium gap-1.5 px-3 bg-muted/30 hover:bg-muted/60 border-border/80 text-foreground"
 													>
-														{isCopied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+														{isCopied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5 text-muted-foreground" />}
 														Copy Syntax
 													</Button>
 													<Button
-														variant="outline"
 														size="sm"
 														onClick={() => handleTestConnection(provider)}
 														disabled={isTesting}
-														className="h-8 text-xs font-semibold gap-1 px-2.5"
+														className="h-8 text-xs font-semibold gap-1.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all shadow-2xs"
 													>
 														{isTesting ? (
-															<RefreshCw className="size-3.5 animate-spin" />
+															<RefreshCw className="size-3.5 animate-spin text-emerald-400" />
 														) : (
-															<ShieldCheck className="size-3.5 text-emerald-500" />
+															<ShieldCheck className="size-3.5 text-emerald-400" />
 														)}
-														Test API
+														Test Connection
 													</Button>
 													<Button
 														variant="ghost"

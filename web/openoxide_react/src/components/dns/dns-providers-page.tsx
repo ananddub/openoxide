@@ -212,18 +212,17 @@ export function DnsProvidersPage() {
 									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
 										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
 										<Button
-											variant="outline"
 											size="sm"
 											onClick={() => handleTestConnection(provider)}
 											disabled={isTesting}
-											className="h-7 text-[11px] font-semibold gap-1 px-2.5"
+											className="h-7 text-[11px] font-semibold gap-1.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all shadow-2xs"
 										>
 											{isTesting ? (
-												<RefreshCw className="size-3 animate-spin" />
+												<RefreshCw className="size-3 animate-spin text-emerald-400" />
 											) : (
-												<CheckCircle2 className="size-3 text-emerald-500" />
+												<CheckCircle2 className="size-3 text-emerald-400" />
 											)}
-											Test API
+											Test Connection
 										</Button>
 									</div>
 								</CardContent>
