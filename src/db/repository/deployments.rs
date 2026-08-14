@@ -852,15 +852,15 @@ impl DeploymentRepository {
         Ok(rows.rows_affected() > 0)
     }
 
-    pub async fn mark_running_as_recovered(&self) -> Result<(), sqlx::Error> {
+    pub async fn mark_interrupted_as_recovered(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments
              SET status        = 'ERROR',
                  state         = 'RECOVERED_AFTER_RESTART',
-                 error_message = COALESCE(error_message, 'server restarted while deployment was running'),
+                 error_message = COALESCE(error_message, 'server restarted before deployment completed'),
                  finished_at   = strftime('%s', 'now'),
                  last_state_at = strftime('%s', 'now')
-             WHERE status = 'RUNNING'",
+             WHERE status IN ('QUEUED', 'RUNNING', 'CANCELLING')",
         )
         .execute(self.pool.as_ref())
         .await?;

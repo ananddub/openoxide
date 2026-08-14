@@ -188,7 +188,7 @@ impl BuilderQueue {
             }
         };
 
-        if let Err(e) = repo.mark_running_as_recovered().await {
+        if let Err(e) = repo.mark_interrupted_as_recovered().await {
             tracing::error!(error = %e, "builder queue: could not recover stale deployments");
         }
 
