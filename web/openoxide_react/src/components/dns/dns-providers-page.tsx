@@ -31,6 +31,12 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import { toast } from 'sonner';
+import {
+	CloudflareIcon,
+	AwsIcon,
+	DigitalOceanIcon,
+	HetznerIcon,
+} from '#/components/icons/provider-icons';
 
 export interface DnsProviderItem {
 	id: number;
@@ -292,10 +298,30 @@ export function DnsProvidersPage() {
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent className="w-[var(--anchor-width)]">
-									<SelectItem value="CLOUDFLARE">Cloudflare DNS</SelectItem>
-									<SelectItem value="ROUTE53">AWS Route53</SelectItem>
-									<SelectItem value="DIGITALOCEAN">DigitalOcean DNS</SelectItem>
-									<SelectItem value="HETZNER">Hetzner DNS</SelectItem>
+									<SelectItem value="CLOUDFLARE">
+										<div className="flex items-center gap-2">
+											<CloudflareIcon className="size-4 shrink-0 text-amber-500" />
+											Cloudflare DNS
+										</div>
+									</SelectItem>
+									<SelectItem value="ROUTE53">
+										<div className="flex items-center gap-2">
+											<AwsIcon className="size-4 shrink-0 text-orange-500" />
+											AWS Route53
+										</div>
+									</SelectItem>
+									<SelectItem value="DIGITALOCEAN">
+										<div className="flex items-center gap-2">
+											<DigitalOceanIcon className="size-4 shrink-0 text-blue-500" />
+											DigitalOcean DNS
+										</div>
+									</SelectItem>
+									<SelectItem value="HETZNER">
+										<div className="flex items-center gap-2">
+											<HetznerIcon className="size-4 shrink-0 text-rose-500" />
+											Hetzner DNS
+										</div>
+									</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>

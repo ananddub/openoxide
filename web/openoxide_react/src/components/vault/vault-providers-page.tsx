@@ -35,6 +35,14 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import { toast } from 'sonner';
+import {
+	HashicorpVaultIcon,
+	InfisicalIcon,
+	AwsIcon,
+	DopplerIcon,
+	AzureIcon,
+	ScalewayIcon,
+} from '#/components/icons/provider-icons';
 
 export interface VaultProviderItem {
 	id: number;
@@ -348,12 +356,42 @@ export function VaultProvidersPage() {
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent className="w-[var(--anchor-width)]">
-									<SelectItem value="HASHICORP">HashiCorp Vault / OpenBao</SelectItem>
-									<SelectItem value="INFISICAL">Infisical</SelectItem>
-									<SelectItem value="DOPPLER">Doppler</SelectItem>
-									<SelectItem value="AWS">AWS Secrets Manager</SelectItem>
-									<SelectItem value="AZURE">Azure Key Vault</SelectItem>
-									<SelectItem value="SCALEWAY">Scaleway Secret Manager</SelectItem>
+									<SelectItem value="HASHICORP">
+										<div className="flex items-center gap-2">
+											<HashicorpVaultIcon className="size-4 shrink-0 text-amber-500" />
+											HashiCorp Vault / OpenBao
+										</div>
+									</SelectItem>
+									<SelectItem value="INFISICAL">
+										<div className="flex items-center gap-2">
+											<InfisicalIcon className="size-4 shrink-0 text-emerald-500" />
+											Infisical
+										</div>
+									</SelectItem>
+									<SelectItem value="DOPPLER">
+										<div className="flex items-center gap-2">
+											<DopplerIcon className="size-4 shrink-0 text-purple-500" />
+											Doppler
+										</div>
+									</SelectItem>
+									<SelectItem value="AWS">
+										<div className="flex items-center gap-2">
+											<AwsIcon className="size-4 shrink-0 text-amber-600" />
+											AWS Secrets Manager
+										</div>
+									</SelectItem>
+									<SelectItem value="AZURE">
+										<div className="flex items-center gap-2">
+											<AzureIcon className="size-4 shrink-0 text-sky-500" />
+											Azure Key Vault
+										</div>
+									</SelectItem>
+									<SelectItem value="SCALEWAY">
+										<div className="flex items-center gap-2">
+											<ScalewayIcon className="size-4 shrink-0 text-purple-600" />
+											Scaleway Secret Manager
+										</div>
+									</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
