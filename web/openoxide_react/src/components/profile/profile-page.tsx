@@ -37,10 +37,11 @@ import {
 	TableHeader,
 	TableRow,
 } from '#/components/ui/table';
-import {useQueryClient} from '@tanstack/react-query';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {useAuthWhoAmI} from 'virtual:openoxide-live';
+import {useAuthStore} from '#/stores/auth-store';
 
 export interface ApiKeyItem {
 	id: string;
@@ -63,8 +64,7 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfilePage() {
-	const queryClient = useQueryClient();
-	const {data: whoamiData, isLoading} = $api.useQuery('get', '/auth/whoami');
+	const {data: whoamiData, loading: isLoading} = useAuthWhoAmI();
 	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
 
 	// Real API Tokens Query
@@ -77,7 +77,6 @@ export function ProfilePage() {
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
 		onSuccess: (data: any) => {
 			if (data) {
-				queryClient.setQueryData(['get', '/auth/whoami'], data);
 				useAuthStore.getState().setAuth({
 					id: data.user_id,
 					email: data.email || '',
@@ -85,7 +84,6 @@ export function ProfilePage() {
 					lastName: data.last_name,
 				});
 			}
-			queryClient.invalidateQueries({queryKey: ['get', '/auth/whoami']});
 			toast.success('Profile Updated Successfully');
 		},
 		onError: (err: any) => {
@@ -116,12 +114,12 @@ export function ProfilePage() {
 	const [isCreatingKey, setIsCreatingKey] = useState(false);
 
 	useEffect(() => {
-		if (whoamiData) {
-			if (whoamiData.email) setEmail(whoamiData.email);
-			if (whoamiData.first_name) setFirstName(whoamiData.first_name);
-			if (whoamiData.last_name) setLastName(whoamiData.last_name);
-			if (whoamiData.avatar) setAvatarValue(whoamiData.avatar);
-		}
+		if (!whoamiData) return;
+
+		setEmail(whoamiData.email ?? '');
+		setFirstName(whoamiData.first_name ?? '');
+		setLastName(whoamiData.last_name ?? '');
+		setAvatarValue(whoamiData.avatar);
 	}, [whoamiData]);
 
 	const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
