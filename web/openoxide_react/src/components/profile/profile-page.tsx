@@ -64,7 +64,11 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfilePage() {
-	const {data: whoamiData, loading: isLoading} = useAuthWhoAmI();
+	const {
+		data: whoamiData,
+		loading: isLoading,
+		setData: setWhoamiData,
+	} = useAuthWhoAmI();
 	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
 
 	// Real API Tokens Query
@@ -77,6 +81,7 @@ export function ProfilePage() {
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
 		onSuccess: (data: any) => {
 			if (data) {
+				setWhoamiData(data);
 				useAuthStore.getState().setAuth({
 					id: data.user_id,
 					email: data.email || '',
@@ -147,7 +152,7 @@ export function ProfilePage() {
 				body: {
 					first_name: firstName.trim() || undefined,
 					last_name: lastName.trim() || undefined,
-					avatar: avatarValue || undefined,
+					avatar: avatarValue,
 				},
 			});
 		} catch {
