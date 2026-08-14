@@ -75,7 +75,7 @@ export function VaultProvidersPage() {
 	const handleOpenCreate = () => {
 		setFormName('');
 		setFormType('HASHICORP');
-		setFormApiUrl('https://vault.example.com:8200');
+		setFormApiUrl('');
 		setFormAuthToken('');
 		setFormNamespace('');
 		setIsCreateOpen(true);
