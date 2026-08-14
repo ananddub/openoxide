@@ -182,7 +182,10 @@ function endpointUrl(metadata, args) {
 async function refetch(metadata, args) {
   if (!metadata.path) return undefined;
   const url = endpointUrl(metadata, args);
-  const request = token => fetch(url, {headers: token ? {authorization: \`Bearer \${token}\`} : {}});
+  const request = token => fetch(url, {
+    cache: 'no-store',
+    headers: token ? {authorization: \`Bearer \${token}\`} : {},
+  });
   const token = accessToken();
   let response = await request(token);
   if (response.status === 401) {

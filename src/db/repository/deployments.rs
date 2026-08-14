@@ -393,26 +393,7 @@ impl DeploymentRepository {
         )
         .execute(&mut *tx)
         .await?;
-        tx.commit().await?;
-
-        // This finalize path runs in a detached builder task. Explicitly
-        // publish after commit so deployment history subscribers receive the
-        // terminal DONE/ERROR transition even if the connection-local SQLite
-        // commit hook was not observed.
-        let mut tables = vec!["deployments"];
-        if application_id.is_some() {
-            tables.push("applications");
-        } else if compose_id.is_some() {
-            tables.push("compose_projects");
-        } else if database_id.is_some() {
-            if let Some(kind) = database_kind {
-                if let Ok(table) = db_kind_to_table(kind) {
-                    tables.push(table);
-                }
-            }
-        }
-        crate::db::reactive::notify_committed_tables(tables);
-        Ok(())
+        tx.commit().await
     }
 
     pub async fn set_application_status(&self, id: i64, status: &str) -> Result<(), sqlx::Error> {
