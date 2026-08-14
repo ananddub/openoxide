@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useVaultProviders } from 'virtual:openoxide-live';
-import { $api, formatApiError } from '@/api/client';
+import { useVaultList } from 'virtual:openoxide-live';
+import { $api } from '#/api/query';
+import { formatApiError } from '#/api/utils';
 import {
 	KeyRound,
 	Plus,
@@ -13,10 +14,10 @@ import {
 	Copy,
 	Check,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Badge } from '#/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '#/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -24,14 +25,14 @@ import {
 	DialogTitle,
 	DialogDescription,
 	DialogFooter,
-} from '@/components/ui/dialog';
+} from '#/components/ui/dialog';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from '@/components/ui/select';
+} from '#/components/ui/select';
 import { toast } from 'sonner';
 
 export interface VaultProviderItem {
@@ -48,7 +49,7 @@ export interface VaultProviderItem {
 }
 
 export function VaultProvidersPage() {
-	const { data: rawProviders, loading: isLoading } = useVaultProviders();
+	const { data: rawProviders, loading: isLoading } = useVaultList();
 	const createMutation = $api.useMutation('post', '/vault-providers');
 	const deleteMutation = $api.useMutation('delete', '/vault-providers/{id}');
 	const testMutation = $api.useMutation('post', '/vault-providers/{id}/test');
