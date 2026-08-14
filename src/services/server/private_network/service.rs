@@ -56,6 +56,10 @@ impl ServerPrivateNetworkService {
     ) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.assert_server(server_id).await?;
         validate(&input)?;
+        if input.connection_mode == ServerConnectionModeDto::ManagedWireguard {
+            self.assert_unique_managed_network(server_id, &input)
+                .await?;
+        }
         if input.connection_mode == ServerConnectionModeDto::DirectSsh {
             self.networks.disable(server_id).await?;
             return Ok(direct_network(server_id));
@@ -395,6 +399,7 @@ impl ServerPrivateNetworkService {
         };
         let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
         let (local, remote) = self.executors(server_id).await?;
+        self.remove_orphaned_local_interfaces(&local).await?;
         let backend = KernelWireGuardBackend::new(&local, &remote);
         let interface = interface_name(server_id);
         let public_key = backend
@@ -579,6 +584,60 @@ impl ServerPrivateNetworkService {
             .ok_or(sqlx::Error::RowNotFound)
     }
 
+    async fn assert_unique_managed_network(
+        &self,
+        server_id: i64,
+        input: &UpdatePrivateNetworkDto,
+    ) -> sqlx::Result<()> {
+        let tunnel = input.tunnel_address.as_deref();
+        let listen_port = input.listen_port.unwrap_or(51820);
+        for network in self.networks.list_managed().await? {
+            if network.server_id == server_id {
+                continue;
+            }
+            if network.tunnel_address.as_deref() == tunnel {
+                return Err(sqlx::Error::Protocol(format!(
+                    "WireGuard tunnel network {} is already assigned to server {}",
+                    tunnel.unwrap_or_default(),
+                    network.server_id,
+                )));
+            }
+            if network.listen_port == Some(i64::from(listen_port)) {
+                return Err(sqlx::Error::Protocol(format!(
+                    "panel WireGuard listen port {listen_port} is already used by server {}; choose another local listen port",
+                    network.server_id,
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    async fn remove_orphaned_local_interfaces(&self, local: &CommandExecutor) -> sqlx::Result<()> {
+        let active = self
+            .networks
+            .list_managed()
+            .await?
+            .into_iter()
+            .map(|network| interface_name(network.server_id))
+            .collect::<std::collections::HashSet<_>>();
+        let output = os::OsCli::new(local)
+            .wireguard()
+            .show(os::wireguard::WireGuardShowTarget::Interfaces)
+            .run()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        for interface in orphaned_managed_interfaces(&output.stdout, &active) {
+            tracing::warn!(interface, "removing orphaned managed WireGuard interface");
+            os::OsCli::new(local)
+                .wireguard()
+                .interface(&interface)
+                .remove()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        }
+        Ok(())
+    }
+
     async fn get_required(&self, server_id: i64) -> sqlx::Result<ServerPrivateNetworkDto> {
         map_network(self.get_model(server_id).await?)
     }
@@ -643,6 +702,17 @@ impl ServerPrivateNetworkService {
     }
 }
 
+fn orphaned_managed_interfaces(
+    interfaces: &str,
+    active: &std::collections::HashSet<String>,
+) -> Vec<String> {
+    interfaces
+        .split_whitespace()
+        .filter(|interface| interface.starts_with("rpwg") && !active.contains(*interface))
+        .map(str::to_owned)
+        .collect()
+}
+
 fn should_auto_repair(status: PrivateNetworkHealthStatusDto, consecutive_failures: i64) -> bool {
     status == PrivateNetworkHealthStatusDto::ConfigDrift
         && consecutive_failures >= AUTO_REPAIR_FAILURE_THRESHOLD
@@ -680,8 +750,18 @@ fn direct_network(server_id: i64) -> ServerPrivateNetworkDto {
 #[cfg(test)]
 mod tests {
     use crate::api::dto::server::PrivateNetworkHealthStatusDto;
+    use std::collections::HashSet;
 
-    use super::should_auto_repair;
+    use super::{orphaned_managed_interfaces, should_auto_repair};
+
+    #[test]
+    fn removes_only_openoxide_interfaces_without_database_owners() {
+        let active = HashSet::from(["rpwge".to_owned()]);
+        assert_eq!(
+            orphaned_managed_interfaces("wg0 rpwgd rpwge tailscale0", &active),
+            vec!["rpwgd"],
+        );
+    }
 
     #[test]
     fn auto_repairs_only_persistent_configuration_drift() {
