@@ -40,11 +40,12 @@ import {
 import {useQueryClient} from '@tanstack/react-query';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 
 export interface ApiKeyItem {
 	id: string;
 	name: string;
-	key: string;
+	keyPrefix: string;
 	createdAt: string;
 }
 
@@ -64,30 +65,47 @@ const PRESET_AVATARS = [
 export function ProfilePage() {
 	const queryClient = useQueryClient();
 	const {data: whoamiData, isLoading} = $api.useQuery('get', '/auth/whoami');
+	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
+
+	// Real API Tokens Query
+	const {
+		data: apiTokensData,
+		refetch: refetchApiTokens,
+		isLoading: isLoadingTokens,
+	} = $api.useQuery('get', '/auth/api-tokens' as any);
+
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
 		onSuccess: () => {
 			queryClient.invalidateQueries({queryKey: ['get', '/auth/whoami']});
-			toast.success('Profile Updated');
+			toast.success('Profile Updated Successfully');
 		},
-		onError: () => {
-			toast.error('Error updating the profile');
+		onError: (err: any) => {
+			toast.error(formatApiError(err) || 'Error updating profile');
 		},
 	});
+
+	const createApiTokenMutation = $api.useMutation('post', '/auth/api-tokens' as any);
+	const revokeApiTokenMutation = $api.useMutation(
+		'delete',
+		'/auth/api-tokens/{id}' as any,
+	);
 
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [email, setEmail] = useState('');
+	const [newPassword, setNewPassword] = useState('');
 	const [avatarValue, setAvatarValue] = useState<string>(PRESET_AVATARS[0]);
 
 	const colorInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	// API Keys State
-	const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
+	// API Keys Modal & State
 	const [isCreateKeyOpen, setIsCreateKeyOpen] = useState(false);
 	const [keyName, setKeyName] = useState('');
+	const [keyConfirmPassword, setKeyConfirmPassword] = useState('');
 	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
-	const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+	const [copiedKeyId, setCopiedKeyId] = useState<string | number | null>(null);
+	const [isCreatingKey, setIsCreatingKey] = useState(false);
 
 	useEffect(() => {
 		if (whoamiData) {
@@ -121,41 +139,69 @@ export function ProfilePage() {
 		try {
 			await updateUserMutation.mutateAsync({
 				body: {
+					first_name: firstName.trim() || undefined,
+					last_name: lastName.trim() || undefined,
+					email: email.trim() || undefined,
 					avatar: avatarValue || undefined,
+					password: newPassword ? newPassword : undefined,
 				},
 			});
+			setNewPassword('');
 		} catch {
-			// handled by mutation onError
+			// handled in onError callback
 		}
 	};
 
-	const handleCreateApiKey = (e: React.FormEvent) => {
+	const handleCreateApiKey = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!keyName.trim()) {
 			toast.error('Please enter a key name');
 			return;
 		}
+		if (!keyConfirmPassword) {
+			toast.error('Account password is required to generate API Key');
+			return;
+		}
 
-		const generatedToken = `rp_live_${Array.from({length: 32}, () => Math.floor(Math.random() * 36).toString(36)).join('')}`;
-		const newKeyItem: ApiKeyItem = {
-			id: String(Date.now()),
-			name: keyName.trim(),
-			key: generatedToken,
-			createdAt: new Date().toISOString(),
-		};
+		setIsCreatingKey(true);
+		try {
+			const res = (await createApiTokenMutation.mutateAsync({
+				body: {
+					name: keyName.trim(),
+					password: keyConfirmPassword,
+				},
+			} as any)) as any;
 
-		setApiKeys(prev => [newKeyItem, ...prev]);
-		setNewlyCreatedKey(generatedToken);
-		setKeyName('');
-		toast.success('API Key Created');
+			const tokenString = res?.token || '';
+			setNewlyCreatedKey(tokenString);
+			setKeyName('');
+			setKeyConfirmPassword('');
+			refetchApiTokens();
+			toast.success('API Key Created');
+		} catch (error) {
+			toast.error(formatApiError(error));
+		} finally {
+			setIsCreatingKey(false);
+		}
 	};
 
-	const handleDeleteApiKey = (id: string) => {
-		setApiKeys(prev => prev.filter(k => k.id !== id));
-		toast.success('API Key Deleted');
+	const handleDeleteApiKey = async (id: number | string) => {
+		try {
+			await revokeApiTokenMutation.mutateAsync({
+				params: {
+					path: {
+						id: Number(id),
+					},
+				},
+			} as any);
+			toast.success('API Key Revoked');
+			refetchApiTokens();
+		} catch (error) {
+			toast.error(formatApiError(error));
+		}
 	};
 
-	const handleCopyKey = (key: string, id: string) => {
+	const handleCopyKey = (key: string, id: string | number) => {
 		navigator.clipboard.writeText(key);
 		setCopiedKeyId(id);
 		toast.success('Copied to clipboard');
@@ -188,31 +234,31 @@ export function ProfilePage() {
 						</div>
 					) : (
 						<form onSubmit={handleSubmitProfile} className="flex flex-col gap-6">
-							{/* Locked Account Info Grid */}
+							{/* Editable Account Information Grid */}
 							<div className="flex flex-col gap-3 p-4 bg-muted/20 border border-border/60 rounded-xl">
-								<div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-									<Lock className="size-3.5" />
-									<span>Account Information (Read-Only)</span>
+								<div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+									<User className="size-3.5 text-primary" />
+									<span>Account Information</span>
 								</div>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									<div className="flex flex-col gap-1.5">
 										<label className="text-[11px] font-semibold text-muted-foreground">First Name</label>
 										<Input
+											placeholder="First Name"
 											value={firstName}
-											disabled
-											readOnly
-											className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed"
+											onChange={e => setFirstName(e.target.value)}
+											className="h-9 text-xs bg-muted/30 border-border/70"
 										/>
 									</div>
 
 									<div className="flex flex-col gap-1.5">
 										<label className="text-[11px] font-semibold text-muted-foreground">Last Name</label>
 										<Input
+											placeholder="Last Name"
 											value={lastName}
-											disabled
-											readOnly
-											className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed"
+											onChange={e => setLastName(e.target.value)}
+											className="h-9 text-xs bg-muted/30 border-border/70"
 										/>
 									</div>
 								</div>
@@ -221,10 +267,23 @@ export function ProfilePage() {
 									<label className="text-[11px] font-semibold text-muted-foreground">Email Address</label>
 									<Input
 										type="email"
+										placeholder="user@example.com"
 										value={email}
-										disabled
-										readOnly
-										className="h-9 text-xs bg-muted/40 border-border/50 text-muted-foreground cursor-not-allowed font-mono"
+										onChange={e => setEmail(e.target.value)}
+										className="h-9 text-xs bg-muted/30 border-border/70 font-mono"
+									/>
+								</div>
+
+								<div className="flex flex-col gap-1.5 pt-1 border-t border-border/40 mt-1">
+									<label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+										<Lock className="size-3 text-muted-foreground" /> Change Password (Optional)
+									</label>
+									<Input
+										type="password"
+										placeholder="Leave blank to keep current password"
+										value={newPassword}
+										onChange={e => setNewPassword(e.target.value)}
+										className="h-9 text-xs bg-muted/30 border-border/70 font-mono"
 									/>
 								</div>
 							</div>
@@ -306,7 +365,7 @@ export function ProfilePage() {
 									disabled={updateUserMutation.isPending}
 									className="h-9 text-xs font-bold px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
 								>
-									{updateUserMutation.isPending ? 'Saving...' : 'Save'}
+									{updateUserMutation.isPending ? 'Saving...' : 'Save Profile Changes'}
 								</Button>
 							</div>
 						</form>
@@ -314,7 +373,7 @@ export function ProfilePage() {
 				</CardContent>
 			</Card>
 
-			{/* Dokploy 1:1 API Keys Card */}
+			{/* Real Backend API Keys Card */}
 			<Card className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden">
 				<CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-4">
 					<div>
@@ -323,7 +382,7 @@ export function ProfilePage() {
 							<span>API Keys</span>
 						</CardTitle>
 						<CardDescription className="text-xs text-muted-foreground mt-0.5">
-							Manage your API keys for authenticating with the OpenOxide API.
+							Manage your Personal Access Tokens for authenticating with the OpenOxide API.
 						</CardDescription>
 					</div>
 
@@ -331,6 +390,7 @@ export function ProfilePage() {
 						size="sm"
 						onClick={() => {
 							setNewlyCreatedKey(null);
+							setKeyConfirmPassword('');
 							setIsCreateKeyOpen(true);
 						}}
 						className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
@@ -341,12 +401,17 @@ export function ProfilePage() {
 				</CardHeader>
 
 				<CardContent className="space-y-4 pt-4 border-t border-border/60">
-					{apiKeys.length === 0 ? (
+					{isLoadingTokens ? (
+						<div className="flex flex-row gap-2 items-center justify-center text-sm text-muted-foreground py-8">
+							<Loader2 className="animate-spin size-4 text-primary" />
+							<span>Loading API Keys...</span>
+						</div>
+					) : !apiTokensData || !Array.isArray(apiTokensData) || apiTokensData.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-border rounded-xl bg-muted/10 gap-2">
 							<KeyRound className="size-8 text-muted-foreground/40" />
 							<span className="text-sm font-semibold text-foreground">No API keys created</span>
 							<span className="text-xs text-muted-foreground max-w-sm">
-								Create an API key to access OpenOxide programmatically from scripts or external tools.
+								Create a personal access token to interact with OpenOxide CLI and REST APIs programmatically.
 							</span>
 						</div>
 					) : (
@@ -360,32 +425,25 @@ export function ProfilePage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{apiKeys.map(keyItem => (
+								{apiTokensData.map((keyItem: any) => (
 									<TableRow key={keyItem.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
 										<TableCell className="px-4 py-3.5 font-semibold text-xs text-foreground">
 											{keyItem.name}
 										</TableCell>
 										<TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
-											{keyItem.key.substring(0, 12)}...
+											{keyItem.token_prefix || 'pat_'}...
 										</TableCell>
 										<TableCell className="text-center px-4 py-3.5 text-xs text-muted-foreground font-mono">
-											{new Date(keyItem.createdAt).toLocaleDateString()}
+											{keyItem.created_at ? new Date(keyItem.created_at * 1000).toLocaleDateString() : 'N/A'}
 										</TableCell>
 										<TableCell className="text-right px-4 py-3.5">
 											<div className="flex items-center justify-end gap-1">
 												<Button
 													variant="ghost"
 													size="icon"
-													onClick={() => handleCopyKey(keyItem.key, keyItem.id)}
-													className="size-8 text-muted-foreground hover:text-foreground"
-												>
-													{copiedKeyId === keyItem.id ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
 													onClick={() => handleDeleteApiKey(keyItem.id)}
-													className="size-8 text-muted-foreground hover:text-rose-500"
+													className="size-8 text-muted-foreground hover:text-rose-500 cursor-pointer"
+													title="Revoke Token"
 												>
 													<Trash2 className="size-3.5" />
 												</Button>
@@ -403,9 +461,9 @@ export function ProfilePage() {
 			<Dialog open={isCreateKeyOpen} onOpenChange={open => !open && setIsCreateKeyOpen(false)}>
 				<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 flex flex-col gap-4 rounded-2xl">
 					<DialogHeader className="space-y-1">
-						<DialogTitle className="text-base font-bold text-foreground">Create API Key</DialogTitle>
+						<DialogTitle className="text-base font-bold text-foreground">Create Personal Access Token</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
-							Enter a descriptive name for your API key.
+							Enter a descriptive name and confirm your password to generate a new API token.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -413,7 +471,7 @@ export function ProfilePage() {
 						<div className="flex flex-col gap-3 py-2">
 							<div className="p-3 bg-muted/40 border border-border rounded-xl space-y-1.5">
 								<span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-									<CheckCircle2 className="size-3.5" /> Save your API key now
+									<CheckCircle2 className="size-3.5" /> Save your token now (won't be shown again)
 								</span>
 								<div className="flex items-center gap-2">
 									<code className="text-xs font-mono bg-background p-2 rounded border border-border flex-1 truncate select-all">
@@ -437,13 +495,24 @@ export function ProfilePage() {
 					) : (
 						<form onSubmit={handleCreateApiKey} className="flex flex-col gap-4">
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-semibold text-foreground">Name</label>
+								<label className="text-xs font-semibold text-foreground">Token Name <span className="text-destructive">*</span></label>
 								<Input
-									placeholder="e.g. CI/CD Deployment Token"
+									placeholder="e.g. CLI Access Token"
 									value={keyName}
 									onChange={e => setKeyName(e.target.value)}
 									className="h-9 text-xs bg-muted/20 border-border/60"
 									autoFocus
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label className="text-xs font-semibold text-foreground">Account Password <span className="text-destructive">*</span></label>
+								<Input
+									type="password"
+									placeholder="Confirm your password"
+									value={keyConfirmPassword}
+									onChange={e => setKeyConfirmPassword(e.target.value)}
+									className="h-9 text-xs bg-muted/20 border-border/60"
 								/>
 							</div>
 
@@ -456,8 +525,8 @@ export function ProfilePage() {
 								>
 									Cancel
 								</Button>
-								<Button type="submit" className="h-8 text-xs font-bold px-4">
-									Create
+								<Button type="submit" disabled={isCreatingKey} className="h-8 text-xs font-bold px-4 cursor-pointer">
+									{isCreatingKey ? 'Creating...' : 'Create Token'}
 								</Button>
 							</div>
 						</form>
