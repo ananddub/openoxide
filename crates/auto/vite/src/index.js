@@ -369,7 +369,7 @@ function createLiveHook(metadata) {
         socket.off('socket:ready', ready); socket.off('disconnect', disconnect); socket.off('live:subscribed', subscribed); socket.off('live:update', update); socket.off('live:invalidate', invalidate);
       };
     }, [endpoint, key, fullKey]);
-    return {data, connected, loading: data === undefined, error};
+    return {data, connected, loading: data === undefined && !error, error};
   };
 }
 ${endpoints}
