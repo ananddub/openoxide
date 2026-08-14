@@ -106,6 +106,11 @@ const authMiddleware: Middleware = {
 		applyOrganizationHeader(request);
 		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 		if (sessionRaw && sessionRaw !== 'undefined') {
+			if (sessionRaw.length > 4000) {
+				localStorage.removeItem(AUTH_STORAGE_KEY);
+				useAuthStore.getState().logout();
+				return request;
+			}
 			try {
 				const session = JSON.parse(sessionRaw);
 				const accessToken = session?.tokens?.access_token;

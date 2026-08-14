@@ -132,7 +132,14 @@ const queueLiveRefetch = createLiveRequestQueue({
 });
 
 function accessToken() {
-  try { return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; }
+  try {
+    const raw = localStorage.getItem('openoxide-auth-session');
+    if (raw && raw.length > 4000) {
+      localStorage.removeItem('openoxide-auth-session');
+      return undefined;
+    }
+    return JSON.parse(raw ?? 'null')?.tokens?.access_token;
+  }
   catch { return undefined; }
 }
 async function refreshAccessToken() {
