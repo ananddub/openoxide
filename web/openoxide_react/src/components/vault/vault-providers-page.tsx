@@ -333,11 +333,8 @@ export function VaultProvidersPage() {
 							</div>
 						)}
 
-						<DialogFooter className="pt-3 gap-2">
-							<Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} className="h-9 text-xs">
-								Cancel
-							</Button>
-							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5">
+						<DialogFooter className="pt-3">
+							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5 w-full">
 								{isSubmitting && <RefreshCw className="size-3 animate-spin" />}
 								Save Provider
 							</Button>
