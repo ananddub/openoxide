@@ -262,6 +262,22 @@ function createLiveHook(metadata) {
         if (message.endpoint === endpoint.endpoint && safeStringify(message.args) === key) {
           setConnected(true);
           setError(undefined);
+          if (metadata.path) {
+            let request = liveRequests.get(fullKey);
+            if (!request) {
+              request = refetch(metadata, args).finally(() => {
+                if (liveRequests.get(fullKey) === request) liveRequests.delete(fullKey);
+              });
+              liveRequests.set(fullKey, request);
+            }
+            request.then(value => {
+              console.debug('[openoxide-live] resubscribed and hydrated', fullKey, {items: Array.isArray(value) ? value.length : undefined});
+              publishLiveValue(fullKey, value);
+            }).catch(cause => {
+              console.error('[openoxide-live] resubscribe hydration failed', fullKey, cause);
+              setError(cause);
+            });
+          }
         }
       };
       const update = (message) => {

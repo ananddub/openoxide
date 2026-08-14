@@ -72,6 +72,23 @@ function socketFor(namespace: string) {
 			if (entry.endpoint.namespace === namespace) socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
 		}
 	});
+	socket.on('live:subscribed', (message: {endpoint: string; args: unknown}) => {
+		const key = `${namespace}:${message.endpoint}:${safeStringify(message.args)}`;
+		const entry = entries.get(key);
+		if (!entry) return;
+		console.debug('[openoxide-live] resubscribed', key);
+		entry.endpoint.refetch?.(entry.endpoint.args).then((value) => {
+			console.debug('[openoxide-live] resubscribed and hydrated', key, {items: Array.isArray(value) ? value.length : undefined});
+			entry.value = value;
+			entry.hasValue = true;
+			entry.version++;
+			for (const notify of entry.listeners) notify(value);
+		}).catch((cause) => {
+			const error = cause instanceof Error ? cause : new Error(String(cause));
+			console.error('[openoxide-live] resubscribe hydration failed', key, error);
+			for (const notify of entry.errorListeners) notify(error);
+		});
+	});
 	socket.on('disconnect', reason => {
 		socketEntry.ready = false;
 		if (reason === 'io server disconnect') socket.connect();
