@@ -16,6 +16,14 @@ impl RetryPolicy {
         }
     }
 
+    pub(super) const fn fast_network() -> Self {
+        Self {
+            attempts: 2,
+            initial_delay: Duration::from_millis(500),
+            max_delay: Duration::from_secs(1),
+        }
+    }
+
     #[cfg(test)]
     const fn immediate(attempts: usize) -> Self {
         Self {

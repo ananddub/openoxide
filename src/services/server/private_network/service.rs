@@ -668,7 +668,7 @@ impl ServerPrivateNetworkService {
         let port = port
             .try_into()
             .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))?;
-        RetryPolicy::network()
+        RetryPolicy::fast_network()
             .run(|attempt| {
                 let executor = RemoteExecutor::new(
                     host,
@@ -678,8 +678,14 @@ impl ServerPrivateNetworkService {
                     SshHostKey::InsecureAcceptAny,
                 );
                 async move {
-                    let result = executor.run("true", std::iter::empty::<&str>()).await;
-                    if let Err(error) = &result {
+                    let result = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        executor.run("true", std::iter::empty::<&str>()),
+                    )
+                    .await
+                    .unwrap_or_else(|_| Err(crate::utils::exec::ExecError::Timeout { seconds: 3 }));
+
+                    if let Err(ref error) = result {
                         tracing::debug!(attempt, %error, "private-network SSH verification attempt failed");
                     }
                     result
