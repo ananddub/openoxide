@@ -36,7 +36,13 @@ function accessToken() {
 }
 
 function safeStringify(val: unknown) {
-	return JSON.stringify(val, (_key, value) => (typeof value === 'bigint' ? value.toString() : value));
+	return JSON.stringify(val, (_key, value) =>
+		typeof value === 'bigint'
+			? value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)
+				? Number(value)
+				: value.toString()
+			: value,
+	);
 }
 
 function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {

@@ -68,7 +68,9 @@ if (typeof BigInt !== 'undefined' && !BigInt.prototype.toJSON) {
 }
 
 function safeStringify(value) {
-  return JSON.stringify(value, (_key, val) => typeof val === 'bigint' ? val.toString() : val);
+  return JSON.stringify(value, (_key, val) => typeof val === 'bigint'
+    ? (val <= BigInt(Number.MAX_SAFE_INTEGER) && val >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(val) : val.toString())
+    : val);
 }
 
 const sockets = new Map();
