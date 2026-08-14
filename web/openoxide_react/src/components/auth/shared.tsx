@@ -1,5 +1,4 @@
 import type React from 'react';
-import {Logo} from '#/components/shared/logo';
 
 type Props = {
 	title: string;
@@ -8,7 +7,6 @@ type Props = {
 
 export const Header: React.FC<Props> = ({title, subtitle}) => (
 	<div className="mb-8 flex flex-col items-center gap-2">
-		<Logo className="size-16" />
 		<h1 className="text-2xl font-bold tracking-tight text-foreground">
 			{title}
 		</h1>
@@ -18,7 +16,7 @@ export const Header: React.FC<Props> = ({title, subtitle}) => (
 
 export const Wrapper: React.FC<React.PropsWithChildren> = ({children}) => {
 	return (
-		<div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card/70 p-8 shadow-2xl backdrop-blur-md transition-all hover:border-border">
+		<div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card/70 p-8 shadow-2xl backdrop-blur-md">
 			{children}
 		</div>
 	);
