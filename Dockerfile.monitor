@@ -14,6 +14,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY agent ./agent
 COPY crates ./crates
 COPY proto ./proto
+COPY src ./src
 
 # Static musl build. The flag is scoped to the target triple rather than set via
 # RUSTFLAGS, which would also apply to proc-macro crates — those are host
