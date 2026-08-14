@@ -213,6 +213,7 @@ export function UsersManagementPage() {
 				}
 
 				toast.success('User account created successfully');
+				setActiveTab('users');
 			} else {
 				// Send Email Invitation
 				await inviteMutation.mutateAsync({
@@ -224,6 +225,7 @@ export function UsersManagementPage() {
 				} as any);
 
 				toast.success('Invitation sent successfully');
+				setActiveTab('invitations');
 			}
 
 			setIsCreateOpen(false);
