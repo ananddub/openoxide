@@ -69,7 +69,7 @@ export const ${endpoint.hook} = createLiveHook(${JSON.stringify(endpoint)});`,
     .join("");
   const groups = groupedRuntimeSource(manifest.endpoints);
   return `
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {io} from 'socket.io-client';
 import {liveArgsKey, matchesLiveInvalidation} from '@openoxide/vite/live-key';
 import {createLiveRequestQueue} from '@openoxide/vite/live-request';
@@ -254,10 +254,10 @@ function createLiveHook(metadata) {
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState(() => liveErrors.get(fullKey));
 
-    const setData = (value) => {
+    const setData = useCallback((value) => {
       publishLiveValue(fullKey, value);
       publishLiveError(fullKey, undefined);
-    };
+    }, [fullKey]);
 
     useEffect(() => {
       const organizationChanged = event => {
@@ -415,7 +415,7 @@ function createLiveHook(metadata) {
         socket.off('socket:ready', ready); socket.off('disconnect', disconnect); socket.off('live:subscribed', subscribed); socket.off('live:update', update); socket.off('live:invalidate', invalidate);
       };
     }, [endpoint, key, fullKey, organizationId]);
-    return {data, connected, loading: data === undefined && !error, error};
+    return {data, connected, loading: data === undefined && !error, error, setData};
   };
 }
 ${endpoints}
@@ -437,7 +437,7 @@ function declarationSource(manifest) {
   const hooks = manifest.endpoints
     .map(
       (endpoint) =>
-        `  export function ${endpoint.hook}(${endpoint.parameters ?? ""}): {data: ${endpoint.result} | undefined; connected: boolean; loading: boolean; error: Error | undefined};`,
+        `  export function ${endpoint.hook}(${endpoint.parameters ?? ""}): {data: ${endpoint.result} | undefined; connected: boolean; loading: boolean; error: Error | undefined; setData: (value: ${endpoint.result}) => void};`,
     )
     .join("\n");
   const groups = groupedDeclarationSource(manifest.endpoints);
