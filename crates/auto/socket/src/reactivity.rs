@@ -58,6 +58,7 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
         let Some(io) = SOCKET_IO.get() else {
             return;
         };
+        let mut broadcast_endpoints = std::collections::HashSet::new();
         for room in rooms {
             if let Some(refresher) = LIVE_REFRESHERS
                 .get()
@@ -69,11 +70,14 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
                 continue;
             }
             if let Some(namespace) = io.of(room.namespace) {
+                if !broadcast_endpoints.insert((room.namespace, room.endpoint.clone())) {
+                    continue;
+                }
                 tracing::info!(endpoint = room.endpoint, room = %room.room, args = ?room.args, "no server refresher; broadcasting live invalidation");
                 match namespace
                     .emit(
                         "live:invalidate",
-                        &serde_json::json!({"endpoint": room.endpoint, "args": room.args}),
+                        &serde_json::json!({"endpoint": room.endpoint, "args": null}),
                     )
                     .await
                 {

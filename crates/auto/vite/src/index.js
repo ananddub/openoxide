@@ -323,7 +323,7 @@ function createLiveHook(metadata) {
         }
       };
       const invalidate = (message) => {
-        if (message.endpoint !== endpoint.endpoint || safeStringify(message.args) !== key || !metadata.path) return;
+        if (message.endpoint !== endpoint.endpoint || (message.args != null && safeStringify(message.args) !== key) || !metadata.path) return;
         console.debug('[openoxide-live] invalidated', fullKey);
         queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
           console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});

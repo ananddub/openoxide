@@ -166,15 +166,19 @@ function socketFor(namespace: string) {
 			}
 		}
 	});
-	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
-		const key = `${namespace}:${invalidation.endpoint}:${safeStringify(invalidation.args)}`;
-		const entry = entries.get(key);
-		if (!entry?.endpoint.refetch) {
-			console.warn('[openoxide-live] ignored invalidation without matching refetch entry', key);
-			return;
+		socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
+		const matching = invalidation.args == null
+			? [...entries.entries()].filter(([, entry]) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === invalidation.endpoint)
+			: (() => {
+				const key = `${namespace}:${invalidation.endpoint}:${safeStringify(invalidation.args)}`;
+				const entry = entries.get(key);
+				return entry ? [[key, entry] as const] : [];
+			})();
+		for (const [key, entry] of matching) {
+			if (!entry.endpoint.refetch) continue;
+			console.debug('[openoxide-live] invalidated', key);
+			queueRefetch(key, entry);
 		}
-		console.debug('[openoxide-live] invalidated', key);
-		queueRefetch(key, entry);
 	});
 	sockets.set(namespace, socketEntry);
 	return socketEntry;
