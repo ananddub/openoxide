@@ -89,6 +89,8 @@ const liveSubscriptions = new Map();
 const liveRequests = new Map();
 const liveListeners = new Map();
 let liveRefreshPromise;
+let liveRefreshRetryAfter = 0;
+let liveRefreshRetryToken;
 
 function publishLiveValue(key, value) {
   if (value === undefined) return;
@@ -128,20 +130,36 @@ function accessToken() {
 async function refreshAccessToken() {
   if (liveRefreshPromise) return liveRefreshPromise;
   liveRefreshPromise = (async () => {
+    let refreshToken;
     try {
       const session = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null');
-      const refreshToken = session?.tokens?.refresh_token;
+      refreshToken = session?.tokens?.refresh_token;
       if (!refreshToken) return undefined;
+      if (liveRefreshRetryToken === refreshToken && Date.now() < liveRefreshRetryAfter) return undefined;
       const response = await fetch(\`\${apiBaseUrl()}/auth/refresh\`, {
         method: 'POST',
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({refresh_token: refreshToken}),
       });
-      if (!response.ok) return undefined;
+      if (!response.ok) {
+        if ([400, 401, 403].includes(response.status)) {
+          localStorage.removeItem('openoxide-auth-session');
+        } else {
+          liveRefreshRetryToken = refreshToken;
+          liveRefreshRetryAfter = Date.now() + 15000;
+        }
+        return undefined;
+      }
       const nextSession = await response.json();
       localStorage.setItem('openoxide-auth-session', JSON.stringify(nextSession));
+      liveRefreshRetryToken = undefined;
+      liveRefreshRetryAfter = 0;
       return nextSession?.tokens?.access_token;
     } catch {
+      if (refreshToken) {
+        liveRefreshRetryToken = refreshToken;
+        liveRefreshRetryAfter = Date.now() + 15000;
+      }
       return undefined;
     } finally {
       liveRefreshPromise = undefined;
@@ -252,8 +270,9 @@ function createLiveHook(metadata) {
           auth: cb => cb({token: accessToken()}),
           reconnection: true,
           reconnectionAttempts: Infinity,
-          reconnectionDelay: 500,
-          reconnectionDelayMax: 5000,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 30000,
+          randomizationFactor: 0.5,
         });
         socketEntry = {socket, ready: false, refreshedForToken: undefined};
         const entry = socketEntry;
@@ -271,12 +290,12 @@ function createLiveHook(metadata) {
         socket.on('connect_error', async error => {
           entry.ready = false;
           console.error('[openoxide-live] socket connection failed', endpoint.namespace, error);
-          const failedToken = accessToken();
+          const authFailure = /auth|unauthor|token/i.test(String(error?.message ?? error));
+          const failedToken = authFailure ? accessToken() : undefined;
           if (failedToken && entry.refreshedForToken !== failedToken) {
             entry.refreshedForToken = failedToken;
             await refreshAccessToken();
           }
-          if (!socket.connected) socket.connect();
         });
         const recover = () => {
           if (!socket.connected) socket.connect();

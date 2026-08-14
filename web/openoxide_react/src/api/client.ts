@@ -8,18 +8,25 @@ export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 	if (import.meta.env.DEV) return '/api';
 	if (typeof window !== 'undefined' && window.location.hostname) {
-		const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+		const host =
+			window.location.hostname === 'localhost'
+				? '127.0.0.1'
+				: window.location.hostname;
 		return `${window.location.protocol}//${host}:4000`;
 	}
 	return 'http://127.0.0.1:4000';
 };
 
 let refreshPromise: Promise<string | null> | null = null;
+let refreshRetryAfter = 0;
+let refreshRetryToken = '';
+const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 
-async function performTokenRefresh(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
 	if (refreshPromise) return refreshPromise;
 
 	refreshPromise = (async () => {
+		let refreshToken = '';
 		try {
 			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 			if (!sessionRaw || sessionRaw === 'undefined') {
@@ -28,11 +35,16 @@ async function performTokenRefresh(): Promise<string | null> {
 			}
 
 			const session = JSON.parse(sessionRaw);
-			const refreshToken = session?.tokens?.refresh_token;
+			refreshToken = session?.tokens?.refresh_token || '';
 			if (!refreshToken) {
 				useAuthStore.getState().logout();
 				return null;
 			}
+			if (
+				refreshRetryToken === refreshToken &&
+				Date.now() < refreshRetryAfter
+			)
+				return null;
 
 			const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
 				method: 'POST',
@@ -43,12 +55,19 @@ async function performTokenRefresh(): Promise<string | null> {
 			});
 
 			if (!refreshRes.ok) {
-				useAuthStore.getState().logout();
+				if ([400, 401, 403].includes(refreshRes.status)) {
+					useAuthStore.getState().logout();
+				} else {
+					refreshRetryToken = refreshToken;
+					refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
+				}
 				return null;
 			}
 
 			const newSession = await refreshRes.json();
 			localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+			refreshRetryToken = '';
+			refreshRetryAfter = 0;
 
 			if (newSession?.user) {
 				useAuthStore.getState().setAuth({
@@ -61,7 +80,10 @@ async function performTokenRefresh(): Promise<string | null> {
 
 			return newSession?.tokens?.access_token || null;
 		} catch {
-			useAuthStore.getState().logout();
+			if (refreshToken) {
+				refreshRetryToken = refreshToken;
+				refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
+			}
 			return null;
 		} finally {
 			refreshPromise = null;
@@ -99,7 +121,7 @@ const authMiddleware: Middleware = {
 		}
 
 		// Use single refresh promise mutex so parallel 401s don't bombard backend
-		const newAccessToken = await performTokenRefresh();
+		const newAccessToken = await refreshAccessToken();
 		if (!newAccessToken) {
 			return response;
 		}

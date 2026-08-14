@@ -1,12 +1,17 @@
-import {getApiBaseUrl} from '#/api/client';
+import {getApiBaseUrl, refreshAccessToken} from '#/api/client';
 
-import type {PrivateNetworkConfig, UpdatePrivateNetworkInput} from './types';
+import type {
+	PrivateNetworkConfig,
+	UpdatePrivateNetworkInput,
+} from './types';
 
 function authHeaders(json = false): HeadersInit {
 	const sessionRaw = localStorage.getItem('openoxide-auth-session');
 	let token = '';
 	try {
-		token = sessionRaw ? JSON.parse(sessionRaw)?.tokens?.access_token || '' : '';
+		token = sessionRaw
+			? JSON.parse(sessionRaw)?.tokens?.access_token || ''
+			: '';
 	} catch {
 		// Invalid sessions are handled by the global authentication flow.
 	}
@@ -20,27 +25,14 @@ function authHeaders(json = false): HeadersInit {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	let response = await fetch(`${getApiBaseUrl()}${path}`, init);
 	if (response.status === 401) {
-		const sessionRaw = localStorage.getItem('openoxide-auth-session');
-		let refreshToken = '';
-		try {
-			refreshToken = sessionRaw ? JSON.parse(sessionRaw)?.tokens?.refresh_token || '' : '';
-		} catch {
-			refreshToken = '';
-		}
-		if (refreshToken) {
-			const refreshed = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({refresh_token: refreshToken}),
+		const accessToken = await refreshAccessToken();
+		if (accessToken) {
+			const headers = new Headers(init?.headers);
+			headers.set('Authorization', `Bearer ${accessToken}`);
+			response = await fetch(`${getApiBaseUrl()}${path}`, {
+				...init,
+				headers,
 			});
-			if (refreshed.ok) {
-				const session = await refreshed.json();
-				localStorage.setItem('openoxide-auth-session', JSON.stringify(session));
-				const headers = new Headers(init?.headers);
-				const accessToken = session?.tokens?.access_token;
-				if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-				response = await fetch(`${getApiBaseUrl()}${path}`, {...init, headers});
-			}
 		}
 	}
 	if (!response.ok) {
@@ -58,7 +50,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	return response.json() as Promise<T>;
 }
 
-const pathFor = (serverId: number, action = '') => `/servers/${serverId}/private-network${action}`;
+const pathFor = (serverId: number, action = '') =>
+	`/servers/${serverId}/private-network${action}`;
 
 export const privateNetworkApi = {
 	get: (serverId: number) =>
@@ -77,7 +70,10 @@ export const privateNetworkApi = {
 			headers: authHeaders(),
 		}),
 	health: (serverId: number) =>
-		request<{status: string; error: string | null}>(pathFor(serverId, '/health'), {headers: authHeaders()}),
+		request<{status: string; error: string | null}>(
+			pathFor(serverId, '/health'),
+			{headers: authHeaders()},
+		),
 	repair: (serverId: number) =>
 		request<PrivateNetworkConfig>(pathFor(serverId, '/repair'), {
 			method: 'POST',

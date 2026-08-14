@@ -105,8 +105,9 @@ function socketFor(namespace: string) {
 		auth: callback => callback({token: accessToken()}),
 		reconnection: true,
 		reconnectionAttempts: Infinity,
-		reconnectionDelay: 500,
-		reconnectionDelayMax: 5000,
+		reconnectionDelay: 1000,
+		reconnectionDelayMax: 30000,
+		randomizationFactor: 0.5,
 	});
 	const socketEntry: SocketEntry = {socket, ready: false};
 	socket.on('connect', () => {

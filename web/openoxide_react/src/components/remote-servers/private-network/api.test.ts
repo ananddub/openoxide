@@ -30,34 +30,78 @@ describe('private network browser API flow', () => {
 	it('refreshes an expired token and retries the original request', async () => {
 		storage.setItem(
 			'openoxide-auth-session',
-			JSON.stringify({tokens: {access_token: 'expired', refresh_token: 'refresh-token'}}),
+			JSON.stringify({
+				tokens: {access_token: 'expired', refresh_token: 'refresh-token'},
+			}),
 		);
 		const fetchMock = vi
 			.fn()
-			.mockResolvedValueOnce(new Response('{"error":"invalid token"}', {status: 401}))
 			.mockResolvedValueOnce(
-				new Response(JSON.stringify({tokens: {access_token: 'fresh', refresh_token: 'next-refresh'}}), {
+				new Response('{"error":"invalid token"}', {status: 401}),
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						tokens: {access_token: 'fresh', refresh_token: 'next-refresh'},
+					}),
+					{
+						status: 200,
+						headers: {'Content-Type': 'application/json'},
+					},
+				),
+			)
+			.mockResolvedValueOnce(
+				new Response('null', {
 					status: 200,
 					headers: {'Content-Type': 'application/json'},
 				}),
-			)
-			.mockResolvedValueOnce(new Response('null', {status: 200, headers: {'Content-Type': 'application/json'}}));
+			);
 		vi.stubGlobal('fetch', fetchMock);
 
 		await expect(privateNetworkApi.get(13)).resolves.toBeNull();
 		expect(fetchMock).toHaveBeenCalledTimes(3);
-		expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:4000/auth/refresh');
-		expect(new Headers(fetchMock.mock.calls[2][1]?.headers).get('Authorization')).toBe('Bearer fresh');
+		expect(fetchMock.mock.calls[1][0]).toBe('/api/auth/refresh');
+		expect(
+			new Headers(fetchMock.mock.calls[2][1]?.headers).get(
+				'Authorization',
+			),
+		).toBe('Bearer fresh');
+	});
+
+	it('keeps the session when token refresh fails during a backend outage', async () => {
+		const session = JSON.stringify({
+			tokens: {
+				access_token: 'expired-outage',
+				refresh_token: 'outage-token',
+			},
+		});
+		storage.setItem('openoxide-auth-session', session);
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response('{"error":"invalid token"}', {status: 401}),
+			)
+			.mockResolvedValueOnce(new Response('Bad Gateway', {status: 502}));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(privateNetworkApi.get(13)).rejects.toThrow(
+			'invalid token',
+		);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(storage.getItem('openoxide-auth-session')).toBe(session);
 	});
 
 	it('surfaces the backend validation message instead of a generic 409', async () => {
 		vi.stubGlobal(
 			'fetch',
 			vi.fn().mockResolvedValue(
-				new Response(JSON.stringify({error: 'managed WireGuard requires endpoint'}), {
-					status: 409,
-					headers: {'Content-Type': 'application/json'},
-				}),
+				new Response(
+					JSON.stringify({error: 'managed WireGuard requires endpoint'}),
+					{
+						status: 409,
+						headers: {'Content-Type': 'application/json'},
+					},
+				),
 			),
 		);
 
@@ -80,7 +124,9 @@ describe('private network browser API flow', () => {
 	it('calls the explicit re-setup route with the current token', async () => {
 		storage.setItem(
 			'openoxide-auth-session',
-			JSON.stringify({tokens: {access_token: 'valid', refresh_token: 'refresh-token'}}),
+			JSON.stringify({
+				tokens: {access_token: 'valid', refresh_token: 'refresh-token'},
+			}),
 		);
 		const response = {
 			server_id: 13,
@@ -98,13 +144,22 @@ describe('private network browser API flow', () => {
 			health_status: 'UNKNOWN',
 			health_error: null,
 		};
-		const fetchMock = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify(response), {status: 200, headers: {'Content-Type': 'application/json'}}),
-		);
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue(
+				new Response(JSON.stringify(response), {
+					status: 200,
+					headers: {'Content-Type': 'application/json'},
+				}),
+			);
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(privateNetworkApi.reSetup(13)).resolves.toMatchObject({status: 'CONFIGURING'});
-		expect(fetchMock.mock.calls[0][0]).toBe('http://127.0.0.1:4000/servers/13/private-network/re-setup');
+		await expect(privateNetworkApi.reSetup(13)).resolves.toMatchObject({
+			status: 'CONFIGURING',
+		});
+		expect(fetchMock.mock.calls[0][0]).toBe(
+			'/api/servers/13/private-network/re-setup',
+		);
 		expect(fetchMock.mock.calls[0][1]?.method).toBe('POST');
 	});
 });
