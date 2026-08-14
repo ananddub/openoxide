@@ -154,6 +154,13 @@ fn bind_subscribe(socket: &SocketRef, namespace: &'static str) {
                 "live:subscribed",
                 &serde_json::json!({"endpoint": request.endpoint, "args": request.args}),
             );
+            // A subscription can be created after a server restart, when the
+            // server-side live cache/room history is empty. Always request one
+            // authorized client hydration so every topic starts in sync.
+            let _ = socket.emit(
+                "live:invalidate",
+                &serde_json::json!({"endpoint": request.endpoint, "args": request.args}),
+            );
             tracing::info!(socket_id = %socket.id, endpoint = %request.endpoint, room = %room, "live subscription acknowledged");
         },
     );
