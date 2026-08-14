@@ -181,7 +181,9 @@ function endpointUrl(metadata, args) {
 }
 async function refetch(metadata, args) {
   if (!metadata.path) return undefined;
-  const url = endpointUrl(metadata, args);
+  const endpoint = new URL(endpointUrl(metadata, args), window.location.origin);
+  endpoint.searchParams.set('_live', Date.now() + '-' + Math.random().toString(36).slice(2));
+  const url = endpoint.toString();
   const request = token => fetch(url, {
     cache: 'no-store',
     headers: token ? {authorization: \`Bearer \${token}\`} : {},
