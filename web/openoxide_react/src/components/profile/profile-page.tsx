@@ -93,7 +93,6 @@ export function ProfilePage() {
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [email, setEmail] = useState('');
-	const [newPassword, setNewPassword] = useState('');
 	const [avatarValue, setAvatarValue] = useState<string>(PRESET_AVATARS[0]);
 
 	const colorInputRef = useRef<HTMLInputElement>(null);
@@ -143,10 +142,8 @@ export function ProfilePage() {
 					last_name: lastName.trim() || undefined,
 					email: email.trim() || undefined,
 					avatar: avatarValue || undefined,
-					password: newPassword ? newPassword : undefined,
 				},
 			});
-			setNewPassword('');
 		} catch {
 			// handled in onError callback
 		}
@@ -270,19 +267,6 @@ export function ProfilePage() {
 										placeholder="user@example.com"
 										value={email}
 										onChange={e => setEmail(e.target.value)}
-										className="h-9 text-xs bg-muted/30 border-border/70 font-mono"
-									/>
-								</div>
-
-								<div className="flex flex-col gap-1.5 pt-1 border-t border-border/40 mt-1">
-									<label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-										<Lock className="size-3 text-muted-foreground" /> Change Password (Optional)
-									</label>
-									<Input
-										type="password"
-										placeholder="Leave blank to keep current password"
-										value={newPassword}
-										onChange={e => setNewPassword(e.target.value)}
 										className="h-9 text-xs bg-muted/30 border-border/70 font-mono"
 									/>
 								</div>
