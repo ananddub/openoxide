@@ -42,12 +42,9 @@ pub(super) fn validate(input: &UpdatePrivateNetworkDto) -> sqlx::Result<()> {
                     "private_host must be {expected_host} for tunnel {cidr}"
                 )));
             }
-            let endpoint_port = endpoint_port(endpoint)?;
-            if endpoint_port != input.listen_port.unwrap_or(51820) {
-                return Err(sqlx::Error::Protocol(
-                    "endpoint port must match listen_port".into(),
-                ));
-            }
+            // The public endpoint can be NAT/port-forwarded to a different
+            // local WireGuard listen port. Validate both independently.
+            endpoint_port(endpoint)?;
         }
         ServerConnectionModeDto::ExternalPrivateNetwork => {
             if provider == PrivateNetworkProviderDto::Wireguard {
@@ -159,13 +156,14 @@ mod tests {
     }
 
     #[test]
-    fn rejects_missing_or_mismatched_managed_endpoint() {
+    fn rejects_missing_managed_endpoint_and_accepts_nat_port_mapping() {
         let mut input = managed();
         input.endpoint = None;
         assert!(validate(&input).is_err());
 
-        input.endpoint = Some("panel.example.com:51821".into());
-        assert!(validate(&input).is_err());
+        input.endpoint = Some("panel.example.com:52180".into());
+        input.listen_port = Some(51820);
+        assert!(validate(&input).is_ok());
     }
 
     #[test]

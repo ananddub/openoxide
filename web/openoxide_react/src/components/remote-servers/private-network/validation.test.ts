@@ -16,22 +16,52 @@ describe('private network form validation', () => {
 	});
 
 	it('requires a panel endpoint', () => {
-		expect(validatePrivateNetworkForm({...managed, endpoint: ''})).toContain('Panel public endpoint is required');
+		expect(
+			validatePrivateNetworkForm({...managed, endpoint: ''}),
+		).toContain('Panel public endpoint is required');
 	});
 
-	it('requires endpoint and listen ports to match', () => {
-		expect(validatePrivateNetworkForm({...managed, endpoint: 'panel.example.com:51821'})).toContain(
-			'must match',
-		);
+	it('allows a NAT-mapped public port to differ from the local listen port', () => {
+		expect(
+			validatePrivateNetworkForm({
+				...managed,
+				endpoint: 'panel.example.com:52180',
+				listenPort: '51820',
+			}),
+		).toBeNull();
+	});
+
+	it('rejects invalid public and local ports', () => {
+		expect(
+			validatePrivateNetworkForm({
+				...managed,
+				endpoint: 'panel.example.com:70000',
+			}),
+		).toContain('valid UDP port');
+		expect(
+			validatePrivateNetworkForm({...managed, listenPort: '0'}),
+		).toContain('between 1 and 65535');
 	});
 
 	it('requires a reachable host for external providers', () => {
 		expect(
-			validatePrivateNetworkForm({...managed, mode: 'EXTERNAL_PRIVATE_NETWORK', endpoint: '', privateHost: ''}),
+			validatePrivateNetworkForm({
+				...managed,
+				mode: 'EXTERNAL_PRIVATE_NETWORK',
+				endpoint: '',
+				privateHost: '',
+			}),
 		).toContain('Private IP or hostname');
 	});
 
 	it('allows direct SSH without private-network fields', () => {
-		expect(validatePrivateNetworkForm({...managed, mode: 'DIRECT_SSH', endpoint: '', managedHost: null})).toBeNull();
+		expect(
+			validatePrivateNetworkForm({
+				...managed,
+				mode: 'DIRECT_SSH',
+				endpoint: '',
+				managedHost: null,
+			}),
+		).toBeNull();
 	});
 });
