@@ -1,4 +1,8 @@
 import {io, type Socket} from 'socket.io-client';
+import {
+	liveArgsKey,
+	matchesLiveInvalidation,
+} from '@openoxide/vite/live-key';
 
 export type LiveEndpoint<TArgs extends readonly unknown[], TData> = {
 	namespace: string;
@@ -50,7 +54,8 @@ function queueRefetch(key: string, entry: Entry) {
 					entry.version++;
 					for (const notify of entry.listeners) notify(value);
 				} catch (cause) {
-					const error = cause instanceof Error ? cause : new Error(String(cause));
+					const error =
+						cause instanceof Error ? cause : new Error(String(cause));
 					for (const notify of entry.errorListeners) notify(error);
 				}
 			}
@@ -63,31 +68,16 @@ function queueRefetch(key: string, entry: Entry) {
 
 function accessToken() {
 	try {
-		return JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token as string | undefined;
+		return JSON.parse(
+			localStorage.getItem('openoxide-auth-session') ?? 'null',
+		)?.tokens?.access_token as string | undefined;
 	} catch {
 		return undefined;
 	}
 }
 
-function canonicalize(value: unknown): unknown {
-	if (typeof value === 'bigint') {
-		return value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)
-			? Number(value)
-			: value.toString();
-	}
-	if (Array.isArray(value)) return value.map(canonicalize);
-	if (value && typeof value === 'object') {
-		return Object.fromEntries(
-			Object.keys(value as Record<string, unknown>)
-				.sort()
-				.map(key => [key, canonicalize((value as Record<string, unknown>)[key])]),
-		);
-	}
-	return value;
-}
-
 function safeStringify(value: unknown) {
-	return JSON.stringify(canonicalize(value));
+	return liveArgsKey(value);
 }
 
 function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
@@ -95,7 +85,8 @@ function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
 }
 
 function socketBaseUrl() {
-	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+	if (import.meta.env.VITE_SOCKET_URL)
+		return import.meta.env.VITE_SOCKET_URL;
 	// In development connect directly to Axum: Vite's proxy can return 502
 	// during Socket.IO polling/upgrade reconnects.
 	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
@@ -118,26 +109,36 @@ function socketFor(namespace: string) {
 		reconnectionDelayMax: 5000,
 	});
 	const socketEntry: SocketEntry = {socket, ready: false};
-	socket.on('connect', () => { socketEntry.ready = false; });
+	socket.on('connect', () => {
+		socketEntry.ready = false;
+	});
 	socket.on('socket:ready', () => {
 		socketEntry.ready = true;
 		for (const entry of entries.values()) {
-			if (entry.endpoint.namespace === namespace) socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
+			if (entry.endpoint.namespace === namespace)
+				socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
 		}
 	});
-	socket.on('live:subscribed', (message: {endpoint: string; args: unknown}) => {
-		const key = `${namespace}:${message.endpoint}:${safeStringify(message.args)}`;
-		const entry = entries.get(key);
-		if (!entry) return;
-		console.debug('[openoxide-live] resubscribed', key);
-		queueRefetch(key, entry);
-	});
+	socket.on(
+		'live:subscribed',
+		(message: {endpoint: string; args: unknown}) => {
+			const key = `${namespace}:${message.endpoint}:${safeStringify(message.args)}`;
+			const entry = entries.get(key);
+			if (!entry) return;
+			console.debug('[openoxide-live] resubscribed', key);
+			queueRefetch(key, entry);
+		},
+	);
 	socket.on('disconnect', reason => {
 		socketEntry.ready = false;
 		if (reason === 'io server disconnect') socket.connect();
 	});
 	socket.on('connect_error', error => {
-		console.error('[openoxide-live] socket connection failed', namespace, error);
+		console.error(
+			'[openoxide-live] socket connection failed',
+			namespace,
+			error,
+		);
 	});
 	const recover = () => {
 		if (!socket.connected) socket.connect();
@@ -151,12 +152,21 @@ function socketFor(namespace: string) {
 		const matching = entries.get(key)
 			? [entries.get(key)!]
 			: update.args == null
-				? [...entries.values()].filter((entry) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === update.endpoint)
+				? [...entries.values()].filter(
+						entry =>
+							entry.endpoint.namespace === namespace &&
+							entry.endpoint.endpoint === update.endpoint,
+					)
 				: [];
-		console.debug('[openoxide-live] received update', key, {matching: matching.length, items: Array.isArray(update.data) ? update.data.length : undefined});
+		console.debug('[openoxide-live] received update', key, {
+			matching: matching.length,
+			items: Array.isArray(update.data) ? update.data.length : undefined,
+		});
 		for (const entry of matching) {
 			try {
-				const value = entry.endpoint.parse ? entry.endpoint.parse(update.data) : update.data;
+				const value = entry.endpoint.parse
+					? entry.endpoint.parse(update.data)
+					: update.data;
 				entry.value = value;
 				entry.hasValue = true;
 				entry.version++;
@@ -166,14 +176,16 @@ function socketFor(namespace: string) {
 			}
 		}
 	});
-		socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
-		const matching = invalidation.args == null
-			? [...entries.entries()].filter(([, entry]) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === invalidation.endpoint)
-			: (() => {
-				const key = `${namespace}:${invalidation.endpoint}:${safeStringify(invalidation.args)}`;
-				const entry = entries.get(key);
-				return entry ? [[key, entry] as const] : [];
-			})();
+	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
+		const matching = [...entries.entries()].filter(
+			([, entry]) =>
+				entry.endpoint.namespace === namespace &&
+				matchesLiveInvalidation(
+					entry.endpoint.endpoint,
+					entry.endpoint.args,
+					invalidation,
+				),
+		);
 		for (const [key, entry] of matching) {
 			if (!entry.endpoint.refetch) continue;
 			console.debug('[openoxide-live] invalidated', key);
@@ -184,7 +196,9 @@ function socketFor(namespace: string) {
 	return socketEntry;
 }
 
-function subscribeMessage(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
+function subscribeMessage(
+	endpoint: LiveEndpoint<readonly unknown[], unknown>,
+) {
 	return {endpoint: endpoint.endpoint, args: endpoint.args};
 }
 
@@ -197,23 +211,37 @@ export function subscribeLive<T>(
 	let entry = entries.get(key);
 	if (!entry) {
 		const socketEntry = socketFor(endpoint.namespace);
-		entry = {endpoint, listeners: new Set(), errorListeners: new Set(), hasValue: false, version: 0};
+		entry = {
+			endpoint,
+			listeners: new Set(),
+			errorListeners: new Set(),
+			hasValue: false,
+			version: 0,
+		};
 		entries.set(key, entry);
 
-		if (socketEntry.ready) socketEntry.socket.emit('live:subscribe', subscribeMessage(endpoint));
+		if (socketEntry.ready)
+			socketEntry.socket.emit(
+				'live:subscribe',
+				subscribeMessage(endpoint),
+			);
 		if (endpoint.refetch) {
-			void endpoint.refetch(endpoint.args).then((value) => {
-				const current = entries.get(key);
-				if (!current) return;
-				current.value = value;
-				current.hasValue = true;
-				for (const notify of current.listeners) notify(value);
-			}).catch((cause) => {
-				const current = entries.get(key);
-				if (!current) return;
-				const error = cause instanceof Error ? cause : new Error(String(cause));
-				for (const notify of current.errorListeners) notify(error);
-			});
+			void endpoint
+				.refetch(endpoint.args)
+				.then(value => {
+					const current = entries.get(key);
+					if (!current) return;
+					current.value = value;
+					current.hasValue = true;
+					for (const notify of current.listeners) notify(value);
+				})
+				.catch(cause => {
+					const current = entries.get(key);
+					if (!current) return;
+					const error =
+						cause instanceof Error ? cause : new Error(String(cause));
+					for (const notify of current.errorListeners) notify(error);
+				});
 		}
 	}
 
@@ -229,7 +257,11 @@ export function subscribeLive<T>(
 		if (current.listeners.size !== 0) return;
 
 		const socketEntry = socketFor(endpoint.namespace);
-		if (socketEntry.ready) socketEntry.socket.emit('live:unsubscribe', subscribeMessage(endpoint));
+		if (socketEntry.ready)
+			socketEntry.socket.emit(
+				'live:unsubscribe',
+				subscribeMessage(endpoint),
+			);
 		entries.delete(key);
 	};
 }

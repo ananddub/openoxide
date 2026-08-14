@@ -1,28 +1,29 @@
-import {execFileSync} from 'node:child_process';
-import {existsSync, mkdirSync, writeFileSync} from 'node:fs';
-import {dirname, resolve} from 'node:path';
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
-const VIRTUAL_ID = 'virtual:openoxide-live';
+const VIRTUAL_ID = "virtual:openoxide-live";
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 
 function findManifest(start) {
   let current = start;
   while (current !== dirname(current)) {
-    const candidate = resolve(current, 'Cargo.toml');
+    const candidate = resolve(current, "Cargo.toml");
     if (existsSync(candidate)) return candidate;
     current = dirname(current);
   }
-  throw new Error('[openoxide] Cargo.toml not found above Vite root');
+  throw new Error("[openoxide] Cargo.toml not found above Vite root");
 }
 
 function loadManifest(root, options) {
-  const cargo = options.manifestPath
-    ? resolve(root, options.manifestPath)
-    : findManifest(root);
-  const stdout = execFileSync('cargo', ['run', '--quiet', '--manifest-path', cargo, '--bin', options.manifestBin], {encoding: 'utf8'});
+  const cargo = options.manifestPath ? resolve(root, options.manifestPath) : findManifest(root);
+  const stdout = execFileSync(
+    "cargo",
+    ["run", "--quiet", "--manifest-path", cargo, "--bin", options.manifestBin],
+    { encoding: "utf8" },
+  );
   return JSON.parse(stdout);
 }
-
 
 function groupTree(endpoints) {
   const root = {};
@@ -31,7 +32,7 @@ function groupTree(endpoints) {
     let children = root;
     let node;
     for (const segment of path) {
-      node = children[segment] ??= {children: {}, endpoints: []};
+      node = children[segment] ??= { children: {}, endpoints: [] };
       children = node.children;
     }
     node.endpoints.push(endpoint);
@@ -39,27 +40,38 @@ function groupTree(endpoints) {
   return root;
 }
 
-function runtimeGroupObject(node, indent = '  ') {
-  const hooks = node.endpoints.map(endpoint => `${indent}${endpoint.member}: ${endpoint.hook},`);
-  const children = Object.entries(node.children).map(([name, child]) =>
-    `${indent}${name}: Object.freeze({\n${runtimeGroupObject(child, `${indent}  `)}\n${indent}}),`);
-  return [...hooks, ...children].join('\n');
+function runtimeGroupObject(node, indent = "  ") {
+  const hooks = node.endpoints.map((endpoint) => `${indent}${endpoint.member}: ${endpoint.hook},`);
+  const children = Object.entries(node.children).map(
+    ([name, child]) =>
+      `${indent}${name}: Object.freeze({\n${runtimeGroupObject(child, `${indent}  `)}\n${indent}}),`,
+  );
+  return [...hooks, ...children].join("\n");
 }
 
 function groupedRuntimeSource(endpoints) {
-  return Object.entries(groupTree(endpoints)).map(([name, node]) => `
+  return Object.entries(groupTree(endpoints))
+    .map(
+      ([name, node]) => `
 export const ${name} = Object.freeze({
 ${runtimeGroupObject(node)}
-});`).join('');
+});`,
+    )
+    .join("");
 }
 
 function runtimeSource(manifest) {
-  const endpoints = manifest.endpoints.map((endpoint) => `
-export const ${endpoint.hook} = createLiveHook(${JSON.stringify(endpoint)});`).join('');
+  const endpoints = manifest.endpoints
+    .map(
+      (endpoint) => `
+export const ${endpoint.hook} = createLiveHook(${JSON.stringify(endpoint)});`,
+    )
+    .join("");
   const groups = groupedRuntimeSource(manifest.endpoints);
   return `
 import {useEffect, useMemo, useState} from 'react';
 import {io} from 'socket.io-client';
+import {liveArgsKey, matchesLiveInvalidation} from '@openoxide/vite/live-key';
 
 if (typeof BigInt !== 'undefined' && !BigInt.prototype.toJSON) {
   BigInt.prototype.toJSON = function () {
@@ -67,19 +79,8 @@ if (typeof BigInt !== 'undefined' && !BigInt.prototype.toJSON) {
   };
 }
 
-function canonicalize(value) {
-  if (typeof value === 'bigint') {
-    return value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(value) : value.toString();
-  }
-  if (Array.isArray(value)) return value.map(canonicalize);
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalize(value[key])]));
-  }
-  return value;
-}
-
 function safeStringify(value) {
-  return JSON.stringify(canonicalize(value));
+  return liveArgsKey(value);
 }
 
 const sockets = new Map();
@@ -323,7 +324,7 @@ function createLiveHook(metadata) {
         }
       };
       const invalidate = (message) => {
-        if (message.endpoint !== endpoint.endpoint || (message.args != null && safeStringify(message.args) !== key) || !metadata.path) return;
+        if (!matchesLiveInvalidation(endpoint.endpoint, args, message) || !metadata.path) return;
         console.debug('[openoxide-live] invalidated', fullKey);
         queueLiveRefetch(fullKey, () => refetch(metadata, args), value => {
           console.debug('[openoxide-live] refetched', fullKey, {items: Array.isArray(value) ? value.length : undefined});
@@ -358,12 +359,22 @@ ${groups}
 }
 
 function isValidTypeName(name) {
-  return typeof name === 'string' && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name.trim());
+  return typeof name === "string" && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name.trim());
 }
 
 function declarationSource(manifest) {
-  const types = manifest.types.map((type) => isValidTypeName(type.name) ? `  export type ${type.name} = ${type.definition};` : '').filter(Boolean).join('\n');
-  const hooks = manifest.endpoints.map((endpoint) => `  export function ${endpoint.hook}(${endpoint.parameters ?? ''}): {data: ${endpoint.result} | undefined; connected: boolean; loading: boolean; error: Error | undefined};`).join('\n');
+  const types = manifest.types
+    .map((type) =>
+      isValidTypeName(type.name) ? `  export type ${type.name} = ${type.definition};` : "",
+    )
+    .filter(Boolean)
+    .join("\n");
+  const hooks = manifest.endpoints
+    .map(
+      (endpoint) =>
+        `  export function ${endpoint.hook}(${endpoint.parameters ?? ""}): {data: ${endpoint.result} | undefined; connected: boolean; loading: boolean; error: Error | undefined};`,
+    )
+    .join("\n");
   const groups = groupedDeclarationSource(manifest.endpoints);
   return `// @generated by @openoxide/vite; do not edit.\ndeclare module '${VIRTUAL_ID}' {\n${types}\n${hooks}\n${groups}\n}\n`;
 }
@@ -372,46 +383,55 @@ export function generateLiveDeclarations(options = {}) {
   const root = resolve(options.root ?? process.cwd());
   const resolvedOptions = {
     manifestPath: options.manifestPath,
-    manifestBin: options.manifestBin ?? 'openoxide-live-manifest',
-    declarations: options.declarations ?? 'src/openoxide-live.generated.d.ts',
+    manifestBin: options.manifestBin ?? "openoxide-live-manifest",
+    declarations: options.declarations ?? "src/openoxide-live.generated.d.ts",
   };
   const manifest = loadManifest(root, resolvedOptions);
   const declarations = resolve(root, resolvedOptions.declarations);
-  mkdirSync(dirname(declarations), {recursive: true});
+  mkdirSync(dirname(declarations), { recursive: true });
   writeFileSync(declarations, declarationSource(manifest));
-  return {declarations, endpoints: manifest.endpoints.length};
+  return { declarations, endpoints: manifest.endpoints.length };
 }
 
-function declarationGroupObject(node, indent = '    ') {
-  const hooks = node.endpoints.map(endpoint => `${indent}${endpoint.member}: typeof ${endpoint.hook};`);
-  const children = Object.entries(node.children).map(([name, child]) =>
-    `${indent}${name}: {\n${declarationGroupObject(child, `${indent}  `)}\n${indent}};`);
-  return [...hooks, ...children].join('\n');
+function declarationGroupObject(node, indent = "    ") {
+  const hooks = node.endpoints.map(
+    (endpoint) => `${indent}${endpoint.member}: typeof ${endpoint.hook};`,
+  );
+  const children = Object.entries(node.children).map(
+    ([name, child]) =>
+      `${indent}${name}: {\n${declarationGroupObject(child, `${indent}  `)}\n${indent}};`,
+  );
+  return [...hooks, ...children].join("\n");
 }
 
 function groupedDeclarationSource(endpoints) {
-  return Object.entries(groupTree(endpoints)).map(([name, node]) =>
-    `  export const ${name}: {\n${declarationGroupObject(node)}\n  };`).join('\n');
+  return Object.entries(groupTree(endpoints))
+    .map(([name, node]) => `  export const ${name}: {\n${declarationGroupObject(node)}\n  };`)
+    .join("\n");
 }
 
 export function openoxide(options = {}) {
   const resolvedOptions = {
     manifestPath: options.manifestPath,
-    manifestBin: options.manifestBin ?? 'openoxide-live-manifest',
-    declarations: options.declarations ?? 'src/openoxide-live.generated.d.ts',
+    manifestBin: options.manifestBin ?? "openoxide-live-manifest",
+    declarations: options.declarations ?? "src/openoxide-live.generated.d.ts",
   };
   let source;
   return {
-    name: 'openoxide-live',
-    enforce: 'pre',
+    name: "openoxide-live",
+    enforce: "pre",
     configResolved(config) {
       const manifest = loadManifest(config.root, resolvedOptions);
       source = runtimeSource(manifest);
       const declarations = resolve(config.root, resolvedOptions.declarations);
-      mkdirSync(dirname(declarations), {recursive: true});
+      mkdirSync(dirname(declarations), { recursive: true });
       writeFileSync(declarations, declarationSource(manifest));
     },
-    resolveId(id) { if (id === VIRTUAL_ID) return RESOLVED_ID; },
-    load(id) { if (id === RESOLVED_ID) return source; },
+    resolveId(id) {
+      if (id === VIRTUAL_ID) return RESOLVED_ID;
+    },
+    load(id) {
+      if (id === RESOLVED_ID) return source;
+    },
   };
 }

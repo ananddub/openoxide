@@ -2,7 +2,20 @@
   "name": "@openoxide/vite",
   "version": "0.1.0",
   "type": "module",
-  "exports": {".": {"types": "./src/index.d.ts", "import": "./src/index.js"}},
   "types": "./src/index.d.ts",
-  "peerDependencies": {"react": ">=18", "socket.io-client": ">=4", "vite": ">=5"}
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./live-key": {
+      "types": "./src/live-key.d.ts",
+      "import": "./src/live-key.js"
+    }
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "socket.io-client": ">=4",
+    "vite": ">=5"
+  }
 }

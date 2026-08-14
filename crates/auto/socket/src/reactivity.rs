@@ -70,15 +70,16 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
                 continue;
             }
             if let Some(namespace) = io.of(room.namespace) {
-                if !broadcast_endpoints.insert((room.namespace, room.endpoint.clone())) {
+                if !claim_endpoint_invalidation(
+                    &mut broadcast_endpoints,
+                    room.namespace,
+                    &room.endpoint,
+                ) {
                     continue;
                 }
                 tracing::info!(endpoint = room.endpoint, room = %room.room, args = ?room.args, "no server refresher; broadcasting live invalidation");
                 match namespace
-                    .emit(
-                        "live:invalidate",
-                        &serde_json::json!({"endpoint": room.endpoint, "args": null}),
-                    )
+                    .emit("live:invalidate", &endpoint_invalidation(&room.endpoint))
                     .await
                 {
                     Ok(()) => tracing::info!(
@@ -98,6 +99,18 @@ fn refresh_or_invalidate_rooms(changed: &std::collections::HashSet<&str>) {
             }
         }
     });
+}
+
+fn claim_endpoint_invalidation(
+    claimed: &mut std::collections::HashSet<(&'static str, String)>,
+    namespace: &'static str,
+    endpoint: &str,
+) -> bool {
+    claimed.insert((namespace, endpoint.to_owned()))
+}
+
+fn endpoint_invalidation(endpoint: &str) -> serde_json::Value {
+    serde_json::json!({"endpoint": endpoint, "args": null})
 }
 
 fn endpoint_cache() -> &'static moka::future::Cache<String, serde_json::Value> {
@@ -173,5 +186,48 @@ pub(crate) async fn refresh_subscription(
         };
         let _guard = gate.lock().await;
         (entry.refresh)(args.clone(), identity.clone()).await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{claim_endpoint_invalidation, endpoint_invalidation};
+    use std::collections::HashSet;
+
+    #[test]
+    fn coalesces_query_variants_into_one_endpoint_invalidation() {
+        let mut claimed = HashSet::new();
+
+        assert!(claim_endpoint_invalidation(
+            &mut claimed,
+            "/_openoxide/live",
+            "DeploymentController::list",
+        ));
+        assert!(!claim_endpoint_invalidation(
+            &mut claimed,
+            "/_openoxide/live",
+            "DeploymentController::list",
+        ));
+        assert!(claim_endpoint_invalidation(
+            &mut claimed,
+            "/_openoxide/live",
+            "ComposeController::get",
+        ));
+        assert!(claim_endpoint_invalidation(
+            &mut claimed,
+            "/another-namespace",
+            "DeploymentController::list",
+        ));
+    }
+
+    #[test]
+    fn endpoint_invalidation_explicitly_targets_every_args_variant() {
+        assert_eq!(
+            endpoint_invalidation("DeploymentController::list"),
+            serde_json::json!({
+                "endpoint": "DeploymentController::list",
+                "args": null,
+            }),
+        );
     }
 }
