@@ -727,7 +727,10 @@ fn orphaned_managed_interfaces(
 ) -> Vec<String> {
     interfaces
         .split_whitespace()
-        .filter(|interface| interface.starts_with("rpwg") && !active.contains(*interface))
+        .filter(|interface| {
+            (interface.starts_with("openoxide") || interface.starts_with("rpwg"))
+                && !active.contains(*interface)
+        })
         .map(str::to_owned)
         .collect()
 }
@@ -775,10 +778,10 @@ mod tests {
 
     #[test]
     fn removes_only_openoxide_interfaces_without_database_owners() {
-        let active = HashSet::from(["rpwge".to_owned()]);
+        let active = HashSet::from(["openoxide14".to_owned()]);
         assert_eq!(
-            orphaned_managed_interfaces("wg0 rpwgd rpwge tailscale0", &active),
-            vec!["rpwgd"],
+            orphaned_managed_interfaces("wg0 openoxide15 openoxide14 tailscale0", &active),
+            vec!["openoxide15"],
         );
     }
 

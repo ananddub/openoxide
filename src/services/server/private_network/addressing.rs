@@ -1,11 +1,16 @@
 pub(super) fn interface_name(server_id: i64) -> String {
-    let encoded = format!("{:x}", server_id.unsigned_abs());
-    let suffix = if encoded.len() > 11 {
-        &encoded[encoded.len() - 11..]
+    let id = server_id.unsigned_abs();
+    let suffix = if id < 1_000_000 {
+        format!("{id}")
     } else {
-        &encoded
+        let hex = format!("{id:x}");
+        if hex.len() > 6 {
+            hex[hex.len() - 6..].to_string()
+        } else {
+            hex
+        }
     };
-    format!("rpwg{suffix}")
+    format!("openoxide{suffix}")
 }
 
 pub(super) fn tunnel_addresses(cidr: &str) -> sqlx::Result<(String, String, String)> {
