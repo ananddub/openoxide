@@ -75,7 +75,10 @@ export function ProfilePage() {
 	} = $api.useQuery('get', '/auth/api-tokens' as any);
 
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
-		onSuccess: () => {
+		onSuccess: (data: any) => {
+			if (data) {
+				queryClient.setQueryData(['get', '/auth/whoami'], data);
+			}
 			queryClient.invalidateQueries({queryKey: ['get', '/auth/whoami']});
 			toast.success('Profile Updated Successfully');
 		},
