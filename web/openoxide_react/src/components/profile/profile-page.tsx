@@ -78,6 +78,12 @@ export function ProfilePage() {
 		onSuccess: (data: any) => {
 			if (data) {
 				queryClient.setQueryData(['get', '/auth/whoami'], data);
+				useAuthStore.getState().setAuth({
+					id: data.user_id,
+					email: data.email || '',
+					firstName: data.first_name,
+					lastName: data.last_name,
+				});
 			}
 			queryClient.invalidateQueries({queryKey: ['get', '/auth/whoami']});
 			toast.success('Profile Updated Successfully');
