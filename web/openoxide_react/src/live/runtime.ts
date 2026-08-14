@@ -63,7 +63,7 @@ function socketFor(namespace: string) {
 
 	const socket = io(`${socketBaseUrl()}${namespace}`, {
 		path: '/socket.io',
-		transports: ['websocket', 'polling'],
+		transports: ['websocket'],
 		auth: callback => callback({token: accessToken()}),
 		reconnection: true,
 		reconnectionAttempts: Infinity,

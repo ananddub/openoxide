@@ -208,6 +208,7 @@ function createLiveHook(metadata) {
       if (!socketEntry) {
         const socket = io(\`\${socketBaseUrl()}\${endpoint.namespace}\`, {
           path: '/socket.io',
+          transports: ['websocket'],
           auth: cb => cb({token: accessToken()}),
           reconnection: true,
           reconnectionAttempts: Infinity,

@@ -194,7 +194,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 			} catch {}
 			const currentSocket = io('/terminal', {
 				path: '/socket.io',
-				transports: ['websocket', 'polling'],
+				transports: ['websocket'],
 				auth: callback => {
 					let currentToken = token;
 					try {
