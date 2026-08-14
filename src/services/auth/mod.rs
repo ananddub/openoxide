@@ -249,6 +249,15 @@ impl AuthService {
         Ok(count > 0)
     }
 
+    pub async fn get_whoami(&self, user_id: i64) -> Result<JwtSubject, AuthError> {
+        let user = self
+            .repo_user
+            .get_by_id(user_id)
+            .await?
+            .ok_or(AuthError::InvalidToken)?;
+        subject_from_user(&user)
+    }
+
     async fn issue_token_pair(&self, subject: &JwtSubject) -> Result<TokenPair, AuthError> {
         let tokens = self.jwt.generate_token_pair(subject)?;
         let session_id = uuid::Uuid::new_v4().to_string();

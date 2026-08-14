@@ -60,8 +60,13 @@ impl AuthController {
     }
 
     #[get("/whoami")]
-    async fn who_am_i(&self, claims: Claims) -> Json<JwtSubject> {
-        Json(claims.user)
+    #[live(table = "users")]
+    async fn who_am_i(&self, claims: Claims) -> Result<Json<JwtSubject>, ApiError> {
+        self.service
+            .get_whoami(claims.user.user_id)
+            .await
+            .map(Json)
+            .map_err(map_auth_error)
     }
 
     #[post("/logout")]
