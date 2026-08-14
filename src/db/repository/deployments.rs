@@ -870,10 +870,14 @@ impl DeploymentRepository {
     pub async fn recover_stale_application_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE applications SET app_status = 'ERROR'
-             WHERE app_status IN ('STARTING', 'BUILDING')
-             AND id IN (
-                 SELECT application_id FROM deployments
-                 WHERE state = 'RECOVERED_AFTER_RESTART' AND application_id IS NOT NULL
+             WHERE EXISTS (
+                 SELECT 1 FROM deployments d
+                 WHERE d.application_id = applications.id
+                   AND d.state = 'RECOVERED_AFTER_RESTART'
+                   AND d.id = (
+                       SELECT MAX(latest.id) FROM deployments latest
+                       WHERE latest.application_id = applications.id
+                   )
              )",
         )
         .execute(self.pool.as_ref())
@@ -884,10 +888,14 @@ impl DeploymentRepository {
     pub async fn recover_stale_compose_statuses(&self) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE compose_projects SET compose_status = 'ERROR'
-             WHERE compose_status IN ('STARTING', 'BUILDING')
-             AND id IN (
-                 SELECT compose_id FROM deployments
-                 WHERE state = 'RECOVERED_AFTER_RESTART' AND compose_id IS NOT NULL
+             WHERE EXISTS (
+                 SELECT 1 FROM deployments d
+                 WHERE d.compose_id = compose_projects.id
+                   AND d.state = 'RECOVERED_AFTER_RESTART'
+                   AND d.id = (
+                       SELECT MAX(latest.id) FROM deployments latest
+                       WHERE latest.compose_id = compose_projects.id
+                   )
              )",
         )
         .execute(self.pool.as_ref())
@@ -896,19 +904,27 @@ impl DeploymentRepository {
     }
 
     pub async fn recover_stale_database_statuses(&self) -> Result<(), sqlx::Error> {
-        for table in &[
-            "postgres_dbs",
-            "mysql_dbs",
-            "mariadb_dbs",
-            "mongo_dbs",
-            "redis_dbs",
-            "libsql_dbs",
+        for (table, kind) in [
+            ("postgres_dbs", "postgres"),
+            ("mysql_dbs", "mysql"),
+            ("mariadb_dbs", "mariadb"),
+            ("mongo_dbs", "mongo"),
+            ("redis_dbs", "redis"),
+            ("libsql_dbs", "libsql"),
         ] {
             let query_str = format!(
-                "UPDATE {} SET app_status = 'ERROR' WHERE app_status IN ('STARTING', 'BUILDING') AND id IN (
-                    SELECT database_id FROM deployments WHERE state = 'RECOVERED_AFTER_RESTART' AND database_id IS NOT NULL
-                )",
-                table
+                "UPDATE {table} SET app_status = 'ERROR'
+                 WHERE EXISTS (
+                     SELECT 1 FROM deployments d
+                     WHERE d.database_id = {table}.id
+                       AND lower(d.database_kind) = '{kind}'
+                       AND d.state = 'RECOVERED_AFTER_RESTART'
+                       AND d.id = (
+                           SELECT MAX(latest.id) FROM deployments latest
+                           WHERE latest.database_id = {table}.id
+                             AND lower(latest.database_kind) = '{kind}'
+                       )
+                 )"
             );
             sqlx::query(sqlx::AssertSqlSafe(&*query_str))
                 .execute(self.pool.as_ref())
