@@ -10,6 +10,7 @@ pub struct OrganizationMemberWithUser {
     pub organization_id: i64,
     pub role: Option<String>,
     pub email: String,
+    pub avatar: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -62,7 +63,7 @@ impl OrganizationMemberRepository {
     ) -> sqlx::Result<Vec<OrganizationMemberWithUser>> {
         sqlx::query_as!(
             OrganizationMemberWithUser,
-            r#"SELECT om.id AS "id?: i64", om.role AS "role?: String", om.user_id AS "user_id: i64", om.organization_id AS "organization_id: i64", om.created_at AS "created_at: i64", om.updated_at AS "updated_at: i64", u.email AS "email!: String" FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC"#,
+            r#"SELECT om.id AS "id?: i64", om.role AS "role?: String", om.user_id AS "user_id: i64", om.organization_id AS "organization_id: i64", om.created_at AS "created_at: i64", om.updated_at AS "updated_at: i64", u.email AS "email!: String", u.avatar AS "avatar?: String" FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC"#,
             organization_id
         )
         .fetch_all(self.pool.as_ref())

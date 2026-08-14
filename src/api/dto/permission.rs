@@ -59,6 +59,7 @@ pub struct OrganizationMemberDto {
     pub id: Option<i64>,
     pub user_id: i64,
     pub email: String,
+    pub avatar: Option<String>,
     pub organization_id: i64,
     pub role: Option<String>,
     pub created_at: i64,

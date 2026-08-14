@@ -60,6 +60,7 @@ export interface UserMember {
 	id: string;
 	email: string;
 	role: 'owner' | 'admin' | 'member';
+	avatar?: string;
 	banned: boolean;
 	twoFactorEnabled: boolean;
 	createdAt: string;
@@ -76,15 +77,13 @@ export interface InvitationItem {
 import {
 	usePermissionGroupMembers,
 	usePermissionGroupInvites,
-	useAuthWhoAmI,
 } from 'virtual:openoxide-live';
 
 export function UsersManagementPage() {
+	const { data: whoamiData } = $api.useQuery('get', '/auth/whoami');
+
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
-
-	// Query backend currentUser from live whoami
-	const {data: whoamiData} = useAuthWhoAmI();
 
 	// Query real organization members via live reactive stream
 	const {
@@ -120,6 +119,7 @@ export function UsersManagementPage() {
 			id: String(m.user_id || m.id),
 			email: m.email || `User #${m.user_id}`,
 			role: (m.role || 'member').toLowerCase() as any,
+			avatar: m.avatar || (whoamiData?.user_id === m.user_id ? whoamiData?.avatar : undefined),
 			banned: false,
 			twoFactorEnabled: false,
 			createdAt: m.created_at
@@ -370,8 +370,12 @@ export function UsersManagementPage() {
 										<TableRow key={member.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
 											<TableCell className="px-4 py-3 font-medium text-xs">
 												<div className="flex items-center gap-3">
-													<div className="size-7 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center border border-primary/20 shrink-0">
-														{member.email.substring(0, 2).toUpperCase()}
+													<div className="size-7 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center border border-primary/20 shrink-0 overflow-hidden">
+														{member.avatar ? (
+															<img src={member.avatar} alt={member.email} className="size-full object-cover rounded-full" />
+														) : (
+															member.email.substring(0, 2).toUpperCase()
+														)}
 													</div>
 													<span className="font-semibold text-xs text-foreground flex items-center gap-1.5">
 														{member.email}
