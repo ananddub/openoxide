@@ -73,26 +73,30 @@ export interface InvitationItem {
 	expiresAt: string;
 }
 
+import {
+	usePermissionGroupMembers,
+	usePermissionGroupInvites,
+	useAuthWhoAmI,
+} from 'virtual:openoxide-live';
+
 export function UsersManagementPage() {
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
 
-	// Query backend currentUser from /auth/whoami
-	const {data: whoamiData} = $api.useQuery('get', '/auth/whoami');
+	// Query backend currentUser from live whoami
+	const {data: whoamiData} = useAuthWhoAmI();
 
-	// Query real organization members
+	// Query real organization members via live reactive stream
 	const {
 		data: membersData,
-		refetch: refetchMembers,
-		isLoading: isLoadingMembers,
-	} = $api.useQuery('get', '/permission/members' as any);
+		loading: isLoadingMembers,
+	} = usePermissionGroupMembers();
 
-	// Query real organization invitations
+	// Query real organization invitations via live reactive stream
 	const {
 		data: invitesData,
-		refetch: refetchInvites,
-		isLoading: isLoadingInvites,
-	} = $api.useQuery('get', '/permission/invites' as any);
+		loading: isLoadingInvites,
+	} = usePermissionGroupInvites();
 
 	// Mutations for invites and members
 	const inviteMutation = $api.useMutation('post', '/permission/invites' as any);
@@ -222,8 +226,6 @@ export function UsersManagementPage() {
 				toast.success('Invitation sent successfully');
 			}
 
-			refetchInvites();
-			refetchMembers();
 			setIsCreateOpen(false);
 		} catch (error) {
 			toast.error(formatApiError(error));
@@ -246,7 +248,6 @@ export function UsersManagementPage() {
 				},
 			} as any);
 			toast.success('User role updated');
-			refetchMembers();
 			setEditingRoleUser(null);
 		} catch (error) {
 			toast.error(formatApiError(error));
