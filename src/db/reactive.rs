@@ -68,6 +68,24 @@ pub fn event_bus() -> &'static DbEventBus {
     BUS.get_or_init(|| DbEventBus::new(256))
 }
 
+/// Publish a notification for a transaction that has already committed.
+///
+/// Background queue transactions can finish outside the request task scope;
+/// callers use this after `commit()` so live subscribers always see the final
+/// state even when SQLite's connection-local commit hook is unavailable.
+pub fn notify_committed_tables<'a>(tables: impl IntoIterator<Item = &'a str>) {
+    let changes = tables
+        .into_iter()
+        .map(|table| DbChangeEvent {
+            table: table.to_owned(),
+            old_row_id: None,
+            new_row_id: None,
+            operation: DbChangeOperation::Unknown,
+        })
+        .collect();
+    event_bus().publish(changes);
+}
+
 pub fn set_pool(pool: sqlx::SqlitePool) {
     let _ = DB_POOL.set(pool);
 }
