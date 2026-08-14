@@ -65,7 +65,7 @@ export function UserNav({isCollapsed}: Props) {
 						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:mx-auto!"
 					/>
 				}>
-				{whoamiData?.avatar?.startsWith('data:') ? (
+				{whoamiData?.avatar && (whoamiData.avatar.startsWith('data:') || whoamiData.avatar.startsWith('http://') || whoamiData.avatar.startsWith('https://')) ? (
 					<img src={whoamiData.avatar} alt="Avatar" className="size-8 rounded-lg object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
 				) : isSolidColorAvatar(whoamiData?.avatar) ? (
 					<div
