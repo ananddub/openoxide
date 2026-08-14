@@ -389,19 +389,18 @@ impl ServerPrivateNetworkService {
             .unwrap_or(51820);
 
         let fallback_endpoint = format!("{remote_ip}:{port}");
-        let stun_endpoint = stun::discover_public_endpoint(port).await;
-        let final_endpoint = if let Some(ref stun_ep) = stun_endpoint {
+        let final_endpoint = if !raw_endpoint.is_empty()
+            && !raw_endpoint.contains("example.com")
+            && !raw_endpoint.contains("pannel.example")
+            && !raw_endpoint.contains("example")
+            && !raw_endpoint.contains("exmaple")
+        {
+            raw_endpoint.to_string()
+        } else if let Some(ref stun_ep) = stun::discover_public_endpoint(port).await {
             tracing::info!(server_id, stun_ep, "using STUN auto-discovered public endpoint");
             stun_ep.to_string()
-        } else if raw_endpoint.is_empty()
-            || raw_endpoint.contains("example.com")
-            || raw_endpoint.contains("pannel.example")
-            || raw_endpoint.contains("example")
-            || raw_endpoint.contains("exmaple")
-        {
-            fallback_endpoint.clone()
         } else {
-            raw_endpoint.to_string()
+            fallback_endpoint
         };
 
         let _ = stun::punch_nat_hole(&final_endpoint, port).await;
