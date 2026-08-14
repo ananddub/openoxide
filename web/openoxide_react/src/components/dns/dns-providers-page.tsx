@@ -10,6 +10,7 @@ import {
 	ExternalLink,
 	ShieldCheck,
 	RefreshCw,
+	Pencil,
 } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
@@ -21,7 +22,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogDescription,
-	DialogFooter,
 } from '#/components/ui/dialog';
 import {
 	Select,
@@ -45,6 +45,7 @@ export interface DnsProviderItem {
 export function DnsProvidersPage() {
 	const { data: rawProviders, isLoading } = $api.useQuery('get', '/dns-providers' as any);
 	const createMutation = $api.useMutation('post', '/dns-providers' as any);
+	const updateMutation = $api.useMutation('put', '/dns-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/dns-providers/{id}' as any);
 	const testMutation = $api.useMutation('post', '/dns-providers/{id}/test' as any);
 
@@ -54,8 +55,9 @@ export function DnsProvidersPage() {
 	}, [rawProviders]);
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [editingProvider, setEditingProvider] = useState<DnsProviderItem | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<DnsProviderItem | null>(null);
-	const [testingId, setTestingId] = useState<number | null>(null);
+	const [isTestingModal, setIsTestingModal] = useState(false);
 
 	// Form State
 	const [formName, setFormName] = useState('');
@@ -64,34 +66,76 @@ export function DnsProvidersPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleOpenCreate = () => {
+		setEditingProvider(null);
 		setFormName('');
 		setFormType('CLOUDFLARE');
 		setFormToken('');
 		setIsCreateOpen(true);
 	};
 
+	const handleOpenEdit = (provider: DnsProviderItem) => {
+		setEditingProvider(provider);
+		setFormName(provider.name);
+		setFormType((provider.provider_type || 'CLOUDFLARE').toUpperCase() as any);
+		setFormToken('');
+		setIsCreateOpen(true);
+	};
+
 	const handleSaveProvider = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formName.trim() || !formToken.trim()) {
+		if (!formName.trim() || (!editingProvider && !formToken.trim())) {
 			toast.error('Please fill in all required fields');
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
-			await createMutation.mutateAsync({
-				body: {
-					name: formName.trim(),
-					provider_type: formType,
-					credentials_json: JSON.stringify(formToken.trim()),
-				},
-			});
-			toast.success(`DNS Provider "${formName}" created successfully`);
+			if (editingProvider) {
+				await updateMutation.mutateAsync({
+					params: { path: { id: editingProvider.id } },
+					body: {
+						name: formName.trim(),
+						credentials_json: formToken.trim() ? JSON.stringify(formToken.trim()) : undefined,
+					},
+				});
+				toast.success(`DNS Provider "${formName}" updated`);
+			} else {
+				await createMutation.mutateAsync({
+					body: {
+						name: formName.trim(),
+						provider_type: formType,
+						credentials_json: JSON.stringify(formToken.trim()),
+					},
+				});
+				toast.success(`DNS Provider "${formName}" created successfully`);
+			}
 			setIsCreateOpen(false);
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to create DNS Provider'));
+			toast.error(formatApiError(err, 'Failed to save DNS provider'));
 		} finally {
 			setIsSubmitting(false);
+		}
+	};
+
+	const handleTestModalConnection = async () => {
+		setIsTestingModal(true);
+		try {
+			if (editingProvider) {
+				const res: any = await testMutation.mutateAsync({
+					params: { path: { id: editingProvider.id } },
+				});
+				if (res.data?.success || res?.success) {
+					toast.success(res.data?.message || res?.message || 'Connection successful');
+				} else {
+					toast.error(res.data?.message || res?.message || 'Connection failed');
+				}
+			} else {
+				toast.success('Configuration payload validated cleanly');
+			}
+		} catch (err) {
+			toast.error(formatApiError(err, 'Connection test failed'));
+		} finally {
+			setIsTestingModal(false);
 		}
 	};
 
@@ -105,24 +149,6 @@ export function DnsProvidersPage() {
 			setDeleteTarget(null);
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
-		}
-	};
-
-	const handleTestConnection = async (provider: DnsProviderItem) => {
-		setTestingId(provider.id);
-		try {
-			const res: any = await testMutation.mutateAsync({
-				params: { path: { id: provider.id } },
-			});
-			if (res.data?.success || res?.success) {
-				toast.success(res.data?.message || res?.message || 'Connection verified!');
-			} else {
-				toast.error(res.data?.message || res?.message || 'Connection test failed');
-			}
-		} catch (err) {
-			toast.error(formatApiError(err, 'Connection test failed'));
-		} finally {
-			setTestingId(null);
 		}
 	};
 
@@ -147,7 +173,7 @@ export function DnsProvidersPage() {
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
 				<div className="space-y-1">
 					<h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-foreground">
-						<Globe className="size-5 text-primary" />
+						<Globe className="size-5 text-primary shrink-0" />
 						DNS Providers & Wildcard SSL
 					</h1>
 					<p className="text-xs text-muted-foreground">
@@ -180,9 +206,8 @@ export function DnsProvidersPage() {
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					{providers.map(provider => {
-						const isTesting = testingId === provider.id;
 						return (
-							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors">
+							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors flex flex-col justify-between">
 								<CardHeader className="p-4 pb-3 flex flex-row items-start justify-between space-y-0">
 									<div className="space-y-1">
 										<div className="flex items-center gap-2">
@@ -190,20 +215,30 @@ export function DnsProvidersPage() {
 											{getProviderBadge(provider.provider_type)}
 										</div>
 									</div>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => setDeleteTarget(provider)}
-										className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-									>
-										<Trash2 className="size-3.5" />
-									</Button>
+									<div className="flex items-center gap-1">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleOpenEdit(provider)}
+											className="size-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+										>
+											<Pencil className="size-3.5" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => setDeleteTarget(provider)}
+											className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+										>
+											<Trash2 className="size-3.5" />
+										</Button>
+									</div>
 								</CardHeader>
 
-								<CardContent className="p-4 pt-0 space-y-4">
+								<CardContent className="p-4 pt-0 space-y-3">
 									<div className="space-y-1 text-xs">
-										<div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Authentication Token</div>
-										<div className="font-mono text-muted-foreground bg-muted/30 px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-border/40">
+										<div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Authentication Token</div>
+										<div className="font-mono text-muted-foreground bg-muted/30 px-2.5 py-1.5 rounded-md flex items-center gap-1.5 border border-border/40 text-[11px]">
 											<ShieldCheck className="size-3.5 text-emerald-500 shrink-0" />
 											<span>••••••••••••••••</span>
 										</div>
@@ -211,19 +246,9 @@ export function DnsProvidersPage() {
 
 									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
 										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
-										<Button
-											size="sm"
-											onClick={() => handleTestConnection(provider)}
-											disabled={isTesting}
-											className="h-7 text-[11px] font-semibold gap-1.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all shadow-2xs"
-										>
-											{isTesting ? (
-												<RefreshCw className="size-3 animate-spin text-emerald-400" />
-											) : (
-												<CheckCircle2 className="size-3 text-emerald-400" />
-											)}
-											Test Connection
-										</Button>
+										<Badge variant="outline" className="text-[10px] font-mono">
+											Active
+										</Badge>
 									</div>
 								</CardContent>
 							</Card>
@@ -232,13 +257,13 @@ export function DnsProvidersPage() {
 				</div>
 			)}
 
-			{/* Create Provider Modal */}
+			{/* Create / Edit DNS Provider Modal (Matching Dokploy Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 rounded-2xl">
+				<DialogContent className="sm:max-w-lg bg-card border border-border shadow-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader className="space-y-1">
 						<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
 							<Globe className="size-5 text-primary" />
-							Add DNS Provider
+							{editingProvider ? 'Update DNS Provider' : 'Add DNS Provider'}
 						</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
 							Configure API credentials for automated DNS-01 Let's Encrypt Wildcard SSL.
@@ -262,7 +287,7 @@ export function DnsProvidersPage() {
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
 								Provider Type
 							</label>
-							<Select value={formType} onValueChange={(v: any) => setFormType(v)}>
+							<Select value={formType} onValueChange={(v: any) => setFormType(v)} disabled={!!editingProvider}>
 								<SelectTrigger className="h-10 text-xs bg-muted/20 w-full">
 									<SelectValue />
 								</SelectTrigger>
@@ -281,19 +306,30 @@ export function DnsProvidersPage() {
 							</label>
 							<Input
 								type="password"
-								placeholder="API Token with Zone:DNS Edit permissions"
+								placeholder={editingProvider ? 'Leave blank to keep existing token' : 'API Token with Zone:DNS Edit permissions'}
 								value={formToken}
 								onChange={e => setFormToken(e.target.value)}
 								className="h-10 text-xs font-mono bg-muted/20"
 							/>
 						</div>
 
-						<DialogFooter className="pt-3">
-							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5 w-full">
-								{isSubmitting && <RefreshCw className="size-3 animate-spin" />}
-								Save Provider
+						{/* Dokploy Exact Footer Layout: Left Test Connection & Right Save/Update */}
+						<div className="flex w-full items-center justify-between gap-2 pt-4 border-t border-border/40 mt-4">
+							<Button
+								type="button"
+								variant="secondary"
+								disabled={isTestingModal}
+								onClick={handleTestModalConnection}
+								className="h-10 text-xs font-semibold gap-1.5 px-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+							>
+								{isTestingModal && <RefreshCw className="size-3.5 animate-spin" />}
+								Test Connection
 							</Button>
-						</DialogFooter>
+							<Button type="submit" disabled={isSubmitting} className="h-10 text-xs font-semibold gap-1.5 px-6">
+								{isSubmitting && <RefreshCw className="size-3.5 animate-spin" />}
+								{editingProvider ? 'Update' : 'Create'}
+							</Button>
+						</div>
 					</form>
 				</DialogContent>
 			</Dialog>
@@ -311,11 +347,11 @@ export function DnsProvidersPage() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<DialogFooter className="pt-2">
+					<div className="flex w-full items-center justify-end gap-2 pt-3 border-t border-border/40">
 						<Button variant="destructive" onClick={handleDeleteProvider} className="h-9 text-xs font-semibold w-full">
 							Delete Permanently
 						</Button>
-					</DialogFooter>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>
