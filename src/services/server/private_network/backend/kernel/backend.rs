@@ -36,10 +36,19 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .await
             .map_err(Self::protocol)?;
 
-        // Auto-configure UFW / firewall to allow WireGuard UDP listen port
-        let ufw_cmd = format!("ufw allow {}/udp comment 'rustploy-wireguard' || true", plan.port);
-        let _ = self.local.run(&ufw_cmd, std::iter::empty::<&str>()).await;
-        let _ = self.remote.run(&ufw_cmd, std::iter::empty::<&str>()).await;
+        // Auto-configure firewall to allow WireGuard UDP listen port via crates/os
+        let _ = OsCli::new(self.local)
+            .firewall()
+            .allow_port(plan.port)
+            .protocol(os::firewall::NetworkProtocol::Udp)
+            .run()
+            .await;
+        let _ = OsCli::new(self.remote)
+            .firewall()
+            .allow_port(plan.port)
+            .protocol(os::firewall::NetworkProtocol::Udp)
+            .run()
+            .await;
 
         if local
             .wireguard()
