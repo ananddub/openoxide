@@ -99,18 +99,18 @@ export function UsersManagementPage() {
 	} = usePermissionGroupInvites();
 
 	// Mutations for invites and members
-	const inviteMutation = $api.useMutation('post', '/permission/invites' as any);
+	const inviteMutation = $api.useMutation('post', '/permission-groups/invites' as any);
 	const cancelInviteMutation = $api.useMutation(
 		'delete',
-		'/permission/invites/{invite_id}' as any,
+		'/permission-groups/invites/{invite_id}' as any,
 	);
 	const updateRoleMutation = $api.useMutation(
 		'put',
-		'/permission/members/{user_id}/role' as any,
+		'/permission-groups/members/{user_id}/role' as any,
 	);
 	const removeMemberMutation = $api.useMutation(
 		'delete',
-		'/permission/members/{user_id}' as any,
+		'/permission-groups/members/{user_id}' as any,
 	);
 
 	const users: UserMember[] = useMemo(() => {
