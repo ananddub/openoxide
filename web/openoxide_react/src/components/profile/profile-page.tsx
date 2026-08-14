@@ -140,7 +140,6 @@ export function ProfilePage() {
 				body: {
 					first_name: firstName.trim() || undefined,
 					last_name: lastName.trim() || undefined,
-					email: email.trim() || undefined,
 					avatar: avatarValue || undefined,
 				},
 			});
@@ -258,17 +257,6 @@ export function ProfilePage() {
 											className="h-9 text-xs bg-muted/30 border-border/70"
 										/>
 									</div>
-								</div>
-
-								<div className="flex flex-col gap-1.5">
-									<label className="text-[11px] font-semibold text-muted-foreground">Email Address</label>
-									<Input
-										type="email"
-										placeholder="user@example.com"
-										value={email}
-										onChange={e => setEmail(e.target.value)}
-										className="h-9 text-xs bg-muted/30 border-border/70 font-mono"
-									/>
 								</div>
 							</div>
 
