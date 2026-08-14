@@ -12,17 +12,17 @@ import { useProjectGet, useApplicationGet, useComposeGet, usePostgresGet } from 
 
 function ProjectNameBreadcrumb({ id }: { id: number }) {
 	const { data: project } = useProjectGet(BigInt(id));
-	return <>{project?.name || 'Loading...'}</>;
+	return <>{project?.name || `Project #${id}`}</>;
 }
 
 function AppNameBreadcrumb({ id }: { id: number }) {
 	const { data: app } = useApplicationGet(BigInt(id));
-	return <>{app?.name || app?.app_name || 'Loading...'}</>;
+	return <>{app?.name || app?.app_name || `App #${id}`}</>;
 }
 
 function ComposeNameBreadcrumb({ id }: { id: number }) {
 	const { data: compose } = useComposeGet(BigInt(id));
-	return <>{compose?.name || compose?.app_name || 'Loading...'}</>;
+	return <>{compose?.name || compose?.app_name || `Compose #${id}`}</>;
 }
 
 function DatabaseNameBreadcrumb({ id }: { id: number }) {
