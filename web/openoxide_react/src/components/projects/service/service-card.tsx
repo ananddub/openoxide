@@ -1,5 +1,5 @@
 import {Box, Layers2, Database as DbIcon} from 'lucide-react';
-import {useNavigate} from '@tanstack/react-router';
+import {Link} from '@tanstack/react-router';
 import {cn} from '#/api/utils';
 import {
 	PostgresqlIcon,
@@ -31,8 +31,6 @@ export function ServiceCard({
 	createdAt,
 	dbKind,
 }: ServiceCardProps) {
-	const navigate = useNavigate();
-
 	const getStatusDotColor = (status: string) => {
 		const s = status?.toLowerCase() || '';
 		if (s.includes('stopping') || s.includes('cancelling')) {
@@ -68,23 +66,36 @@ export function ServiceCard({
 		return <DbIcon className="size-4 text-emerald-500" />;
 	};
 
-	const handleNavigate = () => {
+	const getTargetRoute = () => {
 		if (type === 'APP') {
-			navigate({ to: `/projects/${projectId}/app/${id}` as any });
-		} else if (type === 'COMPOSE') {
-			navigate({ to: `/projects/${projectId}/compose/${id}` as any });
-		} else if (type === 'DATABASE') {
-			navigate({
-				to: `/projects/${projectId}/database/${id}` as any,
-				search: {kind: dbKind || 'postgres'} as any,
-			});
+			return {
+				to: '/projects/$id/app/$appId',
+				params: { id: String(projectId), appId: String(id) },
+			};
 		}
+		if (type === 'COMPOSE') {
+			return {
+				to: '/projects/$id/compose/$composeId',
+				params: { id: String(projectId), composeId: String(id) },
+			};
+		}
+		return {
+			to: '/projects/$id/database/$dbId',
+			params: { id: String(projectId), dbId: String(id) },
+			search: { kind: dbKind || 'postgres' },
+		};
 	};
 
+	const target = getTargetRoute();
+
 	return (
-		<div
-			onClick={handleNavigate}
-			className="w-full bg-card border border-border hover:border-border/80 transition-all duration-200 rounded-xl p-4 flex flex-col justify-between gap-3.5 cursor-pointer group shadow-2xs">
+		<Link
+			to={target.to as any}
+			params={target.params as any}
+			search={(target as any).search}
+			preload="intent"
+			className="w-full bg-card border border-border hover:border-border/80 transition-all duration-200 rounded-xl p-4 flex flex-col justify-between gap-3.5 cursor-pointer group shadow-2xs block text-left no-underline"
+		>
 			<div className="flex items-center gap-3">
 				<div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 relative border border-border/40">
 					{getIcon()}
@@ -108,6 +119,6 @@ export function ServiceCard({
 					})}
 				</span>
 			</div>
-		</div>
+		</Link>
 	);
 }
