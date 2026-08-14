@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import {useAuthStore} from '#/stores/auth-store';
 import {useNavigate} from '@tanstack/react-router';
-import {$api} from '#/api/query';
 import {isSolidColorAvatar} from '#/lib/avatar-utils';
+import {useAuthWhoAmI} from 'virtual:openoxide-live';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -39,12 +39,17 @@ export function UserNav({isCollapsed}: Props) {
 	const navigate = useNavigate();
 	const {theme, toggleTheme} = useTheme();
 
-	// Fetch live backend user whoami
-	const {data: whoamiData} = $api.useQuery('get', '/auth/whoami');
+	const {data: whoamiData} = useAuthWhoAmI();
 
-	const displayEmail = whoamiData?.email || user?.email || '';
-	const displayFirstName = whoamiData?.first_name || user?.firstName || '';
-	const displayLastName = whoamiData?.last_name || user?.lastName || '';
+	const displayEmail = whoamiData
+		? (whoamiData.email ?? '')
+		: (user?.email ?? '');
+	const displayFirstName = whoamiData
+		? (whoamiData.first_name ?? '')
+		: (user?.firstName ?? '');
+	const displayLastName = whoamiData
+		? (whoamiData.last_name ?? '')
+		: (user?.lastName ?? '');
 
 	const getInitials = () => {
 		if (displayFirstName && displayLastName) {
@@ -66,15 +71,15 @@ export function UserNav({isCollapsed}: Props) {
 					/>
 				}>
 				{whoamiData?.avatar && (whoamiData.avatar.startsWith('data:') || whoamiData.avatar.startsWith('http://') || whoamiData.avatar.startsWith('https://')) ? (
-					<img src={whoamiData.avatar} alt="Avatar" className="size-8 rounded-lg object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
+					<img src={whoamiData.avatar} alt="Avatar" className="size-8 rounded-full object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
 				) : isSolidColorAvatar(whoamiData?.avatar) ? (
 					<div
-						className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white select-none group-data-[collapsible=icon]:mx-auto shadow-2xs"
+						className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white select-none group-data-[collapsible=icon]:mx-auto shadow-2xs"
 						style={{backgroundColor: whoamiData?.avatar}}>
 						{getInitials()}
 					</div>
 				) : (
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-xs font-bold text-primary select-none group-data-[collapsible=icon]:mx-auto shadow-2xs">
+					<div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-bold text-primary select-none group-data-[collapsible=icon]:mx-auto shadow-2xs">
 						{getInitials()}
 					</div>
 				)}
