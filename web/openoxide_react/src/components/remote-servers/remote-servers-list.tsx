@@ -28,6 +28,7 @@ import {
 	Shield,
 	AlertCircle,
 	Search,
+	Power,
 } from 'lucide-react';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import type {RemoteServerResponse, SshKeyResponse} from '#/types/api-helpers';
@@ -286,11 +287,11 @@ export function RemoteServersList({
 										<DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => onToggleStatus(item)}>
 											{isServerActive ? (
 												<>
-													<AlertCircle className="w-3.5 h-3.5" /> Deactivate
+													<Power className="w-3.5 h-3.5 text-amber-500" /> Deactivate
 												</>
 											) : (
 												<>
-													<Check className="w-3.5 h-3.5" /> Activate
+													<Power className="w-3.5 h-3.5 text-emerald-500" /> Activate
 												</>
 											)}
 										</DropdownMenuItem>
