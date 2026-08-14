@@ -53,6 +53,7 @@ import {
 	TableRow,
 } from '#/components/ui/table';
 import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 
 export interface UserMember {
 	id: string;
@@ -71,55 +72,75 @@ export interface InvitationItem {
 	expiresAt: string;
 }
 
-const INITIAL_USERS: UserMember[] = [
-	{
-		id: '1',
-		email: 'admin@openoxide.com',
-		role: 'owner',
-		banned: false,
-		twoFactorEnabled: true,
-		createdAt: new Date().toISOString(),
-		isSelf: true,
-	},
-];
-
 export function UsersManagementPage() {
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [users, setUsers] = useState<UserMember[]>(INITIAL_USERS);
-	const [invitations, setInvitations] = useState<InvitationItem[]>([]);
 
 	// Query backend currentUser from /auth/whoami
 	const {data: whoamiData} = $api.useQuery('get', '/auth/whoami');
 
-	const allUsers = useMemo(() => {
-		const list = [...users];
-		if (whoamiData && whoamiData.email) {
-			const existingIdx = list.findIndex(u => u.isSelf || u.email === whoamiData.email);
-			const realSelfUser: UserMember = {
-				id: String(whoamiData.user_id || 1),
-				email: whoamiData.email,
-				role: (whoamiData.role as any) || 'owner',
-				banned: false,
-				twoFactorEnabled: false,
-				createdAt: new Date().toISOString(),
-				isSelf: true,
-			};
-			if (existingIdx >= 0) {
-				list[existingIdx] = realSelfUser;
-			} else {
-				list.unshift(realSelfUser);
-			}
-		}
-		return list;
-	}, [users, whoamiData]);
+	// Query real organization members
+	const {
+		data: membersData,
+		refetch: refetchMembers,
+		isLoading: isLoadingMembers,
+	} = $api.useQuery('get', '/permission/members' as any);
+
+	// Query real organization invitations
+	const {
+		data: invitesData,
+		refetch: refetchInvites,
+		isLoading: isLoadingInvites,
+	} = $api.useQuery('get', '/permission/invites' as any);
+
+	// Mutations for invites and members
+	const inviteMutation = $api.useMutation('post', '/permission/invites' as any);
+	const cancelInviteMutation = $api.useMutation(
+		'delete',
+		'/permission/invites/{invite_id}' as any,
+	);
+	const updateRoleMutation = $api.useMutation(
+		'put',
+		'/permission/members/{user_id}/role' as any,
+	);
+	const removeMemberMutation = $api.useMutation(
+		'delete',
+		'/permission/members/{user_id}' as any,
+	);
+
+	const users: UserMember[] = useMemo(() => {
+		if (!membersData || !Array.isArray(membersData)) return [];
+		return membersData.map((m: any) => ({
+			id: String(m.user_id || m.id),
+			email: m.email || `User #${m.user_id}`,
+			role: (m.role || 'member').toLowerCase() as any,
+			banned: false,
+			twoFactorEnabled: false,
+			createdAt: m.created_at
+				? new Date(m.created_at * 1000).toISOString()
+				: new Date().toISOString(),
+			isSelf: whoamiData?.user_id === m.user_id,
+		}));
+	}, [membersData, whoamiData]);
+
+	const invitations: InvitationItem[] = useMemo(() => {
+		if (!invitesData || !Array.isArray(invitesData)) return [];
+		return invitesData.map((inv: any) => ({
+			id: String(inv.id),
+			email: inv.email,
+			role: (inv.role || 'member').toLowerCase(),
+			expiresAt: inv.expired_at
+				? new Date(inv.expired_at * 1000).toISOString()
+				: new Date().toISOString(),
+		}));
+	}, [invitesData]);
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<UserMember | null>(null);
 	const [editingRoleUser, setEditingRoleUser] = useState<UserMember | null>(null);
 
 	// Form State
-	const [createMode, setCreateMode] = useState<'credentials' | 'invitation'>('credentials');
+	const [createMode, setCreateMode] = useState<'credentials' | 'invitation'>('invitation');
 	const [formEmail, setFormEmail] = useState('');
 	const [formRole, setFormRole] = useState('member');
 	const [formPassword, setFormPassword] = useState('');
@@ -127,10 +148,12 @@ export function UsersManagementPage() {
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const filteredUsers = useMemo(() => {
-		if (!searchQuery.trim()) return allUsers;
+		if (!searchQuery.trim()) return users;
 		const q = searchQuery.toLowerCase();
-		return allUsers.filter(u => u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
-	}, [allUsers, searchQuery]);
+		return users.filter(
+			u => u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q),
+		);
+	}, [users, searchQuery]);
 
 	const filteredInvitations = useMemo(() => {
 		if (!searchQuery.trim()) return invitations;
@@ -151,61 +174,81 @@ export function UsersManagementPage() {
 
 		setIsSubmitting(true);
 		try {
-			if (createMode === 'credentials') {
-				const newUser: UserMember = {
-					id: String(Date.now()),
+			await inviteMutation.mutateAsync({
+				body: {
 					email: formEmail.trim(),
-					role: formRole as any,
-					banned: false,
-					twoFactorEnabled: false,
-					createdAt: new Date().toISOString(),
-				};
-				setUsers(prev => [...prev, newUser]);
-				toast.success('User created successfully');
-			} else {
-				const newInv: InvitationItem = {
-					id: String(Date.now()),
-					email: formEmail.trim(),
-					role: formRole,
-					expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-				};
-				setInvitations(prev => [...prev, newInv]);
-				toast.success('Invitation sent successfully');
-			}
+					role: formRole.toUpperCase(),
+					group_id: 1,
+				},
+			} as any);
+
+			toast.success('Invitation sent successfully');
+			refetchInvites();
+			refetchMembers();
 			setIsCreateOpen(false);
-		} catch {
-			toast.error('Failed to create user');
+		} catch (error) {
+			toast.error(formatApiError(error));
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	const handleUpdateRole = (newRole: string) => {
+	const handleUpdateRole = async (newRole: string) => {
 		if (!editingRoleUser) return;
-		setUsers(prev =>
-			prev.map(u => (u.id === editingRoleUser.id ? {...u, role: newRole as any} : u))
-		);
-		toast.success('User role updated');
-		setEditingRoleUser(null);
+		try {
+			await updateRoleMutation.mutateAsync({
+				params: {
+					path: {
+						user_id: Number(editingRoleUser.id),
+					},
+				},
+				body: {
+					role: newRole.toUpperCase(),
+				},
+			} as any);
+			toast.success('User role updated');
+			refetchMembers();
+			setEditingRoleUser(null);
+		} catch (error) {
+			toast.error(formatApiError(error));
+		}
 	};
 
 	const confirmDeleteUser = async () => {
 		if (!deleteTarget) return;
 		setIsDeleting(true);
 		try {
-			setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-			toast.success('User deleted successfully');
+			await removeMemberMutation.mutateAsync({
+				params: {
+					path: {
+						user_id: Number(deleteTarget.id),
+					},
+				},
+			} as any);
+			toast.success('User removed from organization');
+			refetchMembers();
 			setDeleteTarget(null);
-		} catch {
-			toast.error('Failed to delete user');
+		} catch (error) {
+			toast.error(formatApiError(error));
 		} finally {
 			setIsDeleting(false);
 		}
 	};
 
-	const handleRevokeInvitation = (id: string) => {
-		setInvitations(prev => prev.filter(i => i.id !== id));
-		toast.success('Invitation revoked');
+	const handleRevokeInvitation = async (id: string) => {
+		try {
+			await cancelInviteMutation.mutateAsync({
+				params: {
+					path: {
+						invite_id: Number(id),
+					},
+				},
+			} as any);
+			toast.success('Invitation revoked successfully');
+			refetchInvites();
+		} catch (error) {
+			toast.error(formatApiError(error));
+		}
 	};
 
 	return (

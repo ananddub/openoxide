@@ -3,6 +3,17 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OrganizationMemberWithUser {
+    pub id: Option<i64>,
+    pub user_id: i64,
+    pub organization_id: i64,
+    pub role: Option<String>,
+    pub email: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
 pub struct OrganizationMemberRepository {
     pool: Arc<SqlitePool>,
 }
@@ -39,6 +50,19 @@ impl OrganizationMemberRepository {
         sqlx::query_as!(
             OrganizationMember,
             r#"SELECT id AS "id?: i64", role AS "role?: String", user_id AS "user_id: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM organization_members WHERE organization_id = ? ORDER BY created_at ASC, id ASC"#,
+            organization_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
+    pub async fn list_with_user_for_organization(
+        &self,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<OrganizationMemberWithUser>> {
+        sqlx::query_as!(
+            OrganizationMemberWithUser,
+            r#"SELECT om.id AS "id?: i64", om.role AS "role?: String", om.user_id AS "user_id: i64", om.organization_id AS "organization_id: i64", om.created_at AS "created_at: i64", om.updated_at AS "updated_at: i64", u.email AS "email!: String" FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC"#,
             organization_id
         )
         .fetch_all(self.pool.as_ref())

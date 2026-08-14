@@ -138,6 +138,7 @@ impl PermissionGroupController {
                     .map(|member| OrganizationMemberDto {
                         id: member.id,
                         user_id: member.user_id,
+                        email: member.email,
                         organization_id: member.organization_id,
                         role: member.role,
                         created_at: member.created_at,

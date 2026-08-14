@@ -328,12 +328,12 @@ impl PermissionGroupService {
         &self,
         organization_id: i64,
     ) -> Result<
-        Vec<crate::db::models::organization_members::OrganizationMember>,
+        Vec<crate::db::repository::organization_members::OrganizationMemberWithUser>,
         PermissionGroupError,
     > {
         Ok(self
             .member_repository
-            .list_for_organization(organization_id)
+            .list_with_user_for_organization(organization_id)
             .await?)
     }
 
