@@ -20,8 +20,6 @@ export const Logo = ({
 		);
 	}
 	return (
-		<div className={cn('flex items-center justify-center rounded-lg bg-primary/10 p-1 text-primary shrink-0', className)}>
-			<Power className="size-full stroke-[2.5]" />
-		</div>
+		<Power className={cn('text-primary stroke-[2.5] shrink-0', className)} />
 	);
 };
