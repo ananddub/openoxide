@@ -21,7 +21,6 @@ use super::{
     backend::{KernelWireGuardBackend, ManagedWireGuardBackend, WireGuardInstallPlan},
     mapping::{connection_mode, health_dto, map_network, provider},
     retry::RetryPolicy,
-    stun,
     validation::validate,
 };
 
@@ -376,7 +375,6 @@ impl ServerPrivateNetworkService {
             return self.get_required(server_id).await;
         }
         let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
-        let raw_endpoint = network.endpoint.as_deref().unwrap_or("").trim();
         let remote_ip = self
             .servers
             .get_by_id(server_id)
@@ -388,22 +386,24 @@ impl ServerPrivateNetworkService {
             .and_then(|value| value.try_into().ok())
             .unwrap_or(51820);
 
-        let fallback_endpoint = format!("{remote_ip}:{port}");
-        let final_endpoint = if !raw_endpoint.is_empty()
-            && !raw_endpoint.contains("example.com")
-            && !raw_endpoint.contains("pannel.example")
-            && !raw_endpoint.contains("example")
-            && !raw_endpoint.contains("exmaple")
+        let default_endpoint = format!("{remote_ip}:{port}");
+        let raw_endpoint = network.endpoint.as_deref().unwrap_or("").trim();
+        let endpoint = if raw_endpoint.is_empty()
+            || raw_endpoint.contains("example.com")
+            || raw_endpoint.contains("pannel.example")
+            || raw_endpoint.contains("example")
+            || raw_endpoint.contains("exmaple")
         {
-            raw_endpoint.to_string()
-        } else if let Some(ref stun_ep) = stun::discover_public_endpoint(port).await {
-            tracing::info!(server_id, stun_ep, "using STUN auto-discovered public endpoint");
-            stun_ep.to_string()
+            &default_endpoint
         } else {
-            fallback_endpoint
+            raw_endpoint
         };
 
-        let _ = stun::punch_nat_hole(&final_endpoint, port).await;
+        if let Err(error) = resolve_wireguard_endpoint(endpoint).await {
+            let message = error.to_string();
+            self.record_setup_failure(server_id, None, &message).await?;
+            return Err(error);
+        }
 
         let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
         let (local, remote) = self.executors(server_id).await?;
@@ -417,11 +417,8 @@ impl ServerPrivateNetworkService {
                 remote_address,
                 panel_host: panel_host(cidr)?,
                 remote_host: remote_host.clone(),
-                endpoint: &final_endpoint,
-                port: network
-                    .listen_port
-                    .and_then(|value| value.try_into().ok())
-                    .unwrap_or(51820),
+                endpoint,
+                port,
                 keepalive: network
                     .persistent_keepalive
                     .and_then(|value| value.try_into().ok())
@@ -433,23 +430,22 @@ impl ServerPrivateNetworkService {
         match public_key {
             Ok(public_key) => {
                 if let Err(error) = self.verify_private_ssh(server_id, &remote_host).await {
-                    self.networks
-                        .set_runtime_state(
-                            server_id,
-                            PrivateNetworkStatus::Failed,
-                            Some(&public_key),
-                            None,
-                        )
+                    let message = format!(
+                        "WireGuard was installed, but SSH over the tunnel ({remote_host}) is not reachable: {error}. Verify that UDP port {port} reaches the remote server and that its firewall allows the port"
+                    );
+                    self.record_setup_failure(server_id, Some(&public_key), &message)
                         .await?;
-                    return Err(error);
+                    return Err(sqlx::Error::Protocol(message));
                 }
                 let health = match backend.health(&interface).await {
                     Ok(health) => health,
                     Err(error) => {
-                        self.networks
-                            .set_runtime_state(server_id, PrivateNetworkStatus::Failed, None, None)
+                        let message = format!(
+                            "WireGuard was installed, but its health check failed: {error}"
+                        );
+                        self.record_setup_failure(server_id, Some(&public_key), &message)
                             .await?;
-                        return Err(error);
+                        return Err(sqlx::Error::Protocol(message));
                     }
                 };
                 self.networks
@@ -460,15 +456,41 @@ impl ServerPrivateNetworkService {
                         health.latest_handshake,
                     )
                     .await?;
+                self.networks
+                    .set_health(
+                        server_id,
+                        PrivateNetworkHealthStatus::Healthy,
+                        None,
+                        health.latest_handshake,
+                    )
+                    .await?;
                 self.get_required(server_id).await
             }
             Err(error) => {
-                self.networks
-                    .set_runtime_state(server_id, PrivateNetworkStatus::Failed, None, None)
-                    .await?;
-                Err(error)
+                let message = format!("Managed WireGuard setup failed: {error}");
+                self.record_setup_failure(server_id, None, &message).await?;
+                Err(sqlx::Error::Protocol(message))
             }
         }
+    }
+
+    async fn record_setup_failure(
+        &self,
+        server_id: i64,
+        public_key: Option<&str>,
+        message: &str,
+    ) -> sqlx::Result<()> {
+        self.networks
+            .set_runtime_state(server_id, PrivateNetworkStatus::Failed, public_key, None)
+            .await?;
+        self.networks
+            .set_health(
+                server_id,
+                PrivateNetworkHealthStatus::Unreachable,
+                Some(message),
+                None,
+            )
+            .await
     }
 
     async fn require_managed_wireguard(&self, server_id: i64) -> sqlx::Result<()> {
@@ -603,7 +625,6 @@ impl ServerPrivateNetworkService {
         input: &UpdatePrivateNetworkDto,
     ) -> sqlx::Result<()> {
         let tunnel = input.tunnel_address.as_deref();
-        let listen_port = input.listen_port.unwrap_or(51820);
         for network in self.networks.list_managed().await? {
             if network.server_id == server_id {
                 continue;
@@ -612,12 +633,6 @@ impl ServerPrivateNetworkService {
                 return Err(sqlx::Error::Protocol(format!(
                     "WireGuard tunnel network {} is already assigned to server {}",
                     tunnel.unwrap_or_default(),
-                    network.server_id,
-                )));
-            }
-            if network.listen_port == Some(i64::from(listen_port)) {
-                return Err(sqlx::Error::Protocol(format!(
-                    "panel WireGuard listen port {listen_port} is already used by server {}; choose another local listen port",
                     network.server_id,
                 )));
             }
@@ -733,6 +748,23 @@ fn orphaned_managed_interfaces(
         })
         .map(str::to_owned)
         .collect()
+}
+
+async fn resolve_wireguard_endpoint(endpoint: &str) -> sqlx::Result<()> {
+    tokio::net::lookup_host(endpoint)
+        .await
+        .map_err(|error| {
+            sqlx::Error::Protocol(format!(
+                "Remote WireGuard endpoint '{endpoint}' could not be resolved: {error}. Enter the remote server's reachable public IP or DNS name with its UDP port, for example vpn.example.com:51820"
+            ))
+        })?
+        .next()
+        .ok_or_else(|| {
+            sqlx::Error::Protocol(format!(
+                "Remote WireGuard endpoint '{endpoint}' resolved to no addresses. Check the hostname and DNS configuration"
+            ))
+        })?;
+    Ok(())
 }
 
 fn should_auto_repair(status: PrivateNetworkHealthStatusDto, consecutive_failures: i64) -> bool {

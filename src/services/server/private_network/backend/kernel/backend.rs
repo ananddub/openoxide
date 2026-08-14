@@ -34,21 +34,24 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .install()
             .run()
             .await
-            .map_err(Self::protocol)?;
+            .map_err(|error| {
+                Self::protocol(format!(
+                    "Could not install wireguard-tools on the remote server: {error}"
+                ))
+            })?;
 
-        // Auto-configure firewall to allow WireGuard UDP listen port via crates/os
-        let _ = OsCli::new(self.local)
+        OsCli::new(self.remote)
             .firewall()
             .allow_port(plan.port)
             .protocol(os::firewall::NetworkProtocol::Udp)
             .run()
-            .await;
-        let _ = OsCli::new(self.remote)
-            .firewall()
-            .allow_port(plan.port)
-            .protocol(os::firewall::NetworkProtocol::Udp)
-            .run()
-            .await;
+            .await
+            .map_err(|error| {
+                Self::protocol(format!(
+                    "Could not allow UDP port {} on the remote server firewall: {error}. Open this port manually and retry",
+                    plan.port
+                ))
+            })?;
 
         if local
             .wireguard()
@@ -94,39 +97,16 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .await
             .map_err(Self::protocol)?;
 
-        let endpoint_host = plan.endpoint.split(':').next().unwrap_or(plan.endpoint);
-        let remote_host_str = self.remote.host().unwrap_or_default();
-        let is_remote_endpoint = remote_host_str == endpoint_host
-            || (!remote_host_str.is_empty()
-                && remote_host_str != "127.0.0.1"
-                && plan.endpoint.contains(remote_host_str));
-
-        let (local_peer_builder, remote_peer_builder) = if is_remote_endpoint {
-            (
-                std::iter::once(format!("{}/32", plan.remote_host))
-                    .chain(plan.routes.iter().cloned())
-                    .fold(
-                        WireGuardPeerBuilder::new(remote_public.clone())
-                            .endpoint(plan.endpoint)
-                            .persistent_keepalive(plan.keepalive),
-                        |peer, route| peer.allowed_ip(route),
-                    ),
-                WireGuardPeerBuilder::new(panel_public).allowed_ip(plan.panel_host.clone()),
-            )
-        } else {
-            (
-                std::iter::once(format!("{}/32", plan.remote_host))
-                    .chain(plan.routes.iter().cloned())
-                    .fold(
-                        WireGuardPeerBuilder::new(remote_public.clone()),
-                        |peer, route| peer.allowed_ip(route),
-                    ),
-                WireGuardPeerBuilder::new(panel_public)
-                    .allowed_ip(plan.panel_host.clone())
+        let local_peer_builder = std::iter::once(format!("{}/32", plan.remote_host))
+            .chain(plan.routes.iter().cloned())
+            .fold(
+                WireGuardPeerBuilder::new(remote_public.clone())
                     .endpoint(plan.endpoint)
                     .persistent_keepalive(plan.keepalive),
-            )
-        };
+                |peer, route| peer.allowed_ip(route),
+            );
+        let remote_peer_builder =
+            WireGuardPeerBuilder::new(panel_public).allowed_ip(plan.panel_host.clone());
 
         local
             .wireguard()
@@ -134,7 +114,6 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .install(
                 &WireGuardConfigBuilder::new(panel_private)
                     .address(plan.panel_address.clone())
-                    .listen_port(plan.port)
                     .mtu(1420)
                     .peer(local_peer_builder.build().map_err(Self::protocol)?)
                     .build()
@@ -158,7 +137,10 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .await
         {
             let _ = local.wireguard().interface(plan.interface).remove().await;
-            return Err(Self::protocol(error));
+            return Err(Self::protocol(format!(
+                "Could not start WireGuard on the remote server at {}: {error}. Verify that UDP port {} is free and the endpoint is reachable",
+                plan.endpoint, plan.port
+            )));
         }
         Ok(remote_public)
     }

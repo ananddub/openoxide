@@ -99,7 +99,7 @@ export function PrivateNetworkModal({
 		setMode('DIRECT_SSH');
 		setProvider('TAILSCALE');
 		setPrivateHost('');
-		setEndpoint('');
+		setEndpoint(`${server.ip_address}:51820`);
 		setTunnelAddress(`10.77.${(server.id % 250) + 1}.0/24`);
 		setListenPort('51820');
 		setKeepalive('25');
@@ -122,7 +122,7 @@ export function PrivateNetworkModal({
 				setTunnelAddress(
 					current.tunnel_address || `10.77.${(server.id % 250) + 1}.0/24`,
 				);
-				setEndpoint(current.endpoint || '');
+				setEndpoint(current.endpoint || `${server.ip_address}:51820`);
 				setListenPort(String(current.listen_port || 51820));
 				setKeepalive(String(current.persistent_keepalive || 25));
 				setDnsName(current.dns_name || '');
@@ -265,17 +265,22 @@ export function PrivateNetworkModal({
 					{mode === 'MANAGED_WIREGUARD' && (
 						<>
 							<div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-								OpenOxide installs and manages kernel WireGuard on the
-								panel and remote server. Built-in STUN auto-discovery will
-								automatically resolve and hole-punch the public endpoint over UDP.
-								You can leave the endpoint blank for auto-discovery or enter a specific IP/domain.
+								OpenOxide installs WireGuard on the remote server using its configured IP ({server.ip_address}) and the UDP listen port below. No STUN server discovery or complex mesh VPN is used. Ensure the UDP port is allowed in your server's firewall.
 							</div>
 							<div className="grid gap-3 sm:grid-cols-2">
-								<Field label="Panel public endpoint (Auto / Optional)">
+								<Field label="Remote server UDP listen port">
+									<Input
+										type="number"
+										value={listenPort}
+										onChange={event => setListenPort(event.target.value)}
+										placeholder="51820"
+									/>
+								</Field>
+								<Field label="Custom endpoint override (optional)">
 									<Input
 										value={endpoint}
 										onChange={event => setEndpoint(event.target.value)}
-										placeholder="Auto STUN or 192.168.1.8:51820"
+										placeholder={`${server.ip_address}:${listenPort || '51820'}`}
 									/>
 								</Field>
 								<Field label="Tunnel network">
@@ -291,13 +296,6 @@ export function PrivateNetworkModal({
 									<Input
 										value={managedHost || 'Invalid /24 network'}
 										disabled
-									/>
-								</Field>
-								<Field label="Panel local listen port">
-									<Input
-										type="number"
-										value={listenPort}
-										onChange={event => setListenPort(event.target.value)}
 									/>
 								</Field>
 								<Field label="Persistent keepalive">
