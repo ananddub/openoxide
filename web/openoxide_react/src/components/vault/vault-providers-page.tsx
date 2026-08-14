@@ -384,34 +384,39 @@ export function VaultProvidersPage() {
 						</div>
 
 						{formType === 'HASHICORP' && (
-							<div className="grid grid-cols-2 gap-3">
-								<div className="space-y-1">
-									<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-										KV Mount
-									</label>
-									<Input
-										placeholder="secret"
-										value={formMount}
-										onChange={e => setFormMount(e.target.value)}
-										className="h-10 text-xs font-mono bg-muted/20"
-									/>
+							<>
+								<div className="grid grid-cols-2 gap-3">
+									<div className="space-y-1">
+										<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+											KV Mount
+										</label>
+										<Input
+											placeholder="secret"
+											value={formMount}
+											onChange={e => setFormMount(e.target.value)}
+											className="h-10 text-xs font-mono bg-muted/20"
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+											Namespace (optional)
+										</label>
+										<Input
+											placeholder="admin"
+											value={formNamespace}
+											onChange={e => setFormNamespace(e.target.value)}
+											className="h-10 text-xs font-mono bg-muted/20"
+										/>
+									</div>
 								</div>
-								<div className="space-y-1">
-									<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-										Namespace (optional)
-									</label>
-									<Input
-										placeholder="admin"
-										value={formNamespace}
-										onChange={e => setFormNamespace(e.target.value)}
-										className="h-10 text-xs font-mono bg-muted/20"
-									/>
+								<div className="text-[11px] text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40">
+									Reference format: <code className="text-primary font-mono font-semibold">{'${{vault.<name>.path/to/secret:FIELD}}'}</code>
 								</div>
-							</div>
+							</>
 						)}
 
-						{/* Dokploy Popup Footer with Left Test Connection Button & Right Create/Update Button */}
-						<DialogFooter className="flex w-full flex-row items-center justify-between gap-2 pt-4 border-t border-border/40">
+						{/* Dokploy Exact Footer Layout: Left Test Connection & Right Save/Update */}
+						<div className="flex w-full items-center justify-between gap-2 pt-4 border-t border-border/40 mt-4">
 							<Button
 								type="button"
 								variant="secondary"
@@ -422,11 +427,11 @@ export function VaultProvidersPage() {
 								{isTestingModal && <RefreshCw className="size-3.5 animate-spin" />}
 								Test Connection
 							</Button>
-							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5 px-5">
+							<Button type="submit" disabled={isSubmitting} className="h-9 text-xs font-semibold gap-1.5 px-6">
 								{isSubmitting && <RefreshCw className="size-3.5 animate-spin" />}
 								{editingProvider ? 'Update' : 'Create'}
 							</Button>
-						</DialogFooter>
+						</div>
 					</form>
 				</DialogContent>
 			</Dialog>
