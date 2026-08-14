@@ -173,6 +173,36 @@ export function DnsProvidersPage() {
 		}
 	};
 
+	const getProviderLabel = (type: string) => {
+		switch (type.toUpperCase()) {
+			case 'CLOUDFLARE':
+				return 'Cloudflare DNS';
+			case 'ROUTE53':
+				return 'AWS Route53';
+			case 'DIGITALOCEAN':
+				return 'DigitalOcean DNS';
+			case 'HETZNER':
+				return 'Hetzner DNS';
+			default:
+				return type;
+		}
+	};
+
+	const renderDnsProviderIcon = (type: string) => {
+		switch (type.toUpperCase()) {
+			case 'CLOUDFLARE':
+				return <CloudflareIcon className="size-4 shrink-0 text-amber-500" />;
+			case 'ROUTE53':
+				return <AwsIcon className="size-4 shrink-0 text-orange-500" />;
+			case 'DIGITALOCEAN':
+				return <DigitalOceanIcon className="size-4 shrink-0 text-blue-500" />;
+			case 'HETZNER':
+				return <HetznerIcon className="size-4 shrink-0 text-rose-500" />;
+			default:
+				return <Globe className="size-4 shrink-0 text-primary" />;
+		}
+	};
+
 	return (
 		<div className="p-6 space-y-6 max-w-6xl mx-auto">
 			{/* Page Header */}
@@ -295,7 +325,12 @@ export function DnsProvidersPage() {
 							</label>
 							<Select value={formType} onValueChange={(v: any) => setFormType(v)} disabled={!!editingProvider}>
 								<SelectTrigger className="h-10 text-xs bg-muted/20 w-full">
-									<SelectValue />
+									<SelectValue>
+										<div className="flex items-center gap-2">
+											{renderDnsProviderIcon(formType)}
+											<span>{getProviderLabel(formType)}</span>
+										</div>
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent className="w-[var(--anchor-width)]">
 									<SelectItem value="CLOUDFLARE">

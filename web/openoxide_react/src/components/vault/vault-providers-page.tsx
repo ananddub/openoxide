@@ -214,6 +214,25 @@ export function VaultProvidersPage() {
 		}
 	};
 
+	const renderVaultProviderIcon = (type: string) => {
+		switch (type.toUpperCase()) {
+			case 'HASHICORP':
+				return <HashicorpVaultIcon className="size-4 shrink-0 text-amber-500" />;
+			case 'INFISICAL':
+				return <InfisicalIcon className="size-4 shrink-0 text-emerald-500" />;
+			case 'DOPPLER':
+				return <DopplerIcon className="size-4 shrink-0 text-purple-500" />;
+			case 'AWS':
+				return <AwsIcon className="size-4 shrink-0 text-amber-600" />;
+			case 'AZURE':
+				return <AzureIcon className="size-4 shrink-0 text-sky-500" />;
+			case 'SCALEWAY':
+				return <ScalewayIcon className="size-4 shrink-0 text-purple-600" />;
+			default:
+				return <KeyRound className="size-4 shrink-0 text-primary" />;
+		}
+	};
+
 	return (
 		<div className="p-6 space-y-6 max-w-6xl mx-auto">
 			{/* Page Header */}
@@ -353,7 +372,12 @@ export function VaultProvidersPage() {
 							</label>
 							<Select value={formType} onValueChange={(v: any) => setFormType(v)} disabled={!!editingProvider}>
 								<SelectTrigger className="h-10 text-xs bg-muted/20 w-full">
-									<SelectValue />
+									<SelectValue>
+										<div className="flex items-center gap-2">
+											{renderVaultProviderIcon(formType)}
+											<span>{getProviderLabel(formType)}</span>
+										</div>
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent className="w-[var(--anchor-width)]">
 									<SelectItem value="HASHICORP">
