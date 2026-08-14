@@ -60,14 +60,13 @@ impl PermissionService {
 
         let member_role = self.member_repo.role(user_id, org_id).await?;
 
-        if member_role.is_none() {
+        if let Some(role) = member_role.as_deref() {
+            let role_upper = role.to_uppercase();
+            if role_upper == "ADMIN" || role_upper == "OWNER" {
+                return Ok(true);
+            }
+        } else {
             return Ok(false);
-        }
-
-        match member_role.as_deref() {
-            Some("ADMIN") => return Ok(true),
-            Some("MEMBER") => {}
-            _ => return Ok(false),
         }
 
         // 2. Fetch final permissions via GroupRepository (evaluates user_policy & group_policy)

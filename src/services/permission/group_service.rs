@@ -142,9 +142,11 @@ impl PermissionGroupService {
                 "only admins can invite another admin".into(),
             ));
         }
-        let actions = self.repository.group_actions(body.group_id).await?;
-        self.ensure_subset(actor_id, organization_id, &actions)
-            .await?;
+        if !self.actor_is_privileged(actor_id, organization_id).await? {
+            let actions = self.repository.group_actions(body.group_id).await?;
+            self.ensure_subset(actor_id, organization_id, &actions)
+                .await?;
+        }
         let mut bytes = [0_u8; 32];
         fill(&mut bytes)
             .map_err(|_| PermissionGroupError::Invalid("could not generate invite token".into()))?;
@@ -646,13 +648,17 @@ impl PermissionGroupService {
         if self.permission_service.is_platform_owner(actor_id).await? {
             return Ok(true);
         }
-        Ok(matches!(
-            self.member_repository
-                .role(actor_id, organization_id)
-                .await?
-                .as_deref(),
-            Some("ADMIN")
-        ))
+        let role = self
+            .member_repository
+            .role(actor_id, organization_id)
+            .await?;
+        if let Some(r) = role.as_deref() {
+            let upper = r.to_uppercase();
+            if upper == "ADMIN" || upper == "OWNER" {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     async fn ensure_manageable_target(
