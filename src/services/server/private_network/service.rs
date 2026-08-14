@@ -435,7 +435,12 @@ impl ServerPrivateNetworkService {
             Ok(public_key) => {
                 if let Err(error) = self.verify_private_ssh(server_id, &remote_host).await {
                     self.networks
-                        .set_runtime_state(server_id, PrivateNetworkStatus::Failed, None, None)
+                        .set_runtime_state(
+                            server_id,
+                            PrivateNetworkStatus::Failed,
+                            Some(&public_key),
+                            None,
+                        )
                         .await?;
                     return Err(error);
                 }
