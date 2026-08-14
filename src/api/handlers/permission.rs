@@ -150,6 +150,20 @@ impl PermissionGroupController {
             .map_err(map_error)
     }
 
+    #[post("/members")]
+    async fn add_member(
+        &self,
+        RequirePermission(claims, _): RequirePermission<Members, CanCreate>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        ValidatedJson(body): ValidatedJson<crate::api::dto::permission::AddOrganizationMemberDto>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .add_member(claims.user.user_id, organization_id, body)
+            .await
+            .map(|()| StatusCode::CREATED)
+            .map_err(map_error)
+    }
+
     #[put("/members/{user_id}/role")]
     async fn update_member_role(
         &self,

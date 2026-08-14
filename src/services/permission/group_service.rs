@@ -339,6 +339,68 @@ impl PermissionGroupService {
             .await?)
     }
 
+    pub async fn add_member(
+        &self,
+        actor_id: i64,
+        organization_id: i64,
+        body: crate::api::dto::permission::AddOrganizationMemberDto,
+    ) -> Result<(), PermissionGroupError> {
+        if !self.actor_is_privileged(actor_id, organization_id).await? {
+            return Err(PermissionGroupError::Escalation(
+                "only organization admins can add members".into(),
+            ));
+        }
+
+        let email = body.email.trim().to_ascii_lowercase();
+        if !email.contains('@') {
+            return Err(PermissionGroupError::Invalid("invalid email".into()));
+        }
+
+        let role = body.role.to_ascii_uppercase();
+        if !matches!(role.as_str(), "ADMIN" | "MEMBER") {
+            return Err(PermissionGroupError::Invalid(
+                "role must be ADMIN or MEMBER".into(),
+            ));
+        }
+
+        let existing_user = self.user_repository.get_by_email(&email).await?;
+        let user_id = if let Some(u) = existing_user {
+            u.id.ok_or_else(|| PermissionGroupError::Invalid("user has no id".into()))?
+        } else {
+            let password_raw = body.password.unwrap_or_else(|| "ChangeMe123!".to_string());
+            let password_hash = crate::services::auth::hash_password(password_raw).await
+                .map_err(|_| PermissionGroupError::Invalid("failed to hash password".into()))?;
+            self.user_repository.create(&crate::db::models::users::User {
+                id: None,
+                email: Some(email.clone()),
+                first_name: None,
+                last_name: None,
+                avatar: String::new(),
+                password: password_hash,
+                role: Some("member".into()),
+                group_id: 1,
+                about_me: None,
+                is_email_verify: Some(1),
+                email_verify_at: Some(chrono::Utc::now().timestamp()),
+                two_factor_enable: Some(0),
+                is_registered: 1,
+                added_by: None,
+                created_at: chrono::Utc::now().timestamp(),
+                updated_at: chrono::Utc::now().timestamp(),
+            }).await?
+        };
+
+        let existing_role = self.member_repository.role(user_id, organization_id).await?;
+        if existing_role.is_some() {
+            return Err(PermissionGroupError::Invalid("user is already a member of this organization".into()));
+        }
+
+        self.member_repository
+            .add_member_with_group(&role, user_id, organization_id, 1)
+            .await?;
+        Ok(())
+    }
+
     pub async fn update_member_role(
         &self,
         actor_id: i64,

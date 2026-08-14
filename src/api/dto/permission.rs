@@ -47,6 +47,13 @@ pub struct UpdateMemberRoleDto {
     pub role: String,
 }
 
+#[derive(Debug, Deserialize, Validate, poem_openapi::Object)]
+pub struct AddOrganizationMemberDto {
+    pub email: String,
+    pub password: Option<String>,
+    pub role: String,
+}
+
 #[derive(Debug, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct OrganizationMemberDto {
     pub id: Option<i64>,

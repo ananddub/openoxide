@@ -99,6 +99,7 @@ export function UsersManagementPage() {
 	} = usePermissionGroupInvites();
 
 	// Mutations for invites and members
+	const addMemberMutation = $api.useMutation('post', '/permission-groups/members' as any);
 	const inviteMutation = $api.useMutation('post', '/permission-groups/invites' as any);
 	const cancelInviteMutation = $api.useMutation(
 		'delete',
@@ -185,32 +186,14 @@ export function UsersManagementPage() {
 					setIsSubmitting(false);
 					return;
 				}
-				// 1. Create account via signup
-				const signupRes = await client.POST('/auth/signup' as any, {
+				// Create account and add to organization atomically
+				await addMemberMutation.mutateAsync({
 					body: {
 						email: formEmail.trim(),
 						password: formPassword,
+						role: formRole.toUpperCase(),
 					},
 				} as any);
-
-				if (signupRes.error) {
-					throw signupRes.error;
-				}
-
-				const createdUser = signupRes.data?.user;
-				if (createdUser && createdUser.user_id) {
-					// 2. Set organization role
-					await updateRoleMutation.mutateAsync({
-						params: {
-							path: {
-								user_id: createdUser.user_id,
-							},
-						},
-						body: {
-							role: formRole.toUpperCase(),
-						},
-					} as any);
-				}
 
 				toast.success('User account created successfully');
 				setActiveTab('users');
