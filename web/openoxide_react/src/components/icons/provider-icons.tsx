@@ -4,6 +4,7 @@ interface Props {
 	className?: string;
 }
 
+// 1. HashiCorp Vault (Dokploy Exact 1:1)
 export const HashicorpVaultIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -15,6 +16,7 @@ export const HashicorpVaultIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 2. Infisical (Dokploy Exact 1:1)
 export const InfisicalIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 91 43"
@@ -29,6 +31,7 @@ export const InfisicalIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 3. AWS / Route53 (Dokploy Exact 1:1)
 export const AwsIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 304 182"
@@ -50,6 +53,7 @@ export const AwsIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 4. Doppler (Dokploy Exact 1:1)
 export const DopplerIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 101 100"
@@ -64,6 +68,7 @@ export const DopplerIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 5. Azure Key Vault (Dokploy Exact 1:1)
 export const AzureIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 96 96"
@@ -82,6 +87,7 @@ export const AzureIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 6. Scaleway (Dokploy Exact 1:1)
 export const ScalewayIcon = ({ className = "size-4" }: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -93,6 +99,7 @@ export const ScalewayIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 7. Cloudflare (Dokploy Exact 1:1 from bundled-icons.ts)
 export const CloudflareIcon = ({ className = "size-4" }: Props) => (
 	<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
 		<path
@@ -102,14 +109,19 @@ export const CloudflareIcon = ({ className = "size-4" }: Props) => (
 	</svg>
 );
 
+// 8. DigitalOcean (Dokploy Exact 1:1 from bundled-icons.ts)
 export const DigitalOceanIcon = ({ className = "size-4" }: Props) => (
-	<svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-		<path fill="#0080FF" d="M12.007 0C5.373 0 0 5.373 0 12.007c0 3.327 1.347 6.34 3.52 8.513l3.228-3.227a6.764 6.764 0 01-1.487-4.286c0-3.743 3.034-6.777 6.777-6.777 3.744 0 6.778 3.034 6.778 6.777 0 3.744-3.034 6.778-6.778 6.778v3.262c5.968 0 10.806-4.838 10.806-10.807C22.844 5.373 17.472 0 12.007 0z"/>
+	<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+		<path
+			fill="#0080FF"
+			d="M12.04 0C5.408-.02.005 5.37.005 11.992h4.638c0-4.923 4.882-8.731 10.064-6.855a6.95 6.95 0 014.147 4.148c1.889 5.177-1.924 10.055-6.84 10.064v-4.61H7.391v4.623h4.61V24c7.86 0 13.967-7.588 11.397-15.83-1.115-3.59-3.985-6.446-7.575-7.575A12.8 12.8 0 0012.039 0zM7.39 19.362H3.828v3.564H7.39zm-3.563 0v-2.978H.85v2.978z"
+		/>
 	</svg>
 );
 
+// 9. Hetzner (Dokploy Exact 1:1)
 export const HetznerIcon = ({ className = "size-4" }: Props) => (
-	<svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-		<path fill="#D50C2D" d="M3 3h4v7h10V3h4v18h-4v-7H7v7H3V3z"/>
+	<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+		<path fill="#D50C2D" d="M3 3h4v7h10V3h4v18h-4v-7H7v7H3V3z" />
 	</svg>
 );
