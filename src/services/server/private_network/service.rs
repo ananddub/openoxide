@@ -21,6 +21,7 @@ use super::{
     backend::{KernelWireGuardBackend, ManagedWireGuardBackend, WireGuardInstallPlan},
     mapping::{connection_mode, health_dto, map_network, provider},
     retry::RetryPolicy,
+    stun,
     validation::validate,
 };
 
@@ -388,15 +389,23 @@ impl ServerPrivateNetworkService {
             .unwrap_or(51820);
 
         let fallback_endpoint = format!("{remote_ip}:{port}");
-        let endpoint = if raw_endpoint.is_empty()
+        let stun_endpoint = stun::discover_public_endpoint(port).await;
+        let final_endpoint = if let Some(ref stun_ep) = stun_endpoint {
+            tracing::info!(server_id, stun_ep, "using STUN auto-discovered public endpoint");
+            stun_ep.to_string()
+        } else if raw_endpoint.is_empty()
             || raw_endpoint.contains("example.com")
             || raw_endpoint.contains("pannel.example")
             || raw_endpoint.contains("example")
+            || raw_endpoint.contains("exmaple")
         {
-            &fallback_endpoint
+            fallback_endpoint.clone()
         } else {
-            raw_endpoint
+            raw_endpoint.to_string()
         };
+
+        let _ = stun::punch_nat_hole(&final_endpoint, port).await;
+
         let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
         let (local, remote) = self.executors(server_id).await?;
         self.remove_orphaned_local_interfaces(&local).await?;
@@ -409,7 +418,7 @@ impl ServerPrivateNetworkService {
                 remote_address,
                 panel_host: panel_host(cidr)?,
                 remote_host: remote_host.clone(),
-                endpoint,
+                endpoint: &final_endpoint,
                 port: network
                     .listen_port
                     .and_then(|value| value.try_into().ok())
