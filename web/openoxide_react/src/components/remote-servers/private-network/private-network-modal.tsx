@@ -149,7 +149,10 @@ export function PrivateNetworkModal({
 		tunnel_address:
 			mode === 'MANAGED_WIREGUARD' ? tunnelAddress.trim() : null,
 		public_key: config?.public_key || null,
-		endpoint: mode === 'MANAGED_WIREGUARD' ? endpoint.trim() : null,
+		endpoint:
+			mode === 'MANAGED_WIREGUARD'
+				? `${server?.ip_address}:${listenPort || '51820'}`
+				: null,
 		listen_port: mode === 'MANAGED_WIREGUARD' ? Number(listenPort) : null,
 		persistent_keepalive:
 			mode === 'MANAGED_WIREGUARD' ? Number(keepalive) : null,
@@ -274,13 +277,6 @@ export function PrivateNetworkModal({
 										value={listenPort}
 										onChange={event => setListenPort(event.target.value)}
 										placeholder="51820"
-									/>
-								</Field>
-								<Field label="Custom endpoint override (optional)">
-									<Input
-										value={endpoint}
-										onChange={event => setEndpoint(event.target.value)}
-										placeholder={`${server.ip_address}:${listenPort || '51820'}`}
 									/>
 								</Field>
 								<Field label="Tunnel network">
