@@ -77,6 +77,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 	// Emit a start event using current ref values — safe to call from any closure
 	const emitStartSession = useCallback((sock: Socket, shellMode: string) => {
+		console.log('[terminal] emitStartSession called', { shellMode, connected: sock.connected, isRemoteServer: isRemoteServerRef.current, serverId: serverIdRef.current });
 		if (!sock.connected) return;
 		if (isRemoteServerRef.current && serverIdRef.current) {
 			sock.emit('server:start', { server_id: serverIdRef.current, shell: shellMode, command: shellMode });
@@ -90,6 +91,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const socketConnectedRef = useRef(false);
 	useEffect(() => {
 		// Skip on first render and when modal is closed
+		console.log('[terminal] switch effect fired', { open, shell, socketConnected: socketConnectedRef.current, sockRef: socketRef.current?.connected });
 		if (!open || !socketConnectedRef.current) return;
 		const sock = socketRef.current;
 		const term = termInstanceRef.current;
@@ -203,14 +205,15 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			} else {
 				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
 			}
-			emitStartSession(socket, shellRef.current);
+			// Defer by one tick so the socket.io transport is fully settled before emitting
+			setTimeout(() => emitStartSession(socket, shellRef.current), 0);
 		});
 
 		// Immediate check if already connected (forceNew should prevent this but handle defensively)
 		if (socket.connected && !socketConnectedRef.current) {
 			socketConnectedRef.current = true;
 			setStatus('connected');
-			emitStartSession(socket, shellRef.current);
+			setTimeout(() => emitStartSession(socket, shellRef.current), 0);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
