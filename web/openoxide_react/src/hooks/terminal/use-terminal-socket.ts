@@ -50,6 +50,7 @@ export function useTerminalSocket({
 		setStatus('connecting');
 
 		if (termInstance) {
+			termInstance.reset();
 			if (isRemoteServer) {
 				termInstance.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
 			} else {
@@ -76,13 +77,6 @@ export function useTerminalSocket({
 
 		const handleConnect = () => {
 			setStatus('connected');
-			if (termInstance) {
-				if (isRemoteServer) {
-					termInstance.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
-				} else {
-					termInstance.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
-				}
-			}
 			emitStartSession(socket, shell);
 		};
 
@@ -94,10 +88,13 @@ export function useTerminalSocket({
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
 			if (data?.host) setActiveHostIp(data.host);
-			const connectedTarget = data?.host || targetContainer;
-			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
-			termInstance?.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
-			termInstance?.focus();
+			if (termInstance) {
+				termInstance.reset();
+				const connectedTarget = data?.host || targetContainer;
+				const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
+				termInstance.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
+				termInstance.focus();
+			}
 		});
 
 		socket.on('output', (evt: { data: string }) => {
@@ -187,11 +184,12 @@ export function useTerminalSocket({
 		}
 		if (!isOpen || !socketRef.current?.connected || !termInstance) return;
 
+		termInstance.reset();
 		const connectedTarget = activeHostIp || targetContainer;
 		if (isRemoteServer) {
-			termInstance.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
+			termInstance.writeln(`\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
 		} else {
-			termInstance.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
+			termInstance.writeln(`\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
 		}
 		setStatus('connecting');
 
