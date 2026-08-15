@@ -1,14 +1,23 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-	GlobeIcon,
-	CircuitBoard,
+	Box,
+	Layers2,
+	Database as DbIcon,
 	ServerIcon,
 	MoreHorizontal,
 	RefreshCw,
-	Ban,
-	Database,
+	Play,
+	Square,
 } from 'lucide-react';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+	MongodbIcon,
+	RedisIcon,
+	LibsqlIcon,
+} from '#/components/icons/db-icons';
 import {
 	Table,
 	TableHeader,
@@ -45,12 +54,13 @@ export type OverviewServiceItem = {
 type Props = {
 	services: OverviewServiceItem[];
 	onDeploy?: (service: OverviewServiceItem) => void;
+	onStart?: (service: OverviewServiceItem) => void;
 	onStop?: (service: OverviewServiceItem) => void;
 };
 
 const TYPE_DISPLAY_NAMES: Record<string, string> = {
 	APP: 'Application',
-	COMPOSE: 'Compose',
+	COMPOSE: 'Compose Stacks',
 	DATABASE: 'Database',
 	postgres: 'PostgreSQL',
 	mysql: 'MySQL',
@@ -61,31 +71,62 @@ const TYPE_DISPLAY_NAMES: Record<string, string> = {
 };
 
 const renderIcon = (type: string, dbKind?: string) => {
-	if (type === 'COMPOSE') return <CircuitBoard className="size-5 text-primary" />;
-	if (type === 'DATABASE' || dbKind) return <Database className="size-5 text-amber-500" />;
-	return <GlobeIcon className="size-5 text-blue-500" />;
+	if (type === 'APP') return <Box className="size-4.5 text-foreground shrink-0" />;
+	if (type === 'COMPOSE') return <Layers2 className="size-4.5 text-foreground shrink-0" />;
+	const kind = (dbKind || '').toLowerCase();
+	if (kind.includes('postgres')) return <PostgresqlIcon className="size-5 shrink-0" />;
+	if (kind.includes('mysql')) return <MysqlIcon className="size-5 shrink-0" />;
+	if (kind.includes('mariadb')) return <MariadbIcon className="size-5 shrink-0" />;
+	if (kind.includes('mongo')) return <MongodbIcon className="size-5 shrink-0" />;
+	if (kind.includes('redis')) return <RedisIcon className="size-5 shrink-0" />;
+	if (kind.includes('libsql')) return <LibsqlIcon className="size-5 shrink-0" />;
+
+	return <DbIcon className="size-4.5 text-foreground shrink-0" />;
 };
 
 const renderStatusBadge = (statusStr: string) => {
 	const s = (statusStr || 'done').toLowerCase();
-	let dotColor = 'bg-emerald-500';
-	let label = 'Running';
 
-	if (s.includes('run') || s.includes('build') || s.includes('deploy')) {
-		dotColor = 'bg-amber-500 animate-pulse';
-		label = 'Deploying';
-	} else if (s.includes('err') || s.includes('fail') || s.includes('crash')) {
-		dotColor = 'bg-destructive';
-		label = 'Error';
-	} else if (s.includes('idle') || s.includes('stop')) {
-		dotColor = 'bg-muted-foreground/40';
-		label = 'Idle';
+	if (s.includes('stopping') || s.includes('cancelling')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 text-[11px] font-semibold text-orange-500">
+				<span className="size-2 rounded-full bg-orange-500 animate-pulse" />
+				<span>Stopping</span>
+			</div>
+		);
+	}
+
+	if (s.includes('starting') || s.includes('deploying') || s.includes('building') || s.includes('loading')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-[11px] font-semibold text-amber-500">
+				<span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+				<span>Deploying</span>
+			</div>
+		);
+	}
+
+	if (s.includes('running') || s.includes('active') || s.includes('healthy') || s.includes('up') || s === 'done') {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-[11px] font-semibold text-emerald-500">
+				<span className="size-2 rounded-full bg-emerald-500" />
+				<span>Running</span>
+			</div>
+		);
+	}
+
+	if (s.includes('err') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 text-[11px] font-semibold text-rose-500">
+				<span className="size-2 rounded-full bg-rose-500" />
+				<span>Error</span>
+			</div>
+		);
 	}
 
 	return (
-		<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/60 text-[11px] font-semibold text-foreground">
-			<span className={`size-2 rounded-full ${dotColor}`} />
-			<span>{label}</span>
+		<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/60 text-[11px] font-semibold text-muted-foreground">
+			<span className="size-2 rounded-full bg-muted-foreground/40" />
+			<span>Idle</span>
 		</div>
 	);
 };
@@ -100,7 +141,7 @@ const formatDate = (timestamp?: number) => {
 	);
 };
 
-export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onStop }) => {
+export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onStart, onStop }) => {
 	return (
 		<Table>
 			<TableHeader>
@@ -165,10 +206,17 @@ export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onS
 										Deploy
 									</DropdownMenuItem>
 									<DropdownMenuItem
+										onClick={() => onStart?.(svc)}
+										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-emerald-500 focus:text-emerald-500"
+									>
+										<Play className="size-3.5 fill-current" />
+										Start
+									</DropdownMenuItem>
+									<DropdownMenuItem
 										onClick={() => onStop?.(svc)}
 										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-orange-500 focus:text-orange-500"
 									>
-										<Ban className="size-3.5" />
+										<Square className="size-3.5 fill-current" />
 										Stop
 									</DropdownMenuItem>
 								</DropdownMenuContent>

@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
-import { Card } from '#/components/ui/card';
 import { useOrganizationStore } from '#/stores/organization-store';
 import { $api } from '#/api/query';
+import { client } from '#/api/client';
 import { useProjectListByOrganization } from 'virtual:openoxide-live';
 import { toast } from 'sonner';
+import { formatApiError } from '#/api/utils';
 import {
 	OverviewServicesTable,
 	type OverviewServiceItem,
@@ -39,6 +40,16 @@ export function OverviewServicesTab() {
 			},
 		}
 	);
+
+	// App Mutations
+	const appStart = $api.useMutation('post', '/applications/{id}/start');
+	const appStop = $api.useMutation('post', '/applications/{id}/stop');
+	const appDeploy = $api.useMutation('post', '/applications/{id}/deploy');
+
+	// Compose Mutations
+	const composeStart = $api.useMutation('post', '/compose/{id}/start');
+	const composeStop = $api.useMutation('post', '/compose/{id}/stop');
+	const composeDeploy = $api.useMutation('post', '/compose/{id}/deploy');
 
 	// Transform raw API data into OverviewServiceItem list
 	const allServices = useMemo<OverviewServiceItem[]>(() => {
@@ -100,171 +111,213 @@ export function OverviewServicesTab() {
 		return filteredServices.slice(start, start + pageSize);
 	}, [filteredServices, currentPageIndex, pageSize]);
 
-	const handleDeploy = (svc: OverviewServiceItem) => {
-		toast.success(`Queued deployment for ${svc.name}`);
+	// Action Handlers
+	const handleDeploy = async (svc: OverviewServiceItem) => {
+		try {
+			if (svc.type === 'APP') {
+				await appDeploy.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.type === 'COMPOSE') {
+				await composeDeploy.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.dbKind) {
+				const k = svc.dbKind.toLowerCase();
+				await client.POST(`/${k}/{id}/deploy` as any, { params: { path: { id: svc.id } } });
+			}
+			toast.success(`Queued deployment for ${svc.name}`);
+		} catch (err) {
+			toast.error(formatApiError(err));
+		}
 	};
 
-	const handleStop = (svc: OverviewServiceItem) => {
-		toast.info(`Stopped service ${svc.name}`);
+	const handleStart = async (svc: OverviewServiceItem) => {
+		try {
+			if (svc.type === 'APP') {
+				await appStart.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.type === 'COMPOSE') {
+				await composeStart.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.dbKind) {
+				const k = svc.dbKind.toLowerCase();
+				await client.POST(`/${k}/{id}/start` as any, { params: { path: { id: svc.id } } });
+			}
+			toast.success(`Starting ${svc.name}...`);
+		} catch (err) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	const handleStop = async (svc: OverviewServiceItem) => {
+		try {
+			if (svc.type === 'APP') {
+				await appStop.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.type === 'COMPOSE') {
+				await composeStop.mutateAsync({ params: { path: { id: svc.id } } });
+			} else if (svc.dbKind) {
+				const k = svc.dbKind.toLowerCase();
+				await client.POST(`/${k}/{id}/stop` as any, { params: { path: { id: svc.id } } });
+			}
+			toast.info(`Stopping ${svc.name}...`);
+		} catch (err) {
+			toast.error(formatApiError(err));
+		}
 	};
 
 	return (
 		<div className="flex flex-col gap-5 w-full">
-				{/* Top Header & Filter Toolbar */}
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<h3 className="text-lg font-bold tracking-tight text-foreground">
-						Services{' '}
-						<span className="text-sm font-normal text-muted-foreground">
-							({filteredServices.length})
-						</span>
-					</h3>
+			{/* Top Header & Filter Toolbar */}
+			<div className="flex flex-wrap items-center justify-between gap-4">
+				<h3 className="text-lg font-bold tracking-tight text-foreground">
+					Services{' '}
+					<span className="text-sm font-normal text-muted-foreground">
+						({filteredServices.length})
+					</span>
+				</h3>
 
-					<div className="flex flex-wrap items-center gap-2">
-						{/* Search Input */}
-						<div className="relative">
-							<Input
-								placeholder="Filter services..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="pr-9 w-[180px] h-9 text-xs"
-							/>
-							<Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-						</div>
-
-						{/* Project Filter Select */}
-						<select
-							value={selectedProjectId}
-							onChange={(e) => setSelectedProjectId(e.target.value)}
-							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[130px]"
-						>
-							<option value="all">All projects</option>
-							{projectsToUse.map((p: any) => (
-								<option key={p.id} value={p.id}>
-									{p.name}
-								</option>
-							))}
-						</select>
-
-						{/* Type Filter Select */}
-						<select
-							value={selectedType}
-							onChange={(e) => setSelectedType(e.target.value)}
-							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
-						>
-							<option value="all">All types</option>
-							<option value="application">Application</option>
-							<option value="compose">Compose</option>
-							<option value="database">Database</option>
-							<option value="postgres">PostgreSQL</option>
-							<option value="mysql">MySQL</option>
-							<option value="mariadb">MariaDB</option>
-							<option value="mongo">MongoDB</option>
-							<option value="redis">Redis</option>
-						</select>
-
-						{/* Status Filter Select */}
-						<select
-							value={selectedStatus}
-							onChange={(e) => setSelectedStatus(e.target.value)}
-							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
-						>
-							<option value="all">All statuses</option>
-							<option value="done">Running</option>
-							<option value="deploying">Deploying</option>
-							<option value="idle">Idle</option>
-							<option value="error">Error</option>
-						</select>
-
-						{/* Sort By Select */}
-						<select
-							value={sortBy}
-							onChange={(e) => setSortBy(e.target.value)}
-							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[140px]"
-						>
-							<option value="newest">Newest first</option>
-							<option value="oldest">Oldest first</option>
-							<option value="name-asc">Name (A-Z)</option>
-							<option value="name-desc">Name (Z-A)</option>
-						</select>
-					</div>
-				</div>
-
-				{/* Loading State */}
-				{isLoading && (
-					<div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
-						<Loader2 className="size-4 animate-spin text-primary" />
-						Loading services...
-					</div>
-				)}
-
-				{/* Empty Filter State */}
-				{!isLoading && filteredServices.length === 0 && (
-					<div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
-						<span>No services match the current filters.</span>
-					</div>
-				)}
-
-				{/* Table & Pagination Footer */}
-				{!isLoading && filteredServices.length > 0 && (
-					<>
-						<OverviewServicesTable
-							services={pagedServices}
-							onDeploy={handleDeploy}
-							onStop={handleStop}
+				<div className="flex flex-wrap items-center gap-2">
+					{/* Search Input */}
+					<div className="relative">
+						<Input
+							placeholder="Filter services..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="pr-9 w-[180px] h-9 text-xs"
 						/>
+						<Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+					</div>
 
-						{/* Pagination Controls */}
-						<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 text-xs text-muted-foreground border-t border-border/40">
-							<span>
-								{filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} total
+					{/* Project Filter Select */}
+					<select
+						value={selectedProjectId}
+						onChange={(e) => setSelectedProjectId(e.target.value)}
+						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[130px]"
+					>
+						<option value="all">All projects</option>
+						{projectsToUse.map((p: any) => (
+							<option key={p.id} value={p.id}>
+								{p.name}
+							</option>
+						))}
+					</select>
+
+					{/* Type Filter Select */}
+					<select
+						value={selectedType}
+						onChange={(e) => setSelectedType(e.target.value)}
+						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
+					>
+						<option value="all">All types</option>
+						<option value="application">Application</option>
+						<option value="compose">Compose</option>
+						<option value="database">Database</option>
+						<option value="postgres">PostgreSQL</option>
+						<option value="mysql">MySQL</option>
+						<option value="mariadb">MariaDB</option>
+						<option value="mongo">MongoDB</option>
+						<option value="redis">Redis</option>
+					</select>
+
+					{/* Status Filter Select */}
+					<select
+						value={selectedStatus}
+						onChange={(e) => setSelectedStatus(e.target.value)}
+						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
+					>
+						<option value="all">All statuses</option>
+						<option value="done">Running</option>
+						<option value="deploying">Deploying</option>
+						<option value="idle">Idle</option>
+						<option value="error">Error</option>
+					</select>
+
+					{/* Sort By Select */}
+					<select
+						value={sortBy}
+						onChange={(e) => setSortBy(e.target.value)}
+						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[140px]"
+					>
+						<option value="newest">Newest first</option>
+						<option value="oldest">Oldest first</option>
+						<option value="name-asc">Name (A-Z)</option>
+						<option value="name-desc">Name (Z-A)</option>
+					</select>
+				</div>
+			</div>
+
+			{/* Loading State */}
+			{isLoading && (
+				<div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+					<Loader2 className="size-4 animate-spin text-primary" />
+					Loading services...
+				</div>
+			)}
+
+			{/* Empty Filter State */}
+			{!isLoading && filteredServices.length === 0 && (
+				<div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+					<span>No services match the current filters.</span>
+				</div>
+			)}
+
+			{/* Table & Pagination Footer */}
+			{!isLoading && filteredServices.length > 0 && (
+				<>
+					<OverviewServicesTable
+						services={pagedServices}
+						onDeploy={handleDeploy}
+						onStart={handleStart}
+						onStop={handleStop}
+					/>
+
+					{/* Pagination Controls */}
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 text-xs text-muted-foreground border-t border-border/40">
+						<span>
+							{filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} total
+						</span>
+
+						<div className="flex items-center gap-4">
+							<div className="flex items-center gap-2">
+								<span className="whitespace-nowrap">Rows per page</span>
+								<select
+									value={String(pageSize)}
+									onChange={(e) => {
+										setPageSize(Number(e.target.value));
+										setPageIndex(0);
+									}}
+									className="h-8 text-xs bg-card border border-border rounded-md px-2 text-foreground font-semibold cursor-pointer"
+								>
+									<option value="25">25</option>
+									<option value="50">50</option>
+									<option value="100">100</option>
+									<option value="200">200</option>
+								</select>
+							</div>
+
+							<span className="whitespace-nowrap font-mono">
+								Page {currentPageIndex + 1} of {pageCount}
 							</span>
 
-							<div className="flex items-center gap-4">
-								<div className="flex items-center gap-2">
-									<span className="whitespace-nowrap">Rows per page</span>
-									<select
-										value={String(pageSize)}
-										onChange={(e) => {
-											setPageSize(Number(e.target.value));
-											setPageIndex(0);
-										}}
-										className="h-8 text-xs bg-card border border-border rounded-md px-2 text-foreground font-semibold cursor-pointer"
-									>
-										<option value="25">25</option>
-										<option value="50">50</option>
-										<option value="100">100</option>
-										<option value="200">200</option>
-									</select>
-								</div>
-
-								<span className="whitespace-nowrap font-mono">
-									Page {currentPageIndex + 1} of {pageCount}
-								</span>
-
-								<div className="flex gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setPageIndex(Math.max(0, currentPageIndex - 1))}
-										disabled={currentPageIndex === 0}
-										className="h-8 text-xs font-semibold px-3"
-									>
-										Previous
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setPageIndex(Math.min(pageCount - 1, currentPageIndex + 1))}
-										disabled={currentPageIndex + 1 >= pageCount}
-										className="h-8 text-xs font-semibold px-3"
-									>
-										Next
-									</Button>
-								</div>
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setPageIndex(Math.max(0, currentPageIndex - 1))}
+									disabled={currentPageIndex === 0}
+									className="h-8 text-xs font-semibold px-3"
+								>
+									Previous
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setPageIndex(Math.min(pageCount - 1, currentPageIndex + 1))}
+									disabled={currentPageIndex + 1 >= pageCount}
+									className="h-8 text-xs font-semibold px-3"
+								>
+									Next
+								</Button>
 							</div>
 						</div>
-					</>
-				)}
+					</div>
+				</>
+			)}
 		</div>
 	);
 }
