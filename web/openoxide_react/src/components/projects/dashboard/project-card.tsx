@@ -12,7 +12,6 @@ import {
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
 import { useAppStore } from '#/stores/app-store';
-import { useTagListAll } from 'virtual:openoxide-live';
 import { getTagsFromDescription } from '#/hooks/projects/use-projects-list';
 import { HandleProjectDialog } from './handle-project-dialog';
 
@@ -26,13 +25,9 @@ type ProjectCardProps = {
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 
-	// Read real-time overview services and tags
+	// Read real-time overview services and tags directly from Zustand RAM Store
 	const overviewServices = useAppStore((state) => state.overviewServices || []);
-	const { data: rawTags } = useTagListAll();
-
-	const availableTags = useMemo(() => {
-		return Array.isArray(rawTags) ? (rawTags as any[]) : [];
-	}, [rawTags]);
+	const availableTags = useAppStore((state) => state.tags || []);
 
 	const formatDate = (timestamp?: number) => {
 		if (!timestamp) return 'recently';
@@ -53,7 +48,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 	// Match tag with exact custom color from Settings Tags
 	const getTagColor = (tagName: string) => {
 		const clean = tagName.replace(/^#/, '').trim().toLowerCase();
-		const found = availableTags.find((at) => (at.name || '').trim().toLowerCase() === clean);
+		const found = availableTags.find((at: any) => (at.name || '').trim().toLowerCase() === clean);
 		if (found && found.color) return found.color;
 
 		// Fallback deterministic badge color palette

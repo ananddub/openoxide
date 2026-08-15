@@ -47,22 +47,11 @@ export function OverviewServicesTab() {
 	const { activeOrg } = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
-	// Zustand RAM store overviewServices
-	const storeServices = useAppStore((state) => state.overviewServices);
-
-	// Live Projects stream for Project Select filter
-	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
-
-	// LIVE REALTIME Socket.IO stream from virtual:openoxide-live
-	const { data: liveServicesQuery, loading: isLiveLoading } = useOverviewServices(BigInt(orgId));
-
-	// Prefer live Socket.IO stream data, fallback to Zustand RAM store
-	const rawServices = useMemo(() => {
-		if (liveServicesQuery && Array.isArray(liveServicesQuery) && liveServicesQuery.length > 0) {
-			return liveServicesQuery;
-		}
-		return storeServices || [];
-	}, [liveServicesQuery, storeServices]);
+	// Read directly from Realtime Zustand RAM Store (ZERO extra subscriptions!)
+	const storeServices = useAppStore((state) => state.overviewServices || []);
+	const projectsToUse = useAppStore((state) => state.projects || []);
+	const rawServices = storeServices;
+	const isLiveLoading = false;
 
 	const isLoading = isLiveLoading && rawServices.length === 0;
 

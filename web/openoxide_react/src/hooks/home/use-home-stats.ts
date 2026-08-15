@@ -17,29 +17,10 @@ export function useHomeStats() {
 	const storeProjects = useAppStore(state => state.projects);
 	const storeDeployments = useAppStore(state => state.deployments);
 
-	// Fetch Projects using active organization context
-	const orgId = activeOrg?.id || 1;
-	const {data: rawProjectsQuery, loading: isProjectsLoading} = useProjectListByOrganization(BigInt(orgId));
-
-	const rawProjects = (rawProjectsQuery && Array.isArray(rawProjectsQuery) && rawProjectsQuery.length > 0)
-		? rawProjectsQuery
-		: (storeProjects || []);
-
-	// Fetch real backend deployments history (/deployments)
-	const {data: rawDeploymentsQuery, loading: isDeploymentsLoading} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: null,
-		database_id: null,
-		server_id: null,
-		limit: 50n,
-		offset: null,
-	});
-
-	const rawDeployments = (rawDeploymentsQuery && Array.isArray(rawDeploymentsQuery) && rawDeploymentsQuery.length > 0)
-		? rawDeploymentsQuery
-		: (storeDeployments || []);
+	const rawProjects = storeProjects || [];
+	const rawDeployments = storeDeployments || [];
+	const isProjectsLoading = false;
+	const isDeploymentsLoading = false;
 
 	// Fetch active running deployments (/deployments/running)
 	const {data: rawRunning, loading: isRunningLoading} = useDeploymentRunning({

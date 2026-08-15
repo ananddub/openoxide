@@ -1,31 +1,33 @@
-import {useState, useEffect} from 'react';
-import {toast} from 'sonner';
+import React, {useState, useEffect} from 'react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {Textarea} from '#/components/ui/textarea';
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogFooter,
 } from '#/components/ui/dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {$api} from '#/api/query';
-import {useRemoteServerList} from 'virtual:openoxide-live';
+import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
 interface CreateAppDialogProps {
-	isOpen: boolean;
-	onClose: () => void;
+	projectId: number;
 	environmentId: number;
-	onCreated: (app: any) => void;
+	isOpen: boolean;
+	onOpenChange: (open: boolean) => void;
+	onCreated?: () => void;
 }
 
 export function CreateAppDialog({
-	isOpen,
-	onClose,
+	projectId,
 	environmentId,
+	isOpen,
+	onOpenChange,
 	onCreated,
 }: CreateAppDialogProps) {
 	const [name, setName] = useState('');
@@ -34,8 +36,7 @@ export function CreateAppDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/applications');
-	const {data: rawServers} = useRemoteServerList();
-	const serversList = rawServers ?? [];
+	const serversList = useAppStore((state) => state.servers || []);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -47,103 +48,90 @@ export function CreateAppDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!name.trim()) {
-			toast.error('Please specify application name');
-			return;
-		}
+		if (!name.trim()) return;
 
 		setIsSubmitting(true);
 		try {
-			const res = await createMutation.mutateAsync({
+			await createMutation.mutateAsync({
 				body: {
 					name: name.trim(),
 					description: description.trim() || undefined,
 					environment_id: environmentId,
-					build_type: 'NIXPACKS',
-					source_type: 'GITHUB',
-					server_id: serverId && serverId !== 'local' ? Number(serverId) : undefined,
+					server_id: serverId === 'local' ? undefined : Number(serverId),
 				},
 			});
-			toast.success('Application created successfully');
-			onCreated(res);
-			onClose();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
+			onCreated?.();
+			onOpenChange(false);
+		} catch (err) {
+			alert(formatApiError(err));
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-xl bg-card border border-border shadow-2xl p-6 flex flex-col gap-5 rounded-2xl">
-				<DialogHeader className="space-y-1">
-					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
-						Create Application
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
-						Add a new web application service to this environment.
-					</DialogDescription>
-				</DialogHeader>
+		<Dialog open={isOpen} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[440px]">
+				<form onSubmit={handleSubmit}>
+					<DialogHeader>
+						<DialogTitle>Create Application</DialogTitle>
+					</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
-					<div className="flex flex-col gap-4">
-						{/* App Name */}
+					<div className="flex flex-col gap-4 py-4">
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								App Name <span className="text-destructive">*</span>
-							</label>
+							<label className="text-xs font-semibold text-foreground">Application Name</label>
 							<Input
-								placeholder="e.g. node-api"
+								placeholder="my-awesome-app"
 								value={name}
-								onChange={e => setName(e.target.value)}
-								required
-								className="h-9 rounded-lg border border-border/80 bg-muted/20 px-3 text-xs shadow-inner focus:outline-none"
+								onChange={(e) => setName(e.target.value)}
+								autoFocus
 							/>
 						</div>
 
-						{/* Target Server Selection */}
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-								<Server className="size-3 text-muted-foreground" /> Target Server
-							</label>
-							<Select value={serverId} onValueChange={val => setServerId(val ?? 'local')}>
-								<SelectTrigger className="!h-9 text-xs w-full"><SelectValue /></SelectTrigger>
-								<SelectContent className="bg-card border-border">
-									<SelectItem value="local" className="text-xs">Local Docker Engine</SelectItem>
+							<label className="text-xs font-semibold text-foreground">Target Server</label>
+							<Select value={serverId} onValueChange={setServerId}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select server" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="local">Localhost (Default)</SelectItem>
 									{serversList.map((srv: any) => (
-										<SelectItem key={srv.id} value={String(srv.id)} className="text-xs">
-											{srv.name || `Server #${srv.id}`}
+										<SelectItem key={srv.id} value={String(srv.id)}>
+											<div className="flex items-center gap-2">
+												<Server className="size-3.5 text-muted-foreground" />
+												<span>{srv.name} ({srv.ip})</span>
+											</div>
 										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
 						</div>
 
-						{/* Description */}
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Description
-							</label>
-							<textarea
-								rows={3}
-								placeholder="Optional details about this application..."
+							<label className="text-xs font-semibold text-foreground">Description (Optional)</label>
+							<Textarea
+								placeholder="Brief description of this application..."
 								value={description}
-								onChange={e => setDescription(e.target.value)}
-								className="flex w-full rounded-lg border border-input bg-transparent dark:bg-input/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 outline-none resize-none leading-relaxed"
+								onChange={(e) => setDescription(e.target.value)}
+								rows={2}
 							/>
 						</div>
 					</div>
 
-					{/* Modal Actions */}
-					<div className="flex justify-end pt-3 border-t border-border/30">
+					<DialogFooter>
 						<Button
-							type="submit"
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
 							disabled={isSubmitting}
-							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-5 font-semibold shadow-lg shadow-primary/10 rounded-lg">
+						>
+							Cancel
+						</Button>
+						<Button type="submit" disabled={!name.trim() || isSubmitting}>
 							{isSubmitting ? 'Creating...' : 'Create Application'}
 						</Button>
-					</div>
+					</DialogFooter>
 				</form>
 			</DialogContent>
 		</Dialog>
