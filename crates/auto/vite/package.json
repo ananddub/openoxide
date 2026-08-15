@@ -11,6 +11,10 @@
     "./live-key": {
       "types": "./src/live-key.d.ts",
       "import": "./src/live-key.js"
+    },
+    "./live-request": {
+      "types": "./src/live-request.d.ts",
+      "import": "./src/live-request.js"
     }
   },
   "peerDependencies": {

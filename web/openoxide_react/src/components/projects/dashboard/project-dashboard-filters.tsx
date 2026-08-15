@@ -1,5 +1,5 @@
-import {Search} from 'lucide-react';
-import {Input} from '#/components/ui/input';
+import { Search, ArrowUpDown } from 'lucide-react';
+import { Input } from '#/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -7,7 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {cn} from '#/api/utils';
+import { cn } from '#/api/utils';
 
 interface ProjectDashboardFiltersProps {
 	projects: any[] | undefined;
@@ -34,34 +34,49 @@ export function ProjectDashboardFilters({
 }: ProjectDashboardFiltersProps) {
 	if (!projects || projects.length === 0) return null;
 
+	const getSortLabel = (val: string) => {
+		switch (val) {
+			case 'alphabetical-asc':
+			case 'name-asc':
+				return 'Sort: Name (A-Z)';
+			case 'alphabetical-desc':
+			case 'name-desc':
+				return 'Sort: Name (Z-A)';
+			case 'oldest':
+			case 'createdAt-asc':
+				return 'Sort: Oldest First';
+			case 'newest':
+			case 'createdAt-desc':
+			default:
+				return 'Sort: Newest First';
+		}
+	};
+
 	return (
-		<div className="flex flex-col gap-4 animate-in fade-in duration-255">
+		<div className="flex flex-col gap-4 animate-in fade-in duration-200">
 			<div className="flex flex-col sm:flex-row items-center gap-3">
 				{/* Search Input */}
 				<div className="relative w-full sm:grow">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60" />
 					<Input
-						placeholder="Search projects by name or description..."
+						placeholder="Filter projects..."
 						value={searchQuery}
-						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-9 bg-card border-border h-10 w-full text-xs shadow-2xs rounded-lg"
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="pl-9 pr-4 bg-card border-border/80 h-10 w-full text-xs shadow-2xs rounded-lg"
 					/>
 				</div>
 
-				{/* Sort Select */}
+				{/* Sort Select (Dokploy Style) */}
 				<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-					<span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">
-						Sort by:
-					</span>
-					<Select value={sortBy} onValueChange={val => setSortBy(val ?? 'newest')}>
-						<SelectTrigger className="w-full sm:w-[160px] bg-card border-border !h-10 text-xs shadow-2xs font-medium rounded-lg">
-							<SelectValue placeholder="Sort" />
+					<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
+						<SelectTrigger className="w-full sm:w-[170px] bg-card border-border/80 h-10 text-xs font-semibold rounded-lg shadow-2xs">
+							<SelectValue>{getSortLabel(sortBy)}</SelectValue>
 						</SelectTrigger>
 						<SelectContent className="bg-card border-border">
-							<SelectItem value="newest">Newest First</SelectItem>
-							<SelectItem value="oldest">Oldest First</SelectItem>
-							<SelectItem value="alphabetical-asc">Name (A-Z)</SelectItem>
-							<SelectItem value="alphabetical-desc">Name (Z-A)</SelectItem>
+							<SelectItem value="newest">Sort: Newest First</SelectItem>
+							<SelectItem value="oldest">Sort: Oldest First</SelectItem>
+							<SelectItem value="alphabetical-asc">Sort: Name (A-Z)</SelectItem>
+							<SelectItem value="alphabetical-desc">Sort: Name (Z-A)</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -73,18 +88,20 @@ export function ProjectDashboardFilters({
 					<span className="text-xs font-semibold text-muted-foreground mr-1">
 						Tags:
 					</span>
-					{allTags.map(tag => {
+					{allTags.map((tag) => {
 						const isSelected = selectedTags.includes(tag);
 						return (
 							<button
 								key={tag}
+								type="button"
 								onClick={() => handleTagClick(tag)}
 								className={cn(
-									'text-xs px-2.5 py-1 rounded-full font-medium transition-all border',
+									'text-xs px-2.5 py-1 rounded-full font-medium transition-all border cursor-pointer',
 									isSelected
-										? 'bg-primary text-primary-foreground border-primary shadow-sm'
-										: 'bg-card/45 text-muted-foreground border-border/80 hover:text-foreground hover:bg-card/75',
-								)}>
+										? 'bg-primary text-primary-foreground border-primary shadow-xs'
+										: 'bg-card/45 text-muted-foreground border-border/80 hover:text-foreground hover:bg-card/75'
+								)}
+							>
 								{tag}
 							</button>
 						);
@@ -92,8 +109,10 @@ export function ProjectDashboardFilters({
 
 					{selectedTags.length > 0 && (
 						<button
+							type="button"
 							onClick={() => setSelectedTags([])}
-							className="text-xs text-primary hover:text-primary/80 font-bold ml-1 transition-colors">
+							className="text-xs text-primary hover:text-primary/80 font-bold ml-1 transition-colors cursor-pointer"
+						>
 							Clear Filters
 						</button>
 					)}
