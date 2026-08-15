@@ -2,6 +2,13 @@ import { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
+import {
+	Select,
+	SelectTrigger,
+	SelectValue,
+	SelectContent,
+	SelectItem,
+} from '#/components/ui/select';
 import { useOrganizationStore } from '#/stores/organization-store';
 import { useAppStore } from '#/stores/app-store';
 import { $api } from '#/api/query';
@@ -191,60 +198,64 @@ export function OverviewServicesTab() {
 					</div>
 
 					{/* Project Filter Select */}
-					<select
-						value={selectedProjectId}
-						onChange={(e) => setSelectedProjectId(e.target.value)}
-						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[130px]"
-					>
-						<option value="all">All projects</option>
-						{projectsToUse.map((p: any) => (
-							<option key={p.id} value={p.id}>
-								{p.name}
-							</option>
-						))}
-					</select>
+					<Select value={selectedProjectId} onValueChange={(val) => val && setSelectedProjectId(val)}>
+						<SelectTrigger size="sm" className="w-[140px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All projects" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All projects</SelectItem>
+							{projectsToUse.map((p: any) => (
+								<SelectItem key={p.id} value={String(p.id)}>
+									{p.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 
 					{/* Type Filter Select */}
-					<select
-						value={selectedType}
-						onChange={(e) => setSelectedType(e.target.value)}
-						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
-					>
-						<option value="all">All types</option>
-						<option value="application">Application</option>
-						<option value="compose">Compose</option>
-						<option value="database">Database</option>
-						<option value="postgres">PostgreSQL</option>
-						<option value="mysql">MySQL</option>
-						<option value="mariadb">MariaDB</option>
-						<option value="mongo">MongoDB</option>
-						<option value="redis">Redis</option>
-					</select>
+					<Select value={selectedType} onValueChange={(val) => val && setSelectedType(val)}>
+						<SelectTrigger size="sm" className="w-[130px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All types" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All types</SelectItem>
+							<SelectItem value="application">Application</SelectItem>
+							<SelectItem value="compose">Compose</SelectItem>
+							<SelectItem value="database">Database</SelectItem>
+							<SelectItem value="postgres">PostgreSQL</SelectItem>
+							<SelectItem value="mysql">MySQL</SelectItem>
+							<SelectItem value="mariadb">MariaDB</SelectItem>
+							<SelectItem value="mongo">MongoDB</SelectItem>
+							<SelectItem value="redis">Redis</SelectItem>
+						</SelectContent>
+					</Select>
 
 					{/* Status Filter Select */}
-					<select
-						value={selectedStatus}
-						onChange={(e) => setSelectedStatus(e.target.value)}
-						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
-					>
-						<option value="all">All statuses</option>
-						<option value="done">Running</option>
-						<option value="deploying">Deploying</option>
-						<option value="idle">Idle</option>
-						<option value="error">Error</option>
-					</select>
+					<Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
+						<SelectTrigger size="sm" className="w-[130px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All statuses" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All statuses</SelectItem>
+							<SelectItem value="done">Running</SelectItem>
+							<SelectItem value="deploying">Deploying</SelectItem>
+							<SelectItem value="idle">Idle</SelectItem>
+							<SelectItem value="error">Error</SelectItem>
+						</SelectContent>
+					</Select>
 
 					{/* Sort By Select */}
-					<select
-						value={sortBy}
-						onChange={(e) => setSortBy(e.target.value)}
-						className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[140px]"
-					>
-						<option value="newest">Newest first</option>
-						<option value="oldest">Oldest first</option>
-						<option value="name-asc">Name (A-Z)</option>
-						<option value="name-desc">Name (Z-A)</option>
-					</select>
+					<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
+						<SelectTrigger size="sm" className="w-[145px] text-xs font-semibold h-9">
+							<SelectValue placeholder="Newest first" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="newest">Newest first</SelectItem>
+							<SelectItem value="oldest">Oldest first</SelectItem>
+							<SelectItem value="name-asc">Name (A-Z)</SelectItem>
+							<SelectItem value="name-desc">Name (Z-A)</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 
@@ -282,19 +293,25 @@ export function OverviewServicesTab() {
 						<div className="flex items-center gap-4">
 							<div className="flex items-center gap-2">
 								<span className="whitespace-nowrap">Rows per page</span>
-								<select
+								<Select
 									value={String(pageSize)}
-									onChange={(e) => {
-										setPageSize(Number(e.target.value));
-										setPageIndex(0);
+									onValueChange={(val) => {
+										if (val) {
+											setPageSize(Number(val));
+											setPageIndex(0);
+										}
 									}}
-									className="h-8 text-xs bg-card border border-border rounded-md px-2 text-foreground font-semibold cursor-pointer"
 								>
-									<option value="25">25</option>
-									<option value="50">50</option>
-									<option value="100">100</option>
-									<option value="200">200</option>
-								</select>
+									<SelectTrigger size="sm" className="w-[75px] h-8 text-xs font-semibold">
+										<SelectValue placeholder="50" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="25">25</SelectItem>
+										<SelectItem value="50">50</SelectItem>
+										<SelectItem value="100">100</SelectItem>
+										<SelectItem value="200">200</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 
 							<span className="whitespace-nowrap font-mono">
