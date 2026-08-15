@@ -42,6 +42,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useAuthWhoAmI} from 'virtual:openoxide-live';
 import {useAuthStore} from '#/stores/auth-store';
+import {useAppStore} from '#/stores/app-store';
 
 export interface ApiKeyItem {
 	id: string;
@@ -88,6 +89,12 @@ export function ProfilePage() {
 					firstName: data.first_name,
 					lastName: data.last_name,
 				});
+				useAppStore.getState().setProfile({
+					id: data.user_id,
+					email: data.email || '',
+					name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+					avatar: data.avatar,
+				} as any);
 			}
 			toast.success('Profile Updated Successfully');
 		},
