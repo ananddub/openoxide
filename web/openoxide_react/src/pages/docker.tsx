@@ -1,11 +1,11 @@
-import {useState, useMemo} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
-import {toast} from 'sonner';
-import {$api} from '#/api/query';
-import {useRemoteServerList, useDeploymentRunning} from 'virtual:openoxide-live';
-import {DockerHeader} from '#/components/docker/docker-header';
-import {DockerContainersTable} from '#/components/docker/docker-containers-table';
-import {DockerInspectModal, type GlobalContainerItem} from '#/components/docker/docker-inspect-modal';
+import { useState, useMemo } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { $api } from '#/api/query';
+import { useRemoteServerList, useDeploymentRunning } from 'virtual:openoxide-live';
+import { DockerHeader } from '#/components/docker/docker-header';
+import { DockerContainersTable } from '#/components/docker/docker-containers-table';
+import { DockerInspectModal, type GlobalContainerItem } from '#/components/docker/docker-inspect-modal';
 
 export const Route = createFileRoute('/_app/docker')({
 	component: DockerPage,
@@ -22,10 +22,10 @@ function DockerPage() {
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
 	// Query remote servers
-	const {data: rawServers} = useRemoteServerList();
+	const { data: rawServers } = useRemoteServerList();
 
 	// Real API Query for system-wide Docker containers for selected server host
-	const {data: rawDockerContainers = [], isLoading: isDockerLoading, refetch, isRefetching} = $api.useQuery(
+	const { data: rawDockerContainers = [], isLoading: isDockerLoading, refetch, isRefetching } = $api.useQuery(
 		'get',
 		'/deployments/docker/containers',
 		{
@@ -38,10 +38,15 @@ function DockerPage() {
 	);
 
 	// Active running deployments via live hook
-	const {data: rawRunning, loading: isRunningLoading} = useDeploymentRunning({
-		status: null, state: null,
-		application_id: null, compose_id: null, database_id: null, server_id: null,
-		limit: 50n, offset: null,
+	const { data: rawRunning, loading: isRunningLoading } = useDeploymentRunning({
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 50n,
+		offset: null,
 	});
 
 	// Transform API response into Dokploy-grade container items
@@ -66,9 +71,9 @@ function DockerPage() {
 					ports: String(item.ports || item.Ports || '—'),
 					networks: item.networks ? String(item.networks).split(',') : ['bridge'],
 					mounts: item.mounts
-						? [{source: String(item.mounts), destination: '/data', mode: 'rw'}]
+						? [{ source: String(item.mounts), destination: '/data', mode: 'rw' }]
 						: [],
-					env: {CONTAINER_ID: String(item.id || `cnt-${idx + 1}`)},
+					env: { CONTAINER_ID: String(item.id || `cnt-${idx + 1}`) },
 				};
 			});
 		}
@@ -84,7 +89,7 @@ function DockerPage() {
 				created: item.created_at ? new Date(Number(item.created_at)).toLocaleString() : 'Recently',
 				ports: String(item.ports || '80/tcp -> 0.0.0.0:80'),
 				networks: (item.networks as string[]) || ['openoxide_net', 'traefik_proxy'],
-				mounts: (item.mounts as {source: string; destination: string; mode: string}[]) || [
+				mounts: (item.mounts as { source: string; destination: string; mode: string }[]) || [
 					{
 						source: '/var/lib/docker/volumes/app_data/_data',
 						destination: '/app/data',
@@ -111,7 +116,7 @@ function DockerPage() {
 	};
 
 	const handleOpenModal = (container: GlobalContainerItem, type: 'logs' | 'config' | 'mount' | 'network') => {
-		setActiveModal({type, container});
+		setActiveModal({ type, container });
 		if (type === 'logs') {
 			setLogsStream([
 				`[${new Date().toISOString()}] [INFO] Connected to Docker Engine container stream '${container.name}' (${container.id})`,
@@ -123,10 +128,10 @@ function DockerPage() {
 		}
 	};
 
-	const runningCount = globalContainers.filter(c => c.status === 'running').length;
+	const runningCount = globalContainers.filter((c) => c.status === 'running').length;
 
 	return (
-		<div className="p-4 flex flex-col gap-4 max-w-7xl mx-auto w-full animate-in fade-in duration-200">
+		<div className="p-4 flex flex-col gap-4 max-w-7xl mx-auto w-full h-[calc(100vh-4rem)] overflow-hidden animate-in fade-in duration-200">
 			{/* Header Component (< 200 lines) */}
 			<DockerHeader
 				totalContainers={globalContainers.length}
@@ -147,11 +152,7 @@ function DockerPage() {
 			/>
 
 			{/* Inspect Modal Component (< 200 lines) */}
-			<DockerInspectModal
-				activeModal={activeModal}
-				onClose={() => setActiveModal(null)}
-				logsStream={logsStream}
-			/>
+			<DockerInspectModal activeModal={activeModal} onClose={() => setActiveModal(null)} logsStream={logsStream} />
 		</div>
 	);
 }
