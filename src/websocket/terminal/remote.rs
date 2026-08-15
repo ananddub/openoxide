@@ -33,7 +33,7 @@ pub async fn spawn_remote_terminal(
 
     let actual_host = executor.host().to_string();
 
-    // Default to bash access for remote server interactive sessions
+    // Default to bash access with automatic sh fallback if bash is not installed on remote server
     let shell_req = input.shell.unwrap_or_else(|| "bash".into());
     let builder = crate::utils::ssh::SshBuilder::new(
         actual_host.clone(),
@@ -58,9 +58,13 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Pass target shell directly to OpenSSH so sshd spawns it directly on the remote PTY
-    let target_shell = if shell_req == "sh" { "sh" } else { "bash" };
-    args.push(target_shell.to_string());
+    // If bash is requested, run "bash || sh" so it falls back to sh if bash is missing on remote host
+    let remote_cmd = if shell_req == "sh" {
+        "sh".to_string()
+    } else {
+        "bash || sh".to_string()
+    };
+    args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
