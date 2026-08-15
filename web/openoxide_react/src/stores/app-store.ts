@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface VaultProviderItem {
 	id: number;
@@ -257,154 +256,133 @@ export interface AppStoreState {
 	setWsConnected: (connected: boolean) => void;
 }
 
-export const useAppStore = create<AppStoreState>()(
-	persist(
-		(set) => ({
-			vaultProviders: [],
-			dnsProviders: [],
-			projects: [],
-			applications: [],
-			databases: [],
-			composes: [],
-			servers: [],
-			overviewServices: [],
-			deployments: [],
-			swarmNodes: [],
-			domains: [],
-			backups: [],
-			tags: [],
-			schedules: [],
-			sshKeys: [],
-			destinations: [],
-			profile: null,
-			members: [],
-			invites: [],
+export const useAppStore = create<AppStoreState>((set) => ({
+	vaultProviders: [],
+	dnsProviders: [],
+	projects: [],
+	applications: [],
+	databases: [],
+	composes: [],
+	servers: [],
+	overviewServices: [],
+	deployments: [],
+	swarmNodes: [],
+	domains: [],
+	backups: [],
+	tags: [],
+	schedules: [],
+	sshKeys: [],
+	destinations: [],
+	profile: null,
+	members: [],
+	invites: [],
 
-			isHydrated: false,
-			isWsConnected: false,
+	isHydrated: false,
+	isWsConnected: false,
 
-			setVaultProviders: (providers) => set({ vaultProviders: providers }),
-			addVaultProvider: (provider) =>
-				set((state) => ({ vaultProviders: [provider, ...state.vaultProviders.filter((p) => String(p.id) !== String(provider.id))] })),
-			updateVaultProvider: (id, updated) =>
-				set((state) => ({ vaultProviders: state.vaultProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
-			deleteVaultProvider: (id) =>
-				set((state) => ({ vaultProviders: state.vaultProviders.filter((p) => String(p.id) !== String(id)) })),
+	setVaultProviders: (providers) => set({ vaultProviders: providers }),
+	addVaultProvider: (provider) =>
+		set((state) => ({ vaultProviders: [provider, ...state.vaultProviders.filter((p) => String(p.id) !== String(provider.id))] })),
+	updateVaultProvider: (id, updated) =>
+		set((state) => ({ vaultProviders: state.vaultProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
+	deleteVaultProvider: (id) =>
+		set((state) => ({ vaultProviders: state.vaultProviders.filter((p) => String(p.id) !== String(id)) })),
 
-			setDnsProviders: (providers) => set({ dnsProviders: providers }),
-			addDnsProvider: (provider) =>
-				set((state) => ({ dnsProviders: [provider, ...state.dnsProviders.filter((p) => String(p.id) !== String(provider.id))] })),
-			updateDnsProvider: (id, updated) =>
-				set((state) => ({ dnsProviders: state.dnsProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
-			deleteDnsProvider: (id) =>
-				set((state) => ({ dnsProviders: state.dnsProviders.filter((p) => String(p.id) !== String(id)) })),
+	setDnsProviders: (providers) => set({ dnsProviders: providers }),
+	addDnsProvider: (provider) =>
+		set((state) => ({ dnsProviders: [provider, ...state.dnsProviders.filter((p) => String(p.id) !== String(provider.id))] })),
+	updateDnsProvider: (id, updated) =>
+		set((state) => ({ dnsProviders: state.dnsProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
+	deleteDnsProvider: (id) =>
+		set((state) => ({ dnsProviders: state.dnsProviders.filter((p) => String(p.id) !== String(id)) })),
 
-			setProjects: (projects) => set({ projects }),
-			addProject: (project) =>
-				set((state) => ({ projects: [project, ...state.projects.filter((p) => String(p.id) !== String(project.id))] })),
-			updateProject: (id, updated) =>
-				set((state) => ({ projects: state.projects.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
-			deleteProject: (id) =>
-				set((state) => ({ projects: state.projects.filter((p) => String(p.id) !== String(id)) })),
+	setProjects: (projects) => set({ projects }),
+	addProject: (project) =>
+		set((state) => ({ projects: [project, ...state.projects.filter((p) => String(p.id) !== String(project.id))] })),
+	updateProject: (id, updated) =>
+		set((state) => ({ projects: state.projects.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
+	deleteProject: (id) =>
+		set((state) => ({ projects: state.projects.filter((p) => String(p.id) !== String(id)) })),
 
-			setApplications: (applications) => set({ applications }),
-			addApplication: (app) =>
-				set((state) => ({ applications: [app, ...state.applications.filter((a) => String(a.id) !== String(app.id))] })),
-			updateApplication: (id, updated) =>
-				set((state) => ({ applications: state.applications.map((a) => (String(a.id) === String(id) ? { ...a, ...updated } : a)) })),
-			deleteApplication: (id) =>
-				set((state) => ({ applications: state.applications.filter((a) => String(a.id) !== String(id)) })),
+	setApplications: (applications) => set({ applications }),
+	addApplication: (app) =>
+		set((state) => ({ applications: [app, ...state.applications.filter((a) => String(a.id) !== String(app.id))] })),
+	updateApplication: (id, updated) =>
+		set((state) => ({ applications: state.applications.map((a) => (String(a.id) === String(id) ? { ...a, ...updated } : a)) })),
+	deleteApplication: (id) =>
+		set((state) => ({ applications: state.applications.filter((a) => String(a.id) !== String(id)) })),
 
-			setDatabases: (databases) => set({ databases }),
-			addDatabase: (db) =>
-				set((state) => ({ databases: [db, ...state.databases.filter((d) => String(d.id) !== String(db.id))] })),
-			updateDatabase: (id, updated) =>
-				set((state) => ({ databases: state.databases.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
-			deleteDatabase: (id) =>
-				set((state) => ({ databases: state.databases.filter((d) => String(d.id) !== String(id)) })),
+	setDatabases: (databases) => set({ databases }),
+	addDatabase: (db) =>
+		set((state) => ({ databases: [db, ...state.databases.filter((d) => String(d.id) !== String(db.id))] })),
+	updateDatabase: (id, updated) =>
+		set((state) => ({ databases: state.databases.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
+	deleteDatabase: (id) =>
+		set((state) => ({ databases: state.databases.filter((d) => String(d.id) !== String(id)) })),
 
-			setComposes: (composes) => set({ composes }),
-			addCompose: (compose) =>
-				set((state) => ({ composes: [compose, ...state.composes.filter((c) => String(c.id) !== String(compose.id))] })),
-			updateCompose: (id, updated) =>
-				set((state) => ({ composes: state.composes.map((c) => (String(c.id) === String(id) ? { ...c, ...updated } : c)) })),
-			deleteCompose: (id) =>
-				set((state) => ({ composes: state.composes.filter((c) => String(c.id) !== String(id)) })),
+	setComposes: (composes) => set({ composes }),
+	addCompose: (compose) =>
+		set((state) => ({ composes: [compose, ...state.composes.filter((c) => String(c.id) !== String(compose.id))] })),
+	updateCompose: (id, updated) =>
+		set((state) => ({ composes: state.composes.map((c) => (String(c.id) === String(id) ? { ...c, ...updated } : c)) })),
+	deleteCompose: (id) =>
+		set((state) => ({ composes: state.composes.filter((c) => String(c.id) !== String(id)) })),
 
-			setServers: (servers) => set({ servers }),
-			addServer: (server) =>
-				set((state) => ({ servers: [server, ...state.servers.filter((s) => String(s.id) !== String(server.id))] })),
-			updateServer: (id, updated) =>
-				set((state) => ({ servers: state.servers.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
-			deleteServer: (id) =>
-				set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
+	setServers: (servers) => set({ servers }),
+	addServer: (server) =>
+		set((state) => ({ servers: [server, ...state.servers.filter((s) => String(s.id) !== String(server.id))] })),
+	updateServer: (id, updated) =>
+		set((state) => ({ servers: state.servers.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
+	deleteServer: (id) =>
+		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
 
-			setOverviewServices: (services) => set({ overviewServices: services }),
-			setDeployments: (deployments) => set({ deployments }),
-			setSwarmNodes: (nodes) => set({ swarmNodes: nodes }),
-			setDomains: (domains) => set({ domains }),
-			setBackups: (backups) => set({ backups }),
+	setOverviewServices: (services) => set({ overviewServices: services }),
+	setDeployments: (deployments) => set({ deployments }),
+	setSwarmNodes: (nodes) => set({ swarmNodes: nodes }),
+	setDomains: (domains) => set({ domains }),
+	setBackups: (backups) => set({ backups }),
 
-			setTags: (tags) => set({ tags }),
-			addTag: (tag) =>
-				set((state) => ({ tags: [tag, ...state.tags.filter((t) => String(t.id) !== String(tag.id))] })),
-			deleteTag: (id) =>
-				set((state) => ({ tags: state.tags.filter((t) => String(t.id) !== String(id)) })),
+	setTags: (tags) => set({ tags }),
+	addTag: (tag) =>
+		set((state) => ({ tags: [tag, ...state.tags.filter((t) => String(t.id) !== String(tag.id))] })),
+	deleteTag: (id) =>
+		set((state) => ({ tags: state.tags.filter((t) => String(t.id) !== String(id)) })),
 
-			setSchedules: (schedules) => set({ schedules }),
-			addSchedule: (schedule) =>
-				set((state) => ({ schedules: [schedule, ...state.schedules.filter((s) => String(s.id) !== String(schedule.id))] })),
-			updateSchedule: (id, updated) =>
-				set((state) => ({ schedules: state.schedules.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
-			deleteSchedule: (id) =>
-				set((state) => ({ schedules: state.schedules.filter((s) => String(s.id) !== String(id)) })),
+	setSchedules: (schedules) => set({ schedules }),
+	addSchedule: (schedule) =>
+		set((state) => ({ schedules: [schedule, ...state.schedules.filter((s) => String(s.id) !== String(schedule.id))] })),
+	updateSchedule: (id, updated) =>
+		set((state) => ({ schedules: state.schedules.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
+	deleteSchedule: (id) =>
+		set((state) => ({ schedules: state.schedules.filter((s) => String(s.id) !== String(id)) })),
 
-			setSshKeys: (sshKeys) => set({ sshKeys }),
-			setDestinations: (destinations) => set({ destinations }),
-			setProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } })),
+	setSshKeys: (sshKeys) => set({ sshKeys }),
+	setDestinations: (destinations) => set({ destinations }),
+	setProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } })),
 
-			setMembers: (members) => set({ members }),
-			addMember: (member) =>
-				set((state) => {
-					const mId = String(member.user_id || member.id);
-					return { members: [member, ...state.members.filter((m: any) => String(m.user_id || m.id) !== mId)] };
-				}),
-			updateMember: (id, updated) =>
-				set((state) => ({
-					members: state.members.map((m: any) =>
-						(String(m.user_id || m.id) === String(id) ? { ...m, ...updated } : m)
-					),
-				})),
-			deleteMember: (id) =>
-				set((state) => ({
-					members: state.members.filter((m: any) => String(m.user_id || m.id) !== String(id)),
-				})),
-
-			setInvites: (invites) => set({ invites }),
-			addInvite: (invite) =>
-				set((state) => ({ invites: [invite, ...state.invites.filter((i: any) => String(i.id) !== String(invite.id))] })),
-			deleteInvite: (id) =>
-				set((state) => ({ invites: state.invites.filter((i: any) => String(i.id) !== String(id)) })),
-
-			setHydrated: (hydrated) => set({ isHydrated: hydrated }),
-			setWsConnected: (connected) => set({ isWsConnected: connected }),
+	setMembers: (members) => set({ members }),
+	addMember: (member) =>
+		set((state) => {
+			const mId = String(member.user_id || member.id);
+			return { members: [member, ...state.members.filter((m: any) => String(m.user_id || m.id) !== mId)] };
 		}),
-		{
-			name: 'openoxide-app-store-v1',
-			storage: createJSONStorage(() => localStorage),
-			partialize: (state) => ({
-				projects: state.projects,
-				overviewServices: state.overviewServices,
-				servers: state.servers,
-				members: state.members,
-				invites: state.invites,
-				vaultProviders: state.vaultProviders,
-				dnsProviders: state.dnsProviders,
-				profile: state.profile,
-			}),
-			onRehydrateStorage: () => (state) => {
-				if (state) state.setHydrated(true);
-			},
-		}
-	)
-);
+	updateMember: (id, updated) =>
+		set((state) => ({
+			members: state.members.map((m: any) =>
+				(String(m.user_id || m.id) === String(id) ? { ...m, ...updated } : m)
+			),
+		})),
+	deleteMember: (id) =>
+		set((state) => ({
+			members: state.members.filter((m: any) => String(m.user_id || m.id) !== String(id)),
+		})),
+
+	setInvites: (invites) => set({ invites }),
+	addInvite: (invite) =>
+		set((state) => ({ invites: [invite, ...state.invites.filter((i: any) => String(i.id) !== String(invite.id))] })),
+	deleteInvite: (id) =>
+		set((state) => ({ invites: state.invites.filter((i: any) => String(i.id) !== String(id)) })),
+
+	setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+	setWsConnected: (connected) => set({ isWsConnected: connected }),
+}));
