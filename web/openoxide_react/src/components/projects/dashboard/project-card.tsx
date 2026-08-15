@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { components } from '#/types/api.d.ts';
-import { FolderOpen, Calendar, MoreVertical, Trash2, Eye, ArrowUpRight, Terminal } from 'lucide-react';
+import { Book, MoreHorizontal, Trash2, Eye } from 'lucide-react';
 import { Button } from '#/components/ui/button';
-import { Card, CardTitle } from '#/components/ui/card';
+import { Card, CardHeader, CardTitle, CardFooter } from '#/components/ui/card';
+import { Badge } from '#/components/ui/badge';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -21,33 +22,13 @@ type ProjectCardProps = {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
 	const navigate = useNavigate();
-	const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-
-	// Close context menu on outside click or scroll
-	useEffect(() => {
-		const handleClose = () => setContextMenu(null);
-		if (contextMenu) {
-			window.addEventListener('click', handleClose);
-			window.addEventListener('scroll', handleClose, true);
-		}
-		return () => {
-			window.removeEventListener('click', handleClose);
-			window.removeEventListener('scroll', handleClose, true);
-		};
-	}, [contextMenu]);
 
 	const handleNavigate = () => {
 		navigate({ to: '/projects/$id', params: { id: String(project.id) } });
 	};
 
-	const handleContextMenu = (e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setContextMenu({ x: e.clientX, y: e.clientY });
-	};
-
-	const formatDate = (timestamp: number) => {
-		if (!timestamp) return 'N/A';
+	const formatDate = (timestamp?: number) => {
+		if (!timestamp) return 'recently';
 		const date = new Date(timestamp * 1000);
 		return date.toLocaleDateString(undefined, {
 			month: 'short',
@@ -56,115 +37,102 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 		});
 	};
 
+	// Calculate total services count safely
+	const envs = (project as any).environments || (project as any).envs || [];
+	const totalServices = Array.isArray(envs)
+		? envs.reduce((acc: number, env: any) => {
+				const apps = env.applications?.length || env.apps?.length || 0;
+				const comp = env.compose?.length || 0;
+				const dbs = env.databases?.length || 0;
+				return acc + apps + comp + dbs;
+			}, 0)
+		: 0;
+
 	return (
-		<>
+		<div className="w-full lg:max-w-md">
 			<Card
 				onClick={handleNavigate}
-				onContextMenu={handleContextMenu}
-				className="group relative overflow-hidden border border-border/70 bg-card/80 backdrop-blur-xs hover:bg-card shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col justify-between p-5 min-h-[170px] cursor-pointer rounded-xl hover:-translate-y-0.5"
+				className="group relative w-full h-full bg-transparent transition-colors hover:bg-border flex flex-col cursor-pointer border border-border/80"
 			>
-				{/* Subtle Gradient Hover Backdrop Accent */}
-				<div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-				{/* Top Header Section */}
-				<div className="flex items-start justify-between gap-3 min-w-0 relative z-10">
-					<div className="flex items-start gap-3 min-w-0">
-						<div className="p-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200">
-							<FolderOpen className="size-4.5" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-1.5">
-								<CardTitle className="text-sm font-semibold tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
+				<CardHeader>
+					<CardTitle className="flex items-center justify-between gap-2 overflow-clip font-normal">
+						<span className="flex flex-col gap-1.5">
+							{/* Icon + Title */}
+							<div className="flex items-center gap-2">
+								<Book className="size-4 text-muted-foreground shrink-0" />
+								<span className="text-base font-medium leading-none text-foreground">
 									{project.name}
-								</CardTitle>
-								<ArrowUpRight className="size-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all shrink-0 -translate-x-1 group-hover:translate-x-0" />
+								</span>
 							</div>
-							<p className="text-xs text-muted-foreground/90 line-clamp-2 mt-1 leading-relaxed">
+
+							{/* Description */}
+							<span className="text-sm font-medium text-muted-foreground break-normal leading-relaxed">
 								{project.description || 'No description provided.'}
-							</p>
-						</div>
-					</div>
+							</span>
 
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={(e) => e.stopPropagation()}
-									className="size-7 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus-visible:ring-0"
-								>
-									<MoreVertical className="size-4 text-foreground" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent
-							align="end"
-							className="w-40 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<DropdownMenuItem
-								onClick={handleNavigate}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-foreground"
-							>
-								<Eye className="size-3.5 text-foreground" />
-								View details
-							</DropdownMenuItem>
-							<DropdownMenuSeparator className="bg-border/60" />
-							<DropdownMenuItem
-								onClick={() => onDelete(project.id)}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-foreground hover:text-destructive focus:text-destructive focus:bg-destructive/10"
-							>
-								<Trash2 className="size-3.5 text-foreground group-hover:text-destructive" />
-								Delete project
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-
-				{/* Footer Info Metadata */}
-				<div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50 relative z-10">
-					<span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-						<Calendar className="size-3 text-muted-foreground/70" />
-						{formatDate(project.created_at)}
-					</span>
-
-					{project.env_var ? (
-						<span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
-							<Terminal className="size-2.5" />
-							Configured
+							{/* Tags */}
+							{(project as any).tags && (project as any).tags.length > 0 && (
+								<div className="flex flex-wrap gap-1.5 mt-2">
+									{(project as any).tags.map((t: string) => (
+										<Badge key={t} variant="secondary" className="text-[10px] font-medium px-2 py-0.5">
+											{t}
+										</Badge>
+									))}
+								</div>
+							)}
 						</span>
-					) : null}
-				</div>
-			</Card>
 
-			{/* Custom Right Click Context Menu */}
-			{contextMenu && (
-				<div
-					style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-					className="fixed z-50 w-40 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100"
-					onClick={(e) => e.stopPropagation()}
-				>
-					<button
-						onClick={handleNavigate}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
-					>
-						<Eye className="size-3.5 text-foreground" />
-						View details
-					</button>
-					<div className="my-1 h-px bg-border/60" />
-					<button
-						onClick={() => {
-							setContextMenu(null);
-							onDelete(project.id);
-						}}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
-					>
-						<Trash2 className="size-3.5 text-foreground hover:text-destructive" />
-						Delete project
-					</button>
-				</div>
-			)}
-		</>
+						{/* Actions Menu (Dokploy exact) */}
+						<div className="flex self-start space-x-1" onClick={(e) => e.stopPropagation()}>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={(e) => e.stopPropagation()}
+											className="px-2 size-8 text-muted-foreground hover:text-foreground"
+										>
+											<MoreHorizontal className="size-5" />
+										</Button>
+									}
+								/>
+								<DropdownMenuContent
+									align="end"
+									className="w-44 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<DropdownMenuItem
+										onClick={handleNavigate}
+										className="flex items-center gap-2 cursor-pointer text-xs font-semibold py-2 text-foreground"
+									>
+										<Eye className="size-3.5 text-muted-foreground" />
+										View details
+									</DropdownMenuItem>
+									<DropdownMenuSeparator className="bg-border/60" />
+									<DropdownMenuItem
+										onClick={() => onDelete(project.id)}
+										className="flex items-center gap-2 cursor-pointer text-xs font-semibold py-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+									>
+										<Trash2 className="size-3.5 text-destructive" />
+										Delete project
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					</CardTitle>
+				</CardHeader>
+
+				{/* CardFooter (Dokploy exact) */}
+				<CardFooter className="pt-4 mt-auto">
+					<div className="space-y-1 text-xs flex flex-row justify-between max-sm:flex-wrap w-full gap-2 sm:gap-4 text-muted-foreground">
+						<span>Created {formatDate(project.created_at)}</span>
+						<span>
+							{totalServices} {totalServices === 1 ? 'service' : 'services'}
+						</span>
+					</div>
+				</CardFooter>
+			</Card>
+		</div>
 	);
 };
