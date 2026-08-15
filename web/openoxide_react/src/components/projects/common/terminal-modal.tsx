@@ -44,6 +44,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
 	const isFirstMountRef = useRef<boolean>(true);
+	const socketConnectedRef = useRef<boolean>(false);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -71,17 +72,13 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		}
 	}, [isRemoteServer, serverId, targetContainer]);
 
-	// Primary Socket & Xterm lifecycle: Uses global singleton socketFor('/terminal')
+	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
 		if (!open) {
-			isFirstMountRef.current = true;
+			socketConnectedRef.current = false;
 			if (socketRef.current) {
-				socketRef.current.off('connect');
-				socketRef.current.off('started');
-				socketRef.current.off('output');
-				socketRef.current.off('error');
-				socketRef.current.off('exit');
-				socketRef.current.off('disconnect');
+				socketRef.current.removeAllListeners();
+				socketRef.current.disconnect();
 				socketRef.current = null;
 			}
 			if (termInstanceRef.current) {
@@ -144,28 +141,44 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			term.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
 		}
 
-		// Use global singleton live socket manager
-		const socket = socketFor('/terminal').socket;
+		// Fresh socket per modal open — terminal sessions must not share a socket with other
+		// modals or with the live-query singleton (which would mix up output/exit events).
+		let token: string | undefined;
+		try {
+			token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
+		} catch {}
+
+		const socketUrl = `${getSocketBaseUrl()}/terminal`;
+		const socket = io(socketUrl, {
+			path: '/socket.io',
+			transports: ['websocket'],
+			forceNew: true,
+			multiplex: false,
+			reconnection: true,
+			reconnectionAttempts: 10,
+			auth: (cb) => {
+				let t = token;
+				try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
+				cb({ token: t });
+			},
+		});
 		socketRef.current = socket;
 
-		if (!socket.connected) {
-			socket.connect();
-		}
-
-		const handleConnect = () => {
+		socket.on('connect', () => {
+			socketConnectedRef.current = true;
 			setStatus('connected');
-			if (isRemoteServer) {
-				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
+			if (isRemoteServerRef.current) {
+				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shellRef.current}]...\x1b[0m\r\n`);
 			} else {
-				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
 			}
-			emitStartSession(socket, shell);
-		};
+			emitStartSession(socket, shellRef.current);
+		});
 
-		socket.on('connect', handleConnect);
-
-		if (socket.connected) {
-			handleConnect();
+		if (socket.connected && !socketConnectedRef.current) {
+			socketConnectedRef.current = true;
+			setStatus('connected');
+			emitStartSession(socket, shellRef.current);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
@@ -233,14 +246,10 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
-			isFirstMountRef.current = true;
+			socketConnectedRef.current = false;
 			if (socketRef.current) {
-				socketRef.current.off('connect', handleConnect);
-				socketRef.current.off('started');
-				socketRef.current.off('output');
-				socketRef.current.off('error');
-				socketRef.current.off('exit');
-				socketRef.current.off('disconnect');
+				socketRef.current.removeAllListeners();
+				socketRef.current.disconnect();
 				socketRef.current = null;
 			}
 			if (termInstanceRef.current) {
