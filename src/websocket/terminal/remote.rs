@@ -75,7 +75,9 @@ pub async fn spawn_remote_terminal(
             return;
         }
     };
-    let _ = pty.resize(Size::new(24, 80));
+    let initial_cols = input.cols.unwrap_or(80);
+    let initial_rows = input.rows.unwrap_or(24);
+    let _ = pty.resize(Size::new(initial_rows, initial_cols));
 
     let pty_cmd = PtyCommand::new("ssh")
         .args(&args)

@@ -13,12 +13,16 @@ pub struct DockerTerminalStart {
     pub container: String,
     pub shell: Option<String>,
     pub server_id: Option<i64>,
+    pub cols: Option<u16>,
+    pub rows: Option<u16>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerTerminalStart {
     pub shell: Option<String>,
     pub server_id: Option<i64>,
+    pub cols: Option<u16>,
+    pub rows: Option<u16>,
 }
 
 #[derive(Debug, Deserialize)]

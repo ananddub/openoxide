@@ -56,7 +56,9 @@ pub async fn spawn_docker_terminal(
             return;
         }
     };
-    let _ = pty.resize(Size::new(24, 80));
+    let initial_cols = input.cols.unwrap_or(80);
+    let initial_rows = input.rows.unwrap_or(24);
+    let _ = pty.resize(Size::new(initial_rows, initial_cols));
 
     let exec_args = docker
         .containers()

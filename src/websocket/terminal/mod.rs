@@ -98,10 +98,15 @@ impl TerminalSocket {
             .and_then(|v| v.as_i64())
             .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
 
+        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16);
+        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16);
+
         let input = DockerTerminalStart {
             container,
             shell,
             server_id,
+            cols,
+            rows,
         };
         spawn_docker_terminal(socket, &self.sessions, input).await;
     }
@@ -120,8 +125,10 @@ impl TerminalSocket {
             .and_then(|v| v.as_str())
             .or_else(|| payload.get("command").and_then(|v| v.as_str()))
             .map(|s| s.to_string());
+        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16);
+        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16);
 
-        let input = ServerTerminalStart { shell, server_id };
+        let input = ServerTerminalStart { shell, server_id, cols, rows };
 
         if let Some(server_id) = input.server_id {
             spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;

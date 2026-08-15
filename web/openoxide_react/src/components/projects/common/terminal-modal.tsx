@@ -101,13 +101,25 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		const fitAddon = new FitAddon();
 		term.loadAddon(fitAddon);
 		term.open(termRef.current);
-		try { fitAddon.fit(); } catch (_) {}
+
+		const fitTerminal = () => {
+			try {
+				fitAddon.fit();
+			} catch (_) {}
+		};
+
+		fitTerminal();
+		const timer1 = setTimeout(fitTerminal, 60);
+		const timer2 = setTimeout(fitTerminal, 250);
+
 		setTermInstance(term);
 
-		const handleWindowResize = () => { try { fitAddon.fit(); } catch (_) {} };
+		const handleWindowResize = () => fitTerminal();
 		window.addEventListener('resize', handleWindowResize);
 
 		return () => {
+			clearTimeout(timer1);
+			clearTimeout(timer2);
 			window.removeEventListener('resize', handleWindowResize);
 			term.dispose();
 			setTermInstance(null);

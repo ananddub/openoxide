@@ -68,10 +68,12 @@ export function useTerminalSocket({
 
 		const emitStartSession = (sock: Socket, shellMode: string) => {
 			if (!sock.connected) return;
+			const cols = termInstance?.cols || 80;
+			const rows = termInstance?.rows || 24;
 			if (isRemoteServer && serverId) {
-				sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode });
+				sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode, cols, rows });
 			} else {
-				sock.emit('docker:start', { container: targetContainer, shell: shellMode });
+				sock.emit('docker:start', { container: targetContainer, shell: shellMode, cols, rows });
 			}
 		};
 
@@ -94,6 +96,9 @@ export function useTerminalSocket({
 				const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
 				termInstance.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
 				termInstance.focus();
+				if (socket.connected && termInstance.cols && termInstance.rows) {
+					socket.emit('resize', { cols: termInstance.cols, rows: termInstance.rows });
+				}
 			}
 		});
 
@@ -193,10 +198,13 @@ export function useTerminalSocket({
 		}
 		setStatus('connecting');
 
+		const cols = termInstance.cols || 80;
+		const rows = termInstance.rows || 24;
+
 		if (isRemoteServer && serverId) {
-			socketRef.current.emit('server:start', { server_id: serverId, shell, command: shell });
+			socketRef.current.emit('server:start', { server_id: serverId, shell, command: shell, cols, rows });
 		} else {
-			socketRef.current.emit('docker:start', { container: targetContainer, shell });
+			socketRef.current.emit('docker:start', { container: targetContainer, shell, cols, rows });
 		}
 	}, [targetContainer, shell, isOpen, isRemoteServer, serverId, termInstance, activeHostIp]);
 
