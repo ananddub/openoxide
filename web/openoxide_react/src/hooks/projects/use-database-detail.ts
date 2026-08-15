@@ -22,10 +22,26 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const activeKind = (targetKind || '').toLowerCase();
 
-	// 0ms Instant Zustand Store Read
-	const storeDb = useAppStore((state) =>
-		state.databases.find((d) => String(d.id) === String(dbId))
-	);
+	// 0ms Instant Zustand Store Read with fallback to overviewServices
+	const storeDb = useAppStore((state) => {
+		const direct = state.databases.find((d) => String(d.id) === String(dbId));
+		if (direct) return direct;
+		const service = state.overviewServices.find(
+			(s) => String(s.id) === String(dbId) && (s.type === 'database' || s.kind === 'database' || s.kind === 'postgres' || s.kind === 'mysql' || s.kind === 'mariadb' || s.kind === 'mongo' || s.kind === 'redis' || s.kind === 'libsql')
+		);
+		if (service) {
+			return {
+				id: service.id,
+				name: service.name,
+				database_name: service.name,
+				kind: service.kind,
+				project_id: service.project_id,
+				status: service.status,
+				created_at: service.created_at,
+			} as any;
+		}
+		return undefined;
+	});
 
 	// Target query selection with selective query execution to avoid unnecessary 404 console spam
 	const postgresQ = usePostgresGet(BigInt(dbId));
