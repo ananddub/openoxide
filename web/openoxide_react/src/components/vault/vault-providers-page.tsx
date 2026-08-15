@@ -120,26 +120,48 @@ export function VaultProvidersPage() {
 
 		setIsSubmitting(true);
 		try {
-			const payload: any = {
-				name: formName.trim(),
-				provider_type: formType,
-				credentials_json: JSON.stringify({
-					url: formUrl.trim(),
-					mount: formMount.trim(),
-					namespace: formNamespace.trim(),
-					...(formToken.trim() ? { token: formToken.trim() } : {}),
-				}),
-			};
-
 			if (editingProvider) {
+				const updatePayload: any = {
+					name: formName.trim(),
+					api_url: formUrl.trim() || undefined,
+					...(formToken.trim() ? { auth_token: formToken.trim() } : {}),
+					namespace: formNamespace.trim() || undefined,
+					config_json: JSON.stringify({
+						mount: formMount.trim() || 'secret',
+						url: formUrl.trim(),
+						namespace: formNamespace.trim(),
+					}),
+				};
+
 				await updateMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
-					body: payload,
+					body: updatePayload,
 				});
 				toast.success(`Vault Provider "${formName}" updated`);
 			} else {
+				const defaultApiUrl =
+					formUrl.trim() ||
+					(formType === 'INFISICAL'
+						? 'https://app.infisical.com'
+						: formType === 'DOPPLER'
+						? 'https://api.doppler.com'
+						: 'http://localhost:8200');
+
+				const createPayload: any = {
+					name: formName.trim(),
+					provider_type: formType,
+					api_url: defaultApiUrl,
+					auth_token: formToken.trim(),
+					namespace: formNamespace.trim() || undefined,
+					config_json: JSON.stringify({
+						mount: formMount.trim() || 'secret',
+						url: defaultApiUrl,
+						namespace: formNamespace.trim(),
+					}),
+				};
+
 				await createMutation.mutateAsync({
-					body: payload,
+					body: createPayload,
 				});
 				toast.success(`Vault Provider "${formName}" created successfully`);
 			}
