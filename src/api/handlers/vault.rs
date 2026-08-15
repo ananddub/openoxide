@@ -1,5 +1,5 @@
 use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultTestResultDto,
+    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultSecretListDto, VaultTestResultDto,
 };
 use crate::core::middleware::permission::{
     CanCreate, CanDelete, CanRead, CanUpdate, PermissionOrganization, RequirePermission, Server,
@@ -124,15 +124,27 @@ impl VaultController {
             .map(Json)
             .map_err(map_vault_error)
     }
+
+    #[get("/{id}/secrets")]
+    async fn list_secrets(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<VaultSecretListDto>, ApiError> {
+        self.service
+            .list_secret_names(id, organization_id)
+            .await
+            .map(Json)
+            .map_err(map_vault_error)
+    }
 }
 
 fn map_vault_error(error: VaultServiceError) -> ApiError {
     match error {
         VaultServiceError::NotFound => (StatusCode::NOT_FOUND, "Vault provider not found".into()),
-        VaultServiceError::Database(err) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-        }
-        VaultServiceError::Http(err) => (StatusCode::BAD_GATEWAY, err.to_string()),
+        VaultServiceError::Database(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)),
+        VaultServiceError::Http(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("HTTP error: {}", e)),
         VaultServiceError::ProviderError(msg) => (StatusCode::BAD_REQUEST, msg),
     }
 }

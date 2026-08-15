@@ -20,7 +20,7 @@ pub struct VaultProviderDto {
 pub struct CreateVaultProviderDto {
     #[validate(length(min = 1, max = 100))]
     pub name: String,
-    pub provider_type: String, // "HASHICORP", "INFISICAL", "DOPPLER", "AWS"
+    pub provider_type: String, // "HASHICORP", "INFISICAL", "DOPPLER", "AWS", "SCALEWAY", "AZURE"
     pub api_url: String,
     pub auth_token: String,
     pub namespace: Option<String>,
@@ -40,4 +40,9 @@ pub struct UpdateVaultProviderDto {
 pub struct VaultTestResultDto {
     pub success: bool,
     pub message: String,
+}
+
+#[derive(Debug, Serialize, Object, ts_rs::TS)]
+pub struct VaultSecretListDto {
+    pub secrets: Vec<String>,
 }

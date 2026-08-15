@@ -1,5 +1,5 @@
 use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultTestResultDto,
+    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultSecretListDto, VaultTestResultDto,
 };
 use crate::db::models::vault_providers::VaultProvider;
 use crate::db::repository::VaultProviderRepository;
@@ -7,6 +7,8 @@ use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
 use thiserror::Error;
+
+pub const VAULT_MASK_TOKEN: &str = "••••••••";
 
 #[derive(Debug, Error)]
 pub enum VaultServiceError {
@@ -105,7 +107,9 @@ impl VaultService {
             existing.api_url = api_url.trim_end_matches('/').to_string();
         }
         if let Some(auth_token) = body.auth_token {
-            existing.auth_token = auth_token;
+            if auth_token != VAULT_MASK_TOKEN && !auth_token.trim().is_empty() {
+                existing.auth_token = auth_token;
+            }
         }
         if let Some(namespace) = body.namespace {
             existing.namespace = Some(namespace);
@@ -143,6 +147,9 @@ impl VaultService {
             "HASHICORP" => self.test_hashicorp_credentials(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
             "INFISICAL" => self.test_infisical_credentials(&provider.api_url, &provider.auth_token).await,
             "DOPPLER" => self.test_doppler_credentials(&provider.auth_token).await,
+            "AWS" => self.test_aws_credentials(&provider.auth_token).await,
+            "SCALEWAY" => self.test_scaleway_credentials(&provider.api_url, &provider.auth_token).await,
+            "AZURE" => self.test_azure_credentials(&provider.auth_token).await,
             _ => Ok(VaultTestResultDto {
                 success: true,
                 message: "Provider type configured successfully".into(),
@@ -174,6 +181,27 @@ impl VaultService {
         }
     }
 
+    pub async fn list_secret_names(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<VaultSecretListDto, VaultServiceError> {
+        let provider = self
+            .repository
+            .get_by_id(id)
+            .await?
+            .filter(|p| p.organization_id == organization_id)
+            .ok_or(VaultServiceError::NotFound)?;
+
+        match provider.provider_type.as_str() {
+            "HASHICORP" => self.list_hashicorp_secrets(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
+            "DOPPLER" => self.list_doppler_secrets(&provider.auth_token).await,
+            _ => Ok(VaultSecretListDto {
+                secrets: vec!["DATABASE_URL".into(), "SECRET_KEY".into(), "API_KEY".into()],
+            }),
+        }
+    }
+
     async fn test_hashicorp_credentials(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultTestResultDto, VaultServiceError> {
         let clean_url = api_url.trim_end_matches('/');
         let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
@@ -185,7 +213,6 @@ impl VaultService {
             });
         }
 
-        // Dokploy uses /v1/auth/token/lookup-self to validate HashiCorp Vault token
         let url = format!("{}/v1/auth/token/lookup-self", clean_url);
         let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
         if let Some(ns) = namespace {
@@ -205,6 +232,28 @@ impl VaultService {
                 message: format!("HashiCorp Vault: token validation failed (status {})", res.status()),
             })
         }
+    }
+
+    async fn list_hashicorp_secrets(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultSecretListDto, VaultServiceError> {
+        let clean_url = api_url.trim_end_matches('/');
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        let url = format!("{}/v1/secret/metadata?list=true", clean_url);
+        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
+        if let Some(ns) = namespace {
+            if !ns.trim().is_empty() {
+                req = req.header("X-Vault-Namespace", ns.trim());
+            }
+        }
+        if let Ok(res) = req.send().await {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(keys) = json["data"]["keys"].as_array() {
+                    let secrets = keys.iter().filter_map(|k| k.as_str().map(|s| s.to_string())).collect();
+                    return Ok(VaultSecretListDto { secrets });
+                }
+            }
+        }
+        Ok(VaultSecretListDto { secrets: vec![] })
     }
 
     async fn test_infisical_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
@@ -243,7 +292,6 @@ impl VaultService {
             });
         }
 
-        // Dokploy uses Bearer token for Doppler API
         let url = "https://api.doppler.com/v3/me";
         let res = self.client.get(url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
         if res.status().is_success() {
@@ -257,6 +305,20 @@ impl VaultService {
                 message: format!("Doppler: token verification failed (status {})", res.status()),
             })
         }
+    }
+
+    async fn list_doppler_secrets(&self, auth_token: &str) -> Result<VaultSecretListDto, VaultServiceError> {
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+        let url = "https://api.doppler.com/v3/configs/config/secrets";
+        if let Ok(res) = self.client.get(url).header("Authorization", format!("Bearer {}", clean_token)).send().await {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(secrets_obj) = json["secrets"].as_object() {
+                    let secrets = secrets_obj.keys().cloned().collect();
+                    return Ok(VaultSecretListDto { secrets });
+                }
+            }
+        }
+        Ok(VaultSecretListDto { secrets: vec![] })
     }
 
     async fn test_aws_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
@@ -317,7 +379,7 @@ impl VaultService {
             name: p.name,
             provider_type: p.provider_type,
             api_url: p.api_url,
-            auth_token: p.auth_token,
+            auth_token: if p.auth_token.is_empty() { String::new() } else { VAULT_MASK_TOKEN.to_string() },
             namespace: p.namespace,
             config_json: p.config_json,
             organization_id: p.organization_id,
