@@ -57,13 +57,9 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Pass "bash --login 2>/dev/null || sh" to force login shell PS1 prompt load while gracefully handling hosts without bash
-    let remote_cmd = if shell_req == "sh" {
-        "sh".to_string()
-    } else {
-        "bash --login 2>/dev/null || sh".to_string()
-    };
-    args.push(remote_cmd);
+    // Clean SSH command execution with unbroken PTY stdin/stdout/stderr
+    let target_cmd = if shell_req == "sh" { "sh" } else { "bash" };
+    args.push(target_cmd.to_string());
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
