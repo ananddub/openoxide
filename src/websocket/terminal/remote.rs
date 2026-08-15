@@ -58,14 +58,14 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Pass the target shell directly as the SSH remote command with -i for interactive mode.
-    // Avoid wrapping in `sh -c "stty ...; exec shell"` because:
-    //  - Ubuntu's /bin/sh is dash, which does not support `stty -echoctl` and exits with error.
-    //  - exec replacing the wrapper would lose the PTY attachment on some sshd versions.
-    // SSH with -tt allocates a PTY on the remote side; passing just `bash -i` or `sh -i`
-    // binds that PTY directly and forces interactive mode with full prompt output.
+    // Pass the target shell and -i as separate SSH arguments.
+    // Pushing "sh -i" as a single string would make OpenSSH treat it as one token,
+    // which the remote sshd wraps in `/bin/sh -c "sh -i"` — working by accident for bash
+    // but failing silently for sh on systems where /bin/sh is dash or busybox.
+    // Two separate args: ssh ... host sh -i  →  sshd exec's sh with -i directly.
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
-    args.push(format!("{shell_bin} -i"));
+    args.push(shell_bin.to_string());
+    args.push("-i".to_string());
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
