@@ -51,12 +51,6 @@ import {
 	UserCheck,
 	Clock,
 	XCircle,
-	AlertCircle,
-	Code,
-	Eye,
-	CheckCircle2,
-	User,
-	Sparkles,
 } from 'lucide-react';
 import {
 	DropdownMenu,
@@ -65,30 +59,6 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import { useAppStore, type MemberItem } from '#/stores/app-store';
-
-const ROLES_CONFIG = [
-	{
-		id: 'admin',
-		title: 'Admin',
-		icon: Shield,
-		description: 'Full administrative access to manage workspace settings, billing, and team members.',
-		badgeClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-	},
-	{
-		id: 'developer',
-		title: 'Developer',
-		icon: Code,
-		description: 'Can create, deploy, and manage applications, compose stacks, databases, and environments.',
-		badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-	},
-	{
-		id: 'viewer',
-		title: 'Viewer',
-		icon: Eye,
-		description: 'Read-only access to view projects, deployments, metrics, and application logs.',
-		badgeClass: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-	},
-];
 
 export function UsersManagementPage() {
 	const queryClient = useQueryClient();
@@ -220,7 +190,7 @@ export function UsersManagementPage() {
 					role: newRole.toUpperCase(),
 				},
 			} as any);
-			toast.success('User role updated successfully');
+			toast.success('User role updated');
 			setEditingRoleUser(null);
 		} catch (error) {
 			toast.error(formatApiError(error));
@@ -267,74 +237,70 @@ export function UsersManagementPage() {
 
 	return (
 		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12 animate-in fade-in duration-150">
-			{/* Top Header Row */}
+			{/* Simple Minimal Header */}
 			<div className="flex items-center justify-between gap-4 border-b border-border/40 pb-6 flex-wrap">
 				<div className="flex flex-col gap-1">
-					<div className="flex items-center gap-2.5">
-						<div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0">
-							<Users className="size-5" />
-						</div>
+					<div className="flex items-center gap-2">
+						<Users className="size-5 text-muted-foreground shrink-0" />
 						<h1 className="text-xl font-bold tracking-tight text-foreground">
 							Users & Organization Access
 						</h1>
 					</div>
-					<p className="text-xs text-muted-foreground mt-0.5">
-						Manage workspace team members, send email invitations, and configure role-based access controls.
+					<p className="text-xs text-muted-foreground">
+						Manage workspace members, pending invitations, and roles
 					</p>
 				</div>
 
 				<Button
 					onClick={() => setIsCreateOpen(true)}
-					className="h-9 text-xs font-bold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95 cursor-pointer rounded-lg"
+					className="h-9 text-xs font-semibold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
 				>
 					<UserPlus className="size-4" />
 					<span>Add or Invite User</span>
 				</Button>
 			</div>
 
-			{/* Filter Toolbar & Tabs */}
-			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-card/40 p-3 border border-border/60 rounded-xl backdrop-blur-xs">
-				{/* Tab Selector */}
-				<div className="flex items-center p-1 bg-muted/40 rounded-lg border border-border/40 shrink-0">
+			{/* Simple & Minimal Tab & Filter Bar */}
+			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+				{/* Clean Minimal Tab Switcher */}
+				<div className="flex items-center border-b border-border/40 gap-6">
 					<button
 						onClick={() => setActiveTab('members')}
-						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 cursor-pointer ${
+						className={`pb-2.5 text-xs font-semibold transition-colors relative cursor-pointer ${
 							activeTab === 'members'
-								? 'bg-background text-foreground shadow-xs font-semibold'
+								? 'text-primary border-b-2 border-primary'
 								: 'text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						<UserCheck className="size-3.5" />
-						<span>Members ({members.length})</span>
+						Members ({members.length})
 					</button>
 					<button
 						onClick={() => setActiveTab('invitations')}
-						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 cursor-pointer ${
+						className={`pb-2.5 text-xs font-semibold transition-colors relative cursor-pointer ${
 							activeTab === 'invitations'
-								? 'bg-background text-foreground shadow-xs font-semibold'
+								? 'text-primary border-b-2 border-primary'
 								: 'text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						<Clock className="size-3.5" />
-						<span>Pending Invites ({invites.length})</span>
+						Pending Invites ({invites.length})
 					</button>
 				</div>
 
-				{/* Search & Role Filters */}
-				<div className="flex items-center gap-2.5 flex-1 max-w-md">
-					<div className="relative flex-1">
+				{/* Search & Role Filter Inputs */}
+				<div className="flex items-center gap-2">
+					<div className="relative flex-1 sm:w-64">
 						<Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
 						<Input
-							placeholder={activeTab === 'members' ? 'Search member email or name...' : 'Search pending invites...'}
+							placeholder={activeTab === 'members' ? 'Search members...' : 'Search invites...'}
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="h-8 pl-8 text-xs bg-background/50 border-border/80 rounded-lg"
+							className="h-8 pl-8 text-xs bg-background border-border/80"
 						/>
 					</div>
 
 					{activeTab === 'members' && (
 						<Select value={roleFilter} onValueChange={setRoleFilter}>
-							<SelectTrigger className="h-8 text-xs w-[120px] bg-background/50 border-border/80 font-mono rounded-lg">
+							<SelectTrigger className="h-8 text-xs w-[110px] bg-background border-border/80 font-mono">
 								<SelectValue placeholder="Role" />
 							</SelectTrigger>
 							<SelectContent>
@@ -351,27 +317,27 @@ export function UsersManagementPage() {
 
 			{/* Main Content Area */}
 			{isLoading ? (
-				<div className="flex justify-center py-24">
-					<div className="size-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+				<div className="flex justify-center py-20">
+					<div className="size-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
 				</div>
 			) : activeTab === 'members' ? (
 				/* Members Table */
 				filteredMembers.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 border border-dashed border-border/60 rounded-xl bg-card/10">
-						<Users className="size-10 mb-3 text-muted-foreground/40" />
-						<h3 className="text-sm font-semibold text-foreground">No members found</h3>
-						<p className="text-xs text-muted-foreground mt-1">
+						<Users className="size-8 mb-2 text-muted-foreground/40" />
+						<h3 className="text-xs font-semibold text-foreground">No members found</h3>
+						<p className="text-[11px] text-muted-foreground mt-0.5">
 							{searchQuery || roleFilter !== 'ALL'
 								? 'Try adjusting your search query or role filter.'
 								: 'Add team members to collaborate on projects.'}
 						</p>
 					</div>
 				) : (
-					<div className="border border-border/80 rounded-xl overflow-hidden bg-card/30 shadow-xs">
+					<div className="border border-border/80 rounded-xl overflow-hidden bg-card shadow-xs">
 						<Table>
-							<TableHeader className="bg-muted/30">
+							<TableHeader className="bg-muted/40">
 								<TableRow className="border-border/60 hover:bg-transparent">
-									<TableHead className="text-xs font-semibold text-foreground h-9">User Member</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9">User</TableHead>
 									<TableHead className="text-xs font-semibold text-foreground h-9">Role</TableHead>
 									<TableHead className="text-xs font-semibold text-foreground h-9">Status</TableHead>
 									<TableHead className="text-xs font-semibold text-foreground h-9 text-right pr-4">Actions</TableHead>
@@ -393,23 +359,23 @@ export function UsersManagementPage() {
 										: member.avatar;
 
 									return (
-										<TableRow key={member.id} className="border-border/60 hover:bg-muted/20 transition-colors">
-											<TableCell className="py-3">
+										<TableRow key={member.id} className="border-border/60 hover:bg-muted/30 transition-colors">
+											<TableCell className="py-2.5">
 												<div className="flex items-center gap-3">
 													{displayAvatar ? (
 														<img
 															src={displayAvatar}
 															alt={displayName}
-															className="size-8 rounded-full object-cover border border-primary/20 shrink-0"
+															className="size-7 rounded-full object-cover border border-border/60 shrink-0"
 														/>
 													) : (
-														<div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0">
+														<div className="size-7 rounded-full bg-muted border border-border/60 flex items-center justify-center text-foreground font-bold text-xs uppercase shrink-0">
 															{(displayName || 'U')[0]}
 														</div>
 													)}
 													<div className="flex flex-col min-w-0">
 														<div className="flex items-center gap-1.5">
-															<span className="text-xs font-bold text-foreground truncate">
+															<span className="text-xs font-semibold text-foreground truncate">
 																{displayName}
 															</span>
 															{isCurrentUser && (
@@ -424,7 +390,7 @@ export function UsersManagementPage() {
 													</div>
 												</div>
 											</TableCell>
-											<TableCell className="py-3">
+											<TableCell className="py-2.5">
 												<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
 													member.role.toLowerCase() === 'owner' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
 													member.role.toLowerCase() === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
@@ -435,7 +401,7 @@ export function UsersManagementPage() {
 													{member.role.toUpperCase()}
 												</span>
 											</TableCell>
-											<TableCell className="py-3">
+											<TableCell className="py-2.5">
 												{member.banned ? (
 													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">
 														<XCircle className="size-3 mr-1" /> Banned
@@ -446,7 +412,7 @@ export function UsersManagementPage() {
 													</span>
 												)}
 											</TableCell>
-											<TableCell className="py-3 text-right pr-4">
+											<TableCell className="py-2.5 text-right pr-4">
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
 														<Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
@@ -482,16 +448,16 @@ export function UsersManagementPage() {
 				/* Invitations Table */
 				filteredInvites.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 border border-dashed border-border/60 rounded-xl bg-card/10">
-						<Mail className="size-10 mb-3 text-muted-foreground/40" />
-						<h3 className="text-sm font-semibold text-foreground">No pending invitations</h3>
-						<p className="text-xs text-muted-foreground mt-1">
+						<Mail className="size-8 mb-2 text-muted-foreground/40" />
+						<h3 className="text-xs font-semibold text-foreground">No pending invitations</h3>
+						<p className="text-[11px] text-muted-foreground mt-0.5">
 							All invited team members have accepted or no pending invites exist.
 						</p>
 					</div>
 				) : (
-					<div className="border border-border/80 rounded-xl overflow-hidden bg-card/30 shadow-xs">
+					<div className="border border-border/80 rounded-xl overflow-hidden bg-card shadow-xs">
 						<Table>
-							<TableHeader className="bg-muted/30">
+							<TableHeader className="bg-muted/40">
 								<TableRow className="border-border/60 hover:bg-transparent">
 									<TableHead className="text-xs font-semibold text-foreground h-9">Invited Email</TableHead>
 									<TableHead className="text-xs font-semibold text-foreground h-9">Assigned Role</TableHead>
@@ -501,22 +467,22 @@ export function UsersManagementPage() {
 							</TableHeader>
 							<TableBody>
 								{filteredInvites.map((invite) => (
-									<TableRow key={invite.id} className="border-border/60 hover:bg-muted/20 transition-colors">
-										<TableCell className="py-3">
-											<div className="flex items-center gap-2.5">
-												<Mail className="size-4 text-muted-foreground shrink-0" />
+									<TableRow key={invite.id} className="border-border/60 hover:bg-muted/30 transition-colors">
+										<TableCell className="py-2.5">
+											<div className="flex items-center gap-2">
+												<Mail className="size-3.5 text-muted-foreground shrink-0" />
 												<span className="text-xs font-mono font-medium text-foreground">{invite.email}</span>
 											</div>
 										</TableCell>
-										<TableCell className="py-3">
+										<TableCell className="py-2.5">
 											<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
 												{invite.role.toUpperCase()}
 											</span>
 										</TableCell>
-										<TableCell className="py-3 text-xs text-muted-foreground font-mono">
+										<TableCell className="py-2.5 text-xs text-muted-foreground font-mono">
 											{invite.created_at ? new Date(invite.created_at * 1000).toLocaleDateString() : 'Recently'}
 										</TableCell>
-										<TableCell className="py-3 text-right pr-4">
+										<TableCell className="py-2.5 text-right pr-4">
 											<Button
 												variant="ghost"
 												size="sm"
@@ -534,198 +500,123 @@ export function UsersManagementPage() {
 				)
 			)}
 
-			{/* High-End Refactored Create/Invite Modal */}
+			{/* Simple & Minimal Create/Invite Modal */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="sm:max-w-xl bg-[#09090b] border-border/80 p-6 rounded-2xl shadow-2xl overflow-hidden">
+				<DialogContent className="sm:max-w-md bg-card border-border/80">
 					<DialogHeader>
-						<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
-							<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary shrink-0">
-								<UserPlus className="size-4" />
-							</div>
-							<span>Add Team Member or Send Invite</span>
+						<DialogTitle className="text-base font-bold text-foreground">
+							{actionType === 'direct' ? 'Add User Member' : 'Send Invitation Email'}
 						</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
-							Grant permissions to teammates to collaborate on your deployments and infrastructure.
+							Add a user to this workspace or send an email invitation.
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={handleCreateOrInvite} className="flex flex-col gap-5 mt-3">
-						{/* Action Type Segmented Bar */}
-						<div className="flex items-center p-1 bg-muted/30 rounded-xl border border-border/50">
-							<button
+					<form onSubmit={handleCreateOrInvite} className="flex flex-col gap-4 mt-2">
+						<div className="flex items-center gap-2">
+							<Button
 								type="button"
+								variant={actionType === 'direct' ? 'default' : 'outline'}
+								size="sm"
 								onClick={() => setActionType('direct')}
-								className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-									actionType === 'direct'
-										? 'bg-background text-foreground shadow-xs font-semibold'
-										: 'text-muted-foreground hover:text-foreground'
-								}`}
+								className="flex-1 text-xs h-8"
 							>
-								<User className="size-3.5" />
-								<span>Direct Add Member</span>
-							</button>
-							<button
+								Direct Add
+							</Button>
+							<Button
 								type="button"
+								variant={actionType === 'invite' ? 'default' : 'outline'}
+								size="sm"
 								onClick={() => setActionType('invite')}
-								className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-									actionType === 'invite'
-										? 'bg-background text-foreground shadow-xs font-semibold'
-										: 'text-muted-foreground hover:text-foreground'
-								}`}
+								className="flex-1 text-xs h-8"
 							>
-								<Mail className="size-3.5" />
-								<span>Send Email Invitation</span>
-							</button>
+								Send Invitation
+							</Button>
 						</div>
 
-						{/* Email Input */}
 						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-								<span>User Email Address</span>
-								<span className="text-[10px] text-muted-foreground font-mono">Required</span>
-							</Label>
-							<div className="relative">
-								<Mail className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-								<Input
-									type="email"
-									placeholder="colleague@company.com"
-									value={inputEmail}
-									onChange={(e) => setInputEmail(e.target.value)}
-									required
-									className="h-10 pl-9 text-xs bg-background/50 border-border/80 rounded-xl focus:border-primary/50"
-								/>
-							</div>
+							<Label className="text-xs font-semibold text-foreground">Email Address</Label>
+							<Input
+								type="email"
+								placeholder="user@company.com"
+								value={inputEmail}
+								onChange={(e) => setInputEmail(e.target.value)}
+								required
+								className="h-9 text-xs bg-background border-border/80"
+							/>
 						</div>
 
-						{/* Interactive Role Card Selector Grid */}
-						<div className="flex flex-col gap-2">
-							<Label className="text-xs font-semibold text-foreground">Select Permission Role</Label>
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-								{ROLES_CONFIG.map((roleObj) => {
-									const RoleIcon = roleObj.icon;
-									const isSelected = selectedRole.toLowerCase() === roleObj.id;
-									return (
-										<div
-											key={roleObj.id}
-											onClick={() => setSelectedRole(roleObj.id)}
-											className={`flex flex-col justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
-												isSelected
-													? 'border-primary/60 bg-primary/10 shadow-xs'
-													: 'border-border/60 bg-card/20 hover:border-border/90 hover:bg-card/50'
-											}`}
-										>
-											<div className="flex flex-col gap-2">
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
-														<RoleIcon className={`size-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-														<span className="text-xs font-bold text-foreground">{roleObj.title}</span>
-													</div>
-													{isSelected && (
-														<CheckCircle2 className="size-4 text-primary shrink-0 animate-in zoom-in-50 duration-150" />
-													)}
-												</div>
-												<p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
-													{roleObj.description}
-												</p>
-											</div>
-										</div>
-									);
-								})}
-							</div>
+						<div className="flex flex-col gap-1.5">
+							<Label className="text-xs font-semibold text-foreground">Role</Label>
+							<Select value={selectedRole} onValueChange={setSelectedRole}>
+								<SelectTrigger className="h-9 text-xs bg-background border-border/80 font-mono">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="admin" className="text-xs font-mono">Admin (Full Access)</SelectItem>
+									<SelectItem value="developer" className="text-xs font-mono">Developer (Deploy & Manage)</SelectItem>
+									<SelectItem value="viewer" className="text-xs font-mono">Viewer (Read Only)</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 
 						<DialogFooter className="mt-4 gap-2 sm:gap-0">
-							<Button type="button" variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} className="text-xs rounded-lg">
+							<Button type="button" variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} className="text-xs">
 								Cancel
 							</Button>
-							<Button type="submit" size="sm" disabled={isSubmitting} className="text-xs font-bold px-5 h-9 rounded-lg">
-								{isSubmitting ? 'Processing...' : actionType === 'direct' ? 'Add User Member' : 'Send Invitation Email'}
+							<Button type="submit" size="sm" disabled={isSubmitting} className="text-xs font-semibold px-4">
+								{isSubmitting ? 'Saving...' : actionType === 'direct' ? 'Add User' : 'Send Invite'}
 							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>
 			</Dialog>
 
-			{/* High-End Refactored Edit Role Dialog */}
+			{/* Simple & Minimal Edit Role Dialog */}
 			<Dialog open={Boolean(editingRoleUser)} onOpenChange={() => setEditingRoleUser(null)}>
-				<DialogContent className="sm:max-w-md bg-[#09090b] border-border/80 p-6 rounded-2xl shadow-2xl">
+				<DialogContent className="sm:max-w-xs bg-card border-border/80">
 					<DialogHeader>
-						<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
-							<div className="flex size-8 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shrink-0">
-								<Shield className="size-4" />
-							</div>
-							<span>Change Member Access Role</span>
-						</DialogTitle>
-						<DialogDescription className="text-xs text-muted-foreground">
-							Updating permissions for <span className="font-mono font-semibold text-foreground">{editingRoleUser?.email}</span>
+						<DialogTitle className="text-sm font-bold text-foreground">Change User Role</DialogTitle>
+						<DialogDescription className="text-xs text-muted-foreground font-mono">
+							{editingRoleUser?.email}
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="flex flex-col gap-3 mt-3">
-						{ROLES_CONFIG.map((roleObj) => {
-							const RoleIcon = roleObj.icon;
-							const isCurrent = editingRoleUser?.role.toLowerCase() === roleObj.id;
-							return (
-								<div
-									key={roleObj.id}
-									onClick={() => handleUpdateRole(roleObj.id)}
-									className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-										isCurrent
-											? 'border-primary/60 bg-primary/10 shadow-xs'
-											: 'border-border/60 bg-card/20 hover:border-border/90 hover:bg-card/50'
-									}`}
-								>
-									<div className={`flex size-8 items-center justify-center rounded-lg border shrink-0 ${roleObj.badgeClass}`}>
-										<RoleIcon className="size-4" />
-									</div>
-									<div className="flex flex-col gap-1 flex-1 min-w-0">
-										<div className="flex items-center justify-between">
-											<span className="text-xs font-bold text-foreground">{roleObj.title}</span>
-											{isCurrent && (
-												<span className="text-[10px] bg-primary/20 text-primary font-mono px-2 py-0.5 rounded-full font-semibold">
-													Active Role
-												</span>
-											)}
-										</div>
-										<p className="text-[11px] text-muted-foreground leading-relaxed">
-											{roleObj.description}
-										</p>
-									</div>
-								</div>
-							);
-						})}
+					<div className="flex flex-col gap-2 mt-2">
+						{['admin', 'developer', 'viewer'].map((r) => (
+							<Button
+								key={r}
+								variant={editingRoleUser?.role.toLowerCase() === r ? 'default' : 'outline'}
+								onClick={() => handleUpdateRole(r)}
+								className="text-xs justify-start h-8 font-mono capitalize"
+							>
+								<Shield className="size-3 mr-2" />
+								{r}
+							</Button>
+						))}
 					</div>
-
-					<DialogFooter className="mt-4">
-						<Button variant="ghost" size="sm" onClick={() => setEditingRoleUser(null)} className="text-xs rounded-lg w-full">
-							Cancel
-						</Button>
-					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
-			{/* High-End Refactored Delete Member Confirmation Modal */}
+			{/* Simple & Minimal Delete Member Confirmation Modal */}
 			<AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
-				<AlertDialogContent className="sm:max-w-md bg-[#09090b] border-border/80 p-6 rounded-2xl shadow-2xl">
+				<AlertDialogContent className="sm:max-w-md bg-card border-border/80">
 					<AlertDialogHeader>
-						<AlertDialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
-							<div className="flex size-9 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 shrink-0">
-								<AlertCircle className="size-5" />
-							</div>
-							<span>Remove Workspace Member</span>
+						<AlertDialogTitle className="text-base font-bold text-foreground">
+							Remove Workspace Member
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-2">
-							Are you sure you want to remove <span className="font-mono font-bold text-foreground">{deleteTarget?.email}</span> from this workspace? They will immediately lose access to all projects, environments, and services.
+						<AlertDialogDescription className="text-xs text-muted-foreground mt-1">
+							Are you sure you want to remove <span className="font-mono font-semibold text-foreground">{deleteTarget?.email}</span>?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					<AlertDialogFooter className="mt-5 gap-2 sm:gap-0">
-						<AlertDialogCancel className="text-xs h-9 rounded-lg">Cancel</AlertDialogCancel>
+					<AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
+						<AlertDialogCancel className="text-xs h-8">Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={confirmDeleteUser}
 							disabled={isDeleting}
-							className="text-xs h-9 bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 rounded-lg shadow-sm"
+							className="text-xs h-8 bg-rose-600 hover:bg-rose-700 text-white font-bold"
 						>
-							{isDeleting ? 'Removing Member...' : 'Confirm Remove'}
+							{isDeleting ? 'Removing...' : 'Confirm Remove'}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
