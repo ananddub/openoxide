@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Layers2, Database as DbIcon, Play, Square, Rocket, Trash2, Eye, MoreVertical, XCircle } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, Link } from '@tanstack/react-router';
 import { cn } from '#/api/utils';
 import { $api } from '#/api/query';
 import { toast } from 'sonner';
@@ -46,6 +46,26 @@ export function ServiceCard({
 }: ServiceCardProps) {
 	const navigate = useNavigate();
 	const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+	const routeConfig = useMemo(() => {
+		if (type === 'APP') {
+			return {
+				to: '/projects/$id/app/$appId' as const,
+				params: { id: String(projectId), appId: String(id) },
+			};
+		}
+		if (type === 'COMPOSE') {
+			return {
+				to: '/projects/$id/compose/$composeId' as const,
+				params: { id: String(projectId), composeId: String(id) },
+			};
+		}
+		return {
+			to: '/projects/$id/database/$dbId' as const,
+			params: { id: String(projectId), dbId: String(id) },
+			search: { kind: dbKind || 'postgres' },
+		};
+	}, [type, projectId, id, dbKind]);
 
 	// Close context menu on outside click or scroll
 	useEffect(() => {
@@ -263,8 +283,11 @@ export function ServiceCard({
 
 	return (
 		<>
-			<div
-				onClick={handleNavigate}
+			<Link
+				to={routeConfig.to as any}
+				params={routeConfig.params as any}
+				search={(routeConfig as any).search}
+				preload="intent"
 				onContextMenu={handleContextMenu}
 				className="w-full bg-card border border-border hover:border-primary/40 transition-all duration-200 rounded-xl p-4 flex flex-col justify-between gap-3.5 cursor-pointer group shadow-2xs block text-left relative overflow-hidden"
 			>
@@ -382,7 +405,7 @@ export function ServiceCard({
 						})}
 					</span>
 				</div>
-			</div>
+			</Link>
 
 			{/* Custom Right-Click Context Menu */}
 			{contextMenu && (

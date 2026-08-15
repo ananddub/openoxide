@@ -162,6 +162,7 @@ export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onS
 								<Link
 									to="/projects/$id"
 									params={{ id: String(svc.projectId) }}
+									preload="intent"
 									className="flex items-center gap-3 group"
 								>
 									{renderIcon(svc.type, svc.dbKind)}

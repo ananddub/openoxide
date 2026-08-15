@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import type { components } from '#/types/api.d.ts';
 import { Folder, MoreHorizontal, SquarePen, FileText, Trash2 } from 'lucide-react';
 import { Button } from '#/components/ui/button';
@@ -24,7 +24,6 @@ type ProjectCardProps = {
 };
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
-	const navigate = useNavigate();
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 
 	// Read real-time overview services and tags
@@ -34,10 +33,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 	const availableTags = useMemo(() => {
 		return Array.isArray(rawTags) ? (rawTags as any[]) : [];
 	}, [rawTags]);
-
-	const handleCardClick = () => {
-		navigate({ to: '/projects/$id', params: { id: String(project.id) } });
-	};
 
 	const formatDate = (timestamp?: number) => {
 		if (!timestamp) return 'recently';
@@ -59,22 +54,22 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 	const getTagColor = (tagName: string) => {
 		const clean = tagName.replace(/^#/, '').trim().toLowerCase();
 		const found = availableTags.find((at) => (at.name || '').trim().toLowerCase() === clean);
-		if (found?.color) return found.color;
+		if (found && found.color) return found.color;
 
-		// Deterministic colorful fallback if ad-hoc tag not yet created in Settings
-		const palette = ['#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#6366f1', '#f43f5e', '#3b82f6'];
+		// Fallback deterministic badge color palette
+		const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 		let hash = 0;
-		for (let i = 0; i < clean.length; i++) {
-			hash = clean.charCodeAt(i) + ((hash << 5) - hash);
-		}
+		for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
 		return palette[Math.abs(hash) % palette.length];
 	};
 
 	return (
 		<>
-			<div
-				onClick={handleCardClick}
-				className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[200px] max-w-[340px] w-full"
+			<Link
+				to="/projects/$id"
+				params={{ id: String(project.id) }}
+				preload="intent"
+				className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[200px] max-w-[340px] w-full text-left"
 			>
 				{/* Top Body Section */}
 				<div className="flex flex-col gap-3.5 min-w-0">
@@ -118,18 +113,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 										<span>Update</span>
 									</DropdownMenuItem>
 									<DropdownMenuItem
-										onClick={handleCardClick}
+										onClick={() => {
+											const projectData = `Project: ${project.name}\nCreated: ${formatDate(project.created_at)}\nServices: ${totalServices}\nEnvironments: ${totalEnvironments}`;
+											navigator.clipboard.writeText(projectData);
+										}}
 										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-foreground"
 									>
 										<FileText className="size-4 text-muted-foreground" />
-										<span>Project Environment</span>
+										<span>Copy Specs</span>
 									</DropdownMenuItem>
-									<DropdownMenuSeparator className="bg-border/60" />
+									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={() => onDelete(project.id)}
-										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-destructive focus:bg-destructive/10 focus:text-destructive"
+										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-rose-500 focus:text-rose-500"
 									>
-										<Trash2 className="size-4 text-destructive" />
+										<Trash2 className="size-4" />
 										<span>Delete</span>
 									</DropdownMenuItem>
 								</DropdownMenuContent>
@@ -137,45 +135,30 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						</div>
 					</div>
 
-					{/* Description */}
-					{project.description && (
-						<p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground/90">
-							{project.description.replace(/#[\w-]+/g, '').trim()}
-						</p>
-					)}
-
-					{/* Tag Badges with Exact Custom Colors & Increased Height */}
+					{/* Tag Badges List */}
 					{projectTagNames.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 pt-1">
-							{projectTagNames.map((t) => (
-								<TagBadge
-									key={t}
-									name={t}
-									color={getTagColor(t)}
-									className="text-xs font-semibold px-3 py-1 min-h-[24px] shadow-2xs rounded-md"
-								/>
+						<div className="flex flex-wrap gap-1.5 pt-0.5">
+							{projectTagNames.map((tag) => (
+								<TagBadge key={tag} name={tag} color={getTagColor(tag)} size="sm" />
 							))}
 						</div>
 					)}
 				</div>
 
-				{/* Card Footer Summary */}
-				<div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground font-medium">
-					<div className="flex items-center gap-2.5">
-						<span>
-							<strong className="font-bold text-foreground">{totalEnvironments}</strong>{' '}
-							{totalEnvironments === 1 ? 'Environment' : 'Environments'}
-						</span>
-						<span className="text-muted-foreground/40">•</span>
-						<span>
-							<strong className="font-bold text-foreground">{totalServices}</strong>{' '}
-							{totalServices === 1 ? 'Service' : 'Services'}
-						</span>
+				{/* Bottom Stats Footer */}
+				<div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground">
+					<div className="flex items-center gap-1.5 font-mono">
+						<span className="font-bold text-foreground">{totalServices}</span>
+						<span>{totalServices === 1 ? 'service' : 'services'}</span>
+					</div>
+					<div className="flex items-center gap-1.5 font-mono">
+						<span className="font-bold text-foreground">{totalEnvironments}</span>
+						<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>
 					</div>
 				</div>
-			</div>
+			</Link>
 
-			{/* Update Project Dialog */}
+			{/* Edit/Update Dialog */}
 			<HandleProjectDialog
 				project={project}
 				isOpen={isUpdateOpen}

@@ -85,6 +85,7 @@ export function HomeProjectsList({projects = [], isLoading}: HomeProjectsListPro
 								<Link
 									to="/projects/$id"
 									params={{id: String(project.id)}}
+									preload="intent"
 									className="text-xs font-semibold text-primary inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
 									Manage <ArrowUpRight className="size-3" />
 								</Link>
