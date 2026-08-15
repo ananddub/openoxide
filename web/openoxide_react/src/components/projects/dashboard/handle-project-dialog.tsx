@@ -10,6 +10,7 @@ import {
 } from '#/components/ui/dialog';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
+import { Textarea } from '#/components/ui/textarea';
 import { TagSelector } from '#/components/shared/tag-selector';
 import { $api } from '#/api/query';
 import { toast } from 'sonner';
@@ -144,19 +145,18 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						/>
 					</div>
 
-					{/* Description */}
+					{/* Description Textarea (Shadcn UI Textarea with Dokploy exact min-h-[96px] styling) */}
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="description" className="text-xs font-semibold text-foreground">
 							Description
 						</Label>
-						<textarea
+						<Textarea
 							id="description"
 							placeholder="Description about your project..."
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							disabled={isSubmitting}
-							rows={3}
-							className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-border resize-none"
+							className="min-h-[96px] text-xs bg-card border-border placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 					</div>
 
