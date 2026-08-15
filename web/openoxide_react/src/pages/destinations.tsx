@@ -8,6 +8,8 @@ import {DestinationsHeader} from '#/components/destinations/destinations-header'
 import {DestinationsList} from '#/components/destinations/destinations-list';
 import {CreateDestinationModal} from '#/components/destinations/create-destination-modal';
 
+import { useAppStore } from '#/stores/app-store';
+
 import type {DestinationResponse} from '#/types/api-helpers';
 
 export const Route = createFileRoute('/_app/destinations')({
@@ -18,9 +20,15 @@ function DestinationsPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingDestination, setEditingDestination] = useState<DestinationResponse | null>(null);
 
+	const storeDestinations = useAppStore((state) => state.destinations);
+
 	// Query destinations with safe array fallback
-	const {data: rawDestinations, loading: isLoading} = useDestinationList();
-	const destinations = Array.isArray(rawDestinations ?? []) ? ((rawDestinations ?? []) as unknown as DestinationResponse[]) : [];
+	const {data: rawDestinations, loading: isQueryLoading} = useDestinationList();
+	const destinations = (rawDestinations && Array.isArray(rawDestinations) && rawDestinations.length > 0)
+		? (rawDestinations as unknown as DestinationResponse[])
+		: ((storeDestinations ?? []) as unknown as DestinationResponse[]);
+
+	const isLoading = destinations.length === 0 && isQueryLoading;
 
 	// Mutations
 	const deleteMutation = $api.useMutation('delete', '/destinations/{id}');

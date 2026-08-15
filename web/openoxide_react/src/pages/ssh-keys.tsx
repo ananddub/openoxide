@@ -7,6 +7,8 @@ import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
+import { useAppStore } from '#/stores/app-store';
+
 import type {SshKeyResponse} from '#/types/api-helpers';
 
 export const Route = createFileRoute('/_app/ssh-keys')({
@@ -18,12 +20,18 @@ function SshKeysPage() {
 	const [selectedKeyForView, setSelectedKeyForView] = useState<SshKeyResponse | null>(null);
 	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<SshKeyResponse | null>(null);
 
+	const storeSshKeys = useAppStore((state) => state.sshKeys);
+
 	const {
 		data: rawSshKeys,
-		loading: isLoading,
+		loading: isQueryLoading,
 	} = useSshKeyList();
 
-	const sshKeys = Array.isArray(rawSshKeys ?? []) ? ((rawSshKeys ?? []) as unknown as SshKeyResponse[]) : [];
+	const sshKeys = (rawSshKeys && Array.isArray(rawSshKeys) && rawSshKeys.length > 0)
+		? (rawSshKeys as unknown as SshKeyResponse[])
+		: ((storeSshKeys ?? []) as unknown as SshKeyResponse[]);
+
+	const isLoading = sshKeys.length === 0 && isQueryLoading;
 
 	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
 	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);

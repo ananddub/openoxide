@@ -24,6 +24,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {useTagListAll} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
+import { useAppStore } from '#/stores/app-store';
 
 export const Route = createFileRoute('/_app/tags')({
 	component: MinimalTagsPage,
@@ -57,11 +58,18 @@ function MinimalTagsPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const { data: rawTags, loading: isLoading } = useTagListAll();
+	const storeTags = useAppStore((state) => state.tags);
+
+	const { data: rawTags, loading: isQueryLoading } = useTagListAll();
 
 	const tagsList: TagItem[] = useMemo(() => {
-		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];
-	}, [rawTags]);
+		const source = (rawTags && Array.isArray(rawTags) && rawTags.length > 0)
+			? rawTags
+			: (storeTags || []);
+		return Array.isArray(source) ? (source as unknown as TagItem[]) : [];
+	}, [rawTags, storeTags]);
+
+	const isLoading = tagsList.length === 0 && isQueryLoading;
 
 	const createMutation = $api.useMutation('post', '/tags' as any);
 	const patchMutation = $api.useMutation('patch', '/tags/{id}' as any);

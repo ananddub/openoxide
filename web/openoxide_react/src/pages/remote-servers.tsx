@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
 import {useRemoteServerList, useSshKeyList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
@@ -26,6 +27,9 @@ function RemoteServersPage() {
 	const [terminalServer, setTerminalServer] = useState<RemoteServerResponse | null>(null);
 	const [privateNetworkServer, setPrivateNetworkServer] = useState<RemoteServerResponse | null>(null);
 
+	const storeServers = useAppStore((state) => state.servers);
+	const storeSshKeys = useAppStore((state) => state.sshKeys);
+
 	const {
 		data: rawServers,
 		loading: isServersLoading,
@@ -33,8 +37,13 @@ function RemoteServersPage() {
 
 	const {data: rawSshKeys} = useSshKeyList();
 
-	const servers = Array.isArray(rawServers ?? []) ? ((rawServers ?? []) as unknown as RemoteServerResponse[]) : [];
-	const sshKeys = Array.isArray(rawSshKeys ?? []) ? ((rawSshKeys ?? []) as unknown as SshKeyResponse[]) : [];
+	const servers = (rawServers && Array.isArray(rawServers) && rawServers.length > 0)
+		? (rawServers as unknown as RemoteServerResponse[])
+		: ((storeServers ?? []) as unknown as RemoteServerResponse[]);
+
+	const sshKeys = (rawSshKeys && Array.isArray(rawSshKeys) && rawSshKeys.length > 0)
+		? (rawSshKeys as unknown as SshKeyResponse[])
+		: ((storeSshKeys ?? []) as unknown as SshKeyResponse[]);
 
 	const activateMutation = $api.useMutation('post', '/remote-servers/{id}/activate');
 	const deactivateMutation = $api.useMutation('post', '/remote-servers/{id}/deactivate');
