@@ -105,6 +105,7 @@ pub async fn spawn_remote_terminal(
     let (reader, writer) = pty.into_split();
     let child_arc = Arc::new(Mutex::new(child));
     let session_id = next_session_id();
+    let cancel = tokio_util::sync::CancellationToken::new();
 
     sessions.insert(
         key.clone(),
@@ -112,6 +113,7 @@ pub async fn spawn_remote_terminal(
             writer: Arc::new(Mutex::new(writer)),
             child: child_arc.clone(),
             session_id,
+            cancel: cancel.clone(),
         },
     );
 
@@ -132,7 +134,18 @@ pub async fn spawn_remote_terminal(
     tokio::spawn(async move {
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;
-        let status = child_arc.lock().await.wait().await;
+
+        // Wait for either the child to exit naturally or a cancel signal (shell switch / disconnect)
+        let status = tokio::select! {
+            s = async { child_arc.lock().await.wait().await } => {
+                Some(s)
+            }
+            _ = cancel.cancelled() => {
+                // Kill the child process cleanly on cancel
+                let _ = child_arc.lock().await.kill().await;
+                None
+            }
+        };
         
         let is_current = match sessions_clone.get(&key) {
             Some(entry) => match entry.value() {
@@ -144,7 +157,7 @@ pub async fn spawn_remote_terminal(
 
         if is_current {
             sessions_clone.remove(&key);
-            let code = status.ok().and_then(|s| s.code());
+            let code = status.and_then(|s| s.ok()).and_then(|s| s.code());
             tracing::info!(shell = %shell_bin_log, exit_code = ?code, host = %server_host, "remote terminal session exited");
             if let Some(c) = code {
                 if c != 0 {

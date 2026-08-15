@@ -63,6 +63,7 @@ pub enum TerminalSession {
         writer: Arc<Mutex<OwnedWritePty>>,
         child: Arc<Mutex<Child>>,
         session_id: u64,
+        cancel: tokio_util::sync::CancellationToken,
     },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,
@@ -70,6 +71,6 @@ pub enum TerminalSession {
     },
     Remote {
         input: mpsc::Sender<Vec<u8>>,
-        cancel: CancellationToken,
+        cancel: tokio_util::sync::CancellationToken,
     },
 }

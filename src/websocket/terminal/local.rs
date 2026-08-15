@@ -84,6 +84,7 @@ pub async fn spawn_docker_terminal(
     let (reader, writer) = pty.into_split();
     let child_arc = Arc::new(Mutex::new(child));
     let session_id = next_session_id();
+    let cancel = tokio_util::sync::CancellationToken::new();
 
     sessions.insert(
         key.clone(),
@@ -91,6 +92,7 @@ pub async fn spawn_docker_terminal(
             writer: Arc::new(Mutex::new(writer)),
             child: child_arc.clone(),
             session_id,
+            cancel: cancel.clone(),
         },
     );
 
@@ -109,7 +111,13 @@ pub async fn spawn_docker_terminal(
     let container_name = target_container.clone();
     let shell_name = shell_req.clone();
     tokio::spawn(async move {
-        let status = child_arc.lock().await.wait().await;
+        let status = tokio::select! {
+            s = async { child_arc.lock().await.wait().await } => Some(s),
+            _ = cancel.cancelled() => {
+                let _ = child_arc.lock().await.kill().await;
+                None
+            }
+        };
         
         let is_current = match sessions_clone.get(&key) {
             Some(entry) => match entry.value() {
@@ -121,7 +129,7 @@ pub async fn spawn_docker_terminal(
 
         if is_current {
             sessions_clone.remove(&key);
-            let code = status.ok().and_then(|s| s.code());
+            let code = status.and_then(|s| s.ok()).and_then(|s| s.code());
             if let Some(c) = code {
                 if c != 0 {
                     let err_msg = if c == 126 || c == 127 {

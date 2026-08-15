@@ -43,8 +43,8 @@ impl TerminalSocket {
         let key = socket_key(socket);
         if let Some((_, session)) = self.sessions.remove(&key) {
             match session {
-                TerminalSession::Pty { child, .. } => {
-                    let _ = child.lock().await.kill().await;
+                TerminalSession::Pty { cancel, .. } => {
+                    cancel.cancel();
                 }
                 TerminalSession::Local { child, .. } => {
                     let _ = child.lock().await.kill().await;
@@ -64,8 +64,8 @@ impl TerminalSocket {
             async move {
                 if let Some((_, session)) = sessions.remove(&key) {
                     match session {
-                        TerminalSession::Pty { child, .. } => {
-                            let _ = child.lock().await.kill().await;
+                        TerminalSession::Pty { cancel, .. } => {
+                            cancel.cancel();
                         }
                         TerminalSession::Local { child, .. } => {
                             let _ = child.lock().await.kill().await;
