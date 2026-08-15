@@ -41,7 +41,8 @@ function getSocketBaseUrl(): string {
 }
 
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
-	const [shell, setShell] = useState<'sh' | 'bash'>('sh');
+	// Default shell set to 'bash' as requested for remote & docker terminal sessions
+	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
 	const termRef = useRef<HTMLDivElement>(null);
