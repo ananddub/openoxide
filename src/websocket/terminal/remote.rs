@@ -40,6 +40,7 @@ pub async fn spawn_remote_terminal(
     )
     .port(executor.port())
     .disable_multiplexing()
+    .quiet(true)
     .tty(crate::utils::ssh::TtyMode::ForceTty);
 
     // The builder loads a KeyPair into a private ssh-agent itself, so the key
