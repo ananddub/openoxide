@@ -422,8 +422,8 @@ export function VaultProvidersPage() {
 							</label>
 							<Input
 								placeholder="https://vault.example.com:8200"
-								value={formApiUrl}
-								onChange={e => setFormApiUrl(e.target.value)}
+								value={formUrl}
+								onChange={e => setFormUrl(e.target.value)}
 								className="h-10 text-xs bg-muted/20"
 							/>
 						</div>
@@ -434,9 +434,9 @@ export function VaultProvidersPage() {
 							</label>
 							<Input
 								type="password"
-								placeholder="Token"
-								value={formAuthToken}
-								onChange={e => setFormAuthToken(e.target.value)}
+								placeholder={editingProvider ? 'Leave blank to keep existing token' : 'Token'}
+								value={formToken}
+								onChange={e => setFormToken(e.target.value)}
 								className="h-10 text-xs font-mono bg-muted/20"
 							/>
 						</div>
