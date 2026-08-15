@@ -58,12 +58,14 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // When SSH executes a command string, the shell starts non-interactive by default.
-    // Both bash and sh need -i to force interactive mode so they load their profiles
-    // and display a PS1 prompt. Without -i the shell silently waits for stdin with no prompt.
+    // Pass the target shell directly as the SSH remote command with -i for interactive mode.
+    // Avoid wrapping in `sh -c "stty ...; exec shell"` because:
+    //  - Ubuntu's /bin/sh is dash, which does not support `stty -echoctl` and exits with error.
+    //  - exec replacing the wrapper would lose the PTY attachment on some sshd versions.
+    // SSH with -tt allocates a PTY on the remote side; passing just `bash -i` or `sh -i`
+    // binds that PTY directly and forces interactive mode with full prompt output.
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
-    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_bin} -i");
-    args.push(remote_cmd);
+    args.push(format!("{shell_bin} -i"));
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
