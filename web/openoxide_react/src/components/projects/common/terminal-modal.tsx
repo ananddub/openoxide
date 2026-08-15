@@ -207,8 +207,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
 			}
 			emitStartSession(socket, shellRef.current);
-			// Mark initial emit done AFTER emitting so switch effect won't double-fire
-			setTimeout(() => { initialEmitDoneRef.current = true; }, 0);
 		});
 
 		// Immediate check if already connected (forceNew should prevent this but handle defensively)
@@ -216,10 +214,11 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			socketConnectedRef.current = true;
 			setStatus('connected');
 			emitStartSession(socket, shellRef.current);
-			setTimeout(() => { initialEmitDoneRef.current = true; }, 0);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
+			// Allow shell/container switch effect ONLY after backend confirms session started
+			initialEmitDoneRef.current = true;
 			if (data?.host) setActiveHostIp(data.host);
 			const connectedTarget = data?.host || targetContainer;
 			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
