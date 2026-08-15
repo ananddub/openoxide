@@ -34,6 +34,12 @@ const CONTROL_KEY_MAP: Record<string, string> = {
 	l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15', a: '\x01', e: '\x05', k: '\x0b', w: '\x17',
 };
 
+function getSocketBaseUrl(): string {
+	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
+	return '';
+}
+
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('sh');
 	const [selectedService, setSelectedService] = useState('');
@@ -58,7 +64,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const isRemoteServer = Boolean(app?.isRemoteServer);
 	const serverId = app?.server_id || app?.serverId;
 
-	// Single unified lifecycle effect for Xterm canvas & persistent WebSocket connection
+	// 1. Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
 		if (!open) {
 			if (socketRef.current) {
@@ -73,120 +79,114 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			return;
 		}
 
-		let term: Terminal | null = null;
-		let fitAddon: FitAddon | null = null;
+		if (!termRef.current) return;
+		termRef.current.innerHTML = '';
 
-		const timer = setTimeout(() => {
-			if (!termRef.current) return;
-			termRef.current.innerHTML = '';
-			term = new Terminal({
-				cursorBlink: true, lineHeight: 1.4, convertEol: true, fontSize: 13,
-				fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-				theme: { background: '#09090b', foreground: '#f4f4f5', cursor: '#3b82f6' },
-			});
-			termInstanceRef.current = term;
+		const term = new Terminal({
+			cursorBlink: true, lineHeight: 1.4, convertEol: true, fontSize: 13,
+			fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+			theme: { background: '#09090b', foreground: '#f4f4f5', cursor: '#3b82f6' },
+		});
+		termInstanceRef.current = term;
 
-			fitAddon = new FitAddon();
-			term.loadAddon(fitAddon);
-			term.open(termRef.current);
-			try { fitAddon.fit(); } catch (_) {}
+		const fitAddon = new FitAddon();
+		term.loadAddon(fitAddon);
+		term.open(termRef.current);
+		try { fitAddon.fit(); } catch (_) {}
 
-			setStatus('connecting');
-			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
+		setStatus('connecting');
+		term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-			let token: string | undefined;
-			try {
-				token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
-			} catch {}
+		let token: string | undefined;
+		try {
+			token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
+		} catch {}
 
-			const socket = io('/terminal', {
-				path: '/socket.io',
-				transports: ['websocket'],
-				reconnection: true,
-				reconnectionAttempts: 10,
-				auth: (cb) => {
-					let t = token;
-					try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
-					cb({ token: t });
-				},
-			});
-			socketRef.current = socket;
+		const socketUrl = `${getSocketBaseUrl()}/terminal`;
+		const socket = io(socketUrl, {
+			path: '/socket.io',
+			transports: ['websocket'],
+			reconnection: true,
+			reconnectionAttempts: 10,
+			auth: (cb) => {
+				let t = token;
+				try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
+				cb({ token: t });
+			},
+		});
+		socketRef.current = socket;
 
-			const startSession = () => {
-				setStatus('connected');
-				term?.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
-				if (isRemoteServer && serverId) {
-					socket.emit('server:start', { server_id: serverId, command: shell });
-				} else {
-					socket.emit('docker:start', { container: targetContainer, shell });
+		socket.on('connect', () => {
+			setStatus('connected');
+			term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
+			if (isRemoteServer && serverId) {
+				socket.emit('server:start', { server_id: serverId, command: shell });
+			} else {
+				socket.emit('docker:start', { container: targetContainer, shell });
+			}
+		});
+
+		socket.on('started', (data: { kind?: string }) => {
+			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+			term.focus();
+		});
+
+		socket.on('output', (evt: { data: string }) => {
+			if (evt?.data) term.write(evt.data);
+		});
+
+		socket.on('error', (err: unknown) => {
+			const msg = typeof err === 'string' ? err : (err as { message?: string })?.message || 'Error';
+			term.writeln(`\r\n\x1b[31mError: ${msg}\x1b[0m\r\n`);
+			setStatus('error');
+		});
+
+		socket.on('exit', (evt: { code: number }) => {
+			term.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
+			setStatus('disconnected');
+		});
+
+		socket.on('disconnect', (reason) => {
+			if (socketRef.current !== socket) return;
+			setStatus('disconnected');
+			if (reason !== 'io client disconnect') {
+				term.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
+			}
+		});
+
+		term.onData((data) => { if (socket.connected) socket.emit('input', { data }); });
+		term.onResize(({ cols, rows }) => { if (socket.connected) socket.emit('resize', { cols, rows }); });
+
+		term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+			if (event.ctrlKey || event.metaKey) {
+				const k = event.key.toLowerCase();
+				if (k === 'c' && term.hasSelection()) {
+					if (event.type === 'keydown') navigator.clipboard.writeText(term.getSelection());
+					event.preventDefault(); return false;
 				}
-			};
-
-			socket.on('connect', startSession);
-
-			socket.on('started', (data: { kind?: string }) => {
-				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
-				term?.focus();
-			});
-
-			socket.on('output', (evt: { data: string }) => {
-				if (evt?.data) term?.write(evt.data);
-			});
-
-			socket.on('error', (err: unknown) => {
-				const msg = typeof err === 'string' ? err : (err as { message?: string })?.message || 'Error';
-				term?.writeln(`\r\n\x1b[31mError: ${msg}\x1b[0m\r\n`);
-				setStatus('error');
-			});
-
-			socket.on('exit', (evt: { code: number }) => {
-				term?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
-				setStatus('disconnected');
-			});
-
-			socket.on('disconnect', (reason) => {
-				if (socketRef.current !== socket) return;
-				setStatus('disconnected');
-				if (reason !== 'io client disconnect') {
-					term?.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
+				if (k === 'v') {
+					if (event.type === 'keydown') {
+						navigator.clipboard.readText().then((text) => {
+							if (text && socket.connected) socket.emit('input', { data: text });
+						}).catch(() => {});
+					}
+					event.preventDefault(); return false;
 				}
-			});
-
-			term.onData((data) => { if (socket.connected) socket.emit('input', { data }); });
-			term.onResize(({ cols, rows }) => { if (socket.connected) socket.emit('resize', { cols, rows }); });
-
-			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-				if (event.ctrlKey || event.metaKey) {
-					const k = event.key.toLowerCase();
-					if (k === 'c' && term?.hasSelection()) {
-						if (event.type === 'keydown') navigator.clipboard.writeText(term.getSelection());
-						event.preventDefault(); return false;
+				if (CONTROL_KEY_MAP[k]) {
+					if (event.type === 'keydown' && socket.connected) {
+						if (k === 'l') { term.clear(); socket.emit('input', { data: 'clear\r' }); }
+						else { socket.emit('input', { data: CONTROL_KEY_MAP[k] }); }
 					}
-					if (k === 'v') {
-						if (event.type === 'keydown') {
-							navigator.clipboard.readText().then((text) => {
-								if (text && socket.connected) socket.emit('input', { data: text });
-							}).catch(() => {});
-						}
-						event.preventDefault(); return false;
-					}
-					if (CONTROL_KEY_MAP[k]) {
-						if (event.type === 'keydown' && socket.connected) {
-							if (k === 'l') { term?.clear(); socket.emit('input', { data: 'clear\r' }); }
-							else { socket.emit('input', { data: CONTROL_KEY_MAP[k] }); }
-						}
-						event.preventDefault(); return false;
-					}
+					event.preventDefault(); return false;
 				}
-				return true;
-			});
-		}, 80);
+			}
+			return true;
+		});
 
-		const handleWindowResize = () => { try { fitAddon?.fit(); } catch (_) {} };
+		const handleWindowResize = () => { try { fitAddon.fit(); } catch (_) {} };
 		window.addEventListener('resize', handleWindowResize);
 
 		return () => {
-			clearTimeout(timer);
 			window.removeEventListener('resize', handleWindowResize);
 			if (socketRef.current) {
 				socketRef.current.disconnect();
@@ -197,7 +197,27 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				termInstanceRef.current = null;
 			}
 		};
-	}, [open, targetContainer, shell]);
+	}, [open]);
+
+	// 2. Dynamic Shell / Target Container Switch: Emits docker:start on existing live socket without tear-down
+	const isFirstMountRef = useRef(true);
+	useEffect(() => {
+		if (isFirstMountRef.current) {
+			isFirstMountRef.current = false;
+			return;
+		}
+		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
+
+		const term = termInstanceRef.current;
+		term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on container '${targetContainer}'...\x1b[0m\r\n`);
+		setStatus('connecting');
+
+		if (isRemoteServer && serverId) {
+			socketRef.current.emit('server:start', { server_id: serverId, command: shell });
+		} else {
+			socketRef.current.emit('docker:start', { container: targetContainer, shell });
+		}
+	}, [targetContainer, shell]);
 
 	if (!open) return null;
 
