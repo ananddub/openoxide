@@ -20,13 +20,13 @@ use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
 use remote::spawn_remote_terminal;
 pub use types::{
-    DockerTerminalStart, ServerTerminalStart, TerminalInputPayload, TerminalKind, TerminalResize,
-    TerminalSession,
+    DockerTerminalStart, ServerTerminalStart, SocketKey, TerminalInputPayload, TerminalKind,
+    TerminalResize, TerminalSession,
 };
 
 #[derive(Debug)]
 pub struct TerminalSocket {
-    sessions: Arc<DashMap<String, TerminalSession>>,
+    sessions: Arc<DashMap<SocketKey, TerminalSession>>,
     db: Arc<SqlitePool>,
 }
 
@@ -62,7 +62,7 @@ impl TerminalSocket {
         }
     }
 
-    fn bind_disconnect_cleanup(&self, socket: &SocketRef, key: String) {
+    fn bind_disconnect_cleanup(&self, socket: &SocketRef, key: SocketKey) {
         let sessions = self.sessions.clone();
         socket.on_disconnect(move |_socket: SocketRef, _reason: DisconnectReason| {
             let sessions = sessions.clone();

@@ -8,6 +8,51 @@ use tokio::{
     sync::{Mutex, mpsc},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SocketKey(pub String);
+
+impl std::fmt::Display for SocketKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SanitizedShell {
+    Sh,
+    Bash,
+    Custom(String),
+}
+
+impl SanitizedShell {
+    pub fn parse(s: Option<&str>, default_shell: &'static str) -> Self {
+        let str_val = s.unwrap_or(default_shell).trim();
+        match str_val {
+            "sh" | "/bin/sh" => Self::Sh,
+            "bash" | "/bin/bash" => Self::Bash,
+            other => {
+                let clean: String = other
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || *c == '/' || *c == '-' || *c == '_')
+                    .collect();
+                if clean.is_empty() {
+                    if default_shell == "bash" { Self::Bash } else { Self::Sh }
+                } else {
+                    Self::Custom(clean)
+                }
+            }
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Sh => "sh",
+            Self::Bash => "bash",
+            Self::Custom(s) => s.as_str(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SessionId(pub u64);
 
@@ -64,6 +109,10 @@ impl DockerTerminalStart {
         }
         .sanitize()
     }
+
+    pub fn shell(&self) -> SanitizedShell {
+        SanitizedShell::parse(self.shell.as_deref(), "sh")
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -84,6 +133,11 @@ impl ServerTerminalStart {
             rows: self.rows.unwrap_or(24),
         }
         .sanitize()
+    }
+
+    pub fn shell(&self) -> SanitizedShell {
+        let req = self.shell.as_deref().or(self.command.as_deref());
+        SanitizedShell::parse(req, "bash")
     }
 }
 
@@ -126,8 +180,10 @@ pub struct TerminalStarted<'a> {
 }
 
 #[derive(Debug, Serialize)]
-pub struct TerminalError {
-    pub message: String,
+pub struct TerminalError<'a> {
+    pub message: Cow<'a, str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<&'a str>,
 }
 
 #[derive(Debug, Serialize)]
@@ -135,7 +191,7 @@ pub struct TerminalExit {
     pub code: Option<i32>,
 }
 
-pub type SessionMap = Arc<DashMap<String, TerminalSession>>;
+pub type SessionMap = Arc<DashMap<SocketKey, TerminalSession>>;
 
 #[derive(Debug, Clone)]
 pub enum TerminalSession {
