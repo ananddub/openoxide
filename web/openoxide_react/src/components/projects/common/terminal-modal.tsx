@@ -82,10 +82,38 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		if (!termRef.current) return;
 		termRef.current.innerHTML = '';
 
+		// Full Vibrant 24-bit TrueColor ANSI Theme Palette matching Alacritty / VS Code Pro
 		const term = new Terminal({
-			cursorBlink: true, lineHeight: 1.4, convertEol: true, fontSize: 13,
-			fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-			theme: { background: '#09090b', foreground: '#f4f4f5', cursor: '#3b82f6' },
+			cursorBlink: true,
+			lineHeight: 1.35,
+			convertEol: true,
+			fontSize: 13,
+			fontFamily: 'Menlo, Monaco, "Consolas", "Courier New", monospace',
+			allowProposedApi: true,
+			theme: {
+				background: '#09090b',
+				foreground: '#f4f4f5',
+				cursor: '#3b82f6',
+				cursorAccent: '#09090b',
+				selectionBackground: '#3f3f46',
+				selectionForeground: '#ffffff',
+				black: '#18181b',
+				red: '#f43f5e',
+				green: '#10b981',
+				yellow: '#f59e0b',
+				blue: '#3b82f6',
+				magenta: '#d946ef',
+				cyan: '#06b6d4',
+				white: '#e4e4e7',
+				brightBlack: '#71717a',
+				brightRed: '#fb7185',
+				brightGreen: '#34d399',
+				brightYellow: '#fbbf24',
+				brightBlue: '#60a5fa',
+				brightMagenta: '#e879f9',
+				brightCyan: '#22d3ee',
+				brightWhite: '#ffffff',
+			},
 		});
 		termInstanceRef.current = term;
 
