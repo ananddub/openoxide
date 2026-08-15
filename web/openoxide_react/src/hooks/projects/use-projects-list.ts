@@ -145,9 +145,12 @@ export function useProjectsList() {
 	};
 
 	return {
-		projects: filteredAndSortedProjects,
+		projects,
+		filteredAndSortedProjects,
+		isLoadingProjects: isLoadingProjects && projects.length === 0,
 		allTags,
 		selectedTags,
+		setSelectedTags,
 		searchQuery,
 		setSearchQuery,
 		sortBy,
@@ -158,7 +161,7 @@ export function useProjectsList() {
 		isSubmitting,
 		handleCreateProjectSubmit,
 		handleDeleteProject,
-		isLoading: isLoadingProjects && projects.length === 0,
+		activeOrg,
 		activeOrgId: orgId,
 	};
 }
