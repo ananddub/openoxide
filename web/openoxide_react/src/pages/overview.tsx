@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Box, Globe, Clock, Rocket, Loader2 } from 'lucide-react';
+import { Box, Globe, Clock, Rocket, Loader2, ExternalLink } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '#/components/ui/tabs';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
@@ -10,6 +10,7 @@ import {
 	TableBody,
 	TableHead,
 	TableRow,
+	TableCell,
 } from '#/components/ui/table';
 import { useAppStore } from '#/stores/app-store';
 import { useDeployments } from '#/hooks/deployments/use-deployments';
@@ -87,7 +88,7 @@ function OverviewPage() {
 					<OverviewServicesTab />
 				</TabsContent>
 
-				{/* 2. Backups Tab */}
+				{/* 2. Backups Tab Table */}
 				<TabsContent value="backups" className="space-y-4">
 					{backups.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
@@ -96,25 +97,58 @@ function OverviewPage() {
 							<p className="text-xs text-muted-foreground">Scheduled volume and database backups will appear here</p>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{backups.map((b) => (
-								<div key={b.id} className="p-4 border border-border/60 rounded-xl bg-card flex flex-col gap-2 shadow-xs">
-									<div className="flex items-center justify-between">
-										<p className="font-bold text-xs text-foreground font-mono">{b.name || `Backup #${b.id}`}</p>
-										<Badge variant="secondary" className="text-[10px]">
-											{b.status || 'DONE'}
-										</Badge>
-									</div>
-									<p className="text-[10px] text-muted-foreground font-mono">
-										Type: {b.backup_type || 'Volume'} · Dest: {b.destination || 'Local'}
-									</p>
-								</div>
-							))}
+						<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-340px)] min-h-[280px] shadow-xs">
+							<Table>
+								<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
+									<TableRow className="border-b border-border/60 hover:bg-transparent">
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Backup Name</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Type</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Status</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Destination</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Created</TableHead>
+										<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{backups.map((b) => (
+										<TableRow key={b.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+											<TableCell className="py-3.5 px-4 font-bold text-xs text-foreground font-mono">
+												<div className="flex items-center gap-2">
+													<Clock className="size-4 text-primary shrink-0" />
+													<span>{b.name || `Backup #${b.id}`}</span>
+												</div>
+											</TableCell>
+											<TableCell className="py-3.5 px-4 text-xs font-semibold text-foreground">
+												<Badge variant="outline" className="text-[10px] font-mono">
+													{b.backup_type || 'Volume'}
+												</Badge>
+											</TableCell>
+											<TableCell className="py-3.5 px-4">
+												<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-500">
+													<span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+													<span>{b.status || 'DONE'}</span>
+												</div>
+											</TableCell>
+											<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+												{b.destination || 'Local Storage'}
+											</TableCell>
+											<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+												{b.created_at ? new Date(Number(b.created_at) * 1000).toLocaleDateString() : 'N/A'}
+											</TableCell>
+											<TableCell className="py-3.5 px-4 text-right">
+												<Button size="sm" variant="outline" className="h-7 text-xs font-semibold px-2.5">
+													Download
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
 						</div>
 					)}
 				</TabsContent>
 
-				{/* 3. Domains Tab */}
+				{/* 3. Domains Tab Table */}
 				<TabsContent value="domains" className="space-y-4">
 					{domains.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
@@ -123,20 +157,72 @@ function OverviewPage() {
 							<p className="text-xs text-muted-foreground">Configure custom domain routes in application settings</p>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{domains.map((dom) => (
-								<div key={dom.id} className="p-4 border border-border/60 rounded-xl bg-card flex flex-col gap-2 shadow-xs">
-									<div className="flex items-center justify-between">
-										<p className="font-bold text-xs text-foreground font-mono">{dom.domain || dom.host}</p>
-										<Badge variant="outline" className="text-[10px]">
-											{dom.https ? 'HTTPS' : 'HTTP'}
-										</Badge>
-									</div>
-									<p className="text-[10px] text-muted-foreground font-mono">
-										Port: {dom.port || 80} · Path: {dom.path || '/'}
-									</p>
-								</div>
-							))}
+						<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-340px)] min-h-[280px] shadow-xs">
+							<Table>
+								<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
+									<TableRow className="border-b border-border/60 hover:bg-transparent">
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Domain / Host</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Target Service</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Path & Port</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">SSL Status</TableHead>
+										<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Project</TableHead>
+										<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{domains.map((dom) => {
+										const fullUrl = `${dom.https ? 'https' : 'http'}://${dom.domain || dom.host}${dom.path || ''}`;
+										return (
+											<TableRow key={dom.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+												<TableCell className="py-3.5 px-4 font-bold text-xs text-foreground font-mono">
+													<div className="flex items-center gap-2">
+														<Globe className="size-4 text-primary shrink-0" />
+														<a
+															href={fullUrl}
+															target="_blank"
+															rel="noreferrer"
+															className="hover:underline hover:text-primary transition-colors"
+														>
+															{dom.domain || dom.host}
+														</a>
+													</div>
+												</TableCell>
+												<TableCell className="py-3.5 px-4 text-xs font-semibold text-foreground">
+													{dom.service_name || 'Application'}
+												</TableCell>
+												<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+													{dom.path || '/'} · Port: {dom.port || 80}
+												</TableCell>
+												<TableCell className="py-3.5 px-4">
+													{dom.https ? (
+														<Badge variant="outline" className="text-[10px] font-semibold text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
+															HTTPS (SSL)
+														</Badge>
+													) : (
+														<Badge variant="secondary" className="text-[10px] font-semibold">
+															HTTP
+														</Badge>
+													)}
+												</TableCell>
+												<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-medium">
+													{dom.project_name || 'Rustploy Project'}
+												</TableCell>
+												<TableCell className="py-3.5 px-4 text-right">
+													<a
+														href={fullUrl}
+														target="_blank"
+														rel="noreferrer"
+														className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+													>
+														<ExternalLink className="size-3.5" />
+														<span>Visit</span>
+													</a>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
 						</div>
 					)}
 				</TabsContent>
@@ -205,7 +291,7 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Active or building deployments will appear here in real time</p>
 							</div>
 						) : (
-							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-270px)] min-h-[380px] shadow-xs">
+							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-340px)] min-h-[280px] shadow-xs">
 								<Table>
 									<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
 										<TableRow className="border-b border-border/60 hover:bg-transparent">
