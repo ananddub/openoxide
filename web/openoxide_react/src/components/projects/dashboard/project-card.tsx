@@ -11,6 +11,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
+import { useAppStore } from '#/stores/app-store';
 
 type Project = components['schemas']['ProjectResponseDto'];
 
@@ -22,6 +23,9 @@ type ProjectCardProps = {
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
 	const navigate = useNavigate();
 
+	// Read real-time overview services from Zustand store for exact service & environment counts
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
+
 	const handleCardClick = () => {
 		navigate({ to: '/projects/$id', params: { id: String(project.id) } });
 	};
@@ -32,41 +36,38 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 		return date.toLocaleDateString();
 	};
 
-	const envs = (project as any).environments || (project as any).envs || [];
-	const totalEnvironments = Array.isArray(envs) ? envs.length : 1;
-	const totalServices = Array.isArray(envs)
-		? envs.reduce((acc: number, env: any) => {
-				const apps = env.applications?.length || env.apps?.length || 0;
-				const comp = env.compose?.length || 0;
-				const dbs = env.databases?.length || 0;
-				return acc + apps + comp + dbs;
-			}, 0)
-		: 0;
+	// Calculate accurate total services & environments for this project from Zustand RAM store
+	const projectServices = overviewServices.filter((s) => Number(s.project_id) === Number(project.id));
+	const totalServices = projectServices.length;
+
+	const envIds = new Set(projectServices.map((s) => s.environment_id).filter(Boolean));
+	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
 
 	return (
 		<div
 			onClick={handleCardClick}
-			className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/60 bg-background p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md w-full"
+			className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[190px] w-full"
 		>
-			<div className="flex flex-col gap-3">
+			{/* Top Body Section */}
+			<div className="flex flex-col gap-3.5 min-w-0">
 				{/* Card Header */}
 				<div className="flex items-start justify-between gap-3">
-					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="flex size-9 items-center justify-center rounded-lg border border-border/40 bg-muted/60 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary shrink-0">
-							<Folder className="size-4" />
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="flex size-10 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary shrink-0">
+							<Folder className="size-5" />
 						</div>
 						<div className="flex flex-col min-w-0">
-							<h3 className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+							<h3 className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">
 								{project.name}
 							</h3>
-							<span className="text-[11px] text-muted-foreground">
+							<span className="text-[11px] text-muted-foreground font-mono mt-0.5">
 								Created {formatDate(project.created_at)}
 							</span>
 						</div>
 					</div>
 
 					{/* Action Dropdown Menu */}
-					<div onClick={(e) => e.stopPropagation()}>
+					<div onClick={(e) => e.stopPropagation()} className="shrink-0">
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
@@ -74,7 +75,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 										variant="ghost"
 										size="icon"
 										onClick={(e) => e.stopPropagation()}
-										className="size-8 text-muted-foreground hover:text-foreground focus-visible:ring-0"
+										className="size-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg focus-visible:ring-0"
 									>
 										<MoreHorizontal className="size-4" />
 									</Button>
@@ -110,7 +111,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 
 				{/* Description */}
 				{project.description && (
-					<p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+					<p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground/90">
 						{project.description}
 					</p>
 				)}
@@ -119,7 +120,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 				{(project as any).tags && (project as any).tags.length > 0 && (
 					<div className="flex flex-wrap gap-1.5 pt-1">
 						{(project as any).tags.map((t: string) => (
-							<Badge key={t} variant="secondary" className="text-[11px] font-medium px-2 py-0.5">
+							<Badge key={t} variant="secondary" className="text-[10px] font-semibold px-2.5 py-0.5 rounded-md border border-border/40">
 								{t}
 							</Badge>
 						))}
@@ -128,15 +129,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 			</div>
 
 			{/* Card Footer Summary */}
-			<div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground">
+			<div className="mt-5 flex items-center justify-between border-t border-border/40 pt-3.5 text-xs text-muted-foreground font-medium">
 				<div className="flex items-center gap-3">
 					<span>
-						<strong className="font-semibold text-foreground">{totalEnvironments}</strong>{' '}
+						<strong className="font-bold text-foreground">{totalEnvironments}</strong>{' '}
 						{totalEnvironments === 1 ? 'Environment' : 'Environments'}
 					</span>
-					<span>•</span>
+					<span className="text-muted-foreground/40">•</span>
 					<span>
-						<strong className="font-semibold text-foreground">{totalServices}</strong>{' '}
+						<strong className="font-bold text-foreground">{totalServices}</strong>{' '}
 						{totalServices === 1 ? 'Service' : 'Services'}
 					</span>
 				</div>
