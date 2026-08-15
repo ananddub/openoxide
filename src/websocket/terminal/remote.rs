@@ -59,10 +59,24 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Pass the target shell and -i as separate SSH arguments.
+    // Build the remote shell command.
+    // bash: single command string — sshd wraps it in `/bin/sh -c "..."` which then execs bash.
+    //   TERM + COLORTERM enable 256-color/truecolor.
+    //   PROMPT_COMMAND sets PS1 *after* ~/.bashrc runs so it always wins.
+    //   Colorful prompt: green user@host, blue cwd, then $ / #
+    // sh: plain `sh -i` — dash does not support color PS1 escape sequences reliably.
+    if shell_req == "sh" {
+        args.push("sh".to_string());
+        args.push("-i".to_string());
+    } else {
+        let ps1 = r"\[\e[0;32m\]\u@\h\[\e[0m\]:\[\e[0;34m\]\w\[\e[0m\]\$ ";
+        args.push(format!(
+            "TERM=xterm-256color COLORTERM=truecolor \
+             PROMPT_COMMAND='PS1=\"{ps1}\"' \
+             bash -i"
+        ));
+    }
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
-    args.push(shell_bin.to_string());
-    args.push("-i".to_string());
 
     // DEBUG: log the exact SSH command being constructed
     tracing::info!(shell = %shell_bin, cmd = ?std::iter::once("ssh").chain(args.iter().map(|s| s.as_str())).collect::<Vec<_>>(), "spawning remote terminal");
