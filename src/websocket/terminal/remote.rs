@@ -57,10 +57,13 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // If 'sh' is requested explicitly, pass "sh". Otherwise, leave args empty so OpenSSH launches default interactive shell (Dokploy style)
-    if shell_req == "sh" {
-        args.push("sh".to_string());
-    }
+    // Pass "bash --login 2>/dev/null || sh" to force login shell PS1 prompt load while gracefully handling hosts without bash
+    let remote_cmd = if shell_req == "sh" {
+        "sh".to_string()
+    } else {
+        "bash --login 2>/dev/null || sh".to_string()
+    };
+    args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
