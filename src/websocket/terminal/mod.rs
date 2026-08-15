@@ -20,7 +20,7 @@ use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
 use remote::spawn_remote_terminal;
 pub use types::{
-    DockerTerminalStart, ServerTerminalStart, TerminalInput, TerminalResize, TerminalSession,
+    DockerTerminalStart, ServerTerminalStart, TerminalInputPayload, TerminalResize, TerminalSession,
 };
 
 #[derive(Debug)]
@@ -75,55 +75,26 @@ impl TerminalSocket {
     }
 
     #[on("docker:start")]
-    async fn docker_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
+    async fn docker_start(&self, socket: SocketRef, Data(mut input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
-        let container = payload
-            .get("container")
-            .and_then(|v| v.as_str())
-            .unwrap_or("app")
-            .to_string();
-        let shell = payload
-            .get("shell")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let server_id = payload
-            .get("server_id")
-            .and_then(|v| v.as_i64())
-            .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
+        input.cols = input.cols.map(|v| v.max(1));
+        input.rows = input.rows.map(|v| v.max(1));
 
-        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
-        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
-
-        let input = DockerTerminalStart {
-            container,
-            shell,
-            server_id,
-            cols,
-            rows,
-        };
         spawn_docker_terminal(socket, &self.sessions, input).await;
     }
 
     #[on("server:start")]
-    async fn server_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
+    async fn server_start(&self, socket: SocketRef, Data(mut input): Data<ServerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
-        let server_id = payload
-            .get("server_id")
-            .and_then(|v| v.as_i64())
-            .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
-        let shell = payload
-            .get("shell")
-            .and_then(|v| v.as_str())
-            .or_else(|| payload.get("command").and_then(|v| v.as_str()))
-            .map(|s| s.to_string());
-        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
-        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
-
-        let input = ServerTerminalStart { shell, server_id, cols, rows };
+        if input.shell.is_none() && input.command.is_some() {
+            input.shell = input.command.clone();
+        }
+        input.cols = input.cols.map(|v| v.max(1));
+        input.rows = input.rows.map(|v| v.max(1));
 
         if let Some(server_id) = input.server_id {
             spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
@@ -143,14 +114,11 @@ impl TerminalSocket {
     }
 
     #[on("input")]
-    async fn input(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
+    async fn input(&self, socket: SocketRef, Data(payload): Data<TerminalInputPayload>) {
         let key = socket_key(&socket);
-        let data = if let Some(s) = payload.as_str() {
-            s.to_string()
-        } else if let Some(s) = payload.get("data").and_then(|v| v.as_str()) {
-            s.to_string()
-        } else {
-            return;
+        let data = match payload {
+            TerminalInputPayload::Direct(s) => s,
+            TerminalInputPayload::Object { data } => data,
         };
 
         let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
@@ -187,17 +155,9 @@ impl TerminalSocket {
     }
 
     #[on("resize")]
-    async fn resize(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
-        let cols = payload
-            .get("cols")
-            .and_then(|v| v.as_u64())
-            .map(|v| (v as u16).max(1))
-            .unwrap_or(80);
-        let rows = payload
-            .get("rows")
-            .and_then(|v| v.as_u64())
-            .map(|v| (v as u16).max(1))
-            .unwrap_or(24);
+    async fn resize(&self, socket: SocketRef, Data(payload): Data<TerminalResize>) {
+        let cols = payload.cols.map(|v| v.max(1)).unwrap_or(80);
+        let rows = payload.rows.map(|v| v.max(1)).unwrap_or(24);
 
         let key = socket_key(&socket);
         if let Some(session) = self.sessions.get(&key) {

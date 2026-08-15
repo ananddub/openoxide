@@ -9,24 +9,37 @@ use tokio::{
 
 #[derive(Debug, Deserialize)]
 pub struct DockerTerminalStart {
+    #[serde(default = "default_container")]
     pub container: String,
     pub shell: Option<String>,
+    #[serde(alias = "serverId")]
     pub server_id: Option<i64>,
     pub cols: Option<u16>,
     pub rows: Option<u16>,
+}
+
+fn default_container() -> String {
+    "app".to_string()
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerTerminalStart {
     pub shell: Option<String>,
+    #[serde(alias = "command")]
+    pub command: Option<String>,
+    #[serde(alias = "serverId")]
     pub server_id: Option<i64>,
     pub cols: Option<u16>,
     pub rows: Option<u16>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TerminalInput {
-    pub data: String,
+#[serde(untagged)]
+pub enum TerminalInputPayload {
+    Direct(String),
+    Object {
+        data: String,
+    },
 }
 
 #[derive(Debug, Deserialize)]
