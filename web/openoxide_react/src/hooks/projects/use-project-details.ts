@@ -32,7 +32,7 @@ export function useProjectDetails(projectId: number) {
 
 	// Store Services Fallback for instant 0ms render
 	const storeServicesForProject = useMemo(() => {
-		return overviewServices.filter((s: any) => String(s.project_id) === String(projectId));
+		return (overviewServices || []).filter((s: any) => s && String(s.project_id) === String(projectId));
 	}, [overviewServices, projectId]);
 
 	// Queries
@@ -108,19 +108,19 @@ export function useProjectDetails(projectId: number) {
 
 	// Filter Services Logic
 	const filteredServices = useMemo(() => {
-		const sQuery = searchQuery.toLowerCase().trim();
+		const sQuery = String(searchQuery || '').toLowerCase().trim();
 
 		let list: any[] = [];
 
-		if (apps || composes || databases.length > 0) {
+		if ((apps && apps.length > 0) || (composes && composes.length > 0) || databases.length > 0) {
 			const mappedApps = (apps ?? []).map(app => ({
 				key: `app-${app.id}`,
 				projectId,
 				type: 'APP' as const,
 				id: app.id,
-				name: app.name,
+				name: app.name || '',
 				subtitle: 'Application',
-				status: app.app_status || 'idle',
+				status: String(app.app_status || 'idle'),
 				createdAt: app.created_at,
 			}));
 
@@ -129,20 +129,20 @@ export function useProjectDetails(projectId: number) {
 				projectId,
 				type: 'COMPOSE' as const,
 				id: compose.id,
-				name: compose.name,
+				name: compose.name || '',
 				subtitle: 'Docker Compose',
-				status: compose.compose_status || 'idle',
+				status: String(compose.compose_status || 'idle'),
 				createdAt: compose.created_at,
 			}));
 
 			const mappedDatabases = databases.map(db => ({
-				key: `database-${db.kind}-${db.id}`,
+				key: `database-${db.kind || 'db'}-${db.id}`,
 				projectId,
 				type: 'DATABASE' as const,
 				id: db.id,
-				name: db.name,
-				subtitle: db.kind,
-				status: db.app_status || 'idle',
+				name: String(db.name || ''),
+				subtitle: String(db.kind || 'database'),
+				status: String(db.app_status || 'idle'),
 				createdAt: db.created_at,
 				dbKind: db.kind,
 			}));
@@ -150,30 +150,34 @@ export function useProjectDetails(projectId: number) {
 			list = [...mappedApps, ...mappedComposes, ...mappedDatabases];
 		} else {
 			// Fallback to Zustand RAM store for 0ms instant display
-			list = storeServicesForProject.map((s: any) => ({
-				key: `${s.type.toLowerCase()}-${s.id}`,
-				projectId,
-				type: s.type,
-				id: s.id,
-				name: s.name,
-				subtitle: s.type === 'APP' ? 'Application' : s.type === 'COMPOSE' ? 'Docker Compose' : s.dbKind || 'Database',
-				status: s.status || 'idle',
-				createdAt: s.createdAt,
-				dbKind: s.dbKind,
-			}));
+			list = storeServicesForProject.map((s: any) => {
+				const rawType = String(s?.type || s?.kind || 'APP').toUpperCase();
+				return {
+					key: `${rawType.toLowerCase()}-${s.id}`,
+					projectId,
+					type: rawType,
+					id: s.id,
+					name: String(s?.name || s?.app_name || s?.appName || ''),
+					subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : String(s?.dbKind || s?.kind || 'Database'),
+					status: String(s?.status || s?.app_status || 'idle'),
+					createdAt: s?.createdAt || s?.created_at,
+					dbKind: s?.dbKind || s?.kind,
+				};
+			});
 		}
 
 		// Apply Search
 		if (sQuery) {
-			list = list.filter((item: any) => String(item.name || '').toLowerCase().includes(sQuery));
+			list = list.filter((item: any) => String(item?.name || '').toLowerCase().includes(sQuery));
 		}
 
 		// Apply Type Filter
 		if (typeFilter !== 'all') {
 			list = list.filter((item: any) => {
-				if (typeFilter === 'app') return item.type === 'APP';
-				if (typeFilter === 'compose') return item.type === 'COMPOSE';
-				if (typeFilter === 'database') return item.type === 'DATABASE';
+				const itemType = String(item?.type || '').toLowerCase();
+				if (typeFilter === 'app') return itemType === 'app';
+				if (typeFilter === 'compose') return itemType === 'compose';
+				if (typeFilter === 'database') return itemType === 'database';
 				return true;
 			});
 		}
@@ -181,7 +185,7 @@ export function useProjectDetails(projectId: number) {
 		// Apply Status Filter
 		if (statusFilter !== 'all') {
 			list = list.filter((item: any) => {
-				const st = String(item.status || '').toLowerCase();
+				const st = String(item?.status || '').toLowerCase();
 				const isRunning =
 					st.includes('running') ||
 					st.includes('active') ||
