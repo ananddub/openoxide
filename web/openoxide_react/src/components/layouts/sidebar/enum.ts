@@ -64,8 +64,9 @@ export type Menu = {
 // Exact icon mapping extracted directly from Dokploy source (apps/dokploy/components/layouts/side.tsx)
 export const MENU: Menu = {
 	platform: [
-		{title: 'Overview', icon: LayoutDashboard, to: '/'},
+		{title: 'Home', icon: House, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
+		{title: 'Overview', icon: LayoutDashboard, to: '/overview'},
 		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Monitoring', icon: BarChartHorizontal, to: '/monitoring'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
