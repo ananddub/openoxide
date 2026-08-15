@@ -60,16 +60,34 @@ export function ServiceCard({
 		};
 	}, [contextMenu]);
 
-	// Mutations for App, Compose, DB
+	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');
 	const appStop = $api.useMutation('post', '/applications/{id}/stop');
 	const appDeploy = $api.useMutation('post', '/applications/{id}/deploy');
 	const appDelete = $api.useMutation('delete', '/applications/{id}');
 
+	// Compose Mutations
 	const composeStart = $api.useMutation('post', '/compose/{id}/start');
 	const composeStop = $api.useMutation('post', '/compose/{id}/stop');
 	const composeDeploy = $api.useMutation('post', '/compose/{id}/deploy');
 	const composeDelete = $api.useMutation('delete', '/compose/{id}');
+
+	// Database Mutations (Dynamic route path based on dbKind)
+	const getDbKindPath = () => {
+		const k = (dbKind || '').toLowerCase();
+		if (k.includes('mysql')) return 'mysql';
+		if (k.includes('mariadb')) return 'mariadb';
+		if (k.includes('mongo')) return 'mongo';
+		if (k.includes('redis')) return 'redis';
+		if (k.includes('libsql')) return 'libsql';
+		return 'postgres';
+	};
+
+	const dbKindPath = getDbKindPath();
+	const dbStart = $api.useMutation('post', `/${dbKindPath}/{id}/start` as any);
+	const dbStop = $api.useMutation('post', `/${dbKindPath}/{id}/stop` as any);
+	const dbDeploy = $api.useMutation('post', `/${dbKindPath}/{id}/deploy` as any);
+	const dbDelete = $api.useMutation('delete', `/${dbKindPath}/{id}` as any);
 
 	const getStatusDotColor = (status: string) => {
 		const s = status?.toLowerCase() || '';
@@ -134,6 +152,8 @@ export function ServiceCard({
 				await appStart.mutateAsync({ params: { path: { id } } });
 			} else if (type === 'COMPOSE') {
 				await composeStart.mutateAsync({ params: { path: { id } } });
+			} else {
+				await dbStart.mutateAsync({ params: { path: { id } } });
 			}
 			toast.success(`Starting ${name}...`);
 		} catch (err) {
@@ -149,6 +169,8 @@ export function ServiceCard({
 				await appStop.mutateAsync({ params: { path: { id } } });
 			} else if (type === 'COMPOSE') {
 				await composeStop.mutateAsync({ params: { path: { id } } });
+			} else {
+				await dbStop.mutateAsync({ params: { path: { id } } });
 			}
 			toast.success(`Stopping ${name}...`);
 		} catch (err) {
@@ -164,6 +186,8 @@ export function ServiceCard({
 				await appDeploy.mutateAsync({ params: { path: { id } } });
 			} else if (type === 'COMPOSE') {
 				await composeDeploy.mutateAsync({ params: { path: { id } } });
+			} else {
+				await dbDeploy.mutateAsync({ params: { path: { id } } });
 			}
 			toast.success(`Deploying ${name}...`);
 		} catch (err) {
@@ -180,6 +204,8 @@ export function ServiceCard({
 				await appDelete.mutateAsync({ params: { path: { id } } });
 			} else if (type === 'COMPOSE') {
 				await composeDelete.mutateAsync({ params: { path: { id } } });
+			} else {
+				await dbDelete.mutateAsync({ params: { path: { id } } });
 			}
 			toast.success(`Deleted ${name}`);
 			onDeleted?.();
@@ -254,9 +280,9 @@ export function ServiceCard({
 							<DropdownMenuSeparator className="bg-border/60" />
 							<DropdownMenuItem
 								onClick={handleDelete}
-								className="flex items-center gap-2 cursor-pointer text-xs text-destructive font-medium py-1.5 focus:text-destructive focus:bg-destructive/10"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10"
 							>
-								<Trash2 className="size-3.5 text-foreground" />
+								<Trash2 className="size-3.5 text-destructive" />
 								Delete
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -315,9 +341,9 @@ export function ServiceCard({
 					<div className="my-1 h-px bg-border/60" />
 					<button
 						onClick={handleDelete}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
 					>
-						<Trash2 className="size-3.5 text-foreground" />
+						<Trash2 className="size-3.5 text-destructive" />
 						Delete
 					</button>
 				</div>
