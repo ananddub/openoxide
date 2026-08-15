@@ -58,16 +58,11 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Build the remote command string.
-    // When SSH runs a command string, the shell starts in non-interactive mode by default.
-    // Passing `-i` forces interactive mode so bash loads .bashrc and shows PS1 prompt.
-    // `sh` does not need `-i` as it defaults to interactive when connected to a PTY.
-    let shell_cmd = if shell_req == "sh" {
-        "sh".to_string()
-    } else {
-        "bash -i".to_string()
-    };
-    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_cmd}");
+    // When SSH executes a command string, the shell starts non-interactive by default.
+    // Both bash and sh need -i to force interactive mode so they load their profiles
+    // and display a PS1 prompt. Without -i the shell silently waits for stdin with no prompt.
+    let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
+    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_bin} -i");
     args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
