@@ -90,10 +90,10 @@ export function ServiceCard({
 
 	const getIcon = () => {
 		if (type === 'APP') {
-			return <Box className="size-4 text-primary" />;
+			return <Box className="size-4 text-foreground" />;
 		}
 		if (type === 'COMPOSE') {
-			return <Layers2 className="size-4 text-amber-500" />;
+			return <Layers2 className="size-4 text-foreground" />;
 		}
 		const kind = (dbKind || '').toLowerCase();
 		if (kind.includes('postgres')) return <PostgresqlIcon className="size-5 shrink-0" />;
@@ -103,7 +103,7 @@ export function ServiceCard({
 		if (kind.includes('redis')) return <RedisIcon className="size-5 shrink-0" />;
 		if (kind.includes('libsql')) return <LibsqlIcon className="size-5 shrink-0" />;
 
-		return <DbIcon className="size-4 text-emerald-500" />;
+		return <DbIcon className="size-4 text-foreground" />;
 	};
 
 	const handleNavigate = () => {
@@ -197,7 +197,7 @@ export function ServiceCard({
 			>
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex items-center gap-3 min-w-0">
-						<div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 relative border border-border/40">
+						<div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 relative border border-border/40 text-foreground">
 							{getIcon()}
 							<span className={cn('absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-card', getStatusDotColor(status))} />
 						</div>
@@ -214,7 +214,7 @@ export function ServiceCard({
 									onClick={(e) => e.stopPropagation()}
 									className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
 								>
-									<MoreVertical className="size-4" />
+									<MoreVertical className="size-4 text-foreground" />
 								</button>
 							}
 						/>
@@ -225,30 +225,30 @@ export function ServiceCard({
 						>
 							<DropdownMenuItem
 								onClick={handleNavigate}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
 							>
-								<Eye className="size-3.5 text-muted-foreground" />
+								<Eye className="size-3.5 text-foreground" />
 								View details
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={handleStart}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-emerald-600 dark:text-emerald-400"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
 							>
-								<Play className="size-3.5" />
+								<Play className="size-3.5 text-foreground" />
 								Start
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={handleStop}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-amber-600 dark:text-amber-400"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
 							>
-								<Square className="size-3.5" />
+								<Square className="size-3.5 text-foreground" />
 								Stop
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={handleDeploy}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-blue-600 dark:text-blue-400"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
 							>
-								<Rocket className="size-3.5" />
+								<Rocket className="size-3.5 text-foreground" />
 								Deploy
 							</DropdownMenuItem>
 							<DropdownMenuSeparator className="bg-border/60" />
@@ -256,7 +256,7 @@ export function ServiceCard({
 								onClick={handleDelete}
 								className="flex items-center gap-2 cursor-pointer text-xs text-destructive font-medium py-1.5 focus:text-destructive focus:bg-destructive/10"
 							>
-								<Trash2 className="size-3.5" />
+								<Trash2 className="size-3.5 text-foreground" />
 								Delete
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -281,43 +281,43 @@ export function ServiceCard({
 			{contextMenu && (
 				<div
 					style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-					className="fixed z-50 w-44 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100"
+					className="fixed z-50 w-44 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100 text-foreground"
 					onClick={(e) => e.stopPropagation()}
 				>
 					<button
 						onClick={handleNavigate}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-popover-foreground hover:bg-muted transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
 					>
-						<Eye className="size-3.5 text-muted-foreground" />
+						<Eye className="size-3.5 text-foreground" />
 						View details
 					</button>
 					<button
 						onClick={handleStart}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
 					>
-						<Play className="size-3.5" />
+						<Play className="size-3.5 text-foreground" />
 						Start
 					</button>
 					<button
 						onClick={handleStop}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
 					>
-						<Square className="size-3.5" />
+						<Square className="size-3.5 text-foreground" />
 						Stop
 					</button>
 					<button
 						onClick={handleDeploy}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
 					>
-						<Rocket className="size-3.5" />
+						<Rocket className="size-3.5 text-foreground" />
 						Deploy
 					</button>
 					<div className="my-1 h-px bg-border/60" />
 					<button
 						onClick={handleDelete}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
 					>
-						<Trash2 className="size-3.5" />
+						<Trash2 className="size-3.5 text-foreground" />
 						Delete
 					</button>
 				</div>

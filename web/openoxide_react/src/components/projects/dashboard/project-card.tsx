@@ -1,18 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { components } from '#/types/api.d.ts';
-import {
-	FolderOpen,
-	Calendar,
-	MoreVertical,
-	Trash2,
-	Eye,
-	ArrowUpRight,
-	Terminal,
-	Play,
-	Square,
-	Rocket,
-} from 'lucide-react';
+import { FolderOpen, Calendar, MoreVertical, Trash2, Eye, ArrowUpRight, Terminal } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Card, CardTitle } from '#/components/ui/card';
 import {
@@ -22,7 +11,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
-import { toast } from 'sonner';
 
 type Project = components['schemas']['ProjectResponseDto'];
 
@@ -56,24 +44,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 		e.preventDefault();
 		e.stopPropagation();
 		setContextMenu({ x: e.clientX, y: e.clientY });
-	};
-
-	const handleStartProject = (e?: React.MouseEvent) => {
-		e?.stopPropagation();
-		setContextMenu(null);
-		toast.success(`Starting all services in "${project.name}"...`);
-	};
-
-	const handleStopProject = (e?: React.MouseEvent) => {
-		e?.stopPropagation();
-		setContextMenu(null);
-		toast.success(`Stopping all services in "${project.name}"...`);
-	};
-
-	const handleDeployProject = (e?: React.MouseEvent) => {
-		e?.stopPropagation();
-		setContextMenu(null);
-		toast.success(`Deploying all services in "${project.name}"...`);
 	};
 
 	const formatDate = (timestamp: number) => {
@@ -124,49 +94,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 									onClick={(e) => e.stopPropagation()}
 									className="size-7 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus-visible:ring-0"
 								>
-									<MoreVertical className="size-4" />
+									<MoreVertical className="size-4 text-foreground" />
 								</Button>
 							}
 						/>
 						<DropdownMenuContent
 							align="end"
-							className="w-44 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
+							className="w-40 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
 							onClick={(e) => e.stopPropagation()}
 						>
 							<DropdownMenuItem
 								onClick={handleNavigate}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-foreground"
 							>
-								<Eye className="size-3.5 text-muted-foreground" />
+								<Eye className="size-3.5 text-foreground" />
 								View details
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={handleStartProject}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-emerald-600 dark:text-emerald-400"
-							>
-								<Play className="size-3.5" />
-								Start all
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={handleStopProject}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-amber-600 dark:text-amber-400"
-							>
-								<Square className="size-3.5" />
-								Stop all
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={handleDeployProject}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-blue-600 dark:text-blue-400"
-							>
-								<Rocket className="size-3.5" />
-								Deploy all
 							</DropdownMenuItem>
 							<DropdownMenuSeparator className="bg-border/60" />
 							<DropdownMenuItem
 								onClick={() => onDelete(project.id)}
-								className="flex items-center gap-2 cursor-pointer text-xs text-destructive font-medium py-2 focus:text-destructive focus:bg-destructive/10"
+								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-2 text-foreground hover:text-destructive focus:text-destructive focus:bg-destructive/10"
 							>
-								<Trash2 className="size-3.5" />
+								<Trash2 className="size-3.5 text-foreground group-hover:text-destructive" />
 								Delete project
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -193,36 +142,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 			{contextMenu && (
 				<div
 					style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-					className="fixed z-50 w-44 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100"
+					className="fixed z-50 w-40 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100"
 					onClick={(e) => e.stopPropagation()}
 				>
 					<button
 						onClick={handleNavigate}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-popover-foreground hover:bg-muted transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
 					>
-						<Eye className="size-3.5 text-muted-foreground" />
+						<Eye className="size-3.5 text-foreground" />
 						View details
-					</button>
-					<button
-						onClick={handleStartProject}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors text-left"
-					>
-						<Play className="size-3.5" />
-						Start all
-					</button>
-					<button
-						onClick={handleStopProject}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
-					>
-						<Square className="size-3.5" />
-						Stop all
-					</button>
-					<button
-						onClick={handleDeployProject}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
-					>
-						<Rocket className="size-3.5" />
-						Deploy all
 					</button>
 					<div className="my-1 h-px bg-border/60" />
 					<button
@@ -230,9 +158,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 							setContextMenu(null);
 							onDelete(project.id);
 						}}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
 					>
-						<Trash2 className="size-3.5" />
+						<Trash2 className="size-3.5 text-foreground hover:text-destructive" />
 						Delete project
 					</button>
 				</div>
