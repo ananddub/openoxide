@@ -256,86 +256,95 @@ export const useAppStore = create<AppStoreState>((set) => ({
 
 	setVaultProviders: (providers) => set({ vaultProviders: providers }),
 	addVaultProvider: (provider) =>
-		set((state) => ({ vaultProviders: [provider, ...state.vaultProviders.filter((p) => p.id !== provider.id)] })),
+		set((state) => ({ vaultProviders: [provider, ...state.vaultProviders.filter((p) => String(p.id) !== String(provider.id))] })),
 	updateVaultProvider: (id, updated) =>
-		set((state) => ({ vaultProviders: state.vaultProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+		set((state) => ({ vaultProviders: state.vaultProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
 	deleteVaultProvider: (id) =>
-		set((state) => ({ vaultProviders: state.vaultProviders.filter((p) => p.id !== id) })),
+		set((state) => ({ vaultProviders: state.vaultProviders.filter((p) => String(p.id) !== String(id)) })),
 
 	setDnsProviders: (providers) => set({ dnsProviders: providers }),
 	addDnsProvider: (provider) =>
-		set((state) => ({ dnsProviders: [provider, ...state.dnsProviders.filter((p) => p.id !== provider.id)] })),
+		set((state) => ({ dnsProviders: [provider, ...state.dnsProviders.filter((p) => String(p.id) !== String(provider.id))] })),
 	updateDnsProvider: (id, updated) =>
-		set((state) => ({ dnsProviders: state.dnsProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+		set((state) => ({ dnsProviders: state.dnsProviders.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
 	deleteDnsProvider: (id) =>
-		set((state) => ({ dnsProviders: state.dnsProviders.filter((p) => p.id !== id) })),
+		set((state) => ({ dnsProviders: state.dnsProviders.filter((p) => String(p.id) !== String(id)) })),
 
 	setProjects: (projects) => set({ projects }),
 	addProject: (project) =>
-		set((state) => ({ projects: [project, ...state.projects.filter((p) => p.id !== project.id)] })),
+		set((state) => ({ projects: [project, ...state.projects.filter((p) => String(p.id) !== String(project.id))] })),
 	updateProject: (id, updated) =>
-		set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+		set((state) => ({ projects: state.projects.map((p) => (String(p.id) === String(id) ? { ...p, ...updated } : p)) })),
 	deleteProject: (id) =>
-		set((state) => ({ projects: state.projects.filter((p) => p.id !== id) })),
+		set((state) => ({ projects: state.projects.filter((p) => String(p.id) !== String(id)) })),
 
 	setApplications: (applications) => set({ applications }),
 	addApplication: (app) =>
-		set((state) => ({ applications: [app, ...state.applications.filter((a) => a.id !== app.id)] })),
+		set((state) => ({ applications: [app, ...state.applications.filter((a) => String(a.id) !== String(app.id))] })),
 	updateApplication: (id, updated) =>
-		set((state) => ({ applications: state.applications.map((a) => (a.id === id ? { ...a, ...updated } : a)) })),
+		set((state) => ({ applications: state.applications.map((a) => (String(a.id) === String(id) ? { ...a, ...updated } : a)) })),
 	deleteApplication: (id) =>
-		set((state) => ({ applications: state.applications.filter((a) => a.id !== id) })),
+		set((state) => ({ applications: state.applications.filter((a) => String(a.id) !== String(id)) })),
 
 	setDatabases: (databases) => set({ databases }),
 	addDatabase: (db) =>
-		set((state) => ({ databases: [db, ...state.databases.filter((d) => d.id !== db.id)] })),
+		set((state) => ({ databases: [db, ...state.databases.filter((d) => String(d.id) !== String(db.id))] })),
 	updateDatabase: (id, updated) =>
-		set((state) => ({ databases: state.databases.map((d) => (d.id === id ? { ...d, ...updated } : d)) })),
+		set((state) => ({ databases: state.databases.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
 	deleteDatabase: (id) =>
-		set((state) => ({ databases: state.databases.filter((d) => d.id !== id) })),
+		set((state) => ({ databases: state.databases.filter((d) => String(d.id) !== String(id)) })),
 
 	setComposes: (composes) => set({ composes }),
 	addCompose: (compose) =>
-		set((state) => ({ composes: [compose, ...state.composes.filter((c) => c.id !== compose.id)] })),
+		set((state) => ({ composes: [compose, ...state.composes.filter((c) => String(c.id) !== String(compose.id))] })),
 	updateCompose: (id, updated) =>
-		set((state) => ({ composes: state.composes.map((c) => (c.id === id ? { ...c, ...updated } : c)) })),
+		set((state) => ({ composes: state.composes.map((c) => (String(c.id) === String(id) ? { ...c, ...updated } : c)) })),
 	deleteCompose: (id) =>
-		set((state) => ({ composes: state.composes.filter((c) => c.id !== id) })),
+		set((state) => ({ composes: state.composes.filter((c) => String(c.id) !== String(id)) })),
 
 	setServers: (servers) => set({ servers }),
 	addServer: (server) =>
-		set((state) => ({ servers: [server, ...state.servers.filter((s) => s.id !== server.id)] })),
+		set((state) => ({ servers: [server, ...state.servers.filter((s) => String(s.id) !== String(server.id))] })),
 	updateServer: (id, updated) =>
-		set((state) => ({ servers: state.servers.map((s) => (s.id === id ? { ...s, ...updated } : s)) })),
+		set((state) => ({ servers: state.servers.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
 	deleteServer: (id) =>
-		set((state) => ({ servers: state.servers.filter((s) => s.id !== id) })),
+		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
 
 	setDeployments: (deployments) => set({ deployments }),
 	addDeployment: (deployment) =>
-		set((state) => ({ deployments: [deployment, ...state.deployments.filter((d) => d.id !== deployment.id)] })),
+		set((state) => ({ deployments: [deployment, ...state.deployments.filter((d) => String(d.id) !== String(deployment.id))] })),
 	updateDeployment: (id, updated) =>
-		set((state) => ({ deployments: state.deployments.map((d) => (d.id === id ? { ...d, ...updated } : d)) })),
+		set((state) => ({ deployments: state.deployments.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
 
 	setSwarmNodes: (swarmNodes) => set({ swarmNodes }),
 	setTags: (tags) => set({ tags }),
 	setSchedules: (schedules) => set({ schedules }),
 	setSshKeys: (sshKeys) => set({ sshKeys }),
 	setDestinations: (destinations) => set({ destinations }),
-	setProfile: (profile) => set({ profile }),
+	setProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } })),
 
 	setMembers: (members) => set({ members }),
 	addMember: (member) =>
-		set((state) => ({ members: [member, ...state.members.filter((m) => m.id !== member.id)] })),
+		set((state) => {
+			const mId = String(member.user_id || member.id);
+			return { members: [member, ...state.members.filter((m: any) => String(m.user_id || m.id) !== mId)] };
+		}),
 	updateMember: (id, updated) =>
-		set((state) => ({ members: state.members.map((m) => (m.id === id ? { ...m, ...updated } : m)) })),
+		set((state) => ({
+			members: state.members.map((m: any) =>
+				(String(m.user_id || m.id) === String(id) ? { ...m, ...updated } : m)
+			),
+		})),
 	deleteMember: (id) =>
-		set((state) => ({ members: state.members.filter((m) => m.id !== id) })),
+		set((state) => ({
+			members: state.members.filter((m: any) => String(m.user_id || m.id) !== String(id)),
+		})),
 
 	setInvites: (invites) => set({ invites }),
 	addInvite: (invite) =>
-		set((state) => ({ invites: [invite, ...state.invites.filter((i) => i.id !== invite.id)] })),
+		set((state) => ({ invites: [invite, ...state.invites.filter((i: any) => String(i.id) !== String(invite.id))] })),
 	deleteInvite: (id) =>
-		set((state) => ({ invites: state.invites.filter((i) => i.id !== id) })),
+		set((state) => ({ invites: state.invites.filter((i: any) => String(i.id) !== String(id)) })),
 
 	setHydrated: (hydrated) => set({ isHydrated: hydrated }),
 	setWsConnected: (connected) => set({ isWsConnected: connected }),
