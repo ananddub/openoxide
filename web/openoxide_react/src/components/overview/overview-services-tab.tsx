@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
 import { useOrganizationStore } from '#/stores/organization-store';
 import { $api } from '#/api/query';
 import { client } from '#/api/client';
-import { useProjectListByOrganization } from 'virtual:openoxide-live';
+import {
+	useOverviewServices,
+	useProjectListByOrganization,
+} from 'virtual:openoxide-live';
 import { toast } from 'sonner';
 import { formatApiError } from '#/api/utils';
 import {
@@ -15,7 +17,6 @@ import {
 } from './overview-services-table';
 
 export function OverviewServicesTab() {
-	const queryClient = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedProjectId, setSelectedProjectId] = useState('all');
 	const [selectedType, setSelectedType] = useState('all');
@@ -30,21 +31,8 @@ export function OverviewServicesTab() {
 	// Live Projects stream for Project Select filter
 	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
 
-	// Single backend endpoint query for ALL services in the organization with 2s Realtime Polling Refetch
-	const { data: rawServices, isLoading, refetch } = $api.useQuery(
-		'get',
-		'/overview/services/organization/{organization_id}',
-		{
-			params: {
-				path: {
-					organization_id: orgId,
-				},
-			},
-		},
-		{
-			refetchInterval: 2000, // Realtime live status updates every 2 seconds
-		}
-	);
+	// LIVE REALTIME Socket.IO stream from virtual:openoxide-live (ZERO POLLING!)
+	const { data: rawServices = [], loading: isLoading } = useOverviewServices(BigInt(orgId));
 
 	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');
@@ -116,12 +104,6 @@ export function OverviewServicesTab() {
 		return filteredServices.slice(start, start + pageSize);
 	}, [filteredServices, currentPageIndex, pageSize]);
 
-	// Invalidate query immediately after action
-	const refreshLiveState = () => {
-		refetch();
-		queryClient.invalidateQueries({ queryKey: ['get', '/overview/services/organization/{organization_id}'] });
-	};
-
 	// Action Handlers
 	const handleDeploy = async (svc: OverviewServiceItem) => {
 		try {
@@ -134,7 +116,6 @@ export function OverviewServicesTab() {
 				await client.POST(`/${k}/{id}/deploy` as any, { params: { path: { id: svc.id } } });
 			}
 			toast.success(`Queued deployment for ${svc.name}`);
-			refreshLiveState();
 		} catch (err) {
 			toast.error(formatApiError(err));
 		}
@@ -151,7 +132,6 @@ export function OverviewServicesTab() {
 				await client.POST(`/${k}/{id}/start` as any, { params: { path: { id: svc.id } } });
 			}
 			toast.success(`Starting ${svc.name}...`);
-			refreshLiveState();
 		} catch (err) {
 			toast.error(formatApiError(err));
 		}
@@ -168,7 +148,6 @@ export function OverviewServicesTab() {
 				await client.POST(`/${k}/{id}/stop` as any, { params: { path: { id: svc.id } } });
 			}
 			toast.info(`Stopping ${svc.name}...`);
-			refreshLiveState();
 		} catch (err) {
 			toast.error(formatApiError(err));
 		}

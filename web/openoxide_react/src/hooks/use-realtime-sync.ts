@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '#/stores/app-store';
 import { useOrganizationStore } from '#/stores/organization-store';
-import { $api } from '#/api/query';
 import {
 	usePermissionGroupMembers,
 	usePermissionGroupInvites,
@@ -15,6 +14,8 @@ import {
 	useSshKeyList,
 	useDestinationList,
 	useTagListAll,
+	useOverviewDomains,
+	useOverviewBackups,
 } from 'virtual:openoxide-live';
 
 export function useRealtimeSync() {
@@ -54,16 +55,11 @@ export function useRealtimeSync() {
 	const { data: liveDestinations } = useDestinationList();
 	const { data: liveTags } = useTagListAll();
 
-	// 2. Organization-Wide Domains & Backups HTTP Sync
-	const { data: liveDomains } = $api.useQuery('get', '/overview/domains/organization/{organization_id}', {
-		params: { path: { organization_id: orgId } },
-	});
+	// 2. Organization-Wide Domains & Backups LIVE Socket.IO Sync (ZERO POLLING)
+	const { data: liveDomains } = useOverviewDomains(BigInt(orgId));
+	const { data: liveBackups } = useOverviewBackups(BigInt(orgId));
 
-	const { data: liveBackups } = $api.useQuery('get', '/overview/backups/organization/{organization_id}', {
-		params: { path: { organization_id: orgId } },
-	});
-
-	// Sync Live Realtime Streams & Organization-Wide Queries directly into Zustand Store
+	// Sync Live Realtime Streams directly into Zustand Store
 	useEffect(() => {
 		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
 	}, [liveMembers, setMembers]);
