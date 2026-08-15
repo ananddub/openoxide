@@ -4,7 +4,6 @@ import { useTagListAll } from 'virtual:openoxide-live';
 import { TagBadge } from '#/components/shared/tag-badge';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
-import { Badge } from '#/components/ui/badge';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -92,12 +91,10 @@ export function TagSelector({
 						{variant === 'filter' ? (
 							<div className="flex items-center gap-2 flex-1 min-w-0">
 								<TagsIcon className="size-4 text-muted-foreground shrink-0" />
-								<span>{placeholder}</span>
-								{selectedTags.length > 0 && (
-									<Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary border border-primary/30">
-										{selectedTags.length}
-									</Badge>
-								)}
+								<span>
+									{placeholder}
+									{selectedTags.length > 0 ? ` (${selectedTags.length})` : ''}
+								</span>
 							</div>
 						) : (
 							<div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">

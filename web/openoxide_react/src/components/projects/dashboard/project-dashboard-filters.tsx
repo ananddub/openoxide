@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import {
 	Select,
@@ -64,7 +64,7 @@ export function ProjectDashboardFilters({
 				/>
 			</div>
 
-			{/* Dokploy TagFilter Dropdown with Selected Counter Badge */}
+			{/* Dokploy TagFilter Dropdown */}
 			<div className="w-full sm:w-[150px] shrink-0">
 				<TagSelector
 					selectedTags={selectedTags}
@@ -74,11 +74,14 @@ export function ProjectDashboardFilters({
 				/>
 			</div>
 
-			{/* Sort Select (Dokploy Style) */}
+			{/* Sort Select with ArrowUpDown Icon */}
 			<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
 				<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
-					<SelectTrigger className="w-full sm:w-[170px] bg-card border-border/80 h-10 text-xs font-semibold rounded-lg shadow-2xs">
-						<SelectValue>{getSortLabel(sortBy)}</SelectValue>
+					<SelectTrigger className="w-full sm:w-[185px] bg-card border-border/80 h-10 text-xs font-semibold rounded-lg shadow-2xs">
+						<div className="flex items-center gap-2 min-w-0">
+							<ArrowUpDown className="size-3.5 text-muted-foreground shrink-0" />
+							<SelectValue>{getSortLabel(sortBy)}</SelectValue>
+						</div>
 					</SelectTrigger>
 					<SelectContent className="bg-card border-border">
 						<SelectItem value="newest">Sort: Newest First</SelectItem>
