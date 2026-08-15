@@ -5,6 +5,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {components} from '#/types/api';
 import {useDeploymentLogs} from './use-deployment-logs';
+import {useAppStore} from '#/stores/app-store';
 
 export type Deployment = components['schemas']['DeploymentResponseDto'];
 export type SortKey = 'created_at' | 'title' | 'status';
@@ -32,8 +33,10 @@ export function useDeployments() {
 
 	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
 
+	const storeDeployments = useAppStore((state) => state.deployments);
+
 	// Fetch deployments from backend (live — auto-updates via WebSocket)
-	const {data: deployments, loading: isLoading} = useDeploymentList({
+	const {data: rawDeployments, loading: isQueryLoading} = useDeploymentList({
 		status: null,
 		state: null,
 		application_id: null,
@@ -43,6 +46,12 @@ export function useDeployments() {
 		limit: 100n,
 		offset: null,
 	});
+
+	const deployments = (rawDeployments && Array.isArray(rawDeployments) && rawDeployments.length > 0)
+		? rawDeployments
+		: (storeDeployments || []);
+
+	const isLoading = deployments.length === 0 && isQueryLoading;
 
 	const activeQueue = React.useMemo(() => {
 		if (!deployments) return [];
