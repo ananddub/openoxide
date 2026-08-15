@@ -3,6 +3,7 @@ import { useAppStore } from '#/stores/app-store';
 import { $api } from '#/api/query';
 
 export function useRealtimeSync() {
+	// Setters from Zustand Store
 	const setVaultProviders = useAppStore((state) => state.setVaultProviders);
 	const setDnsProviders = useAppStore((state) => state.setDnsProviders);
 	const setProjects = useAppStore((state) => state.setProjects);
@@ -11,9 +12,18 @@ export function useRealtimeSync() {
 	const setComposes = useAppStore((state) => state.setComposes);
 	const setServers = useAppStore((state) => state.setServers);
 
+	const setDeployments = useAppStore((state) => state.setDeployments);
+	const setSwarmNodes = useAppStore((state) => state.setSwarmNodes);
+	const setTags = useAppStore((state) => state.setTags);
+	const setSchedules = useAppStore((state) => state.setSchedules);
+	const setSshKeys = useAppStore((state) => state.setSshKeys);
+	const setDestinations = useAppStore((state) => state.setDestinations);
+	const setProfile = useAppStore((state) => state.setProfile);
+
 	const setHydrated = useAppStore((state) => state.setHydrated);
 	const setWsConnected = useAppStore((state) => state.setWsConnected);
 
+	// Action Mutations from Zustand Store
 	const addVaultProvider = useAppStore((state) => state.addVaultProvider);
 	const updateVaultProvider = useAppStore((state) => state.updateVaultProvider);
 	const deleteVaultProvider = useAppStore((state) => state.deleteVaultProvider);
@@ -42,48 +52,34 @@ export function useRealtimeSync() {
 	const updateServer = useAppStore((state) => state.updateServer);
 	const deleteServer = useAppStore((state) => state.deleteServer);
 
-	// Fetch Initial Hydration State for All Resources on Boot
+	const addDeployment = useAppStore((state) => state.addDeployment);
+	const updateDeployment = useAppStore((state) => state.updateDeployment);
+
+	// Fetch Initial Hydration State for All Resources
 	const { data: rawVaults } = $api.useQuery('get', '/vault-providers' as any, {} as any);
 	const { data: rawDns } = $api.useQuery('get', '/dns-providers' as any, {} as any);
 	const { data: rawProjects } = $api.useQuery('get', '/projects' as any, {} as any);
 	const { data: rawServers } = $api.useQuery('get', '/remote-servers' as any, {} as any);
+	const { data: rawDeployments } = $api.useQuery('get', '/deployments' as any, {} as any);
+	const { data: rawSshKeys } = $api.useQuery('get', '/ssh-keys' as any, {} as any);
+	const { data: rawDestinations } = $api.useQuery('get', '/destinations' as any, {} as any);
+	const { data: rawTags } = $api.useQuery('get', '/tags' as any, {} as any);
+	const { data: rawProfile } = $api.useQuery('get', '/auth/me' as any, {} as any);
 
-	// Sync Vault Providers
-	useEffect(() => {
-		if (rawVaults && Array.isArray(rawVaults)) {
-			setVaultProviders(rawVaults as any);
-		}
-	}, [rawVaults, setVaultProviders]);
+	// Hydration Sync Effects
+	useEffect(() => { if (rawVaults && Array.isArray(rawVaults)) setVaultProviders(rawVaults as any); }, [rawVaults, setVaultProviders]);
+	useEffect(() => { if (rawDns && Array.isArray(rawDns)) setDnsProviders(rawDns as any); }, [rawDns, setDnsProviders]);
+	useEffect(() => { if (rawProjects && Array.isArray(rawProjects)) setProjects(rawProjects as any); }, [rawProjects, setProjects]);
+	useEffect(() => { if (rawServers && Array.isArray(rawServers)) setServers(rawServers as any); }, [rawServers, setServers]);
+	useEffect(() => { if (rawDeployments && Array.isArray(rawDeployments)) setDeployments(rawDeployments as any); }, [rawDeployments, setDeployments]);
+	useEffect(() => { if (rawSshKeys && Array.isArray(rawSshKeys)) setSshKeys(rawSshKeys as any); }, [rawSshKeys, setSshKeys]);
+	useEffect(() => { if (rawDestinations && Array.isArray(rawDestinations)) setDestinations(rawDestinations as any); }, [rawDestinations, setDestinations]);
+	useEffect(() => { if (rawTags && Array.isArray(rawTags)) setTags(rawTags as any); }, [rawTags, setTags]);
+	useEffect(() => { if (rawProfile) setProfile(rawProfile as any); }, [rawProfile, setProfile]);
 
-	// Sync DNS Providers
-	useEffect(() => {
-		if (rawDns && Array.isArray(rawDns)) {
-			setDnsProviders(rawDns as any);
-		}
-	}, [rawDns, setDnsProviders]);
+	useEffect(() => { setHydrated(true); }, [setHydrated]);
 
-	// Sync Projects
-	useEffect(() => {
-		if (rawProjects && Array.isArray(rawProjects)) {
-			setProjects(rawProjects as any);
-		}
-	}, [rawProjects, setProjects]);
-
-	// Sync Servers
-	useEffect(() => {
-		if (rawServers && Array.isArray(rawServers)) {
-			setServers(rawServers as any);
-		}
-	}, [rawServers, setServers]);
-
-	// Mark Hydration Complete
-	useEffect(() => {
-		if (rawVaults && rawDns && rawProjects) {
-			setHydrated(true);
-		}
-	}, [rawVaults, rawDns, rawProjects, setHydrated]);
-
-	// WebSocket Live Events Subscription Engine
+	// Global WebSocket Event Stream Engine
 	useEffect(() => {
 		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 		const wsUrl = `${protocol}//${window.location.host}/ws/events`;
@@ -94,9 +90,7 @@ export function useRealtimeSync() {
 			try {
 				socket = new WebSocket(wsUrl);
 
-				socket.onopen = () => {
-					setWsConnected(true);
-				};
+				socket.onopen = () => { setWsConnected(true); };
 
 				socket.onmessage = (event) => {
 					try {
@@ -105,88 +99,47 @@ export function useRealtimeSync() {
 
 						switch (msg.type) {
 							// Vault Live Events
-							case 'VAULT_CREATED':
-								if (msg.data) addVaultProvider(msg.data);
-								break;
-							case 'VAULT_UPDATED':
-								if (msg.data && msg.data.id) updateVaultProvider(msg.data.id, msg.data);
-								break;
-							case 'VAULT_DELETED':
-								if (msg.id) deleteVaultProvider(msg.id);
-								break;
+							case 'VAULT_CREATED': if (msg.data) addVaultProvider(msg.data); break;
+							case 'VAULT_UPDATED': if (msg.data && msg.data.id) updateVaultProvider(msg.data.id, msg.data); break;
+							case 'VAULT_DELETED': if (msg.id) deleteVaultProvider(msg.id); break;
 
 							// DNS Live Events
-							case 'DNS_CREATED':
-								if (msg.data) addDnsProvider(msg.data);
-								break;
-							case 'DNS_UPDATED':
-								if (msg.data && msg.data.id) updateDnsProvider(msg.data.id, msg.data);
-								break;
-							case 'DNS_DELETED':
-								if (msg.id) deleteDnsProvider(msg.id);
-								break;
+							case 'DNS_CREATED': if (msg.data) addDnsProvider(msg.data); break;
+							case 'DNS_UPDATED': if (msg.data && msg.data.id) updateDnsProvider(msg.data.id, msg.data); break;
+							case 'DNS_DELETED': if (msg.id) deleteDnsProvider(msg.id); break;
 
 							// Projects Live Events
-							case 'PROJECT_CREATED':
-								if (msg.data) addProject(msg.data);
-								break;
-							case 'PROJECT_UPDATED':
-								if (msg.data && msg.data.id) updateProject(msg.data.id, msg.data);
-								break;
-							case 'PROJECT_DELETED':
-								if (msg.id) deleteProject(msg.id);
-								break;
+							case 'PROJECT_CREATED': if (msg.data) addProject(msg.data); break;
+							case 'PROJECT_UPDATED': if (msg.data && msg.data.id) updateProject(msg.data.id, msg.data); break;
+							case 'PROJECT_DELETED': if (msg.id) deleteProject(msg.id); break;
 
 							// Applications Live Events
-							case 'APP_CREATED':
-								if (msg.data) addApplication(msg.data);
-								break;
-							case 'APP_UPDATED':
-								if (msg.data && msg.data.id) updateApplication(msg.data.id, msg.data);
-								break;
-							case 'APP_DELETED':
-								if (msg.id) deleteApplication(msg.id);
-								break;
+							case 'APP_CREATED': if (msg.data) addApplication(msg.data); break;
+							case 'APP_UPDATED': if (msg.data && msg.data.id) updateApplication(msg.data.id, msg.data); break;
+							case 'APP_DELETED': if (msg.id) deleteApplication(msg.id); break;
 
 							// Databases Live Events
-							case 'DATABASE_CREATED':
-								if (msg.data) addDatabase(msg.data);
-								break;
-							case 'DATABASE_UPDATED':
-								if (msg.data && msg.data.id) updateDatabase(msg.data.id, msg.data);
-								break;
-							case 'DATABASE_DELETED':
-								if (msg.id) deleteDatabase(msg.id);
-								break;
+							case 'DATABASE_CREATED': if (msg.data) addDatabase(msg.data); break;
+							case 'DATABASE_UPDATED': if (msg.data && msg.data.id) updateDatabase(msg.data.id, msg.data); break;
+							case 'DATABASE_DELETED': if (msg.id) deleteDatabase(msg.id); break;
 
 							// Compose Live Events
-							case 'COMPOSE_CREATED':
-								if (msg.data) addCompose(msg.data);
-								break;
-							case 'COMPOSE_UPDATED':
-								if (msg.data && msg.data.id) updateCompose(msg.data.id, msg.data);
-								break;
-							case 'COMPOSE_DELETED':
-								if (msg.id) deleteCompose(msg.id);
-								break;
+							case 'COMPOSE_CREATED': if (msg.data) addCompose(msg.data); break;
+							case 'COMPOSE_UPDATED': if (msg.data && msg.data.id) updateCompose(msg.data.id, msg.data); break;
+							case 'COMPOSE_DELETED': if (msg.id) deleteCompose(msg.id); break;
 
 							// Servers Live Events
-							case 'SERVER_CREATED':
-								if (msg.data) addServer(msg.data);
-								break;
-							case 'SERVER_UPDATED':
-								if (msg.data && msg.data.id) updateServer(msg.data.id, msg.data);
-								break;
-							case 'SERVER_DELETED':
-								if (msg.id) deleteServer(msg.id);
-								break;
+							case 'SERVER_CREATED': if (msg.data) addServer(msg.data); break;
+							case 'SERVER_UPDATED': if (msg.data && msg.data.id) updateServer(msg.data.id, msg.data); break;
+							case 'SERVER_DELETED': if (msg.id) deleteServer(msg.id); break;
 
-							default:
-								break;
+							// Deployments Live Events
+							case 'DEPLOYMENT_CREATED': if (msg.data) addDeployment(msg.data); break;
+							case 'DEPLOYMENT_UPDATED': if (msg.data && msg.data.id) updateDeployment(msg.data.id, msg.data); break;
+
+							default: break;
 						}
-					} catch (e) {
-						// Ignore parse error for ping frames
-					}
+					} catch (e) { /* ping frames ignored */ }
 				};
 
 				socket.onclose = () => {
@@ -210,27 +163,14 @@ export function useRealtimeSync() {
 			if (reconnectTimer) clearTimeout(reconnectTimer);
 		};
 	}, [
-		addVaultProvider,
-		updateVaultProvider,
-		deleteVaultProvider,
-		addDnsProvider,
-		updateDnsProvider,
-		deleteDnsProvider,
-		addProject,
-		updateProject,
-		deleteProject,
-		addApplication,
-		updateApplication,
-		deleteApplication,
-		addDatabase,
-		updateDatabase,
-		deleteDatabase,
-		addCompose,
-		updateCompose,
-		deleteCompose,
-		addServer,
-		updateServer,
-		deleteServer,
+		addVaultProvider, updateVaultProvider, deleteVaultProvider,
+		addDnsProvider, updateDnsProvider, deleteDnsProvider,
+		addProject, updateProject, deleteProject,
+		addApplication, updateApplication, deleteApplication,
+		addDatabase, updateDatabase, deleteDatabase,
+		addCompose, updateCompose, deleteCompose,
+		addServer, updateServer, deleteServer,
+		addDeployment, updateDeployment,
 		setWsConnected,
 	]);
 }

@@ -77,193 +77,222 @@ export interface ServerItem {
 	created_at?: number;
 }
 
+export interface DeploymentItem {
+	id: number;
+	app_id?: number;
+	compose_id?: number;
+	status?: string;
+	title?: string;
+	description?: string;
+	created_at?: number;
+}
+
+export interface TagItem {
+	id: number;
+	name: string;
+	color?: string;
+}
+
+export interface ScheduleItem {
+	id: number;
+	name: string;
+	cron_expression?: string;
+	status?: string;
+}
+
+export interface SwarmNodeItem {
+	id: string;
+	hostname?: string;
+	role?: string;
+	status?: string;
+	availability?: string;
+}
+
+export interface SshKeyItem {
+	id: number;
+	name: string;
+	public_key?: string;
+}
+
+export interface DestinationItem {
+	id: number;
+	name: string;
+	provider_type?: string;
+}
+
+export interface UserProfileItem {
+	id?: number;
+	email?: string;
+	name?: string;
+	role?: string;
+}
+
 interface AppStoreState {
-	// Vault Providers State
+	// Vault & DNS
 	vaultProviders: VaultProviderItem[];
-	isVaultLoading: boolean;
+	dnsProviders: DnsProviderItem[];
+
+	// Core Projects & Apps
+	projects: ProjectItem[];
+	applications: ApplicationItem[];
+	databases: DatabaseItem[];
+	composes: ComposeItem[];
+	servers: ServerItem[];
+
+	// Deployments & Swarm
+	deployments: DeploymentItem[];
+	swarmNodes: SwarmNodeItem[];
+
+	// Tags, Schedules, Keys, Destinations, Profile
+	tags: TagItem[];
+	schedules: ScheduleItem[];
+	sshKeys: SshKeyItem[];
+	destinations: DestinationItem[];
+	profile: UserProfileItem | null;
+
+	// Global Sync Hydration Status
+	isHydrated: boolean;
+	isWsConnected: boolean;
+
+	// Setters & Actions
 	setVaultProviders: (providers: VaultProviderItem[]) => void;
 	addVaultProvider: (provider: VaultProviderItem) => void;
 	updateVaultProvider: (id: number, provider: Partial<VaultProviderItem>) => void;
 	deleteVaultProvider: (id: number) => void;
 
-	// DNS Providers State
-	dnsProviders: DnsProviderItem[];
-	isDnsLoading: boolean;
 	setDnsProviders: (providers: DnsProviderItem[]) => void;
 	addDnsProvider: (provider: DnsProviderItem) => void;
 	updateDnsProvider: (id: number, provider: Partial<DnsProviderItem>) => void;
 	deleteDnsProvider: (id: number) => void;
 
-	// Projects State
-	projects: ProjectItem[];
-	isProjectsLoading: boolean;
 	setProjects: (projects: ProjectItem[]) => void;
 	addProject: (project: ProjectItem) => void;
 	updateProject: (id: number, project: Partial<ProjectItem>) => void;
 	deleteProject: (id: number) => void;
 
-	// Applications State
-	applications: ApplicationItem[];
-	isApplicationsLoading: boolean;
 	setApplications: (applications: ApplicationItem[]) => void;
 	addApplication: (app: ApplicationItem) => void;
 	updateApplication: (id: number, app: Partial<ApplicationItem>) => void;
 	deleteApplication: (id: number) => void;
 
-	// Databases State
-	databases: DatabaseItem[];
-	isDatabasesLoading: boolean;
 	setDatabases: (databases: DatabaseItem[]) => void;
 	addDatabase: (db: DatabaseItem) => void;
 	updateDatabase: (id: number, db: Partial<DatabaseItem>) => void;
 	deleteDatabase: (id: number) => void;
 
-	// Composes State
-	composes: ComposeItem[];
-	isComposesLoading: boolean;
 	setComposes: (composes: ComposeItem[]) => void;
 	addCompose: (compose: ComposeItem) => void;
 	updateCompose: (id: number, compose: Partial<ComposeItem>) => void;
 	deleteCompose: (id: number) => void;
 
-	// Servers State
-	servers: ServerItem[];
-	isServersLoading: boolean;
 	setServers: (servers: ServerItem[]) => void;
 	addServer: (server: ServerItem) => void;
 	updateServer: (id: number, server: Partial<ServerItem>) => void;
 	deleteServer: (id: number) => void;
 
-	// Global Sync Hydration Status
-	isHydrated: boolean;
-	isWsConnected: boolean;
+	setDeployments: (deployments: DeploymentItem[]) => void;
+	addDeployment: (deployment: DeploymentItem) => void;
+	updateDeployment: (id: number, deployment: Partial<DeploymentItem>) => void;
+
+	setSwarmNodes: (nodes: SwarmNodeItem[]) => void;
+	setTags: (tags: TagItem[]) => void;
+	setSchedules: (schedules: ScheduleItem[]) => void;
+	setSshKeys: (keys: SshKeyItem[]) => void;
+	setDestinations: (destinations: DestinationItem[]) => void;
+	setProfile: (profile: UserProfileItem) => void;
+
 	setHydrated: (hydrated: boolean) => void;
 	setWsConnected: (connected: boolean) => void;
 }
 
 export const useAppStore = create<AppStoreState>((set) => ({
-	// Vault Providers Initial State & Actions
 	vaultProviders: [],
-	isVaultLoading: true,
-	setVaultProviders: (providers) => set({ vaultProviders: providers, isVaultLoading: false }),
-	addVaultProvider: (provider) =>
-		set((state) => ({
-			vaultProviders: [provider, ...state.vaultProviders.filter((p) => p.id !== provider.id)],
-		})),
-	updateVaultProvider: (id, updated) =>
-		set((state) => ({
-			vaultProviders: state.vaultProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-		})),
-	deleteVaultProvider: (id) =>
-		set((state) => ({
-			vaultProviders: state.vaultProviders.filter((p) => p.id !== id),
-		})),
-
-	// DNS Providers Initial State & Actions
 	dnsProviders: [],
-	isDnsLoading: true,
-	setDnsProviders: (providers) => set({ dnsProviders: providers, isDnsLoading: false }),
-	addDnsProvider: (provider) =>
-		set((state) => ({
-			dnsProviders: [provider, ...state.dnsProviders.filter((p) => p.id !== provider.id)],
-		})),
-	updateDnsProvider: (id, updated) =>
-		set((state) => ({
-			dnsProviders: state.dnsProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-		})),
-	deleteDnsProvider: (id) =>
-		set((state) => ({
-			dnsProviders: state.dnsProviders.filter((p) => p.id !== id),
-		})),
-
-	// Projects Initial State & Actions
 	projects: [],
-	isProjectsLoading: true,
-	setProjects: (projects) => set({ projects, isProjectsLoading: false }),
-	addProject: (project) =>
-		set((state) => ({
-			projects: [project, ...state.projects.filter((p) => p.id !== project.id)],
-		})),
-	updateProject: (id, updated) =>
-		set((state) => ({
-			projects: state.projects.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-		})),
-	deleteProject: (id) =>
-		set((state) => ({
-			projects: state.projects.filter((p) => p.id !== id),
-		})),
-
-	// Applications Initial State & Actions
 	applications: [],
-	isApplicationsLoading: true,
-	setApplications: (applications) => set({ applications, isApplicationsLoading: false }),
-	addApplication: (app) =>
-		set((state) => ({
-			applications: [app, ...state.applications.filter((a) => a.id !== app.id)],
-		})),
-	updateApplication: (id, updated) =>
-		set((state) => ({
-			applications: state.applications.map((a) => (a.id === id ? { ...a, ...updated } : a)),
-		})),
-	deleteApplication: (id) =>
-		set((state) => ({
-			applications: state.applications.filter((a) => a.id !== id),
-		})),
-
-	// Databases Initial State & Actions
 	databases: [],
-	isDatabasesLoading: true,
-	setDatabases: (databases) => set({ databases, isDatabasesLoading: false }),
-	addDatabase: (db) =>
-		set((state) => ({
-			databases: [db, ...state.databases.filter((d) => d.id !== db.id)],
-		})),
-	updateDatabase: (id, updated) =>
-		set((state) => ({
-			databases: state.databases.map((d) => (d.id === id ? { ...d, ...updated } : d)),
-		})),
-	deleteDatabase: (id) =>
-		set((state) => ({
-			databases: state.databases.filter((d) => d.id !== id),
-		})),
-
-	// Composes Initial State & Actions
 	composes: [],
-	isComposesLoading: true,
-	setComposes: (composes) => set({ composes, isComposesLoading: false }),
-	addCompose: (compose) =>
-		set((state) => ({
-			composes: [compose, ...state.composes.filter((c) => c.id !== compose.id)],
-		})),
-	updateCompose: (id, updated) =>
-		set((state) => ({
-			composes: state.composes.map((c) => (c.id === id ? { ...c, ...updated } : c)),
-		})),
-	deleteCompose: (id) =>
-		set((state) => ({
-			composes: state.composes.filter((c) => c.id !== id),
-		})),
-
-	// Servers Initial State & Actions
 	servers: [],
-	isServersLoading: true,
-	setServers: (servers) => set({ servers, isServersLoading: false }),
-	addServer: (server) =>
-		set((state) => ({
-			servers: [server, ...state.servers.filter((s) => s.id !== server.id)],
-		})),
-	updateServer: (id, updated) =>
-		set((state) => ({
-			servers: state.servers.map((s) => (s.id === id ? { ...s, ...updated } : s)),
-		})),
-	deleteServer: (id) =>
-		set((state) => ({
-			servers: state.servers.filter((s) => s.id !== id),
-		})),
+	deployments: [],
+	swarmNodes: [],
+	tags: [],
+	schedules: [],
+	sshKeys: [],
+	destinations: [],
+	profile: null,
 
-	// Hydration & Connection Status
 	isHydrated: false,
 	isWsConnected: false,
+
+	setVaultProviders: (providers) => set({ vaultProviders: providers }),
+	addVaultProvider: (provider) =>
+		set((state) => ({ vaultProviders: [provider, ...state.vaultProviders.filter((p) => p.id !== provider.id)] })),
+	updateVaultProvider: (id, updated) =>
+		set((state) => ({ vaultProviders: state.vaultProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+	deleteVaultProvider: (id) =>
+		set((state) => ({ vaultProviders: state.vaultProviders.filter((p) => p.id !== id) })),
+
+	setDnsProviders: (providers) => set({ dnsProviders: providers }),
+	addDnsProvider: (provider) =>
+		set((state) => ({ dnsProviders: [provider, ...state.dnsProviders.filter((p) => p.id !== provider.id)] })),
+	updateDnsProvider: (id, updated) =>
+		set((state) => ({ dnsProviders: state.dnsProviders.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+	deleteDnsProvider: (id) =>
+		set((state) => ({ dnsProviders: state.dnsProviders.filter((p) => p.id !== id) })),
+
+	setProjects: (projects) => set({ projects }),
+	addProject: (project) =>
+		set((state) => ({ projects: [project, ...state.projects.filter((p) => p.id !== project.id)] })),
+	updateProject: (id, updated) =>
+		set((state) => ({ projects: state.projects.map((p) => (p.id === id ? { ...p, ...updated } : p)) })),
+	deleteProject: (id) =>
+		set((state) => ({ projects: state.projects.filter((p) => p.id !== id) })),
+
+	setApplications: (applications) => set({ applications }),
+	addApplication: (app) =>
+		set((state) => ({ applications: [app, ...state.applications.filter((a) => a.id !== app.id)] })),
+	updateApplication: (id, updated) =>
+		set((state) => ({ applications: state.applications.map((a) => (a.id === id ? { ...a, ...updated } : a)) })),
+	deleteApplication: (id) =>
+		set((state) => ({ applications: state.applications.filter((a) => a.id !== id) })),
+
+	setDatabases: (databases) => set({ databases }),
+	addDatabase: (db) =>
+		set((state) => ({ databases: [db, ...state.databases.filter((d) => d.id !== db.id)] })),
+	updateDatabase: (id, updated) =>
+		set((state) => ({ databases: state.databases.map((d) => (d.id === id ? { ...d, ...updated } : d)) })),
+	deleteDatabase: (id) =>
+		set((state) => ({ databases: state.databases.filter((d) => d.id !== id) })),
+
+	setComposes: (composes) => set({ composes }),
+	addCompose: (compose) =>
+		set((state) => ({ composes: [compose, ...state.composes.filter((c) => c.id !== compose.id)] })),
+	updateCompose: (id, updated) =>
+		set((state) => ({ composes: state.composes.map((c) => (c.id === id ? { ...c, ...updated } : c)) })),
+	deleteCompose: (id) =>
+		set((state) => ({ composes: state.composes.filter((c) => c.id !== id) })),
+
+	setServers: (servers) => set({ servers }),
+	addServer: (server) =>
+		set((state) => ({ servers: [server, ...state.servers.filter((s) => s.id !== server.id)] })),
+	updateServer: (id, updated) =>
+		set((state) => ({ servers: state.servers.map((s) => (s.id === id ? { ...s, ...updated } : s)) })),
+	deleteServer: (id) =>
+		set((state) => ({ servers: state.servers.filter((s) => s.id !== id) })),
+
+	setDeployments: (deployments) => set({ deployments }),
+	addDeployment: (deployment) =>
+		set((state) => ({ deployments: [deployment, ...state.deployments.filter((d) => d.id !== deployment.id)] })),
+	updateDeployment: (id, updated) =>
+		set((state) => ({ deployments: state.deployments.map((d) => (d.id === id ? { ...d, ...updated } : d)) })),
+
+	setSwarmNodes: (swarmNodes) => set({ swarmNodes }),
+	setTags: (tags) => set({ tags }),
+	setSchedules: (schedules) => set({ schedules }),
+	setSshKeys: (sshKeys) => set({ sshKeys }),
+	setDestinations: (destinations) => set({ destinations }),
+	setProfile: (profile) => set({ profile }),
+
 	setHydrated: (hydrated) => set({ isHydrated: hydrated }),
 	setWsConnected: (connected) => set({ isWsConnected: connected }),
 }));
