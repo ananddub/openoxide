@@ -1,6 +1,5 @@
 import {useState, useCallback} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {useSshKeyList} from 'virtual:openoxide-live';
 import {SshKeysHeader} from '#/components/ssh-keys/ssh-keys-header';
 import {SshKeysList} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';

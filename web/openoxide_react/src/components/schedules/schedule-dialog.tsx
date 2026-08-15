@@ -8,7 +8,6 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/c
 import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
-import {useProjectListByOrganization} from 'virtual:openoxide-live';
 import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleDialogProps {

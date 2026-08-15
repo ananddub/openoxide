@@ -1,6 +1,6 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {useRemoteServerList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {TraefikRequestsView} from '#/components/traefik/traefik-requests';
 import type {RemoteServerItem} from '#/components/traefik/traefik-types';
 

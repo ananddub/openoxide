@@ -2,7 +2,7 @@ import {useState, useEffect, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import {useRemoteServerList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 
 import {TraefikHeader} from '#/components/traefik/traefik-header';

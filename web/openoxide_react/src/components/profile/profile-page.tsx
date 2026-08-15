@@ -40,7 +40,6 @@ import {
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useAuthWhoAmI} from 'virtual:openoxide-live';
 import {useAuthStore} from '#/stores/auth-store';
 import {useAppStore} from '#/stores/app-store';
 

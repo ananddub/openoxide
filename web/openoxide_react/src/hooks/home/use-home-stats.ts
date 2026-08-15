@@ -3,11 +3,7 @@ import {useAuthStore} from '#/stores/auth-store';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
 import {useAppStore} from '#/stores/app-store';
-import {
-	useProjectListByOrganization,
-	useDeploymentList,
-	useDeploymentRunning,
-} from 'virtual:openoxide-live';
+import { useDeploymentRunning } from 'virtual:openoxide-live';
 
 export function useHomeStats() {
 	const user = useAuthStore(state => state.user);

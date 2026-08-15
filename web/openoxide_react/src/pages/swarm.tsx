@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
-import {useRemoteServerList} from 'virtual:openoxide-live';
+import {useAppStore} from '#/stores/app-store';
 import {client} from '#/api/client';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';

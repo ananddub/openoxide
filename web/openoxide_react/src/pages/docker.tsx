@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { $api } from '#/api/query';
-import { useRemoteServerList, useDeploymentRunning } from 'virtual:openoxide-live';
+import { useDeploymentRunning } from 'virtual:openoxide-live';
 import { DockerHeader } from '#/components/docker/docker-header';
 import { DockerContainersTable } from '#/components/docker/docker-containers-table';
 import { DockerInspectModal, type GlobalContainerItem } from '#/components/docker/docker-inspect-modal';

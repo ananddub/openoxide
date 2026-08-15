@@ -2,7 +2,6 @@ import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import {useDestinationList} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 import {DestinationsHeader} from '#/components/destinations/destinations-header';
 import {DestinationsList} from '#/components/destinations/destinations-list';

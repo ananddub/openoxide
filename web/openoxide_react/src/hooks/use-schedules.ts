@@ -4,7 +4,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {components} from '#/types/api';
-import {useScheduleListByOrganization, useRemoteServerList} from 'virtual:openoxide-live';
+import {useScheduleListByOrganization} from 'virtual:openoxide-live';
 
 import { useAppStore } from '#/stores/app-store';
 

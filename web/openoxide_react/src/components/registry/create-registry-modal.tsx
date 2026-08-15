@@ -17,7 +17,6 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {$api} from '#/api/query';
-import {useRemoteServerList} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';

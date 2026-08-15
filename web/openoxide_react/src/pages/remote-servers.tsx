@@ -1,7 +1,6 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
-import {useRemoteServerList, useSshKeyList} from 'virtual:openoxide-live';
 import { useAppStore } from '#/stores/app-store';
 import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';

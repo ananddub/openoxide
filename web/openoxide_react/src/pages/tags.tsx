@@ -22,7 +22,6 @@ import {
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import {useTagListAll} from 'virtual:openoxide-live';
 import {formatApiError} from '#/api/utils';
 import { useAppStore } from '#/stores/app-store';
 
