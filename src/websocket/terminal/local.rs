@@ -5,7 +5,7 @@ use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, socket_key, spawn_output_task, spawn_pty_reader};
+use super::helpers::{emit_error, socket_key, spawn_pty_reader};
 use super::types::{
     DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
 };
@@ -23,7 +23,7 @@ pub async fn spawn_docker_terminal(
         return;
     }
 
-    let shell = input.shell.unwrap_or_else(|| "sh".into());
+    let shell_req = input.shell.unwrap_or_else(|| "sh".into());
     let mut target_container = input.container.clone();
 
     let docker = crate::utils::docker::DockerCli::new_local();
@@ -61,6 +61,13 @@ pub async fn spawn_docker_terminal(
     };
     let _ = pty.resize(Size::new(24, 80));
 
+    // Universal shell fallback: try requested shell first, fallback to sh if bash is missing in Alpine/Nginx
+    let exec_cmd_args: Vec<String> = if shell_req == "bash" {
+        vec!["sh".into(), "-c".into(), "exec bash 2>/dev/null || exec sh".into()]
+    } else {
+        vec![shell_req.clone()]
+    };
+
     let cmd = if use_docker {
         let exec_args = docker
             .containers()
@@ -69,12 +76,12 @@ pub async fn spawn_docker_terminal(
             .tty(true)
             .env("TERM", "xterm-256color")
             .workdir("/")
-            .build_args([&shell]);
+            .build_args(&exec_cmd_args);
         PtyCommand::new("docker")
             .args(&exec_args)
             .env("TERM", "xterm-256color")
     } else {
-        PtyCommand::new(&shell).env("TERM", "xterm-256color")
+        PtyCommand::new(&shell_req).env("TERM", "xterm-256color")
     };
 
     let mut child = match cmd.spawn(pts) {
@@ -101,10 +108,19 @@ pub async fn spawn_docker_terminal(
 
     let sessions_clone = sessions.clone();
     let socket_clone = socket.clone();
+    let container_name = target_container.clone();
     tokio::spawn(async move {
         let status = child.wait().await;
         sessions_clone.remove(&key);
         let code = status.ok().and_then(|s| s.code());
+        if let Some(c) = code {
+            if c != 0 {
+                emit_error(
+                    &socket_clone,
+                    format!("Container '{container_name}' terminal exited with code {c}. Check if container is running."),
+                );
+            }
+        }
         let _ = socket_clone.emit("exit", &TerminalExit { code });
     });
 }
@@ -125,46 +141,29 @@ pub async fn spawn_local_terminal(
         }
     };
 
-    let Some(stdin) = child.stdin.take() else {
-        emit_error(&socket, "terminal stdin is unavailable");
-        let _ = child.kill().await;
-        return;
-    };
+    let stdin = child
+        .stdin
+        .take()
+        .expect("stdin was configured with piped()");
+    let stdout = child
+        .stdout
+        .take()
+        .expect("stdout was configured with piped()");
+    let stderr = child
+        .stderr
+        .take()
+        .expect("stderr was configured with piped()");
 
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
-    let child = Arc::new(Mutex::new(child));
     sessions.insert(
         key.clone(),
         TerminalSession::Local {
             stdin: Arc::new(Mutex::new(stdin)),
-            child: child.clone(),
+            child: Arc::new(Mutex::new(child)),
         },
     );
 
     let _ = socket.emit("started", &TerminalStarted { kind });
-    if let Some(stdout) = stdout {
-        spawn_output_task(socket.clone(), "stdout", stdout);
-    }
-    if let Some(stderr) = stderr {
-        spawn_output_task(socket.clone(), "stderr", stderr);
-    }
 
-    let sessions_clone = sessions.clone();
-    let socket_clone = socket.clone();
-    tokio::spawn(async move {
-        let status = child.lock().await.wait().await;
-        sessions_clone.remove(&key);
-        match status {
-            Ok(status) => {
-                let _ = socket_clone.emit(
-                    "exit",
-                    &TerminalExit {
-                        code: status.code(),
-                    },
-                );
-            }
-            Err(error) => emit_error(&socket_clone, format!("terminal wait failed: {error}")),
-        }
-    });
+    super::helpers::spawn_output_task(socket.clone(), "stdout", stdout);
+    super::helpers::spawn_output_task(socket.clone(), "stderr", stderr);
 }
