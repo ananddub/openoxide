@@ -108,7 +108,6 @@ impl TerminalSocket {
 
     #[on("server:start")]
     async fn server_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
-        tracing::info!(payload = %payload, "server:start received");
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
@@ -121,8 +120,6 @@ impl TerminalSocket {
             .and_then(|v| v.as_str())
             .or_else(|| payload.get("command").and_then(|v| v.as_str()))
             .map(|s| s.to_string());
-
-        tracing::info!(server_id = ?server_id, shell = ?shell, "server:start parsed");
 
         let input = ServerTerminalStart { shell, server_id };
 

@@ -60,8 +60,16 @@ pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
                 Ok(0) => break,
                 Ok(n) => emit_terminal_bytes(&socket, "stdout", buffer[..n].to_vec()),
                 Err(error) => {
-                    tracing::warn!("PTY reader stream error: {error}");
-                    emit_error(&socket, format!("PTY stream read error: {error}"));
+                    // EIO (os error 5) is the normal signal that the PTY master side
+                    // has been closed (session ended / shell switched). Not a real error.
+                    let is_pty_closed = error
+                        .raw_os_error()
+                        .map(|code| code == 5)
+                        .unwrap_or(false);
+                    if !is_pty_closed {
+                        tracing::warn!("PTY reader stream error: {error}");
+                        emit_error(&socket, format!("PTY stream read error: {error}"));
+                    }
                     break;
                 }
             }

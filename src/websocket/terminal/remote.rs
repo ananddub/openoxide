@@ -78,9 +78,6 @@ pub async fn spawn_remote_terminal(
     }
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
 
-    // DEBUG: log the exact SSH command being constructed
-    tracing::info!(shell = %shell_bin, cmd = ?std::iter::once("ssh").chain(args.iter().map(|s| s.as_str())).collect::<Vec<_>>(), "spawning remote terminal");
-
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
         Err(error) => {
