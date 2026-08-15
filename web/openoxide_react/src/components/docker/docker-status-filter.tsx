@@ -39,11 +39,11 @@ export function DockerStatusFilter({
 				<Select value={statusFilter} onValueChange={(v) => v && onStatusFilterChange(v as 'all' | 'running' | 'stopped')}>
 					<SelectTrigger className="w-[180px] h-9 text-xs font-medium bg-card border-border/60 gap-2 shrink-0 shadow-2xs">
 						<Filter className="size-3.5 text-muted-foreground shrink-0" />
-						<SelectValue placeholder="Filter Status" />
+						<SelectValue placeholder="All Status" />
 					</SelectTrigger>
 					<SelectContent className="bg-card border-border text-xs w-[200px] p-1 shadow-md">
 						<SelectItem value="all" className="text-xs font-medium cursor-pointer">
-							All Statuses <span className="text-[10px] text-muted-foreground font-mono">({totalCount})</span>
+							All Status <span className="text-[10px] text-muted-foreground font-mono">({totalCount})</span>
 						</SelectItem>
 						<SelectItem value="running" className="text-xs font-medium cursor-pointer text-emerald-500">
 							Running Only <span className="text-[10px] text-emerald-500/80 font-mono">({runningCount})</span>
