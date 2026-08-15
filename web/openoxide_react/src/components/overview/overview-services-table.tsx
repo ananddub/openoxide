@@ -26,7 +26,6 @@ import {
 	TableRow,
 	TableCell,
 } from '#/components/ui/table';
-import { Button } from '#/components/ui/button';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -190,34 +189,30 @@ export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onS
 							<TableCell className="py-3.5 px-4">{formatDate(svc.lastDeployAt || svc.createdAt)}</TableCell>
 							<TableCell className="py-3.5 px-4 text-right">
 								<DropdownMenu>
-									<DropdownMenuTrigger
-										render={
-											<Button variant="ghost" size="icon" className="size-8 p-0 text-muted-foreground hover:text-foreground">
-												<MoreHorizontal className="size-4 text-foreground" />
-											</Button>
-										}
-									/>
-									<DropdownMenuContent align="end" className="w-44 border border-border bg-popover/95 shadow-md p-1">
-										<DropdownMenuLabel className="truncate text-xs font-bold px-2 py-1.5 border-b border-border/40 mb-1">
+									<DropdownMenuTrigger className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer outline-none">
+										<MoreHorizontal className="size-4" />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="w-44 border border-border bg-popover text-popover-foreground shadow-lg p-1.5 rounded-xl z-50">
+										<DropdownMenuLabel className="truncate text-xs font-bold px-2.5 py-1.5 border-b border-border/50 text-foreground mb-1">
 											{svc.name}
 										</DropdownMenuLabel>
 										<DropdownMenuItem
 											onClick={() => onDeploy?.(svc)}
-											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md hover:bg-muted"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold px-2.5 py-2 rounded-lg hover:bg-muted focus:bg-muted transition-colors"
 										>
 											<RefreshCw className="size-4 shrink-0 text-muted-foreground" />
 											<span>Deploy</span>
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() => onStart?.(svc)}
-											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md text-emerald-500 focus:text-emerald-500 hover:bg-emerald-500/10"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold px-2.5 py-2 rounded-lg text-emerald-500 hover:bg-emerald-500/10 focus:bg-emerald-500/10 transition-colors"
 										>
 											<Play className="size-4 shrink-0 fill-current" />
 											<span>Start</span>
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() => onStop?.(svc)}
-											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md text-orange-500 focus:text-orange-500 hover:bg-orange-500/10"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold px-2.5 py-2 rounded-lg text-orange-500 hover:bg-orange-500/10 focus:bg-orange-500/10 transition-colors"
 										>
 											<Square className="size-4 shrink-0 fill-current" />
 											<span>Stop</span>
