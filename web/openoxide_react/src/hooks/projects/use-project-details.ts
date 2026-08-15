@@ -2,15 +2,6 @@ import {useState, useEffect, useMemo} from 'react';
 import {
 	useProjectGet,
 	useEnvironmentListByProject,
-	useRemoteServerList,
-	useApplicationListByEnvironment,
-	useComposeListByEnvironment,
-	usePostgresListByEnvironment,
-	useMysqlListByEnvironment,
-	useMariadbListByEnvironment,
-	useMongoListByEnvironment,
-	useRedisListByEnvironment,
-	useLibsqlListByEnvironment,
 } from 'virtual:openoxide-live';
 
 import { useAppStore } from '#/stores/app-store';
@@ -24,22 +15,17 @@ export function useProjectDetails(projectId: number) {
 	const [showCreateCompose, setShowCreateCompose] = useState(false);
 	const [showCreateDatabase, setShowCreateDatabase] = useState(false);
 
-	// 0ms Instant Zustand Store Read
+	// 0ms Instant Zustand Store Reads (ZERO Extra WebSockets or HTTP Requests!)
 	const storeProject = useAppStore((state) =>
 		state.projects.find((p) => String(p.id) === String(projectId))
 	);
+	const servers = useAppStore((state) => state.servers);
 	const overviewServices = useAppStore((state) => state.overviewServices);
-
-	// Store Services Fallback for instant 0ms render
-	const storeServicesForProject = useMemo(() => {
-		return (overviewServices || []).filter((s: any) => s && String(s.project_id) === String(projectId));
-	}, [overviewServices, projectId]);
 
 	// Queries
 	const {data: liveProject} = useProjectGet(BigInt(projectId));
 	const project = liveProject || storeProject;
 	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
-	const {data: servers = []} = useRemoteServerList();
 
 	const [userSelectedEnvId, setUserSelectedEnvId] = useState<number | null>(null);
 
@@ -63,36 +49,23 @@ export function useProjectDetails(projectId: number) {
 		[envs, activeEnvId]
 	);
 
-	// Fetch environment services with instant activeEnvId
-	const envId = activeEnvId || 0;
-	const {data: apps, loading: isLoadingApps} = useApplicationListByEnvironment(BigInt(envId));
-	const {data: composes, loading: isLoadingComposes} = useComposeListByEnvironment(BigInt(envId));
-
-	const {data: pgDbs} = usePostgresListByEnvironment(BigInt(envId));
-	const {data: myDbs} = useMysqlListByEnvironment(BigInt(envId));
-	const {data: mariaDbs} = useMariadbListByEnvironment(BigInt(envId));
-	const {data: mongoDbs} = useMongoListByEnvironment(BigInt(envId));
-	const {data: redisDbs} = useRedisListByEnvironment(BigInt(envId));
-	const {data: libsqlDbs} = useLibsqlListByEnvironment(BigInt(envId));
-
-	const databases = useMemo(() => {
-		const list: Record<string, unknown>[] = [];
-		if (pgDbs) list.push(...pgDbs.map(d => ({...d, kind: 'postgres'})));
-		if (myDbs) list.push(...myDbs.map(d => ({...d, kind: 'mysql'})));
-		if (mariaDbs) list.push(...mariaDbs.map(d => ({...d, kind: 'mariadb'})));
-		if (mongoDbs) list.push(...mongoDbs.map(d => ({...d, kind: 'mongo'})));
-		if (redisDbs) list.push(...redisDbs.map(d => ({...d, kind: 'redis'})));
-		if (libsqlDbs) list.push(...libsqlDbs.map(d => ({...d, kind: 'libsql'})));
-		return list;
-	}, [pgDbs, myDbs, mariaDbs, mongoDbs, redisDbs, libsqlDbs]);
+	// Instant Filtered Services directly from Realtime Zustand Store (ZERO extra subscriptions!)
+	const projectServices = useMemo(() => {
+		return (overviewServices || []).filter((s: any) => {
+			if (!s || String(s.project_id) !== String(projectId)) return false;
+			if (activeEnvId !== null && s.environment_id !== undefined && s.environment_id !== null) {
+				return Number(s.environment_id) === Number(activeEnvId);
+			}
+			return true;
+		});
+	}, [overviewServices, projectId, activeEnvId]);
 
 	// Live hooks auto-push updates — no manual refetch needed
 	const handleRefresh = () => {};
 
-	// 0ms instant loading state — never block UI if RAM data is present
-	const isDataInStore = Boolean(storeProject) || storeServicesForProject.length > 0;
-	const isLoading = !isDataInStore && (isLoadingApps || isLoadingComposes);
-	const totalServices = (apps ?? []).length + (composes ?? []).length + databases.length || storeServicesForProject.length;
+	// 0ms instant loading state — never block UI
+	const isLoading = false;
+	const totalServices = projectServices.length;
 
 	// Filter State
 	const [searchQuery, setSearchQuery] = useState('');
@@ -110,61 +83,20 @@ export function useProjectDetails(projectId: number) {
 	const filteredServices = useMemo(() => {
 		const sQuery = String(searchQuery || '').toLowerCase().trim();
 
-		let list: any[] = [];
-
-		if ((apps && apps.length > 0) || (composes && composes.length > 0) || databases.length > 0) {
-			const mappedApps = (apps ?? []).map(app => ({
-				key: `app-${app.id}`,
+		let list = projectServices.map((s: any) => {
+			const rawType = String(s?.type || s?.kind || 'APP').toUpperCase();
+			return {
+				key: `${rawType.toLowerCase()}-${s.id}`,
 				projectId,
-				type: 'APP' as const,
-				id: app.id,
-				name: app.name || '',
-				subtitle: 'Application',
-				status: String(app.app_status || 'idle'),
-				createdAt: app.created_at,
-			}));
-
-			const mappedComposes = (composes ?? []).map(compose => ({
-				key: `compose-${compose.id}`,
-				projectId,
-				type: 'COMPOSE' as const,
-				id: compose.id,
-				name: compose.name || '',
-				subtitle: 'Docker Compose',
-				status: String(compose.compose_status || 'idle'),
-				createdAt: compose.created_at,
-			}));
-
-			const mappedDatabases = databases.map(db => ({
-				key: `database-${db.kind || 'db'}-${db.id}`,
-				projectId,
-				type: 'DATABASE' as const,
-				id: db.id,
-				name: String(db.name || ''),
-				subtitle: String(db.kind || 'database'),
-				status: String(db.app_status || 'idle'),
-				createdAt: db.created_at,
-				dbKind: db.kind,
-			}));
-
-			list = [...mappedApps, ...mappedComposes, ...mappedDatabases];
-		} else {
-			// Fallback to Zustand RAM store for 0ms instant display
-			list = storeServicesForProject.map((s: any) => {
-				const rawType = String(s?.type || s?.kind || 'APP').toUpperCase();
-				return {
-					key: `${rawType.toLowerCase()}-${s.id}`,
-					projectId,
-					type: rawType,
-					id: s.id,
-					name: String(s?.name || s?.app_name || s?.appName || ''),
-					subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : String(s?.dbKind || s?.kind || 'Database'),
-					status: String(s?.status || s?.app_status || 'idle'),
-					createdAt: s?.createdAt || s?.created_at,
-					dbKind: s?.dbKind || s?.kind,
-				};
-			});
-		}
+				type: rawType,
+				id: s.id,
+				name: String(s?.name || s?.app_name || s?.appName || ''),
+				subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : String(s?.dbKind || s?.kind || 'Database'),
+				status: String(s?.status || s?.app_status || 'idle'),
+				createdAt: s?.createdAt || s?.created_at,
+				dbKind: s?.dbKind || s?.kind,
+			};
+		});
 
 		// Apply Search
 		if (sQuery) {
@@ -197,7 +129,7 @@ export function useProjectDetails(projectId: number) {
 		}
 
 		return list;
-	}, [apps, composes, databases, storeServicesForProject, searchQuery, typeFilter, statusFilter, projectId]);
+	}, [projectServices, searchQuery, typeFilter, statusFilter, projectId]);
 
 	return {
 		showCreateEnv,
