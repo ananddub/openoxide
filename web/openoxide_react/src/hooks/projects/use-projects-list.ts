@@ -26,8 +26,9 @@ export function useProjectsList() {
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const orgId = activeOrg?.id || 1;
 
-	// Zustand Realtime Store Read
+	// Zustand Realtime Store Read & Mutators
 	const storeProjects = useAppStore((state) => state.projects);
+	const setProjectsStore = useAppStore((state) => state.setProjects);
 	const addProjectStore = useAppStore((state) => state.addProject);
 	const deleteProjectStore = useAppStore((state) => state.deleteProject);
 
@@ -36,8 +37,16 @@ export function useProjectsList() {
 		BigInt(orgId),
 	);
 
-	// Prefer live WebSocket projects stream or fallback to Zustand RAM store
-	const projects = (liveProjects && liveProjects.length > 0) ? liveProjects : storeProjects;
+	// Keep Zustand store in sync with live WebSocket updates
+	React.useEffect(() => {
+		if (liveProjects && Array.isArray(liveProjects)) {
+			setProjectsStore(liveProjects as any);
+		}
+	}, [liveProjects, setProjectsStore]);
+
+	// Always prefer live WebSocket data if available, fallback to Zustand RAM store
+	const rawProjectsList = liveProjects !== undefined ? liveProjects : storeProjects;
+	const projects = Array.isArray(rawProjectsList) ? rawProjectsList : [];
 
 	// Create Project Mutation
 	const createProjectMutation = $api.useMutation('post', '/projects');
@@ -78,7 +87,7 @@ export function useProjectsList() {
 			if (sortBy === 'newest') return Number(b.created_at || 0) - Number(a.created_at || 0);
 			if (sortBy === 'oldest') return Number(a.created_at || 0) - Number(b.created_at || 0);
 			if (sortBy === 'alphabetical-asc') return a.name.localeCompare(b.name);
-			if (sortBy === 'alphabetical-desc') return a.name.localeCompare(b.name);
+			if (sortBy === 'alphabetical-desc') return b.name.localeCompare(a.name);
 			return 0;
 		});
 	}, [projects, searchQuery, sortBy, selectedTags]);
