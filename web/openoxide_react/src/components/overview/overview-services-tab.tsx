@@ -185,25 +185,25 @@ export function OverviewServicesTab() {
 					</span>
 				</h3>
 
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2.5">
 					{/* Search Input */}
 					<div className="relative">
 						<Input
 							placeholder="Filter services..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pr-9 w-[180px] h-9 text-xs"
+							className="pr-9 w-[190px] h-9 text-xs"
 						/>
 						<Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
 					</div>
 
 					{/* Project Filter Select */}
 					<Select value={selectedProjectId} onValueChange={(val) => val && setSelectedProjectId(val)}>
-						<SelectTrigger size="sm" className="w-[140px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All projects" />
+						<SelectTrigger size="sm" className="w-[145px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All Projects" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All projects</SelectItem>
+							<SelectItem value="all">All Projects</SelectItem>
 							{projectsToUse.map((p: any) => (
 								<SelectItem key={p.id} value={String(p.id)}>
 									{p.name}
@@ -214,11 +214,11 @@ export function OverviewServicesTab() {
 
 					{/* Type Filter Select */}
 					<Select value={selectedType} onValueChange={(val) => val && setSelectedType(val)}>
-						<SelectTrigger size="sm" className="w-[130px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All types" />
+						<SelectTrigger size="sm" className="w-[135px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All Types" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All types</SelectItem>
+							<SelectItem value="all">All Types</SelectItem>
 							<SelectItem value="application">Application</SelectItem>
 							<SelectItem value="compose">Compose</SelectItem>
 							<SelectItem value="database">Database</SelectItem>
@@ -232,11 +232,11 @@ export function OverviewServicesTab() {
 
 					{/* Status Filter Select */}
 					<Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
-						<SelectTrigger size="sm" className="w-[130px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All statuses" />
+						<SelectTrigger size="sm" className="w-[135px] text-xs font-semibold h-9">
+							<SelectValue placeholder="All Statuses" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All statuses</SelectItem>
+							<SelectItem value="all">All Statuses</SelectItem>
 							<SelectItem value="done">Running</SelectItem>
 							<SelectItem value="deploying">Deploying</SelectItem>
 							<SelectItem value="idle">Idle</SelectItem>
@@ -246,14 +246,14 @@ export function OverviewServicesTab() {
 
 					{/* Sort By Select */}
 					<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
-						<SelectTrigger size="sm" className="w-[145px] text-xs font-semibold h-9">
-							<SelectValue placeholder="Newest first" />
+						<SelectTrigger size="sm" className="w-[155px] text-xs font-semibold h-9">
+							<SelectValue placeholder="Sort: Newest First" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="newest">Newest first</SelectItem>
-							<SelectItem value="oldest">Oldest first</SelectItem>
-							<SelectItem value="name-asc">Name (A-Z)</SelectItem>
-							<SelectItem value="name-desc">Name (Z-A)</SelectItem>
+							<SelectItem value="newest">Sort: Newest First</SelectItem>
+							<SelectItem value="oldest">Sort: Oldest First</SelectItem>
+							<SelectItem value="name-asc">Sort: Name (A-Z)</SelectItem>
+							<SelectItem value="name-desc">Sort: Name (Z-A)</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
