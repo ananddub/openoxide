@@ -90,15 +90,15 @@ function ProjectsPage() {
 				setSelectedTags={setSelectedTags}
 			/>
 
-			{/* Content Cards Grid */}
+			{/* Content Cards Grid (Compact dokploy layout) */}
 			{isLoadingProjects ? (
-				<div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+				<div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-48 animate-pulse bg-card/60 border border-border/60 rounded-xl" />
+						<div key={i} className="h-44 max-w-[340px] animate-pulse bg-card/60 border border-border/60 rounded-xl" />
 					))}
 				</div>
 			) : filteredAndSortedProjects.length > 0 ? (
-				<div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+				<div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 					{filteredAndSortedProjects.map((project) => (
 						<ProjectCard
 							key={String(project.id)}
@@ -147,7 +147,7 @@ function ProjectsPage() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Project</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete this project? All associated applications, databases, and environments will be permanently removed.
+							Are you sure you want to delete this project? All associated applications, databases, and environments will be permanently reduced.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
