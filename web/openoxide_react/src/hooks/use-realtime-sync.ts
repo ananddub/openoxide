@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '#/stores/app-store';
+import { useOrganizationStore } from '#/stores/organization-store';
 import { $api } from '#/api/query';
 import {
 	usePermissionGroupMembers,
@@ -17,15 +18,14 @@ import {
 } from 'virtual:openoxide-live';
 
 export function useRealtimeSync() {
+	const activeOrg = useOrganizationStore((state) => state.activeOrg);
+	const orgId = activeOrg?.id || 1;
+
 	// Zustand Setters
 	const setVaultProviders = useAppStore((state) => state.setVaultProviders);
 	const setDnsProviders = useAppStore((state) => state.setDnsProviders);
 	const setProjects = useAppStore((state) => state.setProjects);
-	const setApplications = useAppStore((state) => state.setApplications);
-	const setDatabases = useAppStore((state) => state.setDatabases);
-	const setComposes = useAppStore((state) => state.setComposes);
 	const setServers = useAppStore((state) => state.setServers);
-
 	const setDeployments = useAppStore((state) => state.setDeployments);
 	const setSshKeys = useAppStore((state) => state.setSshKeys);
 	const setDestinations = useAppStore((state) => state.setDestinations);
@@ -34,6 +34,8 @@ export function useRealtimeSync() {
 	const setProfile = useAppStore((state) => state.setProfile);
 	const setMembers = useAppStore((state) => state.setMembers);
 	const setInvites = useAppStore((state) => state.setInvites);
+	const setDomains = useAppStore((state) => state.setDomains);
+	const setBackups = useAppStore((state) => state.setBackups);
 
 	const setHydrated = useAppStore((state) => state.setHydrated);
 	const setWsConnected = useAppStore((state) => state.setWsConnected);
@@ -44,15 +46,24 @@ export function useRealtimeSync() {
 	const { data: liveProfile } = useAuthWhoAmI();
 	const { data: liveVaults } = useVaultList();
 	const { data: liveDns } = useDnsList();
-	const { data: liveProjects } = useProjectListByOrganization(1 as any);
+	const { data: liveProjects } = useProjectListByOrganization(BigInt(orgId));
 	const { data: liveServers } = useRemoteServerList();
 	const { data: liveDeployments } = useDeploymentList();
-	const { data: liveSchedules } = useScheduleListByOrganization(1 as any);
+	const { data: liveSchedules } = useScheduleListByOrganization(BigInt(orgId));
 	const { data: liveSshKeys } = useSshKeyList();
 	const { data: liveDestinations } = useDestinationList();
 	const { data: liveTags } = useTagListAll();
 
-	// Sync Live Realtime Streams directly into Zustand Store
+	// 2. Organization-Wide Domains & Backups HTTP Sync
+	const { data: liveDomains } = $api.useQuery('get', '/overview/domains/organization/{organization_id}', {
+		params: { path: { organization_id: orgId } },
+	});
+
+	const { data: liveBackups } = $api.useQuery('get', '/overview/backups/organization/{organization_id}', {
+		params: { path: { organization_id: orgId } },
+	});
+
+	// Sync Live Realtime Streams & Organization-Wide Queries directly into Zustand Store
 	useEffect(() => {
 		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
 	}, [liveMembers, setMembers]);
@@ -107,6 +118,40 @@ export function useRealtimeSync() {
 	useEffect(() => {
 		if (liveTags && Array.isArray(liveTags)) setTags(liveTags as any);
 	}, [liveTags, setTags]);
+
+	useEffect(() => {
+		if (liveDomains && Array.isArray(liveDomains)) {
+			setDomains(
+				liveDomains.map((d: any) => ({
+					id: Number(d.id),
+					domain: d.host,
+					host: d.host,
+					path: d.path || '/',
+					port: d.port || 80,
+					https: !!d.https,
+					application_id: d.application_id ? Number(d.application_id) : undefined,
+					compose_id: d.compose_id ? Number(d.compose_id) : undefined,
+					service_name: d.service_name,
+					project_name: d.project_name,
+				})) as any
+			);
+		}
+	}, [liveDomains, setDomains]);
+
+	useEffect(() => {
+		if (liveBackups && Array.isArray(liveBackups)) {
+			setBackups(
+				liveBackups.map((b: any) => ({
+					id: Number(b.id),
+					name: b.name,
+					backup_type: b.backup_type,
+					status: b.status,
+					destination: b.destination,
+					created_at: Number(b.created_at),
+				})) as any
+			);
+		}
+	}, [liveBackups, setBackups]);
 
 	useEffect(() => {
 		setHydrated(true);
