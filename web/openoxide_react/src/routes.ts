@@ -9,6 +9,7 @@ export const routes = rootRoute('_root.tsx', [
 	// App Pages
 	layout('_app.tsx', [
 		index('index.tsx'),
+		route('overview', 'overview.tsx'),
 		route('projects', 'projects/index.tsx'),
 		route('projects/$id', 'projects/detail.tsx'),
 		route('projects/$id/stack', 'projects/stack.tsx'),
@@ -30,6 +31,12 @@ export const routes = rootRoute('_root.tsx', [
 		route('requests', 'requests.tsx'),
 		route('tags', 'tags.tsx'),
 		route('users', 'users.tsx'),
+		route('settings', 'settings/index.tsx'),
+		route('settings/server', 'settings/server.tsx'),
+		route('settings/audit-logs', 'settings/audit-logs.tsx'),
+		route('settings/git-providers', 'settings/git-providers.tsx'),
+		route('settings/certificates', 'settings/certificates.tsx'),
+		route('settings/notifications', 'settings/notifications.tsx'),
 		route('settings/users', 'settings/users.tsx'),
 		route('profile', 'profile.tsx'),
 		route('settings/profile', 'settings/profile.tsx'),

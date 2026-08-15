@@ -1,5 +1,6 @@
 import {createFileRoute} from '@tanstack/react-router';
-import {GitBranch, Github, Gitlab} from 'lucide-react';
+import {GitBranch, GitFork} from 'lucide-react';
+import {GithubIcon} from '#/components/icons/data-tools-icons';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 
@@ -22,7 +23,7 @@ function GitProvidersPage() {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<div className="size-10 rounded-xl bg-muted/60 flex items-center justify-center">
-								<Github className="size-6 text-foreground" />
+								<GithubIcon className="size-6 text-foreground" />
 							</div>
 							<div>
 								<h3 className="text-sm font-bold text-foreground">GitHub App</h3>
@@ -40,7 +41,7 @@ function GitProvidersPage() {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<div className="size-10 rounded-xl bg-muted/60 flex items-center justify-center">
-								<Gitlab className="size-6 text-foreground" />
+								<GitBranch className="size-6 text-foreground" />
 							</div>
 							<div>
 								<h3 className="text-sm font-bold text-foreground">GitLab</h3>
