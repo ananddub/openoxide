@@ -41,6 +41,7 @@ pub async fn spawn_remote_terminal(
         executor.host_key().clone(),
     )
     .port(executor.port())
+    .connect_timeout(5)
     .disable_multiplexing()
     .quiet(true)
     .tty(crate::utils::ssh::TtyMode::ForceTty);

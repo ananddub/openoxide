@@ -395,7 +395,6 @@ impl ServerRepository {
             let private_key: String = row.try_get("private_key")?;
             let public_key: String = row.try_get("public_key")?;
 
-            let port = u16::try_from(port_i64).unwrap_or(22);
             let mut selected_ip = public_ip.clone();
 
             if let Some(priv_ip) = private_ip {
@@ -403,24 +402,7 @@ impl ServerRepository {
                 let status = private_status.unwrap_or_default();
 
                 if !priv_ip.trim().is_empty() && mode != "DIRECT_SSH" && status != "INACTIVE" {
-                    let addr = format!("{}:{}", priv_ip.trim(), port);
-                    let probe_timeout = std::time::Duration::from_millis(1000);
-                    let is_healthy = match tokio::time::timeout(probe_timeout, tokio::net::TcpStream::connect(&addr)).await {
-                        Ok(Ok(_stream)) => true,
-                        _ => false,
-                    };
-
-                    if is_healthy {
-                        tracing::info!(server_id, private_ip = %priv_ip, "Selected healthy private network IP for server connection");
-                        selected_ip = priv_ip.trim().to_string();
-                    } else {
-                        tracing::warn!(
-                            server_id,
-                            private_ip = %priv_ip,
-                            public_ip = %public_ip,
-                            "Private network IP is unhealthy/unreachable. Gracefully falling back to direct public SSH IP"
-                        );
-                    }
+                    selected_ip = priv_ip.trim().to_string();
                 }
             }
 
