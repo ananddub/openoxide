@@ -172,56 +172,86 @@ impl VaultService {
     }
 
     async fn test_hashicorp_credentials(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultTestResultDto, VaultServiceError> {
-        let url = format!("{}/v1/sys/health", api_url);
-        let mut req = self.client.get(&url).header("X-Vault-Token", auth_token);
+        let clean_url = api_url.trim_end_matches('/');
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        if clean_token.is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "HashiCorp Vault token is required".into(),
+            });
+        }
+
+        // Dokploy uses /v1/auth/token/lookup-self to validate HashiCorp Vault token
+        let url = format!("{}/v1/auth/token/lookup-self", clean_url);
+        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
         if let Some(ns) = namespace {
             if !ns.trim().is_empty() {
                 req = req.header("X-Vault-Namespace", ns.trim());
             }
         }
         let res = req.send().await?;
-        if res.status().is_success() || res.status().as_u16() == 473 || res.status().as_u16() == 429 {
+        if res.status().is_success() {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully connected to HashiCorp Vault!".into(),
+                message: "HashiCorp Vault: token validated successfully!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("HashiCorp Vault returned HTTP status {}", res.status()),
+                message: format!("HashiCorp Vault: token validation failed (status {})", res.status()),
             })
         }
     }
 
     async fn test_infisical_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        let base = if api_url.is_empty() { "https://app.infisical.com" } else { api_url };
-        let url = format!("{}/api/v1/status", base);
-        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", auth_token)).send().await?;
+        let clean_url = if api_url.trim().is_empty() { "https://app.infisical.com" } else { api_url.trim_end_matches('/') };
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        if clean_token.is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "Infisical Access Token is required".into(),
+            });
+        }
+
+        let url = format!("{}/api/v1/status", clean_url);
+        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
         if res.status().is_success() {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully connected to Infisical Vault!".into(),
+                message: "Infisical: connection verified successfully!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("Infisical returned HTTP status {}", res.status()),
+                message: format!("Infisical: authentication failed (status {})", res.status()),
             })
         }
     }
 
     async fn test_doppler_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        if clean_token.is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "Doppler Service Token is required".into(),
+            });
+        }
+
+        // Dokploy uses Bearer token for Doppler API
         let url = "https://api.doppler.com/v3/me";
-        let res = self.client.get(url).basic_auth(auth_token, Option::<&str>::None).send().await?;
+        let res = self.client.get(url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
         if res.status().is_success() {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully authenticated with Doppler!".into(),
+                message: "Doppler: Service Token authenticated successfully!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("Doppler returned HTTP status {}", res.status()),
+                message: format!("Doppler: token verification failed (status {})", res.status()),
             })
         }
     }
