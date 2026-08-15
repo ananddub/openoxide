@@ -61,7 +61,6 @@ export function VaultProvidersPage() {
 	const updateVaultStore = useAppStore((state) => state.updateVaultProvider);
 	const deleteVaultStore = useAppStore((state) => state.deleteVaultProvider);
 
-	const { refetch } = $api.useQuery('get', '/vault-providers' as any, {} as any);
 	const createMutation = $api.useMutation('post', '/vault-providers' as any);
 	const updateMutation = $api.useMutation('put', '/vault-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/vault-providers/{id}' as any);

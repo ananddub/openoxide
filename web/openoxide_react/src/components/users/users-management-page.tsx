@@ -1,23 +1,22 @@
-import {useState, useMemo} from 'react';
+import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { $api } from '#/api/query';
+import { formatApiError } from '#/api/utils';
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Label } from '#/components/ui/label';
 import {
-	Users,
-	Plus,
-	Search,
-	Trash2,
-	Pencil,
-	Mail,
-	MoreHorizontal,
-	ShieldCheck,
-} from 'lucide-react';
-import {$api} from '#/api/query';
-import {client} from '#/api/client';
-import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {Badge} from '#/components/ui/badge';
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
@@ -32,20 +31,6 @@ import {
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
-} from '#/components/ui/dropdown';
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -53,50 +38,38 @@ import {
 	TableHeader,
 	TableRow,
 } from '#/components/ui/table';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
 
-export interface UserMember {
-	id: string;
-	email: string;
-	role: 'owner' | 'admin' | 'member';
-	avatar?: string;
-	banned: boolean;
-	twoFactorEnabled: boolean;
-	createdAt: string;
-	isSelf?: boolean;
-}
-
-export interface InvitationItem {
-	id: string;
-	email: string;
-	role: string;
-	expiresAt: string;
-}
-
-import { useEffect } from 'react';
-import { useAppStore } from '#/stores/app-store';
+import {
+	Users,
+	UserPlus,
+	Shield,
+	Mail,
+	Search,
+	MoreHorizontal,
+	Trash2,
+	UserCheck,
+	Clock,
+	XCircle,
+	AlertCircle,
+} from 'lucide-react';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '#/components/ui/dropdown';
+import { useAppStore, type MemberItem } from '#/stores/app-store';
 
 export function UsersManagementPage() {
-	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
-	const [searchQuery, setSearchQuery] = useState('');
-
-	// 100% Zustand Store Subscriptions (Zero Direct Component Sockets)
-	const profile = useAppStore((state) => state.profile);
+	const queryClient = useQueryClient();
 	const members = useAppStore((state) => state.members);
 	const invites = useAppStore((state) => state.invites);
-
-	const setMembersStore = useAppStore((state) => state.setMembers);
-	const setInvitesStore = useAppStore((state) => state.setInvites);
-
+	const isMembersLoading = useAppStore((state) => state.isMembersLoading);
 	const addMemberStore = useAppStore((state) => state.addMember);
 	const updateMemberStore = useAppStore((state) => state.updateMember);
 	const deleteMemberStore = useAppStore((state) => state.deleteMember);
 	const addInviteStore = useAppStore((state) => state.addInvite);
 	const deleteInviteStore = useAppStore((state) => state.deleteInvite);
-
-	const { refetch: refetchMembers } = $api.useQuery('get', '/permission-groups/members' as any, {} as any);
-	const { refetch: refetchInvites } = $api.useQuery('get', '/permission-groups/invites' as any, {} as any);
 
 	// Mutations for invites and members
 	const addMemberMutation = $api.useMutation('post', '/permission-groups/members' as any);
@@ -114,116 +87,86 @@ export function UsersManagementPage() {
 		'/permission-groups/members/{user_id}' as any,
 	);
 
-	const users: UserMember[] = useMemo(() => {
-		if (!Array.isArray(members)) return [];
-		return members.map((m: any) => {
-			const isSelf = profile?.id === (m.user_id || m.id) || (profile?.email && profile.email === m.email);
-			return {
-				id: String(m.user_id || m.id),
-				email: isSelf ? (profile?.email || m.email) : (m.email || `User #${m.user_id}`),
-				role: (m.role || 'member').toLowerCase() as any,
-				avatar: isSelf ? (profile?.avatar || m.avatar) : m.avatar,
-				banned: false,
-				twoFactorEnabled: false,
-				createdAt: m.created_at
-					? new Date(m.created_at * 1000).toISOString()
-					: new Date().toISOString(),
-				isSelf,
-			};
-		});
-	}, [members, profile]);
+	const isLoading = isMembersLoading && members.length === 0;
 
-	const invitations: InvitationItem[] = useMemo(() => {
-		if (!Array.isArray(invites)) return [];
-		return invites.map((inv: any) => ({
-			id: String(inv.id),
-			email: inv.email,
-			role: (inv.role || 'member').toLowerCase(),
-			expiresAt: inv.expired_at
-				? new Date(inv.expired_at * 1000).toISOString()
-				: new Date().toISOString(),
-		}));
-	}, [invites]);
+	// Tabs: "members" | "invitations"
+	const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members');
+	const [searchQuery, setSearchQuery] = useState('');
+	const [roleFilter, setRoleFilter] = useState('ALL');
 
+	// Create/Invite Dialog State
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [deleteTarget, setDeleteTarget] = useState<UserMember | null>(null);
-	const [editingRoleUser, setEditingRoleUser] = useState<UserMember | null>(null);
-
-	// Form State
-	const [createMode, setCreateMode] = useState<'credentials' | 'invitation'>('invitation');
-	const [formEmail, setFormEmail] = useState('');
-	const [formRole, setFormRole] = useState('member');
-	const [formPassword, setFormPassword] = useState('');
+	const [actionType, setActionType] = useState<'direct' | 'invite'>('direct');
+	const [inputEmail, setInputEmail] = useState('');
+	const [selectedRole, setSelectedRole] = useState('developer');
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Edit Role Dialog State
+	const [editingRoleUser, setEditingRoleUser] = useState<MemberItem | null>(null);
+
+	// Delete Confirmation Modal State
+	const [deleteTarget, setDeleteTarget] = useState<MemberItem | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const filteredUsers = useMemo(() => {
-		if (!searchQuery.trim()) return users;
-		const q = searchQuery.toLowerCase();
-		return users.filter(
-			u => u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q),
-		);
-	}, [users, searchQuery]);
+	// Filter Members
+	const filteredMembers = useMemo(() => {
+		return members.filter((m) => {
+			const matchesSearch =
+				m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(m.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+			const matchesRole = roleFilter === 'ALL' || m.role.toLowerCase() === roleFilter.toLowerCase();
+			return matchesSearch && matchesRole;
+		});
+	}, [members, searchQuery, roleFilter]);
 
-	const filteredInvitations = useMemo(() => {
-		if (!searchQuery.trim()) return invitations;
-		const q = searchQuery.toLowerCase();
-		return invitations.filter(i => i.email.toLowerCase().includes(q));
-	}, [invitations, searchQuery]);
+	// Filter Invitations
+	const filteredInvites = useMemo(() => {
+		return invites.filter((inv) => inv.email.toLowerCase().includes(searchQuery.toLowerCase()));
+	}, [invites, searchQuery]);
 
-	const handleOpenCreate = () => {
-		setFormEmail('');
-		setFormRole('member');
-		setFormPassword('');
-		setIsCreateOpen(true);
-	};
-
-	const handleSaveUser = async (e: React.FormEvent) => {
+	const handleCreateOrInvite = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formEmail.trim()) return;
+		if (!inputEmail) return;
 
 		setIsSubmitting(true);
 		try {
-			if (createMode === 'credentials') {
-				if (!formPassword || formPassword.length < 8) {
-					toast.error('Password must be at least 8 characters long');
-					setIsSubmitting(false);
-					return;
-				}
-				const res: any = await addMemberMutation.mutateAsync({
+			if (actionType === 'direct') {
+				const tempId = `mem_${Date.now()}`;
+				addMemberStore({
+					id: tempId,
+					email: inputEmail,
+					name: inputEmail.split('@')[0],
+					role: selectedRole.toLowerCase(),
+				});
+				await addMemberMutation.mutateAsync({
 					body: {
-						email: formEmail.trim(),
-						password: formPassword,
-						role: formRole.toUpperCase(),
+						email: inputEmail,
+						role: selectedRole.toUpperCase(),
 					},
 				} as any);
 
-				if (res?.data || res) {
-					addMemberStore(res?.data || res);
-				}
-
-				toast.success('User account created successfully');
-				setActiveTab('users');
+				toast.success(`User ${inputEmail} added successfully`);
+				setInputEmail('');
 			} else {
-				const res: any = await inviteMutation.mutateAsync({
+				const tempId = String(Date.now());
+				addInviteStore({
+					id: tempId,
+					email: inputEmail,
+					role: selectedRole.toLowerCase(),
+					created_at: Math.floor(Date.now() / 1000),
+				});
+				await inviteMutation.mutateAsync({
 					body: {
-						email: formEmail.trim(),
-						role: formRole.toUpperCase(),
-						group_id: 1,
+						email: inputEmail,
+						role: selectedRole.toUpperCase(),
 					},
 				} as any);
-
-				if (res?.data || res) {
-					addInviteStore(res?.data || res);
-				}
 
 				toast.success('Invitation sent successfully');
 				setActiveTab('invitations');
 			}
 
 			setIsCreateOpen(false);
-			await refetchMembers();
-			await refetchInvites();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		} finally {
@@ -248,7 +191,6 @@ export function UsersManagementPage() {
 			} as any);
 			toast.success('User role updated');
 			setEditingRoleUser(null);
-			await refetchMembers();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		}
@@ -268,7 +210,6 @@ export function UsersManagementPage() {
 				},
 			} as any);
 			toast.success('User removed from organization');
-			await refetchMembers();
 			setDeleteTarget(null);
 		} catch (error) {
 			toast.error(formatApiError(error));
@@ -288,7 +229,6 @@ export function UsersManagementPage() {
 				},
 			} as any);
 			toast.success('Invitation revoked successfully');
-			await refetchInvites();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		}
@@ -296,240 +236,229 @@ export function UsersManagementPage() {
 
 	return (
 		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12 animate-in fade-in duration-150">
-			{/* OpenOxide Standard Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 pb-4">
-				<div className="flex items-center gap-3">
-					<div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-						<Users className="w-4 h-4 text-primary" />
+			{/* Top Header Row */}
+			<div className="flex items-center justify-between gap-4 border-b border-border/40 pb-6 flex-wrap">
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center gap-2.5">
+						<Users className="size-6 text-primary shrink-0" />
+						<h1 className="text-xl font-bold tracking-tight text-foreground">
+							Users & Organization Access
+						</h1>
 					</div>
-					<div>
-						<h1 className="text-base font-semibold text-foreground leading-none">Users &amp; Access</h1>
-						<p className="text-xs text-muted-foreground mt-1">
-							Manage team members, roles, and pending organization invitations
-						</p>
-					</div>
+					<p className="text-xs text-muted-foreground">
+						Manage workspace members, invite teammates, and assign role-based access control (RBAC).
+					</p>
 				</div>
 
-				<div className="flex items-center gap-2 sm:ml-auto">
-					<Button size="sm" onClick={handleOpenCreate} className="h-8 text-xs gap-1.5 cursor-pointer">
-						<Plus className="w-3.5 h-3.5" />
-						Create User / Invite
-					</Button>
-				</div>
+				<Button
+					onClick={() => setIsCreateOpen(true)}
+					className="h-9 text-xs font-bold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-95 cursor-pointer"
+				>
+					<UserPlus className="size-4" />
+					<span>Add or Invite User</span>
+				</Button>
 			</div>
 
-			{/* Search + Filter Bar */}
-			<div className="flex items-center justify-between gap-3 flex-wrap">
-				<div className="relative flex-1 max-w-sm">
-					<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-					<Input
-						placeholder="Search users or invitations..."
-						value={searchQuery}
-						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-8 h-8 text-xs bg-muted/20 border-border/60"
-					/>
-				</div>
-
-				<div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60">
+			{/* Filter Toolbar & Tabs */}
+			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-card/40 p-3 border border-border/60 rounded-xl">
+				{/* Tab Selector */}
+				<div className="flex items-center p-1 bg-muted/40 rounded-lg border border-border/40 shrink-0">
 					<button
-						type="button"
-						onClick={() => setActiveTab('users')}
-						className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-							activeTab === 'users' ? 'bg-card text-foreground shadow-2xs border border-border/60' : 'text-muted-foreground hover:text-foreground'
+						onClick={() => setActiveTab('members')}
+						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 ${
+							activeTab === 'members'
+								? 'bg-background text-foreground shadow-xs font-semibold'
+								: 'text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						Active Users ({users.length})
+						<UserCheck className="size-3.5" />
+						<span>Members ({members.length})</span>
 					</button>
 					<button
-						type="button"
 						onClick={() => setActiveTab('invitations')}
-						className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-							activeTab === 'invitations' ? 'bg-card text-foreground shadow-2xs border border-border/60' : 'text-muted-foreground hover:text-foreground'
+						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 ${
+							activeTab === 'invitations'
+								? 'bg-background text-foreground shadow-xs font-semibold'
+								: 'text-muted-foreground hover:text-foreground'
 						}`}
 					>
-						Invitations ({invitations.length})
+						<Clock className="size-3.5" />
+						<span>Pending Invites ({invites.length})</span>
 					</button>
 				</div>
-			</div>
 
-			{/* Dark Mode Table Format for Users */}
-			{activeTab === 'users' && (
-				<div className="border border-border/70 shadow-xs rounded-xl overflow-hidden bg-card">
-					{filteredUsers.length === 0 ? (
-						<div className="p-12 text-center flex flex-col items-center justify-center gap-2">
-							<Users className="size-8 text-muted-foreground/40" />
-							<span className="text-xs text-muted-foreground font-medium">
-								{searchQuery ? `No users match "${searchQuery}"` : 'No users created yet'}
-							</span>
-							{!searchQuery && (
-								<Button size="sm" variant="outline" onClick={handleOpenCreate} className="h-8 text-xs mt-1 font-semibold">
-									<Plus className="size-3.5 mr-1.5" /> Add First User
-								</Button>
-							)}
-						</div>
-					) : (
-						<Table>
-							<TableHeader className="bg-muted/40 border-b border-border/60">
-								<TableRow className="hover:bg-transparent border-border/60">
-									<TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">User Email</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Role</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">2FA Security</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Joined Date</TableHead>
-									<TableHead className="text-right px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Actions</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{filteredUsers.map(member => {
-									const isOwner = member.role === 'owner';
-									const canManage = !isOwner && !member.isSelf;
+				{/* Search & Role Filters */}
+				<div className="flex items-center gap-2.5 flex-1 max-w-md">
+					<div className="relative flex-1">
+						<Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+						<Input
+							placeholder={activeTab === 'members' ? 'Search member email or name...' : 'Search pending invites...'}
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="h-8 pl-8 text-xs bg-background/50 border-border/80"
+						/>
+					</div>
 
-									return (
-										<TableRow key={member.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
-											<TableCell className="px-4 py-3 font-medium text-xs">
-												<div className="flex items-center gap-3">
-													<div className="size-7 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center border border-primary/20 shrink-0 overflow-hidden">
-														{member.avatar ? (
-															<img src={member.avatar} alt={member.email} className="size-full object-cover rounded-full" />
-														) : (
-															member.email.substring(0, 2).toUpperCase()
-														)}
-													</div>
-													<span className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-														{member.email}
-														{member.isSelf && (
-															<span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-bold">
-																You
-															</span>
-														)}
-													</span>
-												</div>
-											</TableCell>
-											<TableCell className="text-center px-4 py-3">
-												<Badge
-													variant="outline"
-													className={`text-[11px] font-semibold capitalize px-2.5 py-0.5 ${
-														member.role === 'owner'
-															? 'bg-purple-500/10 text-purple-500 border-purple-500/30'
-															: member.role === 'admin'
-															? 'bg-blue-500/10 text-blue-500 border-blue-500/30'
-															: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-													}`}
-												>
-													{member.role}
-												</Badge>
-											</TableCell>
-											<TableCell className="text-center px-4 py-3">
-												<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-500">
-													<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-													{member.banned ? 'Deactivated' : 'Active'}
-												</span>
-											</TableCell>
-											<TableCell className="text-center px-4 py-3">
-												{member.twoFactorEnabled ? (
-													<span className="inline-flex items-center gap-1 text-xs text-emerald-500 font-semibold">
-														<ShieldCheck className="w-3.5 h-3.5" /> Enabled
-													</span>
-												) : (
-													<span className="text-xs text-muted-foreground font-mono">
-														Disabled
-													</span>
-												)}
-											</TableCell>
-											<TableCell className="text-center px-4 py-3 text-xs text-muted-foreground font-mono">
-												{new Date(member.createdAt).toLocaleDateString()}
-											</TableCell>
-											<TableCell className="text-right px-4 py-3">
-												{canManage ? (
-													<DropdownMenu>
-														<DropdownMenuTrigger
-															render={
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="size-8 text-muted-foreground hover:text-foreground"
-																>
-																	<MoreHorizontal className="size-4" />
-																</Button>
-															}
-														/>
-														<DropdownMenuContent align="end" className="w-40">
-															<DropdownMenuLabel className="text-xs">
-																Actions
-															</DropdownMenuLabel>
-															<DropdownMenuItem
-																onClick={() => setEditingRoleUser(member)}
-																className="cursor-pointer text-xs"
-															>
-																<Pencil className="size-3.5 mr-2" />
-																Change Role
-															</DropdownMenuItem>
-															<DropdownMenuItem
-																onClick={() => setDeleteTarget(member)}
-																className="cursor-pointer text-xs text-rose-500 hover:text-rose-600"
-															>
-																<Trash2 className="size-3.5 mr-2" />
-																Delete User
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												) : (
-													<span className="text-xs text-muted-foreground/40 font-mono w-8 text-center">—</span>
-												)}
-											</TableCell>
-										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
+					{activeTab === 'members' && (
+						<Select value={roleFilter} onValueChange={setRoleFilter}>
+							<SelectTrigger className="h-8 text-xs w-[120px] bg-background/50 border-border/80 font-mono">
+								<SelectValue placeholder="Role" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="ALL" className="text-xs">All Roles</SelectItem>
+								<SelectItem value="owner" className="text-xs">Owner</SelectItem>
+								<SelectItem value="admin" className="text-xs">Admin</SelectItem>
+								<SelectItem value="developer" className="text-xs">Developer</SelectItem>
+								<SelectItem value="viewer" className="text-xs">Viewer</SelectItem>
+							</SelectContent>
+						</Select>
 					)}
 				</div>
-			)}
+			</div>
 
-			{/* Dark Mode Table Format for Invitations */}
-			{activeTab === 'invitations' && (
-				<div className="border border-border/70 shadow-xs rounded-xl overflow-hidden bg-card">
-					{filteredInvitations.length === 0 ? (
-						<div className="p-12 text-center flex flex-col items-center justify-center gap-2">
-							<Mail className="size-8 text-muted-foreground/40" />
-							<span className="text-xs text-muted-foreground font-medium">No pending invitations</span>
-							<Button size="sm" variant="outline" onClick={handleOpenCreate} className="h-8 text-xs mt-1 font-semibold">
-								<Plus className="size-3.5 mr-1.5" /> Send Invitation
-							</Button>
-						</div>
-					) : (
+			{/* Main Content Area */}
+			{isLoading ? (
+				<div className="flex justify-center py-24">
+					<div className="size-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+				</div>
+			) : activeTab === 'members' ? (
+				/* Members Table */
+				filteredMembers.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-16 border border-dashed border-border/60 rounded-xl bg-card/10">
+						<Users className="size-10 mb-3 text-muted-foreground/40" />
+						<h3 className="text-sm font-semibold text-foreground">No members found</h3>
+						<p className="text-xs text-muted-foreground mt-1">
+							{searchQuery || roleFilter !== 'ALL'
+								? 'Try adjusting your search query or role filter.'
+								: 'Add team members to collaborate on projects.'}
+						</p>
+					</div>
+				) : (
+					<div className="border border-border/80 rounded-xl overflow-hidden bg-card/30 shadow-xs">
 						<Table>
-							<TableHeader className="bg-muted/40 border-b border-border/60">
-								<TableRow className="hover:bg-transparent border-border/60">
-									<TableHead className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Invited Email</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Assigned Role</TableHead>
-									<TableHead className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Expires At</TableHead>
-									<TableHead className="text-right px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Actions</TableHead>
+							<TableHeader className="bg-muted/30">
+								<TableRow className="border-border/60 hover:bg-transparent">
+									<TableHead className="text-xs font-semibold text-foreground h-9">User</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9">Role</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9">Status</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9 text-right pr-4">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredInvitations.map(inv => (
-									<TableRow key={inv.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
-										<TableCell className="px-4 py-3 font-medium text-xs">
-											<div className="flex items-center gap-2.5">
-												<Mail className="size-4 text-primary shrink-0" />
-												<span className="font-semibold text-foreground">{inv.email}</span>
+								{filteredMembers.map((member) => (
+									<TableRow key={member.id} className="border-border/60 hover:bg-muted/20 transition-colors">
+										<TableCell className="py-3">
+											<div className="flex items-center gap-3">
+												<div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0">
+													{(member.name || member.email || 'U')[0]}
+												</div>
+												<div className="flex flex-col min-w-0">
+													<span className="text-xs font-bold text-foreground truncate">
+														{member.name || member.email.split('@')[0]}
+													</span>
+													<span className="text-[11px] text-muted-foreground font-mono truncate">
+														{member.email}
+													</span>
+												</div>
 											</div>
 										</TableCell>
-										<TableCell className="text-center px-4 py-3">
-											<Badge variant="outline" className="text-xs capitalize font-semibold">
-												{inv.role}
-											</Badge>
+										<TableCell className="py-3">
+											<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
+												member.role.toLowerCase() === 'owner' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+												member.role.toLowerCase() === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+												member.role.toLowerCase() === 'developer' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+												'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+											}`}>
+												<Shield className="size-3 mr-1" />
+												{member.role.toUpperCase()}
+											</span>
 										</TableCell>
-										<TableCell className="text-center px-4 py-3 text-xs text-muted-foreground font-mono">
-											{new Date(inv.expiresAt).toLocaleDateString()}
+										<TableCell className="py-3">
+											{member.banned ? (
+												<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">
+													<XCircle className="size-3 mr-1" /> Banned
+												</span>
+											) : (
+												<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+													Active
+												</span>
+											)}
 										</TableCell>
-										<TableCell className="text-right px-4 py-3">
+										<TableCell className="py-3 text-right pr-4">
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
+														<MoreHorizontal className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end" className="w-40">
+													<DropdownMenuItem
+														onClick={() => setEditingRoleUser(member)}
+														className="text-xs gap-2 cursor-pointer"
+													>
+														<Shield className="size-3.5 text-primary" />
+														<span>Change Role</span>
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														onClick={() => setDeleteTarget(member)}
+														className="text-xs text-rose-400 focus:text-rose-400 gap-2 cursor-pointer"
+													>
+														<Trash2 className="size-3.5" />
+														<span>Remove User</span>
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
+				)
+			) : (
+				/* Invitations Table */
+				filteredInvites.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-16 border border-dashed border-border/60 rounded-xl bg-card/10">
+						<Mail className="size-10 mb-3 text-muted-foreground/40" />
+						<h3 className="text-sm font-semibold text-foreground">No pending invitations</h3>
+						<p className="text-xs text-muted-foreground mt-1">
+							All invited team members have accepted or no pending invites exist.
+						</p>
+					</div>
+				) : (
+					<div className="border border-border/80 rounded-xl overflow-hidden bg-card/30 shadow-xs">
+						<Table>
+							<TableHeader className="bg-muted/30">
+								<TableRow className="border-border/60 hover:bg-transparent">
+									<TableHead className="text-xs font-semibold text-foreground h-9">Invited Email</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9">Assigned Role</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9">Sent Date</TableHead>
+									<TableHead className="text-xs font-semibold text-foreground h-9 text-right pr-4">Action</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{filteredInvites.map((invite) => (
+									<TableRow key={invite.id} className="border-border/60 hover:bg-muted/20 transition-colors">
+										<TableCell className="py-3">
+											<div className="flex items-center gap-2.5">
+												<Mail className="size-4 text-muted-foreground shrink-0" />
+												<span className="text-xs font-mono font-medium text-foreground">{invite.email}</span>
+											</div>
+										</TableCell>
+										<TableCell className="py-3">
+											<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+												{invite.role.toUpperCase()}
+											</span>
+										</TableCell>
+										<TableCell className="py-3 text-xs text-muted-foreground font-mono">
+											{invite.created_at ? new Date(invite.created_at * 1000).toLocaleDateString() : 'Recently'}
+										</TableCell>
+										<TableCell className="py-3 text-right pr-4">
 											<Button
 												variant="ghost"
 												size="sm"
-												onClick={() => handleRevokeInvitation(inv.id)}
-												className="h-8 text-xs text-rose-500 hover:bg-rose-500/10 font-semibold"
+												onClick={() => handleRevokeInvitation(invite.id)}
+												className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 font-mono"
 											>
 												Revoke
 											</Button>
@@ -538,152 +467,133 @@ export function UsersManagementPage() {
 								))}
 							</TableBody>
 						</Table>
-					)}
-				</div>
+					</div>
+				)
 			)}
 
-			{/* Create User / Invite Modal */}
-			<Dialog open={isCreateOpen} onOpenChange={open => !open && setIsCreateOpen(false)}>
-				<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 flex flex-col gap-5 rounded-2xl">
-					<DialogHeader className="space-y-1">
-						<DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-							<Users className="size-5 text-primary" />
-							Create User / Invite Member
+			{/* Create/Invite Modal */}
+			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+				<DialogContent className="sm:max-w-md bg-[#09090b] border-border/80">
+					<DialogHeader>
+						<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+							<UserPlus className="size-5 text-primary" />
+							Add User or Send Invite
 						</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
-							Create direct account credentials or send an email invitation.
+							Add an existing user directly to this workspace or send an email invitation.
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={handleSaveUser} className="flex flex-col gap-4">
-						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Account Mode
-							</label>
-							<Select value={createMode} onValueChange={v => v && setCreateMode(v as any)}>
-								<SelectTrigger className="h-10 text-xs bg-muted/30 border-border/80">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="credentials">Create Direct Credentials</SelectItem>
-									<SelectItem value="invitation">Send Email Invitation</SelectItem>
-								</SelectContent>
-							</Select>
+					<form onSubmit={handleCreateOrInvite} className="flex flex-col gap-4 mt-2">
+						<div className="flex items-center p-1 bg-muted/40 rounded-lg border border-border/40">
+							<button
+								type="button"
+								onClick={() => setActionType('direct')}
+								className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+									actionType === 'direct'
+										? 'bg-background text-foreground shadow-xs font-semibold'
+										: 'text-muted-foreground hover:text-foreground'
+								}`}
+							>
+								Direct Add
+							</button>
+							<button
+								type="button"
+								onClick={() => setActionType('invite')}
+								className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+									actionType === 'invite'
+										? 'bg-background text-foreground shadow-xs font-semibold'
+										: 'text-muted-foreground hover:text-foreground'
+								}`}
+							>
+								Send Invitation Email
+							</button>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Email Address <span className="text-destructive">*</span>
-							</label>
+							<Label className="text-xs font-medium text-foreground">User Email Address</Label>
 							<Input
 								type="email"
-								placeholder="user@example.com"
-								value={formEmail}
-								onChange={e => setFormEmail(e.target.value)}
-								className="h-10 text-xs bg-muted/30 border-border/80"
-								autoFocus
+								placeholder="teammate@company.com"
+								value={inputEmail}
+								onChange={(e) => setInputEmail(e.target.value)}
+								required
+								className="h-9 text-xs bg-background/50 border-border/80"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Assign Role
-							</label>
-							<Select value={formRole} onValueChange={v => v && setFormRole(v)}>
-								<SelectTrigger className="h-10 text-xs bg-muted/30 border-border/80">
+							<Label className="text-xs font-medium text-foreground">Assigned Role</Label>
+							<Select value={selectedRole} onValueChange={setSelectedRole}>
+								<SelectTrigger className="h-9 text-xs bg-background/50 border-border/80">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="admin">Admin</SelectItem>
-									<SelectItem value="member">Member</SelectItem>
+									<SelectItem value="admin" className="text-xs">Admin (Full Access)</SelectItem>
+									<SelectItem value="developer" className="text-xs">Developer (Deploy & Manage Services)</SelectItem>
+									<SelectItem value="viewer" className="text-xs">Viewer (Read Only)</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{createMode === 'credentials' && (
-							<div className="flex flex-col gap-1.5">
-								<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-									Password <span className="text-destructive">*</span>
-								</label>
-								<Input
-									type="password"
-									placeholder="••••••••"
-									value={formPassword}
-									onChange={e => setFormPassword(e.target.value)}
-									className="h-10 text-xs bg-muted/30 border-border/80"
-								/>
-							</div>
-						)}
-
-						<div className="flex items-center justify-end gap-3 pt-4 border-t border-border/60">
-							<Button
-								type="button"
-								variant="ghost"
-								onClick={() => setIsCreateOpen(false)}
-								className="h-9 text-xs font-semibold"
-							>
+						<DialogFooter className="mt-4 gap-2 sm:gap-0">
+							<Button type="button" variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} className="text-xs">
 								Cancel
 							</Button>
-							<Button
-								type="submit"
-								disabled={isSubmitting}
-								className="h-9 text-xs font-bold px-4 bg-primary text-primary-foreground hover:bg-primary/90"
-							>
-								{isSubmitting ? 'Saving...' : createMode === 'credentials' ? 'Create User' : 'Send Invite'}
+							<Button type="submit" size="sm" disabled={isSubmitting} className="text-xs font-bold px-4">
+								{isSubmitting ? 'Processing...' : actionType === 'direct' ? 'Add User' : 'Send Invite'}
 							</Button>
-						</div>
+						</DialogFooter>
 					</form>
 				</DialogContent>
 			</Dialog>
 
 			{/* Edit Role Dialog */}
-			<Dialog open={editingRoleUser !== null} onOpenChange={open => !open && setEditingRoleUser(null)}>
-				<DialogContent className="sm:max-w-md bg-card border border-border shadow-2xl p-6 flex flex-col gap-4 rounded-2xl">
-					<DialogHeader className="space-y-1">
-						<DialogTitle className="text-base font-bold text-foreground">
-							Change Role for {editingRoleUser?.email}
-						</DialogTitle>
+			<Dialog open={Boolean(editingRoleUser)} onOpenChange={() => setEditingRoleUser(null)}>
+				<DialogContent className="sm:max-w-xs bg-[#09090b] border-border/80">
+					<DialogHeader>
+						<DialogTitle className="text-sm font-bold text-foreground">Change User Role</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
-							Select the permission role level for this user
+							Select new role for {editingRoleUser?.email}
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="flex items-center gap-3 py-2">
-						<Button
-							variant={editingRoleUser?.role === 'admin' ? 'default' : 'outline'}
-							onClick={() => handleUpdateRole('admin')}
-							className="flex-1 h-9 text-xs font-semibold"
-						>
-							Admin
-						</Button>
-						<Button
-							variant={editingRoleUser?.role === 'member' ? 'default' : 'outline'}
-							onClick={() => handleUpdateRole('member')}
-							className="flex-1 h-9 text-xs font-semibold"
-						>
-							Member
-						</Button>
+					<div className="flex flex-col gap-3 mt-2">
+						{['admin', 'developer', 'viewer'].map((r) => (
+							<Button
+								key={r}
+								variant={editingRoleUser?.role.toLowerCase() === r ? 'default' : 'outline'}
+								onClick={() => handleUpdateRole(r)}
+								className="text-xs justify-start h-9 capitalize"
+							>
+								<Shield className="size-3.5 mr-2" />
+								{r}
+							</Button>
+						))}
 					</div>
 				</DialogContent>
 			</Dialog>
 
-			{/* Delete User Alert Dialog */}
-			<AlertDialog open={deleteTarget !== null} onOpenChange={open => !open && setDeleteTarget(null)}>
-				<AlertDialogContent className="rounded-2xl bg-card border border-border shadow-2xl">
+			{/* Delete Member Confirmation Modal */}
+			<AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
+				<AlertDialogContent className="sm:max-w-md bg-[#09090b] border-border/80">
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete User</AlertDialogTitle>
-						<AlertDialogDescription className="text-xs">
-							Are you sure you want to delete user "{deleteTarget?.email}"? This action cannot be undone.
+						<AlertDialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+							<AlertCircle className="size-5 text-rose-500 shrink-0" />
+							Remove Workspace Member
+						</AlertDialogTitle>
+						<AlertDialogDescription className="text-xs text-muted-foreground">
+							Are you sure you want to remove <span className="font-semibold text-foreground">{deleteTarget?.email}</span> from this organization? They will lose access to all projects.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					<AlertDialogFooter className="pt-2">
-						<AlertDialogCancel disabled={isDeleting} className="h-9 text-xs font-semibold">Cancel</AlertDialogCancel>
+					<AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
+						<AlertDialogCancel className="text-xs h-8">Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={confirmDeleteUser}
 							disabled={isDeleting}
-							className="h-9 text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="text-xs h-8 bg-rose-600 hover:bg-rose-700 text-white font-bold"
 						>
-							{isDeleting ? 'Deleting...' : 'Delete'}
+							{isDeleting ? 'Removing...' : 'Confirm Remove'}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -58,7 +58,6 @@ export function DnsProvidersPage() {
 	const updateDnsStore = useAppStore((state) => state.updateDnsProvider);
 	const deleteDnsStore = useAppStore((state) => state.deleteDnsProvider);
 
-	const { refetch } = $api.useQuery('get', '/dns-providers' as any, {} as any);
 	const createMutation = $api.useMutation('post', '/dns-providers' as any);
 	const updateMutation = $api.useMutation('put', '/dns-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/dns-providers/{id}' as any);
