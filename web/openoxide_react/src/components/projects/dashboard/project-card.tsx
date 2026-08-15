@@ -52,15 +52,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 		<div className="w-full lg:max-w-md">
 			<Card
 				onClick={handleNavigate}
-				className="group relative w-full h-full bg-transparent transition-colors hover:bg-border flex flex-col cursor-pointer border border-border/80"
+				className="group relative w-full h-full bg-transparent transition-colors hover:bg-border flex flex-col cursor-pointer border border-border/80 rounded-xl"
 			>
 				<CardHeader>
-					<CardTitle className="flex items-center justify-between gap-2 overflow-clip font-normal">
-						<span className="flex flex-col gap-1.5">
+					<CardTitle className="flex items-start justify-between gap-2 overflow-clip font-normal">
+						<span className="flex flex-col gap-1.5 min-w-0">
 							{/* Icon + Title */}
 							<div className="flex items-center gap-2">
 								<Book className="size-4 text-muted-foreground shrink-0" />
-								<span className="text-base font-medium leading-none text-foreground">
+								<span className="text-base font-medium leading-none text-foreground truncate">
 									{project.name}
 								</span>
 							</div>
@@ -83,7 +83,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						</span>
 
 						{/* Actions Menu (Dokploy exact) */}
-						<div className="flex self-start space-x-1" onClick={(e) => e.stopPropagation()}>
+						<div className="flex self-start space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
 							<DropdownMenu>
 								<DropdownMenuTrigger
 									render={
