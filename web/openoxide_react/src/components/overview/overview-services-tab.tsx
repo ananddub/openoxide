@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Search } from 'lucide-react';
+import { Box, Search, Folder, Building2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
+import { Badge } from '#/components/ui/badge';
 import { ServiceCard } from '#/components/projects/service/service-card';
 import { useAppStore } from '#/stores/app-store';
 import { useOrganizationStore } from '#/stores/organization-store';
@@ -10,11 +11,12 @@ import { useProjectListByOrganization } from 'virtual:openoxide-live';
 export function OverviewServicesTab() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [typeFilter, setTypeFilter] = useState('all');
+	const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
-	const activeOrg = useOrganizationStore((state) => state.activeOrg);
+	const { organizations, activeOrg, setActiveOrg } = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
-	// Live Projects stream & Zustand RAM store fallback
+	// Live Projects stream for active organization & Zustand RAM store fallback
 	const { data: liveProjects } = useProjectListByOrganization(BigInt(orgId));
 	const storeProjects = useAppStore((state) => state.projects);
 	const storeApps = useAppStore((state) => state.applications);
@@ -27,7 +29,7 @@ export function OverviewServicesTab() {
 		return [];
 	}, [liveProjects, storeProjects]);
 
-	// Extract all services across all projects, environments, and Zustand store
+	// Extract all services across all projects and environments
 	const allServices = useMemo(() => {
 		const serviceMap = new Map<string, {
 			projectId: number;
@@ -161,7 +163,7 @@ export function OverviewServicesTab() {
 			});
 		});
 
-		// 2. Process Zustand RAM Store flat items (if present)
+		// 2. Process Zustand RAM Store flat items
 		(storeApps || []).forEach((app: any) => {
 			const id = Number(app.id);
 			if (id && !serviceMap.has(`APP-${id}`)) {
@@ -214,7 +216,7 @@ export function OverviewServicesTab() {
 		return Array.from(serviceMap.values());
 	}, [projectsToUse, storeApps, storeDbs, storeComposes]);
 
-	// Filtered services
+	// Filtered services by search, type, AND project ID
 	const filteredServices = useMemo(() => {
 		return allServices.filter((s) => {
 			const matchesSearch =
@@ -228,12 +230,57 @@ export function OverviewServicesTab() {
 				(typeFilter === 'compose' && s.type === 'COMPOSE') ||
 				(typeFilter === 'database' && s.type === 'DATABASE');
 
-			return matchesSearch && matchesType;
+			const matchesProject =
+				selectedProjectId === 'all' || String(s.projectId) === String(selectedProjectId);
+
+			return matchesSearch && matchesType && matchesProject;
 		});
-	}, [allServices, searchQuery, typeFilter]);
+	}, [allServices, searchQuery, typeFilter, selectedProjectId]);
 
 	return (
 		<div className="space-y-4">
+			{/* Organization Context & Project Selector Bar */}
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border/60">
+				<div className="flex items-center gap-2">
+					<Building2 className="size-4 text-primary" />
+					<span className="text-xs font-bold text-foreground">Organization:</span>
+					<span className="text-xs font-mono font-medium text-muted-foreground">{activeOrg?.name || 'Default Organization'}</span>
+					{organizations.length > 1 && (
+						<select
+							value={activeOrg?.id || 1}
+							onChange={(e) => {
+								const selected = organizations.find((o) => String(o.id) === e.target.value);
+								if (selected) setActiveOrg(selected);
+							}}
+							className="h-7 text-xs bg-muted border border-border rounded px-2 text-foreground font-semibold cursor-pointer"
+						>
+							{organizations.map((org) => (
+								<option key={org.id} value={org.id}>
+									{org.name}
+								</option>
+							))}
+						</select>
+					)}
+				</div>
+
+				<div className="flex items-center gap-2">
+					<Folder className="size-4 text-muted-foreground" />
+					<span className="text-xs font-bold text-foreground">Filter by Project:</span>
+					<select
+						value={selectedProjectId}
+						onChange={(e) => setSelectedProjectId(e.target.value)}
+						className="h-7 text-xs bg-muted border border-border rounded px-2 text-foreground font-semibold cursor-pointer"
+					>
+						<option value="all">All Projects ({projectsToUse.length})</option>
+						{projectsToUse.map((p: any) => (
+							<option key={p.id} value={p.id}>
+								{p.name}
+							</option>
+						))}
+					</select>
+				</div>
+			</div>
+
 			{/* Search & Filter Toolbar */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
 				<div className="relative flex-1 max-w-md">
