@@ -3,6 +3,7 @@ import {$api} from '#/api/query';
 import {useProjectListByOrganization} from 'virtual:openoxide-live';
 import {toast} from 'sonner';
 import {useOrganizationStore} from '#/stores/organization-store';
+import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 
 // Helper to extract hashtags (e.g. #prod, #api) from text (strips leading #)
@@ -23,11 +24,20 @@ export function useProjectsList() {
 
 	// Get active organization from global layout switcher store
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const orgId = activeOrg?.id || 1;
+
+	// Zustand Realtime Store Read
+	const storeProjects = useAppStore((state) => state.projects);
+	const addProjectStore = useAppStore((state) => state.addProject);
+	const deleteProjectStore = useAppStore((state) => state.deleteProject);
 
 	// Fetch Projects for the active organization (live — auto-updates via WebSocket)
-	const {data: projects, loading: isLoadingProjects} = useProjectListByOrganization(
-		BigInt(activeOrg?.id || 0),
+	const {data: liveProjects, loading: isLoadingProjects} = useProjectListByOrganization(
+		BigInt(orgId),
 	);
+
+	// Prefer live WebSocket projects stream or fallback to Zustand RAM store
+	const projects = (liveProjects && liveProjects.length > 0) ? liveProjects : storeProjects;
 
 	// Create Project Mutation
 	const createProjectMutation = $api.useMutation('post', '/projects');
@@ -68,7 +78,7 @@ export function useProjectsList() {
 			if (sortBy === 'newest') return Number(b.created_at || 0) - Number(a.created_at || 0);
 			if (sortBy === 'oldest') return Number(a.created_at || 0) - Number(b.created_at || 0);
 			if (sortBy === 'alphabetical-asc') return a.name.localeCompare(b.name);
-			if (sortBy === 'alphabetical-desc') return b.name.localeCompare(a.name);
+			if (sortBy === 'alphabetical-desc') return a.name.localeCompare(b.name);
 			return 0;
 		});
 	}, [projects, searchQuery, sortBy, selectedTags]);
@@ -84,58 +94,62 @@ export function useProjectsList() {
 		description: string,
 		envVar: string,
 	) => {
-		if (!name.trim() || !activeOrg) {
+		if (!name.trim()) {
 			toast.error('Project name is required');
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
-			await createProjectMutation.mutateAsync({
+			const res = await createProjectMutation.mutateAsync({
 				body: {
 					name,
 					description: description || undefined,
 					env_var: envVar,
-					organization_id: activeOrg.id,
+					organization_id: orgId,
 				},
 			});
+
+			if (res) {
+				addProjectStore(res as any);
+			}
+
 			toast.success('Project created successfully');
 			setIsCreateOpen(false);
-		} catch (err: any) {
-			toast.error(formatApiError(err, 'Failed to create project'));
+		} catch (error) {
+			toast.error(formatApiError(error));
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
 	const handleDeleteProject = async (id: number) => {
+		deleteProjectStore(id);
 		try {
 			await deleteProjectMutation.mutateAsync({
 				params: {path: {id}},
 			});
-			toast.success('Project deleted successfully');
-		} catch (err: any) {
-			toast.error(formatApiError(err, 'Failed to delete project'));
+			toast.success('Project deleted');
+		} catch (error) {
+			toast.error(formatApiError(error));
 		}
 	};
 
 	return {
-		projects,
-		isLoadingProjects,
-		filteredAndSortedProjects,
+		projects: filteredAndSortedProjects,
 		allTags,
+		selectedTags,
 		searchQuery,
 		setSearchQuery,
 		sortBy,
 		setSortBy,
-		selectedTags,
-		setSelectedTags,
+		handleTagClick,
 		isCreateOpen,
 		setIsCreateOpen,
 		isSubmitting,
-		activeOrg,
-		handleTagClick,
 		handleCreateProjectSubmit,
 		handleDeleteProject,
+		isLoading: isLoadingProjects && projects.length === 0,
+		activeOrgId: orgId,
 	};
 }
