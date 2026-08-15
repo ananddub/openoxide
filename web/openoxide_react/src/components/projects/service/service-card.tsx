@@ -63,22 +63,26 @@ export function ServiceCard({
 	// Status Flags
 	const s = status?.toLowerCase() || '';
 
-	const isTransitioning =
-		s.includes('starting') ||
-		s.includes('deploying') ||
-		s.includes('building') ||
-		s.includes('loading') ||
+	const isStopping =
 		s.includes('stopping') ||
 		s.includes('cancelling');
 
+	const isStartingOrDeploying =
+		!isStopping &&
+		(s.includes('starting') ||
+			s.includes('deploying') ||
+			s.includes('building') ||
+			s.includes('loading'));
+
 	const isRunning =
-		!isTransitioning &&
+		!isStopping &&
+		!isStartingOrDeploying &&
 		(s.includes('running') ||
 			s.includes('active') ||
 			s.includes('healthy') ||
 			s.includes('up'));
 
-	const isStopped = !isTransitioning && !isRunning;
+	const isStopped = !isStopping && !isStartingOrDeploying && !isRunning;
 
 	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');
@@ -113,7 +117,7 @@ export function ServiceCard({
 	const dbDelete = $api.useMutation('delete', `/${dbKindPath}/{id}` as any);
 
 	const getStatusDotColor = (status: string) => {
-		if (s.includes('stopping') || s.includes('cancelling')) {
+		if (isStopping) {
 			return 'bg-orange-500 animate-pulse';
 		}
 		if (isRunning) {
@@ -122,7 +126,7 @@ export function ServiceCard({
 		if (s.includes('error') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
 			return 'bg-rose-500';
 		}
-		if (isTransitioning) {
+		if (isStartingOrDeploying) {
 			return 'bg-amber-500 animate-pulse';
 		}
 		return 'bg-muted-foreground/40';
@@ -169,7 +173,7 @@ export function ServiceCard({
 	const handleStart = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isRunning || isTransitioning) return;
+		if (isRunning || isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
 				await appStart.mutateAsync({ params: { path: { id } } });
@@ -187,7 +191,7 @@ export function ServiceCard({
 	const handleStop = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isStopped || isTransitioning) return;
+		if (isStopped || isStopping) return;
 		try {
 			if (type === 'APP') {
 				await appStop.mutateAsync({ params: { path: { id } } });
@@ -205,6 +209,7 @@ export function ServiceCard({
 	const handleCancel = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
+		if (isStopping) return;
 		try {
 			if (type === 'APP') {
 				await appCancel.mutateAsync({ params: { path: { id } } });
@@ -222,7 +227,7 @@ export function ServiceCard({
 	const handleDeploy = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isTransitioning) return;
+		if (isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
 				await appDeploy.mutateAsync({ params: { path: { id } } });
@@ -299,21 +304,26 @@ export function ServiceCard({
 								View details
 							</DropdownMenuItem>
 
-							{/* Start Option: Disabled if running or transitioning (starting, stopping, deploying) */}
+							{/* Start Option: Disabled if running, starting/deploying, or stopping */}
 							<DropdownMenuItem
-								disabled={isRunning || isTransitioning}
+								disabled={isRunning || isStartingOrDeploying || isStopping}
 								onClick={handleStart}
 								className={cn(
 									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									(isRunning || isTransitioning) && 'opacity-40 cursor-not-allowed'
+									(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
 								)}
 							>
 								<Play className="size-3.5 text-foreground" />
 								Start
 							</DropdownMenuItem>
 
-							{/* Stop/Cancel Option: Shows Cancel when transitioning (starting/stopping/deploying); Stop when running */}
-							{isTransitioning ? (
+							{/* Stop/Cancel Option:
+							    1. When isStopping: disabled Stop
+							    2. When isStartingOrDeploying: Cancel (active)
+							    3. When isRunning: Stop (active)
+							    4. When isStopped: Stop (disabled)
+							*/}
+							{isStartingOrDeploying ? (
 								<DropdownMenuItem
 									onClick={handleCancel}
 									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
@@ -323,11 +333,11 @@ export function ServiceCard({
 								</DropdownMenuItem>
 							) : (
 								<DropdownMenuItem
-									disabled={isStopped}
+									disabled={isStopped || isStopping}
 									onClick={handleStop}
 									className={cn(
 										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-										isStopped && 'opacity-40 cursor-not-allowed'
+										(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
 									)}
 								>
 									<Square className="size-3.5 text-foreground" />
@@ -335,13 +345,13 @@ export function ServiceCard({
 								</DropdownMenuItem>
 							)}
 
-							{/* Deploy Option: Disabled while transitioning (starting, stopping, deploying) */}
+							{/* Deploy Option: Disabled while starting, deploying, or stopping */}
 							<DropdownMenuItem
-								disabled={isTransitioning}
+								disabled={isStartingOrDeploying || isStopping}
 								onClick={handleDeploy}
 								className={cn(
 									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									isTransitioning && 'opacity-40 cursor-not-allowed'
+									(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
 								)}
 							>
 								<Rocket className="size-3.5 text-foreground" />
@@ -391,11 +401,11 @@ export function ServiceCard({
 
 					{/* Start */}
 					<button
-						disabled={isRunning || isTransitioning}
+						disabled={isRunning || isStartingOrDeploying || isStopping}
 						onClick={handleStart}
 						className={cn(
 							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							(isRunning || isTransitioning) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+							(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
 						)}
 					>
 						<Play className="size-3.5 text-foreground" />
@@ -403,7 +413,7 @@ export function ServiceCard({
 					</button>
 
 					{/* Stop / Cancel */}
-					{isTransitioning ? (
+					{isStartingOrDeploying ? (
 						<button
 							onClick={handleCancel}
 							className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
@@ -413,11 +423,11 @@ export function ServiceCard({
 						</button>
 					) : (
 						<button
-							disabled={isStopped}
+							disabled={isStopped || isStopping}
 							onClick={handleStop}
 							className={cn(
 								'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-								isStopped && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+								(isStopped || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
 							)}
 						>
 							<Square className="size-3.5 text-foreground" />
@@ -427,11 +437,11 @@ export function ServiceCard({
 
 					{/* Deploy */}
 					<button
-						disabled={isTransitioning}
+						disabled={isStartingOrDeploying || isStopping}
 						onClick={handleDeploy}
 						className={cn(
 							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							isTransitioning && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+							(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
 						)}
 					>
 						<Rocket className="size-3.5 text-foreground" />
