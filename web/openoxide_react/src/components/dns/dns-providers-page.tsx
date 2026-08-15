@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { $api } from '#/api/query';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatApiError } from '#/api/utils';
 import {
 	Globe,
@@ -49,7 +50,8 @@ export interface DnsProviderItem {
 }
 
 export function DnsProvidersPage() {
-	const { data: rawProviders, isLoading } = $api.useQuery('get', '/dns-providers' as any);
+	const queryClient = useQueryClient();
+	const { data: rawProviders, isLoading, refetch } = $api.useQuery('get', '/dns-providers' as any);
 	const createMutation = $api.useMutation('post', '/dns-providers' as any);
 	const updateMutation = $api.useMutation('put', '/dns-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/dns-providers/{id}' as any);
@@ -116,6 +118,8 @@ export function DnsProvidersPage() {
 				toast.success(`DNS Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
+			await refetch();
+			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to save DNS provider'));
 		} finally {
@@ -153,23 +157,25 @@ export function DnsProvidersPage() {
 			});
 			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
+			await refetch();
+			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
 		}
 	};
 
-	const getProviderBadge = (type: string) => {
+	const renderDnsProviderIcon = (type: string, className = "size-7 shrink-0") => {
 		switch (type.toUpperCase()) {
 			case 'CLOUDFLARE':
-				return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/30">Cloudflare</Badge>;
+				return <CloudflareIcon className={className} />;
 			case 'ROUTE53':
-				return <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/30">AWS Route53</Badge>;
+				return <AwsIcon className={className} />;
 			case 'DIGITALOCEAN':
-				return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/30">DigitalOcean</Badge>;
+				return <DigitalOceanIcon className={className} />;
 			case 'HETZNER':
-				return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/30">Hetzner DNS</Badge>;
+				return <HetznerIcon className={className} />;
 			default:
-				return <Badge variant="outline">{type}</Badge>;
+				return <Globe className={`${className} text-primary`} />;
 		}
 	};
 
@@ -188,110 +194,97 @@ export function DnsProvidersPage() {
 		}
 	};
 
-	const renderDnsProviderIcon = (type: string) => {
-		switch (type.toUpperCase()) {
-			case 'CLOUDFLARE':
-				return <CloudflareIcon className="size-4 shrink-0 text-amber-500" />;
-			case 'ROUTE53':
-				return <AwsIcon className="size-4 shrink-0 text-orange-500" />;
-			case 'DIGITALOCEAN':
-				return <DigitalOceanIcon className="size-4 shrink-0 text-blue-500" />;
-			case 'HETZNER':
-				return <HetznerIcon className="size-4 shrink-0 text-rose-500" />;
-			default:
-				return <Globe className="size-4 shrink-0 text-primary" />;
-		}
-	};
-
 	return (
-		<div className="p-6 space-y-6 max-w-6xl mx-auto">
-			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
-				<div className="space-y-1">
-					<h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-foreground">
-						<Globe className="size-5 text-primary shrink-0" />
-						DNS Providers & Wildcard SSL
-					</h1>
-					<p className="text-xs text-muted-foreground">
-						Connect DNS providers (Cloudflare, Route53, DigitalOcean) for automated Let's Encrypt DNS-01 SSL challenge & Wildcard domains (`*.yourdomain.com`).
-					</p>
-				</div>
-				<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 shrink-0">
-					<Plus className="size-4" /> Add DNS Provider
-				</Button>
-			</div>
+		<div className="w-full p-6 max-w-5xl mx-auto space-y-6">
+			{/* Dokploy Outer Card Wrapper */}
+			<Card className="h-full bg-card p-2.5 rounded-xl border border-border shadow-sm">
+				<div className="rounded-xl bg-background border border-border/50">
+					<CardHeader className="p-6 pb-4">
+						<CardTitle className="text-xl font-bold tracking-tight flex items-center gap-2.5 text-foreground">
+							<Globe className="size-6 text-muted-foreground" />
+							DNS Providers & Wildcard SSL
+						</CardTitle>
+						<CardDescription className="text-xs text-muted-foreground">
+							Connect DNS providers (Cloudflare, Route53, DigitalOcean) for automated Let's Encrypt DNS-01 SSL challenge & Wildcard domains.
+						</CardDescription>
+					</CardHeader>
 
-			{/* Providers Grid */}
-			{isLoading ? (
-				<div className="p-12 text-center text-xs text-muted-foreground">Loading DNS providers...</div>
-			) : providers.length === 0 ? (
-				<Card className="border border-dashed border-border/80 bg-muted/10 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-2xl">
-					<div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-						<Globe className="size-6" />
-					</div>
-					<div className="space-y-1 max-w-sm">
-						<h3 className="text-sm font-semibold text-foreground">No DNS Providers Connected</h3>
-						<p className="text-xs text-muted-foreground">
-							Add a DNS Provider to issue automatic Let's Encrypt Wildcard SSL certificates for all your applications.
-						</p>
-					</div>
-					<Button onClick={handleOpenCreate} size="sm" className="h-8.5 text-xs font-semibold mt-2 gap-1.5">
-						<Plus className="size-3.5" /> Configure First Provider
-					</Button>
-				</Card>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{providers.map(provider => {
-						return (
-							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors flex flex-col justify-between">
-								<CardHeader className="p-4 pb-3 flex flex-row items-start justify-between space-y-0">
-									<div className="space-y-1">
-										<div className="flex items-center gap-2">
-											<CardTitle className="text-sm font-bold text-foreground">{provider.name}</CardTitle>
-											{getProviderBadge(provider.provider_type)}
-										</div>
-									</div>
-									<div className="flex items-center gap-1">
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => handleOpenEdit(provider)}
-											className="size-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+					<CardContent className="space-y-4 p-6 pt-4 border-t border-border/40">
+						{isLoading ? (
+							<div className="flex items-center justify-center gap-2 py-12 text-xs text-muted-foreground">
+								<RefreshCw className="size-4 animate-spin" />
+								Loading DNS providers...
+							</div>
+						) : providers.length === 0 ? (
+							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+								<Globe className="size-8 text-muted-foreground" />
+								<span className="text-sm font-medium text-muted-foreground">
+									You don't have any DNS providers configured
+								</span>
+								<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 mt-2">
+									<Plus className="size-4" /> Add DNS Provider
+								</Button>
+							</div>
+						) : (
+							<div className="space-y-3">
+								<div className="flex flex-col gap-3">
+									{providers.map((provider) => (
+										<div
+											key={provider.id}
+											className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border/70 hover:border-border transition-colors w-full"
 										>
-											<Pencil className="size-3.5" />
-										</Button>
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => setDeleteTarget(provider)}
-											className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-										>
-											<Trash2 className="size-3.5" />
-										</Button>
-									</div>
-								</CardHeader>
+											<div className="flex items-center gap-3.5 min-w-0">
+												{renderDnsProviderIcon(provider.provider_type, "size-7 shrink-0")}
+												<div className="flex flex-col gap-1 min-w-0">
+													<span className="text-sm font-bold text-foreground truncate">{provider.name}</span>
+													<div className="flex flex-wrap items-center gap-2">
+														<Badge variant="secondary" className="text-[10px] font-medium bg-secondary text-secondary-foreground">
+															All Domains
+														</Badge>
+														<Badge variant="outline" className="text-[10px] font-medium">
+															{getProviderLabel(provider.provider_type)}
+														</Badge>
+														<span className="text-[11px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+															Wildcard Ready
+														</span>
+													</div>
+												</div>
+											</div>
 
-								<CardContent className="p-4 pt-0 space-y-3">
-									<div className="space-y-1 text-xs">
-										<div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Authentication Token</div>
-										<div className="font-mono text-muted-foreground bg-muted/30 px-2.5 py-1.5 rounded-md flex items-center gap-1.5 border border-border/40 text-[11px]">
-											<ShieldCheck className="size-3.5 text-emerald-500 shrink-0" />
-											<span>••••••••••••••••</span>
+											<div className="flex items-center gap-1 shrink-0 ml-3">
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleOpenEdit(provider)}
+													title="Edit provider"
+													className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+												>
+													<Pencil className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => setDeleteTarget(provider)}
+													title="Delete provider"
+													className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											</div>
 										</div>
-									</div>
+									))}
+								</div>
 
-									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
-										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
-										<Badge variant="outline" className="text-[10px] font-mono">
-											Active
-										</Badge>
-									</div>
-								</CardContent>
-							</Card>
-						);
-					})}
+								<div className="flex justify-end pt-2">
+									<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5">
+										<Plus className="size-4" /> Add DNS Provider
+									</Button>
+								</div>
+							</div>
+						)}
+					</CardContent>
 				</div>
-			)}
+			</Card>
 
 			{/* Create / Edit DNS Provider Modal (Matching Dokploy Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

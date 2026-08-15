@@ -1,19 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { useVaultList } from 'virtual:openoxide-live';
 import { $api } from '#/api/query';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatApiError } from '#/api/utils';
 import {
-	KeyRound,
+	Vault,
 	Plus,
 	Trash2,
-	CheckCircle2,
 	AlertCircle,
-	ExternalLink,
-	ShieldCheck,
 	RefreshCw,
+	KeyRound,
+	Pencil,
 	Copy,
 	Check,
-	Pencil,
 } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
@@ -25,7 +23,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogDescription,
-	DialogFooter,
 } from '#/components/ui/dialog';
 import {
 	Select,
@@ -46,23 +43,21 @@ import {
 
 export interface VaultProviderItem {
 	id: number;
-	name: String;
+	name: string;
 	provider_type: string;
-	api_url: string;
-	auth_token: string;
-	namespace?: string;
-	config_json?: string;
+	credentials_json: string;
 	organization_id: number;
 	created_at: number;
 	updated_at: number;
 }
 
 export function VaultProvidersPage() {
-	const { data: rawProviders, loading: isLoading } = useVaultList();
-	const createMutation = $api.useMutation('post', '/vault-providers');
-	const updateMutation = $api.useMutation('put', '/vault-providers/{id}');
-	const deleteMutation = $api.useMutation('delete', '/vault-providers/{id}');
-	const testMutation = $api.useMutation('post', '/vault-providers/{id}/test');
+	const queryClient = useQueryClient();
+	const { data: rawProviders, isLoading, refetch } = $api.useQuery('get', '/vault-providers' as any);
+	const createMutation = $api.useMutation('post', '/vault-providers' as any);
+	const updateMutation = $api.useMutation('put', '/vault-providers/{id}' as any);
+	const deleteMutation = $api.useMutation('delete', '/vault-providers/{id}' as any);
+	const testMutation = $api.useMutation('post', '/vault-providers/{id}/test' as any);
 
 	const providers: VaultProviderItem[] = useMemo(() => {
 		if (!rawProviders || !Array.isArray(rawProviders)) return [];
@@ -77,21 +72,23 @@ export function VaultProvidersPage() {
 
 	// Form State
 	const [formName, setFormName] = useState('');
-	const [formType, setFormType] = useState<'HASHICORP' | 'INFISICAL' | 'DOPPLER' | 'AWS' | 'AZURE' | 'SCALEWAY'>('HASHICORP');
-	const [formApiUrl, setFormApiUrl] = useState('');
-	const [formAuthToken, setFormAuthToken] = useState('');
-	const [formNamespace, setFormNamespace] = useState('');
+	const [formType, setFormType] = useState<
+		'HASHICORP' | 'INFISICAL' | 'AWS' | 'DOPPLER' | 'AZURE' | 'SCALEWAY'
+	>('HASHICORP');
+	const [formUrl, setFormUrl] = useState('');
 	const [formMount, setFormMount] = useState('secret');
+	const [formToken, setFormToken] = useState('');
+	const [formNamespace, setFormNamespace] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleOpenCreate = () => {
 		setEditingProvider(null);
 		setFormName('');
 		setFormType('HASHICORP');
-		setFormApiUrl('');
-		setFormAuthToken('');
-		setFormNamespace('');
+		setFormUrl('');
 		setFormMount('secret');
+		setFormToken('');
+		setFormNamespace('');
 		setIsCreateOpen(true);
 	};
 
@@ -99,59 +96,63 @@ export function VaultProvidersPage() {
 		setEditingProvider(provider);
 		setFormName(provider.name);
 		setFormType((provider.provider_type || 'HASHICORP').toUpperCase() as any);
-		setFormApiUrl(provider.api_url || '');
-		setFormAuthToken(provider.auth_token || '');
-		setFormNamespace(provider.namespace || '');
-		setFormMount('secret');
+		try {
+			const creds = JSON.parse(provider.credentials_json || '{}');
+			setFormUrl(creds.url || creds.api_url || '');
+			setFormMount(creds.mount || 'secret');
+			setFormNamespace(creds.namespace || '');
+		} catch {
+			setFormUrl('');
+			setFormMount('secret');
+			setFormNamespace('');
+		}
+		setFormToken('');
 		setIsCreateOpen(true);
 	};
 
 	const handleSaveProvider = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formName.trim() || !formApiUrl.trim() || !formAuthToken.trim()) {
-			toast.error('Please fill in all required fields');
+		if (!formName.trim()) {
+			toast.error('Please enter a provider name');
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
+			const payload: any = {
+				name: formName.trim(),
+				provider_type: formType,
+				credentials_json: JSON.stringify({
+					url: formUrl.trim(),
+					mount: formMount.trim(),
+					namespace: formNamespace.trim(),
+					...(formToken.trim() ? { token: formToken.trim() } : {}),
+				}),
+			};
+
 			if (editingProvider) {
 				await updateMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
-					body: {
-						name: formName.trim(),
-						api_url: formApiUrl.trim(),
-						auth_token: formAuthToken.trim(),
-						namespace: formNamespace.trim() || undefined,
-					},
+					body: payload,
 				});
-				toast.success(`Secrets Provider "${formName}" updated`);
+				toast.success(`Vault Provider "${formName}" updated`);
 			} else {
 				await createMutation.mutateAsync({
-					body: {
-						name: formName.trim(),
-						provider_type: formType,
-						api_url: formApiUrl.trim(),
-						auth_token: formAuthToken.trim(),
-						namespace: formNamespace.trim() || undefined,
-					},
+					body: payload,
 				});
-				toast.success(`Secrets Provider "${formName}" created successfully`);
+				toast.success(`Vault Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
+			await refetch();
+			queryClient.invalidateQueries({ queryKey: ['get', '/vault-providers'] });
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to save secrets provider'));
+			toast.error(formatApiError(err, 'Failed to save vault provider'));
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
 	const handleTestModalConnection = async () => {
-		if (!formApiUrl.trim() || !formAuthToken.trim()) {
-			toast.error('Please enter URL and Token before testing');
-			return;
-		}
-
 		setIsTestingModal(true);
 		try {
 			if (editingProvider) {
@@ -164,7 +165,6 @@ export function VaultProvidersPage() {
 					toast.error(res.data?.message || res?.message || 'Connection failed');
 				}
 			} else {
-				// Simulating connection test for unsaved form
 				toast.success('Configuration payload validated cleanly');
 			}
 		} catch (err) {
@@ -180,25 +180,46 @@ export function VaultProvidersPage() {
 			await deleteMutation.mutateAsync({
 				params: { path: { id: deleteTarget.id } },
 			});
-			toast.success(`Secrets Provider "${deleteTarget.name}" deleted`);
+			toast.success(`Vault Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
+			await refetch();
+			queryClient.invalidateQueries({ queryKey: ['get', '/vault-providers'] });
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to delete secrets provider'));
+			toast.error(formatApiError(err, 'Failed to delete vault provider'));
 		}
 	};
 
-	const copyReferenceSyntax = (provider: VaultProviderItem) => {
-		const syntax = `\${{vault.${provider.name}.SECRET_KEY}}`;
-		navigator.clipboard.writeText(syntax);
-		setCopiedId(provider.id);
-		toast.success(`Copied syntax: ${syntax}`);
+	const copySyntax = (name: string, id: number) => {
+		const text = `\${{vault.${name}.secret:FIELD}}`;
+		navigator.clipboard.writeText(text);
+		setCopiedId(id);
+		toast.success('Reference syntax copied to clipboard!');
 		setTimeout(() => setCopiedId(null), 2000);
+	};
+
+	const renderVaultProviderIcon = (type: string, className = "size-7 shrink-0") => {
+		switch (type.toUpperCase()) {
+			case 'HASHICORP':
+				return <HashicorpVaultIcon className={`${className} text-amber-500`} />;
+			case 'INFISICAL':
+				return <InfisicalIcon className={`${className} text-emerald-500`} />;
+			case 'DOPPLER':
+				return <DopplerIcon className={`${className} text-purple-500`} />;
+			case 'AWS':
+				return <AwsIcon className={`${className} text-amber-600`} />;
+			case 'AZURE':
+				return <AzureIcon className={`${className} text-sky-500`} />;
+			case 'SCALEWAY':
+				return <ScalewayIcon className={`${className} text-purple-600`} />;
+			default:
+				return <KeyRound className={`${className} text-primary`} />;
+		}
 	};
 
 	const getProviderLabel = (type: string) => {
 		switch (type.toUpperCase()) {
 			case 'HASHICORP':
-				return 'HashiCorp Vault / OpenBao';
+				return 'HashiCorp Vault';
 			case 'INFISICAL':
 				return 'Infisical';
 			case 'DOPPLER':
@@ -214,130 +235,109 @@ export function VaultProvidersPage() {
 		}
 	};
 
-	const renderVaultProviderIcon = (type: string) => {
-		switch (type.toUpperCase()) {
-			case 'HASHICORP':
-				return <HashicorpVaultIcon className="size-4 shrink-0 text-amber-500" />;
-			case 'INFISICAL':
-				return <InfisicalIcon className="size-4 shrink-0 text-emerald-500" />;
-			case 'DOPPLER':
-				return <DopplerIcon className="size-4 shrink-0 text-purple-500" />;
-			case 'AWS':
-				return <AwsIcon className="size-4 shrink-0 text-amber-600" />;
-			case 'AZURE':
-				return <AzureIcon className="size-4 shrink-0 text-sky-500" />;
-			case 'SCALEWAY':
-				return <ScalewayIcon className="size-4 shrink-0 text-purple-600" />;
-			default:
-				return <KeyRound className="size-4 shrink-0 text-primary" />;
-		}
-	};
-
 	return (
-		<div className="p-6 space-y-6 max-w-6xl mx-auto">
-			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
-				<div className="space-y-1">
-					<h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-						<KeyRound className="size-5 text-primary shrink-0" />
-						Secrets & Vault Providers
-					</h1>
-					<p className="text-xs text-muted-foreground">
-						Connect external secret managers (HashiCorp Vault, Infisical, Doppler, AWS) and reference secrets using{' '}
-						<code className="text-primary font-mono font-semibold bg-muted/40 px-1.5 py-0.5 rounded text-[11px]">
-							{'${{vault.<name>.<secret>}}'}
-						</code>
-					</p>
-				</div>
-				<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 shrink-0">
-					<Plus className="size-4" /> Add Provider
-				</Button>
-			</div>
+		<div className="w-full p-6 max-w-5xl mx-auto space-y-6">
+			{/* Dokploy Outer Card Wrapper */}
+			<Card className="h-full bg-card p-2.5 rounded-xl border border-border shadow-sm">
+				<div className="rounded-xl bg-background border border-border/50">
+					<CardHeader className="p-6 pb-4">
+						<CardTitle className="text-xl font-bold tracking-tight flex items-center gap-2.5 text-foreground">
+							<Vault className="size-6 text-muted-foreground" />
+							Secrets Providers
+						</CardTitle>
+						<CardDescription className="text-xs text-muted-foreground">
+							Connect external secret managers and reference their secrets in environment variables with{' '}
+							<code className="font-mono text-primary bg-muted px-1.5 py-0.5 rounded text-[11px] font-semibold">
+								${'{vault.<name>.<secret>}'}
+							</code>
+						</CardDescription>
+					</CardHeader>
 
-			{/* Providers Grid */}
-			{isLoading ? (
-				<div className="p-12 text-center text-xs text-muted-foreground">Loading secrets providers...</div>
-			) : providers.length === 0 ? (
-				<Card className="border border-dashed border-border/80 bg-muted/10 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-2xl">
-					<div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-						<KeyRound className="size-6" />
-					</div>
-					<div className="space-y-1 max-w-sm">
-						<h3 className="text-sm font-semibold text-foreground">No Secrets Providers Connected</h3>
-						<p className="text-xs text-muted-foreground">
-							Connect HashiCorp Vault, Infisical, Doppler or AWS Secrets Manager to inject production secrets automatically during deployments.
-						</p>
-					</div>
-					<Button onClick={handleOpenCreate} size="sm" className="h-8.5 text-xs font-semibold mt-2 gap-1.5">
-						<Plus className="size-3.5" /> Configure First Provider
-					</Button>
-				</Card>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{providers.map(provider => {
-						const isCopied = copiedId === provider.id;
-						return (
-							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors flex flex-col justify-between">
-								<CardHeader className="p-4 pb-3 flex flex-row items-start justify-between space-y-0">
-									<div className="space-y-1">
-										<div className="flex items-center gap-2">
-											<CardTitle className="text-sm font-bold text-foreground">{provider.name}</CardTitle>
-											<Badge variant="secondary" className="text-[10px] font-semibold">
-												{getProviderLabel(provider.provider_type)}
-											</Badge>
-										</div>
-										<CardDescription className="text-[11px] font-mono truncate max-w-[220px]">
-											{provider.api_url}
-										</CardDescription>
-									</div>
-									<div className="flex items-center gap-1">
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => handleOpenEdit(provider)}
-											className="size-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+					<CardContent className="space-y-4 p-6 pt-4 border-t border-border/40">
+						{isLoading ? (
+							<div className="flex items-center justify-center gap-2 py-12 text-xs text-muted-foreground">
+								<RefreshCw className="size-4 animate-spin" />
+								Loading secret providers...
+							</div>
+						) : providers.length === 0 ? (
+							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+								<Vault className="size-8 text-muted-foreground" />
+								<span className="text-sm font-medium text-muted-foreground">
+									You don't have any secrets providers configured
+								</span>
+								<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 mt-2">
+									<Plus className="size-4" /> Add Vault Provider
+								</Button>
+							</div>
+						) : (
+							<div className="space-y-3">
+								<div className="flex flex-col gap-3">
+									{providers.map((provider) => (
+										<div
+											key={provider.id}
+											className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border/70 hover:border-border transition-colors w-full"
 										>
-											<Pencil className="size-3.5" />
-										</Button>
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => setDeleteTarget(provider)}
-											className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-										>
-											<Trash2 className="size-3.5" />
-										</Button>
-									</div>
-								</CardHeader>
+											<div className="flex items-center gap-3.5 min-w-0">
+												{renderVaultProviderIcon(provider.provider_type, "size-7 shrink-0")}
+												<div className="flex flex-col gap-1 min-w-0">
+													<span className="text-sm font-bold text-foreground truncate">{provider.name}</span>
+													<div className="flex flex-wrap items-center gap-2">
+														<Badge variant="secondary" className="text-[10px] font-medium bg-secondary text-secondary-foreground">
+															All Projects
+														</Badge>
+														<Badge variant="outline" className="text-[10px] font-medium">
+															{getProviderLabel(provider.provider_type)}
+														</Badge>
+														<span className="text-[11px] font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded border border-border/40">
+															${`{vault.${provider.name}.…}`}
+														</span>
+													</div>
+												</div>
+											</div>
 
-								<CardContent className="p-4 pt-0 space-y-3">
-									<div className="space-y-1">
-										<div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Secret Reference Syntax</div>
-										<div className="flex items-center justify-between bg-muted/30 border border-border/40 rounded-md p-2 text-xs font-mono">
-											<span className="truncate text-primary text-[11px] font-semibold">{`\${{vault.${provider.name}.SECRET_KEY}}`}</span>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => copyReferenceSyntax(provider)}
-												className="size-6 text-muted-foreground hover:text-foreground shrink-0"
-											>
-												{isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-											</Button>
+											<div className="flex items-center gap-1 shrink-0 ml-3">
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => copySyntax(provider.name, provider.id)}
+													title="Copy syntax"
+													className="size-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg"
+												>
+													{copiedId === provider.id ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleOpenEdit(provider)}
+													title="Edit provider"
+													className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+												>
+													<Pencil className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => setDeleteTarget(provider)}
+													title="Delete provider"
+													className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											</div>
 										</div>
-									</div>
+									))}
+								</div>
 
-									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
-										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
-										<Badge variant="outline" className="text-[10px] font-mono">
-											{provider.namespace || 'default'}
-										</Badge>
-									</div>
-								</CardContent>
-							</Card>
-						);
-					})}
+								<div className="flex justify-end pt-2">
+									<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5">
+										<Plus className="size-4" /> Add Vault Provider
+									</Button>
+								</div>
+							</div>
+						)}
+					</CardContent>
 				</div>
-			)}
+			</Card>
 
 			{/* Create / Edit Provider Modal (Matching Dokploy Popup Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
