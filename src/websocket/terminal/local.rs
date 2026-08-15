@@ -5,7 +5,7 @@ use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, emit_terminal_bytes, socket_key, spawn_pty_reader};
+use super::helpers::{emit_error, emit_terminal_bytes, next_session_id, socket_key, spawn_pty_reader};
 use super::types::{
     DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
 };
@@ -88,6 +88,7 @@ pub async fn spawn_docker_terminal(
 
     let (reader, writer) = pty.into_split();
     let child_arc = Arc::new(Mutex::new(child));
+    let session_id = next_session_id();
 
     let key = socket_key(&socket);
     sessions.insert(
@@ -95,6 +96,7 @@ pub async fn spawn_docker_terminal(
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
             child: child_arc.clone(),
+            session_id,
         },
     );
 
@@ -114,19 +116,30 @@ pub async fn spawn_docker_terminal(
     let shell_name = shell_req.clone();
     tokio::spawn(async move {
         let status = child_arc.lock().await.wait().await;
-        sessions_clone.remove(&key);
-        let code = status.ok().and_then(|s| s.code());
-        if let Some(c) = code {
-            if c != 0 {
-                let err_msg = if c == 126 || c == 127 {
-                    format!("\r\n\x1b[31m[Error] Shell '{shell_name}' is not installed in container '{container_name}'. Please switch shell dropdown to 'sh'.\x1b[0m\r\n")
-                } else {
-                    format!("\r\n\x1b[31m[Error] Container '{container_name}' shell process exited with code {c}. Check container status.\x1b[0m\r\n")
-                };
-                emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
+        
+        let is_current = match sessions_clone.get(&key) {
+            Some(entry) => match entry.value() {
+                TerminalSession::Pty { session_id: sid, .. } => *sid == session_id,
+                _ => false,
+            },
+            None => false,
+        };
+
+        if is_current {
+            sessions_clone.remove(&key);
+            let code = status.ok().and_then(|s| s.code());
+            if let Some(c) = code {
+                if c != 0 {
+                    let err_msg = if c == 126 || c == 127 {
+                        format!("\r\n\x1b[31m[Error] Shell '{shell_name}' is not installed in container '{container_name}'. Please switch shell dropdown to 'sh'.\x1b[0m\r\n")
+                    } else {
+                        format!("\r\n\x1b[31m[Error] Container '{container_name}' shell process exited with code {c}. Check container status.\x1b[0m\r\n")
+                    };
+                    emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
+                }
             }
+            let _ = socket_clone.emit("exit", &TerminalExit { code });
         }
-        let _ = socket_clone.emit("exit", &TerminalExit { code });
     });
 }
 

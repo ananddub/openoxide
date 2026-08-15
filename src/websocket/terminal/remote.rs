@@ -4,7 +4,7 @@ use pty_process::{Command as PtyCommand, Size};
 use socketioxide::extract::SocketRef;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, emit_terminal_bytes, socket_key, spawn_pty_reader};
+use super::helpers::{emit_error, emit_terminal_bytes, next_session_id, socket_key, spawn_pty_reader};
 use super::types::{
     ServerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
 };
@@ -105,12 +105,14 @@ pub async fn spawn_remote_terminal(
 
     let (reader, writer) = pty.into_split();
     let child_arc = Arc::new(Mutex::new(child));
+    let session_id = next_session_id();
 
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
             child: child_arc.clone(),
+            session_id,
         },
     );
 
@@ -131,14 +133,25 @@ pub async fn spawn_remote_terminal(
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;
         let status = child_arc.lock().await.wait().await;
-        sessions_clone.remove(&key);
-        let code = status.ok().and_then(|s| s.code());
-        if let Some(c) = code {
-            if c != 0 {
-                let err_msg = format!("\r\n\x1b[31m[Error] SSH session to server '{server_host}' closed with exit code {c}.\x1b[0m\r\n");
-                emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
+        
+        let is_current = match sessions_clone.get(&key) {
+            Some(entry) => match entry.value() {
+                TerminalSession::Pty { session_id: sid, .. } => *sid == session_id,
+                _ => false,
+            },
+            None => false,
+        };
+
+        if is_current {
+            sessions_clone.remove(&key);
+            let code = status.ok().and_then(|s| s.code());
+            if let Some(c) = code {
+                if c != 0 {
+                    let err_msg = format!("\r\n\x1b[31m[Error] SSH session to server '{server_host}' closed with exit code {c}.\x1b[0m\r\n");
+                    emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
+                }
             }
+            let _ = socket_clone.emit("exit", &TerminalExit { code });
         }
-        let _ = socket_clone.emit("exit", &TerminalExit { code });
     });
 }

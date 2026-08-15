@@ -1,8 +1,15 @@
 use pty_process::OwnedReadPty;
 use socketioxide::extract::SocketRef;
+use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::io::AsyncReadExt;
 
 use super::types::{TerminalError, TerminalOutput};
+
+static NEXT_SESSION_ID: AtomicU64 = AtomicU64::new(1);
+
+pub fn next_session_id() -> u64 {
+    NEXT_SESSION_ID.fetch_add(1, Ordering::SeqCst)
+}
 
 pub fn socket_key(socket: &SocketRef) -> String {
     socket.id.to_string()

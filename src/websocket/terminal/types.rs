@@ -62,6 +62,7 @@ pub enum TerminalSession {
     Pty {
         writer: Arc<Mutex<OwnedWritePty>>,
         child: Arc<Mutex<Child>>,
+        session_id: u64,
     },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,
