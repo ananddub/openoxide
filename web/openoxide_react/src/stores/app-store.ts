@@ -137,6 +137,29 @@ export interface MemberItem {
 	created_at?: number;
 }
 
+export interface DomainItem {
+	id: number;
+	domain: string;
+	host?: string;
+	path?: string;
+	port?: number;
+	https?: boolean;
+	certificate_type?: string;
+	application_id?: number;
+	compose_id?: number;
+}
+
+export interface BackupItem {
+	id: number;
+	name?: string;
+	cron_expression?: string;
+	destination_id?: number;
+	application_id?: number;
+	compose_id?: number;
+	database_id?: number;
+	created_at?: number;
+}
+
 export interface InviteItem {
 	id: string;
 	email: string;
@@ -160,7 +183,9 @@ interface AppStoreState {
 	deployments: DeploymentItem[];
 	swarmNodes: SwarmNodeItem[];
 
-	// Tags, Schedules, Keys, Destinations, Profile, Members & Invites
+	// Domains, Backups, Tags, Schedules, Keys, Destinations, Profile, Members & Invites
+	domains: DomainItem[];
+	backups: BackupItem[];
 	tags: TagItem[];
 	schedules: ScheduleItem[];
 	sshKeys: SshKeyItem[];
@@ -214,8 +239,22 @@ interface AppStoreState {
 	updateDeployment: (id: number, deployment: Partial<DeploymentItem>) => void;
 
 	setSwarmNodes: (nodes: SwarmNodeItem[]) => void;
+	setDomains: (domains: DomainItem[]) => void;
+	addDomain: (domain: DomainItem) => void;
+	updateDomain: (id: number, domain: Partial<DomainItem>) => void;
+	deleteDomain: (id: number) => void;
+
+	setBackups: (backups: BackupItem[]) => void;
+	addBackup: (backup: BackupItem) => void;
+	updateBackup: (id: number, backup: Partial<BackupItem>) => void;
+	deleteBackup: (id: number) => void;
+
 	setTags: (tags: TagItem[]) => void;
 	setSchedules: (schedules: ScheduleItem[]) => void;
+	addSchedule: (schedule: ScheduleItem) => void;
+	updateSchedule: (id: number, schedule: Partial<ScheduleItem>) => void;
+	deleteSchedule: (id: number) => void;
+
 	setSshKeys: (keys: SshKeyItem[]) => void;
 	setDestinations: (destinations: DestinationItem[]) => void;
 	setProfile: (profile: UserProfileItem) => void;
@@ -243,6 +282,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	servers: [],
 	deployments: [],
 	swarmNodes: [],
+	domains: [],
+	backups: [],
 	tags: [],
 	schedules: [],
 	sshKeys: [],
@@ -317,8 +358,30 @@ export const useAppStore = create<AppStoreState>((set) => ({
 		set((state) => ({ deployments: state.deployments.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
 
 	setSwarmNodes: (swarmNodes) => set({ swarmNodes }),
+	setDomains: (domains) => set({ domains }),
+	addDomain: (domain) =>
+		set((state) => ({ domains: [domain, ...state.domains.filter((d) => String(d.id) !== String(domain.id))] })),
+	updateDomain: (id, updated) =>
+		set((state) => ({ domains: state.domains.map((d) => (String(d.id) === String(id) ? { ...d, ...updated } : d)) })),
+	deleteDomain: (id) =>
+		set((state) => ({ domains: state.domains.filter((d) => String(d.id) !== String(id)) })),
+
+	setBackups: (backups) => set({ backups }),
+	addBackup: (backup) =>
+		set((state) => ({ backups: [backup, ...state.backups.filter((b) => String(b.id) !== String(backup.id))] })),
+	updateBackup: (id, updated) =>
+		set((state) => ({ backups: state.backups.map((b) => (String(b.id) === String(id) ? { ...b, ...updated } : b)) })),
+	deleteBackup: (id) =>
+		set((state) => ({ backups: state.backups.filter((b) => String(b.id) !== String(id)) })),
+
 	setTags: (tags) => set({ tags }),
 	setSchedules: (schedules) => set({ schedules }),
+	addSchedule: (schedule) =>
+		set((state) => ({ schedules: [schedule, ...state.schedules.filter((s) => String(s.id) !== String(schedule.id))] })),
+	updateSchedule: (id, updated) =>
+		set((state) => ({ schedules: state.schedules.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
+	deleteSchedule: (id) =>
+		set((state) => ({ schedules: state.schedules.filter((s) => String(s.id) !== String(id)) })),
 	setSshKeys: (sshKeys) => set({ sshKeys }),
 	setDestinations: (destinations) => set({ destinations }),
 	setProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } })),

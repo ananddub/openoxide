@@ -6,6 +6,8 @@ import {useOrganizationStore} from '#/stores/organization-store';
 import type {components} from '#/types/api';
 import {useScheduleListByOrganization, useRemoteServerList} from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export type Schedule = components['schemas']['ScheduleResponseDto'];
 
 export function useSchedules() {
@@ -14,8 +16,16 @@ export function useSchedules() {
 	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 	const [editingSchedule, setEditingSchedule] = React.useState<Schedule | null>(null);
 
-	// Fetch schedules — pass 0n when no org; live hook returns undefined which falls back to []
-	const {data: schedules, loading} = useScheduleListByOrganization(BigInt(activeOrg?.id ?? 0));
+	const storeSchedules = useAppStore((state) => state.schedules);
+
+	// Fetch schedules — live hook returns undefined which falls back to Zustand store
+	const {data: rawSchedules, loading: isQueryLoading} = useScheduleListByOrganization(BigInt(activeOrg?.id ?? 1));
+
+	const schedules = (rawSchedules && Array.isArray(rawSchedules) && rawSchedules.length > 0)
+		? rawSchedules
+		: (storeSchedules || []);
+
+	const loading = schedules.length === 0 && isQueryLoading;
 
 	// Fetch remote servers to let user link a schedule to a server
 	const {data: servers} = useRemoteServerList();
