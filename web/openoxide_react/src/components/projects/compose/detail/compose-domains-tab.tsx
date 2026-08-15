@@ -1,13 +1,13 @@
-import {useState, useMemo} from 'react';
-import {Globe, Plus} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
-import {toast} from 'sonner';
-import {$api} from '#/api/query';
-import {formatApiError} from '#/api/utils';
-import {useComposeGet, useDomainListByCompose} from 'virtual:openoxide-live';
-import {ComposeDomainModal} from './domains/compose-domain-modal';
-import {ComposeDomainsTable} from './domains/compose-domains-table';
+import { useState, useMemo } from 'react';
+import { Globe, Plus } from 'lucide-react';
+import { Button } from '#/components/ui/button';
+import { Badge } from '#/components/ui/badge';
+import { toast } from 'sonner';
+import { $api } from '#/api/query';
+import { formatApiError } from '#/api/utils';
+import { useBackupListVolumeBackups } from 'virtual:openoxide-live';
+import { ComposeDomainsTable } from './domains/compose-domains-table';
+import { ComposeDomainModal } from './domains/compose-domain-modal';
 
 interface ComposeDomainsTabProps {
 	composeId: number;
@@ -51,65 +51,51 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return services;
 };
 
-export function ComposeDomainsTab({composeId, compose: passedCompose, domains: passedDomains, isLoading: passedIsLoading}: ComposeDomainsTabProps) {
+export function ComposeDomainsTab({
+	composeId,
+	compose,
+	domains: passedDomains,
+	isLoading: passedIsLoading,
+}: ComposeDomainsTabProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingDomain, setEditingDomain] = useState<any | null>(null);
 
-	// Fetch compose details if not passed
-	const {data: rawCompose} = useComposeGet(BigInt(composeId));
-	const compose = passedCompose || rawCompose;
-
+	// Extract list of compose service names
 	const availableServices = useMemo(() => {
 		return extractServicesFromYaml(compose?.compose_file);
 	}, [compose?.compose_file]);
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time domains query for compose stack (fallback if not passed from parent)
-	const {data: rawDomains, loading: innerLoading} = useDomainListByCompose(BigInt(composeId));
-
-	const domains = passedDomains ?? (rawDomains ?? []);
-	const isLoading = passedIsLoading ?? innerLoading;
-
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
-	const patchMutation = $api.useMutation('patch', '/domains/{id}');
+	const updateMutation = $api.useMutation('put', '/domains/{id}');
 	const deleteMutation = $api.useMutation('delete', '/domains/{id}');
 
-	const handleSave = async (data: {
-		domain: string;
-		serviceName: string;
-		containerPort: number;
-		https: boolean;
-		path: string;
-	}) => {
+	const domains = Array.isArray(passedDomains) ? passedDomains : [];
+	const isLoading = passedIsLoading ?? false;
+
+	const handleSave = async (formData: any) => {
 		try {
-			if (editingDomain) {
-				await patchMutation.mutateAsync({
-					params: {path: {id: editingDomain.id}},
+			if (editingDomain?.id) {
+				await updateMutation.mutateAsync({
+					params: { path: { id: editingDomain.id } },
 					body: {
-						host: data.domain,
-						service_name: data.serviceName,
-						port: data.containerPort,
-						https: data.https,
-						path: data.path,
+						...formData,
+						compose_id: composeId,
 					} as any,
 				});
 				toast.success('Compose domain route updated');
 			} else {
 				await createMutation.mutateAsync({
 					body: {
-						host: data.domain,
+						...formData,
 						compose_id: composeId,
-						service_name: data.serviceName,
-						port: data.containerPort,
-						https: data.https,
-						path: data.path,
 					} as any,
 				});
-				toast.success('Compose domain route added');
+				toast.success('Compose domain route created');
 			}
-
+			setIsModalOpen(false);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -117,9 +103,8 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id}}});
+			await deleteMutation.mutateAsync({ params: { path: { id } } });
 			toast.success('Compose domain route deleted');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -136,26 +121,28 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 	};
 
 	return (
-		<div className="flex flex-col gap-6">
-			{/* Top Header Card */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4 shadow-sm">
-				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Globe className="w-4 h-4 text-primary" /> Compose Domains
+		<div className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
+			{/* Top Header Toolbar */}
+			<div className="flex items-center justify-between flex-wrap gap-4 border-b border-border/40 pb-4">
+				<div className="flex flex-col gap-1">
+					<h3 className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
+						<Globe className="size-4 text-primary" /> Compose Domains
 					</h3>
-					<p className="text-xs text-muted-foreground mt-1">Configure domain routes and SSL ingress rules for compose stack services</p>
+					<p className="text-xs text-muted-foreground">
+						Configure domain routes and SSL ingress rules for compose stack services
+					</p>
 				</div>
 				<div className="flex items-center gap-3">
 					<Badge variant="outline" className="text-xs font-mono px-3 py-1">
 						Active Domains: {domains.length}
 					</Badge>
-					<Button onClick={handleOpenCreate} size="sm" className="h-8 text-xs font-semibold flex items-center gap-1.5">
-						<Plus className="w-4 h-4" /> Add Compose Domain
+					<Button onClick={handleOpenCreate} size="sm" className="h-8 text-xs font-bold flex items-center gap-1.5">
+						<Plus className="size-3.5" /> Add Compose Domain
 					</Button>
 				</div>
-			</section>
+			</div>
 
-			{/* Domains Table Component (< 200 lines) */}
+			{/* Domains Table Component */}
 			<ComposeDomainsTable
 				domains={domains}
 				isLoading={isLoading}
@@ -163,7 +150,7 @@ export function ComposeDomainsTab({composeId, compose: passedCompose, domains: p
 				onDelete={handleDelete}
 			/>
 
-			{/* Modal Component (< 200 lines) */}
+			{/* Modal Component */}
 			<ComposeDomainModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
