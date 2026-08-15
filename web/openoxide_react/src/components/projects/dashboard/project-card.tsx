@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { components } from '#/types/api.d.ts';
 import { Folder, MoreHorizontal, SquarePen, FileText, Trash2 } from 'lucide-react';
 import { Button } from '#/components/ui/button';
-import { Badge } from '#/components/ui/badge';
+import { TagBadge } from '#/components/shared/tag-badge';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -12,6 +12,8 @@ import {
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
 import { useAppStore } from '#/stores/app-store';
+import { useTagListAll } from 'virtual:openoxide-live';
+import { getTagsFromDescription } from '#/hooks/projects/use-projects-list';
 import { HandleProjectDialog } from './handle-project-dialog';
 
 type Project = components['schemas']['ProjectResponseDto'];
@@ -25,8 +27,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 	const navigate = useNavigate();
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 
-	// Read real-time overview services from Zustand store for exact service & environment counts
+	// Read real-time overview services and tags
 	const overviewServices = useAppStore((state) => state.overviewServices || []);
+	const { data: rawTags } = useTagListAll();
+
+	const availableTags = useMemo(() => {
+		return Array.isArray(rawTags) ? (rawTags as any[]) : [];
+	}, [rawTags]);
 
 	const handleCardClick = () => {
 		navigate({ to: '/projects/$id', params: { id: String(project.id) } });
@@ -44,6 +51,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 
 	const envIds = new Set(projectServices.map((s) => s.environment_id).filter(Boolean));
 	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
+
+	// Extract project tags from description (hashtag tags)
+	const projectTagNames = getTagsFromDescription(project.description || '');
 
 	return (
 		<>
@@ -115,18 +125,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 					{/* Description */}
 					{project.description && (
 						<p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground/90">
-							{project.description}
+							{project.description.replace(/#[\w-]+/g, '').trim()}
 						</p>
 					)}
 
-					{/* Tag Badges */}
-					{(project as any).tags && (project as any).tags.length > 0 && (
+					{/* Tag Badges with Custom Colors */}
+					{projectTagNames.length > 0 && (
 						<div className="flex flex-wrap gap-1.5 pt-0.5">
-							{(project as any).tags.map((t: string) => (
-								<Badge key={t} variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-border/40">
-									{t}
-								</Badge>
-							))}
+							{projectTagNames.map((t) => {
+								const foundTag = availableTags.find((at) => at.name.toLowerCase() === t.toLowerCase());
+								return (
+									<TagBadge
+										key={t}
+										name={t}
+										color={foundTag?.color || '#3b82f6'}
+										className="text-[10px] font-semibold px-2 py-0.5"
+									/>
+								);
+							})}
 						</div>
 					)}
 				</div>
