@@ -1,193 +1,272 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Search, Folder, Building2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
-import { ServiceCard } from '#/components/projects/service/service-card';
+import { Card } from '#/components/ui/card';
 import { useOrganizationStore } from '#/stores/organization-store';
 import { $api } from '#/api/query';
 import { useProjectListByOrganization } from 'virtual:openoxide-live';
+import { toast } from 'sonner';
+import {
+	OverviewServicesTable,
+	type OverviewServiceItem,
+} from './overview-services-table';
 
 export function OverviewServicesTab() {
 	const [searchQuery, setSearchQuery] = useState('');
-	const [typeFilter, setTypeFilter] = useState('all');
-	const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+	const [selectedProjectId, setSelectedProjectId] = useState('all');
+	const [selectedType, setSelectedType] = useState('all');
+	const [selectedStatus, setSelectedStatus] = useState('all');
+	const [sortBy, setSortBy] = useState('newest');
+	const [pageSize, setPageSize] = useState(50);
+	const [pageIndex, setPageIndex] = useState(0);
 
-	const { organizations, activeOrg, setActiveOrg } = useOrganizationStore();
+	const { activeOrg } = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
-	// Live Projects for filter dropdown
+	// Live Projects stream for Project Select filter
 	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
 
 	// Single backend endpoint query for ALL services in the organization
-	const { data: rawServices, isLoading } = $api.useQuery('get', '/overview/services/organization/{organization_id}', {
-		params: {
-			path: {
-				organization_id: orgId,
+	const { data: rawServices, isLoading } = $api.useQuery(
+		'get',
+		'/overview/services/organization/{organization_id}',
+		{
+			params: {
+				path: {
+					organization_id: orgId,
+				},
 			},
-		},
-	});
+		}
+	);
 
-	// Transform API services list for rendering
-	const allServices = useMemo(() => {
+	// Transform raw API data into OverviewServiceItem list
+	const allServices = useMemo<OverviewServiceItem[]>(() => {
 		if (!rawServices || !Array.isArray(rawServices)) return [];
 
 		return rawServices.map((svc: any) => ({
 			key: `${svc.service_type}-${svc.id}`,
-			projectId: Number(svc.project_id),
-			type: svc.service_type as 'APP' | 'COMPOSE' | 'DATABASE',
 			id: Number(svc.id),
 			name: svc.name,
-			subtitle: `${svc.project_name} / ${svc.environment_name}`,
-			status: svc.status || 'idle',
+			type: (svc.service_type || 'APP') as 'APP' | 'COMPOSE' | 'DATABASE',
+			status: svc.status || 'done',
 			createdAt: Number(svc.created_at),
+			projectId: Number(svc.project_id),
+			projectName: svc.project_name || 'Project',
+			environmentId: Number(svc.environment_id),
+			environmentName: svc.environment_name || 'production',
 			dbKind: svc.db_kind || undefined,
+			serverName: 'Rustploy Server',
 		}));
 	}, [rawServices]);
 
-	// Filtered services
+	// Filter and sort services
 	const filteredServices = useMemo(() => {
-		return allServices.filter((s) => {
+		let list = allServices.filter((s) => {
 			const matchesSearch =
 				!searchQuery ||
 				s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				s.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
-
-			const matchesType =
-				typeFilter === 'all' ||
-				(typeFilter === 'app' && s.type === 'APP') ||
-				(typeFilter === 'compose' && s.type === 'COMPOSE') ||
-				(typeFilter === 'database' && s.type === 'DATABASE');
+				s.projectName.toLowerCase().includes(searchQuery.toLowerCase());
 
 			const matchesProject =
 				selectedProjectId === 'all' || String(s.projectId) === String(selectedProjectId);
 
-			return matchesSearch && matchesType && matchesProject;
+			const matchesType =
+				selectedType === 'all' ||
+				(selectedType === 'application' && s.type === 'APP') ||
+				(selectedType === 'compose' && s.type === 'COMPOSE') ||
+				(selectedType === 'database' && s.type === 'DATABASE') ||
+				(s.dbKind && s.dbKind === selectedType);
+
+			const matchesStatus =
+				selectedStatus === 'all' || s.status.toLowerCase().includes(selectedStatus.toLowerCase());
+
+			return matchesSearch && matchesProject && matchesType && matchesStatus;
 		});
-	}, [allServices, searchQuery, typeFilter, selectedProjectId]);
+
+		if (sortBy === 'newest') list.sort((a, b) => b.createdAt - a.createdAt);
+		else if (sortBy === 'oldest') list.sort((a, b) => a.createdAt - b.createdAt);
+		else if (sortBy === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name));
+		else if (sortBy === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name));
+
+		return list;
+	}, [allServices, searchQuery, selectedProjectId, selectedType, selectedStatus, sortBy]);
+
+	// Pagination
+	const pageCount = Math.max(1, Math.ceil(filteredServices.length / pageSize));
+	const currentPageIndex = Math.min(pageIndex, pageCount - 1);
+	const pagedServices = useMemo(() => {
+		const start = currentPageIndex * pageSize;
+		return filteredServices.slice(start, start + pageSize);
+	}, [filteredServices, currentPageIndex, pageSize]);
+
+	const handleDeploy = (svc: OverviewServiceItem) => {
+		toast.success(`Queued deployment for ${svc.name}`);
+	};
+
+	const handleStop = (svc: OverviewServiceItem) => {
+		toast.info(`Stopped service ${svc.name}`);
+	};
 
 	return (
-		<div className="space-y-4">
-			{/* Organization Context & Project Selector Bar */}
-			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border/60">
-				<div className="flex items-center gap-2">
-					<Building2 className="size-4 text-primary" />
-					<span className="text-xs font-bold text-foreground">Organization:</span>
-					<span className="text-xs font-mono font-medium text-muted-foreground">{activeOrg?.name || 'Default Organization'}</span>
-					{organizations.length > 1 && (
+		<Card className="bg-sidebar p-2.5 rounded-xl w-full border border-border/60 shadow-xs">
+			<div className="rounded-xl bg-background shadow-md p-6 flex flex-col gap-5">
+				{/* Top Header & Filter Toolbar */}
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<h3 className="text-lg font-bold tracking-tight text-foreground">
+						Services{' '}
+						<span className="text-sm font-normal text-muted-foreground">
+							({filteredServices.length})
+						</span>
+					</h3>
+
+					<div className="flex flex-wrap items-center gap-2">
+						{/* Search Input */}
+						<div className="relative">
+							<Input
+								placeholder="Filter services..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="pr-9 w-[180px] h-9 text-xs"
+							/>
+							<Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+						</div>
+
+						{/* Project Filter Select */}
 						<select
-							value={activeOrg?.id || 1}
-							onChange={(e) => {
-								const selected = organizations.find((o) => String(o.id) === e.target.value);
-								if (selected) setActiveOrg(selected);
-							}}
-							className="h-7 text-xs bg-muted border border-border rounded px-2 text-foreground font-semibold cursor-pointer"
+							value={selectedProjectId}
+							onChange={(e) => setSelectedProjectId(e.target.value)}
+							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[130px]"
 						>
-							{organizations.map((org) => (
-								<option key={org.id} value={org.id}>
-									{org.name}
+							<option value="all">All projects</option>
+							{projectsToUse.map((p: any) => (
+								<option key={p.id} value={p.id}>
+									{p.name}
 								</option>
 							))}
 						</select>
-					)}
+
+						{/* Type Filter Select */}
+						<select
+							value={selectedType}
+							onChange={(e) => setSelectedType(e.target.value)}
+							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
+						>
+							<option value="all">All types</option>
+							<option value="application">Application</option>
+							<option value="compose">Compose</option>
+							<option value="database">Database</option>
+							<option value="postgres">PostgreSQL</option>
+							<option value="mysql">MySQL</option>
+							<option value="mariadb">MariaDB</option>
+							<option value="mongo">MongoDB</option>
+							<option value="redis">Redis</option>
+						</select>
+
+						{/* Status Filter Select */}
+						<select
+							value={selectedStatus}
+							onChange={(e) => setSelectedStatus(e.target.value)}
+							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[120px]"
+						>
+							<option value="all">All statuses</option>
+							<option value="done">Running</option>
+							<option value="deploying">Deploying</option>
+							<option value="idle">Idle</option>
+							<option value="error">Error</option>
+						</select>
+
+						{/* Sort By Select */}
+						<select
+							value={sortBy}
+							onChange={(e) => setSortBy(e.target.value)}
+							className="h-9 text-xs bg-card border border-border rounded-lg px-3 text-foreground font-semibold cursor-pointer min-w-[140px]"
+						>
+							<option value="newest">Newest first</option>
+							<option value="oldest">Oldest first</option>
+							<option value="name-asc">Name (A-Z)</option>
+							<option value="name-desc">Name (Z-A)</option>
+						</select>
+					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
-					<Folder className="size-4 text-muted-foreground" />
-					<span className="text-xs font-bold text-foreground">Filter by Project:</span>
-					<select
-						value={selectedProjectId}
-						onChange={(e) => setSelectedProjectId(e.target.value)}
-						className="h-7 text-xs bg-muted border border-border rounded px-2 text-foreground font-semibold cursor-pointer"
-					>
-						<option value="all">All Projects ({projectsToUse.length})</option>
-						{projectsToUse.map((p: any) => (
-							<option key={p.id} value={p.id}>
-								{p.name}
-							</option>
-						))}
-					</select>
-				</div>
-			</div>
+				{/* Loading State */}
+				{isLoading && (
+					<div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+						<Loader2 className="size-4 animate-spin text-primary" />
+						Loading services...
+					</div>
+				)}
 
-			{/* Search & Filter Toolbar */}
-			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-				<div className="relative flex-1 max-w-md">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-					<Input
-						placeholder="Search services by name or project..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-9 h-9 text-xs"
-					/>
-				</div>
-				<div className="flex items-center gap-2 flex-wrap">
-					<Button
-						variant={typeFilter === 'all' ? 'secondary' : 'ghost'}
-						size="sm"
-						onClick={() => setTypeFilter('all')}
-						className="h-8 text-xs"
-					>
-						All ({allServices.length})
-					</Button>
-					<Button
-						variant={typeFilter === 'app' ? 'secondary' : 'ghost'}
-						size="sm"
-						onClick={() => setTypeFilter('app')}
-						className="h-8 text-xs"
-					>
-						Apps ({allServices.filter((s) => s.type === 'APP').length})
-					</Button>
-					<Button
-						variant={typeFilter === 'compose' ? 'secondary' : 'ghost'}
-						size="sm"
-						onClick={() => setTypeFilter('compose')}
-						className="h-8 text-xs"
-					>
-						Compose ({allServices.filter((s) => s.type === 'COMPOSE').length})
-					</Button>
-					<Button
-						variant={typeFilter === 'database' ? 'secondary' : 'ghost'}
-						size="sm"
-						onClick={() => setTypeFilter('database')}
-						className="h-8 text-xs"
-					>
-						Databases ({allServices.filter((s) => s.type === 'DATABASE').length})
-					</Button>
-				</div>
-			</div>
+				{/* Empty Filter State */}
+				{!isLoading && filteredServices.length === 0 && (
+					<div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+						<span>No services match the current filters.</span>
+					</div>
+				)}
 
-			{/* Services Grid */}
-			{isLoading ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-36 animate-pulse rounded-xl bg-card border border-border/40" />
-					))}
-				</div>
-			) : filteredServices.length === 0 ? (
-				<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
-					<Box className="size-8 text-muted-foreground/40 mb-2" />
-					<p className="text-sm font-semibold text-foreground">No services found</p>
-					<p className="text-xs text-muted-foreground">
-						{searchQuery ? 'Try clearing your search query' : 'Create an application, compose stack, or database inside a project'}
-					</p>
-				</div>
-			) : (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{filteredServices.map((svc) => (
-						<ServiceCard
-							key={svc.key}
-							projectId={svc.projectId}
-							type={svc.type}
-							id={svc.id}
-							name={svc.name}
-							subtitle={svc.subtitle}
-							status={svc.status}
-							createdAt={svc.createdAt}
-							dbKind={svc.dbKind}
+				{/* Table & Pagination Footer */}
+				{!isLoading && filteredServices.length > 0 && (
+					<>
+						<OverviewServicesTable
+							services={pagedServices}
+							onDeploy={handleDeploy}
+							onStop={handleStop}
 						/>
-					))}
-				</div>
-			)}
-		</div>
+
+						{/* Pagination Controls */}
+						<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 text-xs text-muted-foreground border-t border-border/40">
+							<span>
+								{filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} total
+							</span>
+
+							<div className="flex items-center gap-4">
+								<div className="flex items-center gap-2">
+									<span className="whitespace-nowrap">Rows per page</span>
+									<select
+										value={String(pageSize)}
+										onChange={(e) => {
+											setPageSize(Number(e.target.value));
+											setPageIndex(0);
+										}}
+										className="h-8 text-xs bg-card border border-border rounded-md px-2 text-foreground font-semibold cursor-pointer"
+									>
+										<option value="25">25</option>
+										<option value="50">50</option>
+										<option value="100">100</option>
+										<option value="200">200</option>
+									</select>
+								</div>
+
+								<span className="whitespace-nowrap font-mono">
+									Page {currentPageIndex + 1} of {pageCount}
+								</span>
+
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setPageIndex(Math.max(0, currentPageIndex - 1))}
+										disabled={currentPageIndex === 0}
+										className="h-8 text-xs font-semibold px-3"
+									>
+										Previous
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setPageIndex(Math.min(pageCount - 1, currentPageIndex + 1))}
+										disabled={currentPageIndex + 1 >= pageCount}
+										className="h-8 text-xs font-semibold px-3"
+									>
+										Next
+									</Button>
+								</div>
+							</div>
+						</div>
+					</>
+				)}
+			</div>
+		</Card>
 	);
 }
