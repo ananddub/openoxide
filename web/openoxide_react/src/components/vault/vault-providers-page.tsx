@@ -236,108 +236,105 @@ export function VaultProvidersPage() {
 	};
 
 	return (
-		<div className="w-full p-6 max-w-5xl mx-auto space-y-6">
-			{/* Dokploy Outer Card Wrapper */}
-			<Card className="h-full bg-card p-2.5 rounded-xl border border-border shadow-sm">
-				<div className="rounded-xl bg-background border border-border/50">
-					<CardHeader className="p-6 pb-4">
-						<CardTitle className="text-xl font-bold tracking-tight flex items-center gap-2.5 text-foreground">
-							<Vault className="size-6 text-muted-foreground" />
-							Secrets Providers
-						</CardTitle>
-						<CardDescription className="text-xs text-muted-foreground">
-							Connect external secret managers and reference their secrets in environment variables with{' '}
-							<code className="font-mono text-primary bg-muted px-1.5 py-0.5 rounded text-[11px] font-semibold">
-								${'{vault.<name>.<secret>}'}
-							</code>
-						</CardDescription>
-					</CardHeader>
-
-					<CardContent className="space-y-4 p-6 pt-4 border-t border-border/40">
-						{isLoading ? (
-							<div className="flex items-center justify-center gap-2 py-12 text-xs text-muted-foreground">
-								<RefreshCw className="size-4 animate-spin" />
-								Loading secret providers...
-							</div>
-						) : providers.length === 0 ? (
-							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-								<Vault className="size-8 text-muted-foreground" />
-								<span className="text-sm font-medium text-muted-foreground">
-									You don't have any secrets providers configured
-								</span>
-								<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 mt-2">
-									<Plus className="size-4" /> Add Vault Provider
-								</Button>
-							</div>
-						) : (
-							<div className="space-y-3">
-								<div className="flex flex-col gap-3">
-									{providers.map((provider) => (
-										<div
-											key={provider.id}
-											className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border/70 hover:border-border transition-colors w-full"
-										>
-											<div className="flex items-center gap-3.5 min-w-0">
-												{renderVaultProviderIcon(provider.provider_type, "size-7 shrink-0")}
-												<div className="flex flex-col gap-1 min-w-0">
-													<span className="text-sm font-bold text-foreground truncate">{provider.name}</span>
-													<div className="flex flex-wrap items-center gap-2">
-														<Badge variant="secondary" className="text-[10px] font-medium bg-secondary text-secondary-foreground">
-															All Projects
-														</Badge>
-														<Badge variant="outline" className="text-[10px] font-medium">
-															{getProviderLabel(provider.provider_type)}
-														</Badge>
-														<span className="text-[11px] font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded border border-border/40">
-															${`{vault.${provider.name}.…}`}
-														</span>
-													</div>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-1 shrink-0 ml-3">
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => copySyntax(provider.name, provider.id)}
-													title="Copy syntax"
-													className="size-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg"
-												>
-													{copiedId === provider.id ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => handleOpenEdit(provider)}
-													title="Edit provider"
-													className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
-												>
-													<Pencil className="size-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => setDeleteTarget(provider)}
-													title="Delete provider"
-													className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-												>
-													<Trash2 className="size-4" />
-												</Button>
-											</div>
-										</div>
-									))}
-								</div>
-
-								<div className="flex justify-end pt-2">
-									<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5">
-										<Plus className="size-4" /> Add Vault Provider
-									</Button>
-								</div>
-							</div>
-						)}
-					</CardContent>
+		<div className="p-6 space-y-6 max-w-6xl mx-auto">
+			{/* Page Header */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
+				<div className="space-y-1">
+					<h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-foreground">
+						<Vault className="size-5 text-primary shrink-0" />
+						Vault Providers
+					</h1>
+					<p className="text-xs text-muted-foreground">
+						Connect HashiCorp Vault, Infisical, Doppler, or AWS Secrets Manager. Reference secret values dynamically during build and deployment.
+					</p>
 				</div>
-			</Card>
+				<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 shrink-0">
+					<Plus className="size-4" /> Add Vault Provider
+				</Button>
+			</div>
+
+			{/* Providers Grid */}
+			{isLoading ? (
+				<div className="p-12 text-center text-xs text-muted-foreground">Loading vault providers...</div>
+			) : providers.length === 0 ? (
+				<Card className="border border-dashed border-border/80 bg-muted/10 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-2xl">
+					<div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+						<Vault className="size-6" />
+					</div>
+					<div className="space-y-1 max-w-sm">
+						<h3 className="text-sm font-semibold text-foreground">No Vault Providers Connected</h3>
+						<p className="text-xs text-muted-foreground">
+							Reference secrets in your environment variables with <code className="font-mono text-primary">${'{vault.<name>.<secret>}'}</code>.
+						</p>
+					</div>
+					<Button onClick={handleOpenCreate} size="sm" className="h-8.5 text-xs font-semibold mt-2 gap-1.5">
+						<Plus className="size-3.5" /> Configure First Provider
+					</Button>
+				</Card>
+			) : (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{providers.map(provider => {
+						const isCopied = copiedId === provider.id;
+						return (
+							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors flex flex-col justify-between">
+								<CardHeader className="p-4 pb-3 flex flex-row items-start justify-between space-y-0">
+									<div className="space-y-1 min-w-0 pr-2">
+										<div className="flex items-center gap-2">
+											{renderVaultProviderIcon(provider.provider_type, "size-4.5 shrink-0")}
+											<CardTitle className="text-sm font-bold text-foreground truncate">{provider.name}</CardTitle>
+										</div>
+										<Badge variant="outline" className="text-[10px]">
+											{getProviderLabel(provider.provider_type)}
+										</Badge>
+									</div>
+									<div className="flex items-center gap-1 shrink-0">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleOpenEdit(provider)}
+											className="size-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+										>
+											<Pencil className="size-3.5" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => setDeleteTarget(provider)}
+											className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+										>
+											<Trash2 className="size-3.5" />
+										</Button>
+									</div>
+								</CardHeader>
+
+								<CardContent className="p-4 pt-0 space-y-3">
+									<div className="space-y-1">
+										<div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Secret Reference Syntax</div>
+										<div className="flex items-center justify-between bg-muted/30 border border-border/40 rounded-md p-2 text-xs font-mono">
+											<span className="truncate text-primary text-[11px] font-semibold">{`\${{vault.${provider.name}.SECRET_KEY}}`}</span>
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() => copySyntax(provider.name, provider.id)}
+												className="size-6 text-muted-foreground hover:text-foreground shrink-0"
+											>
+												{isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+											</Button>
+										</div>
+									</div>
+
+									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
+										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
+										<Badge variant="outline" className="text-[10px] font-mono">
+											Active
+										</Badge>
+									</div>
+								</CardContent>
+							</Card>
+						);
+					})}
+				</div>
+			)}
 
 			{/* Create / Edit Provider Modal (Matching Dokploy Popup Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
