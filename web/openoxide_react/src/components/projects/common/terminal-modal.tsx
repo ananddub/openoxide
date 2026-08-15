@@ -85,24 +85,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		}
 	}, []); // stable — reads live values from refs, no deps needed
 
-	// Shell / container switch: fires when shell or targetContainer changes AFTER initial connect
 	const socketConnectedRef = useRef(false);
-
-	useEffect(() => {
-		if (!open || !socketConnectedRef.current) return;
-		const sock = socketRef.current;
-		const term = termInstanceRef.current;
-		if (!sock?.connected || !term) return;
-
-		const connectedTarget = activeHostIp || targetContainerRef.current;
-		if (isRemoteServerRef.current) {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
-		} else {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
-		}
-		setStatus('connecting');
-		emitStartSession(sock, shell);
-	}, [shell, targetContainer]); // only shell/container changes trigger this — not emitStartSession
 
 	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
@@ -326,7 +309,19 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 						{!isRemoteServer && isCompose && servicesList.length > 1 && (
 							<div className="flex items-center gap-1.5">
 								<Box className="size-3.5 text-muted-foreground" />
-								<Select value={targetContainer} onValueChange={setSelectedService}>
+								<Select value={targetContainer} onValueChange={(val) => {
+									setSelectedService(val);
+									const sock = socketRef.current;
+									const term = termInstanceRef.current;
+									if (!sock?.connected || !term) return;
+									term.writeln(`\r\n\x1b[33mSwitching container to [${val}]...\x1b[0m\r\n`);
+									setStatus('connecting');
+									if (isRemoteServerRef.current && serverIdRef.current) {
+										sock.emit('server:start', { server_id: serverIdRef.current, shell: shellRef.current, command: shellRef.current });
+									} else {
+										sock.emit('docker:start', { container: val, shell: shellRef.current });
+									}
+								}}>
 									<SelectTrigger className="h-8 text-xs w-[140px] bg-background/50 border-border/80">
 										<SelectValue placeholder="Select Service" />
 									</SelectTrigger>
@@ -341,7 +336,25 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 							</div>
 						)}
 
-						<Select value={shell} onValueChange={(val) => setShell(val as 'sh' | 'bash')}>
+						<Select value={shell} onValueChange={(val) => {
+							const newShell = val as 'sh' | 'bash';
+							setShell(newShell);
+							const sock = socketRef.current;
+							const term = termInstanceRef.current;
+							if (!sock?.connected || !term) return;
+							const connectedTarget = activeHostIp || targetContainerRef.current;
+							if (isRemoteServerRef.current) {
+								term.writeln(`\r\n\x1b[33mSwitching shell to [${newShell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
+							} else {
+								term.writeln(`\r\n\x1b[33mSwitching shell to [${newShell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
+							}
+							setStatus('connecting');
+							if (isRemoteServerRef.current && serverIdRef.current) {
+								sock.emit('server:start', { server_id: serverIdRef.current, shell: newShell, command: newShell });
+							} else {
+								sock.emit('docker:start', { container: targetContainerRef.current, shell: newShell });
+							}
+						}}>
 							<SelectTrigger className="h-8 text-xs w-[90px] bg-background/50 border-border/80 font-mono">
 								<SelectValue />
 							</SelectTrigger>

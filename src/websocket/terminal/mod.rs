@@ -81,7 +81,6 @@ impl TerminalSocket {
 
     #[on("docker:start")]
     async fn docker_start(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
-        tracing::info!(payload = %payload, "docker:start received");
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
