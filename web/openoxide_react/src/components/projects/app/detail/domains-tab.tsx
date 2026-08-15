@@ -4,6 +4,14 @@ import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Badge } from '#/components/ui/badge';
 import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableHead,
+	TableRow,
+	TableCell,
+} from '#/components/ui/table';
+import {
 	Select,
 	SelectTrigger,
 	SelectValue,
@@ -109,7 +117,7 @@ export function DomainsTab({ app, domains: passedDomains, onRefresh }: DomainsTa
 				</div>
 			</div>
 
-			{/* Domains List */}
+			{/* Domains Table List */}
 			{domains.length === 0 ? (
 				<div className="flex flex-col items-center justify-center gap-3 py-16 border border-dashed border-border/60 rounded-2xl bg-card/10 text-center">
 					<Globe className="size-10 text-muted-foreground/35" />
@@ -124,66 +132,74 @@ export function DomainsTab({ app, domains: passedDomains, onRefresh }: DomainsTa
 					</Button>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 gap-4 lg:grid-cols-2 w-full">
-					{domains.map((d: any) => {
-						const url = `${d.https ? 'https' : 'http'}://${d.host}${d.path && d.path !== '/' ? d.path : ''}`;
-						return (
-							<div
-								key={d.id}
-								className="p-5 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-all flex flex-col gap-3 shadow-xs"
-							>
-								{/* Top Row: Domain URL & Delete Button */}
-								<div className="flex items-center justify-between gap-3">
-									<div className="flex items-center gap-2.5 min-w-0">
-										<div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-											<Globe className="size-4" />
-										</div>
-										<a
-											href={url}
-											target="_blank"
-											rel="noreferrer"
-											className="text-sm font-bold text-foreground hover:underline hover:text-primary transition-colors flex items-center gap-1.5 truncate"
-										>
-											<span className="truncate">{d.host}</span>
-											<ExternalLink className="size-3.5 text-muted-foreground shrink-0" />
-										</a>
-									</div>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => setDeleteId(d.id)}
-										className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 rounded-lg"
-									>
-										<Trash2 className="size-4" />
-									</Button>
-								</div>
-
-								{/* Badges Row */}
-								<div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/30">
-									<Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
-										Path: {d.path || '/'}
-									</Badge>
-									<Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
-										Port: {d.port || 80}
-									</Badge>
-									{d.https ? (
-										<Badge variant="outline" className="text-[10px] font-semibold text-emerald-500 border-emerald-500/30 bg-emerald-500/10 flex items-center gap-1">
-											<Lock className="size-3" /> HTTPS (SSL)
-										</Badge>
-									) : (
-										<Badge variant="secondary" className="text-[10px] font-semibold flex items-center gap-1">
-											<LockOpen className="size-3" /> HTTP
-										</Badge>
-									)}
-									{d.certificate_type && d.certificate_type !== 'none' && (
-										<Badge variant="outline" className="text-[10px] font-mono text-primary border-primary/30">
-											Cert: {d.certificate_type}
-										</Badge>
-									)}
-								</div>
-							</div>
-						);
-					})}
+				<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+					<Table>
+						<TableHeader>
+							<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
+								<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Domain / Host</TableHead>
+								<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Path & Port</TableHead>
+								<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">SSL Status</TableHead>
+								<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Certificate</TableHead>
+								<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{domains.map((d: any) => {
+								const url = `${d.https ? 'https' : 'http'}://${d.host}${d.path && d.path !== '/' ? d.path : ''}`;
+								return (
+									<TableRow key={d.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+										<TableCell className="py-3.5 px-4 font-bold text-xs text-foreground font-mono">
+											<div className="flex items-center gap-2.5">
+												<Globe className="size-4 text-primary shrink-0" />
+												<a
+													href={url}
+													target="_blank"
+													rel="noreferrer"
+													className="hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
+												>
+													<span>{d.host}</span>
+													<ExternalLink className="size-3.5 text-muted-foreground shrink-0" />
+												</a>
+											</div>
+										</TableCell>
+										<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+											Path: {d.path || '/'} · Port: {d.port || 80}
+										</TableCell>
+										<TableCell className="py-3.5 px-4">
+											{d.https ? (
+												<Badge variant="outline" className="text-[10px] font-semibold text-emerald-500 border-emerald-500/30 bg-emerald-500/10 flex items-center gap-1 w-fit">
+													<Lock className="size-3" /> HTTPS (SSL)
+												</Badge>
+											) : (
+												<Badge variant="secondary" className="text-[10px] font-semibold flex items-center gap-1 w-fit">
+													<LockOpen className="size-3" /> HTTP
+												</Badge>
+											)}
+										</TableCell>
+										<TableCell className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+											{d.certificate_type && d.certificate_type !== 'none' ? (
+												<Badge variant="outline" className="text-[10px] font-mono text-primary border-primary/30">
+													{d.certificate_type}
+												</Badge>
+											) : (
+												'—'
+											)}
+										</TableCell>
+										<TableCell className="py-3.5 px-4 text-right">
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() => setDeleteId(d.id)}
+												className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+											>
+												<Trash2 className="size-4" />
+											</Button>
+										</TableCell>
+									</TableRow>
+								);
+							})}
+						</TableBody>
+					</Table>
 				</div>
 			)}
 

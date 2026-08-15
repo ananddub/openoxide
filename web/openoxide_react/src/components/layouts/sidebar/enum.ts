@@ -67,7 +67,6 @@ export const MENU: Menu = {
 		{title: 'Home', icon: House, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
 		{title: 'Overview', icon: LayoutDashboard, to: '/overview'},
-		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Monitoring', icon: BarChartHorizontal, to: '/monitoring'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
 		{title: 'Traefik', icon: GalleryVerticalEnd, to: '/traefik'},
