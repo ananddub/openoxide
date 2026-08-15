@@ -1,6 +1,6 @@
 import { Search, Filter } from 'lucide-react';
 import { Input } from '#/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '#/components/ui/select';
 
 interface DockerStatusFilterProps {
 	searchQuery: string;
@@ -21,6 +21,17 @@ export function DockerStatusFilter({
 	runningCount,
 	stoppedCount,
 }: DockerStatusFilterProps) {
+	const getDisplayLabel = (filter: 'all' | 'running' | 'stopped') => {
+		switch (filter) {
+			case 'all':
+				return 'All Status';
+			case 'running':
+				return 'Running Only';
+			case 'stopped':
+				return 'Stopped / Exited';
+		}
+	};
+
 	return (
 		<div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
 			{/* Search Input */}
@@ -39,7 +50,7 @@ export function DockerStatusFilter({
 				<Select value={statusFilter} onValueChange={(v) => v && onStatusFilterChange(v as 'all' | 'running' | 'stopped')}>
 					<SelectTrigger className="w-[180px] h-9 text-xs font-medium bg-card border-border/60 gap-2 shrink-0 shadow-2xs">
 						<Filter className="size-3.5 text-muted-foreground shrink-0" />
-						<SelectValue placeholder="All Status" />
+						<span className="truncate">{getDisplayLabel(statusFilter)}</span>
 					</SelectTrigger>
 					<SelectContent className="bg-card border-border text-xs w-[200px] p-1 shadow-md">
 						<SelectItem value="all" className="text-xs font-medium cursor-pointer">
