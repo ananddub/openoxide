@@ -5,10 +5,19 @@ import {
 	usePermissionGroupMembers,
 	usePermissionGroupInvites,
 	useAuthWhoAmI,
+	useVaultList,
+	useDnsList,
+	useProjectListByOrganization,
+	useRemoteServerList,
+	useDeploymentList,
+	useScheduleListByOrganization,
+	useSshKeyList,
+	useDestinationList,
+	useTagListAll,
 } from 'virtual:openoxide-live';
 
 export function useRealtimeSync() {
-	// Setters from Zustand Store
+	// Zustand Setters
 	const setVaultProviders = useAppStore((state) => state.setVaultProviders);
 	const setDnsProviders = useAppStore((state) => state.setDnsProviders);
 	const setProjects = useAppStore((state) => state.setProjects);
@@ -21,6 +30,7 @@ export function useRealtimeSync() {
 	const setSshKeys = useAppStore((state) => state.setSshKeys);
 	const setDestinations = useAppStore((state) => state.setDestinations);
 	const setTags = useAppStore((state) => state.setTags);
+	const setSchedules = useAppStore((state) => state.setSchedules);
 	const setProfile = useAppStore((state) => state.setProfile);
 	const setMembers = useAppStore((state) => state.setMembers);
 	const setInvites = useAppStore((state) => state.setInvites);
@@ -28,32 +38,32 @@ export function useRealtimeSync() {
 	const setHydrated = useAppStore((state) => state.setHydrated);
 	const setWsConnected = useAppStore((state) => state.setWsConnected);
 
-	// 1. Live Socket.IO Stream Hooks from virtual:openoxide-live
+	// 1. Live Socket.IO Reactive Stream Hooks from virtual:openoxide-live
 	const { data: liveMembers } = usePermissionGroupMembers();
 	const { data: liveInvites } = usePermissionGroupInvites();
 	const { data: liveProfile } = useAuthWhoAmI();
+	const { data: liveVaults } = useVaultList();
+	const { data: liveDns } = useDnsList();
+	const { data: liveProjects } = useProjectListByOrganization(1 as any);
+	const { data: liveServers } = useRemoteServerList();
+	const { data: liveDeployments } = useDeploymentList();
+	const { data: liveSchedules } = useScheduleListByOrganization(1 as any);
+	const { data: liveSshKeys } = useSshKeyList();
+	const { data: liveDestinations } = useDestinationList();
+	const { data: liveTags } = useTagListAll();
 
-	// 2. HTTP Initial Hydration for static resources
-	const { data: rawVaults } = $api.useQuery('get', '/vault-providers' as any, {} as any);
-	const { data: rawDns } = $api.useQuery('get', '/dns-providers' as any, {} as any);
-	const { data: rawProjects } = $api.useQuery('get', '/projects' as any, {} as any);
-	const { data: rawServers } = $api.useQuery('get', '/remote-servers' as any, {} as any);
-	const { data: rawDeployments } = $api.useQuery('get', '/deployments' as any, {} as any);
-	const { data: rawSshKeys } = $api.useQuery('get', '/ssh-keys' as any, {} as any);
-	const { data: rawDestinations } = $api.useQuery('get', '/destinations' as any, {} as any);
-	const { data: rawTags } = $api.useQuery('get', '/tags' as any, {} as any);
+	// 2. Additional HTTP Fallback Queries
+	const { data: rawApps } = $api.useQuery('get', '/applications' as any, {} as any);
+	const { data: rawDbs } = $api.useQuery('get', '/databases' as any, {} as any);
+	const { data: rawComposes } = $api.useQuery('get', '/composes' as any, {} as any);
 
-	// Sync Live Realtime Socket Stream into Zustand Store
+	// Sync Live Realtime Streams directly into Zustand Store
 	useEffect(() => {
-		if (liveMembers && Array.isArray(liveMembers)) {
-			setMembers(liveMembers as any);
-		}
+		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
 	}, [liveMembers, setMembers]);
 
 	useEffect(() => {
-		if (liveInvites && Array.isArray(liveInvites)) {
-			setInvites(liveInvites as any);
-		}
+		if (liveInvites && Array.isArray(liveInvites)) setInvites(liveInvites as any);
 	}, [liveInvites, setInvites]);
 
 	useEffect(() => {
@@ -67,15 +77,53 @@ export function useRealtimeSync() {
 		}
 	}, [liveProfile, setProfile]);
 
-	// Hydration Sync Effects
-	useEffect(() => { if (rawVaults && Array.isArray(rawVaults)) setVaultProviders(rawVaults as any); }, [rawVaults, setVaultProviders]);
-	useEffect(() => { if (rawDns && Array.isArray(rawDns)) setDnsProviders(rawDns as any); }, [rawDns, setDnsProviders]);
-	useEffect(() => { if (rawProjects && Array.isArray(rawProjects)) setProjects(rawProjects as any); }, [rawProjects, setProjects]);
-	useEffect(() => { if (rawServers && Array.isArray(rawServers)) setServers(rawServers as any); }, [rawServers, setServers]);
-	useEffect(() => { if (rawDeployments && Array.isArray(rawDeployments)) setDeployments(rawDeployments as any); }, [rawDeployments, setDeployments]);
-	useEffect(() => { if (rawSshKeys && Array.isArray(rawSshKeys)) setSshKeys(rawSshKeys as any); }, [rawSshKeys, setSshKeys]);
-	useEffect(() => { if (rawDestinations && Array.isArray(rawDestinations)) setDestinations(rawDestinations as any); }, [rawDestinations, setDestinations]);
-	useEffect(() => { if (rawTags && Array.isArray(rawTags)) setTags(rawTags as any); }, [rawTags, setTags]);
+	useEffect(() => {
+		if (liveVaults && Array.isArray(liveVaults)) setVaultProviders(liveVaults as any);
+	}, [liveVaults, setVaultProviders]);
+
+	useEffect(() => {
+		if (liveDns && Array.isArray(liveDns)) setDnsProviders(liveDns as any);
+	}, [liveDns, setDnsProviders]);
+
+	useEffect(() => {
+		if (liveProjects && Array.isArray(liveProjects)) setProjects(liveProjects as any);
+	}, [liveProjects, setProjects]);
+
+	useEffect(() => {
+		if (liveServers && Array.isArray(liveServers)) setServers(liveServers as any);
+	}, [liveServers, setServers]);
+
+	useEffect(() => {
+		if (liveDeployments && Array.isArray(liveDeployments)) setDeployments(liveDeployments as any);
+	}, [liveDeployments, setDeployments]);
+
+	useEffect(() => {
+		if (liveSchedules && Array.isArray(liveSchedules)) setSchedules(liveSchedules as any);
+	}, [liveSchedules, setSchedules]);
+
+	useEffect(() => {
+		if (liveSshKeys && Array.isArray(liveSshKeys)) setSshKeys(liveSshKeys as any);
+	}, [liveSshKeys, setSshKeys]);
+
+	useEffect(() => {
+		if (liveDestinations && Array.isArray(liveDestinations)) setDestinations(liveDestinations as any);
+	}, [liveDestinations, setDestinations]);
+
+	useEffect(() => {
+		if (liveTags && Array.isArray(liveTags)) setTags(liveTags as any);
+	}, [liveTags, setTags]);
+
+	useEffect(() => {
+		if (rawApps && Array.isArray(rawApps)) setApplications(rawApps as any);
+	}, [rawApps, setApplications]);
+
+	useEffect(() => {
+		if (rawDbs && Array.isArray(rawDbs)) setDatabases(rawDbs as any);
+	}, [rawDbs, setDatabases]);
+
+	useEffect(() => {
+		if (rawComposes && Array.isArray(rawComposes)) setComposes(rawComposes as any);
+	}, [rawComposes, setComposes]);
 
 	useEffect(() => {
 		setHydrated(true);
