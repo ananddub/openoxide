@@ -47,8 +47,6 @@ pub async fn spawn_remote_terminal(
     .quiet(true)
     .tty(crate::utils::ssh::TtyMode::ForceTty);
 
-    // The builder loads a KeyPair into a private ssh-agent itself, so the key
-    // never reaches disk. The session must outlive the command.
     let (mut args, agent_session, temp_askpass, agent_socket) = match builder.build_args().await {
         Ok(res) => res,
         Err(error) => {
@@ -59,12 +57,6 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Build the remote shell command.
-    // bash: single command string — sshd wraps it in `/bin/sh -c "..."` which then execs bash.
-    //   TERM + COLORTERM enable 256-color/truecolor.
-    //   PROMPT_COMMAND sets PS1 *after* ~/.bashrc runs so it always wins.
-    //   Colorful prompt: green user@host, blue cwd, then $ / #
-    // sh: plain `sh -i` — dash does not support color PS1 escape sequences reliably.
     if shell_req == "sh" {
         args.push("sh".to_string());
         args.push("-i".to_string());
@@ -146,13 +138,11 @@ pub async fn spawn_remote_terminal(
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;
 
-        // Wait for either the child to exit naturally or a cancel signal (shell switch / disconnect)
         let status = tokio::select! {
             s = async { child_arc.lock().await.wait().await } => {
                 Some(s)
             }
             _ = cancel.cancelled() => {
-                // Kill the child process cleanly on cancel
                 let _ = child_arc.lock().await.kill().await;
                 None
             }
