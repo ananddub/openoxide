@@ -28,6 +28,12 @@ export function useProjectDetails(projectId: number) {
 	const storeProject = useAppStore((state) =>
 		state.projects.find((p) => String(p.id) === String(projectId))
 	);
+	const overviewServices = useAppStore((state) => state.overviewServices);
+
+	// Store Services Fallback for instant 0ms render
+	const storeServicesForProject = useMemo(() => {
+		return overviewServices.filter((s: any) => String(s.project_id) === String(projectId));
+	}, [overviewServices, projectId]);
 
 	// Queries
 	const {data: liveProject} = useProjectGet(BigInt(projectId));
@@ -83,8 +89,10 @@ export function useProjectDetails(projectId: number) {
 	// Live hooks auto-push updates — no manual refetch needed
 	const handleRefresh = () => {};
 
-	const isLoading = isLoadingApps || isLoadingComposes;
-	const totalServices = (apps ?? []).length + (composes ?? []).length + databases.length;
+	// 0ms instant loading state — never block UI if RAM data is present
+	const isDataInStore = Boolean(storeProject) || storeServicesForProject.length > 0;
+	const isLoading = !isDataInStore && (isLoadingApps || isLoadingComposes);
+	const totalServices = (apps ?? []).length + (composes ?? []).length + databases.length || storeServicesForProject.length;
 
 	// Filter State
 	const [searchQuery, setSearchQuery] = useState('');
@@ -102,44 +110,58 @@ export function useProjectDetails(projectId: number) {
 	const filteredServices = useMemo(() => {
 		const sQuery = searchQuery.toLowerCase().trim();
 
-		// Map apps
-		const mappedApps = (apps ?? []).map(app => ({
-			key: `app-${app.id}`,
-			projectId,
-			type: 'APP' as const,
-			id: app.id,
-			name: app.name,
-			subtitle: 'Application',
-			status: app.app_status || 'idle',
-			createdAt: app.created_at,
-		}));
+		let list: any[] = [];
 
-		// Map composes
-		const mappedComposes = (composes ?? []).map(compose => ({
-			key: `compose-${compose.id}`,
-			projectId,
-			type: 'COMPOSE' as const,
-			id: compose.id,
-			name: compose.name,
-			subtitle: 'Docker Compose',
-			status: compose.compose_status || 'idle',
-			createdAt: compose.created_at,
-		}));
+		if (apps || composes || databases.length > 0) {
+			const mappedApps = (apps ?? []).map(app => ({
+				key: `app-${app.id}`,
+				projectId,
+				type: 'APP' as const,
+				id: app.id,
+				name: app.name,
+				subtitle: 'Application',
+				status: app.app_status || 'idle',
+				createdAt: app.created_at,
+			}));
 
-		// Map databases
-		const mappedDatabases = databases.map(db => ({
-			key: `database-${db.kind}-${db.id}`,
-			projectId,
-			type: 'DATABASE' as const,
-			id: db.id,
-			name: db.name,
-			subtitle: db.kind,
-			status: db.app_status || 'idle',
-			createdAt: db.created_at,
-			dbKind: db.kind,
-		}));
+			const mappedComposes = (composes ?? []).map(compose => ({
+				key: `compose-${compose.id}`,
+				projectId,
+				type: 'COMPOSE' as const,
+				id: compose.id,
+				name: compose.name,
+				subtitle: 'Docker Compose',
+				status: compose.compose_status || 'idle',
+				createdAt: compose.created_at,
+			}));
 
-		let list = [...mappedApps, ...mappedComposes, ...mappedDatabases];
+			const mappedDatabases = databases.map(db => ({
+				key: `database-${db.kind}-${db.id}`,
+				projectId,
+				type: 'DATABASE' as const,
+				id: db.id,
+				name: db.name,
+				subtitle: db.kind,
+				status: db.app_status || 'idle',
+				createdAt: db.created_at,
+				dbKind: db.kind,
+			}));
+
+			list = [...mappedApps, ...mappedComposes, ...mappedDatabases];
+		} else {
+			// Fallback to Zustand RAM store for 0ms instant display
+			list = storeServicesForProject.map((s: any) => ({
+				key: `${s.type.toLowerCase()}-${s.id}`,
+				projectId,
+				type: s.type,
+				id: s.id,
+				name: s.name,
+				subtitle: s.type === 'APP' ? 'Application' : s.type === 'COMPOSE' ? 'Docker Compose' : s.dbKind || 'Database',
+				status: s.status || 'idle',
+				createdAt: s.createdAt,
+				dbKind: s.dbKind,
+			}));
+		}
 
 		// Apply Search
 		if (sQuery) {
@@ -171,7 +193,7 @@ export function useProjectDetails(projectId: number) {
 		}
 
 		return list;
-	}, [apps, composes, databases, searchQuery, typeFilter, statusFilter, projectId]);
+	}, [apps, composes, databases, storeServicesForProject, searchQuery, typeFilter, statusFilter, projectId]);
 
 	return {
 		showCreateEnv,
