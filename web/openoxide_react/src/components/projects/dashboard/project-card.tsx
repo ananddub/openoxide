@@ -55,19 +55,34 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 	// Extract project tags from description (hashtag tags)
 	const projectTagNames = getTagsFromDescription(project.description || '');
 
+	// Match tag with exact custom color from Settings Tags
+	const getTagColor = (tagName: string) => {
+		const clean = tagName.replace(/^#/, '').trim().toLowerCase();
+		const found = availableTags.find((at) => (at.name || '').trim().toLowerCase() === clean);
+		if (found?.color) return found.color;
+
+		// Deterministic colorful fallback if ad-hoc tag not yet created in Settings
+		const palette = ['#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#6366f1', '#f43f5e', '#3b82f6'];
+		let hash = 0;
+		for (let i = 0; i < clean.length; i++) {
+			hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		return palette[Math.abs(hash) % palette.length];
+	};
+
 	return (
 		<>
 			<div
 				onClick={handleCardClick}
-				className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-4.5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[175px] max-w-[340px] w-full"
+				className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[200px] max-w-[340px] w-full"
 			>
 				{/* Top Body Section */}
-				<div className="flex flex-col gap-3 min-w-0">
+				<div className="flex flex-col gap-3.5 min-w-0">
 					{/* Card Header */}
 					<div className="flex items-start justify-between gap-2.5">
-						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="flex size-9 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary shrink-0">
-								<Folder className="size-4" />
+						<div className="flex items-center gap-3 min-w-0">
+							<div className="flex size-9.5 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary shrink-0">
+								<Folder className="size-4.5" />
 							</div>
 							<div className="flex flex-col min-w-0">
 								<h3 className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">
@@ -129,20 +144,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						</p>
 					)}
 
-					{/* Tag Badges with Custom Colors */}
+					{/* Tag Badges with Exact Custom Colors */}
 					{projectTagNames.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 pt-0.5">
-							{projectTagNames.map((t) => {
-								const foundTag = availableTags.find((at) => at.name.toLowerCase() === t.toLowerCase());
-								return (
-									<TagBadge
-										key={t}
-										name={t}
-										color={foundTag?.color || '#3b82f6'}
-										className="text-[10px] font-semibold px-2 py-0.5"
-									/>
-								);
-							})}
+						<div className="flex flex-wrap gap-1.5 pt-1">
+							{projectTagNames.map((t) => (
+								<TagBadge
+									key={t}
+									name={t}
+									color={getTagColor(t)}
+									className="text-[10px] font-semibold px-2.5 py-0.5"
+								/>
+							))}
 						</div>
 					)}
 				</div>

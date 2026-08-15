@@ -5,11 +5,11 @@ import {toast} from 'sonner';
 import {useOrganizationStore} from '#/stores/organization-store';
 import {formatApiError} from '#/api/utils';
 
-// Helper to extract hashtags (e.g. #prod, #api) from text
+// Helper to extract hashtags (e.g. #prod, #api) from text (strips leading #)
 export const getTagsFromDescription = (description?: string): string[] => {
 	if (!description) return [];
 	const matches = description.match(/#[\w-]+/g);
-	return matches ? matches.map(m => m.toLowerCase()) : [];
+	return matches ? matches.map(m => m.replace(/^#/, '').toLowerCase()) : [];
 };
 
 export function useProjectsList() {
@@ -58,7 +58,7 @@ export function useProjectsList() {
 			const projectTags = getTagsFromDescription(project.description || '');
 			const matchesTags =
 				selectedTags.length === 0 ||
-				selectedTags.every(t => projectTags.includes(t));
+				selectedTags.every(t => projectTags.includes(t.toLowerCase()));
 
 			return matchesSearch && matchesTags;
 		});
@@ -99,33 +99,23 @@ export function useProjectsList() {
 					organization_id: activeOrg.id,
 				},
 			});
-
-			toast.success('Project created successfully!');
+			toast.success('Project created successfully');
 			setIsCreateOpen(false);
-			// Live hook auto-updates via WebSocket — no manual refresh needed
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
+		} catch (err: any) {
+			toast.error(formatApiError(err, 'Failed to create project'));
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	const handleDeleteProject = async (projectId: number) => {
-		if (!activeOrg) return;
-
+	const handleDeleteProject = async (id: number) => {
 		try {
 			await deleteProjectMutation.mutateAsync({
-				params: {
-					path: {
-						id: projectId,
-					},
-				},
+				params: {path: {id}},
 			});
-
 			toast.success('Project deleted successfully');
-			// Live hook auto-updates via WebSocket — no manual refresh needed
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
+		} catch (err: any) {
+			toast.error(formatApiError(err, 'Failed to delete project'));
 		}
 	};
 
