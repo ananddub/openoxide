@@ -119,7 +119,7 @@ impl VaultController {
         ValidatedJson(body): ValidatedJson<CreateVaultProviderDto>,
     ) -> Result<Json<VaultTestResultDto>, ApiError> {
         self.service
-            .test_credentials(&body.provider_type, &body.api_url, &body.auth_token, body.namespace)
+            .test_credentials(body.provider_type, &body.api_url, &body.auth_token, body.namespace)
             .await
             .map(Json)
             .map_err(map_vault_error)

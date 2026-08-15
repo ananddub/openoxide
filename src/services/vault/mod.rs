@@ -1,5 +1,5 @@
 use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultSecretListDto, VaultTestResultDto,
+    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultProviderType, VaultSecretListDto, VaultTestResultDto,
 };
 use crate::db::models::vault_providers::VaultProvider;
 use crate::db::repository::VaultProviderRepository;
@@ -69,7 +69,7 @@ impl VaultService {
         let provider = VaultProvider {
             id: None,
             name: body.name,
-            provider_type: body.provider_type.to_ascii_uppercase(),
+            provider_type: body.provider_type.as_str().to_string(),
             api_url: body.api_url.trim_end_matches('/').to_string(),
             auth_token: body.auth_token,
             namespace: body.namespace,
@@ -144,23 +144,21 @@ impl VaultService {
             .filter(|p| p.organization_id == organization_id)
             .ok_or(VaultServiceError::NotFound)?;
 
-        match provider.provider_type.as_str() {
-            "HASHICORP" => self.test_hashicorp_credentials(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
-            "INFISICAL" => self.test_infisical_credentials(&provider.api_url, &provider.auth_token).await,
-            "DOPPLER" => self.test_doppler_credentials(&provider.auth_token).await,
-            "AWS" => self.test_aws_credentials(&provider.auth_token).await,
-            "SCALEWAY" => self.test_scaleway_credentials(&provider.api_url, &provider.auth_token).await,
-            "AZURE" => self.test_azure_credentials(&provider.auth_token).await,
-            _ => Ok(VaultTestResultDto {
-                success: true,
-                message: "Provider type configured successfully".into(),
-            }),
+        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
+
+        match p_type {
+            VaultProviderType::Hashicorp => self.test_hashicorp_credentials(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
+            VaultProviderType::Infisical => self.test_infisical_credentials(&provider.api_url, &provider.auth_token).await,
+            VaultProviderType::Doppler => self.test_doppler_credentials(&provider.auth_token).await,
+            VaultProviderType::Aws => self.test_aws_credentials(&provider.auth_token).await,
+            VaultProviderType::Scaleway => self.test_scaleway_credentials(&provider.api_url, &provider.auth_token).await,
+            VaultProviderType::Azure => self.test_azure_credentials(&provider.auth_token).await,
         }
     }
 
     pub async fn test_credentials(
         &self,
-        provider_type: &str,
+        provider_type: VaultProviderType,
         api_url: &str,
         auth_token: &str,
         namespace: Option<String>,
@@ -168,17 +166,13 @@ impl VaultService {
         let clean_url = api_url.trim_end_matches('/');
         let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
 
-        match provider_type.to_ascii_uppercase().as_str() {
-            "HASHICORP" => self.test_hashicorp_credentials(clean_url, clean_token, namespace.as_deref()).await,
-            "INFISICAL" => self.test_infisical_credentials(clean_url, clean_token).await,
-            "DOPPLER" => self.test_doppler_credentials(clean_token).await,
-            "AWS" => self.test_aws_credentials(clean_token).await,
-            "SCALEWAY" => self.test_scaleway_credentials(clean_url, clean_token).await,
-            "AZURE" => self.test_azure_credentials(clean_token).await,
-            _ => Ok(VaultTestResultDto {
-                success: true,
-                message: "Vault provider configuration validated successfully".into(),
-            }),
+        match provider_type {
+            VaultProviderType::Hashicorp => self.test_hashicorp_credentials(clean_url, clean_token, namespace.as_deref()).await,
+            VaultProviderType::Infisical => self.test_infisical_credentials(clean_url, clean_token).await,
+            VaultProviderType::Doppler => self.test_doppler_credentials(clean_token).await,
+            VaultProviderType::Aws => self.test_aws_credentials(clean_token).await,
+            VaultProviderType::Scaleway => self.test_scaleway_credentials(clean_url, clean_token).await,
+            VaultProviderType::Azure => self.test_azure_credentials(clean_token).await,
         }
     }
 
@@ -194,9 +188,11 @@ impl VaultService {
             .filter(|p| p.organization_id == organization_id)
             .ok_or(VaultServiceError::NotFound)?;
 
-        match provider.provider_type.as_str() {
-            "HASHICORP" => self.list_hashicorp_secrets(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
-            "DOPPLER" => self.list_doppler_secrets(&provider.auth_token).await,
+        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
+
+        match p_type {
+            VaultProviderType::Hashicorp => self.list_hashicorp_secrets(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
+            VaultProviderType::Doppler => self.list_doppler_secrets(&provider.auth_token).await,
             _ => Ok(VaultSecretListDto {
                 secrets: vec!["DATABASE_URL".into(), "SECRET_KEY".into(), "API_KEY".into()],
             }),
@@ -227,16 +223,18 @@ impl VaultService {
             let rest = &resolved[start_idx + prefix.len()..];
             if let Some(end_idx) = rest.find(suffix) {
                 let full_ref = &resolved[start_idx..start_idx + prefix.len() + end_idx + suffix.len()];
-                let inner = &rest[..end_idx]; // e.g. "my_doppler.STRIPE_SECRET"
+                let inner = &rest[..end_idx];
 
                 if let Some(dot_idx) = inner.find('.') {
                     let provider_name = &inner[..dot_idx];
                     let ref_path = &inner[dot_idx + 1..];
 
                     if let Some(provider) = provider_map.get(provider_name) {
-                        let val = match provider.provider_type.as_str() {
-                            "DOPPLER" => self.fetch_doppler_secret(&provider.auth_token, ref_path).await?,
-                            "HASHICORP" => self.fetch_hashicorp_secret(&provider.api_url, &provider.auth_token, provider.namespace.as_deref(), ref_path).await?,
+                        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
+
+                        let val = match p_type {
+                            VaultProviderType::Doppler => self.fetch_doppler_secret(&provider.auth_token, ref_path).await?,
+                            VaultProviderType::Hashicorp => self.fetch_hashicorp_secret(&provider.api_url, &provider.auth_token, provider.namespace.as_deref(), ref_path).await?,
                             _ => String::new(),
                         };
                         resolved = resolved.replace(full_ref, &val);
@@ -469,10 +467,12 @@ impl VaultService {
     }
 
     fn into_dto(p: VaultProvider) -> VaultProviderDto {
+        let p_type: VaultProviderType = p.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
+
         VaultProviderDto {
             id: p.id.unwrap_or_default(),
             name: p.name,
-            provider_type: p.provider_type,
+            provider_type: p_type,
             api_url: p.api_url,
             auth_token: if p.auth_token.is_empty() { String::new() } else { VAULT_MASK_TOKEN.to_string() },
             namespace: p.namespace,
