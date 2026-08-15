@@ -122,6 +122,8 @@ impl TerminalSocket {
             .or_else(|| payload.get("command").and_then(|v| v.as_str()))
             .map(|s| s.to_string());
 
+        tracing::info!(server_id = ?server_id, shell = ?shell, "server:start parsed");
+
         let input = ServerTerminalStart { shell, server_id };
 
         if let Some(server_id) = input.server_id {

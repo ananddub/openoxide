@@ -21,6 +21,7 @@ pub async fn spawn_remote_terminal(
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
         Err(error) => {
+            tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_terminal");
             let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
             emit_error(
