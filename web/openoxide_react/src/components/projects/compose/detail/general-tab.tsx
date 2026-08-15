@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import {useSshKeyList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
@@ -27,7 +27,7 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 	const [gitSshKeyId, setGitSshKeyId] = useState<number | undefined>(compose?.custom_git_ssh_key_id || undefined);
 	const [savingSource, setSavingSource] = useState(false);
 
-	const {data: sshKeys} = useSshKeyList();
+	const sshKeys = useAppStore((state) => state.sshKeys || []);
 
 	const patchRawMutation = $api.useMutation('patch', '/compose/{id}/source/raw');
 	const patchGithubMutation = $api.useMutation('patch', '/compose/{id}/source/github');

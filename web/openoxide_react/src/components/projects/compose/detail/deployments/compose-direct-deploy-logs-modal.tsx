@@ -4,7 +4,7 @@ import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {useDeploymentList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 
 interface ComposeDirectDeployLogsModalProps {
 	isOpen: boolean;
@@ -22,17 +22,10 @@ export function ComposeDirectDeployLogsModal({
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isConnecting, setIsConnecting] = useState(true);
 
-	// Fetch latest deployment for this compose stack via live hook
-	const {data: rawDeployments, loading: isLoadingDeployments} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: BigInt(composeId),
-		database_id: null,
-		server_id: null,
-		limit: null,
-		offset: null,
-	});
+	// Read deployments directly from Zustand RAM Store
+	const storeDeployments = useAppStore((state) => state.deployments || []);
+	const rawDeployments = storeDeployments.filter((d: any) => String(d.compose_id) === String(composeId));
+	const isLoadingDeployments = false;
 
 	const deployments = rawDeployments ?? [];
 	const latestDeployment = deployments[0];

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
-import {useDeploymentList} from 'virtual:openoxide-live';
+
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {components} from '#/types/api';
@@ -35,23 +35,8 @@ export function useDeployments() {
 
 	const storeDeployments = useAppStore((state) => state.deployments);
 
-	// Fetch deployments from backend (live — auto-updates via WebSocket)
-	const {data: rawDeployments, loading: isQueryLoading} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: null,
-		database_id: null,
-		server_id: null,
-		limit: 100n,
-		offset: null,
-	});
-
-	const deployments = (rawDeployments && Array.isArray(rawDeployments) && rawDeployments.length > 0)
-		? rawDeployments
-		: (storeDeployments || []);
-
-	const isLoading = deployments.length === 0 && isQueryLoading;
+	const deployments = (storeDeployments || []) as unknown as Deployment[];
+	const isLoading = false;
 
 	const activeQueue = React.useMemo(() => {
 		if (!deployments) return [];

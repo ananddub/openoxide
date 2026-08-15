@@ -6,7 +6,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {useDeploymentList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
 import {
 	AlertDialog,
@@ -42,22 +42,11 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
 
-	// Fetch deployments via live hook (fallback if not passed from parent)
-	const {data: rawDeployments, loading: innerLoading} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: BigInt(composeId),
-		database_id: null,
-		server_id: null,
-		limit: null,
-		offset: null,
-	});
-
-	// The tab owns the matching live subscription. Do not prefer a parent prop:
-	// doing so can mask a newer socket/refetch result during a parent render.
-	const deployments = rawDeployments ?? passedDeployments ?? [];
-	const isLoading = innerLoading && passedIsLoading !== false;
+	// Read deployments directly from Zustand RAM Store
+	const storeDeployments = useAppStore((state) => state.deployments || []);
+	const rawDeployments = storeDeployments.filter((d: any) => String(d.compose_id) === String(composeId));
+	const deployments = rawDeployments.length > 0 ? rawDeployments : (passedDeployments ?? []);
+	const isLoading = false;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
 

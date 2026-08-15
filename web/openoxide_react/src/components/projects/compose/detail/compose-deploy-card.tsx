@@ -5,7 +5,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {ComposeConfirmDialog} from './cards/compose-confirm-dialog';
 import {ComposeDeployActions} from './cards/compose-deploy-actions';
-import {useDeploymentList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 
 interface ComposeDeployCardProps {
 	compose: any;
@@ -21,17 +21,11 @@ export function ComposeDeployCard({compose, onUpdated, onOpenTerminal}: ComposeD
 
 	const queryClient = useQueryClient();
 
-	// 1. Fetch compose deployments query via live WebSocket hook
-	const {data: rawDeployments} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: BigInt(compose?.id || 0),
-		database_id: null,
-		server_id: null,
-		limit: 20n,
-		offset: null,
-	});
+	// Read deployments from Zustand RAM store
+	const storeDeployments = useAppStore((state) => state.deployments || []);
+	const rawDeployments = useMemo(() => {
+		return storeDeployments.filter((d: any) => String(d.compose_id) === String(compose?.id));
+	}, [storeDeployments, compose?.id]);
 
 	const events = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
 	const deploymentRevision = useMemo(

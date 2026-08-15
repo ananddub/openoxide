@@ -2,7 +2,7 @@ import {useState, useMemo} from 'react';
 import {Rocket, RefreshCw, Hammer, Play, Ban, Terminal, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
-import {useDeploymentList} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 
 interface DeploySettingsCardProps {
 	app: any;
@@ -20,17 +20,11 @@ export function DeploySettingsCard({app, handleAction, onUpdated}: DeploySetting
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(null);
 	const [activeLoading, setActiveLoading] = useState<string | null>(null);
 
-	// Fetch deployments query via live WebSocket hook
-	const {data: rawDeployments} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: BigInt(app?.id || 0),
-		compose_id: null,
-		database_id: null,
-		server_id: null,
-		limit: 20n,
-		offset: null,
-	});
+	// Read deployments from Zustand RAM store
+	const storeDeployments = useAppStore((state) => state.deployments || []);
+	const rawDeployments = useMemo(() => {
+		return storeDeployments.filter((d: any) => String(d.application_id) === String(app?.id));
+	}, [storeDeployments, app?.id]);
 
 	const events = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
 
