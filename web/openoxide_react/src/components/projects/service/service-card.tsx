@@ -62,20 +62,23 @@ export function ServiceCard({
 
 	// Status Flags
 	const s = status?.toLowerCase() || '';
-	const isStartingOrDeploying =
+
+	const isTransitioning =
 		s.includes('starting') ||
 		s.includes('deploying') ||
 		s.includes('building') ||
-		s.includes('loading');
+		s.includes('loading') ||
+		s.includes('stopping') ||
+		s.includes('cancelling');
 
 	const isRunning =
-		!isStartingOrDeploying &&
+		!isTransitioning &&
 		(s.includes('running') ||
 			s.includes('active') ||
 			s.includes('healthy') ||
 			s.includes('up'));
 
-	const isStopped = !isStartingOrDeploying && !isRunning;
+	const isStopped = !isTransitioning && !isRunning;
 
 	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');
@@ -119,7 +122,7 @@ export function ServiceCard({
 		if (s.includes('error') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
 			return 'bg-rose-500';
 		}
-		if (isStartingOrDeploying) {
+		if (isTransitioning) {
 			return 'bg-amber-500 animate-pulse';
 		}
 		return 'bg-muted-foreground/40';
@@ -166,7 +169,7 @@ export function ServiceCard({
 	const handleStart = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isRunning || isStartingOrDeploying) return;
+		if (isRunning || isTransitioning) return;
 		try {
 			if (type === 'APP') {
 				await appStart.mutateAsync({ params: { path: { id } } });
@@ -184,7 +187,7 @@ export function ServiceCard({
 	const handleStop = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isStopped) return;
+		if (isStopped || isTransitioning) return;
 		try {
 			if (type === 'APP') {
 				await appStop.mutateAsync({ params: { path: { id } } });
@@ -219,7 +222,7 @@ export function ServiceCard({
 	const handleDeploy = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (isStartingOrDeploying) return;
+		if (isTransitioning) return;
 		try {
 			if (type === 'APP') {
 				await appDeploy.mutateAsync({ params: { path: { id } } });
@@ -296,21 +299,21 @@ export function ServiceCard({
 								View details
 							</DropdownMenuItem>
 
-							{/* Start Option: Disabled if running or starting */}
+							{/* Start Option: Disabled if running or transitioning (starting, stopping, deploying) */}
 							<DropdownMenuItem
-								disabled={isRunning || isStartingOrDeploying}
+								disabled={isRunning || isTransitioning}
 								onClick={handleStart}
 								className={cn(
 									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									(isRunning || isStartingOrDeploying) && 'opacity-40 cursor-not-allowed'
+									(isRunning || isTransitioning) && 'opacity-40 cursor-not-allowed'
 								)}
 							>
 								<Play className="size-3.5 text-foreground" />
 								Start
 							</DropdownMenuItem>
 
-							{/* Stop/Cancel Option: Shows Cancel when starting/deploying; Stop when running */}
-							{isStartingOrDeploying ? (
+							{/* Stop/Cancel Option: Shows Cancel when transitioning (starting/stopping/deploying); Stop when running */}
+							{isTransitioning ? (
 								<DropdownMenuItem
 									onClick={handleCancel}
 									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
@@ -332,13 +335,13 @@ export function ServiceCard({
 								</DropdownMenuItem>
 							)}
 
-							{/* Deploy Option: Disabled while starting/deploying */}
+							{/* Deploy Option: Disabled while transitioning (starting, stopping, deploying) */}
 							<DropdownMenuItem
-								disabled={isStartingOrDeploying}
+								disabled={isTransitioning}
 								onClick={handleDeploy}
 								className={cn(
 									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									isStartingOrDeploying && 'opacity-40 cursor-not-allowed'
+									isTransitioning && 'opacity-40 cursor-not-allowed'
 								)}
 							>
 								<Rocket className="size-3.5 text-foreground" />
@@ -388,11 +391,11 @@ export function ServiceCard({
 
 					{/* Start */}
 					<button
-						disabled={isRunning || isStartingOrDeploying}
+						disabled={isRunning || isTransitioning}
 						onClick={handleStart}
 						className={cn(
 							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							(isRunning || isStartingOrDeploying) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+							(isRunning || isTransitioning) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
 						)}
 					>
 						<Play className="size-3.5 text-foreground" />
@@ -400,7 +403,7 @@ export function ServiceCard({
 					</button>
 
 					{/* Stop / Cancel */}
-					{isStartingOrDeploying ? (
+					{isTransitioning ? (
 						<button
 							onClick={handleCancel}
 							className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
@@ -424,11 +427,11 @@ export function ServiceCard({
 
 					{/* Deploy */}
 					<button
-						disabled={isStartingOrDeploying}
+						disabled={isTransitioning}
 						onClick={handleDeploy}
 						className={cn(
 							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							isStartingOrDeploying && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+							isTransitioning && 'opacity-40 cursor-not-allowed hover:bg-transparent'
 						)}
 					>
 						<Rocket className="size-3.5 text-foreground" />
