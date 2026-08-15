@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '#/components/ui/button';
 import { ProjectCard } from '#/components/projects/dashboard/project-card';
 import { EmptyState } from '#/components/projects/dashboard/empty-state';
-import { CreateProjectDialog } from '#/components/projects/dashboard/create-project-dialog';
+import { HandleProjectDialog } from '#/components/projects/dashboard/handle-project-dialog';
 import { ProjectDashboardFilters } from '#/components/projects/dashboard/project-dashboard-filters';
 import { useProjectsList } from '#/hooks/projects/use-projects-list';
 import {
@@ -39,10 +39,8 @@ function ProjectsPage() {
 		setSelectedTags,
 		isCreateOpen,
 		setIsCreateOpen,
-		isSubmitting,
 		activeOrg,
 		handleTagClick,
-		handleCreateProjectSubmit,
 		handleDeleteProject,
 	} = useProjectsList();
 
@@ -90,7 +88,7 @@ function ProjectsPage() {
 				setSelectedTags={setSelectedTags}
 			/>
 
-			{/* Content Cards Grid (Compact dokploy layout) */}
+			{/* Content Cards Grid */}
 			{isLoadingProjects ? (
 				<div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 					{[1, 2, 3].map((i) => (
@@ -134,11 +132,10 @@ function ProjectsPage() {
 			)}
 
 			{/* Create Project Modal */}
-			<CreateProjectDialog
+			<HandleProjectDialog
 				isOpen={isCreateOpen}
 				onOpenChange={setIsCreateOpen}
-				onSubmit={handleCreateProjectSubmit}
-				isSubmitting={isSubmitting}
+				activeOrgId={activeOrg?.id}
 			/>
 
 			{/* Delete Confirmation Alert Dialog */}
@@ -147,7 +144,7 @@ function ProjectsPage() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Project</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete this project? All associated applications, databases, and environments will be permanently reduced.
+							Are you sure you want to delete this project? All associated applications, databases, and environments will be permanently removed.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
