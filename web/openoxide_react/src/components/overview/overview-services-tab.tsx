@@ -24,6 +24,17 @@ import {
 	type OverviewServiceItem,
 } from './overview-services-table';
 
+const TYPE_DISPLAY_MAP: Record<string, string> = {
+	application: 'Application',
+	compose: 'Compose',
+	database: 'Database',
+	postgres: 'PostgreSQL',
+	mysql: 'MySQL',
+	mariadb: 'MariaDB',
+	mongo: 'MongoDB',
+	redis: 'Redis',
+};
+
 export function OverviewServicesTab() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedProjectId, setSelectedProjectId] = useState('all');
@@ -174,6 +185,36 @@ export function OverviewServicesTab() {
 		}
 	};
 
+	// Helper for selected project name label
+	const selectedProjectLabel = useMemo(() => {
+		if (selectedProjectId === 'all') return 'Project: All Projects';
+		const found = projectsToUse.find((p: any) => String(p.id) === String(selectedProjectId));
+		return `Project: ${found?.name || 'Selected'}`;
+	}, [selectedProjectId, projectsToUse]);
+
+	// Helper for selected type label
+	const selectedTypeLabel = useMemo(() => {
+		if (selectedType === 'all') return 'Type: All Types';
+		return `Type: ${TYPE_DISPLAY_MAP[selectedType] || selectedType}`;
+	}, [selectedType]);
+
+	// Helper for selected status label
+	const selectedStatusLabel = useMemo(() => {
+		if (selectedStatus === 'all') return 'Status: All Statuses';
+		if (selectedStatus === 'done') return 'Status: Running';
+		if (selectedStatus === 'deploying') return 'Status: Deploying';
+		if (selectedStatus === 'idle') return 'Status: Idle';
+		return 'Status: Error';
+	}, [selectedStatus]);
+
+	// Helper for selected sort label
+	const selectedSortLabel = useMemo(() => {
+		if (sortBy === 'newest') return 'Sort: Newest First';
+		if (sortBy === 'oldest') return 'Sort: Oldest First';
+		if (sortBy === 'name-asc') return 'Sort: Name (A-Z)';
+		return 'Sort: Name (Z-A)';
+	}, [sortBy]);
+
 	return (
 		<div className="flex flex-col gap-5 w-full">
 			{/* Top Header & Filter Toolbar */}
@@ -199,8 +240,8 @@ export function OverviewServicesTab() {
 
 					{/* Project Filter Select */}
 					<Select value={selectedProjectId} onValueChange={(val) => val && setSelectedProjectId(val)}>
-						<SelectTrigger size="sm" className="w-[145px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All Projects" />
+						<SelectTrigger size="sm" className="w-[160px] text-xs font-semibold h-9">
+							<SelectValue>{selectedProjectLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All Projects</SelectItem>
@@ -214,8 +255,8 @@ export function OverviewServicesTab() {
 
 					{/* Type Filter Select */}
 					<Select value={selectedType} onValueChange={(val) => val && setSelectedType(val)}>
-						<SelectTrigger size="sm" className="w-[135px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All Types" />
+						<SelectTrigger size="sm" className="w-[150px] text-xs font-semibold h-9">
+							<SelectValue>{selectedTypeLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All Types</SelectItem>
@@ -232,8 +273,8 @@ export function OverviewServicesTab() {
 
 					{/* Status Filter Select */}
 					<Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
-						<SelectTrigger size="sm" className="w-[135px] text-xs font-semibold h-9">
-							<SelectValue placeholder="All Statuses" />
+						<SelectTrigger size="sm" className="w-[150px] text-xs font-semibold h-9">
+							<SelectValue>{selectedStatusLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All Statuses</SelectItem>
@@ -246,8 +287,8 @@ export function OverviewServicesTab() {
 
 					{/* Sort By Select */}
 					<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
-						<SelectTrigger size="sm" className="w-[155px] text-xs font-semibold h-9">
-							<SelectValue placeholder="Sort: Newest First" />
+						<SelectTrigger size="sm" className="w-[160px] text-xs font-semibold h-9">
+							<SelectValue>{selectedSortLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="newest">Sort: Newest First</SelectItem>
