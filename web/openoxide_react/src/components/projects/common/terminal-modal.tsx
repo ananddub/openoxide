@@ -87,8 +87,12 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 	// Shell / container switch: fires when shell or targetContainer changes AFTER initial connect
 	const socketConnectedRef = useRef(false);
+	// True only after the first session has been started via connect handler
+	// Prevents switch effect from double-firing on initial connect
+	const initialEmitDoneRef = useRef(false);
+
 	useEffect(() => {
-		if (!open || !socketConnectedRef.current) return;
+		if (!open || !socketConnectedRef.current || !initialEmitDoneRef.current) return;
 		const sock = socketRef.current;
 		const term = termInstanceRef.current;
 		if (!sock?.connected || !term) return;
@@ -107,6 +111,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	useEffect(() => {
 		if (!open) {
 			socketConnectedRef.current = false;
+			initialEmitDoneRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
@@ -202,6 +207,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
 			}
 			emitStartSession(socket, shellRef.current);
+			// Mark initial emit done AFTER emitting so switch effect won't double-fire
+			setTimeout(() => { initialEmitDoneRef.current = true; }, 0);
 		});
 
 		// Immediate check if already connected (forceNew should prevent this but handle defensively)
@@ -209,6 +216,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			socketConnectedRef.current = true;
 			setStatus('connected');
 			emitStartSession(socket, shellRef.current);
+			setTimeout(() => { initialEmitDoneRef.current = true; }, 0);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
@@ -277,6 +285,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
 			socketConnectedRef.current = false;
+			initialEmitDoneRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
