@@ -123,7 +123,9 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						{isEditing ? 'Update project' : 'Add a project'}
 					</DialogTitle>
 					<DialogDescription className="text-muted-foreground text-xs">
-						The home of something big!
+						{isEditing
+							? 'Update your project name, description, and tags.'
+							: 'The home of something big!'}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -173,7 +175,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						/>
 					</div>
 
-					{/* Dialog Footer (Dokploy exact: Submit button only, no cancel button) */}
+					{/* Dialog Footer */}
 					<div className="flex items-center justify-end pt-3 border-t border-border/40 mt-4">
 						<Button
 							type="submit"
