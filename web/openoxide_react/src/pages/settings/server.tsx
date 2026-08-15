@@ -1,6 +1,6 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {Activity, Cpu, HardDrive, Network, Server} from 'lucide-react';
-import {Card, CardHeader, CardTitle, CardDescription, CardContent} from '#/components/ui/button';
+import {Card, CardHeader, CardTitle, CardDescription, CardContent} from '#/components/ui/card';
 import {Badge} from '#/components/ui/badge';
 
 export const Route = createFileRoute('/_app/settings/server')({
