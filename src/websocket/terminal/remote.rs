@@ -61,12 +61,8 @@ pub async fn spawn_remote_terminal(
         args.push("sh".to_string());
         args.push("-i".to_string());
     } else {
-        let ps1 = r"\[\e[0;32m\]\u@\h\[\e[0m\]:\[\e[0;34m\]\w\[\e[0m\]\$ ";
-        args.push(format!(
-            "TERM=xterm-256color COLORTERM=truecolor \
-             PROMPT_COMMAND='PS1=\"{ps1}\"' \
-             bash -i"
-        ));
+        args.push("bash".to_string());
+        args.push("-l".to_string());
     }
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
 
