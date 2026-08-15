@@ -58,9 +58,10 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Clean SSH command execution with unbroken PTY stdin/stdout/stderr
-    let target_cmd = if shell_req == "sh" { "sh" } else { "bash" };
-    args.push(target_cmd.to_string());
+    // For default bash/server access, leave args empty so OpenSSH launches native interactive login shell (Dokploy style). Only push "sh" if explicitly requested.
+    if shell_req == "sh" {
+        args.push("sh".to_string());
+    }
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
