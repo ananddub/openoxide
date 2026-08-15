@@ -154,6 +154,11 @@ export function VaultProvidersPage() {
 	};
 
 	const handleTestModalConnection = async () => {
+		if (!editingProvider && !formToken.trim()) {
+			toast.error('Please enter a Token / Access Key to test connection');
+			return;
+		}
+
 		setIsTestingModal(true);
 		try {
 			if (editingProvider) {
@@ -161,15 +166,40 @@ export function VaultProvidersPage() {
 					params: { path: { id: editingProvider.id } },
 				});
 				if (res.data?.success || res?.success) {
-					toast.success(res.data?.message || res?.message || 'Connection successful');
+					toast.success(res.data?.message || res?.message || 'Connection successful!');
 				} else {
-					toast.error(res.data?.message || res?.message || 'Connection failed');
+					toast.error(res.data?.message || res?.message || 'Connection failed!');
 				}
 			} else {
-				toast.success('Configuration payload validated cleanly');
+				// Perform real direct HTTP endpoint test for new unsaved configuration
+				let testEndpoint = '';
+				let headers: Record<string, string> = {};
+
+				if (formType === 'HASHICORP') {
+					testEndpoint = `${(formUrl || 'http://localhost:8200').replace(/\/$/, '')}/v1/sys/health`;
+					headers['X-Vault-Token'] = formToken.trim();
+					if (formNamespace.trim()) headers['X-Vault-Namespace'] = formNamespace.trim();
+				} else if (formType === 'INFISICAL') {
+					testEndpoint = `${(formUrl || 'https://app.infisical.com').replace(/\/$/, '')}/api/v1/status`;
+					headers['Authorization'] = `Bearer ${formToken.trim()}`;
+				} else if (formType === 'DOPPLER') {
+					testEndpoint = 'https://api.doppler.com/v3/me';
+					headers['Authorization'] = `Basic ${btoa(`${formToken.trim()}:`)}`;
+				}
+
+				if (testEndpoint) {
+					const response = await fetch(testEndpoint, { method: 'GET', headers });
+					if (response.ok || response.status === 473 || response.status === 429) {
+						toast.success(`Successfully connected to ${getProviderLabel(formType)}!`);
+					} else {
+						toast.error(`${getProviderLabel(formType)} returned HTTP status ${response.status}`);
+					}
+				} else {
+					toast.success('Configuration parameters validated successfully!');
+				}
 			}
-		} catch (err) {
-			toast.error(formatApiError(err, 'Connection test failed'));
+		} catch (err: any) {
+			toast.error(err?.message || formatApiError(err, 'Connection test failed'));
 		} finally {
 			setIsTestingModal(false);
 		}

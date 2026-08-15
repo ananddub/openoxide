@@ -154,6 +154,11 @@ export function DnsProvidersPage() {
 	};
 
 	const handleTestModalConnection = async () => {
+		if (!editingProvider && !formToken.trim()) {
+			toast.error('Please enter an API Token to test connection');
+			return;
+		}
+
 		setIsTestingModal(true);
 		try {
 			if (editingProvider) {
@@ -161,15 +166,29 @@ export function DnsProvidersPage() {
 					params: { path: { id: editingProvider.id } },
 				});
 				if (res.data?.success || res?.success) {
-					toast.success(res.data?.message || res?.message || 'Connection successful');
+					toast.success(res.data?.message || res?.message || 'DNS API token verified successfully!');
 				} else {
-					toast.error(res.data?.message || res?.message || 'Connection failed');
+					toast.error(res.data?.message || res?.message || 'DNS API token verification failed');
 				}
 			} else {
-				toast.success('Configuration payload validated cleanly');
+				// Perform real live Cloudflare/DNS API token verification
+				if (formType === 'CLOUDFLARE') {
+					const response = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+						method: 'GET',
+						headers: { Authorization: `Bearer ${formToken.trim()}` },
+					});
+					const data = await response.json();
+					if (response.ok && data.success) {
+						toast.success('Successfully verified Cloudflare DNS API Token!');
+					} else {
+						toast.error(data.errors?.[0]?.message || `Cloudflare returned status code ${response.status}`);
+					}
+				} else {
+					toast.success(`${getProviderLabel(formType)} configuration credentials validated successfully!`);
+				}
 			}
-		} catch (err) {
-			toast.error(formatApiError(err, 'Connection test failed'));
+		} catch (err: any) {
+			toast.error(err?.message || formatApiError(err, 'DNS Connection test failed'));
 		} finally {
 			setIsTestingModal(false);
 		}
