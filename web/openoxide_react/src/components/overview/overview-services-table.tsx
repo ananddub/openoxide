@@ -90,7 +90,7 @@ const renderStatusBadge = (statusStr: string) => {
 	if (s.includes('stopping') || s.includes('cancelling')) {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 text-xs font-semibold text-orange-500">
-				<span className="size-2 rounded-full bg-orange-500 animate-pulse" />
+				<span className="size-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
 				<span>Stopping</span>
 			</div>
 		);
@@ -99,7 +99,7 @@ const renderStatusBadge = (statusStr: string) => {
 	if (s.includes('starting') || s.includes('deploying') || s.includes('building') || s.includes('loading')) {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
-				<span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+				<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
 				<span>Deploying</span>
 			</div>
 		);
@@ -108,7 +108,7 @@ const renderStatusBadge = (statusStr: string) => {
 	if (s.includes('running') || s.includes('active') || s.includes('healthy') || s.includes('up') || s === 'done') {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-500">
-				<span className="size-2 rounded-full bg-emerald-500" />
+				<span className="size-2 rounded-full bg-emerald-500 shrink-0" />
 				<span>Running</span>
 			</div>
 		);
@@ -117,7 +117,7 @@ const renderStatusBadge = (statusStr: string) => {
 	if (s.includes('err') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-xs font-semibold text-rose-500">
-				<span className="size-2 rounded-full bg-rose-500" />
+				<span className="size-2 rounded-full bg-rose-500 shrink-0" />
 				<span>Error</span>
 			</div>
 		);
@@ -125,7 +125,7 @@ const renderStatusBadge = (statusStr: string) => {
 
 	return (
 		<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 text-xs font-semibold text-muted-foreground">
-			<span className="size-2 rounded-full bg-muted-foreground/40" />
+			<span className="size-2 rounded-full bg-muted-foreground/40 shrink-0" />
 			<span>Idle</span>
 		</div>
 	);
@@ -182,7 +182,7 @@ export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onS
 							<TableCell className="py-3.5 px-4">{renderStatusBadge(svc.status)}</TableCell>
 							<TableCell className="py-3.5 px-4">
 								<div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-									<ServerIcon className="size-4 text-muted-foreground/70" />
+									<ServerIcon className="size-4 text-muted-foreground/70 shrink-0" />
 									<span className="truncate">{svc.serverName || 'Rustploy Server'}</span>
 								</div>
 							</TableCell>
@@ -197,28 +197,30 @@ export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onS
 											</Button>
 										}
 									/>
-									<DropdownMenuContent align="end" className="w-44 border border-border bg-popover/95 shadow-md">
-										<DropdownMenuLabel className="truncate text-xs font-bold">{svc.name}</DropdownMenuLabel>
+									<DropdownMenuContent align="end" className="w-44 border border-border bg-popover/95 shadow-md p-1">
+										<DropdownMenuLabel className="truncate text-xs font-bold px-2 py-1.5 border-b border-border/40 mb-1">
+											{svc.name}
+										</DropdownMenuLabel>
 										<DropdownMenuItem
 											onClick={() => onDeploy?.(svc)}
-											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md hover:bg-muted"
 										>
-											<RefreshCw className="size-3.5" />
-											Deploy
+											<RefreshCw className="size-4 shrink-0 text-muted-foreground" />
+											<span>Deploy</span>
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() => onStart?.(svc)}
-											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-emerald-500 focus:text-emerald-500"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md text-emerald-500 focus:text-emerald-500 hover:bg-emerald-500/10"
 										>
-											<Play className="size-3.5 fill-current" />
-											Start
+											<Play className="size-4 shrink-0 fill-current" />
+											<span>Start</span>
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() => onStop?.(svc)}
-											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-orange-500 focus:text-orange-500"
+											className="flex items-center gap-2.5 cursor-pointer text-xs font-medium px-2.5 py-1.5 rounded-md text-orange-500 focus:text-orange-500 hover:bg-orange-500/10"
 										>
-											<Square className="size-3.5 fill-current" />
-											Stop
+											<Square className="size-4 shrink-0 fill-current" />
+											<span>Stop</span>
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
