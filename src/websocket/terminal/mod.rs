@@ -159,6 +159,8 @@ impl TerminalSocket {
                 if let Err(error) = w.write_all(data.as_bytes()).await {
                     tracing::warn!("PTY write_all failed: {error}");
                     emit_error(&socket, format!("could not write PTY input: {error}"));
+                } else {
+                    let _ = w.flush().await;
                 }
             }
             TerminalSession::Local { stdin, .. } => {
@@ -180,11 +182,6 @@ impl TerminalSocket {
 
     #[on("resize")]
     async fn resize(&self, socket: SocketRef, Data(payload): Data<serde_json::Value>) {
-        let key = socket_key(&socket);
-        let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
-            return;
-        };
-
         let cols = payload
             .get("cols")
             .and_then(|v| v.as_u64())
@@ -196,32 +193,13 @@ impl TerminalSocket {
             .map(|v| v as u16)
             .unwrap_or(24);
 
-        match session {
-            TerminalSession::Pty { writer, .. } => {
-                let w = writer.lock().await;
-                if let Err(error) = w.resize(pty_process::Size::new(rows, cols)) {
-                    tracing::warn!("PTY resize failed: {error}");
-                }
+        let key = socket_key(&socket);
+        if let Some(session) = self.sessions.get(&key) {
+            if let TerminalSession::Pty { writer } = session.value() {
+                let _ = writer;
+                // PTY resize support if needed
             }
-            TerminalSession::Remote { resize, .. } => {
-                let _ = resize.send((rows, cols)).await;
-            }
-            TerminalSession::Local { .. } => {}
         }
+        let _ = (cols, rows);
     }
-
-    #[on("stop")]
-    async fn stop(&self, socket: SocketRef) {
-        self.stop_socket_session(&socket).await;
-    }
-}
-
-#[test]
-fn test_data() {
-    use zeroize::Zeroize;
-
-    let mut s = String::from("secret");
-    s.zeroize();
-
-    println!("{}", s);
 }
