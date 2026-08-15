@@ -137,7 +137,9 @@ export function UsersManagementPage() {
 	);
 
 	const users: UserMember[] = useMemo(() => {
-		const source = (storeMembers && storeMembers.length > 0) ? storeMembers : (membersData || []);
+		const source = (membersData && Array.isArray(membersData) && membersData.length > 0)
+			? membersData
+			: (storeMembers || []);
 		if (!Array.isArray(source)) return [];
 		return source.map((m: any) => ({
 			id: String(m.user_id || m.id),
@@ -151,10 +153,12 @@ export function UsersManagementPage() {
 				: new Date().toISOString(),
 			isSelf: whoamiData?.user_id === m.user_id,
 		}));
-	}, [storeMembers, membersData, whoamiData]);
+	}, [membersData, storeMembers, whoamiData]);
 
 	const invitations: InvitationItem[] = useMemo(() => {
-		const source = (storeInvites && storeInvites.length > 0) ? storeInvites : (invitesData || []);
+		const source = (invitesData && Array.isArray(invitesData) && invitesData.length > 0)
+			? invitesData
+			: (storeInvites || []);
 		if (!Array.isArray(source)) return [];
 		return source.map((inv: any) => ({
 			id: String(inv.id),
@@ -164,7 +168,7 @@ export function UsersManagementPage() {
 				? new Date(inv.expired_at * 1000).toISOString()
 				: new Date().toISOString(),
 		}));
-	}, [storeInvites, invitesData]);
+	}, [invitesData, storeInvites]);
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<UserMember | null>(null);
