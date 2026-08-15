@@ -87,12 +87,9 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 	// Shell / container switch: fires when shell or targetContainer changes AFTER initial connect
 	const socketConnectedRef = useRef(false);
-	// True only after the first session has been started via connect handler
-	// Prevents switch effect from double-firing on initial connect
-	const initialEmitDoneRef = useRef(false);
 
 	useEffect(() => {
-		if (!open || !socketConnectedRef.current || !initialEmitDoneRef.current) return;
+		if (!open || !socketConnectedRef.current) return;
 		const sock = socketRef.current;
 		const term = termInstanceRef.current;
 		if (!sock?.connected || !term) return;
@@ -111,7 +108,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	useEffect(() => {
 		if (!open) {
 			socketConnectedRef.current = false;
-			initialEmitDoneRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
@@ -217,8 +213,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
-			// Allow shell/container switch effect ONLY after backend confirms session started
-			initialEmitDoneRef.current = true;
 			if (data?.host) setActiveHostIp(data.host);
 			const connectedTarget = data?.host || targetContainer;
 			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
@@ -284,7 +278,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
 			socketConnectedRef.current = false;
-			initialEmitDoneRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
