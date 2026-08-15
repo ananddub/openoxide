@@ -35,6 +35,12 @@ const CONTROL_KEY_MAP: Record<string, string> = {
 	l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15', a: '\x01', e: '\x05', k: '\x0b', w: '\x17',
 };
 
+function getSocketBaseUrl(): string {
+	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
+	return '';
+}
+
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
