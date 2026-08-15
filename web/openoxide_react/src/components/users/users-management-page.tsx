@@ -501,36 +501,28 @@ export function UsersManagementPage() {
 
 			{/* Simple & Minimal Create/Invite Modal (NO CANCEL BUTTON) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="sm:max-w-md border-border/80">
+				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="text-base font-bold text-foreground">
-							{actionType === 'direct' ? 'Add User Member' : 'Send Invitation Email'}
+							Add or Invite User
 						</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground">
-							Add a user to this workspace or send an email invitation.
+							Add a member directly to your workspace or send an email invitation.
 						</DialogDescription>
 					</DialogHeader>
 
 					<form onSubmit={handleCreateOrInvite} className="flex flex-col gap-4 mt-2">
-						<div className="flex items-center gap-2">
-							<Button
-								type="button"
-								variant={actionType === 'direct' ? 'default' : 'outline'}
-								size="sm"
-								onClick={() => setActionType('direct')}
-								className="flex-1 text-xs h-8"
-							>
-								Direct Add
-							</Button>
-							<Button
-								type="button"
-								variant={actionType === 'invite' ? 'default' : 'outline'}
-								size="sm"
-								onClick={() => setActionType('invite')}
-								className="flex-1 text-xs h-8"
-							>
-								Send Invitation
-							</Button>
+						<div className="flex flex-col gap-1.5">
+							<Label className="text-xs font-semibold text-foreground">Action</Label>
+							<Select value={actionType} onValueChange={(val) => setActionType(val as 'direct' | 'invite')}>
+								<SelectTrigger className="h-9 text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="direct" className="text-xs">Direct Add Member</SelectItem>
+									<SelectItem value="invite" className="text-xs">Send Email Invitation</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
@@ -541,25 +533,25 @@ export function UsersManagementPage() {
 								value={inputEmail}
 								onChange={(e) => setInputEmail(e.target.value)}
 								required
-								className="h-9 text-xs border-border/80"
+								className="h-9 text-xs"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
 							<Label className="text-xs font-semibold text-foreground">Role</Label>
 							<Select value={selectedRole} onValueChange={setSelectedRole}>
-								<SelectTrigger className="h-9 text-xs border-border/80 font-mono">
+								<SelectTrigger className="h-9 text-xs font-mono">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="admin" className="text-xs font-mono">Admin (Full Access)</SelectItem>
-									<SelectItem value="developer" className="text-xs font-mono">Developer (Deploy & Manage)</SelectItem>
-									<SelectItem value="viewer" className="text-xs font-mono">Viewer (Read Only)</SelectItem>
+									<SelectItem value="admin" className="text-xs font-mono">Admin</SelectItem>
+									<SelectItem value="developer" className="text-xs font-mono">Developer</SelectItem>
+									<SelectItem value="viewer" className="text-xs font-mono">Viewer</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						<div className="mt-4">
+						<div className="mt-2">
 							<Button type="submit" disabled={isSubmitting} className="w-full text-xs font-semibold h-9">
 								{isSubmitting ? 'Saving...' : actionType === 'direct' ? 'Add User' : 'Send Invite'}
 							</Button>
