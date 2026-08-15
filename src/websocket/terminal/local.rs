@@ -76,7 +76,7 @@ pub async fn spawn_docker_terminal(
         .env("FORCE_COLOR", "3")
         .env("CLICOLOR_FORCE", "1");
 
-    let mut child = match pty_cmd.spawn(pts) {
+    let child = match pty_cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Failed to execute docker exec for container '{target_container}': {error}\x1b[0m\r\n");
@@ -87,12 +87,14 @@ pub async fn spawn_docker_terminal(
     };
 
     let (reader, writer) = pty.into_split();
+    let child_arc = Arc::new(Mutex::new(child));
 
     let key = socket_key(&socket);
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
+            child: child_arc.clone(),
         },
     );
 
@@ -111,7 +113,7 @@ pub async fn spawn_docker_terminal(
     let container_name = target_container.clone();
     let shell_name = shell_req.clone();
     tokio::spawn(async move {
-        let status = child.wait().await;
+        let status = child_arc.lock().await.wait().await;
         sessions_clone.remove(&key);
         let code = status.ok().and_then(|s| s.code());
         if let Some(c) = code {

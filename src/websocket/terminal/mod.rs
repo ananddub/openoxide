@@ -43,7 +43,9 @@ impl TerminalSocket {
         let key = socket_key(socket);
         if let Some((_, session)) = self.sessions.remove(&key) {
             match session {
-                TerminalSession::Pty { .. } => {}
+                TerminalSession::Pty { child, .. } => {
+                    let _ = child.lock().await.kill().await;
+                }
                 TerminalSession::Local { child, .. } => {
                     let _ = child.lock().await.kill().await;
                 }
@@ -62,7 +64,9 @@ impl TerminalSocket {
             async move {
                 if let Some((_, session)) = sessions.remove(&key) {
                     match session {
-                        TerminalSession::Pty { .. } => {}
+                        TerminalSession::Pty { child, .. } => {
+                            let _ = child.lock().await.kill().await;
+                        }
                         TerminalSession::Local { child, .. } => {
                             let _ = child.lock().await.kill().await;
                         }
@@ -195,9 +199,9 @@ impl TerminalSocket {
 
         let key = socket_key(&socket);
         if let Some(session) = self.sessions.get(&key) {
-            if let TerminalSession::Pty { writer } = session.value() {
-                let _ = writer;
-                // PTY resize support if needed
+            if let TerminalSession::Pty { writer, .. } = session.value() {
+                let w = writer.lock().await;
+                let _ = w.resize(pty_process::Size::new(rows, cols));
             }
         }
         let _ = (cols, rows);

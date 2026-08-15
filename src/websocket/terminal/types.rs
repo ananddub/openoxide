@@ -61,6 +61,7 @@ pub type SessionMap = Arc<DashMap<String, TerminalSession>>;
 pub enum TerminalSession {
     Pty {
         writer: Arc<Mutex<OwnedWritePty>>,
+        child: Arc<Mutex<Child>>,
     },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,

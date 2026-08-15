@@ -93,7 +93,7 @@ pub async fn spawn_remote_terminal(
             .env("DISPLAY", ":0");
     }
 
-    let mut child = match cmd.spawn(pts) {
+    let child = match cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not spawn SSH terminal process: {error}\x1b[0m\r\n");
@@ -104,11 +104,13 @@ pub async fn spawn_remote_terminal(
     };
 
     let (reader, writer) = pty.into_split();
+    let child_arc = Arc::new(Mutex::new(child));
 
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {
             writer: Arc::new(Mutex::new(writer)),
+            child: child_arc.clone(),
         },
     );
 
@@ -128,7 +130,7 @@ pub async fn spawn_remote_terminal(
     tokio::spawn(async move {
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;
-        let status = child.wait().await;
+        let status = child_arc.lock().await.wait().await;
         sessions_clone.remove(&key);
         let code = status.ok().and_then(|s| s.code());
         if let Some(c) = code {
