@@ -1,5 +1,5 @@
 use crate::api::dto::dns::{
-    CreateDnsProviderDto, DnsProviderDto, DnsTestResultDto, UpdateDnsProviderDto,
+    CreateDnsProviderDto, DnsProviderDto, DnsRecordDto, DnsTestResultDto, DnsZoneDto, UpdateDnsProviderDto, UpsertDnsRecordDto,
 };
 use crate::core::middleware::permission::{
     CanCreate, CanDelete, CanRead, CanUpdate, PermissionOrganization, RequirePermission, Server,
@@ -119,9 +119,66 @@ impl DnsController {
         ValidatedJson(body): ValidatedJson<CreateDnsProviderDto>,
     ) -> Result<Json<DnsTestResultDto>, ApiError> {
         self.service
-            .test_credentials(&body.provider_type, &body.credentials_json)
+            .test_credentials(body.provider_type, &body.credentials_json)
             .await
             .map(Json)
+            .map_err(map_dns_error)
+    }
+
+    #[get("/{id}/zones")]
+    async fn list_zones(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Vec<DnsZoneDto>>, ApiError> {
+        self.service
+            .list_zones(id, organization_id)
+            .await
+            .map(Json)
+            .map_err(map_dns_error)
+    }
+
+    #[get("/{id}/zones/{zone_id}/records")]
+    async fn list_records(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path((id, zone_id)): Path<(i64, String)>,
+    ) -> Result<Json<Vec<DnsRecordDto>>, ApiError> {
+        self.service
+            .list_records(id, organization_id, &zone_id)
+            .await
+            .map(Json)
+            .map_err(map_dns_error)
+    }
+
+    #[post("/{id}/records")]
+    async fn upsert_record(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(id): Path<i64>,
+        ValidatedJson(body): ValidatedJson<UpsertDnsRecordDto>,
+    ) -> Result<Json<DnsRecordDto>, ApiError> {
+        self.service
+            .upsert_record(id, organization_id, body)
+            .await
+            .map(Json)
+            .map_err(map_dns_error)
+    }
+
+    #[delete("/{id}/zones/{zone_id}/records/{record_id}")]
+    async fn delete_record(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanDelete>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path((id, zone_id, record_id)): Path<(i64, String, String)>,
+    ) -> Result<StatusCode, ApiError> {
+        self.service
+            .delete_record(id, organization_id, &zone_id, &record_id)
+            .await
+            .map(|_| StatusCode::NO_CONTENT)
             .map_err(map_dns_error)
     }
 }
@@ -129,8 +186,8 @@ impl DnsController {
 fn map_dns_error(error: DnsServiceError) -> ApiError {
     match error {
         DnsServiceError::NotFound => (StatusCode::NOT_FOUND, "DNS provider not found".into()),
-        DnsServiceError::Database(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-        DnsServiceError::Http(err) => (StatusCode::BAD_GATEWAY, err.to_string()),
+        DnsServiceError::Database(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)),
+        DnsServiceError::Http(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("HTTP error: {}", e)),
         DnsServiceError::ProviderError(msg) => (StatusCode::BAD_REQUEST, msg),
     }
 }

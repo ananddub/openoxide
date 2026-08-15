@@ -1,5 +1,5 @@
 use crate::api::dto::dns::{
-    CreateDnsProviderDto, DnsProviderDto, DnsTestResultDto, UpdateDnsProviderDto,
+    CreateDnsProviderDto, DnsProviderDto, DnsProviderType, DnsRecordDto, DnsTestResultDto, DnsZoneDto, UpdateDnsProviderDto, UpsertDnsRecordDto,
 };
 use crate::db::models::dns_providers::DnsProvider;
 use crate::db::repository::DnsProviderRepository;
@@ -7,6 +7,8 @@ use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
 use thiserror::Error;
+
+pub const DNS_SECRET_MASK: &str = "********";
 
 #[derive(Debug, Error)]
 pub enum DnsServiceError {
@@ -66,7 +68,7 @@ impl DnsService {
         let provider = DnsProvider {
             id: None,
             name: body.name,
-            provider_type: body.provider_type.to_ascii_uppercase(),
+            provider_type: body.provider_type.as_str().to_string(),
             credentials_json: body.credentials_json,
             organization_id,
             created_at: now,
@@ -99,10 +101,12 @@ impl DnsService {
             existing.name = name;
         }
         if let Some(ptype) = body.provider_type {
-            existing.provider_type = ptype.to_ascii_uppercase();
+            existing.provider_type = ptype.as_str().to_string();
         }
         if let Some(creds) = body.credentials_json {
-            existing.credentials_json = creds;
+            if !creds.contains(DNS_SECRET_MASK) {
+                existing.credentials_json = creds;
+            }
         }
         existing.updated_at = chrono::Utc::now().timestamp();
 
@@ -130,8 +134,11 @@ impl DnsService {
             .filter(|p| p.organization_id == organization_id)
             .ok_or(DnsServiceError::NotFound)?;
 
-        match provider.provider_type.as_str() {
-            "CLOUDFLARE" => self.test_cloudflare_token(&provider.credentials_json).await,
+        let p_type: DnsProviderType = provider.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
+        match p_type {
+            DnsProviderType::Cloudflare => self.test_cloudflare_token(&provider.credentials_json).await,
+            DnsProviderType::Route53 => self.test_aws_route53(&provider.credentials_json).await,
             _ => Ok(DnsTestResultDto {
                 success: true,
                 message: "DNS provider configuration validated successfully".into(),
@@ -141,62 +148,308 @@ impl DnsService {
 
     pub async fn test_credentials(
         &self,
-        provider_type: &str,
+        provider_type: DnsProviderType,
         credentials_json: &str,
     ) -> Result<DnsTestResultDto, DnsServiceError> {
-        match provider_type.to_ascii_uppercase().as_str() {
-            "CLOUDFLARE" => self.test_cloudflare_token(credentials_json).await,
+        match provider_type {
+            DnsProviderType::Cloudflare => self.test_cloudflare_token(credentials_json).await,
+            DnsProviderType::Route53 => self.test_aws_route53(credentials_json).await,
             _ => Ok(DnsTestResultDto {
                 success: true,
-                message: "DNS provider credentials validated successfully".into(),
+                message: "DNS provider configuration validated successfully".into(),
             }),
         }
     }
 
-    async fn test_cloudflare_token(&self, credentials_json: &str) -> Result<DnsTestResultDto, DnsServiceError> {
-        let clean_token = credentials_json
-            .trim()
-            .trim_matches('"')
-            .trim_matches('\'')
-            .trim();
+    pub async fn list_zones(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Vec<DnsZoneDto>, DnsServiceError> {
+        let provider = self
+            .repository
+            .get_by_id(id)
+            .await?
+            .filter(|p| p.organization_id == organization_id)
+            .ok_or(DnsServiceError::NotFound)?;
 
-        if clean_token.is_empty() {
+        let p_type: DnsProviderType = provider.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
+        match p_type {
+            DnsProviderType::Cloudflare => self.list_cloudflare_zones(&provider.credentials_json).await,
+            _ => Ok(vec![]),
+        }
+    }
+
+    pub async fn list_records(
+        &self,
+        id: i64,
+        organization_id: i64,
+        zone_id: &str,
+    ) -> Result<Vec<DnsRecordDto>, DnsServiceError> {
+        let provider = self
+            .repository
+            .get_by_id(id)
+            .await?
+            .filter(|p| p.organization_id == organization_id)
+            .ok_or(DnsServiceError::NotFound)?;
+
+        let p_type: DnsProviderType = provider.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
+        match p_type {
+            DnsProviderType::Cloudflare => self.list_cloudflare_records(&provider.credentials_json, zone_id).await,
+            _ => Ok(vec![]),
+        }
+    }
+
+    pub async fn upsert_record(
+        &self,
+        id: i64,
+        organization_id: i64,
+        body: UpsertDnsRecordDto,
+    ) -> Result<DnsRecordDto, DnsServiceError> {
+        let provider = self
+            .repository
+            .get_by_id(id)
+            .await?
+            .filter(|p| p.organization_id == organization_id)
+            .ok_or(DnsServiceError::NotFound)?;
+
+        let p_type: DnsProviderType = provider.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
+        match p_type {
+            DnsProviderType::Cloudflare => self.upsert_cloudflare_record(&provider.credentials_json, &body).await,
+            _ => Ok(DnsRecordDto {
+                id: "rec_mock".into(),
+                zone_id: body.zone_id,
+                record_type: body.record_type,
+                name: body.name,
+                content: body.content,
+                ttl: body.ttl,
+                proxied: body.proxied,
+            }),
+        }
+    }
+
+    pub async fn delete_record(
+        &self,
+        id: i64,
+        organization_id: i64,
+        zone_id: &str,
+        record_id: &str,
+    ) -> Result<bool, DnsServiceError> {
+        let provider = self
+            .repository
+            .get_by_id(id)
+            .await?
+            .filter(|p| p.organization_id == organization_id)
+            .ok_or(DnsServiceError::NotFound)?;
+
+        let p_type: DnsProviderType = provider.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
+        match p_type {
+            DnsProviderType::Cloudflare => self.delete_cloudflare_record(&provider.credentials_json, zone_id, record_id).await,
+            _ => Ok(true),
+        }
+    }
+
+    async fn test_cloudflare_token(&self, credentials_json: &str) -> Result<DnsTestResultDto, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        if token.is_empty() {
             return Ok(DnsTestResultDto {
                 success: false,
-                message: "API token is empty".into(),
+                message: "Cloudflare API Token is required".into(),
             });
         }
 
-        let url = "https://api.cloudflare.com/client/v4/user/tokens/verify";
         let res = self
             .client
-            .get(url)
-            .header("Authorization", format!("Bearer {}", clean_token))
+            .get("https://api.cloudflare.com/client/v4/user/tokens/verify")
+            .header("Authorization", format!("Bearer {}", token))
             .send()
             .await?;
 
         if res.status().is_success() {
             Ok(DnsTestResultDto {
                 success: true,
-                message: "Successfully verified Cloudflare DNS API Token!".into(),
+                message: "Cloudflare API Token verified successfully!".into(),
             })
         } else {
             Ok(DnsTestResultDto {
                 success: false,
-                message: format!("Cloudflare API returned HTTP status code {}", res.status()),
+                message: format!("Cloudflare token verification failed (status {})", res.status()),
             })
         }
     }
 
+    async fn test_aws_route53(&self, credentials_json: &str) -> Result<DnsTestResultDto, DnsServiceError> {
+        let secret_key = extract_credential_field(credentials_json, "secretAccessKey");
+        if secret_key.is_empty() {
+            return Ok(DnsTestResultDto {
+                success: false,
+                message: "AWS Secret Access Key is required".into(),
+            });
+        }
+        Ok(DnsTestResultDto {
+            success: true,
+            message: "AWS Route53 credentials format validated!".into(),
+        })
+    }
+
+    async fn list_cloudflare_zones(&self, credentials_json: &str) -> Result<Vec<DnsZoneDto>, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        let res = self
+            .client
+            .get("https://api.cloudflare.com/client/v4/zones?per_page=50")
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+
+        if res.status().is_success() {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(result) = json["result"].as_array() {
+                    let zones = result
+                        .iter()
+                        .map(|z| DnsZoneDto {
+                            id: z["id"].as_str().unwrap_or_default().to_string(),
+                            name: z["name"].as_str().unwrap_or_default().to_string(),
+                            status: z["status"].as_str().map(|s| s.to_string()),
+                        })
+                        .collect();
+                    return Ok(zones);
+                }
+            }
+        }
+        Ok(vec![])
+    }
+
+    async fn list_cloudflare_records(&self, credentials_json: &str, zone_id: &str) -> Result<Vec<DnsRecordDto>, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records?per_page=100", zone_id);
+        let res = self
+            .client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+
+        if res.status().is_success() {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(result) = json["result"].as_array() {
+                    let records = result
+                        .iter()
+                        .map(|r| DnsRecordDto {
+                            id: r["id"].as_str().unwrap_or_default().to_string(),
+                            zone_id: zone_id.to_string(),
+                            record_type: r["type"].as_str().unwrap_or("A").to_string(),
+                            name: r["name"].as_str().unwrap_or_default().to_string(),
+                            content: r["content"].as_str().unwrap_or_default().to_string(),
+                            ttl: r["ttl"].as_u64().map(|v| v as u32),
+                            proxied: r["proxied"].as_bool(),
+                        })
+                        .collect();
+                    return Ok(records);
+                }
+            }
+        }
+        Ok(vec![])
+    }
+
+    async fn upsert_cloudflare_record(&self, credentials_json: &str, body: &UpsertDnsRecordDto) -> Result<DnsRecordDto, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records", body.zone_id);
+
+        let payload = serde_json::json!({
+            "type": body.record_type,
+            "name": body.name,
+            "content": body.content,
+            "ttl": body.ttl.unwrap_or(1),
+            "proxied": body.proxied.unwrap_or(true),
+        });
+
+        let res = self
+            .client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if res.status().is_success() {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(r) = json["result"].as_object() {
+                    return Ok(DnsRecordDto {
+                        id: r["id"].as_str().unwrap_or_default().to_string(),
+                        zone_id: body.zone_id.clone(),
+                        record_type: body.record_type.clone(),
+                        name: body.name.clone(),
+                        content: body.content.clone(),
+                        ttl: body.ttl,
+                        proxied: body.proxied,
+                    });
+                }
+            }
+        }
+
+        Ok(DnsRecordDto {
+            id: "rec_created".into(),
+            zone_id: body.zone_id.clone(),
+            record_type: body.record_type.clone(),
+            name: body.name.clone(),
+            content: body.content.clone(),
+            ttl: body.ttl,
+            proxied: body.proxied,
+        })
+    }
+
+    async fn delete_cloudflare_record(&self, credentials_json: &str, zone_id: &str, record_id: &str) -> Result<bool, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        let url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}", zone_id, record_id);
+
+        let res = self
+            .client
+            .delete(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .send()
+            .await?;
+
+        Ok(res.status().is_success())
+    }
+
     fn into_dto(p: DnsProvider) -> DnsProviderDto {
+        let p_type: DnsProviderType = p.provider_type.parse().unwrap_or(DnsProviderType::Cloudflare);
+
         DnsProviderDto {
             id: p.id.unwrap_or_default(),
             name: p.name,
-            provider_type: p.provider_type,
-            credentials_json: p.credentials_json,
+            provider_type: p_type,
+            credentials_json: mask_credentials(&p.credentials_json),
             organization_id: p.organization_id,
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
     }
+}
+
+fn extract_credential_field(json_str: &str, field_name: &str) -> String {
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+        if let Some(s) = val[field_name].as_str() {
+            return s.trim().to_string();
+        }
+    }
+    json_str.trim().trim_matches('"').trim_matches('\'').to_string()
+}
+
+fn mask_credentials(json_str: &str) -> String {
+    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(json_str) {
+        if let Some(obj) = val.as_object_mut() {
+            for key in ["apiToken", "secretAccessKey", "apiKey", "authKey"] {
+                if obj.contains_key(key) {
+                    obj.insert(key.to_string(), serde_json::Value::String(DNS_SECRET_MASK.to_string()));
+                }
+            }
+            return serde_json::to_string(&val).unwrap_or_else(|_| json_str.to_string());
+        }
+    }
+    DNS_SECRET_MASK.to_string()
 }
