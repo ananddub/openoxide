@@ -31,10 +31,12 @@ pub async fn spawn_remote_terminal(
         }
     };
 
+    let actual_host = executor.host().to_string();
+
     // Default to bash access for remote server interactive sessions
     let shell_req = input.shell.unwrap_or_else(|| "bash".into());
     let builder = crate::utils::ssh::SshBuilder::new(
-        executor.host().to_string(),
+        actual_host.clone(),
         executor.username().to_string(),
         executor.auth().clone(),
         executor.host_key().clone(),
@@ -114,6 +116,7 @@ pub async fn spawn_remote_terminal(
         "started",
         &TerminalStarted {
             kind: "remote-server",
+            host: Some(&actual_host),
         },
     );
 
@@ -121,7 +124,7 @@ pub async fn spawn_remote_terminal(
 
     let sessions_clone = sessions.clone();
     let socket_clone = socket.clone();
-    let server_host = executor.host().to_string();
+    let server_host = actual_host.clone();
     tokio::spawn(async move {
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;

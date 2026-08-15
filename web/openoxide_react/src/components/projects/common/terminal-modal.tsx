@@ -45,6 +45,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+	const [activeHostIp, setActiveHostIp] = useState<string | null>(null);
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
@@ -77,6 +78,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				termInstanceRef.current = null;
 			}
 			setStatus('disconnected');
+			setActiveHostIp(null);
 			return;
 		}
 
@@ -152,7 +154,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		socket.on('connect', () => {
 			setStatus('connected');
 			if (isRemoteServer) {
-				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}] on Remote Server [${targetContainer}]...\x1b[0m\r\n`);
+				term.writeln(`\x1b[32mSocket connected. Resolving SSH host & launching shell [${shell}]...\x1b[0m\r\n`);
 				socket.emit('server:start', { server_id: serverId, command: shell });
 			} else {
 				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
@@ -160,9 +162,11 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			}
 		});
 
-		socket.on('started', (data: { kind?: string }) => {
+		socket.on('started', (data: { kind?: string; host?: string }) => {
+			if (data?.host) setActiveHostIp(data.host);
+			const connectedTarget = data?.host || targetContainer;
 			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
-			term.writeln(`\x1b[32mTerminal session started (${label}). Type commands below:\x1b[0m\r\n`);
+			term.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
 			term.focus();
 		});
 
@@ -244,10 +248,11 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
 
 		const term = termInstanceRef.current;
+		const connectedTarget = activeHostIp || targetContainer;
 		if (isRemoteServer) {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${targetContainer}]...\x1b[0m\r\n`);
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
 		} else {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
 		}
 		setStatus('connecting');
 
@@ -259,6 +264,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	}, [targetContainer, shell]);
 
 	if (!open) return null;
+
+	const displayHost = activeHostIp || targetContainer;
 
 	return createPortal(
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150">
@@ -283,8 +290,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 								</span>
 							</h3>
 							<p className="text-xs text-muted-foreground font-mono truncate max-w-md">
-								{isRemoteServer ? 'Server Host: ' : 'Container: '}
-								<span className="text-foreground font-semibold">{targetContainer}</span>
+								{isRemoteServer ? 'SSH Target: ' : 'Container: '}
+								<span className="text-foreground font-semibold">{displayHost}</span>
 							</p>
 						</div>
 					</div>

@@ -96,7 +96,13 @@ pub async fn spawn_docker_terminal(
         },
     );
 
-    let _ = socket.emit("started", &TerminalStarted { kind: "docker" });
+    let _ = socket.emit(
+        "started",
+        &TerminalStarted {
+            kind: "docker",
+            host: Some(&target_container),
+        },
+    );
 
     spawn_pty_reader(socket.clone(), reader);
 
@@ -161,7 +167,13 @@ pub async fn spawn_local_terminal(
         },
     );
 
-    let _ = socket.emit("started", &TerminalStarted { kind });
+    let _ = socket.emit(
+        "started",
+        &TerminalStarted {
+            kind,
+            host: Some("local"),
+        },
+    );
 
     super::helpers::spawn_output_task(socket.clone(), "stdout", stdout);
     super::helpers::spawn_output_task(socket.clone(), "stderr", stderr);

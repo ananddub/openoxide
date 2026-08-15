@@ -41,6 +41,8 @@ pub struct TerminalOutput<'a> {
 #[derive(Debug, Serialize)]
 pub struct TerminalStarted<'a> {
     pub kind: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host: Option<&'a str>,
 }
 
 #[derive(Debug, Serialize)]
@@ -53,7 +55,9 @@ pub struct TerminalExit {
     pub code: Option<i32>,
 }
 
-#[derive(Clone)]
+pub type SessionMap = Arc<DashMap<String, TerminalSession>>;
+
+#[derive(Debug, Clone)]
 pub enum TerminalSession {
     Pty {
         writer: Arc<Mutex<OwnedWritePty>>,
@@ -64,19 +68,6 @@ pub enum TerminalSession {
     },
     Remote {
         input: mpsc::Sender<Vec<u8>>,
-        resize: mpsc::Sender<(u16, u16)>,
         cancel: CancellationToken,
     },
 }
-
-impl std::fmt::Debug for TerminalSession {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Pty { .. } => write!(f, "TerminalSession::Pty"),
-            Self::Local { .. } => write!(f, "TerminalSession::Local"),
-            Self::Remote { .. } => write!(f, "TerminalSession::Remote"),
-        }
-    }
-}
-
-pub type SessionMap = Arc<DashMap<String, TerminalSession>>;
