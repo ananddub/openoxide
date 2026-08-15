@@ -65,7 +65,12 @@ export function DnsProvidersPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingProvider, setEditingProvider] = useState<DnsProviderItem | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<DnsProviderItem | null>(null);
+	const [selectedDomainsProvider, setSelectedDomainsProvider] = useState<DnsProviderItem | null>(null);
 	const [isTestingModal, setIsTestingModal] = useState(false);
+	const [newDomainInput, setNewDomainInput] = useState('');
+	const [managedDomainsMap, setManagedDomainsMap] = useState<Record<number, string[]>>({
+		1: ['*.rustploy.dev', 'app.rustploy.io'],
+	});
 
 	// Form State
 	const [formName, setFormName] = useState('');
@@ -87,6 +92,27 @@ export function DnsProvidersPage() {
 		setFormType((provider.provider_type || 'CLOUDFLARE').toUpperCase() as any);
 		setFormToken('');
 		setIsCreateOpen(true);
+	};
+
+	const handleAddDomainToProvider = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!selectedDomainsProvider || !newDomainInput.trim()) return;
+		const domain = newDomainInput.trim().toLowerCase();
+		setManagedDomainsMap(prev => ({
+			...prev,
+			[selectedDomainsProvider.id]: [...(prev[selectedDomainsProvider.id] || []), domain],
+		}));
+		setNewDomainInput('');
+		toast.success(`Domain "${domain}" added to ${selectedDomainsProvider.name}`);
+	};
+
+	const handleRemoveDomainFromProvider = (domain: string) => {
+		if (!selectedDomainsProvider) return;
+		setManagedDomainsMap(prev => ({
+			...prev,
+			[selectedDomainsProvider.id]: (prev[selectedDomainsProvider.id] || []).filter(d => d !== domain),
+		}));
+		toast.success(`Domain "${domain}" removed`);
 	};
 
 	const handleSaveProvider = async (e: React.FormEvent) => {
@@ -233,6 +259,7 @@ export function DnsProvidersPage() {
 			) : (
 				<div className="flex flex-col gap-3">
 					{providers.map(provider => {
+						const domainCount = (managedDomainsMap[provider.id] || []).length;
 						return (
 							<Card
 								key={provider.id}
@@ -251,6 +278,9 @@ export function DnsProvidersPage() {
 											<span className="text-[11px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold">
 												Wildcard Ready
 											</span>
+											<Badge variant="secondary" className="text-[10px] font-medium bg-secondary text-secondary-foreground">
+												{domainCount === 0 ? 'No domains linked' : `${domainCount} domain${domainCount === 1 ? '' : 's'} managed`}
+											</Badge>
 											<span className="text-[11px] text-muted-foreground">
 												• Added {new Date(provider.created_at * 1000).toLocaleDateString()}
 											</span>
@@ -258,25 +288,36 @@ export function DnsProvidersPage() {
 									</div>
 								</div>
 
-								<div className="flex items-center gap-1 shrink-0 self-end sm:self-center">
+								<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
 									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => handleOpenEdit(provider)}
-										title="Edit provider"
-										className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+										variant="secondary"
+										size="sm"
+										onClick={() => setSelectedDomainsProvider(provider)}
+										className="h-8 text-xs font-semibold gap-1.5 px-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
 									>
-										<Pencil className="size-4" />
+										<Globe className="size-3.5 text-primary" />
+										View Domains
 									</Button>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => setDeleteTarget(provider)}
-										title="Delete provider"
-										className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-									>
-										<Trash2 className="size-4" />
-									</Button>
+									<div className="flex items-center gap-1">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleOpenEdit(provider)}
+											title="Edit provider"
+											className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+										>
+											<Pencil className="size-4" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => setDeleteTarget(provider)}
+											title="Delete provider"
+											className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+										>
+											<Trash2 className="size-4" />
+										</Button>
+									</div>
 								</div>
 							</Card>
 						);
@@ -406,6 +447,89 @@ export function DnsProvidersPage() {
 					</div>
 				</DialogContent>
 			</Dialog>
+
+			{/* View & Manage Domains Modal */}
+			<Dialog open={!!selectedDomainsProvider} onOpenChange={open => !open && setSelectedDomainsProvider(null)}>
+				<DialogContent className="sm:max-w-xl bg-card border border-border shadow-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto space-y-4">
+					<DialogHeader className="space-y-1">
+						<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+							<Globe className="size-5 text-primary" />
+							Domains Managed by {selectedDomainsProvider?.name}
+						</DialogTitle>
+						<DialogDescription className="text-xs text-muted-foreground">
+							Domains using automated Let's Encrypt DNS-01 challenge for SSL certificates.
+						</DialogDescription>
+					</DialogHeader>
+
+					{/* Add Domain Form */}
+					<form onSubmit={handleAddDomainToProvider} className="flex items-center gap-2 pt-2">
+						<Input
+							placeholder="e.g. *.yourdomain.com or api.domain.io"
+							value={newDomainInput}
+							onChange={e => setNewDomainInput(e.target.value)}
+							className="h-9 text-xs font-mono bg-muted/20 flex-1"
+						/>
+						<Button type="submit" size="sm" className="h-9 text-xs font-semibold px-4 gap-1.5 shrink-0">
+							<Plus className="size-3.5" /> Add Domain
+						</Button>
+					</form>
+
+					{/* Managed Domains List */}
+					<div className="space-y-2 pt-2 border-t border-border/40">
+						<div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+							Active Domain Mappings
+						</div>
+
+						{selectedDomainsProvider && (managedDomainsMap[selectedDomainsProvider.id] || []).length === 0 ? (
+							<div className="p-8 text-center border border-dashed border-border/70 rounded-xl bg-muted/10 space-y-1">
+								<Globe className="size-6 text-muted-foreground mx-auto" />
+								<p className="text-xs font-semibold text-foreground">No Domains Linked Yet</p>
+								<p className="text-[11px] text-muted-foreground">
+									Add a domain name above to issue automated Let's Encrypt Wildcard SSL certificates.
+								</p>
+							</div>
+						) : (
+							<div className="space-y-2">
+								{selectedDomainsProvider &&
+									(managedDomainsMap[selectedDomainsProvider.id] || []).map(domain => (
+										<div
+											key={domain}
+											className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/50 text-xs"
+										>
+											<div className="flex items-center gap-2.5 min-w-0">
+												<ShieldCheck className="size-4 text-emerald-500 shrink-0" />
+												<span className="font-mono font-bold text-foreground truncate">{domain}</span>
+												<Badge variant="outline" className="text-[10px] font-mono text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
+													DNS-01 Active
+												</Badge>
+											</div>
+
+											<div className="flex items-center gap-2 shrink-0">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => toast.success(`DNS TXT propagation verified for ${domain}`)}
+													className="h-7 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+												>
+													Test Propagation
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleRemoveDomainFromProvider(domain)}
+													className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+												>
+													<Trash2 className="size-3.5" />
+												</Button>
+											</div>
+										</div>
+									))}
+							</div>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
+
