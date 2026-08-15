@@ -1,223 +1,178 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Search, Folder, Building2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
-import { Badge } from '#/components/ui/badge';
 import { ServiceCard } from '#/components/projects/service/service-card';
-import { useAppStore } from '#/stores/app-store';
 import { useOrganizationStore } from '#/stores/organization-store';
-import { useProjectListByOrganization } from 'virtual:openoxide-live';
+import {
+	useProjectListByOrganization,
+	useEnvironmentListByProject,
+	useApplicationListByEnvironment,
+	useComposeListByEnvironment,
+	usePostgresListByEnvironment,
+	useMysqlListByEnvironment,
+	useMariadbListByEnvironment,
+	useMongoListByEnvironment,
+	useRedisListByEnvironment,
+} from 'virtual:openoxide-live';
 
-export function OverviewServicesTab() {
-	const [searchQuery, setSearchQuery] = useState('');
-	const [typeFilter, setTypeFilter] = useState('all');
-	const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+export type AggregatedService = {
+	key: string;
+	projectId: number;
+	type: 'APP' | 'COMPOSE' | 'DATABASE';
+	id: number;
+	name: string;
+	subtitle: string;
+	status: string;
+	createdAt: number;
+	dbKind?: string;
+};
 
-	const { organizations, activeOrg, setActiveOrg } = useOrganizationStore();
-	const orgId = activeOrg?.id || 1;
+// Component for a single Environment that queries all services reactively
+function EnvironmentServicesFetcher({
+	projectId,
+	projName,
+	envId,
+	envName,
+	onServicesUpdate,
+}: {
+	projectId: number;
+	projName: string;
+	envId: number;
+	envName: string;
+	onServicesUpdate: (envId: number, services: AggregatedService[]) => void;
+}) {
+	const { data: apps = [] } = useApplicationListByEnvironment(BigInt(envId));
+	const { data: composes = [] } = useComposeListByEnvironment(BigInt(envId));
+	const { data: pgDbs = [] } = usePostgresListByEnvironment(BigInt(envId));
+	const { data: myDbs = [] } = useMysqlListByEnvironment(BigInt(envId));
+	const { data: mariaDbs = [] } = useMariadbListByEnvironment(BigInt(envId));
+	const { data: mongoDbs = [] } = useMongoListByEnvironment(BigInt(envId));
+	const { data: redisDbs = [] } = useRedisListByEnvironment(BigInt(envId));
 
-	// Live Projects stream for active organization & Zustand RAM store fallback
-	const { data: liveProjects } = useProjectListByOrganization(BigInt(orgId));
-	const storeProjects = useAppStore((state) => state.projects);
-	const storeApps = useAppStore((state) => state.applications);
-	const storeDbs = useAppStore((state) => state.databases);
-	const storeComposes = useAppStore((state) => state.composes);
+	useEffect(() => {
+		const list: AggregatedService[] = [];
 
-	const projectsToUse = useMemo(() => {
-		if (Array.isArray(liveProjects) && liveProjects.length > 0) return liveProjects;
-		if (Array.isArray(storeProjects) && storeProjects.length > 0) return storeProjects;
-		return [];
-	}, [liveProjects, storeProjects]);
-
-	// Extract all services across all projects and environments
-	const allServices = useMemo(() => {
-		const serviceMap = new Map<string, {
-			projectId: number;
-			type: 'APP' | 'COMPOSE' | 'DATABASE';
-			id: number;
-			name: string;
-			subtitle: string;
-			status: string;
-			createdAt: number;
-			dbKind?: string;
-		}>();
-
-		// 1. Process Projects and their Environments / Service arrays
-		projectsToUse.forEach((proj: any) => {
-			const pId = Number(proj.id) || 1;
-			const projName = proj.name || `Project #${pId}`;
-
-			// Top-level service arrays on project
-			(proj.applications || []).forEach((app: any) => {
-				const id = Number(app.id);
-				if (id) {
-					serviceMap.set(`APP-${id}`, {
-						projectId: pId,
-						type: 'APP',
-						id,
-						name: app.name || app.app_name || `App #${id}`,
-						subtitle: `${projName} / production`,
-						status: app.application_status || app.status || 'idle',
-						createdAt: app.created_at || Date.now() / 1000,
-					});
-				}
-			});
-
-			(proj.composes || []).forEach((comp: any) => {
-				const id = Number(comp.id);
-				if (id) {
-					serviceMap.set(`COMPOSE-${id}`, {
-						projectId: pId,
-						type: 'COMPOSE',
-						id,
-						name: comp.name || comp.app_name || `Compose #${id}`,
-						subtitle: `${projName} / production`,
-						status: comp.compose_status || comp.status || 'idle',
-						createdAt: comp.created_at || Date.now() / 1000,
-					});
-				}
-			});
-
-			const topDbs = [
-				...(proj.postgresDbs || proj.postgreses || []).map((db: any) => ({ ...db, kind: 'postgres' })),
-				...(proj.mysqlDbs || proj.mysqls || []).map((db: any) => ({ ...db, kind: 'mysql' })),
-				...(proj.mariadbDbs || proj.mariadbs || []).map((db: any) => ({ ...db, kind: 'mariadb' })),
-				...(proj.mongoDbs || proj.mongos || []).map((db: any) => ({ ...db, kind: 'mongo' })),
-				...(proj.redisDbs || proj.redises || []).map((db: any) => ({ ...db, kind: 'redis' })),
-			];
-
-			topDbs.forEach((db: any) => {
-				const id = Number(db.id);
-				if (id) {
-					serviceMap.set(`DATABASE-${id}`, {
-						projectId: pId,
-						type: 'DATABASE',
-						id,
-						name: db.name || db.database_name || `DB #${id}`,
-						subtitle: `${projName} / production`,
-						status: db.database_status || db.status || 'idle',
-						dbKind: db.kind,
-						createdAt: db.created_at || Date.now() / 1000,
-					});
-				}
-			});
-
-			// Nested Environments
-			const envs = proj.environments || [];
-			envs.forEach((env: any) => {
-				const envName = env.name || 'production';
-
-				(env.applications || []).forEach((app: any) => {
-					const id = Number(app.id);
-					if (id && !serviceMap.has(`APP-${id}`)) {
-						serviceMap.set(`APP-${id}`, {
-							projectId: pId,
-							type: 'APP',
-							id,
-							name: app.name || `App #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: app.application_status || app.status || 'idle',
-							createdAt: app.created_at || Date.now() / 1000,
-						});
-					}
-				});
-
-				(env.composes || []).forEach((comp: any) => {
-					const id = Number(comp.id);
-					if (id && !serviceMap.has(`COMPOSE-${id}`)) {
-						serviceMap.set(`COMPOSE-${id}`, {
-							projectId: pId,
-							type: 'COMPOSE',
-							id,
-							name: comp.name || `Compose #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: comp.compose_status || comp.status || 'idle',
-							createdAt: comp.created_at || Date.now() / 1000,
-						});
-					}
-				});
-
-				const envDbs = [
-					...(env.postgreses || env.postgresDbs || []).map((db: any) => ({ ...db, kind: 'postgres' })),
-					...(env.mysqls || env.mysqlDbs || []).map((db: any) => ({ ...db, kind: 'mysql' })),
-					...(env.mariadbs || env.mariadbDbs || []).map((db: any) => ({ ...db, kind: 'mariadb' })),
-					...(env.mongos || env.mongoDbs || []).map((db: any) => ({ ...db, kind: 'mongo' })),
-					...(env.redises || env.redisDbs || []).map((db: any) => ({ ...db, kind: 'redis' })),
-				];
-
-				envDbs.forEach((db: any) => {
-					const id = Number(db.id);
-					if (id && !serviceMap.has(`DATABASE-${id}`)) {
-						serviceMap.set(`DATABASE-${id}`, {
-							projectId: pId,
-							type: 'DATABASE',
-							id,
-							name: db.name || `DB #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: db.database_status || db.status || 'idle',
-							dbKind: db.kind,
-							createdAt: db.created_at || Date.now() / 1000,
-						});
-					}
-				});
-			});
-		});
-
-		// 2. Process Zustand RAM Store flat items
-		(storeApps || []).forEach((app: any) => {
+		(apps || []).forEach((app: any) => {
 			const id = Number(app.id);
-			if (id && !serviceMap.has(`APP-${id}`)) {
-				const pId = Number(app.project_id || 1);
-				serviceMap.set(`APP-${id}`, {
-					projectId: pId,
+			if (id) {
+				list.push({
+					key: `APP-${id}`,
+					projectId,
 					type: 'APP',
 					id,
 					name: app.name || app.app_name || `App #${id}`,
-					subtitle: `Project #${pId} / production`,
+					subtitle: `${projName} / ${envName}`,
 					status: app.application_status || app.status || 'idle',
 					createdAt: app.created_at || Date.now() / 1000,
 				});
 			}
 		});
 
-		(storeComposes || []).forEach((comp: any) => {
+		(composes || []).forEach((comp: any) => {
 			const id = Number(comp.id);
-			if (id && !serviceMap.has(`COMPOSE-${id}`)) {
-				const pId = Number(comp.project_id || 1);
-				serviceMap.set(`COMPOSE-${id}`, {
-					projectId: pId,
+			if (id) {
+				list.push({
+					key: `COMPOSE-${id}`,
+					projectId,
 					type: 'COMPOSE',
 					id,
 					name: comp.name || comp.app_name || `Compose #${id}`,
-					subtitle: `Project #${pId} / production`,
+					subtitle: `${projName} / ${envName}`,
 					status: comp.compose_status || comp.status || 'idle',
 					createdAt: comp.created_at || Date.now() / 1000,
 				});
 			}
 		});
 
-		(storeDbs || []).forEach((db: any) => {
+		const dbsWithKind = [
+			...(pgDbs || []).map((d: any) => ({ ...d, kind: 'postgres' })),
+			...(myDbs || []).map((d: any) => ({ ...d, kind: 'mysql' })),
+			...(mariaDbs || []).map((d: any) => ({ ...d, kind: 'mariadb' })),
+			...(mongoDbs || []).map((d: any) => ({ ...d, kind: 'mongo' })),
+			...(redisDbs || []).map((d: any) => ({ ...d, kind: 'redis' })),
+		];
+
+		dbsWithKind.forEach((db: any) => {
 			const id = Number(db.id);
-			if (id && !serviceMap.has(`DATABASE-${id}`)) {
-				const pId = Number(db.project_id || 1);
-				serviceMap.set(`DATABASE-${id}`, {
-					projectId: pId,
+			if (id) {
+				list.push({
+					key: `DATABASE-${id}`,
+					projectId,
 					type: 'DATABASE',
 					id,
 					name: db.name || db.database_name || `DB #${id}`,
-					subtitle: `Project #${pId} / production`,
+					subtitle: `${projName} / ${envName}`,
 					status: db.database_status || db.status || 'idle',
-					dbKind: (db.db_type || db.type || 'postgres').toLowerCase(),
+					dbKind: db.kind,
 					createdAt: db.created_at || Date.now() / 1000,
 				});
 			}
 		});
 
-		return Array.from(serviceMap.values());
-	}, [projectsToUse, storeApps, storeDbs, storeComposes]);
+		onServicesUpdate(envId, list);
+	}, [apps, composes, pgDbs, myDbs, mariaDbs, mongoDbs, redisDbs, projectId, projName, envId, envName]);
 
-	// Filtered services by search, type, AND project ID
-	const filteredServices = useMemo(() => {
+	return null;
+}
+
+// Component for a single Project that queries all environments reactively
+function ProjectFetcher({
+	projectId,
+	projName,
+	onServicesUpdate,
+}: {
+	projectId: number;
+	projName: string;
+	onServicesUpdate: (envId: number, services: AggregatedService[]) => void;
+}) {
+	const { data: envs = [] } = useEnvironmentListByProject(BigInt(projectId));
+
+	return (
+		<>
+			{(envs || []).map((env: any) => (
+				<EnvironmentServicesFetcher
+					key={env.id}
+					projectId={projectId}
+					projName={projName}
+					envId={Number(env.id)}
+					envName={env.name || 'production'}
+					onServicesUpdate={onServicesUpdate}
+				/>
+			))}
+		</>
+	);
+}
+
+export function OverviewServicesTab() {
+	const [searchQuery, setSearchQuery] = useState('');
+	const [typeFilter, setTypeFilter] = useState('all');
+	const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+	const [envServicesMap, setEnvServicesMap] = useState<Record<number, AggregatedService[]>>({});
+
+	const { organizations, activeOrg, setActiveOrg } = useOrganizationStore();
+	const orgId = activeOrg?.id || 1;
+
+	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
+
+	const handleServicesUpdate = (envId: number, services: AggregatedService[]) => {
+		setEnvServicesMap((prev) => {
+			if (JSON.stringify(prev[envId]) === JSON.stringify(services)) return prev;
+			return { ...prev, [envId]: services };
+		});
+	};
+
+	// Aggregate all services across all envs
+	const allServices = React.useMemo(() => {
+		const map = new Map<string, AggregatedService>();
+		Object.values(envServicesMap).forEach((list) => {
+			list.forEach((s) => map.set(s.key, s));
+		});
+		return Array.from(map.values());
+	}, [envServicesMap]);
+
+	// Filtered services
+	const filteredServices = React.useMemo(() => {
 		return allServices.filter((s) => {
 			const matchesSearch =
 				!searchQuery ||
@@ -239,6 +194,16 @@ export function OverviewServicesTab() {
 
 	return (
 		<div className="space-y-4">
+			{/* Mount Reactive Stream Fetchers for each Project */}
+			{(projectsToUse || []).map((proj: any) => (
+				<ProjectFetcher
+					key={proj.id}
+					projectId={Number(proj.id)}
+					projName={proj.name || `Project #${proj.id}`}
+					onServicesUpdate={handleServicesUpdate}
+				/>
+			))}
+
 			{/* Organization Context & Project Selector Bar */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border/60">
 				<div className="flex items-center gap-2">
@@ -341,7 +306,7 @@ export function OverviewServicesTab() {
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 					{filteredServices.map((svc) => (
 						<ServiceCard
-							key={`${svc.type}-${svc.id}`}
+							key={svc.key}
 							projectId={svc.projectId}
 							type={svc.type}
 							id={svc.id}
