@@ -14,7 +14,7 @@ import {
 	CardTitle,
 } from '#/components/ui/card';
 import {$api} from '#/api/query';
-import {useTagListAll} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {HandleTag} from './handle-tag';
 
 interface TagItem {
@@ -25,7 +25,8 @@ interface TagItem {
 
 export const TagManager = () => {
 	const [searchQuery, setSearchQuery] = useState('');
-	const {data: rawTags, loading: isLoading} = useTagListAll();
+	const rawTags = useAppStore((state) => state.tags);
+	const isLoading = false;
 	const deleteMutation = $api.useMutation('delete', '/tags/{id}' as any);
 
 	const tags: TagItem[] = useMemo(() => {

@@ -22,16 +22,8 @@ function SshKeysPage() {
 
 	const storeSshKeys = useAppStore((state) => state.sshKeys);
 
-	const {
-		data: rawSshKeys,
-		loading: isQueryLoading,
-	} = useSshKeyList();
-
-	const sshKeys = (rawSshKeys && Array.isArray(rawSshKeys) && rawSshKeys.length > 0)
-		? (rawSshKeys as unknown as SshKeyResponse[])
-		: ((storeSshKeys ?? []) as unknown as SshKeyResponse[]);
-
-	const isLoading = sshKeys.length === 0 && isQueryLoading;
+	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
+	const isLoading = false;
 
 	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
 	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);

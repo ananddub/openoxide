@@ -81,7 +81,7 @@ function SwarmPage() {
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
 	const queryClient = useQueryClient();
 
-	const {data: serversData} = useRemoteServerList();
+	const serversData = useAppStore((state) => state.servers);
 	const servers = Array.isArray(serversData) ? (serversData as unknown as RemoteServerResponse[]) : [];
 	const serverIdsKey = servers.map(s => s.id).join(',');
 

@@ -30,20 +30,9 @@ function RemoteServersPage() {
 	const storeServers = useAppStore((state) => state.servers);
 	const storeSshKeys = useAppStore((state) => state.sshKeys);
 
-	const {
-		data: rawServers,
-		loading: isServersLoading,
-	} = useRemoteServerList();
-
-	const {data: rawSshKeys} = useSshKeyList();
-
-	const servers = (rawServers && Array.isArray(rawServers) && rawServers.length > 0)
-		? (rawServers as unknown as RemoteServerResponse[])
-		: ((storeServers ?? []) as unknown as RemoteServerResponse[]);
-
-	const sshKeys = (rawSshKeys && Array.isArray(rawSshKeys) && rawSshKeys.length > 0)
-		? (rawSshKeys as unknown as SshKeyResponse[])
-		: ((storeSshKeys ?? []) as unknown as SshKeyResponse[]);
+	const servers = (storeServers ?? []) as unknown as RemoteServerResponse[];
+	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
+	const isServersLoading = false;
 
 	const activateMutation = $api.useMutation('post', '/remote-servers/{id}/activate');
 	const deactivateMutation = $api.useMutation('post', '/remote-servers/{id}/deactivate');

@@ -27,8 +27,8 @@ export function useSchedules() {
 
 	const loading = schedules.length === 0 && isQueryLoading;
 
-	// Fetch remote servers to let user link a schedule to a server
-	const {data: servers} = useRemoteServerList();
+	// Remote servers list from Zustand RAM store
+	const servers = useAppStore((state) => state.servers || []);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');

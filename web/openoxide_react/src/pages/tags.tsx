@@ -60,16 +60,11 @@ function MinimalTagsPage() {
 
 	const storeTags = useAppStore((state) => state.tags);
 
-	const { data: rawTags, loading: isQueryLoading } = useTagListAll();
-
 	const tagsList: TagItem[] = useMemo(() => {
-		const source = (rawTags && Array.isArray(rawTags) && rawTags.length > 0)
-			? rawTags
-			: (storeTags || []);
-		return Array.isArray(source) ? (source as unknown as TagItem[]) : [];
-	}, [rawTags, storeTags]);
+		return Array.isArray(storeTags) ? (storeTags as unknown as TagItem[]) : [];
+	}, [storeTags]);
 
-	const isLoading = tagsList.length === 0 && isQueryLoading;
+	const isLoading = false;
 
 	const createMutation = $api.useMutation('post', '/tags' as any);
 	const patchMutation = $api.useMutation('patch', '/tags/{id}' as any);

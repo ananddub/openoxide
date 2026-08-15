@@ -42,8 +42,7 @@ export function ScheduleDialog({
 	const [targetId, setTargetId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
-	const {data: projectsList} = useProjectListByOrganization(BigInt(activeOrg?.id ?? 0));
+	const projectsList = useAppStore((state) => state.projects || []);
 
 	const allApplications = useMemo(() => {
 		if (!Array.isArray(projectsList)) return [];

@@ -21,8 +21,8 @@ function DockerPage() {
 
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
-	// Query remote servers
-	const { data: rawServers } = useRemoteServerList();
+	// Read remote servers from Zustand RAM store
+	const rawServers = useAppStore((state) => state.servers);
 
 	// Real API Query for system-wide Docker containers for selected server host
 	const { data: rawDockerContainers = [], isLoading: isDockerLoading, refetch, isRefetching } = $api.useQuery(

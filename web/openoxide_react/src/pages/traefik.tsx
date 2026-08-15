@@ -31,8 +31,8 @@ function TraefikPage() {
 
 	const parsedServerId = selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
 
-	// Query Remote Servers list
-	const {data: rawServers} = useRemoteServerList();
+	// Read Remote Servers list from Zustand RAM store
+	const rawServers = useAppStore((state) => state.servers);
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {

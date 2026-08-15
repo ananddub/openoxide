@@ -11,8 +11,8 @@ export const Route = createFileRoute('/_app/requests')({
 function RequestsPage() {
 	const [selectedServerId, setSelectedServerId] = useState<string>('local');
 
-	// Query Remote Servers list
-	const {data: rawServers} = useRemoteServerList();
+	// Read Remote Servers list from Zustand RAM store
+	const rawServers = useAppStore((state) => state.servers);
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {

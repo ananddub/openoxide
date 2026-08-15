@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Check, ChevronsUpDown, X, Tags as TagsIcon, Plus } from 'lucide-react';
-import { useTagListAll } from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import { TagBadge } from '#/components/shared/tag-badge';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
@@ -33,7 +33,7 @@ export function TagSelector({
 	variant = 'form',
 }: TagSelectorProps) {
 	const [searchQuery, setSearchQuery] = useState('');
-	const { data: rawTags } = useTagListAll();
+	const rawTags = useAppStore((state) => state.tags || []);
 
 	const availableTags: TagItem[] = useMemo(() => {
 		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];

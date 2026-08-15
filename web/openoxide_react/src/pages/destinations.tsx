@@ -22,13 +22,8 @@ function DestinationsPage() {
 
 	const storeDestinations = useAppStore((state) => state.destinations);
 
-	// Query destinations with safe array fallback
-	const {data: rawDestinations, loading: isQueryLoading} = useDestinationList();
-	const destinations = (rawDestinations && Array.isArray(rawDestinations) && rawDestinations.length > 0)
-		? (rawDestinations as unknown as DestinationResponse[])
-		: ((storeDestinations ?? []) as unknown as DestinationResponse[]);
-
-	const isLoading = destinations.length === 0 && isQueryLoading;
+	const destinations = (storeDestinations ?? []) as unknown as DestinationResponse[];
+	const isLoading = false;
 
 	// Mutations
 	const deleteMutation = $api.useMutation('delete', '/destinations/{id}');

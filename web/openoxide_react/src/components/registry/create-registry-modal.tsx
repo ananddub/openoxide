@@ -44,7 +44,7 @@ export function CreateRegistryModal({
 	const [serverId, setServerId] = useState<string>('local');
 	const [isTesting, setIsTesting] = useState(false);
 
-	const {data: serversData} = useRemoteServerList();
+	const serversData = useAppStore((state) => state.servers);
 	const servers = (Array.isArray(serversData) ? serversData : []) as unknown as RemoteServerResponse[];
 
 	const createMutation = $api.useMutation('post', '/registries');
