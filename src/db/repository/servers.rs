@@ -367,23 +367,67 @@ impl ServerRepository {
         server_id: i64,
     ) -> Result<Option<(String, i64, String, String, String)>, sqlx::Error> {
         let res = sqlx::query(
-            r#"SELECT COALESCE(CASE WHEN n.status = 'ACTIVE' AND n.connection_mode != 'DIRECT_SSH' THEN n.private_host END, s.ip_address) AS ip_address, s.port, s.username, k.private_key, k.public_key
-               FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?"#,
+            r#"SELECT 
+                  s.ip_address AS public_ip,
+                  n.private_host AS private_ip,
+                  n.status AS private_status,
+                  n.connection_mode AS connection_mode,
+                  s.port,
+                  s.username,
+                  k.private_key,
+                  k.public_key
+               FROM servers s 
+               JOIN ssh_keys k ON k.id = s.ssh_key_id 
+               LEFT JOIN server_private_networks n ON n.server_id = s.id 
+               WHERE s.id = ?"#,
         )
         .bind(server_id)
         .fetch_optional(self.pool.as_ref())
         .await?;
 
-        res.map(|row| {
-            Ok((
-                row.try_get("ip_address")?,
-                row.try_get("port")?,
-                row.try_get("username")?,
-                row.try_get("private_key")?,
-                row.try_get("public_key")?,
-            ))
-        })
-        .transpose()
+        if let Some(row) = res {
+            let public_ip: String = row.try_get("public_ip")?;
+            let private_ip: Option<String> = row.try_get("private_ip").ok().flatten();
+            let private_status: Option<String> = row.try_get("private_status").ok().flatten();
+            let connection_mode: Option<String> = row.try_get("connection_mode").ok().flatten();
+            let port_i64: i64 = row.try_get("port")?;
+            let username: String = row.try_get("username")?;
+            let private_key: String = row.try_get("private_key")?;
+            let public_key: String = row.try_get("public_key")?;
+
+            let port = u16::try_from(port_i64).unwrap_or(22);
+            let mut selected_ip = public_ip.clone();
+
+            if let Some(priv_ip) = private_ip {
+                let mode = connection_mode.unwrap_or_default();
+                let status = private_status.unwrap_or_default();
+
+                if !priv_ip.trim().is_empty() && mode != "DIRECT_SSH" && status != "INACTIVE" {
+                    let addr = format!("{}:{}", priv_ip.trim(), port);
+                    let probe_timeout = std::time::Duration::from_millis(1000);
+                    let is_healthy = match tokio::time::timeout(probe_timeout, tokio::net::TcpStream::connect(&addr)).await {
+                        Ok(Ok(_stream)) => true,
+                        _ => false,
+                    };
+
+                    if is_healthy {
+                        tracing::info!(server_id, private_ip = %priv_ip, "Selected healthy private network IP for server connection");
+                        selected_ip = priv_ip.trim().to_string();
+                    } else {
+                        tracing::warn!(
+                            server_id,
+                            private_ip = %priv_ip,
+                            public_ip = %public_ip,
+                            "Private network IP is unhealthy/unreachable. Gracefully falling back to direct public SSH IP"
+                        );
+                    }
+                }
+            }
+
+            return Ok(Some((selected_ip, port_i64, username, private_key, public_key)));
+        }
+
+        Ok(None)
     }
 
     pub async fn get_direct_ssh_credentials(
