@@ -6,10 +6,12 @@ import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
 import { Badge } from '#/components/ui/badge';
 import { useAppStore } from '#/stores/app-store';
+import { useOrganizationStore } from '#/stores/organization-store';
 import { ServiceCard } from '#/components/projects/service/service-card';
 import { useDeployments } from '#/hooks/deployments/use-deployments';
 import { DeploymentItem } from '#/components/deployments/deployment-item';
 import { DeploymentLogsDialog } from '#/components/deployments/deployment-logs-dialog';
+import { useProjectListByOrganization } from 'virtual:openoxide-live';
 
 export const Route = createFileRoute('/_app/overview')({
 	component: OverviewPage,
@@ -20,8 +22,12 @@ function OverviewPage() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [typeFilter, setTypeFilter] = useState('all');
 
-	// RAM Store Readers (0ms Local-First Reactive Memory)
-	const projects = useAppStore((state) => state.projects);
+	const activeOrg = useOrganizationStore((state) => state.activeOrg);
+	const orgId = activeOrg?.id || 1;
+
+	// Live Stream + RAM Store Readers
+	const { data: liveProjects } = useProjectListByOrganization(BigInt(orgId));
+	const storeProjects = useAppStore((state) => state.projects);
 	const domains = useAppStore((state) => state.domains);
 	const backups = useAppStore((state) => state.backups);
 
@@ -30,12 +36,17 @@ function OverviewPage() {
 		selectedDeployment,
 		setSelectedDeployment,
 		logs,
-		isLogsLoading,
 		copied,
 		handleCopyLogs,
 	} = useDeployments();
 
-	// Aggregate all Applications, Compose Stacks, and Databases across all Projects & Environments
+	const projectsToUse = useMemo(() => {
+		if (Array.isArray(liveProjects) && liveProjects.length > 0) return liveProjects;
+		if (Array.isArray(storeProjects) && storeProjects.length > 0) return storeProjects;
+		return [];
+	}, [liveProjects, storeProjects]);
+
+	// Aggregate all Applications, Compose Stacks, and Databases across all Projects, Environments, & Deployments
 	const allServices = useMemo(() => {
 		const serviceMap = new Map<string, {
 			projectId: number;
@@ -48,14 +59,12 @@ function OverviewPage() {
 			dbKind?: string;
 		}>();
 
-		if (!Array.isArray(projects)) return [];
-
-		projects.forEach((proj: any) => {
-			const pId = Number(proj.id);
-			if (!pId) return;
+		// 1. Extract from Projects array
+		projectsToUse.forEach((proj: any) => {
+			const pId = Number(proj.id) || 1;
 			const projName = proj.name || `Project #${pId}`;
 
-			// 1. Process top-level service arrays on project (if present)
+			// Top-level service arrays
 			(proj.applications || []).forEach((app: any) => {
 				const id = Number(app.id);
 				if (id) {
@@ -110,7 +119,7 @@ function OverviewPage() {
 				}
 			});
 
-			// 2. Process nested Environments array
+			// Nested Environments array
 			const envs = proj.environments || [];
 			envs.forEach((env: any) => {
 				const envName = env.name || 'production';
@@ -171,8 +180,31 @@ function OverviewPage() {
 			});
 		});
 
+		// 2. Fallback: If serviceMap is empty but deployments exist, infer services from deployments list
+		if (serviceMap.size === 0 && deploymentsList.length > 0) {
+			deploymentsList.forEach((dep: any) => {
+				const id = Number(dep.app_id || dep.id || 1);
+				const isCompose = !!dep.compose_id;
+				const isDb = !!dep.database_id;
+				const type: 'APP' | 'COMPOSE' | 'DATABASE' = isCompose ? 'COMPOSE' : isDb ? 'DATABASE' : 'APP';
+				const key = `${type}-${id}`;
+
+				if (!serviceMap.has(key)) {
+					serviceMap.set(key, {
+						projectId: Number(dep.project_id || 1),
+						type,
+						id,
+						name: dep.title || dep.app_name || dep.name || `Service #${id}`,
+						subtitle: `${dep.project_name || 'Production'} / production`,
+						status: dep.status || 'running',
+						createdAt: dep.created_at || Date.now() / 1000,
+					});
+				}
+			});
+		}
+
 		return Array.from(serviceMap.values());
-	}, [projects]);
+	}, [projectsToUse, deploymentsList]);
 
 	// Filtered services
 	const filteredServices = useMemo(() => {
