@@ -23,7 +23,7 @@ pub async fn spawn_remote_terminal(
         Err(error) => {
             tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_terminal");
             let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
-            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(
                 &socket,
                 format!("could not create remote executor: {error}"),
@@ -51,7 +51,7 @@ pub async fn spawn_remote_terminal(
         Ok(res) => res,
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not build SSH authentication arguments: {error}\x1b[0m\r\n");
-            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not build SSH args: {error}"));
             return;
         }
@@ -70,7 +70,7 @@ pub async fn spawn_remote_terminal(
         Ok(res) => res,
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open PTY for SSH terminal: {error}\x1b[0m\r\n");
-            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not open PTY: {error}"));
             return;
         }
@@ -97,7 +97,7 @@ pub async fn spawn_remote_terminal(
         Ok(child) => child,
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not spawn SSH terminal process: {error}\x1b[0m\r\n");
-            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not start SSH terminal: {error}"));
             return;
         }
@@ -161,7 +161,7 @@ pub async fn spawn_remote_terminal(
             if let Some(c) = code {
                 if c != 0 {
                     let err_msg = format!("\r\n\x1b[31m[Error] SSH session to server '{server_host}' closed with exit code {c}.\x1b[0m\r\n");
-                    emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
+                    emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes());
                 }
             }
             let _ = socket_clone.emit("exit", &TerminalExit { code });

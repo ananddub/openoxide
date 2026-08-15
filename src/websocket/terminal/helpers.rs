@@ -15,8 +15,8 @@ pub fn socket_key(socket: &SocketRef) -> String {
     socket.id.to_string()
 }
 
-pub fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: Vec<u8>) {
-    let data = String::from_utf8_lossy(&bytes).into_owned();
+pub fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: &[u8]) {
+    let data = String::from_utf8_lossy(bytes).into_owned();
     let _ = socket.emit("output", &TerminalOutput { stream, data });
 }
 
@@ -37,11 +37,11 @@ pub fn spawn_output_task(
     mut reader: impl tokio::io::AsyncRead + Unpin + Send + 'static,
 ) {
     tokio::spawn(async move {
-        let mut buffer = vec![0; 8192];
+        let mut buffer = vec![0u8; 8192];
         loop {
             match reader.read(&mut buffer).await {
                 Ok(0) => return,
-                Ok(n) => emit_terminal_bytes(&socket, stream, buffer[..n].to_vec()),
+                Ok(n) => emit_terminal_bytes(&socket, stream, &buffer[..n]),
                 Err(error) => {
                     tracing::warn!("Terminal output read error: {error}");
                     emit_error(&socket, format!("terminal read failed: {error}"));
@@ -58,10 +58,8 @@ pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
         loop {
             match reader.read(&mut buffer).await {
                 Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&socket, "stdout", buffer[..n].to_vec()),
+                Ok(n) => emit_terminal_bytes(&socket, "stdout", &buffer[..n]),
                 Err(error) => {
-                    // EIO (os error 5) is the normal signal that the PTY master side
-                    // has been closed (session ended / shell switched). Not a real error.
                     let is_pty_closed = error
                         .raw_os_error()
                         .map(|code| code == 5)

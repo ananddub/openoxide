@@ -6,7 +6,6 @@ use tokio::{
     process::{Child, ChildStdin},
     sync::{Mutex, mpsc},
 };
-use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Deserialize)]
 pub struct DockerTerminalStart {

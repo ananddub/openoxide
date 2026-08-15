@@ -39,20 +39,25 @@ impl TerminalSocket {
         }
     }
 
+    async fn terminate_session(session: TerminalSession) {
+        match session {
+            TerminalSession::Pty { cancel, child, .. } => {
+                cancel.cancel();
+                let _ = child.lock().await.kill().await;
+            }
+            TerminalSession::Local { child, .. } => {
+                let _ = child.lock().await.kill().await;
+            }
+            TerminalSession::Remote { cancel, .. } => {
+                cancel.cancel();
+            }
+        }
+    }
+
     async fn stop_socket_session(&self, socket: &SocketRef) {
         let key = socket_key(socket);
         if let Some((_, session)) = self.sessions.remove(&key) {
-            match session {
-                TerminalSession::Pty { cancel, .. } => {
-                    cancel.cancel();
-                }
-                TerminalSession::Local { child, .. } => {
-                    let _ = child.lock().await.kill().await;
-                }
-                TerminalSession::Remote { cancel, .. } => {
-                    cancel.cancel();
-                }
-            }
+            Self::terminate_session(session).await;
         }
     }
 
@@ -63,17 +68,7 @@ impl TerminalSocket {
             let key = key.clone();
             async move {
                 if let Some((_, session)) = sessions.remove(&key) {
-                    match session {
-                        TerminalSession::Pty { cancel, .. } => {
-                            cancel.cancel();
-                        }
-                        TerminalSession::Local { child, .. } => {
-                            let _ = child.lock().await.kill().await;
-                        }
-                        TerminalSession::Remote { cancel, .. } => {
-                            cancel.cancel();
-                        }
-                    }
+                    Self::terminate_session(session).await;
                 }
             }
         });
@@ -98,8 +93,8 @@ impl TerminalSocket {
             .and_then(|v| v.as_i64())
             .or_else(|| payload.get("serverId").and_then(|v| v.as_i64()));
 
-        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16);
-        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16);
+        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
+        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
 
         let input = DockerTerminalStart {
             container,
@@ -125,8 +120,8 @@ impl TerminalSocket {
             .and_then(|v| v.as_str())
             .or_else(|| payload.get("command").and_then(|v| v.as_str()))
             .map(|s| s.to_string());
-        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| v as u16);
-        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| v as u16);
+        let cols = payload.get("cols").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
+        let rows = payload.get("rows").and_then(|v| v.as_u64()).map(|v| (v as u16).max(1));
 
         let input = ServerTerminalStart { shell, server_id, cols, rows };
 
@@ -196,12 +191,12 @@ impl TerminalSocket {
         let cols = payload
             .get("cols")
             .and_then(|v| v.as_u64())
-            .map(|v| v as u16)
+            .map(|v| (v as u16).max(1))
             .unwrap_or(80);
         let rows = payload
             .get("rows")
             .and_then(|v| v.as_u64())
-            .map(|v| v as u16)
+            .map(|v| (v as u16).max(1))
             .unwrap_or(24);
 
         let key = socket_key(&socket);
@@ -211,6 +206,5 @@ impl TerminalSocket {
                 let _ = w.resize(pty_process::Size::new(rows, cols));
             }
         }
-        let _ = (cols, rows);
     }
 }
