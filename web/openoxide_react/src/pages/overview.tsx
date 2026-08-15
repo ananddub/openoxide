@@ -29,7 +29,7 @@ function OverviewPage() {
 	} = useDeployments();
 
 	return (
-		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full animate-in fade-in duration-200">
+		<div className="p-6 md:px-8 flex flex-col gap-6 w-full max-w-full animate-in fade-in duration-200">
 			{/* Page Header */}
 			<div className="flex flex-col gap-1">
 				<h1 className="text-2xl font-bold text-foreground tracking-tight">Overview</h1>

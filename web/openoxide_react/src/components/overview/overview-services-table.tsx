@@ -71,17 +71,17 @@ const TYPE_DISPLAY_NAMES: Record<string, string> = {
 };
 
 const renderIcon = (type: string, dbKind?: string) => {
-	if (type === 'APP') return <Box className="size-4.5 text-foreground shrink-0" />;
-	if (type === 'COMPOSE') return <Layers2 className="size-4.5 text-foreground shrink-0" />;
+	if (type === 'APP') return <Box className="size-5 text-foreground shrink-0" />;
+	if (type === 'COMPOSE') return <Layers2 className="size-5 text-foreground shrink-0" />;
 	const kind = (dbKind || '').toLowerCase();
-	if (kind.includes('postgres')) return <PostgresqlIcon className="size-5 shrink-0" />;
-	if (kind.includes('mysql')) return <MysqlIcon className="size-5 shrink-0" />;
-	if (kind.includes('mariadb')) return <MariadbIcon className="size-5 shrink-0" />;
-	if (kind.includes('mongo')) return <MongodbIcon className="size-5 shrink-0" />;
-	if (kind.includes('redis')) return <RedisIcon className="size-5 shrink-0" />;
-	if (kind.includes('libsql')) return <LibsqlIcon className="size-5 shrink-0" />;
+	if (kind.includes('postgres')) return <PostgresqlIcon className="size-5.5 shrink-0" />;
+	if (kind.includes('mysql')) return <MysqlIcon className="size-5.5 shrink-0" />;
+	if (kind.includes('mariadb')) return <MariadbIcon className="size-5.5 shrink-0" />;
+	if (kind.includes('mongo')) return <MongodbIcon className="size-5.5 shrink-0" />;
+	if (kind.includes('redis')) return <RedisIcon className="size-5.5 shrink-0" />;
+	if (kind.includes('libsql')) return <LibsqlIcon className="size-5.5 shrink-0" />;
 
-	return <DbIcon className="size-4.5 text-foreground shrink-0" />;
+	return <DbIcon className="size-5 text-foreground shrink-0" />;
 };
 
 const renderStatusBadge = (statusStr: string) => {
@@ -89,7 +89,7 @@ const renderStatusBadge = (statusStr: string) => {
 
 	if (s.includes('stopping') || s.includes('cancelling')) {
 		return (
-			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 text-[11px] font-semibold text-orange-500">
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 text-xs font-semibold text-orange-500">
 				<span className="size-2 rounded-full bg-orange-500 animate-pulse" />
 				<span>Stopping</span>
 			</div>
@@ -98,7 +98,7 @@ const renderStatusBadge = (statusStr: string) => {
 
 	if (s.includes('starting') || s.includes('deploying') || s.includes('building') || s.includes('loading')) {
 		return (
-			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-[11px] font-semibold text-amber-500">
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
 				<span className="size-2 rounded-full bg-amber-500 animate-pulse" />
 				<span>Deploying</span>
 			</div>
@@ -107,7 +107,7 @@ const renderStatusBadge = (statusStr: string) => {
 
 	if (s.includes('running') || s.includes('active') || s.includes('healthy') || s.includes('up') || s === 'done') {
 		return (
-			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-[11px] font-semibold text-emerald-500">
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-500">
 				<span className="size-2 rounded-full bg-emerald-500" />
 				<span>Running</span>
 			</div>
@@ -116,7 +116,7 @@ const renderStatusBadge = (statusStr: string) => {
 
 	if (s.includes('err') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
 		return (
-			<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 text-[11px] font-semibold text-rose-500">
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-xs font-semibold text-rose-500">
 				<span className="size-2 rounded-full bg-rose-500" />
 				<span>Error</span>
 			</div>
@@ -124,7 +124,7 @@ const renderStatusBadge = (statusStr: string) => {
 	}
 
 	return (
-		<div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/60 text-[11px] font-semibold text-muted-foreground">
+		<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 text-xs font-semibold text-muted-foreground">
 			<span className="size-2 rounded-full bg-muted-foreground/40" />
 			<span>Idle</span>
 		</div>
@@ -143,88 +143,90 @@ const formatDate = (timestamp?: number) => {
 
 export const OverviewServicesTable: React.FC<Props> = ({ services, onDeploy, onStart, onStop }) => {
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow className="border-b border-border/60 hover:bg-transparent">
-					<TableHead className="font-bold text-foreground">Service</TableHead>
-					<TableHead className="font-bold text-foreground">Type</TableHead>
-					<TableHead className="font-bold text-foreground">Status</TableHead>
-					<TableHead className="font-bold text-foreground">Server</TableHead>
-					<TableHead className="font-bold text-foreground">Created</TableHead>
-					<TableHead className="font-bold text-foreground">Last Deploy</TableHead>
-					<TableHead className="text-right font-bold text-foreground">Actions</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{services.map((svc) => (
-					<TableRow key={svc.key} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
-						<TableCell>
-							<Link
-								to="/projects/$id"
-								params={{ id: String(svc.projectId) }}
-								className="flex items-center gap-2.5 group"
-							>
-								{renderIcon(svc.type, svc.dbKind)}
-								<div className="flex flex-col min-w-0">
-									<span className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors truncate">
-										{svc.name}
-									</span>
-									<span className="text-[11px] text-muted-foreground truncate">
-										{svc.projectName} / {svc.environmentName}
-									</span>
-								</div>
-							</Link>
-						</TableCell>
-						<TableCell className="text-xs font-medium text-foreground">
-							{svc.dbKind ? TYPE_DISPLAY_NAMES[svc.dbKind] || svc.dbKind : TYPE_DISPLAY_NAMES[svc.type] || svc.type}
-						</TableCell>
-						<TableCell>{renderStatusBadge(svc.status)}</TableCell>
-						<TableCell>
-							<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-								<ServerIcon className="size-3.5" />
-								<span className="truncate">{svc.serverName || 'Rustploy Server'}</span>
-							</div>
-						</TableCell>
-						<TableCell>{formatDate(svc.createdAt)}</TableCell>
-						<TableCell>{formatDate(svc.lastDeployAt || svc.createdAt)}</TableCell>
-						<TableCell className="text-right">
-							<DropdownMenu>
-								<DropdownMenuTrigger
-									render={
-										<Button variant="ghost" size="icon" className="size-8 p-0 text-muted-foreground hover:text-foreground">
-											<MoreHorizontal className="size-4 text-foreground" />
-										</Button>
-									}
-								/>
-								<DropdownMenuContent align="end" className="w-40 border border-border bg-popover/95 shadow-md">
-									<DropdownMenuLabel className="truncate text-xs font-bold">{svc.name}</DropdownMenuLabel>
-									<DropdownMenuItem
-										onClick={() => onDeploy?.(svc)}
-										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5"
-									>
-										<RefreshCw className="size-3.5" />
-										Deploy
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => onStart?.(svc)}
-										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-emerald-500 focus:text-emerald-500"
-									>
-										<Play className="size-3.5 fill-current" />
-										Start
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => onStop?.(svc)}
-										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-orange-500 focus:text-orange-500"
-									>
-										<Square className="size-3.5 fill-current" />
-										Stop
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</TableCell>
+		<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+			<Table>
+				<TableHeader>
+					<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Service</TableHead>
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Type</TableHead>
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Server</TableHead>
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Created</TableHead>
+						<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Last Deploy</TableHead>
+						<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
 					</TableRow>
-				))}
-			</TableBody>
-		</Table>
+				</TableHeader>
+				<TableBody>
+					{services.map((svc) => (
+						<TableRow key={svc.key} className="border-b border-border/40 hover:bg-muted/40 transition-colors">
+							<TableCell className="py-3.5 px-4">
+								<Link
+									to="/projects/$id"
+									params={{ id: String(svc.projectId) }}
+									className="flex items-center gap-3 group"
+								>
+									{renderIcon(svc.type, svc.dbKind)}
+									<div className="flex flex-col min-w-0">
+										<span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+											{svc.name}
+										</span>
+										<span className="text-xs text-muted-foreground truncate">
+											{svc.projectName} / {svc.environmentName}
+										</span>
+									</div>
+								</Link>
+							</TableCell>
+							<TableCell className="py-3.5 px-4 text-xs font-semibold text-foreground">
+								{svc.dbKind ? TYPE_DISPLAY_NAMES[svc.dbKind] || svc.dbKind : TYPE_DISPLAY_NAMES[svc.type] || svc.type}
+							</TableCell>
+							<TableCell className="py-3.5 px-4">{renderStatusBadge(svc.status)}</TableCell>
+							<TableCell className="py-3.5 px-4">
+								<div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+									<ServerIcon className="size-4 text-muted-foreground/70" />
+									<span className="truncate">{svc.serverName || 'Rustploy Server'}</span>
+								</div>
+							</TableCell>
+							<TableCell className="py-3.5 px-4">{formatDate(svc.createdAt)}</TableCell>
+							<TableCell className="py-3.5 px-4">{formatDate(svc.lastDeployAt || svc.createdAt)}</TableCell>
+							<TableCell className="py-3.5 px-4 text-right">
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button variant="ghost" size="icon" className="size-8 p-0 text-muted-foreground hover:text-foreground">
+												<MoreHorizontal className="size-4 text-foreground" />
+											</Button>
+										}
+									/>
+									<DropdownMenuContent align="end" className="w-44 border border-border bg-popover/95 shadow-md">
+										<DropdownMenuLabel className="truncate text-xs font-bold">{svc.name}</DropdownMenuLabel>
+										<DropdownMenuItem
+											onClick={() => onDeploy?.(svc)}
+											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5"
+										>
+											<RefreshCw className="size-3.5" />
+											Deploy
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => onStart?.(svc)}
+											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-emerald-500 focus:text-emerald-500"
+										>
+											<Play className="size-3.5 fill-current" />
+											Start
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => onStop?.(svc)}
+											className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-orange-500 focus:text-orange-500"
+										>
+											<Square className="size-3.5 fill-current" />
+											Stop
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
+		</div>
 	);
 };
