@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Terminal as TerminalIcon, X, Box } from 'lucide-react';
+import { Terminal as TerminalIcon, X, Box, Server as ServerIcon } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select';
 import { Terminal } from '@xterm/xterm';
@@ -124,7 +124,11 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		try { fitAddon.fit(); } catch (_) {}
 
 		setStatus('connecting');
-		term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
+		if (isRemoteServer) {
+			term.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
+		} else {
+			term.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
+		}
 
 		let token: string | undefined;
 		try {
@@ -147,16 +151,18 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		socket.on('connect', () => {
 			setStatus('connected');
-			term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
-			if (isRemoteServer && serverId) {
+			if (isRemoteServer) {
+				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}] on Remote Server [${targetContainer}]...\x1b[0m\r\n`);
 				socket.emit('server:start', { server_id: serverId, command: shell });
 			} else {
+				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
 				socket.emit('docker:start', { container: targetContainer, shell });
 			}
 		});
 
 		socket.on('started', (data: { kind?: string }) => {
-			term.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
+			term.writeln(`\x1b[32mTerminal session started (${label}). Type commands below:\x1b[0m\r\n`);
 			term.focus();
 		});
 
@@ -238,7 +244,11 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
 
 		const term = termInstanceRef.current;
-		term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on container '${targetContainer}'...\x1b[0m\r\n`);
+		if (isRemoteServer) {
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${targetContainer}]...\x1b[0m\r\n`);
+		} else {
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+		}
 		setStatus('connecting');
 
 		if (isRemoteServer && serverId) {
@@ -256,10 +266,14 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/20 shrink-0">
 					<div className="flex items-center gap-3">
-						<TerminalIcon className="size-5 text-primary shrink-0" />
+						{isRemoteServer ? (
+							<ServerIcon className="size-5 text-primary shrink-0" />
+						) : (
+							<TerminalIcon className="size-5 text-primary shrink-0" />
+						)}
 						<div>
 							<h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-								Terminal Stream
+								{isRemoteServer ? 'Remote Server SSH Terminal' : 'Container Terminal Stream'}
 								<span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${
 									status === 'connected' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
 									status === 'connecting' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
@@ -269,7 +283,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 								</span>
 							</h3>
 							<p className="text-xs text-muted-foreground font-mono truncate max-w-md">
-								Container: <span className="text-foreground font-semibold">{targetContainer}</span>
+								{isRemoteServer ? 'Server Host: ' : 'Container: '}
+								<span className="text-foreground font-semibold">{targetContainer}</span>
 							</p>
 						</div>
 					</div>
