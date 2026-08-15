@@ -13,6 +13,9 @@ import '#/styles/index.css';
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
+		const alreadyUser = useAuthStore.getState().user;
+		if (alreadyUser) return;
+
 		const session = localStorage.getItem('openoxide-auth-session');
 		if (!session || session === 'undefined') {
 			useAuthStore.getState().logout();
