@@ -58,12 +58,9 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // If bash is requested, use exec fallback chain so bash login prompt starts if present, or falls back to sh
-    if shell_req == "sh" {
-        args.push("sh".to_string());
-    } else {
-        args.push("sh -c 'exec bash -l 2>/dev/null || exec bash 2>/dev/null || exec sh'".to_string());
-    }
+    // Master branch working remote command execution formula
+    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_req}");
+    args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
