@@ -171,16 +171,16 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Deployments will appear here once triggered</p>
 							</div>
 						) : (
-							<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-270px)] min-h-[380px] shadow-xs">
 								<Table>
-									<TableHeader>
-										<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px]">ID</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Deployment</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Type</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Created</TableHead>
-											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
+									<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
+										<TableRow className="border-b border-border/60 hover:bg-transparent">
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px] bg-card/95 backdrop-blur-md sticky top-0 z-20">ID</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Deployment</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Type</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Status</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Created</TableHead>
+											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Actions</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -205,16 +205,16 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Active or building deployments will appear here in real time</p>
 							</div>
 						) : (
-							<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-270px)] min-h-[380px] shadow-xs">
 								<Table>
-									<TableHeader>
-										<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px]">ID</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Deployment</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Type</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
-											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Created</TableHead>
-											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
+									<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
+										<TableRow className="border-b border-border/60 hover:bg-transparent">
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px] bg-card/95 backdrop-blur-md sticky top-0 z-20">ID</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Deployment</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Type</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Status</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Created</TableHead>
+											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider bg-card/95 backdrop-blur-md sticky top-0 z-20">Actions</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
