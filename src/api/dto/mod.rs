@@ -32,3 +32,4 @@ pub mod tag;
 pub mod traefik;
 pub mod vault;
 pub mod dns;
+pub mod overview;

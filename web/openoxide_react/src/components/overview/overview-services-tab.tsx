@@ -1,178 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Search, Folder, Building2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
 import { ServiceCard } from '#/components/projects/service/service-card';
 import { useOrganizationStore } from '#/stores/organization-store';
-import {
-	useProjectListByOrganization,
-	useEnvironmentListByProject,
-	useApplicationListByEnvironment,
-	useComposeListByEnvironment,
-	usePostgresListByEnvironment,
-	useMysqlListByEnvironment,
-	useMariadbListByEnvironment,
-	useMongoListByEnvironment,
-	useRedisListByEnvironment,
-} from 'virtual:openoxide-live';
-
-export type AggregatedService = {
-	key: string;
-	projectId: number;
-	type: 'APP' | 'COMPOSE' | 'DATABASE';
-	id: number;
-	name: string;
-	subtitle: string;
-	status: string;
-	createdAt: number;
-	dbKind?: string;
-};
-
-// Component for a single Environment that queries all services reactively
-function EnvironmentServicesFetcher({
-	projectId,
-	projName,
-	envId,
-	envName,
-	onServicesUpdate,
-}: {
-	projectId: number;
-	projName: string;
-	envId: number;
-	envName: string;
-	onServicesUpdate: (envId: number, services: AggregatedService[]) => void;
-}) {
-	const { data: apps = [] } = useApplicationListByEnvironment(BigInt(envId));
-	const { data: composes = [] } = useComposeListByEnvironment(BigInt(envId));
-	const { data: pgDbs = [] } = usePostgresListByEnvironment(BigInt(envId));
-	const { data: myDbs = [] } = useMysqlListByEnvironment(BigInt(envId));
-	const { data: mariaDbs = [] } = useMariadbListByEnvironment(BigInt(envId));
-	const { data: mongoDbs = [] } = useMongoListByEnvironment(BigInt(envId));
-	const { data: redisDbs = [] } = useRedisListByEnvironment(BigInt(envId));
-
-	useEffect(() => {
-		const list: AggregatedService[] = [];
-
-		(apps || []).forEach((app: any) => {
-			const id = Number(app.id);
-			if (id) {
-				list.push({
-					key: `APP-${id}`,
-					projectId,
-					type: 'APP',
-					id,
-					name: app.name || app.app_name || `App #${id}`,
-					subtitle: `${projName} / ${envName}`,
-					status: app.application_status || app.status || 'idle',
-					createdAt: app.created_at || Date.now() / 1000,
-				});
-			}
-		});
-
-		(composes || []).forEach((comp: any) => {
-			const id = Number(comp.id);
-			if (id) {
-				list.push({
-					key: `COMPOSE-${id}`,
-					projectId,
-					type: 'COMPOSE',
-					id,
-					name: comp.name || comp.app_name || `Compose #${id}`,
-					subtitle: `${projName} / ${envName}`,
-					status: comp.compose_status || comp.status || 'idle',
-					createdAt: comp.created_at || Date.now() / 1000,
-				});
-			}
-		});
-
-		const dbsWithKind = [
-			...(pgDbs || []).map((d: any) => ({ ...d, kind: 'postgres' })),
-			...(myDbs || []).map((d: any) => ({ ...d, kind: 'mysql' })),
-			...(mariaDbs || []).map((d: any) => ({ ...d, kind: 'mariadb' })),
-			...(mongoDbs || []).map((d: any) => ({ ...d, kind: 'mongo' })),
-			...(redisDbs || []).map((d: any) => ({ ...d, kind: 'redis' })),
-		];
-
-		dbsWithKind.forEach((db: any) => {
-			const id = Number(db.id);
-			if (id) {
-				list.push({
-					key: `DATABASE-${id}`,
-					projectId,
-					type: 'DATABASE',
-					id,
-					name: db.name || db.database_name || `DB #${id}`,
-					subtitle: `${projName} / ${envName}`,
-					status: db.database_status || db.status || 'idle',
-					dbKind: db.kind,
-					createdAt: db.created_at || Date.now() / 1000,
-				});
-			}
-		});
-
-		onServicesUpdate(envId, list);
-	}, [apps, composes, pgDbs, myDbs, mariaDbs, mongoDbs, redisDbs, projectId, projName, envId, envName]);
-
-	return null;
-}
-
-// Component for a single Project that queries all environments reactively
-function ProjectFetcher({
-	projectId,
-	projName,
-	onServicesUpdate,
-}: {
-	projectId: number;
-	projName: string;
-	onServicesUpdate: (envId: number, services: AggregatedService[]) => void;
-}) {
-	const { data: envs = [] } = useEnvironmentListByProject(BigInt(projectId));
-
-	return (
-		<>
-			{(envs || []).map((env: any) => (
-				<EnvironmentServicesFetcher
-					key={env.id}
-					projectId={projectId}
-					projName={projName}
-					envId={Number(env.id)}
-					envName={env.name || 'production'}
-					onServicesUpdate={onServicesUpdate}
-				/>
-			))}
-		</>
-	);
-}
+import { $api } from '#/api/query';
+import { useProjectListByOrganization } from 'virtual:openoxide-live';
 
 export function OverviewServicesTab() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [typeFilter, setTypeFilter] = useState('all');
 	const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
-	const [envServicesMap, setEnvServicesMap] = useState<Record<number, AggregatedService[]>>({});
 
 	const { organizations, activeOrg, setActiveOrg } = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
+	// Live Projects for filter dropdown
 	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
 
-	const handleServicesUpdate = (envId: number, services: AggregatedService[]) => {
-		setEnvServicesMap((prev) => {
-			if (JSON.stringify(prev[envId]) === JSON.stringify(services)) return prev;
-			return { ...prev, [envId]: services };
-		});
-	};
+	// Single backend endpoint query for ALL services in the organization
+	const { data: rawServices, isLoading } = $api.useQuery('get', '/overview/services/organization/{organization_id}', {
+		params: {
+			path: {
+				organization_id: orgId,
+			},
+		},
+	});
 
-	// Aggregate all services across all envs
-	const allServices = React.useMemo(() => {
-		const map = new Map<string, AggregatedService>();
-		Object.values(envServicesMap).forEach((list) => {
-			list.forEach((s) => map.set(s.key, s));
-		});
-		return Array.from(map.values());
-	}, [envServicesMap]);
+	// Transform API services list for rendering
+	const allServices = useMemo(() => {
+		if (!rawServices || !Array.isArray(rawServices)) return [];
+
+		return rawServices.map((svc: any) => ({
+			key: `${svc.service_type}-${svc.id}`,
+			projectId: Number(svc.project_id),
+			type: svc.service_type as 'APP' | 'COMPOSE' | 'DATABASE',
+			id: Number(svc.id),
+			name: svc.name,
+			subtitle: `${svc.project_name} / ${svc.environment_name}`,
+			status: svc.status || 'idle',
+			createdAt: Number(svc.created_at),
+			dbKind: svc.db_kind || undefined,
+		}));
+	}, [rawServices]);
 
 	// Filtered services
-	const filteredServices = React.useMemo(() => {
+	const filteredServices = useMemo(() => {
 		return allServices.filter((s) => {
 			const matchesSearch =
 				!searchQuery ||
@@ -194,16 +67,6 @@ export function OverviewServicesTab() {
 
 	return (
 		<div className="space-y-4">
-			{/* Mount Reactive Stream Fetchers for each Project */}
-			{(projectsToUse || []).map((proj: any) => (
-				<ProjectFetcher
-					key={proj.id}
-					projectId={Number(proj.id)}
-					projName={proj.name || `Project #${proj.id}`}
-					onServicesUpdate={handleServicesUpdate}
-				/>
-			))}
-
 			{/* Organization Context & Project Selector Bar */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border/60">
 				<div className="flex items-center gap-2">
@@ -294,7 +157,13 @@ export function OverviewServicesTab() {
 			</div>
 
 			{/* Services Grid */}
-			{filteredServices.length === 0 ? (
+			{isLoading ? (
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+					{[1, 2, 3].map((i) => (
+						<div key={i} className="h-36 animate-pulse rounded-xl bg-card border border-border/40" />
+					))}
+				</div>
+			) : filteredServices.length === 0 ? (
 				<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
 					<Box className="size-8 text-muted-foreground/40 mb-2" />
 					<p className="text-sm font-semibold text-foreground">No services found</p>

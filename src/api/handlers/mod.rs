@@ -34,6 +34,7 @@ pub mod traefik;
 pub mod vault;
 pub mod dns;
 pub mod webhook;
+pub mod overview;
 
 pub use vault::VaultController;
 pub use dns::DnsController;

@@ -33,3 +33,4 @@ pub mod user;
 pub mod vault;
 pub mod dns;
 pub mod webhook;
+pub mod overview;
