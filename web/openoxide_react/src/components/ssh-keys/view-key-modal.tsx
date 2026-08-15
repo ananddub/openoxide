@@ -7,7 +7,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import {useSshKeyGet} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {toast} from 'sonner';
 import {Copy, Check, Eye, EyeOff, Key, Terminal, Download} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
@@ -29,8 +29,9 @@ export function ViewKeyModal({
 	const [copiedPrivate, setCopiedPrivate] = useState(false);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
-	const {data: fullKeyDetails} = useSshKeyGet(BigInt(sshKey?.id ?? 0));
-
+	// Read full SSH Key details directly from Zustand RAM Store
+	const storeSshKeys = useAppStore((state) => state.sshKeys || []);
+	const fullKeyDetails = storeSshKeys.find((k: any) => String(k.id) === String(sshKey?.id));
 	const activeKey = fullKeyDetails || sshKey;
 
 	const handleCopyPub = () => {

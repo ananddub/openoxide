@@ -5,7 +5,6 @@ import { Badge } from '#/components/ui/badge';
 import { toast } from 'sonner';
 import { $api } from '#/api/query';
 import { formatApiError } from '#/api/utils';
-import { useBackupListVolumeBackups } from 'virtual:openoxide-live';
 import { ComposeDomainsTable } from './domains/compose-domains-table';
 import { ComposeDomainModal } from './domains/compose-domain-modal';
 

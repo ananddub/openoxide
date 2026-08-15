@@ -8,27 +8,33 @@ import {
 } from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
-import { useProjectGet, useApplicationGet, useComposeGet, usePostgresGet } from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import { useRealtimeSync } from '#/hooks/use-realtime-sync';
 
 function ProjectNameBreadcrumb({ id }: { id: number }) {
-	const { data: project } = useProjectGet(BigInt(id));
+	const projects = useAppStore((state) => state.projects || []);
+	const project = projects.find((p: any) => Number(p.id) === Number(id));
 	return <>{project?.name || `Project #${id}`}</>;
 }
 
 function AppNameBreadcrumb({ id }: { id: number }) {
-	const { data: app } = useApplicationGet(BigInt(id));
+	const apps = useAppStore((state) => state.applications || []);
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
+	const app = apps.find((a: any) => Number(a.id) === Number(id)) || overviewServices.find((s: any) => Number(s.id) === Number(id));
 	return <>{app?.name || app?.app_name || `App #${id}`}</>;
 }
 
 function ComposeNameBreadcrumb({ id }: { id: number }) {
-	const { data: compose } = useComposeGet(BigInt(id));
+	const composes = useAppStore((state) => state.composes || []);
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
+	const compose = composes.find((c: any) => Number(c.id) === Number(id)) || overviewServices.find((s: any) => Number(s.id) === Number(id));
 	return <>{compose?.name || compose?.app_name || `Compose #${id}`}</>;
 }
 
 function DatabaseNameBreadcrumb({ id }: { id: number }) {
-	const { data: postgresDb } = usePostgresGet(BigInt(id));
-	return <>{postgresDb?.name || postgresDb?.database_name || postgresDb?.app_name || `Database #${id}`}</>;
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
+	const db = overviewServices.find((s: any) => Number(s.id) === Number(id));
+	return <>{db?.name || db?.app_name || `DB #${id}`}</>;
 }
 
 

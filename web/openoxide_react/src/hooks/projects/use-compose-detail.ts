@@ -7,8 +7,6 @@ import {
 	useComposeGet,
 	useDomainListByCompose,
 	useScheduleListByCompose,
-	useBackupListVolumeBackups,
-	useDeploymentList,
 } from 'virtual:openoxide-live';
 
 import { useAppStore } from '#/stores/app-store';
@@ -50,28 +48,20 @@ export function useComposeDetail(composeId: number) {
 	// 3. Central Schedules Query
 	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByCompose(BigInt(composeId));
 
-	// 4. Central Backups Query — filter locally by compose_id
-	const {data: rawBackupsAll, loading: isLoadingBackups} = useBackupListVolumeBackups();
-
-	// 5. Central Deployments Query
-	const {data: rawDeployments, loading: isLoadingDeployments} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: BigInt(composeId),
-		database_id: null,
-		server_id: null,
-		limit: null,
-		offset: null,
-	});
+	// Read backups and deployments directly from Zustand RAM store
+	const storeBackups = useAppStore((state) => state.backups || []);
+	const storeDeployments = useAppStore((state) => state.deployments || []);
 
 	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
 	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
 	const backups = useMemo(() => {
-		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
-		return all.filter((b: any) => b.compose_id === composeId);
-	}, [rawBackupsAll, composeId]);
-	const deployments = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
+		return storeBackups.filter((b: any) => Number(b.compose_id) === Number(composeId));
+	}, [storeBackups, composeId]);
+	const deployments = useMemo(() => {
+		return storeDeployments.filter((d: any) => Number(d.compose_id) === Number(composeId));
+	}, [storeDeployments, composeId]);
+	const isLoadingBackups = false;
+	const isLoadingDeployments = false;
 
 	// 6. Central Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(composeId, 'compose');

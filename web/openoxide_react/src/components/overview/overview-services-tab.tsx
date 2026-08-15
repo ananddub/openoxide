@@ -13,10 +13,6 @@ import { useOrganizationStore } from '#/stores/organization-store';
 import { useAppStore } from '#/stores/app-store';
 import { $api } from '#/api/query';
 import { client } from '#/api/client';
-import {
-	useOverviewServices,
-	useProjectListByOrganization,
-} from 'virtual:openoxide-live';
 import { toast } from 'sonner';
 import { formatApiError } from '#/api/utils';
 import {

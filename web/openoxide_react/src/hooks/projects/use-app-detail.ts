@@ -7,8 +7,6 @@ import {
 	useApplicationGet,
 	useDomainListByApplication,
 	useScheduleListByApplication,
-	useBackupListVolumeBackups,
-	useDeploymentList,
 } from 'virtual:openoxide-live';
 
 import { useAppStore } from '#/stores/app-store';
@@ -50,28 +48,20 @@ export function useAppDetail(appId: number) {
 	// 3. Schedules Query
 	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByApplication(BigInt(appId));
 
-	// 4. Backups Query — filter locally by application_id
-	const {data: rawBackupsAll, loading: isLoadingBackups} = useBackupListVolumeBackups();
-
-	// 5. Deployments Query
-	const {data: rawDeployments, loading: isLoadingDeployments} = useDeploymentList({
-		status: null,
-		state: null,
-		application_id: BigInt(appId),
-		compose_id: null,
-		database_id: null,
-		server_id: null,
-		limit: null,
-		offset: null,
-	});
+	// Read backups and deployments directly from Zustand RAM store
+	const storeBackups = useAppStore((state) => state.backups || []);
+	const storeDeployments = useAppStore((state) => state.deployments || []);
 
 	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
 	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
 	const backups = useMemo(() => {
-		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
-		return all.filter((b: any) => b.application_id === appId);
-	}, [rawBackupsAll, appId]);
-	const deployments = useMemo(() => (Array.isArray(rawDeployments) ? rawDeployments : []), [rawDeployments]);
+		return storeBackups.filter((b: any) => Number(b.application_id) === Number(appId));
+	}, [storeBackups, appId]);
+	const deployments = useMemo(() => {
+		return storeDeployments.filter((d: any) => Number(d.application_id) === Number(appId));
+	}, [storeDeployments, appId]);
+	const isLoadingBackups = false;
+	const isLoadingDeployments = false;
 
 	// 6. Central Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(appId, 'application');

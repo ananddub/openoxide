@@ -5,7 +5,7 @@ import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import {useBackupListVolumeBackups} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
 
@@ -59,18 +59,17 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time volume backups live hook (fallback if not passed from parent)
-	const {data: rawBackups, loading: innerLoading} = useBackupListVolumeBackups();
+	// Read volume backups directly from Zustand RAM Store
+	const storeBackups = useAppStore((state) => state.backups || []);
 
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
-		if (passedBackups) return passedBackups;
-		const list = rawBackups ?? [];
-		return list.filter(
-			(b: any) => b.compose_id === compose?.id || b.app_name === compose?.app_name
+		if (passedBackups && passedBackups.length > 0) return passedBackups;
+		return storeBackups.filter(
+			(b: any) => Number(b.compose_id) === Number(compose?.id) || b.app_name === compose?.app_name
 		);
-	}, [passedBackups, rawBackups, compose]);
-	const isLoading = passedIsLoading ?? innerLoading;
+	}, [passedBackups, storeBackups, compose]);
+	const isLoading = false;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/backups/volume');

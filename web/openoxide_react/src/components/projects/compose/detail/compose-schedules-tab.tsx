@@ -5,7 +5,7 @@ import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import {useScheduleListByCompose} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
 
@@ -59,13 +59,16 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 
-	// Real-time compose schedules query (fallback if not passed from parent)
+	// Read schedules directly from Zustand RAM Store
 	const composeId = compose?.id;
-	const {data: rawSchedules, loading: innerLoading} = useScheduleListByCompose(BigInt(composeId ?? 0));
+	const storeSchedules = useAppStore((state) => state.schedules || []);
 
 	// Safe array normalization
-	const composeSchedules = passedSchedules ?? (rawSchedules ?? []);
-	const isLoading = passedIsLoading ?? innerLoading;
+	const composeSchedules = useMemo(() => {
+		if (passedSchedules && passedSchedules.length > 0) return passedSchedules;
+		return storeSchedules.filter((s: any) => Number(s.compose_id) === Number(composeId));
+	}, [passedSchedules, storeSchedules, composeId]);
+	const isLoading = false;
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
