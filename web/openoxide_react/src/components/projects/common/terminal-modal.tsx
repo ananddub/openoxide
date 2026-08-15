@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Terminal as TerminalIcon, X, Box, Server as ServerIcon } from 'lucide-react';
 import { Button } from '#/components/ui/button';
@@ -6,9 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import type { Socket } from 'socket.io-client';
-import { socketFor } from '#/live/socket';
 import { load as yamlLoad } from 'js-yaml';
+import { useTerminalSocket } from '#/hooks/terminal/use-terminal-socket';
 
 interface TerminalModalProps {
 	app: any;
@@ -31,26 +30,11 @@ export const extractServicesFromYaml = (yamlStr?: string): string[] => {
 	return [];
 };
 
-const CONTROL_KEY_MAP: Record<string, string> = {
-	l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15', a: '\x01', e: '\x05', k: '\x0b', w: '\x17',
-};
-
-function getSocketBaseUrl(): string {
-	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
-	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
-	return '';
-}
-
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
-	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-	const [activeHostIp, setActiveHostIp] = useState<string | null>(null);
+	const [termInstance, setTermInstance] = useState<Terminal | null>(null);
 	const termRef = useRef<HTMLDivElement>(null);
-	const socketRef = useRef<Socket | null>(null);
-	const termInstanceRef = useRef<Terminal | null>(null);
-	const isFirstMountRef = useRef<boolean>(true);
-	const socketConnectedRef = useRef<boolean>(false);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -68,39 +52,19 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const isRemoteServer = Boolean(app?.isRemoteServer);
 	const serverId = app?.server_id || app?.serverId || (isRemoteServer ? app?.id : undefined);
 
-	// Start terminal session handler
-	const emitStartSession = useCallback((sock: Socket, shellMode: string) => {
-		if (!sock.connected) return;
-		if (isRemoteServer && serverId) {
-			sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode });
-		} else {
-			sock.emit('docker:start', { container: targetContainer, shell: shellMode });
-		}
-	}, [isRemoteServer, serverId, targetContainer]);
-
-	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
+	// Initialize Xterm instance and FitAddon
 	useEffect(() => {
 		if (!open) {
-			socketConnectedRef.current = false;
-			if (socketRef.current) {
-				socketRef.current.removeAllListeners();
-				socketRef.current.disconnect();
-				socketRef.current = null;
+			if (termInstance) {
+				termInstance.dispose();
+				setTermInstance(null);
 			}
-			if (termInstanceRef.current) {
-				termInstanceRef.current.dispose();
-				termInstanceRef.current = null;
-			}
-			setStatus('disconnected');
-			setActiveHostIp(null);
 			return;
 		}
 
 		if (!termRef.current) return;
 		termRef.current.innerHTML = '';
-		isFirstMountRef.current = true;
 
-		// Full Vibrant 24-bit TrueColor ANSI Theme Palette matching Alacritty / VS Code Pro
 		const term = new Terminal({
 			cursorBlink: true,
 			lineHeight: 1.35,
@@ -133,157 +97,32 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				brightWhite: '#ffffff',
 			},
 		});
-		termInstanceRef.current = term;
 
 		const fitAddon = new FitAddon();
 		term.loadAddon(fitAddon);
 		term.open(termRef.current);
 		try { fitAddon.fit(); } catch (_) {}
-
-		setStatus('connecting');
-		if (isRemoteServer) {
-			term.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
-		} else {
-			term.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
-		}
-
-		// Fresh socket per modal open — terminal sessions must not share a socket with other
-		// modals or with the live-query singleton (which would mix up output/exit events).
-		let token: string | undefined;
-		try {
-			token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
-		} catch {}
-
-		const socketUrl = `${getSocketBaseUrl()}/terminal`;
-		const socket = io(socketUrl, {
-			path: '/socket.io',
-			transports: ['websocket'],
-			forceNew: true,
-			multiplex: false,
-			reconnection: true,
-			reconnectionAttempts: 10,
-			auth: (cb) => {
-				let t = token;
-				try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
-				cb({ token: t });
-			},
-		});
-		socketRef.current = socket;
-
-		socket.on('connect', () => {
-			socketConnectedRef.current = true;
-			setStatus('connected');
-			if (isRemoteServerRef.current) {
-				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shellRef.current}]...\x1b[0m\r\n`);
-			} else {
-				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
-			}
-			emitStartSession(socket, shellRef.current);
-		});
-
-		if (socket.connected && !socketConnectedRef.current) {
-			socketConnectedRef.current = true;
-			setStatus('connected');
-			emitStartSession(socket, shellRef.current);
-		}
-
-		socket.on('started', (data: { kind?: string; host?: string }) => {
-			if (data?.host) setActiveHostIp(data.host);
-			const connectedTarget = data?.host || targetContainer;
-			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
-			term.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
-			term.focus();
-		});
-
-		socket.on('output', (evt: { data: string }) => {
-			if (evt?.data) term.write(evt.data);
-		});
-
-		socket.on('error', (err: unknown) => {
-			const msg = typeof err === 'string' ? err : (err as { message?: string })?.message || 'Error';
-			term.writeln(`\r\n\x1b[31mError: ${msg}\x1b[0m\r\n`);
-			setStatus('error');
-		});
-
-		socket.on('exit', (evt: { code: number }) => {
-			term.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
-			setStatus('disconnected');
-		});
-
-		socket.on('disconnect', (reason) => {
-			if (socketRef.current !== socket) return;
-			setStatus('disconnected');
-			if (reason !== 'io client disconnect') {
-				term.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
-			}
-		});
-
-		term.onData((data) => { if (socket.connected) socket.emit('input', { data }); });
-		term.onResize(({ cols, rows }) => { if (socket.connected) socket.emit('resize', { cols, rows }); });
-
-		term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-			if (event.ctrlKey || event.metaKey) {
-				const k = event.key.toLowerCase();
-				if (k === 'c' && term.hasSelection()) {
-					if (event.type === 'keydown') navigator.clipboard.writeText(term.getSelection());
-					event.preventDefault(); return false;
-				}
-				if (k === 'v') {
-					if (event.type === 'keydown') {
-						navigator.clipboard.readText().then((text) => {
-							if (text && socket.connected) socket.emit('input', { data: text });
-						}).catch(() => {});
-					}
-					event.preventDefault(); return false;
-				}
-				if (CONTROL_KEY_MAP[k]) {
-					if (event.type === 'keydown' && socket.connected) {
-						if (k === 'l') { term.clear(); socket.emit('input', { data: 'clear\r' }); }
-						else { socket.emit('input', { data: CONTROL_KEY_MAP[k] }); }
-					}
-					event.preventDefault(); return false;
-				}
-			}
-			return true;
-		});
+		setTermInstance(term);
 
 		const handleWindowResize = () => { try { fitAddon.fit(); } catch (_) {} };
 		window.addEventListener('resize', handleWindowResize);
 
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
-			socketConnectedRef.current = false;
-			if (socketRef.current) {
-				socketRef.current.removeAllListeners();
-				socketRef.current.disconnect();
-				socketRef.current = null;
-			}
-			if (termInstanceRef.current) {
-				termInstanceRef.current.dispose();
-				termInstanceRef.current = null;
-			}
+			term.dispose();
+			setTermInstance(null);
 		};
 	}, [open]);
 
-	// Dynamic Shell / Target Container Switch: Emits start event on existing live socket without tear-down
-	useEffect(() => {
-		if (isFirstMountRef.current) {
-			isFirstMountRef.current = false;
-			return;
-		}
-		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
-
-		const term = termInstanceRef.current;
-		const connectedTarget = activeHostIp || targetContainer;
-		if (isRemoteServer) {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
-		} else {
-			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
-		}
-		setStatus('connecting');
-
-		emitStartSession(socketRef.current, shell);
-	}, [targetContainer, shell, emitStartSession]);
+	// Reusable Terminal Socket Hook
+	const { status, activeHostIp } = useTerminalSocket({
+		isOpen: open,
+		targetContainer,
+		shell,
+		isRemoteServer,
+		serverId,
+		termInstance,
+	});
 
 	if (!open) return null;
 

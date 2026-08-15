@@ -3,13 +3,17 @@ import type { Socket } from 'socket.io-client';
 import { socketFor } from '#/live/socket';
 import type { Terminal } from '@xterm/xterm';
 
+const CONTROL_KEY_MAP: Record<string, string> = {
+	l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15', a: '\x01', e: '\x05', k: '\x0b', w: '\x17',
+};
+
 interface UseTerminalSocketOptions {
 	isOpen: boolean;
 	targetContainer: string;
 	shell: string;
 	isRemoteServer: boolean;
 	serverId?: number;
-	termRef: React.RefObject<Terminal | null>;
+	termInstance: Terminal | null;
 }
 
 export function useTerminalSocket({
@@ -18,14 +22,16 @@ export function useTerminalSocket({
 	shell,
 	isRemoteServer,
 	serverId,
-	termRef,
+	termInstance,
 }: UseTerminalSocketOptions) {
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('disconnected');
+	const [activeHostIp, setActiveHostIp] = useState<string | null>(null);
 	const socketRef = useRef<Socket | null>(null);
-	const startedRef = useRef(false);
+	const isFirstMountRef = useRef<boolean>(true);
 
 	useEffect(() => {
 		if (!isOpen) {
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
 				socketRef.current.off('connect');
 				socketRef.current.off('started');
@@ -35,72 +41,132 @@ export function useTerminalSocket({
 				socketRef.current.off('disconnect');
 				socketRef.current = null;
 			}
-			startedRef.current = false;
 			setStatus('disconnected');
+			setActiveHostIp(null);
 			return;
 		}
 
-		const term = termRef.current;
-		startedRef.current = false;
+		isFirstMountRef.current = true;
 		setStatus('connecting');
-		term?.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-		// Use global singleton live socket manager
-		const currentSocket = socketFor('/terminal').socket;
-		socketRef.current = currentSocket;
-
-		if (!currentSocket.connected) {
-			currentSocket.connect();
+		if (termInstance) {
+			if (isRemoteServer) {
+				termInstance.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
+			} else {
+				termInstance.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
+			}
 		}
 
-		const handleConnect = () => {
-			setStatus('connected');
+		// Use global singleton live socket manager
+		const socket = socketFor('/terminal').socket;
+		socketRef.current = socket;
+
+		if (!socket.connected) {
+			socket.connect();
+		}
+
+		const emitStartSession = (sock: Socket, shellMode: string) => {
+			if (!sock.connected) return;
 			if (isRemoteServer && serverId) {
-				currentSocket.emit('server:start', { server_id: serverId, shell, command: shell });
+				sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode });
 			} else {
-				currentSocket.emit('docker:start', { container: targetContainer, shell });
+				sock.emit('docker:start', { container: targetContainer, shell: shellMode });
 			}
 		};
 
-		currentSocket.on('connect', handleConnect);
+		const handleConnect = () => {
+			setStatus('connected');
+			if (termInstance) {
+				if (isRemoteServer) {
+					termInstance.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
+				} else {
+					termInstance.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+				}
+			}
+			emitStartSession(socket, shell);
+		};
 
-		if (currentSocket.connected) {
+		socket.on('connect', handleConnect);
+
+		if (socket.connected) {
 			handleConnect();
 		}
 
-		currentSocket.on('started', (data: { kind?: string; host?: string }) => {
-			startedRef.current = true;
-			const hostInfo = data?.host ? ` on ${data.host}` : '';
-			term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}${hostInfo}). Type commands below:\x1b[0m\r\n`);
-			term?.focus();
+		socket.on('started', (data: { kind?: string; host?: string }) => {
+			if (data?.host) setActiveHostIp(data.host);
+			const connectedTarget = data?.host || targetContainer;
+			const label = data?.kind === 'remote-server' ? 'SSH Remote Server' : 'Docker Container';
+			termInstance?.writeln(`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`);
+			termInstance?.focus();
 		});
 
-		currentSocket.on('output', (evt: { data: string }) => {
+		socket.on('output', (evt: { data: string }) => {
 			if (evt?.data) {
-				term?.write(evt.data);
+				termInstance?.write(evt.data);
 			}
 		});
 
-		currentSocket.on('error', (err: unknown) => {
+		socket.on('error', (err: unknown) => {
 			const message = typeof err === 'string' ? err : (err as { message?: string })?.message || 'Terminal socket error';
-			term?.writeln(`\r\n\x1b[31mError: ${message}\x1b[0m\r\n`);
+			termInstance?.writeln(`\r\n\x1b[31mError: ${message}\x1b[0m\r\n`);
 			setStatus('error');
 		});
 
-		currentSocket.on('exit', (evt: { code: number }) => {
-			term?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
+		socket.on('exit', (evt: { code: number }) => {
+			termInstance?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
 			setStatus('disconnected');
 		});
 
-		currentSocket.on('disconnect', (reason) => {
-			if (socketRef.current !== currentSocket) return;
+		socket.on('disconnect', (reason) => {
+			if (socketRef.current !== socket) return;
 			setStatus('disconnected');
 			if (reason !== 'io client disconnect') {
-				term?.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
+				termInstance?.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
 			}
 		});
 
+		let dataDisposable: { dispose: () => void } | undefined;
+		let resizeDisposable: { dispose: () => void } | undefined;
+
+		if (termInstance) {
+			dataDisposable = termInstance.onData((data) => {
+				if (socket.connected) socket.emit('input', { data });
+			});
+			resizeDisposable = termInstance.onResize(({ cols, rows }) => {
+				if (socket.connected) socket.emit('resize', { cols, rows });
+			});
+
+			termInstance.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+				if (event.ctrlKey || event.metaKey) {
+					const k = event.key.toLowerCase();
+					if (k === 'c' && termInstance.hasSelection()) {
+						if (event.type === 'keydown') navigator.clipboard.writeText(termInstance.getSelection());
+						event.preventDefault(); return false;
+					}
+					if (k === 'v') {
+						if (event.type === 'keydown') {
+							navigator.clipboard.readText().then((text) => {
+								if (text && socket.connected) socket.emit('input', { data: text });
+							}).catch(() => {});
+						}
+						event.preventDefault(); return false;
+					}
+					if (CONTROL_KEY_MAP[k]) {
+						if (event.type === 'keydown' && socket.connected) {
+							if (k === 'l') { termInstance.clear(); socket.emit('input', { data: 'clear\r' }); }
+							else { socket.emit('input', { data: CONTROL_KEY_MAP[k] }); }
+						}
+						event.preventDefault(); return false;
+					}
+				}
+				return true;
+			});
+		}
+
 		return () => {
+			dataDisposable?.dispose();
+			resizeDisposable?.dispose();
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
 				socketRef.current.off('connect', handleConnect);
 				socketRef.current.off('started');
@@ -111,10 +177,34 @@ export function useTerminalSocket({
 				socketRef.current = null;
 			}
 		};
-	}, [isOpen, targetContainer, shell, isRemoteServer, serverId, termRef]);
+	}, [isOpen, targetContainer, shell, isRemoteServer, serverId, termInstance]);
+
+	// Dynamic Shell / Target Container Switch
+	useEffect(() => {
+		if (isFirstMountRef.current) {
+			isFirstMountRef.current = false;
+			return;
+		}
+		if (!isOpen || !socketRef.current?.connected || !termInstance) return;
+
+		const connectedTarget = activeHostIp || targetContainer;
+		if (isRemoteServer) {
+			termInstance.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
+		} else {
+			termInstance.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
+		}
+		setStatus('connecting');
+
+		if (isRemoteServer && serverId) {
+			socketRef.current.emit('server:start', { server_id: serverId, shell, command: shell });
+		} else {
+			socketRef.current.emit('docker:start', { container: targetContainer, shell });
+		}
+	}, [targetContainer, shell, isOpen, isRemoteServer, serverId, termInstance, activeHostIp]);
 
 	return {
 		socket: socketRef.current,
 		status,
+		activeHostIp,
 	};
 }
