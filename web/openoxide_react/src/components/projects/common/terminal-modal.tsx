@@ -48,7 +48,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
-	const isFirstMountRef = useRef<boolean>(true);
+	// Track whether the initial session has already been started on this socket connection
+	const sessionStartedRef = useRef<boolean>(false);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -66,6 +67,10 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const isRemoteServer = Boolean(app?.isRemoteServer);
 	const serverId = app?.server_id || app?.serverId || (isRemoteServer ? app?.id : undefined);
 
+	// Keep a ref to the latest shell so socket event closures always see the current value
+	const shellRef = useRef(shell);
+	useEffect(() => { shellRef.current = shell; }, [shell]);
+
 	// Start terminal session handler
 	const emitStartSession = useCallback((sock: Socket, shellMode: string) => {
 		if (!sock.connected) return;
@@ -79,7 +84,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
 		if (!open) {
-			isFirstMountRef.current = true;
+			sessionStartedRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
@@ -96,7 +101,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		if (!termRef.current) return;
 		termRef.current.innerHTML = '';
-		isFirstMountRef.current = true;
+		sessionStartedRef.current = false;
 
 		// Full Vibrant 24-bit TrueColor ANSI Theme Palette matching Alacritty / VS Code Pro
 		const term = new Terminal({
@@ -169,17 +174,19 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		socket.on('connect', () => {
 			setStatus('connected');
 			if (isRemoteServer) {
-				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
+				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shellRef.current}]...\x1b[0m\r\n`);
 			} else {
-				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainer}]...\x1b[0m\r\n`);
 			}
-			emitStartSession(socket, shell);
+			sessionStartedRef.current = true;
+			emitStartSession(socket, shellRef.current);
 		});
 
-		// Immediate check if already connected
-		if (socket.connected) {
+		// Immediate check if already connected (socket reuse edge case)
+		if (socket.connected && !sessionStartedRef.current) {
 			setStatus('connected');
-			emitStartSession(socket, shell);
+			sessionStartedRef.current = true;
+			emitStartSession(socket, shellRef.current);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
@@ -247,7 +254,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
-			isFirstMountRef.current = true;
+			sessionStartedRef.current = false;
 			if (socketRef.current) {
 				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
@@ -261,12 +268,9 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	}, [open]);
 
 	// Dynamic Shell / Target Container Switch: Emits start event on existing live socket without tear-down
+	// Only fires AFTER the initial session has already been started (sessionStartedRef guards against double-fire on mount)
 	useEffect(() => {
-		if (isFirstMountRef.current) {
-			isFirstMountRef.current = false;
-			return;
-		}
-		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
+		if (!open || !sessionStartedRef.current || !socketRef.current?.connected || !termInstanceRef.current) return;
 
 		const term = termInstanceRef.current;
 		const connectedTarget = activeHostIp || targetContainer;

@@ -58,8 +58,16 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Master branch working remote command execution formula
-    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_req}");
+    // Build the remote command string.
+    // When SSH runs a command string, the shell starts in non-interactive mode by default.
+    // Passing `-i` forces interactive mode so bash loads .bashrc and shows PS1 prompt.
+    // `sh` does not need `-i` as it defaults to interactive when connected to a PTY.
+    let shell_cmd = if shell_req == "sh" {
+        "sh".to_string()
+    } else {
+        "bash -i".to_string()
+    };
+    let remote_cmd = format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_cmd}");
     args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
