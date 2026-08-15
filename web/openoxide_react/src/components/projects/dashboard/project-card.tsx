@@ -144,7 +144,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						</p>
 					)}
 
-					{/* Tag Badges with Exact Custom Colors */}
+					{/* Tag Badges with Exact Custom Colors & Increased Height */}
 					{projectTagNames.length > 0 && (
 						<div className="flex flex-wrap gap-1.5 pt-1">
 							{projectTagNames.map((t) => (
@@ -152,7 +152,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 									key={t}
 									name={t}
 									color={getTagColor(t)}
-									className="text-[10px] font-semibold px-2.5 py-0.5"
+									className="text-xs font-semibold px-3 py-1 min-h-[24px] shadow-2xs rounded-md"
 								/>
 							))}
 						</div>
