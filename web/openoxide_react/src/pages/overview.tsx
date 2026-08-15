@@ -171,7 +171,7 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Deployments will appear here once triggered</p>
 							</div>
 						) : (
-							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-270px)] min-h-[380px] shadow-xs">
+							<div className="rounded-xl border border-border/60 bg-card overflow-y-auto max-h-[calc(100vh-340px)] min-h-[280px] shadow-xs">
 								<Table>
 									<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
 										<TableRow className="border-b border-border/60 hover:bg-transparent">
