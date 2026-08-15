@@ -123,9 +123,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						{isEditing ? 'Update project' : 'Add a project'}
 					</DialogTitle>
 					<DialogDescription className="text-muted-foreground text-xs">
-						{isEditing
-							? 'Update your project name, description, and tags.'
-							: 'The home of something big!'}
+						The home of something big!
 					</DialogDescription>
 				</DialogHeader>
 
@@ -162,7 +160,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						/>
 					</div>
 
-					{/* Multiselect Tags Dropdown (with custom colors from Settings Tags) */}
+					{/* Multiselect Tags Dropdown */}
 					<div className="flex flex-col gap-1.5">
 						<Label className="text-xs font-semibold text-foreground">
 							Tags
