@@ -58,12 +58,9 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Export 256-color, TrueColor, FORCE_COLOR=3 and launch login shell (-l) so .bashrc / .profile prompts load
-    let target_shell = if shell_req.is_empty() { "bash" } else { &shell_req };
-    let remote_cmd = format!(
-        "export TERM=xterm-256color COLORTERM=truecolor FORCE_COLOR=3 CLICOLOR_FORCE=1 CLICOLOR=1; if command -v {target_shell} >/dev/null 2>&1; then exec {target_shell} -l; else exec sh -l; fi"
-    );
-    args.push(remote_cmd);
+    // Pass target shell directly to OpenSSH so sshd spawns it directly on the remote PTY
+    let target_shell = if shell_req == "sh" { "sh" } else { "bash" };
+    args.push(target_shell.to_string());
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
