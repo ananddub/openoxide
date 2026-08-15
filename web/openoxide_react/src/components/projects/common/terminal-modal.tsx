@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { useTerminalSocket } from '#/hooks/terminal/use-terminal-socket';
+import { io, type Socket } from 'socket.io-client';
 import { load as yamlLoad } from 'js-yaml';
 
 interface TerminalModalProps {
@@ -26,9 +26,7 @@ export const extractServicesFromYaml = (yamlStr?: string): string[] => {
 		if (doc && typeof doc === 'object' && doc.services && typeof doc.services === 'object' && !Array.isArray(doc.services)) {
 			return Object.keys(doc.services);
 		}
-	} catch (e) {
-		console.warn('[extractServicesFromYaml] Error parsing YAML:', e);
-	}
+	} catch {}
 	return [];
 };
 
@@ -39,7 +37,9 @@ const CONTROL_KEY_MAP: Record<string, string> = {
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('sh');
 	const [selectedService, setSelectedService] = useState('');
+	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
 	const termRef = useRef<HTMLDivElement>(null);
+	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
@@ -58,17 +58,21 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const isRemoteServer = Boolean(app?.isRemoteServer);
 	const serverId = app?.server_id || app?.serverId;
 
-	const { status, socketRef } = useTerminalSocket({
-		isOpen: open,
-		targetContainer,
-		shell,
-		isRemoteServer,
-		serverId,
-		termRef: termInstanceRef,
-	});
-
+	// Single unified lifecycle effect for Xterm canvas & persistent WebSocket connection
 	useEffect(() => {
-		if (!open) return;
+		if (!open) {
+			if (socketRef.current) {
+				socketRef.current.disconnect();
+				socketRef.current = null;
+			}
+			if (termInstanceRef.current) {
+				termInstanceRef.current.dispose();
+				termInstanceRef.current = null;
+			}
+			setStatus('disconnected');
+			return;
+		}
+
 		let term: Terminal | null = null;
 		let fitAddon: FitAddon | null = null;
 
@@ -87,20 +91,69 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			term.open(termRef.current);
 			try { fitAddon.fit(); } catch (_) {}
 
-			setTimeout(() => {
-				term?.focus();
-				const helper = termRef.current?.querySelector('textarea');
-				if (helper) helper.focus();
-			}, 50);
+			setStatus('connecting');
+			term.writeln(`\x1b[33mConnecting to container/host '${targetContainer}'...\x1b[0m\r\n`);
 
-			const handlePaste = (e: ClipboardEvent) => {
-				const text = e.clipboardData?.getData('text');
-				if (text && socketRef.current?.connected) {
-					socketRef.current.emit('input', { data: text });
+			let token: string | undefined;
+			try {
+				token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
+			} catch {}
+
+			const socket = io('/terminal', {
+				path: '/socket.io',
+				transports: ['websocket'],
+				reconnection: true,
+				reconnectionAttempts: 10,
+				auth: (cb) => {
+					let t = token;
+					try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
+					cb({ token: t });
+				},
+			});
+			socketRef.current = socket;
+
+			const startSession = () => {
+				setStatus('connected');
+				term?.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on '${targetContainer}'...\x1b[0m\r\n`);
+				if (isRemoteServer && serverId) {
+					socket.emit('server:start', { server_id: serverId, command: shell });
+				} else {
+					socket.emit('docker:start', { container: targetContainer, shell });
 				}
 			};
-			const el = termRef.current;
-			if (el) el.addEventListener('paste', handlePaste);
+
+			socket.on('connect', startSession);
+
+			socket.on('started', (data: { kind?: string }) => {
+				term?.writeln(`\x1b[32mTerminal session started (${data?.kind || 'docker'}). Type commands below:\x1b[0m\r\n`);
+				term?.focus();
+			});
+
+			socket.on('output', (evt: { data: string }) => {
+				if (evt?.data) term?.write(evt.data);
+			});
+
+			socket.on('error', (err: unknown) => {
+				const msg = typeof err === 'string' ? err : (err as { message?: string })?.message || 'Error';
+				term?.writeln(`\r\n\x1b[31mError: ${msg}\x1b[0m\r\n`);
+				setStatus('error');
+			});
+
+			socket.on('exit', (evt: { code: number }) => {
+				term?.writeln(`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`);
+				setStatus('disconnected');
+			});
+
+			socket.on('disconnect', (reason) => {
+				if (socketRef.current !== socket) return;
+				setStatus('disconnected');
+				if (reason !== 'io client disconnect') {
+					term?.writeln(`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`);
+				}
+			});
+
+			term.onData((data) => { if (socket.connected) socket.emit('input', { data }); });
+			term.onResize(({ cols, rows }) => { if (socket.connected) socket.emit('resize', { cols, rows }); });
 
 			term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
 				if (event.ctrlKey || event.metaKey) {
@@ -111,26 +164,23 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 					}
 					if (k === 'v') {
 						if (event.type === 'keydown') {
-							navigator.clipboard.readText().then(text => {
-								if (text && socketRef.current?.connected) socketRef.current.emit('input', { data: text });
+							navigator.clipboard.readText().then((text) => {
+								if (text && socket.connected) socket.emit('input', { data: text });
 							}).catch(() => {});
 						}
 						event.preventDefault(); return false;
 					}
 					if (CONTROL_KEY_MAP[k]) {
-						if (event.type === 'keydown' && socketRef.current?.connected) {
-							if (k === 'l') { term?.clear(); socketRef.current.emit('input', { data: 'clear\r' }); }
-							else { socketRef.current.emit('input', { data: CONTROL_KEY_MAP[k] }); }
+						if (event.type === 'keydown' && socket.connected) {
+							if (k === 'l') { term?.clear(); socket.emit('input', { data: 'clear\r' }); }
+							else { socket.emit('input', { data: CONTROL_KEY_MAP[k] }); }
 						}
 						event.preventDefault(); return false;
 					}
 				}
 				return true;
 			});
-
-			term.onData(data => { if (socketRef.current?.connected) socketRef.current.emit('input', { data }); });
-			term.onResize(({ cols, rows }) => { if (socketRef.current?.connected) socketRef.current.emit('resize', { cols, rows }); });
-		}, 100);
+		}, 80);
 
 		const handleWindowResize = () => { try { fitAddon?.fit(); } catch (_) {} };
 		window.addEventListener('resize', handleWindowResize);
@@ -138,10 +188,16 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		return () => {
 			clearTimeout(timer);
 			window.removeEventListener('resize', handleWindowResize);
-			term?.dispose();
-			termInstanceRef.current = null;
+			if (socketRef.current) {
+				socketRef.current.disconnect();
+				socketRef.current = null;
+			}
+			if (termInstanceRef.current) {
+				termInstanceRef.current.dispose();
+				termInstanceRef.current = null;
+			}
 		};
-	}, [open, targetContainer]);
+	}, [open, targetContainer, shell]);
 
 	if (!open) return null;
 
@@ -173,18 +229,18 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 						{isCompose && servicesList.length > 1 && (
 							<div className="flex items-center gap-1.5">
 								<Box className="size-3.5 text-muted-foreground shrink-0" />
-								<Select value={targetContainer} onValueChange={v => v && setSelectedService(v)}>
+								<Select value={targetContainer} onValueChange={(v) => v && setSelectedService(v)}>
 									<SelectTrigger className="h-8 text-xs font-mono bg-card border-border/60 w-[140px]">
 										<SelectValue placeholder="Service" />
 									</SelectTrigger>
 									<SelectContent className="bg-card border-border text-xs">
-										{servicesList.map(s => <SelectItem key={s} value={s} className="text-xs font-mono">{s}</SelectItem>)}
+										{servicesList.map((s) => <SelectItem key={s} value={s} className="text-xs font-mono">{s}</SelectItem>)}
 									</SelectContent>
 								</Select>
 							</div>
 						)}
 
-						<Select value={shell} onValueChange={v => v && setShell(v as 'sh' | 'bash')}>
+						<Select value={shell} onValueChange={(v) => v && setShell(v as 'sh' | 'bash')}>
 							<SelectTrigger className="h-8 text-xs font-mono bg-card border-border/60 w-[90px]">
 								<SelectValue placeholder="Shell" />
 							</SelectTrigger>
@@ -203,8 +259,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 				{/* Xterm.js Canvas Box */}
 				<div className="flex-1 p-3 bg-[#09090b] relative overflow-hidden min-h-0 cursor-text" onClick={() => {
 					termInstanceRef.current?.focus();
-					const helper = termRef.current?.querySelector('textarea');
-					if (helper) helper.focus();
 				}}>
 					<div ref={termRef} className="w-full h-full text-left font-mono" />
 				</div>
