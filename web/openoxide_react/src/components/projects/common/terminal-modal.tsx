@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { socketFor } from '#/live/socket';
 import { load as yamlLoad } from 'js-yaml';
 
 interface TerminalModalProps {
@@ -34,12 +35,6 @@ const CONTROL_KEY_MAP: Record<string, string> = {
 	l: '\x0c', c: '\x03', d: '\x04', z: '\x1a', u: '\x15', a: '\x01', e: '\x05', k: '\x0b', w: '\x17',
 };
 
-function getSocketBaseUrl(): string {
-	if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
-	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
-	return '';
-}
-
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
@@ -48,6 +43,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
+	const isFirstMountRef = useRef<boolean>(true);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -65,35 +61,27 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const isRemoteServer = Boolean(app?.isRemoteServer);
 	const serverId = app?.server_id || app?.serverId || (isRemoteServer ? app?.id : undefined);
 
-	// Refs so that socket event closures always see the latest values without stale captures
-	const shellRef = useRef(shell);
-	const targetContainerRef = useRef(targetContainer);
-	const isRemoteServerRef = useRef(isRemoteServer);
-	const serverIdRef = useRef(serverId);
-	useEffect(() => { shellRef.current = shell; }, [shell]);
-	useEffect(() => { targetContainerRef.current = targetContainer; }, [targetContainer]);
-	useEffect(() => { isRemoteServerRef.current = isRemoteServer; }, [isRemoteServer]);
-	useEffect(() => { serverIdRef.current = serverId; }, [serverId]);
-
-	// Emit a start event using current ref values — safe to call from any closure
+	// Start terminal session handler
 	const emitStartSession = useCallback((sock: Socket, shellMode: string) => {
 		if (!sock.connected) return;
-		if (isRemoteServerRef.current && serverIdRef.current) {
-			sock.emit('server:start', { server_id: serverIdRef.current, shell: shellMode, command: shellMode });
+		if (isRemoteServer && serverId) {
+			sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode });
 		} else {
-			sock.emit('docker:start', { container: targetContainerRef.current, shell: shellMode });
+			sock.emit('docker:start', { container: targetContainer, shell: shellMode });
 		}
-	}, []); // stable — reads live values from refs, no deps needed
+	}, [isRemoteServer, serverId, targetContainer]);
 
-	const socketConnectedRef = useRef(false);
-
-	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
+	// Primary Socket & Xterm lifecycle: Uses global singleton socketFor('/terminal')
 	useEffect(() => {
 		if (!open) {
-			socketConnectedRef.current = false;
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
-				socketRef.current.removeAllListeners();
-				socketRef.current.disconnect();
+				socketRef.current.off('connect');
+				socketRef.current.off('started');
+				socketRef.current.off('output');
+				socketRef.current.off('error');
+				socketRef.current.off('exit');
+				socketRef.current.off('disconnect');
 				socketRef.current = null;
 			}
 			if (termInstanceRef.current) {
@@ -107,7 +95,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		if (!termRef.current) return;
 		termRef.current.innerHTML = '';
-		socketConnectedRef.current = false;
+		isFirstMountRef.current = true;
 
 		// Full Vibrant 24-bit TrueColor ANSI Theme Palette matching Alacritty / VS Code Pro
 		const term = new Terminal({
@@ -156,43 +144,28 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			term.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
 		}
 
-		let token: string | undefined;
-		try {
-			token = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token;
-		} catch {}
-
-		const socketUrl = `${getSocketBaseUrl()}/terminal`;
-		const socket = io(socketUrl, {
-			path: '/socket.io',
-			transports: ['websocket'],
-			forceNew: true,
-			multiplex: false,
-			reconnection: true,
-			reconnectionAttempts: 10,
-			auth: (cb) => {
-				let t = token;
-				try { t = JSON.parse(localStorage.getItem('openoxide-auth-session') ?? 'null')?.tokens?.access_token; } catch {}
-				cb({ token: t });
-			},
-		});
+		// Use global singleton live socket manager
+		const socket = socketFor('/terminal').socket;
 		socketRef.current = socket;
 
-		socket.on('connect', () => {
-			socketConnectedRef.current = true;
-			setStatus('connected');
-			if (isRemoteServerRef.current) {
-				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shellRef.current}]...\x1b[0m\r\n`);
-			} else {
-				term.writeln(`\x1b[32mSocket connected. Starting shell [${shellRef.current}] on Container [${targetContainerRef.current}]...\x1b[0m\r\n`);
-			}
-			emitStartSession(socket, shellRef.current);
-		});
+		if (!socket.connected) {
+			socket.connect();
+		}
 
-		// Immediate check if already connected (forceNew should prevent this but handle defensively)
-		if (socket.connected && !socketConnectedRef.current) {
-			socketConnectedRef.current = true;
+		const handleConnect = () => {
 			setStatus('connected');
-			emitStartSession(socket, shellRef.current);
+			if (isRemoteServer) {
+				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
+			} else {
+				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
+			}
+			emitStartSession(socket, shell);
+		};
+
+		socket.on('connect', handleConnect);
+
+		if (socket.connected) {
+			handleConnect();
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
@@ -260,10 +233,14 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
-			socketConnectedRef.current = false;
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
-				socketRef.current.removeAllListeners();
-				socketRef.current.disconnect();
+				socketRef.current.off('connect', handleConnect);
+				socketRef.current.off('started');
+				socketRef.current.off('output');
+				socketRef.current.off('error');
+				socketRef.current.off('exit');
+				socketRef.current.off('disconnect');
 				socketRef.current = null;
 			}
 			if (termInstanceRef.current) {
@@ -272,6 +249,26 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 			}
 		};
 	}, [open]);
+
+	// Dynamic Shell / Target Container Switch: Emits start event on existing live socket without tear-down
+	useEffect(() => {
+		if (isFirstMountRef.current) {
+			isFirstMountRef.current = false;
+			return;
+		}
+		if (!open || !socketRef.current?.connected || !termInstanceRef.current) return;
+
+		const term = termInstanceRef.current;
+		const connectedTarget = activeHostIp || targetContainer;
+		if (isRemoteServer) {
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
+		} else {
+			term.writeln(`\r\n\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
+		}
+		setStatus('connecting');
+
+		emitStartSession(socketRef.current, shell);
+	}, [targetContainer, shell, emitStartSession]);
 
 	if (!open) return null;
 
@@ -309,19 +306,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 						{!isRemoteServer && isCompose && servicesList.length > 1 && (
 							<div className="flex items-center gap-1.5">
 								<Box className="size-3.5 text-muted-foreground" />
-								<Select value={targetContainer} onValueChange={(val) => {
-									setSelectedService(val);
-									const sock = socketRef.current;
-									const term = termInstanceRef.current;
-									if (!sock?.connected || !term) return;
-									term.writeln(`\r\n\x1b[33mSwitching container to [${val}]...\x1b[0m\r\n`);
-									setStatus('connecting');
-									if (isRemoteServerRef.current && serverIdRef.current) {
-										sock.emit('server:start', { server_id: serverIdRef.current, shell: shellRef.current, command: shellRef.current });
-									} else {
-										sock.emit('docker:start', { container: val, shell: shellRef.current });
-									}
-								}}>
+								<Select value={targetContainer} onValueChange={setSelectedService}>
 									<SelectTrigger className="h-8 text-xs w-[140px] bg-background/50 border-border/80">
 										<SelectValue placeholder="Select Service" />
 									</SelectTrigger>
@@ -336,25 +321,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 							</div>
 						)}
 
-						<Select value={shell} onValueChange={(val) => {
-							const newShell = val as 'sh' | 'bash';
-							setShell(newShell);
-							const sock = socketRef.current;
-							const term = termInstanceRef.current;
-							if (!sock?.connected || !term) return;
-							const connectedTarget = activeHostIp || targetContainerRef.current;
-							if (isRemoteServerRef.current) {
-								term.writeln(`\r\n\x1b[33mSwitching shell to [${newShell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
-							} else {
-								term.writeln(`\r\n\x1b[33mSwitching shell to [${newShell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
-							}
-							setStatus('connecting');
-							if (isRemoteServerRef.current && serverIdRef.current) {
-								sock.emit('server:start', { server_id: serverIdRef.current, shell: newShell, command: newShell });
-							} else {
-								sock.emit('docker:start', { container: targetContainerRef.current, shell: newShell });
-							}
-						}}>
+						<Select value={shell} onValueChange={(val) => setShell(val as 'sh' | 'bash')}>
 							<SelectTrigger className="h-8 text-xs w-[90px] bg-background/50 border-border/80 font-mono">
 								<SelectValue />
 							</SelectTrigger>
