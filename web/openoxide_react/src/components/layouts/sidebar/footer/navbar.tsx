@@ -65,12 +65,12 @@ export function UserNav({isCollapsed}: Props) {
 						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:mx-auto!"
 					/>
 				}>
-				{whoamiData?.avatar && (whoamiData.avatar.startsWith('data:') || whoamiData.avatar.startsWith('http://') || whoamiData.avatar.startsWith('https://')) ? (
-					<img src={whoamiData.avatar} alt="Avatar" className="size-8 rounded-full object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
-				) : isSolidColorAvatar(whoamiData?.avatar) ? (
+				{profile?.avatar && (profile.avatar.startsWith('data:') || profile.avatar.startsWith('http://') || profile.avatar.startsWith('https://')) ? (
+					<img src={profile.avatar} alt="Avatar" className="size-8 rounded-full object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
+				) : isSolidColorAvatar(profile?.avatar) ? (
 					<div
 						className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white select-none group-data-[collapsible=icon]:mx-auto shadow-2xs"
-						style={{backgroundColor: whoamiData?.avatar}}>
+						style={{backgroundColor: profile?.avatar}}>
 						{getInitials()}
 					</div>
 				) : (
