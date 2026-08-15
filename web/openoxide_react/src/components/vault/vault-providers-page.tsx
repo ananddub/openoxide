@@ -153,6 +153,8 @@ export function VaultProvidersPage() {
 		}
 	};
 
+	const testConnectionMutation = $api.useMutation('post', '/vault-providers/test-connection' as any);
+
 	const handleTestModalConnection = async () => {
 		if (!editingProvider && !formToken.trim()) {
 			toast.error('Please enter a Token / Access Key to test connection');
@@ -165,37 +167,28 @@ export function VaultProvidersPage() {
 				const res: any = await testMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
 				});
-				if (res.data?.success || res?.success) {
-					toast.success(res.data?.message || res?.message || 'Connection successful!');
+				const result = res.data || res;
+				if (result?.success) {
+					toast.success(result.message || 'Connection successful!');
 				} else {
-					toast.error(res.data?.message || res?.message || 'Connection failed!');
+					toast.error(result?.message || 'Connection failed!');
 				}
 			} else {
-				// Perform real direct HTTP endpoint test for new unsaved configuration
-				let testEndpoint = '';
-				let headers: Record<string, string> = {};
-
-				if (formType === 'HASHICORP') {
-					testEndpoint = `${(formUrl || 'http://localhost:8200').replace(/\/$/, '')}/v1/sys/health`;
-					headers['X-Vault-Token'] = formToken.trim();
-					if (formNamespace.trim()) headers['X-Vault-Namespace'] = formNamespace.trim();
-				} else if (formType === 'INFISICAL') {
-					testEndpoint = `${(formUrl || 'https://app.infisical.com').replace(/\/$/, '')}/api/v1/status`;
-					headers['Authorization'] = `Bearer ${formToken.trim()}`;
-				} else if (formType === 'DOPPLER') {
-					testEndpoint = 'https://api.doppler.com/v3/me';
-					headers['Authorization'] = `Basic ${btoa(`${formToken.trim()}:`)}`;
-				}
-
-				if (testEndpoint) {
-					const response = await fetch(testEndpoint, { method: 'GET', headers });
-					if (response.ok || response.status === 473 || response.status === 429) {
-						toast.success(`Successfully connected to ${getProviderLabel(formType)}!`);
-					} else {
-						toast.error(`${getProviderLabel(formType)} returned HTTP status ${response.status}`);
-					}
+				// Call Rust backend proxy to bypass CORS and run live HTTP ping
+				const res: any = await testConnectionMutation.mutateAsync({
+					body: {
+						name: formName.trim() || 'Test',
+						provider_type: formType,
+						api_url: formUrl.trim(),
+						auth_token: formToken.trim(),
+						namespace: formNamespace.trim() || undefined,
+					},
+				});
+				const result = res.data || res;
+				if (result?.success) {
+					toast.success(result.message || 'Vault connection verified successfully!');
 				} else {
-					toast.success('Configuration parameters validated successfully!');
+					toast.error(result?.message || 'Vault connection test failed!');
 				}
 			}
 		} catch (err: any) {

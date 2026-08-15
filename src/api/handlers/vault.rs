@@ -111,6 +111,19 @@ impl VaultController {
             .map(Json)
             .map_err(map_vault_error)
     }
+
+    #[post("/test-connection")]
+    async fn test_connection(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        ValidatedJson(body): ValidatedJson<CreateVaultProviderDto>,
+    ) -> Result<Json<VaultTestResultDto>, ApiError> {
+        self.service
+            .test_credentials(&body.provider_type, &body.api_url, &body.auth_token, body.namespace)
+            .await
+            .map(Json)
+            .map_err(map_vault_error)
+    }
 }
 
 fn map_vault_error(error: VaultServiceError) -> ApiError {

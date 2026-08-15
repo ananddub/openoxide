@@ -111,6 +111,19 @@ impl DnsController {
             .map(Json)
             .map_err(map_dns_error)
     }
+
+    #[post("/test-connection")]
+    async fn test_connection(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        ValidatedJson(body): ValidatedJson<CreateDnsProviderDto>,
+    ) -> Result<Json<DnsTestResultDto>, ApiError> {
+        self.service
+            .test_credentials(&body.provider_type, &body.credentials_json)
+            .await
+            .map(Json)
+            .map_err(map_dns_error)
+    }
 }
 
 fn map_dns_error(error: DnsServiceError) -> ApiError {

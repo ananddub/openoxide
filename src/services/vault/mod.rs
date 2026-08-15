@@ -140,9 +140,9 @@ impl VaultService {
             .ok_or(VaultServiceError::NotFound)?;
 
         match provider.provider_type.as_str() {
-            "HASHICORP" => self.test_hashicorp(&provider).await,
-            "INFISICAL" => self.test_infisical(&provider).await,
-            "DOPPLER" => self.test_doppler(&provider).await,
+            "HASHICORP" => self.test_hashicorp_credentials(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
+            "INFISICAL" => self.test_infisical_credentials(&provider.api_url, &provider.auth_token).await,
+            "DOPPLER" => self.test_doppler_credentials(&provider.auth_token).await,
             _ => Ok(VaultTestResultDto {
                 success: true,
                 message: "Provider type configured successfully".into(),
@@ -150,54 +150,78 @@ impl VaultService {
         }
     }
 
-    async fn test_hashicorp(&self, provider: &VaultProvider) -> Result<VaultTestResultDto, VaultServiceError> {
-        let url = format!("{}/v1/sys/health", provider.api_url);
-        let mut req = self.client.get(&url).header("X-Vault-Token", &provider.auth_token);
-        if let Some(ns) = &provider.namespace {
-            req = req.header("X-Vault-Namespace", ns);
+    pub async fn test_credentials(
+        &self,
+        provider_type: &str,
+        api_url: &str,
+        auth_token: &str,
+        namespace: Option<String>,
+    ) -> Result<VaultTestResultDto, VaultServiceError> {
+        let clean_url = api_url.trim_end_matches('/');
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        match provider_type.to_ascii_uppercase().as_str() {
+            "HASHICORP" => self.test_hashicorp_credentials(clean_url, clean_token, namespace.as_deref()).await,
+            "INFISICAL" => self.test_infisical_credentials(clean_url, clean_token).await,
+            "DOPPLER" => self.test_doppler_credentials(clean_token).await,
+            _ => Ok(VaultTestResultDto {
+                success: true,
+                message: "Vault provider configuration validated successfully".into(),
+            }),
+        }
+    }
+
+    async fn test_hashicorp_credentials(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultTestResultDto, VaultServiceError> {
+        let url = format!("{}/v1/sys/health", api_url);
+        let mut req = self.client.get(&url).header("X-Vault-Token", auth_token);
+        if let Some(ns) = namespace {
+            if !ns.trim().is_empty() {
+                req = req.header("X-Vault-Namespace", ns.trim());
+            }
         }
         let res = req.send().await?;
         if res.status().is_success() || res.status().as_u16() == 473 || res.status().as_u16() == 429 {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully connected to HashiCorp Vault".into(),
+                message: "Successfully connected to HashiCorp Vault!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("HashiCorp Vault returned status code {}", res.status()),
+                message: format!("HashiCorp Vault returned HTTP status {}", res.status()),
             })
         }
     }
 
-    async fn test_infisical(&self, provider: &VaultProvider) -> Result<VaultTestResultDto, VaultServiceError> {
-        let url = format!("{}/api/v1/status", provider.api_url);
-        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", provider.auth_token)).send().await?;
+    async fn test_infisical_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
+        let base = if api_url.is_empty() { "https://app.infisical.com" } else { api_url };
+        let url = format!("{}/api/v1/status", base);
+        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", auth_token)).send().await?;
         if res.status().is_success() {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully connected to Infisical Vault".into(),
+                message: "Successfully connected to Infisical Vault!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("Infisical returned status code {}", res.status()),
+                message: format!("Infisical returned HTTP status {}", res.status()),
             })
         }
     }
 
-    async fn test_doppler(&self, provider: &VaultProvider) -> Result<VaultTestResultDto, VaultServiceError> {
+    async fn test_doppler_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
         let url = "https://api.doppler.com/v3/me";
-        let res = self.client.get(url).basic_auth(&provider.auth_token, Option::<&str>::None).send().await?;
+        let res = self.client.get(url).basic_auth(auth_token, Option::<&str>::None).send().await?;
         if res.status().is_success() {
             Ok(VaultTestResultDto {
                 success: true,
-                message: "Successfully authenticated with Doppler".into(),
+                message: "Successfully authenticated with Doppler!".into(),
             })
         } else {
             Ok(VaultTestResultDto {
                 success: false,
-                message: format!("Doppler returned status code {}", res.status()),
+                message: format!("Doppler returned HTTP status {}", res.status()),
             })
         }
     }

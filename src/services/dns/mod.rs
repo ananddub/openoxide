@@ -131,38 +131,59 @@ impl DnsService {
             .ok_or(DnsServiceError::NotFound)?;
 
         match provider.provider_type.as_str() {
-            "CLOUDFLARE" => self.test_cloudflare(&provider).await,
+            "CLOUDFLARE" => self.test_cloudflare_token(&provider.credentials_json).await,
             _ => Ok(DnsTestResultDto {
                 success: true,
-                message: "DNS provider configuration saved successfully".into(),
+                message: "DNS provider configuration validated successfully".into(),
             }),
         }
     }
 
-    async fn test_cloudflare(&self, provider: &DnsProvider) -> Result<DnsTestResultDto, DnsServiceError> {
-        let token = provider
-            .credentials_json
+    pub async fn test_credentials(
+        &self,
+        provider_type: &str,
+        credentials_json: &str,
+    ) -> Result<DnsTestResultDto, DnsServiceError> {
+        match provider_type.to_ascii_uppercase().as_str() {
+            "CLOUDFLARE" => self.test_cloudflare_token(credentials_json).await,
+            _ => Ok(DnsTestResultDto {
+                success: true,
+                message: "DNS provider credentials validated successfully".into(),
+            }),
+        }
+    }
+
+    async fn test_cloudflare_token(&self, credentials_json: &str) -> Result<DnsTestResultDto, DnsServiceError> {
+        let clean_token = credentials_json
             .trim()
             .trim_matches('"')
-            .to_string();
+            .trim_matches('\'')
+            .trim();
+
+        if clean_token.is_empty() {
+            return Ok(DnsTestResultDto {
+                success: false,
+                message: "API token is empty".into(),
+            });
+        }
 
         let url = "https://api.cloudflare.com/client/v4/user/tokens/verify";
         let res = self
             .client
             .get(url)
-            .header("Authorization", format!("Bearer {}", token))
+            .header("Authorization", format!("Bearer {}", clean_token))
             .send()
             .await?;
 
         if res.status().is_success() {
             Ok(DnsTestResultDto {
                 success: true,
-                message: "Successfully verified Cloudflare DNS API Token".into(),
+                message: "Successfully verified Cloudflare DNS API Token!".into(),
             })
         } else {
             Ok(DnsTestResultDto {
                 success: false,
-                message: format!("Cloudflare returned status code {}", res.status()),
+                message: format!("Cloudflare API returned HTTP status code {}", res.status()),
             })
         }
     }

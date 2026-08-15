@@ -153,6 +153,8 @@ export function DnsProvidersPage() {
 		}
 	};
 
+	const testConnectionMutation = $api.useMutation('post', '/dns-providers/test-connection' as any);
+
 	const handleTestModalConnection = async () => {
 		if (!editingProvider && !formToken.trim()) {
 			toast.error('Please enter an API Token to test connection');
@@ -165,26 +167,26 @@ export function DnsProvidersPage() {
 				const res: any = await testMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
 				});
-				if (res.data?.success || res?.success) {
-					toast.success(res.data?.message || res?.message || 'DNS API token verified successfully!');
+				const result = res.data || res;
+				if (result?.success) {
+					toast.success(result.message || 'DNS API token verified successfully!');
 				} else {
-					toast.error(res.data?.message || res?.message || 'DNS API token verification failed');
+					toast.error(result?.message || 'DNS API token verification failed');
 				}
 			} else {
-				// Perform real live Cloudflare/DNS API token verification
-				if (formType === 'CLOUDFLARE') {
-					const response = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
-						method: 'GET',
-						headers: { Authorization: `Bearer ${formToken.trim()}` },
-					});
-					const data = await response.json();
-					if (response.ok && data.success) {
-						toast.success('Successfully verified Cloudflare DNS API Token!');
-					} else {
-						toast.error(data.errors?.[0]?.message || `Cloudflare returned status code ${response.status}`);
-					}
+				// Call Rust backend proxy to bypass browser CORS & run official API test
+				const res: any = await testConnectionMutation.mutateAsync({
+					body: {
+						name: formName.trim() || 'Test',
+						provider_type: formType,
+						credentials_json: JSON.stringify(formToken.trim()),
+					},
+				});
+				const result = res.data || res;
+				if (result?.success) {
+					toast.success(result.message || 'DNS API Token verified successfully!');
 				} else {
-					toast.success(`${getProviderLabel(formType)} configuration credentials validated successfully!`);
+					toast.error(result?.message || 'DNS API Token verification failed');
 				}
 			}
 		} catch (err: any) {
