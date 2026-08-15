@@ -77,13 +77,15 @@ export interface InvitationItem {
 import {
 	usePermissionGroupMembers,
 	usePermissionGroupInvites,
+	useAuthWhoAmI,
 } from 'virtual:openoxide-live';
 
 import { useEffect } from 'react';
 import { useAppStore } from '#/stores/app-store';
 
 export function UsersManagementPage() {
-	const { data: whoamiData } = $api.useQuery('get', '/auth/whoami' as any, {} as any);
+	// Live Reactive WhoAmI / Profile Hook from openoxide-live
+	const { data: whoamiData } = useAuthWhoAmI();
 
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
@@ -141,18 +143,21 @@ export function UsersManagementPage() {
 			? membersData
 			: (storeMembers || []);
 		if (!Array.isArray(source)) return [];
-		return source.map((m: any) => ({
-			id: String(m.user_id || m.id),
-			email: m.email || `User #${m.user_id}`,
-			role: (m.role || 'member').toLowerCase() as any,
-			avatar: m.avatar || (whoamiData?.user_id === m.user_id ? whoamiData?.avatar : undefined),
-			banned: false,
-			twoFactorEnabled: false,
-			createdAt: m.created_at
-				? new Date(m.created_at * 1000).toISOString()
-				: new Date().toISOString(),
-			isSelf: whoamiData?.user_id === m.user_id,
-		}));
+		return source.map((m: any) => {
+			const isSelf = whoamiData?.user_id === (m.user_id || m.id);
+			return {
+				id: String(m.user_id || m.id),
+				email: isSelf ? (whoamiData?.email || m.email) : (m.email || `User #${m.user_id}`),
+				role: (m.role || 'member').toLowerCase() as any,
+				avatar: isSelf ? (whoamiData?.avatar || m.avatar) : m.avatar,
+				banned: false,
+				twoFactorEnabled: false,
+				createdAt: m.created_at
+					? new Date(m.created_at * 1000).toISOString()
+					: new Date().toISOString(),
+				isSelf,
+			};
+		});
 	}, [membersData, storeMembers, whoamiData]);
 
 	const invitations: InvitationItem[] = useMemo(() => {
