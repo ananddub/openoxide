@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Layers2, Database as DbIcon, Play, Square, Rocket, Trash2, Eye, MoreVertical } from 'lucide-react';
+import { Box, Layers2, Database as DbIcon, Play, Square, Rocket, Trash2, Eye, MoreVertical, XCircle } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '#/api/utils';
 import { $api } from '#/api/query';
@@ -60,19 +60,38 @@ export function ServiceCard({
 		};
 	}, [contextMenu]);
 
+	// Status Flags
+	const s = status?.toLowerCase() || '';
+	const isStartingOrDeploying =
+		s.includes('starting') ||
+		s.includes('deploying') ||
+		s.includes('building') ||
+		s.includes('loading');
+
+	const isRunning =
+		!isStartingOrDeploying &&
+		(s.includes('running') ||
+			s.includes('active') ||
+			s.includes('healthy') ||
+			s.includes('up'));
+
+	const isStopped = !isStartingOrDeploying && !isRunning;
+
 	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');
 	const appStop = $api.useMutation('post', '/applications/{id}/stop');
 	const appDeploy = $api.useMutation('post', '/applications/{id}/deploy');
+	const appCancel = $api.useMutation('post', '/applications/{id}/cancel');
 	const appDelete = $api.useMutation('delete', '/applications/{id}');
 
 	// Compose Mutations
 	const composeStart = $api.useMutation('post', '/compose/{id}/start');
 	const composeStop = $api.useMutation('post', '/compose/{id}/stop');
 	const composeDeploy = $api.useMutation('post', '/compose/{id}/deploy');
+	const composeCancel = $api.useMutation('post', '/compose/{id}/cancel');
 	const composeDelete = $api.useMutation('delete', '/compose/{id}');
 
-	// Database Mutations (Dynamic route path based on dbKind)
+	// Database Mutations
 	const getDbKindPath = () => {
 		const k = (dbKind || '').toLowerCase();
 		if (k.includes('mysql')) return 'mysql';
@@ -87,20 +106,20 @@ export function ServiceCard({
 	const dbStart = $api.useMutation('post', `/${dbKindPath}/{id}/start` as any);
 	const dbStop = $api.useMutation('post', `/${dbKindPath}/{id}/stop` as any);
 	const dbDeploy = $api.useMutation('post', `/${dbKindPath}/{id}/deploy` as any);
+	const dbCancel = $api.useMutation('post', `/${dbKindPath}/{id}/cancel` as any);
 	const dbDelete = $api.useMutation('delete', `/${dbKindPath}/{id}` as any);
 
 	const getStatusDotColor = (status: string) => {
-		const s = status?.toLowerCase() || '';
 		if (s.includes('stopping') || s.includes('cancelling')) {
 			return 'bg-orange-500 animate-pulse';
 		}
-		if (s.includes('running') || s.includes('active') || s.includes('healthy') || s.includes('up')) {
+		if (isRunning) {
 			return 'bg-emerald-500';
 		}
 		if (s.includes('error') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
 			return 'bg-rose-500';
 		}
-		if (s.includes('loading') || s.includes('deploying') || s.includes('starting') || s.includes('building')) {
+		if (isStartingOrDeploying) {
 			return 'bg-amber-500 animate-pulse';
 		}
 		return 'bg-muted-foreground/40';
@@ -147,6 +166,7 @@ export function ServiceCard({
 	const handleStart = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
+		if (isRunning || isStartingOrDeploying) return;
 		try {
 			if (type === 'APP') {
 				await appStart.mutateAsync({ params: { path: { id } } });
@@ -164,6 +184,7 @@ export function ServiceCard({
 	const handleStop = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
+		if (isStopped) return;
 		try {
 			if (type === 'APP') {
 				await appStop.mutateAsync({ params: { path: { id } } });
@@ -178,9 +199,27 @@ export function ServiceCard({
 		}
 	};
 
+	const handleCancel = async (e?: React.MouseEvent) => {
+		e?.stopPropagation();
+		setContextMenu(null);
+		try {
+			if (type === 'APP') {
+				await appCancel.mutateAsync({ params: { path: { id } } });
+			} else if (type === 'COMPOSE') {
+				await composeCancel.mutateAsync({ params: { path: { id } } });
+			} else {
+				await dbCancel.mutateAsync({ params: { path: { id } } });
+			}
+			toast.success(`Cancelling ${name}...`);
+		} catch (err) {
+			toast.error(formatApiError(err));
+		}
+	};
+
 	const handleDeploy = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
+		if (isStartingOrDeploying) return;
 		try {
 			if (type === 'APP') {
 				await appDeploy.mutateAsync({ params: { path: { id } } });
@@ -256,27 +295,56 @@ export function ServiceCard({
 								<Eye className="size-3.5 text-foreground" />
 								View details
 							</DropdownMenuItem>
+
+							{/* Start Option: Disabled if running or starting */}
 							<DropdownMenuItem
+								disabled={isRunning || isStartingOrDeploying}
 								onClick={handleStart}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+								className={cn(
+									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+									(isRunning || isStartingOrDeploying) && 'opacity-40 cursor-not-allowed'
+								)}
 							>
 								<Play className="size-3.5 text-foreground" />
 								Start
 							</DropdownMenuItem>
+
+							{/* Stop/Cancel Option: Shows Cancel when starting/deploying; Stop when running */}
+							{isStartingOrDeploying ? (
+								<DropdownMenuItem
+									onClick={handleCancel}
+									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+								>
+									<XCircle className="size-3.5 text-foreground" />
+									Cancel
+								</DropdownMenuItem>
+							) : (
+								<DropdownMenuItem
+									disabled={isStopped}
+									onClick={handleStop}
+									className={cn(
+										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+										isStopped && 'opacity-40 cursor-not-allowed'
+									)}
+								>
+									<Square className="size-3.5 text-foreground" />
+									Stop
+								</DropdownMenuItem>
+							)}
+
+							{/* Deploy Option: Disabled while starting/deploying */}
 							<DropdownMenuItem
-								onClick={handleStop}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
-							>
-								<Square className="size-3.5 text-foreground" />
-								Stop
-							</DropdownMenuItem>
-							<DropdownMenuItem
+								disabled={isStartingOrDeploying}
 								onClick={handleDeploy}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+								className={cn(
+									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+									isStartingOrDeploying && 'opacity-40 cursor-not-allowed'
+								)}
 							>
 								<Rocket className="size-3.5 text-foreground" />
 								Deploy
 							</DropdownMenuItem>
+
 							<DropdownMenuSeparator className="bg-border/60" />
 							<DropdownMenuItem
 								onClick={handleDelete}
@@ -317,27 +385,56 @@ export function ServiceCard({
 						<Eye className="size-3.5 text-foreground" />
 						View details
 					</button>
+
+					{/* Start */}
 					<button
+						disabled={isRunning || isStartingOrDeploying}
 						onClick={handleStart}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+						className={cn(
+							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
+							(isRunning || isStartingOrDeploying) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+						)}
 					>
 						<Play className="size-3.5 text-foreground" />
 						Start
 					</button>
+
+					{/* Stop / Cancel */}
+					{isStartingOrDeploying ? (
+						<button
+							onClick={handleCancel}
+							className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+						>
+							<XCircle className="size-3.5 text-foreground" />
+							Cancel
+						</button>
+					) : (
+						<button
+							disabled={isStopped}
+							onClick={handleStop}
+							className={cn(
+								'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
+								isStopped && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+							)}
+						>
+							<Square className="size-3.5 text-foreground" />
+							Stop
+						</button>
+					)}
+
+					{/* Deploy */}
 					<button
-						onClick={handleStop}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
-					>
-						<Square className="size-3.5 text-foreground" />
-						Stop
-					</button>
-					<button
+						disabled={isStartingOrDeploying}
 						onClick={handleDeploy}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+						className={cn(
+							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
+							isStartingOrDeploying && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+						)}
 					>
 						<Rocket className="size-3.5 text-foreground" />
 						Deploy
 					</button>
+
 					<div className="my-1 h-px bg-border/60" />
 					<button
 						onClick={handleDelete}
