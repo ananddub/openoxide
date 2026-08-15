@@ -17,10 +17,13 @@ export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
 
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
-	const storeCompose = useAppStore((state) => {
-		const direct = state.composes.find((c) => String(c.id) === String(composeId));
+	const composes = useAppStore((state) => state.composes);
+	const overviewServices = useAppStore((state) => state.overviewServices);
+
+	const storeCompose = useMemo(() => {
+		const direct = composes.find((c) => String(c.id) === String(composeId));
 		if (direct) return direct;
-		const service = state.overviewServices.find(
+		const service = overviewServices.find(
 			(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
 		);
 		if (service) {
@@ -34,7 +37,7 @@ export function useComposeDetail(composeId: number) {
 			} as any;
 		}
 		return undefined;
-	});
+	}, [composes, overviewServices, composeId]);
 
 	// 1. Central Compose Query — live push replaces refetchInterval
 	const {data: liveCompose} = useComposeGet(BigInt(composeId));

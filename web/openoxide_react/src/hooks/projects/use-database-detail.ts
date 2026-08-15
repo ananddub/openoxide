@@ -1,7 +1,6 @@
-import {useState} from 'react';
+import {useState, useMemo} from 'react';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
 	usePostgresGet,
@@ -23,10 +22,13 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const activeKind = (targetKind || '').toLowerCase();
 
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
-	const storeDb = useAppStore((state) => {
-		const direct = state.databases.find((d) => String(d.id) === String(dbId));
+	const databases = useAppStore((state) => state.databases);
+	const overviewServices = useAppStore((state) => state.overviewServices);
+
+	const storeDb = useMemo(() => {
+		const direct = databases.find((d) => String(d.id) === String(dbId));
 		if (direct) return direct;
-		const service = state.overviewServices.find(
+		const service = overviewServices.find(
 			(s) => String(s.id) === String(dbId) && (s.type === 'database' || s.kind === 'database' || s.kind === 'postgres' || s.kind === 'mysql' || s.kind === 'mariadb' || s.kind === 'mongo' || s.kind === 'redis' || s.kind === 'libsql')
 		);
 		if (service) {
@@ -41,7 +43,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			} as any;
 		}
 		return undefined;
-	});
+	}, [databases, overviewServices, dbId]);
 
 	// Target query selection with selective query execution to avoid unnecessary 404 console spam
 	const postgresQ = usePostgresGet(BigInt(dbId));
@@ -74,114 +76,84 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const currentKind = (database?.kind || detectedKind || 'postgres').toLowerCase();
 
 	const statusUpper = (database?.app_status || (database as any)?.status || (database as any)?.application_status || '').toUpperCase();
-	const isBuilding = ['STARTING', 'BUILDING', 'QUEUED', 'PREPARING'].includes(statusUpper) || actionLoading === 'deploy' || actionLoading === 'start';
+	const isDeployed = statusUpper === 'RUNNING' || statusUpper === 'HEALTHY' || statusUpper === 'SUCCESS' || statusUpper === 'COMPLETED';
 
-
-
-	let activeEndpoint: '/postgres/{id}' | '/mysql/{id}' | '/mariadb/{id}' | '/mongo/{id}' | '/redis/{id}' | '/libsql/{id}' = '/postgres/{id}';
-	if (currentKind.includes('mysql')) activeEndpoint = '/mysql/{id}';
-	else if (currentKind.includes('mariadb')) activeEndpoint = '/mariadb/{id}';
-	else if (currentKind.includes('mongo')) activeEndpoint = '/mongo/{id}';
-	else if (currentKind.includes('redis')) activeEndpoint = '/redis/{id}';
-	else if (currentKind.includes('libsql')) activeEndpoint = '/libsql/{id}';
-
-	// Live hooks auto-update — refetch is a no-op
-	const refetch = async () => {};
-
-	const deployMutation = $api.useMutation('post', `${activeEndpoint}/deploy` as any);
-	const reloadMutation = $api.useMutation('post', `${activeEndpoint}/reload` as any);
-	const startMutation = $api.useMutation('post', `${activeEndpoint}/start` as any);
-	const stopMutation = $api.useMutation('post', `${activeEndpoint}/stop` as any);
-	const cancelMutation = $api.useMutation('post', `${activeEndpoint}/cancel` as any);
-	const patchMutation = $api.useMutation('patch', activeEndpoint as any);
-	const deleteMutation = $api.useMutation('delete', activeEndpoint as any);
-
-	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel') => {
-		try {
-			setActionLoading(action as any);
-
-			if (action === 'deploy') {
-				await deployMutation.mutateAsync({params: {path: {id: dbId}}});
-				toast.success('Database deployment triggered');
-			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({params: {path: {id: dbId}}});
-				toast.success('Database reload triggered');
-			} else if (action === 'start') {
-				await startMutation.mutateAsync({params: {path: {id: dbId}}});
-				toast.success('Database start triggered');
-			} else if (action === 'stop') {
-				await stopMutation.mutateAsync({params: {path: {id: dbId}}});
-				toast.success('Database stopped successfully');
-			} else if (action === 'cancel') {
-				await cancelMutation.mutateAsync({params: {path: {id: dbId}}});
-				toast.success('Database action cancelled');
-			}
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		} finally {
-			setActionLoading(null);
-		}
-	};
-
-	const handleUpdate = async (body: Record<string, unknown>) => {
-		try {
-			await patchMutation.mutateAsync({
-				params: {path: {id: dbId}},
-				body,
-			});
-			toast.success('Database updated successfully');
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	// Centralized Schedules Query
+	// Schedules
 	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByDatabase(BigInt(dbId));
+	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
 
-	// Centralized Backups Query
-	const {data: rawBackups, loading: isLoadingBackups} = useBackupListVolumeBackups();
+	// Backups — filter locally by database_id
+	const {data: rawBackupsAll, loading: isLoadingBackups} = useBackupListVolumeBackups();
+	const backups = useMemo(() => {
+		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
+		return all.filter((b: any) => b.database_id === dbId);
+	}, [rawBackupsAll, dbId]);
 
-	const schedules = Array.isArray(rawSchedules) ? rawSchedules : [];
-	const backups = (Array.isArray(rawBackups) ? rawBackups : []).filter((b: any) =>
-		b.database_id === dbId ||
-		b.postgres_id === dbId || b.mysql_id === dbId || b.mariadb_id === dbId ||
-		b.mongo_id === dbId || b.redis_id === dbId || b.libsql_id === dbId ||
-		b.app_name === (database as any)?.app_name || b.app_name === (database as any)?.name
-	);
-
-	// Centralized Container Monitoring Stream
-	const monitoring = useContainerMonitoring(dbId, 'database');
-
-	const refetchSchedules = () => {};
-	const refetchBackups = () => {};
+	// Live Container Monitoring Stream
+	const monitoring = useContainerMonitoring(dbId, currentKind || 'postgres');
 
 	const refetchAll = () => {
 		monitoring.triggerRefresh();
 	};
 
-	const allQueries = [postgresQ, mysqlQ, mariadbQ, mongoQ, redisQ, libsqlQ];
-	const isPendingOrFetching = allQueries.some(q => q.loading);
-	const isLoading = !database && isPendingOrFetching;
+	const deployMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/deploy` as any);
+	const reloadMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/reload` as any);
+	const startMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/start` as any);
+	const stopMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/stop` as any);
+	const patchMutation = $api.useMutation('patch', `/${currentKind as 'postgres'}/{id}` as any);
+
+	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop') => {
+		setActionLoading(action);
+		try {
+			if (action === 'deploy') {
+				await deployMutation.mutateAsync({params: {path: {id: dbId}}} as any);
+				toast.success(`${currentKind.toUpperCase()} deployment triggered`);
+			} else if (action === 'reload') {
+				await reloadMutation.mutateAsync({params: {path: {id: dbId}}} as any);
+				toast.success(`${currentKind.toUpperCase()} reloaded`);
+			} else if (action === 'start') {
+				await startMutation.mutateAsync({params: {path: {id: dbId}}} as any);
+				toast.success(`${currentKind.toUpperCase()} started`);
+			} else if (action === 'stop') {
+				await stopMutation.mutateAsync({params: {path: {id: dbId}}} as any);
+				toast.success(`${currentKind.toUpperCase()} stopped`);
+			}
+			refetchAll();
+		} catch (err) {
+			toast.error(`Action failed: ${action}`);
+		} finally {
+			setActionLoading(null);
+		}
+	};
+
+	const handleUpdateEnv = async (patchData: Record<string, unknown>) => {
+		try {
+			await patchMutation.mutateAsync({
+				params: {path: {id: dbId}},
+				body: patchData,
+			} as any);
+			toast.success('Database settings updated');
+			refetchAll();
+		} catch (err) {
+			toast.error('Failed to update database settings');
+		}
+	};
 
 	return {
 		database,
+		currentKind,
+		isDeployed,
 		schedules,
 		backups,
 		monitoring,
-		isLoading,
+		isLoading: !database,
 		isLoadingSchedules,
 		isLoadingBackups,
 		actionLoading,
-		isBuilding,
-		detectedKind: currentKind,
-		refetch,
-		refetchSchedules,
-		refetchBackups,
 		refetchAll,
 		activeTab,
 		setActiveTab,
 		handleAction,
-		handleUpdate,
-		deleteMutation,
+		handleUpdateEnv,
 	};
 }

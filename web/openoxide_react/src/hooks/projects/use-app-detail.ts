@@ -17,10 +17,13 @@ export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
-	const storeApp = useAppStore((state) => {
-		const direct = state.applications.find((a) => String(a.id) === String(appId));
+	const applications = useAppStore((state) => state.applications);
+	const overviewServices = useAppStore((state) => state.overviewServices);
+
+	const storeApp = useMemo(() => {
+		const direct = applications.find((a) => String(a.id) === String(appId));
 		if (direct) return direct;
-		const service = state.overviewServices.find(
+		const service = overviewServices.find(
 			(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
 		);
 		if (service) {
@@ -34,7 +37,7 @@ export function useAppDetail(appId: number) {
 			} as any;
 		}
 		return undefined;
-	});
+	}, [applications, overviewServices, appId]);
 
 	// 1. App Query — live push replaces refetchInterval
 	const {data: liveApp} = useApplicationGet(BigInt(appId));
