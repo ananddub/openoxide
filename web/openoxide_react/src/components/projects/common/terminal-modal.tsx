@@ -48,6 +48,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const termRef = useRef<HTMLDivElement>(null);
 	const socketRef = useRef<Socket | null>(null);
 	const termInstanceRef = useRef<Terminal | null>(null);
+	const isFirstMountRef = useRef<boolean>(true);
 
 	const availableServices = useMemo(() => extractServicesFromYaml(app?.compose_file), [app?.compose_file]);
 	const isCompose = app?.compose_status !== undefined || app?.compose_type !== undefined || app?.compose_file !== undefined;
@@ -78,7 +79,9 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
 		if (!open) {
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
+				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
 				socketRef.current = null;
 			}
@@ -93,6 +96,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		if (!termRef.current) return;
 		termRef.current.innerHTML = '';
+		isFirstMountRef.current = true;
 
 		// Full Vibrant 24-bit TrueColor ANSI Theme Palette matching Alacritty / VS Code Pro
 		const term = new Terminal({
@@ -150,6 +154,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		const socket = io(socketUrl, {
 			path: '/socket.io',
 			transports: ['websocket'],
+			forceNew: true,
+			multiplex: false,
 			reconnection: true,
 			reconnectionAttempts: 10,
 			auth: (cb) => {
@@ -241,7 +247,9 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 
 		return () => {
 			window.removeEventListener('resize', handleWindowResize);
+			isFirstMountRef.current = true;
 			if (socketRef.current) {
+				socketRef.current.removeAllListeners();
 				socketRef.current.disconnect();
 				socketRef.current = null;
 			}
@@ -253,7 +261,6 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	}, [open]);
 
 	// Dynamic Shell / Target Container Switch: Emits start event on existing live socket without tear-down
-	const isFirstMountRef = useRef(true);
 	useEffect(() => {
 		if (isFirstMountRef.current) {
 			isFirstMountRef.current = false;
@@ -299,49 +306,55 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 									{status}
 								</span>
 							</h3>
-							<p className="text-xs text-muted-foreground font-mono truncate max-w-md">
-								{isRemoteServer ? 'SSH Target: ' : 'Container: '}
-								<span className="text-foreground font-semibold">{displayHost}</span>
+							<p className="text-xs text-muted-foreground font-mono mt-0.5">
+								Target: <span className="text-foreground font-semibold">{displayHost}</span>
 							</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-3">
-						{isCompose && servicesList.length > 1 && (
+						{!isRemoteServer && isCompose && servicesList.length > 1 && (
 							<div className="flex items-center gap-1.5">
-								<Box className="size-3.5 text-muted-foreground shrink-0" />
-								<Select value={targetContainer} onValueChange={(v) => v && setSelectedService(v)}>
-									<SelectTrigger className="h-8 text-xs font-mono bg-card border-border/60 w-[140px]">
-										<SelectValue placeholder="Service" />
+								<Box className="size-3.5 text-muted-foreground" />
+								<Select value={targetContainer} onValueChange={setSelectedService}>
+									<SelectTrigger className="h-8 text-xs w-[140px] bg-background/50 border-border/80">
+										<SelectValue placeholder="Select Service" />
 									</SelectTrigger>
-									<SelectContent className="bg-card border-border text-xs">
-										{servicesList.map((s) => <SelectItem key={s} value={s} className="text-xs font-mono">{s}</SelectItem>)}
+									<SelectContent>
+										{servicesList.map((svc) => (
+											<SelectItem key={svc} value={svc} className="text-xs">
+												{svc}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
 							</div>
 						)}
 
-						<Select value={shell} onValueChange={(v) => v && setShell(v as 'sh' | 'bash')}>
-							<SelectTrigger className="h-8 text-xs font-mono bg-card border-border/60 w-[90px]">
-								<SelectValue placeholder="Shell" />
+						<Select value={shell} onValueChange={(val) => setShell(val as 'sh' | 'bash')}>
+							<SelectTrigger className="h-8 text-xs w-[90px] bg-background/50 border-border/80 font-mono">
+								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="bg-card border-border text-xs">
-								<SelectItem value="sh" className="text-xs font-mono">sh</SelectItem>
+							<SelectContent>
 								<SelectItem value="bash" className="text-xs font-mono">bash</SelectItem>
+								<SelectItem value="sh" className="text-xs font-mono">sh</SelectItem>
 							</SelectContent>
 						</Select>
 
-						<Button variant="ghost" size="icon" onClick={onClose} className="size-8 text-muted-foreground hover:text-foreground cursor-pointer">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+							onClick={onClose}
+						>
 							<X className="size-4" />
 						</Button>
 					</div>
 				</div>
 
-				{/* Xterm.js Canvas Box */}
-				<div className="flex-1 p-3 bg-[#09090b] relative overflow-hidden min-h-0 cursor-text" onClick={() => {
-					termInstanceRef.current?.focus();
-				}}>
-					<div ref={termRef} className="w-full h-full text-left font-mono" />
+				{/* Xterm Terminal Container */}
+				<div className="flex-1 bg-[#09090b] p-3 overflow-hidden relative">
+					<div ref={termRef} className="w-full h-full text-left" />
 				</div>
 			</div>
 		</div>,
