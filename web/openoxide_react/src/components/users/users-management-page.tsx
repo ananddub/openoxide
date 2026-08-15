@@ -79,22 +79,34 @@ import {
 	usePermissionGroupInvites,
 } from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export function UsersManagementPage() {
-	const { data: whoamiData } = $api.useQuery('get', '/auth/whoami');
+	const { data: whoamiData } = $api.useQuery('get', '/auth/whoami' as any, {} as any);
 
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
 
+	// Zustand Store Subscriptions & Actions
+	const storeMembers = useAppStore((state) => state.members);
+	const storeInvites = useAppStore((state) => state.invites);
+	const addMemberStore = useAppStore((state) => state.addMember);
+	const updateMemberStore = useAppStore((state) => state.updateMember);
+	const deleteMemberStore = useAppStore((state) => state.deleteMember);
+	const addInviteStore = useAppStore((state) => state.addInvite);
+	const deleteInviteStore = useAppStore((state) => state.deleteInvite);
+
+	const { refetch: refetchMembers } = $api.useQuery('get', '/permission-groups/members' as any, {} as any);
+	const { refetch: refetchInvites } = $api.useQuery('get', '/permission-groups/invites' as any, {} as any);
+
 	// Query real organization members via live reactive stream
 	const {
 		data: membersData,
-		loading: isLoadingMembers,
 	} = usePermissionGroupMembers();
 
 	// Query real organization invitations via live reactive stream
 	const {
 		data: invitesData,
-		loading: isLoadingInvites,
 	} = usePermissionGroupInvites();
 
 	// Mutations for invites and members
@@ -114,8 +126,9 @@ export function UsersManagementPage() {
 	);
 
 	const users: UserMember[] = useMemo(() => {
-		if (!membersData || !Array.isArray(membersData)) return [];
-		return membersData.map((m: any) => ({
+		const source = (storeMembers && storeMembers.length > 0) ? storeMembers : (membersData || []);
+		if (!Array.isArray(source)) return [];
+		return source.map((m: any) => ({
 			id: String(m.user_id || m.id),
 			email: m.email || `User #${m.user_id}`,
 			role: (m.role || 'member').toLowerCase() as any,
@@ -127,11 +140,12 @@ export function UsersManagementPage() {
 				: new Date().toISOString(),
 			isSelf: whoamiData?.user_id === m.user_id,
 		}));
-	}, [membersData, whoamiData]);
+	}, [storeMembers, membersData, whoamiData]);
 
 	const invitations: InvitationItem[] = useMemo(() => {
-		if (!invitesData || !Array.isArray(invitesData)) return [];
-		return invitesData.map((inv: any) => ({
+		const source = (storeInvites && storeInvites.length > 0) ? storeInvites : (invitesData || []);
+		if (!Array.isArray(source)) return [];
+		return source.map((inv: any) => ({
 			id: String(inv.id),
 			email: inv.email,
 			role: (inv.role || 'member').toLowerCase(),
@@ -139,7 +153,7 @@ export function UsersManagementPage() {
 				? new Date(inv.expired_at * 1000).toISOString()
 				: new Date().toISOString(),
 		}));
-	}, [invitesData]);
+	}, [storeInvites, invitesData]);
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<UserMember | null>(null);
@@ -186,8 +200,7 @@ export function UsersManagementPage() {
 					setIsSubmitting(false);
 					return;
 				}
-				// Create account and add to organization atomically
-				await addMemberMutation.mutateAsync({
+				const res: any = await addMemberMutation.mutateAsync({
 					body: {
 						email: formEmail.trim(),
 						password: formPassword,
@@ -195,11 +208,14 @@ export function UsersManagementPage() {
 					},
 				} as any);
 
+				if (res?.data || res) {
+					addMemberStore(res?.data || res);
+				}
+
 				toast.success('User account created successfully');
 				setActiveTab('users');
 			} else {
-				// Send Email Invitation
-				await inviteMutation.mutateAsync({
+				const res: any = await inviteMutation.mutateAsync({
 					body: {
 						email: formEmail.trim(),
 						role: formRole.toUpperCase(),
@@ -207,11 +223,17 @@ export function UsersManagementPage() {
 					},
 				} as any);
 
+				if (res?.data || res) {
+					addInviteStore(res?.data || res);
+				}
+
 				toast.success('Invitation sent successfully');
 				setActiveTab('invitations');
 			}
 
 			setIsCreateOpen(false);
+			await refetchMembers();
+			await refetchInvites();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		} finally {
@@ -221,11 +243,13 @@ export function UsersManagementPage() {
 
 	const handleUpdateRole = async (newRole: string) => {
 		if (!editingRoleUser) return;
+		const targetId = editingRoleUser.id;
+		updateMemberStore(targetId, { role: newRole });
 		try {
 			await updateRoleMutation.mutateAsync({
 				params: {
 					path: {
-						user_id: Number(editingRoleUser.id),
+						user_id: Number(targetId),
 					},
 				},
 				body: {
@@ -234,6 +258,7 @@ export function UsersManagementPage() {
 			} as any);
 			toast.success('User role updated');
 			setEditingRoleUser(null);
+			await refetchMembers();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		}
@@ -241,17 +266,19 @@ export function UsersManagementPage() {
 
 	const confirmDeleteUser = async () => {
 		if (!deleteTarget) return;
+		const targetId = deleteTarget.id;
+		deleteMemberStore(targetId);
 		setIsDeleting(true);
 		try {
 			await removeMemberMutation.mutateAsync({
 				params: {
 					path: {
-						user_id: Number(deleteTarget.id),
+						user_id: Number(targetId),
 					},
 				},
 			} as any);
 			toast.success('User removed from organization');
-			refetchMembers();
+			await refetchMembers();
 			setDeleteTarget(null);
 		} catch (error) {
 			toast.error(formatApiError(error));
@@ -261,6 +288,7 @@ export function UsersManagementPage() {
 	};
 
 	const handleRevokeInvitation = async (id: string) => {
+		deleteInviteStore(id);
 		try {
 			await cancelInviteMutation.mutateAsync({
 				params: {
@@ -270,7 +298,7 @@ export function UsersManagementPage() {
 				},
 			} as any);
 			toast.success('Invitation revoked successfully');
-			refetchInvites();
+			await refetchInvites();
 		} catch (error) {
 			toast.error(formatApiError(error));
 		}

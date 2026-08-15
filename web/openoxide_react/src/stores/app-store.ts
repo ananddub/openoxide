@@ -127,6 +127,23 @@ export interface UserProfileItem {
 	role?: string;
 }
 
+export interface MemberItem {
+	id: string;
+	user_id?: number;
+	email: string;
+	role: string;
+	avatar?: string;
+	banned?: boolean;
+	created_at?: number;
+}
+
+export interface InviteItem {
+	id: string;
+	email: string;
+	role: string;
+	expired_at?: number;
+}
+
 interface AppStoreState {
 	// Vault & DNS
 	vaultProviders: VaultProviderItem[];
@@ -143,12 +160,14 @@ interface AppStoreState {
 	deployments: DeploymentItem[];
 	swarmNodes: SwarmNodeItem[];
 
-	// Tags, Schedules, Keys, Destinations, Profile
+	// Tags, Schedules, Keys, Destinations, Profile, Members & Invites
 	tags: TagItem[];
 	schedules: ScheduleItem[];
 	sshKeys: SshKeyItem[];
 	destinations: DestinationItem[];
 	profile: UserProfileItem | null;
+	members: MemberItem[];
+	invites: InviteItem[];
 
 	// Global Sync Hydration Status
 	isHydrated: boolean;
@@ -201,6 +220,15 @@ interface AppStoreState {
 	setDestinations: (destinations: DestinationItem[]) => void;
 	setProfile: (profile: UserProfileItem) => void;
 
+	setMembers: (members: MemberItem[]) => void;
+	addMember: (member: MemberItem) => void;
+	updateMember: (id: string, member: Partial<MemberItem>) => void;
+	deleteMember: (id: string) => void;
+
+	setInvites: (invites: InviteItem[]) => void;
+	addInvite: (invite: InviteItem) => void;
+	deleteInvite: (id: string) => void;
+
 	setHydrated: (hydrated: boolean) => void;
 	setWsConnected: (connected: boolean) => void;
 }
@@ -220,6 +248,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	sshKeys: [],
 	destinations: [],
 	profile: null,
+	members: [],
+	invites: [],
 
 	isHydrated: false,
 	isWsConnected: false,
@@ -292,6 +322,20 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	setSshKeys: (sshKeys) => set({ sshKeys }),
 	setDestinations: (destinations) => set({ destinations }),
 	setProfile: (profile) => set({ profile }),
+
+	setMembers: (members) => set({ members }),
+	addMember: (member) =>
+		set((state) => ({ members: [member, ...state.members.filter((m) => m.id !== member.id)] })),
+	updateMember: (id, updated) =>
+		set((state) => ({ members: state.members.map((m) => (m.id === id ? { ...m, ...updated } : m)) })),
+	deleteMember: (id) =>
+		set((state) => ({ members: state.members.filter((m) => m.id !== id) })),
+
+	setInvites: (invites) => set({ invites }),
+	addInvite: (invite) =>
+		set((state) => ({ invites: [invite, ...state.invites.filter((i) => i.id !== invite.id)] })),
+	deleteInvite: (id) =>
+		set((state) => ({ invites: state.invites.filter((i) => i.id !== id) })),
 
 	setHydrated: (hydrated) => set({ isHydrated: hydrated }),
 	setWsConnected: (connected) => set({ isWsConnected: connected }),
