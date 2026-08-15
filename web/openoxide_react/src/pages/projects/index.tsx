@@ -1,14 +1,14 @@
-import {createFileRoute} from '@tanstack/react-router';
-import {Plus} from 'lucide-react';
-import {useState} from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { Plus, FolderInput, Search } from 'lucide-react';
+import { useState } from 'react';
 
-import {Button} from '#/components/ui/button';
-import {Card} from '#/components/ui/card';
-import {ProjectCard} from '#/components/projects/dashboard/project-card';
-import {EmptyState} from '#/components/projects/dashboard/empty-state';
-import {CreateProjectDialog} from '#/components/projects/dashboard/create-project-dialog';
-import {ProjectDashboardFilters} from '#/components/projects/dashboard/project-dashboard-filters';
-import {useProjectsList} from '#/hooks/projects/use-projects-list';
+import { Button } from '#/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '#/components/ui/card';
+import { ProjectCard } from '#/components/projects/dashboard/project-card';
+import { EmptyState } from '#/components/projects/dashboard/empty-state';
+import { CreateProjectDialog } from '#/components/projects/dashboard/create-project-dialog';
+import { ProjectDashboardFilters } from '#/components/projects/dashboard/project-dashboard-filters';
+import { useProjectsList } from '#/hooks/projects/use-projects-list';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -55,76 +55,91 @@ function ProjectsPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 w-full">
-			{/* Page Header */}
-			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
-				<div>
-					<h1 className="text-2xl font-bold tracking-tight text-foreground">Projects</h1>
-					<p className="text-muted-foreground text-xs font-medium mt-1">
-						Manage your deployment environments, applications, and infrastructure stacks
-					</p>
-				</div>
-				<Button
-					onClick={() => setIsCreateOpen(true)}
-					disabled={!activeOrg}
-					className="h-10 text-xs font-semibold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all active:scale-95 cursor-pointer">
-					<Plus className="size-4" />
-					<span>New Project</span>
-				</Button>
-			</div>
+		<div className="w-full max-w-full animate-in fade-in duration-200">
+			<Card className="h-full bg-sidebar p-2.5 rounded-xl border border-border/60">
+				<div className="rounded-xl bg-background shadow-xs border border-border/40">
+					{/* Header Row (Dokploy Style) */}
+					<div className="flex justify-between gap-4 w-full items-center flex-wrap p-6">
+						<CardHeader className="flex-1 p-0">
+							<CardTitle className="text-xl flex flex-row gap-2.5 items-center font-bold tracking-tight text-foreground">
+								<FolderInput className="size-6 text-muted-foreground shrink-0" />
+								<span>Projects</span>
+							</CardTitle>
+							<CardDescription className="text-xs text-muted-foreground mt-1">
+								Create and manage your projects
+							</CardDescription>
+						</CardHeader>
 
-			<ProjectDashboardFilters
-				projects={projects}
-				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
-				sortBy={sortBy}
-				setSortBy={setSortBy}
-				allTags={allTags}
-				selectedTags={selectedTags}
-				handleTagClick={handleTagClick}
-				setSelectedTags={setSelectedTags}
-			/>
+						<Button
+							onClick={() => setIsCreateOpen(true)}
+							disabled={!activeOrg}
+							className="h-9 text-xs font-bold px-4 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-95 cursor-pointer"
+						>
+							<Plus className="size-4" />
+							<span>Create Project</span>
+						</Button>
+					</div>
 
-			{/* Content Area */}
-			{isLoadingProjects ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-					{[1, 2, 3].map(i => (
-						<Card key={i} className="h-44 animate-pulse bg-muted/40 border-border/40" />
-					))}
-				</div>
-			) : filteredAndSortedProjects.length > 0 ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-					{filteredAndSortedProjects.map(project => (
-						<ProjectCard
-							key={String(project.id)}
-							project={project as unknown as any}
-							onDelete={id => setDeletingId(id)}
+					{/* Content Section */}
+					<CardContent className="space-y-6 py-6 px-6 border-t border-border/50 flex flex-col min-h-[60vh]">
+						{/* Filter Toolbar */}
+						<ProjectDashboardFilters
+							projects={projects}
+							searchQuery={searchQuery}
+							setSearchQuery={setSearchQuery}
+							sortBy={sortBy}
+							setSortBy={setSortBy}
+							allTags={allTags}
+							selectedTags={selectedTags}
+							handleTagClick={handleTagClick}
+							setSelectedTags={setSelectedTags}
 						/>
-					))}
+
+						{/* Content Cards Grid */}
+						{isLoadingProjects ? (
+							<div className="w-full grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+								{[1, 2, 3].map((i) => (
+									<Card key={i} className="h-44 animate-pulse bg-muted/40 border-border/40" />
+								))}
+							</div>
+						) : filteredAndSortedProjects.length > 0 ? (
+							<div className="w-full grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+								{filteredAndSortedProjects.map((project) => (
+									<ProjectCard
+										key={String(project.id)}
+										project={project as unknown as any}
+										onDelete={(id) => setDeletingId(id)}
+									/>
+								))}
+							</div>
+						) : projects && projects.length > 0 ? (
+							/* Filter Empty State */
+							<div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-2xl p-12 text-center bg-card/10 backdrop-blur-xs my-auto">
+								<Search className="size-8 text-muted-foreground/40 mb-2" />
+								<h3 className="text-md font-bold text-foreground">No matching projects found</h3>
+								<p className="text-muted-foreground mt-1 text-xs">
+									Try adjusting your search keywords or clearing selected tags.
+								</p>
+								<Button
+									variant="ghost"
+									onClick={() => {
+										setSearchQuery('');
+										setSelectedTags([]);
+									}}
+									className="mt-4 text-xs font-semibold text-primary"
+								>
+									Clear All Filters
+								</Button>
+							</div>
+						) : (
+							<EmptyState
+								onCreateClick={() => setIsCreateOpen(true)}
+								disabled={!activeOrg}
+							/>
+						)}
+					</CardContent>
 				</div>
-			) : projects && projects.length > 0 ? (
-				/* Filter Empty State */
-				<div className="flex flex-col items-center justify-center border border-dashed border-border/80 rounded-2xl p-12 text-center bg-card/10 backdrop-blur-[2px]">
-					<h3 className="text-md font-bold text-foreground">No matching projects</h3>
-					<p className="text-muted-foreground mt-1 text-xs">
-						Try adjusting your search keywords or clearing selected tags.
-					</p>
-					<Button
-						variant="ghost"
-						onClick={() => {
-							setSearchQuery('');
-							setSelectedTags([]);
-						}}
-						className="mt-4 text-xs font-semibold text-primary">
-						Clear All Filters
-					</Button>
-				</div>
-			) : (
-				<EmptyState
-					onCreateClick={() => setIsCreateOpen(true)}
-					disabled={!activeOrg}
-				/>
-			)}
+			</Card>
 
 			{/* Create Project Modal */}
 			<CreateProjectDialog
@@ -135,7 +150,7 @@ function ProjectsPage() {
 			/>
 
 			{/* Delete Confirmation Alert Dialog */}
-			<AlertDialog open={deletingId !== null} onOpenChange={open => !open && setDeletingId(null)}>
+			<AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Project</AlertDialogTitle>
@@ -146,7 +161,7 @@ function ProjectsPage() {
 					<AlertDialogFooter>
 						<AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold"
 							onClick={confirmDelete}
 						>
 							Delete Project
