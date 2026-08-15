@@ -15,6 +15,7 @@ pub async fn spawn_docker_terminal(
     sessions: &SessionMap,
     input: DockerTerminalStart,
 ) {
+    let key = socket_key(&socket);
     if input.server_id.is_some() {
         let msg = "\r\n\x1b[31m[Error] Remote docker terminal should be opened with server:start\x1b[0m\r\n";
         emit_terminal_bytes(&socket, "stdout", msg.as_bytes().to_vec());
@@ -63,18 +64,12 @@ pub async fn spawn_docker_terminal(
         .interactive()
         .tty(true)
         .env("TERM", "xterm-256color")
-        .env("COLORTERM", "truecolor")
-        .env("FORCE_COLOR", "3")
-        .env("CLICOLOR_FORCE", "1")
         .workdir("/")
         .build_args([&shell_req]);
 
     let pty_cmd = PtyCommand::new("docker")
         .args(&exec_args)
-        .env("TERM", "xterm-256color")
-        .env("COLORTERM", "truecolor")
-        .env("FORCE_COLOR", "3")
-        .env("CLICOLOR_FORCE", "1");
+        .env("TERM", "xterm-256color");
 
     let child = match pty_cmd.spawn(pts) {
         Ok(child) => child,
@@ -90,7 +85,6 @@ pub async fn spawn_docker_terminal(
     let child_arc = Arc::new(Mutex::new(child));
     let session_id = next_session_id();
 
-    let key = socket_key(&socket);
     sessions.insert(
         key.clone(),
         TerminalSession::Pty {

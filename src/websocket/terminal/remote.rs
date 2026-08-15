@@ -76,10 +76,7 @@ pub async fn spawn_remote_terminal(
 
     let pty_cmd = PtyCommand::new("ssh")
         .args(&args)
-        .env("TERM", "xterm-256color")
-        .env("COLORTERM", "truecolor")
-        .env("FORCE_COLOR", "3")
-        .env("CLICOLOR_FORCE", "1");
+        .env("TERM", "xterm-256color");
     let mut cmd = pty_cmd;
     if let Some(socket_path) = agent_socket {
         cmd = cmd.env("SSH_AUTH_SOCK", socket_path);
