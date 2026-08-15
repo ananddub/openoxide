@@ -109,8 +109,7 @@ export function OverviewServicesTab() {
 	};
 
 	return (
-		<Card className="bg-sidebar p-2.5 rounded-xl w-full border border-border/60 shadow-xs">
-			<div className="rounded-xl bg-background shadow-md p-6 flex flex-col gap-5">
+		<div className="flex flex-col gap-5 w-full">
 				{/* Top Header & Filter Toolbar */}
 				<div className="flex flex-wrap items-center justify-between gap-4">
 					<h3 className="text-lg font-bold tracking-tight text-foreground">
@@ -266,7 +265,6 @@ export function OverviewServicesTab() {
 						</div>
 					</>
 				)}
-			</div>
-		</Card>
+		</div>
 	);
 }
