@@ -5,6 +5,7 @@ use crate::db::models::vault_providers::VaultProvider;
 use crate::db::repository::VaultProviderRepository;
 use auto_di::singleton;
 use reqwest::Client;
+use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -200,6 +201,100 @@ impl VaultService {
                 secrets: vec!["DATABASE_URL".into(), "SECRET_KEY".into(), "API_KEY".into()],
             }),
         }
+    }
+
+    /// Resolves all Vault references like `${{vault.provider_name.ref_path}}` in raw_env text during build/deployment phase.
+    pub async fn resolve_vault_references(
+        &self,
+        raw_env: &str,
+        organization_id: i64,
+    ) -> Result<String, VaultServiceError> {
+        if !raw_env.contains("${{vault.") {
+            return Ok(raw_env.to_string());
+        }
+
+        let providers = self.repository.list_by_organization(organization_id).await?;
+        let mut provider_map: HashMap<String, VaultProvider> = HashMap::new();
+        for p in providers {
+            provider_map.insert(p.name.clone(), p);
+        }
+
+        let mut resolved = raw_env.to_string();
+        let prefix = "${{vault.";
+        let suffix = "}}";
+
+        while let Some(start_idx) = resolved.find(prefix) {
+            let rest = &resolved[start_idx + prefix.len()..];
+            if let Some(end_idx) = rest.find(suffix) {
+                let full_ref = &resolved[start_idx..start_idx + prefix.len() + end_idx + suffix.len()];
+                let inner = &rest[..end_idx]; // e.g. "my_doppler.STRIPE_SECRET"
+
+                if let Some(dot_idx) = inner.find('.') {
+                    let provider_name = &inner[..dot_idx];
+                    let ref_path = &inner[dot_idx + 1..];
+
+                    if let Some(provider) = provider_map.get(provider_name) {
+                        let val = match provider.provider_type.as_str() {
+                            "DOPPLER" => self.fetch_doppler_secret(&provider.auth_token, ref_path).await?,
+                            "HASHICORP" => self.fetch_hashicorp_secret(&provider.api_url, &provider.auth_token, provider.namespace.as_deref(), ref_path).await?,
+                            _ => String::new(),
+                        };
+                        resolved = resolved.replace(full_ref, &val);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(resolved)
+    }
+
+    async fn fetch_doppler_secret(&self, auth_token: &str, secret_name: &str) -> Result<String, VaultServiceError> {
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+        let url = format!("https://api.doppler.com/v3/configs/config/secret?name={}", secret_name);
+        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
+        if res.status().is_success() {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(val) = json["value"]["computed"].as_str().or_else(|| json["value"]["raw"].as_str()) {
+                    return Ok(val.to_string());
+                }
+            }
+        }
+        Ok(String::new())
+    }
+
+    async fn fetch_hashicorp_secret(&self, api_url: &str, auth_token: &str, namespace: Option<&str>, path_and_key: &str) -> Result<String, VaultServiceError> {
+        let clean_url = api_url.trim_end_matches('/');
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+        
+        let parts: Vec<&str> = path_and_key.split(':').collect();
+        let (path, field) = if parts.len() == 2 {
+            (parts[0], parts[1])
+        } else {
+            (path_and_key, "value")
+        };
+
+        let url = format!("{}/v1/secret/data/{}", clean_url, path);
+        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
+        if let Some(ns) = namespace {
+            if !ns.trim().is_empty() {
+                req = req.header("X-Vault-Namespace", ns.trim());
+            }
+        }
+
+        if let Ok(res) = req.send().await {
+            if let Ok(json) = res.json::<serde_json::Value>().await {
+                if let Some(val) = json["data"]["data"][field].as_str() {
+                    return Ok(val.to_string());
+                }
+            }
+        }
+        Ok(String::new())
     }
 
     async fn test_hashicorp_credentials(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultTestResultDto, VaultServiceError> {
