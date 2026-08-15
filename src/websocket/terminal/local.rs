@@ -5,7 +5,7 @@ use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
-use super::helpers::{emit_error, socket_key, spawn_pty_reader};
+use super::helpers::{emit_error, emit_terminal_bytes, socket_key, spawn_pty_reader};
 use super::types::{
     DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
 };
@@ -16,10 +16,9 @@ pub async fn spawn_docker_terminal(
     input: DockerTerminalStart,
 ) {
     if input.server_id.is_some() {
-        emit_error(
-            &socket,
-            "remote docker terminal should be opened with server:start and docker command inside the remote shell",
-        );
+        let msg = "\r\n\x1b[31m[Error] Remote docker terminal should be opened with server:start\x1b[0m\r\n";
+        emit_terminal_bytes(&socket, "stdout", msg.as_bytes().to_vec());
+        emit_error(&socket, "remote docker terminal should be opened with server:start");
         return;
     }
 
@@ -27,67 +26,56 @@ pub async fn spawn_docker_terminal(
     let mut target_container = input.container.clone();
 
     let docker = crate::utils::docker::DockerCli::new_local();
-    let mut use_docker = false;
+    let mut container_found = false;
+
     if let Ok(containers) = docker.containers().ps().list().await {
-        if !containers.is_empty() {
-            use_docker = true;
-            let search = input.container.to_lowercase();
-            if let Some(matching) = containers.iter().find(|c| {
-                let n = c.names.to_lowercase();
-                n.contains(&search)
-                    || n.contains(&format!("{}_", search))
-                    || n.contains(&format!("{}.", search))
-            }) {
-                target_container = matching.names.trim_start_matches('/').to_string();
-            } else {
-                emit_error(
-                    &socket,
-                    format!(
-                        "container for service '{}' is not currently running",
-                        input.container
-                    ),
-                );
-                return;
-            }
+        let search = input.container.to_lowercase();
+        if let Some(matching) = containers.iter().find(|c| {
+            let n = c.names.to_lowercase();
+            n.contains(&search)
+                || n.trim_start_matches('/').starts_with(&search)
+                || n.contains(&format!("{}_", search))
+                || n.contains(&format!("{}.", search))
+        }) {
+            target_container = matching.names.trim_start_matches('/').to_string();
+            container_found = true;
         }
+    }
+
+    if !container_found && !input.container.is_empty() {
+        target_container = input.container.clone();
     }
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
         Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Failed opening PTY system terminal: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
             emit_error(&socket, format!("could not open PTY: {error}"));
             return;
         }
     };
     let _ = pty.resize(Size::new(24, 80));
 
-    // Universal shell fallback: try requested shell first, fallback to sh if bash is missing in Alpine/Nginx
-    let exec_cmd_args: Vec<String> = if shell_req == "bash" {
-        vec!["sh".into(), "-c".into(), "exec bash 2>/dev/null || exec sh".into()]
-    } else {
-        vec![shell_req.clone()]
-    };
+    let exec_args = docker
+        .containers()
+        .exec(&target_container)
+        .interactive()
+        .tty(true)
+        .env("TERM", "xterm-256color")
+        .workdir("/")
+        .build_args([&shell_req]);
 
-    let cmd = if use_docker {
-        let exec_args = docker
-            .containers()
-            .exec(&target_container)
-            .interactive()
-            .tty(true)
-            .env("TERM", "xterm-256color")
-            .workdir("/")
-            .build_args(&exec_cmd_args);
-        PtyCommand::new("docker")
-            .args(&exec_args)
-            .env("TERM", "xterm-256color")
-    } else {
-        PtyCommand::new(&shell_req).env("TERM", "xterm-256color")
-    };
+    let pty_cmd = PtyCommand::new("docker")
+        .args(&exec_args)
+        .env("TERM", "xterm-256color");
 
-    let mut child = match cmd.spawn(pts) {
+    let mut child = match pty_cmd.spawn(pts) {
         Ok(child) => child,
         Err(error) => {
-            emit_error(&socket, format!("could not start terminal: {error}"));
+            let err_msg = format!("\r\n\x1b[31m[Error] Failed to execute docker exec for container '{target_container}': {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
+            emit_error(&socket, format!("could not start docker exec terminal: {error}"));
             return;
         }
     };
@@ -109,16 +97,19 @@ pub async fn spawn_docker_terminal(
     let sessions_clone = sessions.clone();
     let socket_clone = socket.clone();
     let container_name = target_container.clone();
+    let shell_name = shell_req.clone();
     tokio::spawn(async move {
         let status = child.wait().await;
         sessions_clone.remove(&key);
         let code = status.ok().and_then(|s| s.code());
         if let Some(c) = code {
             if c != 0 {
-                emit_error(
-                    &socket_clone,
-                    format!("Container '{container_name}' terminal exited with code {c}. Check if container is running."),
-                );
+                let err_msg = if c == 126 || c == 127 {
+                    format!("\r\n\x1b[31m[Error] Shell '{shell_name}' is not installed in container '{container_name}'. Please switch shell dropdown to 'sh'.\x1b[0m\r\n")
+                } else {
+                    format!("\r\n\x1b[31m[Error] Container '{container_name}' shell process exited with code {c}. Check container status.\x1b[0m\r\n")
+                };
+                emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes().to_vec());
             }
         }
         let _ = socket_clone.emit("exit", &TerminalExit { code });
@@ -136,6 +127,8 @@ pub async fn spawn_local_terminal(
     let mut child = match command.spawn() {
         Ok(child) => child,
         Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not start local process: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes().to_vec());
             emit_error(&socket, format!("could not start terminal: {error}"));
             return;
         }
