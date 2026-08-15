@@ -23,15 +23,13 @@ export const Route = createFileRoute('/_app/projects/$id/app/$appId')({
 
 const TABS = [
 	'General',
-	'Architecture',
 	'Environment',
 	'Domains',
 	'Deployments',
-	'Preview Deployments',
-	'Schedules',
 	'Volume Backups',
-	'Logs',
 	'Monitoring',
+	'Logs',
+	'Schedules',
 	'Advanced',
 ] as const;
 
