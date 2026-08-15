@@ -2,6 +2,7 @@ import {useMemo} from 'react';
 import {useAuthStore} from '#/stores/auth-store';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
+import {useAppStore} from '#/stores/app-store';
 import {
 	useProjectListByOrganization,
 	useDeploymentList,
@@ -13,12 +14,19 @@ export function useHomeStats() {
 	const activeOrg = useOrganizationStore((state) => state.activeOrg);
 	const firstName = user?.firstName || (user?.email ? user.email.split('@')[0] : undefined);
 
+	const storeProjects = useAppStore(state => state.projects);
+	const storeDeployments = useAppStore(state => state.deployments);
+
 	// Fetch Projects using active organization context
 	const orgId = activeOrg?.id || 1;
-	const {data: rawProjects, loading: isProjectsLoading} = useProjectListByOrganization(BigInt(orgId));
+	const {data: rawProjectsQuery, loading: isProjectsLoading} = useProjectListByOrganization(BigInt(orgId));
+
+	const rawProjects = (rawProjectsQuery && Array.isArray(rawProjectsQuery) && rawProjectsQuery.length > 0)
+		? rawProjectsQuery
+		: (storeProjects || []);
 
 	// Fetch real backend deployments history (/deployments)
-	const {data: rawDeployments, loading: isDeploymentsLoading} = useDeploymentList({
+	const {data: rawDeploymentsQuery, loading: isDeploymentsLoading} = useDeploymentList({
 		status: null,
 		state: null,
 		application_id: null,
@@ -28,6 +36,10 @@ export function useHomeStats() {
 		limit: 50n,
 		offset: null,
 	});
+
+	const rawDeployments = (rawDeploymentsQuery && Array.isArray(rawDeploymentsQuery) && rawDeploymentsQuery.length > 0)
+		? rawDeploymentsQuery
+		: (storeDeployments || []);
 
 	// Fetch active running deployments (/deployments/running)
 	const {data: rawRunning, loading: isRunningLoading} = useDeploymentRunning({
