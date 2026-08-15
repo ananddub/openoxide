@@ -17,7 +17,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
@@ -500,9 +499,9 @@ export function UsersManagementPage() {
 				)
 			)}
 
-			{/* Simple & Minimal Create/Invite Modal */}
+			{/* Simple & Minimal Create/Invite Modal (NO CANCEL BUTTON) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="sm:max-w-md bg-card border-border/80">
+				<DialogContent className="sm:max-w-md border-border/80">
 					<DialogHeader>
 						<DialogTitle className="text-base font-bold text-foreground">
 							{actionType === 'direct' ? 'Add User Member' : 'Send Invitation Email'}
@@ -542,14 +541,14 @@ export function UsersManagementPage() {
 								value={inputEmail}
 								onChange={(e) => setInputEmail(e.target.value)}
 								required
-								className="h-9 text-xs bg-background border-border/80"
+								className="h-9 text-xs border-border/80"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
 							<Label className="text-xs font-semibold text-foreground">Role</Label>
 							<Select value={selectedRole} onValueChange={setSelectedRole}>
-								<SelectTrigger className="h-9 text-xs bg-background border-border/80 font-mono">
+								<SelectTrigger className="h-9 text-xs border-border/80 font-mono">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -560,21 +559,18 @@ export function UsersManagementPage() {
 							</Select>
 						</div>
 
-						<DialogFooter className="mt-4 gap-2 sm:gap-0">
-							<Button type="button" variant="ghost" size="sm" onClick={() => setIsCreateOpen(false)} className="text-xs">
-								Cancel
-							</Button>
-							<Button type="submit" size="sm" disabled={isSubmitting} className="text-xs font-semibold px-4">
+						<div className="mt-4">
+							<Button type="submit" disabled={isSubmitting} className="w-full text-xs font-semibold h-9">
 								{isSubmitting ? 'Saving...' : actionType === 'direct' ? 'Add User' : 'Send Invite'}
 							</Button>
-						</DialogFooter>
+						</div>
 					</form>
 				</DialogContent>
 			</Dialog>
 
-			{/* Simple & Minimal Edit Role Dialog */}
+			{/* Simple & Minimal Edit Role Dialog (NO CANCEL BUTTON) */}
 			<Dialog open={Boolean(editingRoleUser)} onOpenChange={() => setEditingRoleUser(null)}>
-				<DialogContent className="sm:max-w-xs bg-card border-border/80">
+				<DialogContent className="sm:max-w-xs border-border/80">
 					<DialogHeader>
 						<DialogTitle className="text-sm font-bold text-foreground">Change User Role</DialogTitle>
 						<DialogDescription className="text-xs text-muted-foreground font-mono">
@@ -598,9 +594,9 @@ export function UsersManagementPage() {
 				</DialogContent>
 			</Dialog>
 
-			{/* Simple & Minimal Delete Member Confirmation Modal */}
+			{/* Simple & Minimal Delete Member Confirmation Modal (NO CANCEL BUTTON) */}
 			<AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
-				<AlertDialogContent className="sm:max-w-md bg-card border-border/80">
+				<AlertDialogContent className="sm:max-w-md border-border/80">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="text-base font-bold text-foreground">
 							Remove Workspace Member
@@ -609,16 +605,15 @@ export function UsersManagementPage() {
 							Are you sure you want to remove <span className="font-mono font-semibold text-foreground">{deleteTarget?.email}</span>?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					<AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
-						<AlertDialogCancel className="text-xs h-8">Cancel</AlertDialogCancel>
+					<div className="mt-4">
 						<AlertDialogAction
 							onClick={confirmDeleteUser}
 							disabled={isDeleting}
-							className="text-xs h-8 bg-rose-600 hover:bg-rose-700 text-white font-bold"
+							className="w-full text-xs h-9 bg-rose-600 hover:bg-rose-700 text-white font-bold"
 						>
 							{isDeleting ? 'Removing...' : 'Confirm Remove'}
 						</AlertDialogAction>
-					</AlertDialogFooter>
+					</div>
 				</AlertDialogContent>
 			</AlertDialog>
 		</div>
