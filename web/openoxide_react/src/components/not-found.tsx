@@ -1,7 +1,7 @@
 import {Link} from '@tanstack/react-router';
 import {Logo} from '#/components/shared/logo';
 import {buttonVariants} from '#/components/ui/button';
-import {ChevronLeft, Construction} from 'lucide-react';
+import {ChevronLeft, AlertCircle} from 'lucide-react';
 import {useAuthStore} from '#/stores/auth-store';
 import {
 	SidebarInset,
@@ -29,23 +29,23 @@ export const NotFound = () => {
 						<div className="flex items-center gap-2">
 							<SidebarTrigger className="-ml-1" />
 							<Separator orientation="vertical" className="mx-2 h-4" />
-							<span className="text-xs font-bold text-foreground">Page Under Construction</span>
+							<span className="text-xs font-bold text-foreground">404 - Page Not Found</span>
 						</div>
 					</header>
 					<main className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-						<div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20 mb-3">
-							<Construction className="size-7" />
+						<div className="size-14 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive shadow-sm border border-destructive/20 mb-3">
+							<AlertCircle className="size-7" />
 						</div>
 						<h2 className="text-lg font-bold tracking-tight text-foreground mb-1">
-							Page Under Construction
+							Page Not Found
 						</h2>
 						<p className="text-xs text-muted-foreground max-w-sm mb-4">
-							This feature is currently being crafted. Your sidebar remains fully active and accessible.
+							The page or resource you are looking for does not exist or has been moved.
 						</p>
 						<Link
 							to="/"
 							className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
-							Return to Dashboard
+							Return to Overview
 						</Link>
 					</main>
 				</SidebarInset>
