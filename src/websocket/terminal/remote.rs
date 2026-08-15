@@ -58,9 +58,11 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // For default bash/server access, leave args empty so OpenSSH launches native interactive login shell (Dokploy style). Only push "sh" if explicitly requested.
+    // If bash is requested, use exec fallback chain so bash login prompt starts if present, or falls back to sh
     if shell_req == "sh" {
         args.push("sh".to_string());
+    } else {
+        args.push("sh -c 'exec bash -l 2>/dev/null || exec bash 2>/dev/null || exec sh'".to_string());
     }
 
     let (pty, pts) = match pty_process::open() {
