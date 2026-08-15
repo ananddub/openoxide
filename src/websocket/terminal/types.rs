@@ -1,11 +1,45 @@
+use std::borrow::Cow;
 use dashmap::DashMap;
-use pty_process::OwnedWritePty;
+use pty_process::{OwnedWritePty, Size};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::{
     process::{Child, ChildStdin},
     sync::{Mutex, mpsc},
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SessionId(pub u64);
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TerminalKind {
+    Docker,
+    RemoteServer,
+    Server,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub struct TerminalSize {
+    #[serde(default = "default_cols")]
+    pub cols: u16,
+    #[serde(default = "default_rows")]
+    pub rows: u16,
+}
+
+fn default_cols() -> u16 {
+    80
+}
+
+fn default_rows() -> u16 {
+    24
+}
+
+impl TerminalSize {
+    pub fn sanitize(&self) -> Size {
+        Size::new(self.rows.clamp(1, 1000), self.cols.clamp(1, 1000))
+    }
+}
 
 #[derive(Debug, Deserialize)]
 pub struct DockerTerminalStart {
@@ -22,6 +56,16 @@ fn default_container() -> String {
     "app".to_string()
 }
 
+impl DockerTerminalStart {
+    pub fn size(&self) -> Size {
+        TerminalSize {
+            cols: self.cols.unwrap_or(80),
+            rows: self.rows.unwrap_or(24),
+        }
+        .sanitize()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ServerTerminalStart {
     pub shell: Option<String>,
@@ -31,6 +75,16 @@ pub struct ServerTerminalStart {
     pub server_id: Option<i64>,
     pub cols: Option<u16>,
     pub rows: Option<u16>,
+}
+
+impl ServerTerminalStart {
+    pub fn size(&self) -> Size {
+        TerminalSize {
+            cols: self.cols.unwrap_or(80),
+            rows: self.rows.unwrap_or(24),
+        }
+        .sanitize()
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,15 +102,25 @@ pub struct TerminalResize {
     pub rows: Option<u16>,
 }
 
+impl TerminalResize {
+    pub fn size(&self) -> Size {
+        TerminalSize {
+            cols: self.cols.unwrap_or(80),
+            rows: self.rows.unwrap_or(24),
+        }
+        .sanitize()
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct TerminalOutput<'a> {
     pub stream: &'a str,
-    pub data: String,
+    pub data: Cow<'a, str>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct TerminalStarted<'a> {
-    pub kind: &'a str,
+    pub kind: TerminalKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub host: Option<&'a str>,
 }
@@ -78,7 +142,7 @@ pub enum TerminalSession {
     Pty {
         writer: Arc<Mutex<OwnedWritePty>>,
         child: Arc<Mutex<Child>>,
-        session_id: u64,
+        session_id: SessionId,
         cancel: tokio_util::sync::CancellationToken,
     },
     Local {

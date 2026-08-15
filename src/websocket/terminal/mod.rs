@@ -20,7 +20,8 @@ use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
 use remote::spawn_remote_terminal;
 pub use types::{
-    DockerTerminalStart, ServerTerminalStart, TerminalInputPayload, TerminalResize, TerminalSession,
+    DockerTerminalStart, ServerTerminalStart, TerminalInputPayload, TerminalKind, TerminalResize,
+    TerminalSession,
 };
 
 #[derive(Debug)]
@@ -75,12 +76,9 @@ impl TerminalSocket {
     }
 
     #[on("docker:start")]
-    async fn docker_start(&self, socket: SocketRef, Data(mut input): Data<DockerTerminalStart>) {
+    async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
-
-        input.cols = input.cols.map(|v| v.max(1));
-        input.rows = input.rows.map(|v| v.max(1));
 
         spawn_docker_terminal(socket, &self.sessions, input).await;
     }
@@ -93,8 +91,6 @@ impl TerminalSocket {
         if input.shell.is_none() && input.command.is_some() {
             input.shell = input.command.clone();
         }
-        input.cols = input.cols.map(|v| v.max(1));
-        input.rows = input.rows.map(|v| v.max(1));
 
         if let Some(server_id) = input.server_id {
             spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
@@ -110,7 +106,7 @@ impl TerminalSocket {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
-        spawn_local_terminal(socket, &self.sessions, "server", command).await;
+        spawn_local_terminal(socket, &self.sessions, TerminalKind::Server, command).await;
     }
 
     #[on("input")]
@@ -156,14 +152,11 @@ impl TerminalSocket {
 
     #[on("resize")]
     async fn resize(&self, socket: SocketRef, Data(payload): Data<TerminalResize>) {
-        let cols = payload.cols.map(|v| v.max(1)).unwrap_or(80);
-        let rows = payload.rows.map(|v| v.max(1)).unwrap_or(24);
-
         let key = socket_key(&socket);
         if let Some(session) = self.sessions.get(&key) {
             if let TerminalSession::Pty { writer, .. } = session.value() {
                 let w = writer.lock().await;
-                let _ = w.resize(pty_process::Size::new(rows, cols));
+                let _ = w.resize(payload.size());
             }
         }
     }

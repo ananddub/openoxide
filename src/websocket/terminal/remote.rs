@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use pty_process::{Command as PtyCommand, Size};
+use pty_process::Command as PtyCommand;
 use socketioxide::extract::SocketRef;
 use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, emit_terminal_bytes, next_session_id, socket_key, spawn_pty_reader};
 use super::types::{
-    ServerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
+    ServerTerminalStart, SessionMap, TerminalExit, TerminalKind, TerminalSession, TerminalStarted,
 };
 
 pub async fn spawn_remote_terminal(
@@ -34,7 +34,7 @@ pub async fn spawn_remote_terminal(
 
     let actual_host = executor.host().to_string();
 
-    let shell_req = input.shell.unwrap_or_else(|| "bash".into());
+    let shell_req = input.shell.as_deref().unwrap_or("bash").to_string();
     let builder = crate::utils::ssh::SshBuilder::new(
         actual_host.clone(),
         executor.username().to_string(),
@@ -75,9 +75,7 @@ pub async fn spawn_remote_terminal(
             return;
         }
     };
-    let initial_cols = input.cols.unwrap_or(80);
-    let initial_rows = input.rows.unwrap_or(24);
-    let _ = pty.resize(Size::new(initial_rows, initial_cols));
+    let _ = pty.resize(input.size());
 
     let pty_cmd = PtyCommand::new("ssh")
         .args(&args)
@@ -121,7 +119,7 @@ pub async fn spawn_remote_terminal(
     let _ = socket.emit(
         "started",
         &TerminalStarted {
-            kind: "remote-server",
+            kind: TerminalKind::RemoteServer,
             host: Some(&actual_host),
         },
     );

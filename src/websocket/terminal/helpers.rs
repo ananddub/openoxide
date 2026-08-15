@@ -3,12 +3,12 @@ use socketioxide::extract::SocketRef;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::io::AsyncReadExt;
 
-use super::types::{TerminalError, TerminalOutput};
+use super::types::{SessionId, TerminalError, TerminalOutput};
 
 static NEXT_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
-pub fn next_session_id() -> u64 {
-    NEXT_SESSION_ID.fetch_add(1, Ordering::SeqCst)
+pub fn next_session_id() -> SessionId {
+    SessionId(NEXT_SESSION_ID.fetch_add(1, Ordering::SeqCst))
 }
 
 pub fn socket_key(socket: &SocketRef) -> String {
@@ -16,7 +16,7 @@ pub fn socket_key(socket: &SocketRef) -> String {
 }
 
 pub fn emit_terminal_bytes(socket: &SocketRef, stream: &'static str, bytes: &[u8]) {
-    let data = String::from_utf8_lossy(bytes).into_owned();
+    let data = String::from_utf8_lossy(bytes);
     let _ = socket.emit("output", &TerminalOutput { stream, data });
 }
 

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use pty_process::{Command as PtyCommand, Size};
+use pty_process::Command as PtyCommand;
 use socketioxide::extract::SocketRef;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, emit_terminal_bytes, next_session_id, socket_key, spawn_pty_reader};
 use super::types::{
-    DockerTerminalStart, SessionMap, TerminalExit, TerminalSession, TerminalStarted,
+    DockerTerminalStart, SessionMap, TerminalExit, TerminalKind, TerminalSession, TerminalStarted,
 };
 
 pub async fn spawn_docker_terminal(
@@ -23,7 +23,7 @@ pub async fn spawn_docker_terminal(
         return;
     }
 
-    let shell_req = input.shell.unwrap_or_else(|| "sh".into());
+    let shell_req = input.shell.as_deref().unwrap_or("sh").to_string();
     let mut target_container = input.container.clone();
 
     let docker = crate::utils::docker::DockerCli::new_local();
@@ -56,9 +56,7 @@ pub async fn spawn_docker_terminal(
             return;
         }
     };
-    let initial_cols = input.cols.unwrap_or(80);
-    let initial_rows = input.rows.unwrap_or(24);
-    let _ = pty.resize(Size::new(initial_rows, initial_cols));
+    let _ = pty.resize(input.size());
 
     let exec_args = docker
         .containers()
@@ -101,7 +99,7 @@ pub async fn spawn_docker_terminal(
     let _ = socket.emit(
         "started",
         &TerminalStarted {
-            kind: "docker",
+            kind: TerminalKind::Docker,
             host: Some(&target_container),
         },
     );
@@ -150,7 +148,7 @@ pub async fn spawn_docker_terminal(
 pub async fn spawn_local_terminal(
     socket: SocketRef,
     sessions: &SessionMap,
-    kind: &'static str,
+    kind: TerminalKind,
     mut command: Command,
 ) {
     let key = socket_key(&socket);
