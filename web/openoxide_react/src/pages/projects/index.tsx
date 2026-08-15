@@ -56,8 +56,8 @@ function ProjectsPage() {
 
 	return (
 		<div className="w-full max-w-full animate-in fade-in duration-200">
-			<Card className="h-full bg-sidebar p-2.5 rounded-xl border border-border/60">
-				<div className="rounded-xl bg-background shadow-md border border-border/40">
+			<Card className="h-full bg-background p-2.5 rounded-xl border border-border/30 shadow-none">
+				<div className="rounded-xl bg-card/40 backdrop-blur-xs border border-border/50 shadow-xs">
 					{/* Header Row (Dokploy Style) */}
 					<div className="flex justify-between gap-4 w-full items-center flex-wrap p-6">
 						<CardHeader className="flex-1 p-0">
