@@ -1,48 +1,42 @@
-import {io, type Socket} from 'socket.io-client';
-import {
-	liveArgsKey,
-	matchesLiveInvalidation,
-} from '@openoxide/vite/live-key';
+import { liveArgsKey, matchesLiveInvalidation } from '@openoxide/vite/live-key';
+import { socketFor, subscribeMessage } from './socket';
+import type { Entry, Listener, LiveEndpoint, LiveInvalidation, LiveUpdate, RefetchState } from './types';
 
-export type LiveEndpoint<TArgs extends readonly unknown[], TData> = {
-	namespace: string;
-	endpoint: string;
-	event: string;
-	args: TArgs;
-	parse?: (value: unknown) => TData;
-	refetch?: (args: readonly unknown[]) => Promise<TData>;
-};
-
-type Listener<T> = (value: T) => void;
-type Entry = {
-	endpoint: LiveEndpoint<readonly unknown[], unknown>;
-	listeners: Set<Listener<unknown>>;
-	errorListeners: Set<Listener<Error>>;
-	value?: unknown;
-	hasValue: boolean;
-	version: number;
-};
-
-type SocketEntry = {socket: Socket; ready: boolean};
-type RefetchState = {running: boolean; pending: boolean};
-
-type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
-type LiveInvalidation = {endpoint: string; args: unknown};
-
-const sockets = new Map<string, SocketEntry>();
 const entries = new Map<string, Entry>();
 const refetches = new Map<string, RefetchState>();
+
+function safeStringify(value: unknown): string {
+	return liveArgsKey(value);
+}
+
+function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>): string {
+	return `${endpoint.namespace}:${endpoint.endpoint}:${safeStringify(endpoint.args)}`;
+}
+
+function notifyListeners<T>(listeners: Set<Listener<T>>, value: T) {
+	// Microtask batching prevents UI lockup when multiple state updates fire in rapid succession during reconnect
+	queueMicrotask(() => {
+		for (const notify of listeners) {
+			try {
+				notify(value);
+			} catch (err) {
+				console.error('[openoxide-live] listener error:', err);
+			}
+		}
+	});
+}
 
 function queueRefetch(key: string, entry: Entry) {
 	if (!entry.endpoint.refetch) return;
 	let state = refetches.get(key);
 	if (!state) {
-		state = {running: false, pending: false};
+		state = { running: false, pending: false };
 		refetches.set(key, state);
 	}
 	state.pending = true;
 	if (state.running) return;
 	state.running = true;
+
 	void (async () => {
 		try {
 			while (state.pending) {
@@ -52,11 +46,12 @@ function queueRefetch(key: string, entry: Entry) {
 					entry.value = value;
 					entry.hasValue = true;
 					entry.version++;
-					for (const notify of entry.listeners) notify(value);
+					notifyListeners(entry.listeners, value);
 				} catch (cause) {
-					const error =
-						cause instanceof Error ? cause : new Error(String(cause));
-					for (const notify of entry.errorListeners) notify(error);
+					const error = cause instanceof Error ? cause : new Error(String(cause));
+					notifyListeners(entry.errorListeners, error);
+					// Add 1000ms delay on failure to prevent tight-loop CPU freezing during server reconnect
+					await new Promise((r) => setTimeout(r, 1000));
 				}
 			}
 		} finally {
@@ -66,141 +61,66 @@ function queueRefetch(key: string, entry: Entry) {
 	})();
 }
 
-function accessToken() {
-	try {
-		return JSON.parse(
-			localStorage.getItem('openoxide-auth-session') ?? 'null',
-		)?.tokens?.access_token as string | undefined;
-	} catch {
-		return undefined;
-	}
-}
+function attachSocketListeners(namespace: string) {
+	const socketEntry = socketFor(namespace);
+	const { socket } = socketEntry;
 
-function safeStringify(value: unknown) {
-	return liveArgsKey(value);
-}
+	if (socket.listeners('socket:ready').length === 0) {
+		socket.on('socket:ready', () => {
+			socketEntry.ready = true;
+			for (const entry of entries.values()) {
+				if (entry.endpoint.namespace === namespace) {
+					socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
+				}
+			}
+		});
 
-function roomKey(endpoint: LiveEndpoint<readonly unknown[], unknown>) {
-	return `${endpoint.namespace}:${endpoint.endpoint}:${safeStringify(endpoint.args)}`;
-}
-
-function socketBaseUrl() {
-	if (import.meta.env.VITE_SOCKET_URL)
-		return import.meta.env.VITE_SOCKET_URL;
-	// In development connect directly to Axum: Vite's proxy can return 502
-	// during Socket.IO polling/upgrade reconnects.
-	if (import.meta.env.DEV) return 'http://127.0.0.1:4000';
-	return '';
-}
-
-function socketFor(namespace: string) {
-	let existing = sockets.get(namespace);
-	if (existing) return existing;
-
-	const socket = io(`${socketBaseUrl()}${namespace}`, {
-		path: '/socket.io',
-		transports: ['websocket', 'polling'],
-		tryAllTransports: true,
-		upgrade: false,
-		auth: callback => callback({token: accessToken()}),
-		reconnection: true,
-		reconnectionAttempts: Infinity,
-		reconnectionDelay: 1000,
-		reconnectionDelayMax: 30000,
-		randomizationFactor: 0.5,
-	});
-	const socketEntry: SocketEntry = {socket, ready: false};
-	socket.on('connect', () => {
-		socketEntry.ready = false;
-	});
-	socket.on('socket:ready', () => {
-		socketEntry.ready = true;
-		for (const entry of entries.values()) {
-			if (entry.endpoint.namespace === namespace)
-				socket.emit('live:subscribe', subscribeMessage(entry.endpoint));
-		}
-	});
-	socket.on(
-		'live:subscribed',
-		(message: {endpoint: string; args: unknown}) => {
+		socket.on('live:subscribed', (message: { endpoint: string; args: unknown }) => {
 			const key = `${namespace}:${message.endpoint}:${safeStringify(message.args)}`;
 			const entry = entries.get(key);
-			if (!entry) return;
-			console.debug('[openoxide-live] resubscribed', key);
-			queueRefetch(key, entry);
-		},
-	);
-	socket.on('disconnect', reason => {
-		socketEntry.ready = false;
-		if (reason === 'io server disconnect') socket.connect();
-	});
-	socket.on('connect_error', error => {
-		console.error(
-			'[openoxide-live] socket connection failed',
-			namespace,
-			error,
-		);
-	});
-	const recover = () => {
-		if (!socket.connected) socket.connect();
-	};
-	window.addEventListener('online', recover);
-	document.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'visible') recover();
-	});
-	socket.on('live:update', (update: LiveUpdate) => {
-		const key = `${namespace}:${update.endpoint}:${safeStringify(update.args)}`;
-		const matching = entries.get(key)
-			? [entries.get(key)!]
-			: update.args == null
-				? [...entries.values()].filter(
-						entry =>
-							entry.endpoint.namespace === namespace &&
-							entry.endpoint.endpoint === update.endpoint,
-					)
-				: [];
-		console.debug('[openoxide-live] received update', key, {
-			matching: matching.length,
-			items: Array.isArray(update.data) ? update.data.length : undefined,
-		});
-		for (const entry of matching) {
-			try {
-				const value = entry.endpoint.parse
-					? entry.endpoint.parse(update.data)
-					: update.data;
-				entry.value = value;
-				entry.hasValue = true;
-				entry.version++;
-				for (const notify of entry.listeners) notify(value);
-			} catch {
-				// A generated runtime validator can surface this through the hook's error state.
+			if (entry) {
+				queueRefetch(key, entry);
 			}
-		}
-	});
-	socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
-		const matching = [...entries.entries()].filter(
-			([, entry]) =>
-				entry.endpoint.namespace === namespace &&
-				matchesLiveInvalidation(
-					entry.endpoint.endpoint,
-					entry.endpoint.args,
-					invalidation,
-				),
-		);
-		for (const [key, entry] of matching) {
-			if (!entry.endpoint.refetch) continue;
-			console.debug('[openoxide-live] invalidated', key);
-			queueRefetch(key, entry);
-		}
-	});
-	sockets.set(namespace, socketEntry);
-	return socketEntry;
-}
+		});
 
-function subscribeMessage(
-	endpoint: LiveEndpoint<readonly unknown[], unknown>,
-) {
-	return {endpoint: endpoint.endpoint, args: endpoint.args};
+		socket.on('live:update', (update: LiveUpdate) => {
+			const key = `${namespace}:${update.endpoint}:${safeStringify(update.args)}`;
+			const matching = entries.get(key)
+				? [entries.get(key)!]
+				: update.args == null
+					? [...entries.values()].filter(
+							(entry) => entry.endpoint.namespace === namespace && entry.endpoint.endpoint === update.endpoint,
+						)
+					: [];
+
+			for (const entry of matching) {
+				try {
+					const value = entry.endpoint.parse ? entry.endpoint.parse(update.data) : update.data;
+					entry.value = value;
+					entry.hasValue = true;
+					entry.version++;
+					notifyListeners(entry.listeners, value);
+				} catch {
+					// Ignore parse errors
+				}
+			}
+		});
+
+		socket.on('live:invalidate', (invalidation: LiveInvalidation) => {
+			const matching = [...entries.entries()].filter(
+				([, entry]) =>
+					entry.endpoint.namespace === namespace &&
+					matchesLiveInvalidation(entry.endpoint.endpoint, entry.endpoint.args, invalidation),
+			);
+			for (const [key, entry] of matching) {
+				if (entry.endpoint.refetch) {
+					queueRefetch(key, entry);
+				}
+			}
+		});
+	}
+
+	return socketEntry;
 }
 
 export function subscribeLive<T>(
@@ -211,7 +131,7 @@ export function subscribeLive<T>(
 	const key = roomKey(endpoint);
 	let entry = entries.get(key);
 	if (!entry) {
-		const socketEntry = socketFor(endpoint.namespace);
+		const socketEntry = attachSocketListeners(endpoint.namespace);
 		entry = {
 			endpoint,
 			listeners: new Set(),
@@ -221,34 +141,34 @@ export function subscribeLive<T>(
 		};
 		entries.set(key, entry);
 
-		if (socketEntry.ready)
-			socketEntry.socket.emit(
-				'live:subscribe',
-				subscribeMessage(endpoint),
-			);
+		if (socketEntry.ready) {
+			socketEntry.socket.emit('live:subscribe', subscribeMessage(endpoint));
+		}
 		if (endpoint.refetch) {
 			void endpoint
 				.refetch(endpoint.args)
-				.then(value => {
+				.then((value) => {
 					const current = entries.get(key);
 					if (!current) return;
 					current.value = value;
 					current.hasValue = true;
-					for (const notify of current.listeners) notify(value);
+					notifyListeners(current.listeners, value);
 				})
-				.catch(cause => {
+				.catch((cause) => {
 					const current = entries.get(key);
 					if (!current) return;
-					const error =
-						cause instanceof Error ? cause : new Error(String(cause));
-					for (const notify of current.errorListeners) notify(error);
+					const error = cause instanceof Error ? cause : new Error(String(cause));
+					notifyListeners(current.errorListeners, error);
 				});
 		}
 	}
 
 	entry.listeners.add(listener as Listener<unknown>);
 	if (onError) entry.errorListeners.add(onError);
-	if (entry.hasValue) listener(entry.value as T);
+	if (entry.hasValue) {
+		const cached = entry.value as T;
+		queueMicrotask(() => listener(cached));
+	}
 
 	return () => {
 		const current = entries.get(key);
@@ -258,11 +178,10 @@ export function subscribeLive<T>(
 		if (current.listeners.size !== 0) return;
 
 		const socketEntry = socketFor(endpoint.namespace);
-		if (socketEntry.ready)
-			socketEntry.socket.emit(
-				'live:unsubscribe',
-				subscribeMessage(endpoint),
-			);
+		if (socketEntry.ready) {
+			socketEntry.socket.emit('live:unsubscribe', subscribeMessage(endpoint));
+		}
 		entries.delete(key);
 	};
 }
+export type { LiveEndpoint } from './types';
