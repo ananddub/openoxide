@@ -253,7 +253,7 @@ export function VaultProvidersPage() {
 				</Button>
 			</div>
 
-			{/* Providers Grid */}
+			{/* Providers List (Horizontal Card Rows) */}
 			{isLoading ? (
 				<div className="p-12 text-center text-xs text-muted-foreground">Loading vault providers...</div>
 			) : providers.length === 0 ? (
@@ -272,64 +272,63 @@ export function VaultProvidersPage() {
 					</Button>
 				</Card>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				<div className="flex flex-col gap-3">
 					{providers.map(provider => {
 						const isCopied = copiedId === provider.id;
 						return (
-							<Card key={provider.id} className="border border-border/70 bg-card shadow-xs rounded-xl overflow-hidden hover:border-border transition-colors flex flex-col justify-between">
-								<CardHeader className="p-4 pb-3 flex flex-row items-start justify-between space-y-0">
-									<div className="space-y-1 min-w-0 pr-2">
-										<div className="flex items-center gap-2">
-											{renderVaultProviderIcon(provider.provider_type, "size-4.5 shrink-0")}
-											<CardTitle className="text-sm font-bold text-foreground truncate">{provider.name}</CardTitle>
+							<Card
+								key={provider.id}
+								className="border border-border/70 bg-card p-4 rounded-xl shadow-2xs hover:border-border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+							>
+								<div className="flex items-center gap-3.5 min-w-0">
+									{renderVaultProviderIcon(provider.provider_type, "size-7 shrink-0")}
+									<div className="flex flex-col gap-1 min-w-0">
+										<div className="flex items-center gap-2.5">
+											<span className="text-sm font-bold text-foreground truncate">{provider.name}</span>
+											<Badge variant="outline" className="text-[10px] font-mono shrink-0">
+												{getProviderLabel(provider.provider_type)}
+											</Badge>
 										</div>
-										<Badge variant="outline" className="text-[10px]">
-											{getProviderLabel(provider.provider_type)}
-										</Badge>
-									</div>
-									<div className="flex items-center gap-1 shrink-0">
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => handleOpenEdit(provider)}
-											className="size-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
-										>
-											<Pencil className="size-3.5" />
-										</Button>
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => setDeleteTarget(provider)}
-											className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-										>
-											<Trash2 className="size-3.5" />
-										</Button>
-									</div>
-								</CardHeader>
-
-								<CardContent className="p-4 pt-0 space-y-3">
-									<div className="space-y-1">
-										<div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Secret Reference Syntax</div>
-										<div className="flex items-center justify-between bg-muted/30 border border-border/40 rounded-md p-2 text-xs font-mono">
-											<span className="truncate text-primary text-[11px] font-semibold">{`\${{vault.${provider.name}.SECRET_KEY}}`}</span>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => copySyntax(provider.name, provider.id)}
-												className="size-6 text-muted-foreground hover:text-foreground shrink-0"
-											>
-												{isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-											</Button>
+										<div className="flex flex-wrap items-center gap-2 text-xs">
+											<span className="font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded border border-border/40 text-[11px]">
+												${`{vault.${provider.name}.SECRET_KEY}`}
+											</span>
+											<span className="text-[11px] text-muted-foreground">
+												• Added {new Date(provider.created_at * 1000).toLocaleDateString()}
+											</span>
 										</div>
 									</div>
+								</div>
 
-									<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
-										<span>Added {new Date(provider.created_at * 1000).toLocaleDateString()}</span>
-										<Badge variant="outline" className="text-[10px] font-mono">
-											Active
-										</Badge>
-									</div>
-								</CardContent>
+								<div className="flex items-center gap-1 shrink-0 self-end sm:self-center">
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => copySyntax(provider.name, provider.id)}
+										title="Copy reference syntax"
+										className="size-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg"
+									>
+										{isCopied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => handleOpenEdit(provider)}
+										title="Edit provider"
+										className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+									>
+										<Pencil className="size-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => setDeleteTarget(provider)}
+										title="Delete provider"
+										className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								</div>
 							</Card>
 						);
 					})}
