@@ -62,6 +62,7 @@ pub async fn spawn_docker_terminal(
         .containers()
         .exec(&target_container)
         .interactive()
+        .tty(true)
         .env("TERM", "xterm-256color")
         .workdir("/")
         .build_args([&shell_req]);
