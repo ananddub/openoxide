@@ -56,10 +56,10 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    // Export 256-color, TrueColor, and launch interactive login shell so .bashrc color prompts load
+    // Export 256-color, TrueColor, FORCE_COLOR=3 and launch interactive login shell so .bashrc color prompts load
     let target_shell = if shell_req.is_empty() { "bash" } else { &shell_req };
     let remote_cmd = format!(
-        "export TERM=xterm-256color COLORTERM=truecolor CLICOLOR=1; if command -v {target_shell} >/dev/null 2>&1; then exec {target_shell} -i -l; else exec sh -l; fi"
+        "export TERM=xterm-256color COLORTERM=truecolor FORCE_COLOR=3 CLICOLOR_FORCE=1 CLICOLOR=1; if command -v {target_shell} >/dev/null 2>&1; then exec {target_shell} -i -l; else exec sh -l; fi"
     );
     args.push(remote_cmd);
 
@@ -77,7 +77,9 @@ pub async fn spawn_remote_terminal(
     let pty_cmd = PtyCommand::new("ssh")
         .args(&args)
         .env("TERM", "xterm-256color")
-        .env("COLORTERM", "truecolor");
+        .env("COLORTERM", "truecolor")
+        .env("FORCE_COLOR", "3")
+        .env("CLICOLOR_FORCE", "1");
     let mut cmd = pty_cmd;
     if let Some(socket_path) = agent_socket {
         cmd = cmd.env("SSH_AUTH_SOCK", socket_path);

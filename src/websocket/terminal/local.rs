@@ -63,12 +63,18 @@ pub async fn spawn_docker_terminal(
         .interactive()
         .tty(true)
         .env("TERM", "xterm-256color")
+        .env("COLORTERM", "truecolor")
+        .env("FORCE_COLOR", "3")
+        .env("CLICOLOR_FORCE", "1")
         .workdir("/")
         .build_args([&shell_req]);
 
     let pty_cmd = PtyCommand::new("docker")
         .args(&exec_args)
-        .env("TERM", "xterm-256color");
+        .env("TERM", "xterm-256color")
+        .env("COLORTERM", "truecolor")
+        .env("FORCE_COLOR", "3")
+        .env("CLICOLOR_FORCE", "1");
 
     let mut child = match pty_cmd.spawn(pts) {
         Ok(child) => child,
