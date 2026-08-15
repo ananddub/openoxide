@@ -4,6 +4,13 @@ import { Box, Globe, Clock, Rocket, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '#/components/ui/tabs';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableHead,
+	TableRow,
+} from '#/components/ui/table';
 import { useAppStore } from '#/stores/app-store';
 import { useDeployments } from '#/hooks/deployments/use-deployments';
 import { DeploymentItem } from '#/components/deployments/deployment-item';
@@ -32,6 +39,7 @@ function OverviewPage() {
 		logs,
 		copied,
 		handleCopyLogs,
+		handleCancelDeployment,
 	} = useDeployments();
 
 	return (
@@ -163,15 +171,30 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Deployments will appear here once triggered</p>
 							</div>
 						) : (
-							<div className="flex flex-col gap-2">
-								{deploymentsList.map((dep) => (
-									<DeploymentItem
-										key={dep.id}
-										deployment={dep}
-										onViewLogs={() => setSelectedDeployment(dep)}
-										onViewError={() => setSelectedDeployment(dep)}
-									/>
-								))}
+							<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+								<Table>
+									<TableHeader>
+										<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px]">ID</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Deployment</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Type</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Created</TableHead>
+											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{deploymentsList.map((dep) => (
+											<DeploymentItem
+												key={dep.id}
+												deployment={dep}
+												onViewLogs={() => setSelectedDeployment(dep)}
+												onViewError={() => setSelectedDeployment(dep)}
+												onCancel={handleCancelDeployment}
+											/>
+										))}
+									</TableBody>
+								</Table>
 							</div>
 						)
 					) : (
@@ -182,15 +205,30 @@ function OverviewPage() {
 								<p className="text-xs text-muted-foreground">Active or building deployments will appear here in real time</p>
 							</div>
 						) : (
-							<div className="flex flex-col gap-2">
-								{runningDeployments.map((dep: any) => (
-									<DeploymentItem
-										key={dep.id}
-										deployment={dep}
-										onViewLogs={() => setSelectedDeployment(dep)}
-										onViewError={() => setSelectedDeployment(dep)}
-									/>
-								))}
+							<div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+								<Table>
+									<TableHeader>
+										<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider w-[80px]">ID</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Deployment</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Type</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
+											<TableHead className="py-3.5 px-4 font-bold text-foreground text-xs uppercase tracking-wider">Created</TableHead>
+											<TableHead className="py-3.5 px-4 text-right font-bold text-foreground text-xs uppercase tracking-wider">Actions</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{runningDeployments.map((dep: any) => (
+											<DeploymentItem
+												key={dep.id}
+												deployment={dep}
+												onViewLogs={() => setSelectedDeployment(dep)}
+												onViewError={() => setSelectedDeployment(dep)}
+												onCancel={handleCancelDeployment}
+											/>
+										))}
+									</TableBody>
+								</Table>
 							</div>
 						)
 					)}
