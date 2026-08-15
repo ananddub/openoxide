@@ -1,13 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Box, Globe, Clock, Rocket } from 'lucide-react';
+import { Box, Globe, Clock, Rocket, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '#/components/ui/tabs';
 import { Badge } from '#/components/ui/badge';
+import { Button } from '#/components/ui/button';
 import { useAppStore } from '#/stores/app-store';
 import { useDeployments } from '#/hooks/deployments/use-deployments';
 import { DeploymentItem } from '#/components/deployments/deployment-item';
 import { DeploymentLogsDialog } from '#/components/deployments/deployment-logs-dialog';
 import { OverviewServicesTab } from '#/components/overview/overview-services-tab';
+import { useDeploymentRunning } from 'virtual:openoxide-live';
 
 export const Route = createFileRoute('/_app/overview')({
 	component: OverviewPage,
@@ -15,9 +17,13 @@ export const Route = createFileRoute('/_app/overview')({
 
 function OverviewPage() {
 	const [activeTab, setActiveTab] = useState('services');
+	const [deploymentSubTab, setDeploymentSubTab] = useState<'history' | 'queue'>('history');
 
 	const domains = useAppStore((state) => state.domains);
 	const backups = useAppStore((state) => state.backups);
+
+	// Live running deployments queue
+	const { data: runningDeployments = [] } = useDeploymentRunning();
 
 	const {
 		filteredAndSorted: deploymentsList,
@@ -34,22 +40,22 @@ function OverviewPage() {
 			<div className="flex flex-col gap-1">
 				<h1 className="text-2xl font-bold text-foreground tracking-tight">Overview</h1>
 				<p className="text-xs text-muted-foreground">
-					Centralized platform overview of all applications, compose stacks, databases, deployments, domains, and backups
+					Centralized platform overview of all applications, compose stacks, databases, volume backups, domains, and deployments
 				</p>
 			</div>
 
-			{/* Main Overview Tabs */}
+			{/* Main Overview Tabs (Services -> Backups -> Domains -> Deployments) */}
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
 				<TabsList variant="line" className="border-b border-border w-full justify-start gap-6 rounded-none pb-0">
 					<TabsTrigger value="services" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
 						<Box className="size-4" />
 						Services
 					</TabsTrigger>
-					<TabsTrigger value="deployments" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
-						<Rocket className="size-4" />
-						Deployments
+					<TabsTrigger value="backups" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
+						<Clock className="size-4" />
+						Backups
 						<Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
-							{deploymentsList.length}
+							{backups.length}
 						</Badge>
 					</TabsTrigger>
 					<TabsTrigger value="domains" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
@@ -59,43 +65,48 @@ function OverviewPage() {
 							{domains.length}
 						</Badge>
 					</TabsTrigger>
-					<TabsTrigger value="backups" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
-						<Clock className="size-4" />
-						Volume Backups
+					<TabsTrigger value="deployments" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
+						<Rocket className="size-4" />
+						Deployments
 						<Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
-							{backups.length}
+							{deploymentsList.length}
 						</Badge>
 					</TabsTrigger>
 				</TabsList>
 
-				{/* Services Tab */}
+				{/* 1. Services Tab */}
 				<TabsContent value="services">
 					<OverviewServicesTab />
 				</TabsContent>
 
-				{/* Deployments Tab */}
-				<TabsContent value="deployments" className="space-y-4">
-					{deploymentsList.length === 0 ? (
+				{/* 2. Backups Tab */}
+				<TabsContent value="backups" className="space-y-4">
+					{backups.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
-							<Rocket className="size-8 text-muted-foreground/40 mb-2" />
-							<p className="text-sm font-semibold text-foreground">No deployment history</p>
-							<p className="text-xs text-muted-foreground">Deployments will appear here once triggered</p>
+							<Clock className="size-8 text-muted-foreground/40 mb-2" />
+							<p className="text-sm font-semibold text-foreground">No volume backups found</p>
+							<p className="text-xs text-muted-foreground">Scheduled volume and database backups will appear here</p>
 						</div>
 					) : (
-						<div className="flex flex-col gap-2">
-							{deploymentsList.map((dep) => (
-								<DeploymentItem
-									key={dep.id}
-									deployment={dep}
-									onViewLogs={() => setSelectedDeployment(dep)}
-									onViewError={() => setSelectedDeployment(dep)}
-								/>
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+							{backups.map((b) => (
+								<div key={b.id} className="p-4 border border-border/60 rounded-xl bg-card flex flex-col gap-2 shadow-xs">
+									<div className="flex items-center justify-between">
+										<p className="font-bold text-xs text-foreground font-mono">{b.name || `Backup #${b.id}`}</p>
+										<Badge variant="secondary" className="text-[10px]">
+											{b.status || 'DONE'}
+										</Badge>
+									</div>
+									<p className="text-[10px] text-muted-foreground font-mono">
+										Type: {b.backup_type || 'Volume'} · Dest: {b.destination || 'Local'}
+									</p>
+								</div>
 							))}
 						</div>
 					)}
 				</TabsContent>
 
-				{/* Domains Tab */}
+				{/* 3. Domains Tab */}
 				<TabsContent value="domains" className="space-y-4">
 					{domains.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
@@ -106,7 +117,7 @@ function OverviewPage() {
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 							{domains.map((dom) => (
-								<div key={dom.id} className="p-4 border rounded-xl bg-card flex flex-col gap-2">
+								<div key={dom.id} className="p-4 border border-border/60 rounded-xl bg-card flex flex-col gap-2 shadow-xs">
 									<div className="flex items-center justify-between">
 										<p className="font-bold text-xs text-foreground font-mono">{dom.domain || dom.host}</p>
 										<Badge variant="outline" className="text-[10px]">
@@ -122,30 +133,66 @@ function OverviewPage() {
 					)}
 				</TabsContent>
 
-				{/* Backups Tab */}
-				<TabsContent value="backups" className="space-y-4">
-					{backups.length === 0 ? (
-						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
-							<Clock className="size-8 text-muted-foreground/40 mb-2" />
-							<p className="text-sm font-semibold text-foreground">No volume backups found</p>
-							<p className="text-xs text-muted-foreground">Scheduled volume backups will appear here</p>
-						</div>
+				{/* 4. Deployments Tab (Deployments History vs Queue Sub-tabs) */}
+				<TabsContent value="deployments" className="space-y-4">
+					<div className="flex items-center gap-2 border-b border-border/60 pb-3">
+						<Button
+							variant={deploymentSubTab === 'history' ? 'secondary' : 'ghost'}
+							size="sm"
+							onClick={() => setDeploymentSubTab('history')}
+							className="h-8 text-xs font-bold"
+						>
+							Deployments ({deploymentsList.length})
+						</Button>
+						<Button
+							variant={deploymentSubTab === 'queue' ? 'secondary' : 'ghost'}
+							size="sm"
+							onClick={() => setDeploymentSubTab('queue')}
+							className="h-8 text-xs font-bold flex items-center gap-1.5"
+						>
+							{runningDeployments.length > 0 && <Loader2 className="size-3 animate-spin text-amber-500" />}
+							Queue ({runningDeployments.length})
+						</Button>
+					</div>
+
+					{deploymentSubTab === 'history' ? (
+						deploymentsList.length === 0 ? (
+							<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
+								<Rocket className="size-8 text-muted-foreground/40 mb-2" />
+								<p className="text-sm font-semibold text-foreground">No deployment history</p>
+								<p className="text-xs text-muted-foreground">Deployments will appear here once triggered</p>
+							</div>
+						) : (
+							<div className="flex flex-col gap-2">
+								{deploymentsList.map((dep) => (
+									<DeploymentItem
+										key={dep.id}
+										deployment={dep}
+										onViewLogs={() => setSelectedDeployment(dep)}
+										onViewError={() => setSelectedDeployment(dep)}
+									/>
+								))}
+							</div>
+						)
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{backups.map((b) => (
-								<div key={b.id} className="p-4 border rounded-xl bg-card flex flex-col gap-2">
-									<div className="flex items-center justify-between">
-										<p className="font-bold text-xs text-foreground font-mono">{b.name || `Backup #${b.id}`}</p>
-										<Badge variant="secondary" className="text-[10px]">
-											{b.status || 'DONE'}
-										</Badge>
-									</div>
-									<p className="text-[10px] text-muted-foreground font-mono">
-										Size: {b.size || 'N/A'} · Dest: {b.destination || 'Local'}
-									</p>
-								</div>
-							))}
-						</div>
+						runningDeployments.length === 0 ? (
+							<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
+								<Rocket className="size-8 text-muted-foreground/40 mb-2" />
+								<p className="text-sm font-semibold text-foreground">Queue is empty</p>
+								<p className="text-xs text-muted-foreground">Active or building deployments will appear here in real time</p>
+							</div>
+						) : (
+							<div className="flex flex-col gap-2">
+								{runningDeployments.map((dep: any) => (
+									<DeploymentItem
+										key={dep.id}
+										deployment={dep}
+										onViewLogs={() => setSelectedDeployment(dep)}
+										onViewError={() => setSelectedDeployment(dep)}
+									/>
+								))}
+							</div>
+						)
 					)}
 				</TabsContent>
 			</Tabs>
