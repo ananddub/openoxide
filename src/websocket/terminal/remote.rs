@@ -55,11 +55,11 @@ pub async fn spawn_remote_terminal(
         }
     };
 
-    let remote_cmd = if shell_req == "bash" {
-        "stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec bash 2>/dev/null || exec sh".to_string()
-    } else {
-        format!("stty -echoctl 2>/dev/null; export TERM=xterm-256color 2>/dev/null; exec {shell_req}")
-    };
+    // Clean interactive remote shell command without breaking TTY stderr check
+    let target_shell = if shell_req.is_empty() { "bash" } else { &shell_req };
+    let remote_cmd = format!(
+        "export TERM=xterm-256color; if command -v {target_shell} >/dev/null 2>&1; then exec {target_shell} -l; else exec sh -l; fi"
+    );
     args.push(remote_cmd);
 
     let (pty, pts) = match pty_process::open() {
