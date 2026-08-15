@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Terminal as TerminalIcon, X, Box, Server as ServerIcon } from 'lucide-react';
 import { Button } from '#/components/ui/button';
@@ -41,7 +41,6 @@ function getSocketBaseUrl(): string {
 }
 
 export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
-	// Default shell set to 'bash' as requested for remote & docker terminal sessions
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
 	const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
@@ -64,9 +63,19 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 	const targetContainer = selectedService || defaultContainer;
 	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
 	const isRemoteServer = Boolean(app?.isRemoteServer);
-	const serverId = app?.server_id || app?.serverId;
+	const serverId = app?.server_id || app?.serverId || (isRemoteServer ? app?.id : undefined);
 
-	// 1. Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
+	// Start terminal session handler
+	const emitStartSession = useCallback((sock: Socket, shellMode: string) => {
+		if (!sock.connected) return;
+		if (isRemoteServer && serverId) {
+			sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode });
+		} else {
+			sock.emit('docker:start', { container: targetContainer, shell: shellMode });
+		}
+	}, [isRemoteServer, serverId, targetContainer]);
+
+	// Primary Socket & Xterm lifecycle: Runs ONLY when `open` changes
 	useEffect(() => {
 		if (!open) {
 			if (socketRef.current) {
@@ -154,13 +163,18 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		socket.on('connect', () => {
 			setStatus('connected');
 			if (isRemoteServer) {
-				term.writeln(`\x1b[32mSocket connected. Resolving SSH host & launching shell [${shell}]...\x1b[0m\r\n`);
-				socket.emit('server:start', { server_id: serverId, command: shell });
+				term.writeln(`\x1b[32mSocket connected. Launching SSH shell [${shell}]...\x1b[0m\r\n`);
 			} else {
 				term.writeln(`\x1b[32mSocket connected. Starting shell [${shell}] on Container [${targetContainer}]...\x1b[0m\r\n`);
-				socket.emit('docker:start', { container: targetContainer, shell });
 			}
+			emitStartSession(socket, shell);
 		});
+
+		// Immediate check if already connected
+		if (socket.connected) {
+			setStatus('connected');
+			emitStartSession(socket, shell);
+		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
 			if (data?.host) setActiveHostIp(data.host);
@@ -238,7 +252,7 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		};
 	}, [open]);
 
-	// 2. Dynamic Shell / Target Container Switch: Emits docker:start on existing live socket without tear-down
+	// Dynamic Shell / Target Container Switch: Emits start event on existing live socket without tear-down
 	const isFirstMountRef = useRef(true);
 	useEffect(() => {
 		if (isFirstMountRef.current) {
@@ -256,12 +270,8 @@ export function TerminalModal({ app, open, onClose }: TerminalModalProps) {
 		}
 		setStatus('connecting');
 
-		if (isRemoteServer && serverId) {
-			socketRef.current.emit('server:start', { server_id: serverId, command: shell });
-		} else {
-			socketRef.current.emit('docker:start', { container: targetContainer, shell });
-		}
-	}, [targetContainer, shell]);
+		emitStartSession(socketRef.current, shell);
+	}, [targetContainer, shell, emitStartSession]);
 
 	if (!open) return null;
 
