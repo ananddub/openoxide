@@ -69,16 +69,16 @@ export function ProfilePage() {
 	const authUser = useAuthStore((state) => state.user);
 	const isLoading = false;
 
-	const [whoamiData, setWhoamiData] = useState<any>(null);
-
 	useEffect(() => {
-		setWhoamiData({
-			user_id: storeProfile?.id || authUser?.id,
-			email: storeProfile?.email || authUser?.email,
-			first_name: storeProfile?.name?.split(' ')[0] || authUser?.firstName || '',
-			last_name: storeProfile?.name?.split(' ').slice(1).join(' ') || authUser?.lastName || '',
-			avatar: storeProfile?.avatar,
-		});
+		const initialEmail = storeProfile?.email || authUser?.email || '';
+		const initialFirstName = storeProfile?.name?.split(' ')[0] || authUser?.firstName || '';
+		const initialLastName = storeProfile?.name?.split(' ').slice(1).join(' ') || authUser?.lastName || '';
+		const initialAvatar = storeProfile?.avatar || '';
+
+		setEmail(initialEmail);
+		setFirstName(initialFirstName);
+		setLastName(initialLastName);
+		setAvatarValue(initialAvatar);
 	}, [storeProfile, authUser]);
 	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
 
@@ -92,7 +92,6 @@ export function ProfilePage() {
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
 		onSuccess: (data: any) => {
 			if (data) {
-				setWhoamiData(data);
 				useAuthStore.getState().setAuth({
 					id: data.user_id,
 					email: data.email || '',
@@ -135,14 +134,7 @@ export function ProfilePage() {
 	const [copiedKeyId, setCopiedKeyId] = useState<string | number | null>(null);
 	const [isCreatingKey, setIsCreatingKey] = useState(false);
 
-	useEffect(() => {
-		if (!whoamiData) return;
 
-		setEmail(whoamiData.email ?? '');
-		setFirstName(whoamiData.first_name ?? '');
-		setLastName(whoamiData.last_name ?? '');
-		setAvatarValue(whoamiData.avatar);
-	}, [whoamiData]);
 
 	const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -308,10 +300,10 @@ export function ProfilePage() {
 									<div
 										onClick={() => fileInputRef.current?.click()}
 										className={`h-12 w-12 rounded-full border border-dashed hover:border-primary transition-all flex items-center justify-center bg-muted/40 cursor-pointer overflow-hidden relative ${
-											avatarValue.startsWith('data:') ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border'
+											(avatarValue || '').startsWith('data:') ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border'
 										}`}
 									>
-										{avatarValue.startsWith('data:') ? (
+										{(avatarValue || '').startsWith('data:') ? (
 											<img src={avatarValue} alt="Custom avatar" className="h-full w-full object-cover rounded-full" />
 										) : (
 											<Upload className="h-4 w-4 text-muted-foreground" />
