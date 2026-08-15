@@ -64,6 +64,7 @@ export function UsersManagementPage() {
 	const queryClient = useQueryClient();
 	const members = useAppStore((state) => state.members);
 	const invites = useAppStore((state) => state.invites);
+	const userProfile = useAppStore((state) => state.profile);
 	const isMembersLoading = useAppStore((state) => state.isMembersLoading);
 	const addMemberStore = useAppStore((state) => state.addMember);
 	const updateMemberStore = useAppStore((state) => state.updateMember);
@@ -345,72 +346,102 @@ export function UsersManagementPage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredMembers.map((member) => (
-									<TableRow key={member.id} className="border-border/60 hover:bg-muted/20 transition-colors">
-										<TableCell className="py-3">
-											<div className="flex items-center gap-3">
-												<div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0">
-													{(member.name || member.email || 'U')[0]}
+								{filteredMembers.map((member) => {
+									const isCurrentUser = userProfile && (
+										(userProfile.email && userProfile.email.toLowerCase() === member.email.toLowerCase()) ||
+										(userProfile.id && member.user_id && Number(userProfile.id) === Number(member.user_id))
+									);
+
+									const displayName = (isCurrentUser && userProfile?.name)
+										? userProfile.name
+										: member.name || (member.email ? member.email.split('@')[0] : 'User');
+
+									const displayAvatar = (isCurrentUser && userProfile?.avatar)
+										? userProfile.avatar
+										: member.avatar;
+
+									return (
+										<TableRow key={member.id} className="border-border/60 hover:bg-muted/20 transition-colors">
+											<TableCell className="py-3">
+												<div className="flex items-center gap-3">
+													{displayAvatar ? (
+														<img
+															src={displayAvatar}
+															alt={displayName}
+															className="size-8 rounded-full object-cover border border-primary/20 shrink-0"
+														/>
+													) : (
+														<div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0">
+															{(displayName || 'U')[0]}
+														</div>
+													)}
+													<div className="flex flex-col min-w-0">
+														<div className="flex items-center gap-1.5">
+															<span className="text-xs font-bold text-foreground truncate">
+																{displayName}
+															</span>
+															{isCurrentUser && (
+																<span className="text-[10px] bg-primary/10 text-primary font-semibold px-1.5 py-0.2 rounded border border-primary/20 font-mono">
+																	You
+																</span>
+															)}
+														</div>
+														<span className="text-[11px] text-muted-foreground font-mono truncate">
+															{member.email}
+														</span>
+													</div>
 												</div>
-												<div className="flex flex-col min-w-0">
-													<span className="text-xs font-bold text-foreground truncate">
-														{member.name || member.email.split('@')[0]}
-													</span>
-													<span className="text-[11px] text-muted-foreground font-mono truncate">
-														{member.email}
-													</span>
-												</div>
-											</div>
-										</TableCell>
-										<TableCell className="py-3">
-											<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
-												member.role.toLowerCase() === 'owner' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-												member.role.toLowerCase() === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-												member.role.toLowerCase() === 'developer' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-												'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
-											}`}>
-												<Shield className="size-3 mr-1" />
-												{member.role.toUpperCase()}
-											</span>
-										</TableCell>
-										<TableCell className="py-3">
-											{member.banned ? (
-												<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">
-													<XCircle className="size-3 mr-1" /> Banned
+											</TableCell>
+											<TableCell className="py-3">
+												<span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
+													member.role.toLowerCase() === 'owner' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+													member.role.toLowerCase() === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+													member.role.toLowerCase() === 'developer' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+													'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+												}`}>
+													<Shield className="size-3 mr-1" />
+													{member.role.toUpperCase()}
 												</span>
-											) : (
-												<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-													Active
-												</span>
-											)}
-										</TableCell>
-										<TableCell className="py-3 text-right pr-4">
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
-														<MoreHorizontal className="size-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end" className="w-40">
-													<DropdownMenuItem
-														onClick={() => setEditingRoleUser(member)}
-														className="text-xs gap-2 cursor-pointer"
-													>
-														<Shield className="size-3.5 text-primary" />
-														<span>Change Role</span>
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => setDeleteTarget(member)}
-														className="text-xs text-rose-400 focus:text-rose-400 gap-2 cursor-pointer"
-													>
-														<Trash2 className="size-3.5" />
-														<span>Remove User</span>
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</TableCell>
-									</TableRow>
-								))}
+											</TableCell>
+											<TableCell className="py-3">
+												{member.banned ? (
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">
+														<XCircle className="size-3 mr-1" /> Banned
+													</span>
+												) : (
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+														Active
+													</span>
+												)}
+											</TableCell>
+											<TableCell className="py-3 text-right pr-4">
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
+															<MoreHorizontal className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end" className="w-40">
+														<DropdownMenuItem
+															onClick={() => setEditingRoleUser(member)}
+															className="text-xs gap-2 cursor-pointer"
+														>
+															<Shield className="size-3.5 text-primary" />
+															<span>Change Role</span>
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => setDeleteTarget(member)}
+															className="text-xs text-rose-400 focus:text-rose-400 gap-2 cursor-pointer"
+														>
+															<Trash2 className="size-3.5" />
+															<span>Remove User</span>
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</TableCell>
+										</TableRow>
+									);
+								})}
 							</TableBody>
 						</Table>
 					</div>
