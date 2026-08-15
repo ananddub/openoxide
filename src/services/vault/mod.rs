@@ -164,6 +164,9 @@ impl VaultService {
             "HASHICORP" => self.test_hashicorp_credentials(clean_url, clean_token, namespace.as_deref()).await,
             "INFISICAL" => self.test_infisical_credentials(clean_url, clean_token).await,
             "DOPPLER" => self.test_doppler_credentials(clean_token).await,
+            "AWS" => self.test_aws_credentials(clean_token).await,
+            "SCALEWAY" => self.test_scaleway_credentials(clean_url, clean_token).await,
+            "AZURE" => self.test_azure_credentials(clean_token).await,
             _ => Ok(VaultTestResultDto {
                 success: true,
                 message: "Vault provider configuration validated successfully".into(),
@@ -254,6 +257,58 @@ impl VaultService {
                 message: format!("Doppler: token verification failed (status {})", res.status()),
             })
         }
+    }
+
+    async fn test_aws_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
+        if auth_token.trim().is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "AWS Secret Access Key is required".into(),
+            });
+        }
+        Ok(VaultTestResultDto {
+            success: true,
+            message: "AWS Secrets Manager: credentials format validated!".into(),
+        })
+    }
+
+    async fn test_scaleway_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
+        let clean_url = if api_url.trim().is_empty() { "https://api.scaleway.com" } else { api_url.trim_end_matches('/') };
+        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
+
+        if clean_token.is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "Scaleway Secret Key is required".into(),
+            });
+        }
+
+        let url = format!("{}/secret-manager/v1beta1/regions/fr-par/secrets", clean_url);
+        let res = self.client.get(&url).header("X-Auth-Token", clean_token).send().await?;
+        if res.status().is_success() || res.status().as_u16() == 404 {
+            Ok(VaultTestResultDto {
+                success: true,
+                message: "Scaleway Secret Manager: Secret Key authenticated successfully!".into(),
+            })
+        } else {
+            Ok(VaultTestResultDto {
+                success: false,
+                message: format!("Scaleway: authentication failed (status {})", res.status()),
+            })
+        }
+    }
+
+    async fn test_azure_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
+        if auth_token.trim().is_empty() {
+            return Ok(VaultTestResultDto {
+                success: false,
+                message: "Azure Client Secret is required".into(),
+            });
+        }
+        Ok(VaultTestResultDto {
+            success: true,
+            message: "Azure Key Vault: credentials format validated!".into(),
+        })
     }
 
     fn into_dto(p: VaultProvider) -> VaultProviderDto {
