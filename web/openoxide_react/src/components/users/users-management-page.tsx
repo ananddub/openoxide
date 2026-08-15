@@ -79,6 +79,7 @@ import {
 	usePermissionGroupInvites,
 } from 'virtual:openoxide-live';
 
+import { useEffect } from 'react';
 import { useAppStore } from '#/stores/app-store';
 
 export function UsersManagementPage() {
@@ -87,9 +88,16 @@ export function UsersManagementPage() {
 	const [activeTab, setActiveTab] = useState<'users' | 'invitations'>('users');
 	const [searchQuery, setSearchQuery] = useState('');
 
-	// Direct 100% Zustand Store Subscriptions & Actions
-	const members = useAppStore((state) => state.members);
-	const invites = useAppStore((state) => state.invites);
+	// 1. Live Reactive Hooks from openoxide-live (Auto-updates via Socket stream)
+	const { data: membersData } = usePermissionGroupMembers();
+	const { data: invitesData } = usePermissionGroupInvites();
+
+	// 2. Zustand Store Subscriptions & Actions for Instant 0ms Optimistic Updates
+	const storeMembers = useAppStore((state) => state.members);
+	const storeInvites = useAppStore((state) => state.invites);
+	const setMembersStore = useAppStore((state) => state.setMembers);
+	const setInvitesStore = useAppStore((state) => state.setInvites);
+
 	const addMemberStore = useAppStore((state) => state.addMember);
 	const updateMemberStore = useAppStore((state) => state.updateMember);
 	const deleteMemberStore = useAppStore((state) => state.deleteMember);
@@ -98,6 +106,19 @@ export function UsersManagementPage() {
 
 	const { refetch: refetchMembers } = $api.useQuery('get', '/permission-groups/members' as any, {} as any);
 	const { refetch: refetchInvites } = $api.useQuery('get', '/permission-groups/invites' as any, {} as any);
+
+	// Sync Live Backend Stream into Zustand Store
+	useEffect(() => {
+		if (membersData && Array.isArray(membersData)) {
+			setMembersStore(membersData as any);
+		}
+	}, [membersData, setMembersStore]);
+
+	useEffect(() => {
+		if (invitesData && Array.isArray(invitesData)) {
+			setInvitesStore(invitesData as any);
+		}
+	}, [invitesData, setInvitesStore]);
 
 	// Mutations for invites and members
 	const addMemberMutation = $api.useMutation('post', '/permission-groups/members' as any);
@@ -116,8 +137,9 @@ export function UsersManagementPage() {
 	);
 
 	const users: UserMember[] = useMemo(() => {
-		if (!Array.isArray(members)) return [];
-		return members.map((m: any) => ({
+		const source = (storeMembers && storeMembers.length > 0) ? storeMembers : (membersData || []);
+		if (!Array.isArray(source)) return [];
+		return source.map((m: any) => ({
 			id: String(m.user_id || m.id),
 			email: m.email || `User #${m.user_id}`,
 			role: (m.role || 'member').toLowerCase() as any,
@@ -129,11 +151,12 @@ export function UsersManagementPage() {
 				: new Date().toISOString(),
 			isSelf: whoamiData?.user_id === m.user_id,
 		}));
-	}, [members, whoamiData]);
+	}, [storeMembers, membersData, whoamiData]);
 
 	const invitations: InvitationItem[] = useMemo(() => {
-		if (!Array.isArray(invites)) return [];
-		return invites.map((inv: any) => ({
+		const source = (storeInvites && storeInvites.length > 0) ? storeInvites : (invitesData || []);
+		if (!Array.isArray(source)) return [];
+		return source.map((inv: any) => ({
 			id: String(inv.id),
 			email: inv.email,
 			role: (inv.role || 'member').toLowerCase(),
@@ -141,7 +164,7 @@ export function UsersManagementPage() {
 				? new Date(inv.expired_at * 1000).toISOString()
 				: new Date().toISOString(),
 		}));
-	}, [invites]);
+	}, [storeInvites, invitesData]);
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<UserMember | null>(null);
