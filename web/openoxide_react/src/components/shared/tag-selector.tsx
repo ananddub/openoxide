@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Check, ChevronsUpDown, X, Tag as TagIcon, Plus } from 'lucide-react';
+import { Check, ChevronsUpDown, X, Tags as TagsIcon, Plus } from 'lucide-react';
 import { useTagListAll } from 'virtual:openoxide-live';
 import { TagBadge } from '#/components/shared/tag-badge';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
+import { Badge } from '#/components/ui/badge';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -22,13 +23,15 @@ interface TagSelectorProps {
 	onTagsChange: (tags: string[]) => void;
 	placeholder?: string;
 	disabled?: boolean;
+	variant?: 'form' | 'filter';
 }
 
 export function TagSelector({
 	selectedTags,
 	onTagsChange,
-	placeholder = 'Select tags...',
+	placeholder = 'Tags',
 	disabled = false,
+	variant = 'form',
 }: TagSelectorProps) {
 	const [searchQuery, setSearchQuery] = useState('');
 	const { data: rawTags } = useTagListAll();
@@ -49,6 +52,11 @@ export function TagSelector({
 	const handleRemoveTag = (tagName: string, e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		onTagsChange(selectedTags.filter((t) => t.toLowerCase() !== tagName.toLowerCase()));
+	};
+
+	const handleClearAll = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		onTagsChange([]);
 	};
 
 	const filteredTags = useMemo(() => {
@@ -76,48 +84,73 @@ export function TagSelector({
 						variant="outline"
 						disabled={disabled}
 						className={cn(
-							'w-full justify-between min-h-10 h-auto bg-card border-border px-3 py-2 text-xs font-normal cursor-pointer',
+							'w-full justify-between min-h-10 h-auto bg-card border-border/80 px-3 py-2 text-xs font-semibold cursor-pointer shadow-2xs rounded-lg',
+							selectedTags.length > 0 && 'border-primary text-primary',
 							disabled && 'cursor-not-allowed opacity-50'
 						)}
 					>
-						<div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
-							{selectedTagObjects.length > 0 ? (
-								selectedTagObjects.map((t) => (
-									<TagBadge
-										key={t.name}
-										name={t.name}
-										color={t.color}
-										className="px-2 py-0.5 text-[11px] font-semibold"
-									>
-										<button
-											type="button"
-											onClick={(e) => handleRemoveTag(t.name, e)}
-											className="ml-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+						{variant === 'filter' ? (
+							<div className="flex items-center gap-2 flex-1 min-w-0">
+								<TagsIcon className="size-4 text-muted-foreground shrink-0" />
+								<span>{placeholder}</span>
+								{selectedTags.length > 0 && (
+									<Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary border border-primary/30">
+										{selectedTags.length}
+									</Badge>
+								)}
+							</div>
+						) : (
+							<div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
+								{selectedTagObjects.length > 0 ? (
+									selectedTagObjects.map((t) => (
+										<TagBadge
+											key={t.name}
+											name={t.name}
+											color={t.color}
+											className="px-2 py-0.5 text-[11px] font-semibold"
 										>
-											<X className="size-3" />
-										</button>
-									</TagBadge>
-								))
-							) : (
-								<span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-									<TagIcon className="size-3.5" />
-									{placeholder}
-								</span>
-							)}
-						</div>
+											<button
+												type="button"
+												onClick={(e) => handleRemoveTag(t.name, e)}
+												className="ml-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+											>
+												<X className="size-3" />
+											</button>
+										</TagBadge>
+									))
+								) : (
+									<span className="text-muted-foreground flex items-center gap-1.5 text-xs font-normal">
+										<TagsIcon className="size-3.5" />
+										{placeholder}
+									</span>
+								)}
+							</div>
+						)}
 						<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 					</Button>
 				}
 			/>
 
-			<DropdownMenuContent className="w-[320px] p-2 bg-popover border-border shadow-xl rounded-xl" align="start">
+			<DropdownMenuContent className="w-[280px] p-2 bg-popover border-border shadow-xl rounded-xl" align="start">
 				<div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-					<Input
-						placeholder="Search tags..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="h-8 text-xs bg-muted/40 border-border/60"
-					/>
+					<div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2 px-1">
+						<Input
+							placeholder="Search tags..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="h-8 text-xs bg-muted/40 border-border/60"
+						/>
+						{selectedTags.length > 0 && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleClearAll}
+								className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+							>
+								Clear
+							</Button>
+						)}
+					</div>
 
 					<div className="max-h-52 overflow-y-auto flex flex-col gap-1 pr-1">
 						{filteredTags.length > 0 ? (

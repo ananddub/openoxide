@@ -1,8 +1,6 @@
 import React from 'react';
-import { Search, Tags } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '#/components/ui/input';
-import { Button } from '#/components/ui/button';
-import { Badge } from '#/components/ui/badge';
 import {
 	Select,
 	SelectContent,
@@ -66,12 +64,13 @@ export function ProjectDashboardFilters({
 				/>
 			</div>
 
-			{/* Dokploy TagFilter Dropdown (In Toolbar Row) */}
-			<div className="w-full sm:w-[200px] shrink-0">
+			{/* Dokploy TagFilter Dropdown with Selected Counter Badge */}
+			<div className="w-full sm:w-[150px] shrink-0">
 				<TagSelector
 					selectedTags={selectedTags}
 					onTagsChange={setSelectedTags}
 					placeholder="Tags"
+					variant="filter"
 				/>
 			</div>
 
