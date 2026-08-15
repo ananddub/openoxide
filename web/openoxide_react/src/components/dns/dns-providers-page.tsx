@@ -38,6 +38,7 @@ import {
 	DigitalOceanIcon,
 	HetznerIcon,
 } from '#/components/icons/provider-icons';
+import { useAppStore } from '#/stores/app-store';
 
 export interface DnsProviderItem {
 	id: number;
@@ -51,21 +52,25 @@ export interface DnsProviderItem {
 
 export function DnsProvidersPage() {
 	const queryClient = useQueryClient();
-	const { data: rawProviders, isLoading, refetch } = $api.useQuery('get', '/dns-providers' as any);
+	const storeProviders = useAppStore((state) => state.dnsProviders);
+	const isDnsLoading = useAppStore((state) => state.isDnsLoading);
+	const addDnsStore = useAppStore((state) => state.addDnsProvider);
+	const updateDnsStore = useAppStore((state) => state.updateDnsProvider);
+	const deleteDnsStore = useAppStore((state) => state.deleteDnsProvider);
+
+	const { refetch } = $api.useQuery('get', '/dns-providers' as any, {} as any);
 	const createMutation = $api.useMutation('post', '/dns-providers' as any);
 	const updateMutation = $api.useMutation('put', '/dns-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/dns-providers/{id}' as any);
 	const testMutation = $api.useMutation('post', '/dns-providers/{id}/test' as any);
 
-	const providers: DnsProviderItem[] = useMemo(() => {
-		if (!rawProviders || !Array.isArray(rawProviders)) return [];
-		return rawProviders as any;
-	}, [rawProviders]);
+	const providers = storeProviders;
+	const isLoading = isDnsLoading && providers.length === 0;
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingProvider, setEditingProvider] = useState<DnsProviderItem | null>(null);
-	const [deleteTarget, setDeleteTarget] = useState<DnsProviderItem | null>(null);
-	const [selectedDomainsProvider, setSelectedDomainsProvider] = useState<DnsProviderItem | null>(null);
+	const [editingProvider, setEditingProvider] = useState<any | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+	const [selectedDomainsProvider, setSelectedDomainsProvider] = useState<any | null>(null);
 	const [isTestingModal, setIsTestingModal] = useState(false);
 	const [newDomainInput, setNewDomainInput] = useState('');
 	const [managedDomainsMap, setManagedDomainsMap] = useState<Record<number, string[]>>({
@@ -86,7 +91,7 @@ export function DnsProvidersPage() {
 		setIsCreateOpen(true);
 	};
 
-	const handleOpenEdit = (provider: DnsProviderItem) => {
+	const handleOpenEdit = (provider: any) => {
 		setEditingProvider(provider);
 		setFormName(provider.name);
 		setFormType((provider.provider_type || 'CLOUDFLARE').toUpperCase() as any);
@@ -125,22 +130,33 @@ export function DnsProvidersPage() {
 		setIsSubmitting(true);
 		try {
 			if (editingProvider) {
+				const updatePayload: any = {
+					name: formName.trim(),
+					credentials_json: formToken.trim() ? JSON.stringify(formToken.trim()) : undefined,
+				};
+
+				updateDnsStore(editingProvider.id, updatePayload);
+
 				await updateMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
-					body: {
-						name: formName.trim(),
-						credentials_json: formToken.trim() ? JSON.stringify(formToken.trim()) : undefined,
-					},
+					body: updatePayload,
 				});
 				toast.success(`DNS Provider "${formName}" updated`);
 			} else {
-				await createMutation.mutateAsync({
-					body: {
-						name: formName.trim(),
-						provider_type: formType,
-						credentials_json: JSON.stringify(formToken.trim()),
-					},
+				const createPayload: any = {
+					name: formName.trim(),
+					provider_type: formType,
+					credentials_json: JSON.stringify(formToken.trim()),
+				};
+
+				const res: any = await createMutation.mutateAsync({
+					body: createPayload,
 				});
+
+				if (res.data || res) {
+					addDnsStore(res.data || res);
+				}
+
 				toast.success(`DNS Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
@@ -150,6 +166,23 @@ export function DnsProvidersPage() {
 			toast.error(formatApiError(err, 'Failed to save DNS provider'));
 		} finally {
 			setIsSubmitting(false);
+		}
+	};
+
+	const handleDeleteProvider = async () => {
+		if (!deleteTarget) return;
+		const targetId = deleteTarget.id;
+		deleteDnsStore(targetId);
+		try {
+			await deleteMutation.mutateAsync({
+				params: { path: { id: targetId } },
+			});
+			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
+			setDeleteTarget(null);
+			await refetch();
+			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
+		} catch (err) {
+			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
 		}
 	};
 
@@ -193,21 +226,6 @@ export function DnsProvidersPage() {
 			toast.error(err?.message || formatApiError(err, 'DNS Connection test failed'));
 		} finally {
 			setIsTestingModal(false);
-		}
-	};
-
-	const handleDeleteProvider = async () => {
-		if (!deleteTarget) return;
-		try {
-			await deleteMutation.mutateAsync({
-				params: { path: { id: deleteTarget.id } },
-			});
-			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
-			setDeleteTarget(null);
-			await refetch();
-			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
-		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
 		}
 	};
 

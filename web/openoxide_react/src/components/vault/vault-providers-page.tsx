@@ -41,6 +41,7 @@ import {
 	AzureIcon,
 	ScalewayIcon,
 } from '#/components/icons/provider-icons';
+import { useAppStore } from '#/stores/app-store';
 
 export interface VaultProviderItem {
 	id: number;
@@ -54,19 +55,23 @@ export interface VaultProviderItem {
 
 export function VaultProvidersPage() {
 	const queryClient = useQueryClient();
-	const { data: rawProviders, isLoading, refetch } = $api.useQuery('get', '/vault-providers' as any);
+	const storeProviders = useAppStore((state) => state.vaultProviders);
+	const isVaultLoading = useAppStore((state) => state.isVaultLoading);
+	const addVaultStore = useAppStore((state) => state.addVaultProvider);
+	const updateVaultStore = useAppStore((state) => state.updateVaultProvider);
+	const deleteVaultStore = useAppStore((state) => state.deleteVaultProvider);
+
+	const { refetch } = $api.useQuery('get', '/vault-providers' as any, {} as any);
 	const createMutation = $api.useMutation('post', '/vault-providers' as any);
 	const updateMutation = $api.useMutation('put', '/vault-providers/{id}' as any);
 	const deleteMutation = $api.useMutation('delete', '/vault-providers/{id}' as any);
 	const testMutation = $api.useMutation('post', '/vault-providers/{id}/test' as any);
 
-	const providers: VaultProviderItem[] = useMemo(() => {
-		if (!rawProviders || !Array.isArray(rawProviders)) return [];
-		return rawProviders as any;
-	}, [rawProviders]);
+	const providers = storeProviders;
+	const isLoading = isVaultLoading && providers.length === 0;
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingProvider, setEditingProvider] = useState<VaultProviderItem | null>(null);
+	const [editingProvider, setEditingProvider] = useState<any | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<VaultProviderItem | null>(null);
 	const [isTestingModal, setIsTestingModal] = useState(false);
 	const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -93,28 +98,21 @@ export function VaultProvidersPage() {
 		setIsCreateOpen(true);
 	};
 
-	const handleOpenEdit = (provider: VaultProviderItem) => {
+	const handleOpenEdit = (provider: any) => {
 		setEditingProvider(provider);
 		setFormName(provider.name);
 		setFormType((provider.provider_type || 'HASHICORP').toUpperCase() as any);
-		try {
-			const creds = JSON.parse(provider.credentials_json || '{}');
-			setFormUrl(creds.url || creds.api_url || '');
-			setFormMount(creds.mount || 'secret');
-			setFormNamespace(creds.namespace || '');
-		} catch {
-			setFormUrl('');
-			setFormMount('secret');
-			setFormNamespace('');
-		}
+		setFormUrl(provider.api_url || '');
 		setFormToken('');
+		setFormNamespace(provider.namespace || '');
+		setFormMount('secret');
 		setIsCreateOpen(true);
 	};
 
 	const handleSaveProvider = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formName.trim()) {
-			toast.error('Please enter a provider name');
+		if (!formName.trim() || (!editingProvider && !formToken.trim())) {
+			toast.error('Please fill in all required fields');
 			return;
 		}
 
@@ -132,6 +130,9 @@ export function VaultProvidersPage() {
 						namespace: formNamespace.trim(),
 					}),
 				};
+
+				// Optimistic Zustand update
+				updateVaultStore(editingProvider.id, updatePayload);
 
 				await updateMutation.mutateAsync({
 					params: { path: { id: editingProvider.id } },
@@ -160,9 +161,15 @@ export function VaultProvidersPage() {
 					}),
 				};
 
-				await createMutation.mutateAsync({
+				const res: any = await createMutation.mutateAsync({
 					body: createPayload,
 				});
+
+				// Optimistic Zustand add
+				if (res.data || res) {
+					addVaultStore(res.data || res);
+				}
+
 				toast.success(`Vault Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
@@ -222,9 +229,11 @@ export function VaultProvidersPage() {
 
 	const handleDeleteProvider = async () => {
 		if (!deleteTarget) return;
+		const targetId = deleteTarget.id;
+		deleteVaultStore(targetId);
 		try {
 			await deleteMutation.mutateAsync({
-				params: { path: { id: deleteTarget.id } },
+				params: { path: { id: targetId } },
 			});
 			toast.success(`Vault Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);

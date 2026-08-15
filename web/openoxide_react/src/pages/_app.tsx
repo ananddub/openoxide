@@ -9,6 +9,7 @@ import {
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
 import { useProjectGet, useApplicationGet, useComposeGet, usePostgresGet } from 'virtual:openoxide-live';
+import { useRealtimeSync } from '#/hooks/use-realtime-sync';
 
 function ProjectNameBreadcrumb({ id }: { id: number }) {
 	const { data: project } = useProjectGet(BigInt(id));
@@ -50,6 +51,7 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
+	useRealtimeSync();
 	const isAuth = useAuthStore(state => state.isAuth);
 	const location = useLocation();
 
