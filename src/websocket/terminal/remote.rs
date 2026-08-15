@@ -59,13 +59,12 @@ pub async fn spawn_remote_terminal(
     };
 
     // Pass the target shell and -i as separate SSH arguments.
-    // Pushing "sh -i" as a single string would make OpenSSH treat it as one token,
-    // which the remote sshd wraps in `/bin/sh -c "sh -i"` — working by accident for bash
-    // but failing silently for sh on systems where /bin/sh is dash or busybox.
-    // Two separate args: ssh ... host sh -i  →  sshd exec's sh with -i directly.
     let shell_bin = if shell_req == "sh" { "sh" } else { "bash" };
     args.push(shell_bin.to_string());
     args.push("-i".to_string());
+
+    // DEBUG: log the exact SSH command being constructed
+    tracing::info!(shell = %shell_bin, cmd = ?std::iter::once("ssh").chain(args.iter().map(|s| s.as_str())).collect::<Vec<_>>(), "spawning remote terminal");
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
@@ -128,6 +127,7 @@ pub async fn spawn_remote_terminal(
     let sessions_clone = sessions.clone();
     let socket_clone = socket.clone();
     let server_host = actual_host.clone();
+    let shell_bin_log = shell_bin.to_string();
     tokio::spawn(async move {
         let _keep_alive_agent = agent_session;
         let _keep_alive_askpass = temp_askpass;
@@ -144,6 +144,7 @@ pub async fn spawn_remote_terminal(
         if is_current {
             sessions_clone.remove(&key);
             let code = status.ok().and_then(|s| s.code());
+            tracing::info!(shell = %shell_bin_log, exit_code = ?code, host = %server_host, "remote terminal session exited");
             if let Some(c) = code {
                 if c != 0 {
                     let err_msg = format!("\r\n\x1b[31m[Error] SSH session to server '{server_host}' closed with exit code {c}.\x1b[0m\r\n");
