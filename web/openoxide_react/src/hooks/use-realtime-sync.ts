@@ -52,11 +52,6 @@ export function useRealtimeSync() {
 	const { data: liveDestinations } = useDestinationList();
 	const { data: liveTags } = useTagListAll();
 
-	// 2. Additional HTTP Fallback Queries
-	const { data: rawApps } = $api.useQuery('get', '/applications' as any, {} as any);
-	const { data: rawDbs } = $api.useQuery('get', '/databases' as any, {} as any);
-	const { data: rawComposes } = $api.useQuery('get', '/composes' as any, {} as any);
-
 	// Sync Live Realtime Streams directly into Zustand Store
 	useEffect(() => {
 		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
@@ -112,18 +107,6 @@ export function useRealtimeSync() {
 	useEffect(() => {
 		if (liveTags && Array.isArray(liveTags)) setTags(liveTags as any);
 	}, [liveTags, setTags]);
-
-	useEffect(() => {
-		if (rawApps && Array.isArray(rawApps)) setApplications(rawApps as any);
-	}, [rawApps, setApplications]);
-
-	useEffect(() => {
-		if (rawDbs && Array.isArray(rawDbs)) setDatabases(rawDbs as any);
-	}, [rawDbs, setDatabases]);
-
-	useEffect(() => {
-		if (rawComposes && Array.isArray(rawComposes)) setComposes(rawComposes as any);
-	}, [rawComposes, setComposes]);
 
 	useEffect(() => {
 		setHydrated(true);

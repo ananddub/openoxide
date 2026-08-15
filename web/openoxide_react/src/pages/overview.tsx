@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { Box, Layers, Database, Globe, Clock, Rocket, Search, Filter } from 'lucide-react';
+import { Box, Globe, Clock, Rocket, Search } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '#/components/ui/tabs';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
@@ -10,7 +10,6 @@ import { ServiceCard } from '#/components/projects/service/service-card';
 import { useDeployments } from '#/hooks/deployments/use-deployments';
 import { DeploymentItem } from '#/components/deployments/deployment-item';
 import { DeploymentLogsDialog } from '#/components/deployments/deployment-logs-dialog';
-import { $api } from '#/api/query';
 
 export const Route = createFileRoute('/_app/overview')({
 	component: OverviewPage,
@@ -21,22 +20,13 @@ function OverviewPage() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [typeFilter, setTypeFilter] = useState('all');
 
-	// RAM Store Readers (0ms Local-First Reads)
+	// RAM Store Readers (0ms Local-First Reactive Memory)
 	const projects = useAppStore((state) => state.projects);
-	const storeApps = useAppStore((state) => state.applications);
-	const storeDbs = useAppStore((state) => state.databases);
-	const storeComposes = useAppStore((state) => state.composes);
-	const storeDomains = useAppStore((state) => state.domains);
-	const storeBackups = useAppStore((state) => state.backups);
-
-	// Direct API Fallbacks (in case RAM store is hydrating)
-	const { data: apiApps } = $api.useQuery('get', '/applications' as any, {} as any);
-	const { data: apiDbs } = $api.useQuery('get', '/databases' as any, {} as any);
-	const { data: apiComposes } = $api.useQuery('get', '/composes' as any, {} as any);
+	const domains = useAppStore((state) => state.domains);
+	const backups = useAppStore((state) => state.backups);
 
 	const {
 		filteredAndSorted: deploymentsList,
-		isLoading: isDeploymentsLoading,
 		selectedDeployment,
 		setSelectedDeployment,
 		logs,
@@ -45,16 +35,7 @@ function OverviewPage() {
 		handleCopyLogs,
 	} = useDeployments();
 
-	// Map project ID to Project Name for subtitle display
-	const projectNameMap = useMemo(() => {
-		const map = new Map<number, string>();
-		projects.forEach((p) => {
-			if (p.id) map.set(Number(p.id), p.name || `Project #${p.id}`);
-		});
-		return map;
-	}, [projects]);
-
-	// Extract all services across flat arrays AND nested project environments
+	// Aggregate all Applications, Compose Stacks, and Databases across all Projects & Environments
 	const allServices = useMemo(() => {
 		const serviceMap = new Map<string, {
 			projectId: number;
@@ -67,71 +48,73 @@ function OverviewPage() {
 			dbKind?: string;
 		}>();
 
-		// 1. Process Flat Applications
-		const appsList = storeApps?.length ? storeApps : (Array.isArray(apiApps) ? apiApps : []);
-		appsList.forEach((app: any) => {
-			const id = Number(app.id);
-			if (!id) return;
-			const pId = Number(app.project_id || app.projectId || 1);
-			const projName = projectNameMap.get(pId) || 'Default Project';
-			serviceMap.set(`APP-${id}`, {
-				projectId: pId,
-				type: 'APP',
-				id,
-				name: app.name || app.app_name || `App #${id}`,
-				subtitle: `${projName} / production`,
-				status: app.application_status || app.status || 'idle',
-				createdAt: app.created_at || Date.now() / 1000,
-			});
-		});
+		if (!Array.isArray(projects)) return [];
 
-		// 2. Process Flat Compose Stacks
-		const composesList = storeComposes?.length ? storeComposes : (Array.isArray(apiComposes) ? apiComposes : []);
-		composesList.forEach((comp: any) => {
-			const id = Number(comp.id);
-			if (!id) return;
-			const pId = Number(comp.project_id || comp.projectId || 1);
-			const projName = projectNameMap.get(pId) || 'Default Project';
-			serviceMap.set(`COMPOSE-${id}`, {
-				projectId: pId,
-				type: 'COMPOSE',
-				id,
-				name: comp.name || comp.app_name || `Compose #${id}`,
-				subtitle: `${projName} / production`,
-				status: comp.compose_status || comp.status || 'idle',
-				createdAt: comp.created_at || Date.now() / 1000,
-			});
-		});
-
-		// 3. Process Flat Databases
-		const dbsList = storeDbs?.length ? storeDbs : (Array.isArray(apiDbs) ? apiDbs : []);
-		dbsList.forEach((db: any) => {
-			const id = Number(db.id);
-			if (!id) return;
-			const pId = Number(db.project_id || db.projectId || 1);
-			const projName = projectNameMap.get(pId) || 'Default Project';
-			const dbKind = (db.db_type || db.type || db.database_type || 'postgres').toLowerCase();
-			serviceMap.set(`DATABASE-${id}`, {
-				projectId: pId,
-				type: 'DATABASE',
-				id,
-				name: db.name || db.database_name || `DB #${id}`,
-				subtitle: `${projName} / production`,
-				status: db.database_status || db.status || 'idle',
-				dbKind,
-				createdAt: db.created_at || Date.now() / 1000,
-			});
-		});
-
-		// 4. Process Nested Projects -> Environments
 		projects.forEach((proj: any) => {
-			const envs = proj.environments || [];
 			const pId = Number(proj.id);
+			if (!pId) return;
 			const projName = proj.name || `Project #${pId}`;
 
+			// 1. Process top-level service arrays on project (if present)
+			(proj.applications || []).forEach((app: any) => {
+				const id = Number(app.id);
+				if (id) {
+					serviceMap.set(`APP-${id}`, {
+						projectId: pId,
+						type: 'APP',
+						id,
+						name: app.name || app.app_name || `App #${id}`,
+						subtitle: `${projName} / production`,
+						status: app.application_status || app.status || 'idle',
+						createdAt: app.created_at || Date.now() / 1000,
+					});
+				}
+			});
+
+			(proj.composes || []).forEach((comp: any) => {
+				const id = Number(comp.id);
+				if (id) {
+					serviceMap.set(`COMPOSE-${id}`, {
+						projectId: pId,
+						type: 'COMPOSE',
+						id,
+						name: comp.name || comp.app_name || `Compose #${id}`,
+						subtitle: `${projName} / production`,
+						status: comp.compose_status || comp.status || 'idle',
+						createdAt: comp.created_at || Date.now() / 1000,
+					});
+				}
+			});
+
+			const topDbs = [
+				...(proj.postgresDbs || []).map((db: any) => ({ ...db, kind: 'postgres' })),
+				...(proj.mysqlDbs || []).map((db: any) => ({ ...db, kind: 'mysql' })),
+				...(proj.mariadbDbs || []).map((db: any) => ({ ...db, kind: 'mariadb' })),
+				...(proj.mongoDbs || []).map((db: any) => ({ ...db, kind: 'mongo' })),
+				...(proj.redisDbs || []).map((db: any) => ({ ...db, kind: 'redis' })),
+			];
+
+			topDbs.forEach((db: any) => {
+				const id = Number(db.id);
+				if (id) {
+					serviceMap.set(`DATABASE-${id}`, {
+						projectId: pId,
+						type: 'DATABASE',
+						id,
+						name: db.name || db.database_name || `DB #${id}`,
+						subtitle: `${projName} / production`,
+						status: db.database_status || db.status || 'idle',
+						dbKind: db.kind,
+						createdAt: db.created_at || Date.now() / 1000,
+					});
+				}
+			});
+
+			// 2. Process nested Environments array
+			const envs = proj.environments || [];
 			envs.forEach((env: any) => {
 				const envName = env.name || 'production';
-				// Applications
+
 				(env.applications || []).forEach((app: any) => {
 					const id = Number(app.id);
 					if (id && !serviceMap.has(`APP-${id}`)) {
@@ -146,7 +129,7 @@ function OverviewPage() {
 						});
 					}
 				});
-				// Compose
+
 				(env.composes || []).forEach((comp: any) => {
 					const id = Number(comp.id);
 					if (id && !serviceMap.has(`COMPOSE-${id}`)) {
@@ -161,82 +144,26 @@ function OverviewPage() {
 						});
 					}
 				});
-				// Postgres
-				(env.postgreses || []).forEach((db: any) => {
+
+				const envDbs = [
+					...(env.postgreses || env.postgresDbs || []).map((db: any) => ({ ...db, kind: 'postgres' })),
+					...(env.mysqls || env.mysqlDbs || []).map((db: any) => ({ ...db, kind: 'mysql' })),
+					...(env.mariadbs || env.mariadbDbs || []).map((db: any) => ({ ...db, kind: 'mariadb' })),
+					...(env.mongos || env.mongoDbs || []).map((db: any) => ({ ...db, kind: 'mongo' })),
+					...(env.redises || env.redisDbs || []).map((db: any) => ({ ...db, kind: 'redis' })),
+				];
+
+				envDbs.forEach((db: any) => {
 					const id = Number(db.id);
 					if (id && !serviceMap.has(`DATABASE-${id}`)) {
 						serviceMap.set(`DATABASE-${id}`, {
 							projectId: pId,
 							type: 'DATABASE',
 							id,
-							name: db.name || `Postgres #${id}`,
+							name: db.name || `DB #${id}`,
 							subtitle: `${projName} / ${envName}`,
 							status: db.database_status || db.status || 'idle',
-							dbKind: 'postgres',
-							createdAt: db.created_at || Date.now() / 1000,
-						});
-					}
-				});
-				// MySQL
-				(env.mysqls || []).forEach((db: any) => {
-					const id = Number(db.id);
-					if (id && !serviceMap.has(`DATABASE-${id}`)) {
-						serviceMap.set(`DATABASE-${id}`, {
-							projectId: pId,
-							type: 'DATABASE',
-							id,
-							name: db.name || `MySQL #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: db.database_status || db.status || 'idle',
-							dbKind: 'mysql',
-							createdAt: db.created_at || Date.now() / 1000,
-						});
-					}
-				});
-				// MariaDB
-				(env.mariadbs || []).forEach((db: any) => {
-					const id = Number(db.id);
-					if (id && !serviceMap.has(`DATABASE-${id}`)) {
-						serviceMap.set(`DATABASE-${id}`, {
-							projectId: pId,
-							type: 'DATABASE',
-							id,
-							name: db.name || `MariaDB #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: db.database_status || db.status || 'idle',
-							dbKind: 'mariadb',
-							createdAt: db.created_at || Date.now() / 1000,
-						});
-					}
-				});
-				// Mongo
-				(env.mongos || []).forEach((db: any) => {
-					const id = Number(db.id);
-					if (id && !serviceMap.has(`DATABASE-${id}`)) {
-						serviceMap.set(`DATABASE-${id}`, {
-							projectId: pId,
-							type: 'DATABASE',
-							id,
-							name: db.name || `Mongo #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: db.database_status || db.status || 'idle',
-							dbKind: 'mongo',
-							createdAt: db.created_at || Date.now() / 1000,
-						});
-					}
-				});
-				// Redis
-				(env.redises || []).forEach((db: any) => {
-					const id = Number(db.id);
-					if (id && !serviceMap.has(`DATABASE-${id}`)) {
-						serviceMap.set(`DATABASE-${id}`, {
-							projectId: pId,
-							type: 'DATABASE',
-							id,
-							name: db.name || `Redis #${id}`,
-							subtitle: `${projName} / ${envName}`,
-							status: db.database_status || db.status || 'idle',
-							dbKind: 'redis',
+							dbKind: db.kind,
 							createdAt: db.created_at || Date.now() / 1000,
 						});
 					}
@@ -245,7 +172,7 @@ function OverviewPage() {
 		});
 
 		return Array.from(serviceMap.values());
-	}, [projects, storeApps, storeDbs, storeComposes, apiApps, apiDbs, apiComposes, projectNameMap]);
+	}, [projects]);
 
 	// Filtered services
 	const filteredServices = useMemo(() => {
@@ -267,11 +194,11 @@ function OverviewPage() {
 
 	return (
 		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full animate-in fade-in duration-200">
-			{/* Page Title */}
+			{/* Page Header */}
 			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold text-foreground tracking-tight">Platform Overview</h1>
+				<h1 className="text-2xl font-bold text-foreground tracking-tight">Overview</h1>
 				<p className="text-xs text-muted-foreground">
-					Centralized management of all services, deployments, domains, and backups across your organization
+					Centralized platform overview of all applications, compose stacks, databases, deployments, domains, and backups
 				</p>
 			</div>
 
@@ -296,14 +223,14 @@ function OverviewPage() {
 						<Globe className="size-4" />
 						Domains
 						<Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
-							{storeDomains.length}
+							{domains.length}
 						</Badge>
 					</TabsTrigger>
 					<TabsTrigger value="backups" className="pb-2.5 text-xs font-semibold flex items-center gap-2">
 						<Clock className="size-4" />
 						Volume Backups
 						<Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
-							{storeBackups.length}
+							{backups.length}
 						</Badge>
 					</TabsTrigger>
 				</TabsList>
@@ -409,7 +336,7 @@ function OverviewPage() {
 
 				{/* Domains Tab Content */}
 				<TabsContent value="domains" className="space-y-4">
-					{storeDomains.length === 0 ? (
+					{domains.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
 							<Globe className="size-8 text-muted-foreground/40 mb-2" />
 							<p className="text-sm font-semibold text-foreground">No active domains configured</p>
@@ -417,7 +344,7 @@ function OverviewPage() {
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{storeDomains.map((dom) => (
+							{domains.map((dom) => (
 								<div key={dom.id} className="p-4 border rounded-xl bg-card flex flex-col gap-2">
 									<div className="flex items-center justify-between">
 										<p className="font-bold text-xs text-foreground font-mono">{dom.domain || dom.host}</p>
@@ -436,7 +363,7 @@ function OverviewPage() {
 
 				{/* Backups Tab Content */}
 				<TabsContent value="backups" className="space-y-4">
-					{storeBackups.length === 0 ? (
+					{backups.length === 0 ? (
 						<div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-center">
 							<Clock className="size-8 text-muted-foreground/40 mb-2" />
 							<p className="text-sm font-semibold text-foreground">No volume backups found</p>
@@ -444,7 +371,7 @@ function OverviewPage() {
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{storeBackups.map((b) => (
+							{backups.map((b) => (
 								<div key={b.id} className="p-4 border rounded-xl bg-card flex flex-col gap-2">
 									<div className="flex items-center justify-between">
 										<p className="font-bold text-xs text-foreground font-mono">{b.name || `Backup #${b.id}`}</p>
@@ -467,7 +394,7 @@ function OverviewPage() {
 				selectedDeployment={selectedDeployment}
 				onClose={() => setSelectedDeployment(null)}
 				logs={logs}
-				isLogsLoading={isLogsLoading}
+				isLogsLoading={false}
 				copied={copied}
 				onCopyLogs={handleCopyLogs}
 			/>
