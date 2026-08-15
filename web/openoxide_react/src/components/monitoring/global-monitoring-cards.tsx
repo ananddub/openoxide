@@ -82,8 +82,9 @@ function getAccessToken(): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalMonitoringCards() {
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
 	const {data: rawDockerContainers = []} =
-		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}}, {refetchInterval: 5000});
+		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}});
 
 	const {data: rawRunning} = useDeploymentRunning({
 		status: null, state: null,

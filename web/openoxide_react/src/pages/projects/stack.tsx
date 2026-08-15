@@ -1,7 +1,8 @@
 import {useState} from 'react';
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {FolderOpen, Layers} from 'lucide-react';
-import {useProjectGet, useEnvironmentListByProject} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
+import { useEnvironmentListByProject } from 'virtual:openoxide-live';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
 import {StackCanvas} from '#/components/projects/stack/stack-canvas';
 
@@ -14,7 +15,8 @@ function BlueprintPage() {
 	const projectId = Number(id);
 	const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>();
 
-	const {data: project} = useProjectGet(BigInt(projectId));
+	const storeProjects = useAppStore((state) => state.projects || []);
+	const project = storeProjects.find((p: any) => Number(p.id) === projectId);
 	const {data: rawEnvs} = useEnvironmentListByProject(BigInt(projectId));
 	const envs = rawEnvs ?? [];
 

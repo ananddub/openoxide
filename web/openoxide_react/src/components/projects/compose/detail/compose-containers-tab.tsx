@@ -31,7 +31,6 @@ export function ComposeContainersTab({compose, onUpdated}: ComposeContainersTabP
 					},
 				},
 			},
-			refetchInterval: 3000,
 		},
 	);
 

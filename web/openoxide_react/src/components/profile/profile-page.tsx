@@ -65,11 +65,21 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfilePage() {
-	const {
-		data: whoamiData,
-		loading: isLoading,
-		setData: setWhoamiData,
-	} = useAuthWhoAmI();
+	const storeProfile = useAppStore((state) => state.profile);
+	const authUser = useAuthStore((state) => state.user);
+	const isLoading = false;
+
+	const [whoamiData, setWhoamiData] = useState<any>(null);
+
+	useEffect(() => {
+		setWhoamiData({
+			user_id: storeProfile?.id || authUser?.id,
+			email: storeProfile?.email || authUser?.email,
+			first_name: storeProfile?.name?.split(' ')[0] || authUser?.firstName || '',
+			last_name: storeProfile?.name?.split(' ').slice(1).join(' ') || authUser?.lastName || '',
+			avatar: storeProfile?.avatar,
+		});
+	}, [storeProfile, authUser]);
 	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
 
 	// Real API Tokens Query

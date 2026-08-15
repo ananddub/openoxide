@@ -15,7 +15,7 @@ import {
 import {useAuthStore} from '#/stores/auth-store';
 import {useNavigate} from '@tanstack/react-router';
 import {isSolidColorAvatar} from '#/lib/avatar-utils';
-import {useAuthWhoAmI} from 'virtual:openoxide-live';
+import { useAppStore } from '#/stores/app-store';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -39,17 +39,12 @@ export function UserNav({isCollapsed}: Props) {
 	const navigate = useNavigate();
 	const {theme, toggleTheme} = useTheme();
 
-	const {data: whoamiData} = useAuthWhoAmI();
+	const profile = useAppStore((state) => state.profile);
 
-	const displayEmail = whoamiData
-		? (whoamiData.email ?? '')
-		: (user?.email ?? '');
-	const displayFirstName = whoamiData
-		? (whoamiData.first_name ?? '')
-		: (user?.firstName ?? '');
-	const displayLastName = whoamiData
-		? (whoamiData.last_name ?? '')
-		: (user?.lastName ?? '');
+	const displayEmail = profile?.email || user?.email || '';
+	const displayName = profile?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+	const displayFirstName = displayName.split(' ')[0] || '';
+	const displayLastName = displayName.split(' ').slice(1).join(' ') || '';
 
 	const getInitials = () => {
 		if (displayFirstName && displayLastName) {
