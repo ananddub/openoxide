@@ -49,7 +49,7 @@ export function useProjectDetails(projectId: number) {
 		[envs, activeEnvId]
 	);
 
-	// Instant Filtered Services directly from Realtime Zustand Store (ZERO extra subscriptions!)
+	// Instant Filtered Services directly from Realtime Zustand Store
 	const projectServices = useMemo(() => {
 		return (overviewServices || []).filter((s: any) => {
 			if (!s || String(s.project_id) !== String(projectId)) return false;
@@ -84,17 +84,18 @@ export function useProjectDetails(projectId: number) {
 		const sQuery = String(searchQuery || '').toLowerCase().trim();
 
 		let list = projectServices.map((s: any) => {
-			const rawType = String(s?.type || s?.kind || 'APP').toUpperCase();
+			const rawType = String(s?.service_type || s?.serviceType || s?.type || s?.kind || 'APP').toUpperCase();
+			const dbKind = s?.db_kind || s?.dbKind || s?.kind;
 			return {
-				key: `${rawType.toLowerCase()}-${s.id}`,
+				key: `${rawType.toLowerCase()}-${dbKind || 'svc'}-${s.id}`,
 				projectId,
-				type: rawType,
+				type: rawType as 'APP' | 'COMPOSE' | 'DATABASE',
 				id: s.id,
 				name: String(s?.name || s?.app_name || s?.appName || ''),
-				subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : String(s?.dbKind || s?.kind || 'Database'),
+				subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : (dbKind ? String(dbKind).toLowerCase() : 'Database'),
 				status: String(s?.status || s?.app_status || 'idle'),
 				createdAt: s?.createdAt || s?.created_at,
-				dbKind: s?.dbKind || s?.kind,
+				dbKind: dbKind ? String(dbKind).toLowerCase() : undefined,
 			};
 		});
 
