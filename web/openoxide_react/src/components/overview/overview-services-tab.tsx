@@ -3,6 +3,7 @@ import { Search, Loader2 } from 'lucide-react';
 import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
 import { useOrganizationStore } from '#/stores/organization-store';
+import { useAppStore } from '#/stores/app-store';
 import { $api } from '#/api/query';
 import { client } from '#/api/client';
 import {
@@ -28,11 +29,24 @@ export function OverviewServicesTab() {
 	const { activeOrg } = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
+	// Zustand RAM store overviewServices
+	const storeServices = useAppStore((state) => state.overviewServices);
+
 	// Live Projects stream for Project Select filter
 	const { data: projectsToUse = [] } = useProjectListByOrganization(BigInt(orgId));
 
-	// LIVE REALTIME Socket.IO stream from virtual:openoxide-live (ZERO POLLING!)
-	const { data: rawServices = [], loading: isLoading } = useOverviewServices(BigInt(orgId));
+	// LIVE REALTIME Socket.IO stream from virtual:openoxide-live
+	const { data: liveServicesQuery, loading: isLiveLoading } = useOverviewServices(BigInt(orgId));
+
+	// Prefer live Socket.IO stream data, fallback to Zustand RAM store
+	const rawServices = useMemo(() => {
+		if (liveServicesQuery && Array.isArray(liveServicesQuery) && liveServicesQuery.length > 0) {
+			return liveServicesQuery;
+		}
+		return storeServices || [];
+	}, [liveServicesQuery, storeServices]);
+
+	const isLoading = isLiveLoading && rawServices.length === 0;
 
 	// App Mutations
 	const appStart = $api.useMutation('post', '/applications/{id}/start');

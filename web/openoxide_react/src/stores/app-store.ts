@@ -167,6 +167,19 @@ export interface InviteItem {
 	expired_at?: number;
 }
 
+export interface OverviewServiceItem {
+	id: number;
+	name: string;
+	service_type: string;
+	status: string;
+	created_at: number;
+	project_id: number;
+	project_name: string;
+	environment_id: number;
+	environment_name: string;
+	db_kind?: string | null;
+}
+
 interface AppStoreState {
 	// Vault & DNS
 	vaultProviders: VaultProviderItem[];
@@ -178,6 +191,7 @@ interface AppStoreState {
 	databases: DatabaseItem[];
 	composes: ComposeItem[];
 	servers: ServerItem[];
+	overviewServices: OverviewServiceItem[];
 
 	// Deployments & Swarm
 	deployments: DeploymentItem[];
@@ -234,6 +248,7 @@ interface AppStoreState {
 	updateServer: (id: number, server: Partial<ServerItem>) => void;
 	deleteServer: (id: number) => void;
 
+	setOverviewServices: (services: OverviewServiceItem[]) => void;
 	setDeployments: (deployments: DeploymentItem[]) => void;
 	addDeployment: (deployment: DeploymentItem) => void;
 	updateDeployment: (id: number, deployment: Partial<DeploymentItem>) => void;
@@ -280,6 +295,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	databases: [],
 	composes: [],
 	servers: [],
+	overviewServices: [],
 	deployments: [],
 	swarmNodes: [],
 	domains: [],
@@ -350,6 +366,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
 		set((state) => ({ servers: state.servers.map((s) => (String(s.id) === String(id) ? { ...s, ...updated } : s)) })),
 	deleteServer: (id) =>
 		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
+
+	setOverviewServices: (overviewServices) => set({ overviewServices }),
 
 	setDeployments: (deployments) => set({ deployments }),
 	addDeployment: (deployment) =>

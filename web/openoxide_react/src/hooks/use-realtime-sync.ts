@@ -14,6 +14,7 @@ import {
 	useSshKeyList,
 	useDestinationList,
 	useTagListAll,
+	useOverviewServices,
 	useOverviewDomains,
 	useOverviewBackups,
 } from 'virtual:openoxide-live';
@@ -37,6 +38,7 @@ export function useRealtimeSync() {
 	const setInvites = useAppStore((state) => state.setInvites);
 	const setDomains = useAppStore((state) => state.setDomains);
 	const setBackups = useAppStore((state) => state.setBackups);
+	const setOverviewServices = useAppStore((state) => state.setOverviewServices);
 
 	const setHydrated = useAppStore((state) => state.setHydrated);
 	const setWsConnected = useAppStore((state) => state.setWsConnected);
@@ -55,11 +57,18 @@ export function useRealtimeSync() {
 	const { data: liveDestinations } = useDestinationList();
 	const { data: liveTags } = useTagListAll();
 
-	// 2. Organization-Wide Domains & Backups LIVE Socket.IO Sync (ZERO POLLING)
+	// 2. Organization-Wide Services, Domains & Backups LIVE Socket.IO Sync (ZERO POLLING)
+	const { data: liveServices } = useOverviewServices(BigInt(orgId));
 	const { data: liveDomains } = useOverviewDomains(BigInt(orgId));
 	const { data: liveBackups } = useOverviewBackups(BigInt(orgId));
 
 	// Sync Live Realtime Streams directly into Zustand Store
+	useEffect(() => {
+		if (liveServices && Array.isArray(liveServices)) {
+			setOverviewServices(liveServices as any);
+		}
+	}, [liveServices, setOverviewServices]);
+
 	useEffect(() => {
 		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
 	}, [liveMembers, setMembers]);
