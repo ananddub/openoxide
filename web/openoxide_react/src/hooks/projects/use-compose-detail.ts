@@ -12,11 +12,21 @@ import {
 	useDeploymentList,
 } from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
 
-	// 1. Central Compose Query — live push replaces refetchInterval:3000
-	const {data: compose, loading: isLoadingCompose} = useComposeGet(BigInt(composeId));
+	// 0ms Instant Zustand Store Read
+	const storeCompose = useAppStore((state) =>
+		state.composes.find((c) => String(c.id) === String(composeId))
+	);
+
+	// 1. Central Compose Query — live push replaces refetchInterval
+	const {data: liveCompose} = useComposeGet(BigInt(composeId));
+
+	const compose = liveCompose || storeCompose;
+	const isLoadingCompose = !compose;
 
 	// 2. Central Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));

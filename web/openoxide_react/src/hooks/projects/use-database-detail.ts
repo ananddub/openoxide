@@ -14,11 +14,18 @@ import {
 	useBackupListVolumeBackups,
 } from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
 	const [actionLoading, setActionLoading] = useState<'deploy' | 'reload' | 'start' | 'stop' | null>(null);
 
 	const activeKind = (targetKind || '').toLowerCase();
+
+	// 0ms Instant Zustand Store Read
+	const storeDb = useAppStore((state) =>
+		state.databases.find((d) => String(d.id) === String(dbId))
+	);
 
 	// Target query selection with selective query execution to avoid unnecessary 404 console spam
 	const postgresQ = usePostgresGet(BigInt(dbId));
@@ -29,7 +36,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const libsqlQ = useLibsqlGet(BigInt(dbId));
 
 	// Select active query result
-	const database = (activeKind.includes('redis') ? redisQ.data : null) ||
+	const database = storeDb ||
+		(activeKind.includes('redis') ? redisQ.data : null) ||
 		(activeKind.includes('postgres') ? postgresQ.data : null) ||
 		(activeKind.includes('mysql') ? mysqlQ.data : null) ||
 		(activeKind.includes('mariadb') ? mariadbQ.data : null) ||

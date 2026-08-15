@@ -13,6 +13,8 @@ import {
 	useLibsqlListByEnvironment,
 } from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export function useProjectDetails(projectId: number) {
 	// Modals State
 	const [showCreateEnv, setShowCreateEnv] = useState(false);
@@ -22,8 +24,14 @@ export function useProjectDetails(projectId: number) {
 	const [showCreateCompose, setShowCreateCompose] = useState(false);
 	const [showCreateDatabase, setShowCreateDatabase] = useState(false);
 
+	// 0ms Instant Zustand Store Read
+	const storeProject = useAppStore((state) =>
+		state.projects.find((p) => String(p.id) === String(projectId))
+	);
+
 	// Queries
-	const {data: project} = useProjectGet(BigInt(projectId));
+	const {data: liveProject} = useProjectGet(BigInt(projectId));
+	const project = liveProject || storeProject;
 	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
 	const {data: servers = []} = useRemoteServerList();
 

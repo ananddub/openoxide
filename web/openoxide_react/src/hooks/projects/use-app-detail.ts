@@ -12,11 +12,21 @@ import {
 	useDeploymentList,
 } from 'virtual:openoxide-live';
 
+import { useAppStore } from '#/stores/app-store';
+
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 
+	// 0ms Instant Zustand Store Read
+	const storeApp = useAppStore((state) =>
+		state.applications.find((a) => String(a.id) === String(appId))
+	);
+
 	// 1. App Query — live push replaces refetchInterval
-	const {data: app, loading: isLoadingApp} = useApplicationGet(BigInt(appId));
+	const {data: liveApp} = useApplicationGet(BigInt(appId));
+
+	const app = liveApp || storeApp;
+	const isLoadingApp = !app;
 
 	// 2. Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByApplication(BigInt(appId));
