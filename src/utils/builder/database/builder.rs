@@ -313,9 +313,19 @@ impl DatabaseBuilder {
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
 
-        if let Err(error) = result {
-            self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
-            return Err(error);
+        match result {
+            Ok(output) => {
+                if !output.stdout.is_empty() {
+                    self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+                }
+                if !output.stderr.is_empty() {
+                    self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+                }
+            }
+            Err(error) => {
+                self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
+                return Err(error);
+            }
         }
 
         // Wait healthy

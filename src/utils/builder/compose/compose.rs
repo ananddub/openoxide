@@ -194,10 +194,17 @@ impl ComposeBuilder {
             deploy_cmd;
         };
 
-        self.ctx
+        let output = self
+            .ctx
             .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
+        if !output.stdout.is_empty() {
+            self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+        }
+        if !output.stderr.is_empty() {
+            self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+        }
         Ok(())
     }
 
@@ -255,7 +262,8 @@ impl ComposeBuilder {
             up_cmd;
         };
 
-        self.ctx
+        let output = self
+            .ctx
             .apply_cgroup(pipeline)?
             .execute_cancelled(&self.ctx.executor, cancel)
             .await
@@ -263,6 +271,12 @@ impl ComposeBuilder {
                 tracing::error!(error = %e, "docker compose deploy failed");
                 e
             })?;
+        if !output.stdout.is_empty() {
+            self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+        }
+        if !output.stderr.is_empty() {
+            self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+        }
         Ok(())
     }
 
