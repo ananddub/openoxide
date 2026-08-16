@@ -226,6 +226,8 @@ export interface AppStoreState {
 
 	setOverviewServices: (services: OverviewServiceItem[]) => void;
 	setDeployments: (deployments: DeploymentItem[]) => void;
+	deleteDeployment: (id: number | string) => void;
+	clearDeployments: (filter?: { appId?: number | string; composeId?: number | string; databaseId?: number | string }) => void;
 	setSwarmNodes: (nodes: any[]) => void;
 	setDomains: (domains: DomainItem[]) => void;
 	setBackups: (backups: BackupItem[]) => void;
@@ -338,6 +340,18 @@ export const useAppStore = create<AppStoreState>((set) => ({
 
 	setOverviewServices: (services) => set({ overviewServices: services }),
 	setDeployments: (deployments) => set({ deployments }),
+	deleteDeployment: (id) =>
+		set((state) => ({ deployments: state.deployments.filter((d) => String(d.id) !== String(id)) })),
+	clearDeployments: (filter) =>
+		set((state) => ({
+			deployments: state.deployments.filter((d: any) => {
+				if (filter?.appId && String(d.application_id) === String(filter.appId)) return false;
+				if (filter?.composeId && String(d.compose_id) === String(filter.composeId)) return false;
+				if (filter?.databaseId && String(d.database_id) === String(filter.databaseId)) return false;
+				if (!filter?.appId && !filter?.composeId && !filter?.databaseId) return false;
+				return true;
+			}),
+		})),
 	setSwarmNodes: (nodes) => set({ swarmNodes: nodes }),
 	setDomains: (domains) => set({ domains }),
 	setBackups: (backups) => set({ backups }),

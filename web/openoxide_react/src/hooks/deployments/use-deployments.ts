@@ -105,6 +105,7 @@ export function useDeployments() {
 					},
 				},
 			});
+			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			refetch();
@@ -119,6 +120,7 @@ export function useDeployments() {
 				params: { query: {} },
 			});
 			const data = res as any;
+			useAppStore.getState().clearDeployments();
 			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			refetch();

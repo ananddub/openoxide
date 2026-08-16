@@ -196,6 +196,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 				},
 			});
 			const data = res as any;
+			useAppStore.getState().clearDeployments({composeId});
 			toast.success(`Cleared ${data?.cleared_count || 0} compose deployment logs & history`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 		} catch (err: unknown) {
@@ -212,6 +213,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 					},
 				},
 			});
+			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 		} catch (err: unknown) {

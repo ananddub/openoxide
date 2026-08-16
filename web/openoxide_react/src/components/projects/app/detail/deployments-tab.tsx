@@ -1,3 +1,4 @@
+import {useAppStore} from '#/stores/app-store';
 import {useState, useEffect, useRef} from 'react';
 import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
@@ -209,6 +210,7 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 				},
 			});
 			const data = res as any;
+			useAppStore.getState().clearDeployments({appId});
 			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			onRefresh?.();
@@ -226,6 +228,7 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 					},
 				},
 			});
+			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			onRefresh?.();
