@@ -20,8 +20,6 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
 	const [actionLoading, setActionLoading] = useState<'deploy' | 'reload' | 'start' | 'stop' | null>(null);
 
-	const activeKind = (targetKind || '').toLowerCase();
-
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
 	const databases = useAppStore((state) => state.databases);
 	const overviewServices = useAppStore((state) => state.overviewServices);
