@@ -105,45 +105,42 @@ impl<'a> GitProviderBuilder<'a> {
 
     pub fn build(self) -> Result<GitProvider, AdapterError> {
         match self.source_type {
-            SourceType::Github => Ok(GitProvider::Github {
-                owner: self
-                    .owner
-                    .ok_or(AdapterError::MissingField("owner"))?
-                    .into(),
-                repo: self
-                    .repository
-                    .ok_or(AdapterError::MissingField("repository"))?
-                    .into(),
-            }),
+            SourceType::Github => {
+                let repo_raw = self.repository.unwrap_or("").trim();
+                let owner_raw = self.owner.unwrap_or("").trim();
+                let (parsed_owner, parsed_repo) = parse_owner_repo(owner_raw, repo_raw);
+                if parsed_repo.contains("://") || parsed_repo.starts_with("git@") {
+                    Ok(GitProvider::Custom { url: parsed_repo })
+                } else {
+                    Ok(GitProvider::Github {
+                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
+                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
+                    })
+                }
+            }
             SourceType::Gitlab => {
-                let url = self
-                    .gitlab_repository
-                    .ok_or(AdapterError::MissingField("gitlab_repository"))?;
-                if url.contains("://") || url.starts_with("git@") {
-                    Ok(GitProvider::Custom { url: url.into() })
+                let repo_raw = self.gitlab_repository.unwrap_or("").trim();
+                let owner_raw = self.gitlab_owner.unwrap_or("").trim();
+                let (parsed_owner, parsed_repo) = parse_owner_repo(owner_raw, repo_raw);
+                if parsed_repo.contains("://") || parsed_repo.starts_with("git@") {
+                    Ok(GitProvider::Custom { url: parsed_repo })
                 } else {
                     Ok(GitProvider::Gitlab {
-                        owner: self
-                            .gitlab_owner
-                            .ok_or(AdapterError::MissingField("gitlab_owner"))?
-                            .into(),
-                        repo: url.into(),
+                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
+                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
                     })
                 }
             }
             SourceType::Bitbucket => {
-                let url = self
-                    .bitbucket_repository
-                    .ok_or(AdapterError::MissingField("bitbucket_repository"))?;
-                if url.contains("://") || url.starts_with("git@") {
-                    Ok(GitProvider::Custom { url: url.into() })
+                let repo_raw = self.bitbucket_repository.unwrap_or("").trim();
+                let owner_raw = self.bitbucket_owner.unwrap_or("").trim();
+                let (parsed_owner, parsed_repo) = parse_owner_repo(owner_raw, repo_raw);
+                if parsed_repo.contains("://") || parsed_repo.starts_with("git@") {
+                    Ok(GitProvider::Custom { url: parsed_repo })
                 } else {
                     Ok(GitProvider::Bitbucket {
-                        owner: self
-                            .bitbucket_owner
-                            .ok_or(AdapterError::MissingField("bitbucket_owner"))?
-                            .into(),
-                        repo: url.into(),
+                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
+                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
                     })
                 }
             }
@@ -166,4 +163,15 @@ impl<'a> GitProviderBuilder<'a> {
             other => Err(AdapterError::UnsupportedSourceType(format!("{other:?}"))),
         }
     }
+}
+
+fn parse_owner_repo(owner_input: &str, repo_input: &str) -> (String, String) {
+    if !owner_input.is_empty() && !repo_input.is_empty() {
+        return (owner_input.to_string(), repo_input.to_string());
+    }
+    if repo_input.contains('/') && !repo_input.contains("://") && !repo_input.starts_with("git@") {
+        let parts: Vec<&str> = repo_input.splitn(2, '/').collect();
+        return (parts[0].to_string(), parts[1].to_string());
+    }
+    (owner_input.to_string(), repo_input.to_string())
 }

@@ -107,12 +107,13 @@ impl ApplicationBuilder {
         };
 
         if let Err(error) = pipeline.execute_cancelled(&self.ctx.executor, cancel).await {
-            self.ctx
+            let _ = self
+                .ctx
                 .docker
                 .services()
                 .rollback(spec.service_name().as_str())
                 .run()
-                .await?;
+                .await;
             self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
             return Err(error);
         }
@@ -122,12 +123,13 @@ impl ApplicationBuilder {
 
         self.ctx.emit(BuilderEvent::HealthCheck).await;
         if let Err(error) = self.wait_healthy(spec, cancel).await {
-            self.ctx
+            let _ = self
+                .ctx
                 .docker
                 .services()
                 .rollback(spec.service_name().as_str())
                 .run()
-                .await?;
+                .await;
             self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
             return Err(error);
         }
