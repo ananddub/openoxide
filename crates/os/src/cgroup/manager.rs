@@ -396,10 +396,15 @@ impl Cgroup {
 
     pub fn to_add_process_command(&self, pid: &str) -> String {
         let filepath = format!("{}/cgroup.procs", self.cgroup_path());
+        let pid_val = if pid == "$$" {
+            "$$".to_string()
+        } else {
+            shell_single_quote(pid)
+        };
         format!(
             "if [ -f {0} ]; then echo {1} > {0}; fi",
             shell_single_quote(&filepath),
-            shell_single_quote(pid)
+            pid_val
         )
     }
 

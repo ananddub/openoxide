@@ -53,9 +53,13 @@ impl BuilderQueue {
                 self.execute_operation_compose(cmp_id, deployment_id, op)
                     .await
             }
-            (None, None, Some(db_id), Some(db_kind)) => {
+            (None, None, Some(db_id), db_kind_opt) => {
+                let db_kind = match db_kind_opt {
+                    Some(k) if !k.is_empty() => k.to_string(),
+                    _ => "postgres".to_string(),
+                };
                 let op = parse_database_operation(&operation);
-                self.execute_operation_db(db_id, db_kind.to_string(), deployment_id, op)
+                self.execute_operation_db(db_id, db_kind, deployment_id, op)
                     .await
             }
             _ => Err(crate::utils::builder::errors::BuilderError::Execution(
