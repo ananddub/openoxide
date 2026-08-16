@@ -123,17 +123,20 @@ impl DatabaseService {
 
     pub async fn cancel_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
         let db_record = self.get_by_id(kind, id).await.ok();
-        let current_status = db_record.as_ref().map(|d| d.app_status.to_uppercase()).unwrap_or_default();
+        let current_st_str = db_record.as_ref().map(|d| d.app_status.as_str()).unwrap_or("IDLE");
+        let current_status = crate::services::database::types::DatabaseRuntimeStatus::from_str(current_st_str)
+            .unwrap_or(crate::services::database::types::DatabaseRuntimeStatus::Idle);
 
-        let is_building = matches!(
-            current_status.as_str(),
-            "QUEUED" | "BUILDING" | "STARTING" | "DEPLOYING" | "PREPARING" | "PENDING" | "CANCELLING"
-        );
-
-        let (intermediate, final_st) = if is_building {
-            ("CANCELLING", "CANCELLED")
+        let (intermediate, final_st) = if current_status.is_building() {
+            (
+                crate::services::database::types::DatabaseRuntimeStatus::Cancelling.as_str(),
+                crate::services::database::types::DatabaseRuntimeStatus::Cancelled.as_str(),
+            )
         } else {
-            ("STOPPING", "STOPPED")
+            (
+                crate::services::database::types::DatabaseRuntimeStatus::Stopping.as_str(),
+                crate::services::database::types::DatabaseRuntimeStatus::Stopped.as_str(),
+            )
         };
 
         match kind {

@@ -26,6 +26,15 @@ string_enum! {
         }
 }
 
+impl ComposeStatus {
+    pub fn is_building(self) -> bool {
+        matches!(
+            self,
+            Self::Queued | Self::Starting | Self::Cancelling
+        )
+    }
+}
+
 // impl From<String> for ComposeType {
 //     fn from(value: String) -> Self {
 //         Self::from_str(&value).unwrap_or_else(|| {

@@ -108,15 +108,23 @@ impl ComposeService {
     }
 
     pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
-        self.stop_or_cancel_compose(id, ComposeStatus::Stopping.as_str(), ComposeStatus::Stopped.as_str()).await
+        self.stop_or_cancel_smart(id).await
     }
 
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
-        self.stop_or_cancel_compose(id, ComposeStatus::Cancelling.as_str(), ComposeStatus::Cancelled.as_str()).await
+        self.stop_or_cancel_smart(id).await
     }
 
-    async fn stop_or_cancel_compose(&self, id: i64, intermediate: &'static str, final_st: &'static str) -> sqlx::Result<bool> {
+    pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
+        let current_status = ComposeStatus::from_str(&compose.compose_status).unwrap_or(ComposeStatus::Idle);
+
+        let (intermediate, final_st) = if current_status.is_building() {
+            (ComposeStatus::Cancelling.as_str(), ComposeStatus::Cancelled.as_str())
+        } else {
+            (ComposeStatus::Stopping.as_str(), ComposeStatus::Stopped.as_str())
+        };
+
         let _ = self
             .repo_compose
             .update_status(id, intermediate)

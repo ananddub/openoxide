@@ -1,3 +1,34 @@
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum ApplicationStatus {
+        default = Idle;
+        Idle => "IDLE",
+        Queued => "QUEUED",
+        Building => "BUILDING",
+        Deploying => "DEPLOYING",
+        Starting => "STARTING",
+        Running => "RUNNING",
+        Healthy => "HEALTHY",
+        Stopping => "STOPPING",
+        Stopped => "STOPPED",
+        Cancelling => "CANCELLING",
+        Cancelled => "CANCELLED",
+        Done => "DONE",
+        Failed => "FAILED",
+        Error => "ERROR"
+    }
+}
+
+impl ApplicationStatus {
+    pub fn is_building(self) -> bool {
+        matches!(
+            self,
+            Self::Queued | Self::Building | Self::Deploying | Self::Starting | Self::Cancelling
+        )
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ApplicationRecord {
     pub id: i64,

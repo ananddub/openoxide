@@ -236,10 +236,10 @@ impl DatabaseService {
             ));
         }
         let current = self.repo_management.credentials(kind, id).await?;
-        let live_changed = if crate::services::database::types::DatabaseRuntimeStatus::try_from(
+        let live_changed = if crate::services::database::types::DatabaseRuntimeStatus::from_str(
             record.app_status.as_str(),
         )
-        .map_err(sqlx::Error::Protocol)?
+        .unwrap_or(crate::services::database::types::DatabaseRuntimeStatus::Idle)
             == crate::services::database::types::DatabaseRuntimeStatus::Running
         {
             self.apply_live_password(kind, &current, &password).await?;

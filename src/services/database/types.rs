@@ -90,42 +90,34 @@ pub struct DatabaseRecord {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DatabaseRuntimeStatus {
-    Idle,
-    Queued,
-    Building,
-    Deploying,
-    Starting,
-    Running,
-    Healthy,
-    Stopping,
-    Stopped,
-    Cancelling,
-    Cancelled,
-    Done,
-    Failed,
+use os::string_enum;
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum DatabaseRuntimeStatus {
+        default = Idle;
+        Idle => "IDLE",
+        Queued => "QUEUED",
+        Building => "BUILDING",
+        Deploying => "DEPLOYING",
+        Starting => "STARTING",
+        Running => "RUNNING",
+        Healthy => "HEALTHY",
+        Stopping => "STOPPING",
+        Stopped => "STOPPED",
+        Cancelling => "CANCELLING",
+        Cancelled => "CANCELLED",
+        Done => "DONE",
+        Failed => "FAILED"
+    }
 }
 
-impl TryFrom<&str> for DatabaseRuntimeStatus {
-    type Error = String;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.trim().to_ascii_uppercase().as_str() {
-            "IDLE" => Ok(Self::Idle),
-            "QUEUED" => Ok(Self::Queued),
-            "BUILDING" => Ok(Self::Building),
-            "DEPLOYING" => Ok(Self::Deploying),
-            "STARTING" => Ok(Self::Starting),
-            "RUNNING" => Ok(Self::Running),
-            "HEALTHY" | "OK" => Ok(Self::Healthy),
-            "STOPPING" => Ok(Self::Stopping),
-            "STOPPED" => Ok(Self::Stopped),
-            "CANCELLING" => Ok(Self::Cancelling),
-            "CANCELLED" => Ok(Self::Cancelled),
-            "DONE" | "SUCCESS" => Ok(Self::Done),
-            "FAILED" | "ERROR" => Ok(Self::Failed),
-            other => Err(format!("invalid database runtime status: {other}")),
-        }
+impl DatabaseRuntimeStatus {
+    pub fn is_building(self) -> bool {
+        matches!(
+            self,
+            Self::Queued | Self::Building | Self::Deploying | Self::Starting | Self::Cancelling
+        )
     }
 }
 

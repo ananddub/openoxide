@@ -89,17 +89,19 @@ impl ApplicationService {
 
     pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
-        let current_status = app_user.app_status.to_uppercase();
+        let current_status = crate::services::application::types::ApplicationStatus::from_str(&app_user.app_status)
+            .unwrap_or(crate::services::application::types::ApplicationStatus::Idle);
 
-        let is_building = matches!(
-            current_status.as_str(),
-            "QUEUED" | "BUILDING" | "STARTING" | "PREPARING" | "PENDING" | "CANCELLING"
-        );
-
-        let (intermediate, final_st) = if is_building {
-            ("CANCELLING", "CANCELLED")
+        let (intermediate, final_st) = if current_status.is_building() {
+            (
+                crate::services::application::types::ApplicationStatus::Cancelling.as_str(),
+                crate::services::application::types::ApplicationStatus::Cancelled.as_str(),
+            )
         } else {
-            ("STOPPING", "STOPPED")
+            (
+                crate::services::application::types::ApplicationStatus::Stopping.as_str(),
+                crate::services::application::types::ApplicationStatus::Stopped.as_str(),
+            )
         };
 
         let _ = self.repo_app.update_status(id, intermediate).await;
