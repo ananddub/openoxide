@@ -26,26 +26,43 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const overviewServices = useAppStore((state) => state.overviewServices);
 
 	const storeDb = useMemo(() => {
-		const direct = databases.find((d) => String(d.id) === String(dbId));
+		const targetK = (targetKind || '').toLowerCase();
+
+		// 1. Try finding in databases array matching id AND kind
+		const direct = databases.find((d: any) => {
+			if (String(d.id) !== String(dbId)) return false;
+			if (!targetK) return true;
+			const dk = String(d.kind || d.type || '').toLowerCase();
+			return dk.includes(targetK) || targetK.includes(dk);
+		});
 		if (direct) return direct;
-		const service = overviewServices.find(
-			(s) => String(s.id) === String(dbId) && (s.type === 'database' || s.kind === 'database' || s.kind === 'postgres' || s.kind === 'mysql' || s.kind === 'mariadb' || s.kind === 'mongo' || s.kind === 'redis' || s.kind === 'libsql')
-		);
+
+		// 2. Try finding in overviewServices matching id AND kind
+		const service = overviewServices.find((s: any) => {
+			if (String(s.id) !== String(dbId)) return false;
+			if (!targetK) return true;
+			const sk = String(s.kind || s.db_kind || s.dbKind || s.type || '').toLowerCase();
+			return sk.includes(targetK) || targetK.includes(sk);
+		});
+
 		if (service) {
 			return {
 				id: service.id,
 				name: service.name,
 				database_name: service.name,
-				kind: service.kind,
+				kind: service.kind || targetKind || 'postgres',
 				project_id: service.project_id,
 				status: service.status,
 				created_at: service.created_at,
 			} as any;
 		}
-		return undefined;
-	}, [databases, overviewServices, dbId]);
 
-	// Target query selection with selective query execution to avoid unnecessary 404 console spam
+		// 3. Fallback to any matching ID if no kind match
+		return databases.find((d) => String(d.id) === String(dbId)) ||
+			overviewServices.find((s) => String(s.id) === String(dbId));
+	}, [databases, overviewServices, dbId, targetKind]);
+
+	// Target query selection with selective query execution
 	const postgresQ = usePostgresGet(BigInt(dbId));
 	const mysqlQ = useMysqlGet(BigInt(dbId));
 	const mariadbQ = useMariadbGet(BigInt(dbId));
@@ -53,27 +70,26 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const redisQ = useRedisGet(BigInt(dbId));
 	const libsqlQ = useLibsqlGet(BigInt(dbId));
 
-	// Select active query result
+	// Select active query result matching targetKind strictly
 	const database = storeDb ||
 		(activeKind.includes('redis') ? redisQ.data : null) ||
 		(activeKind.includes('postgres') ? postgresQ.data : null) ||
 		(activeKind.includes('mysql') ? mysqlQ.data : null) ||
 		(activeKind.includes('mariadb') ? mariadbQ.data : null) ||
 		(activeKind.includes('mongo') ? mongoQ.data : null) ||
-		(activeKind.includes('libsql') ? libsqlQ.data : null) ||
-		postgresQ.data || mysqlQ.data || mariadbQ.data || mongoQ.data || redisQ.data || libsqlQ.data;
+		(activeKind.includes('libsql') ? libsqlQ.data : null);
 
 	const detectedKind = targetKind || (
-		postgresQ.data ? 'postgres'
+		redisQ.data ? 'redis'
+		: postgresQ.data ? 'postgres'
 		: mysqlQ.data ? 'mysql'
 		: mariadbQ.data ? 'mariadb'
 		: mongoQ.data ? 'mongo'
-		: redisQ.data ? 'redis'
 		: libsqlQ.data ? 'libsql'
 		: null
 	);
 
-	const currentKind = (database?.kind || detectedKind || 'postgres').toLowerCase();
+	const currentKind = (database?.kind || detectedKind || targetKind || 'postgres').toLowerCase();
 
 	const statusUpper = (database?.app_status || (database as any)?.status || (database as any)?.application_status || '').toUpperCase();
 	const isDeployed = statusUpper === 'RUNNING' || statusUpper === 'HEALTHY' || statusUpper === 'SUCCESS' || statusUpper === 'COMPLETED';

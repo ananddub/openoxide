@@ -84,18 +84,20 @@ export function useProjectDetails(projectId: number) {
 		const sQuery = String(searchQuery || '').toLowerCase().trim();
 
 		let list = projectServices.map((s: any) => {
-			const rawType = String(s?.service_type || s?.serviceType || s?.type || s?.kind || 'APP').toUpperCase();
-			const dbKind = s?.db_kind || s?.dbKind || s?.kind;
+			const rawKind = String(s?.kind || s?.db_kind || s?.dbKind || '').toLowerCase();
+			const isDb = s?.type === 'database' || s?.type === 'DATABASE' || ['postgres', 'mysql', 'mariadb', 'mongo', 'redis', 'libsql'].includes(rawKind);
+			const rawType = isDb ? 'DATABASE' : String(s?.service_type || s?.serviceType || s?.type || 'APP').toUpperCase();
+			const dbKind = rawKind || (isDb ? 'postgres' : undefined);
 			return {
 				key: `${rawType.toLowerCase()}-${dbKind || 'svc'}-${s.id}`,
 				projectId,
 				type: rawType as 'APP' | 'COMPOSE' | 'DATABASE',
 				id: s.id,
 				name: String(s?.name || s?.app_name || s?.appName || ''),
-				subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : (dbKind ? String(dbKind).toLowerCase() : 'Database'),
+				subtitle: rawType === 'APP' ? 'Application' : rawType === 'COMPOSE' ? 'Docker Compose' : (dbKind ? dbKind.toUpperCase() : 'Database'),
 				status: String(s?.status || s?.app_status || 'idle'),
 				createdAt: s?.createdAt || s?.created_at,
-				dbKind: dbKind ? String(dbKind).toLowerCase() : undefined,
+				dbKind: dbKind,
 			};
 		});
 
