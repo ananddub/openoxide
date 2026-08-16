@@ -452,9 +452,12 @@ impl ScheduleRunner {
 
 fn normalize_cron_expression(value: &str) -> String {
     let trimmed = value.trim();
-    if trimmed.split_whitespace().count() == 5 {
-        format!("0 {trimmed}")
-    } else {
-        trimmed.into()
+    if croner::Cron::new(trimmed).parse().is_ok() {
+        return trimmed.to_string();
     }
+    let with_seconds = format!("0 {trimmed}");
+    if croner::Cron::new(&with_seconds).parse().is_ok() {
+        return with_seconds;
+    }
+    trimmed.to_string()
 }

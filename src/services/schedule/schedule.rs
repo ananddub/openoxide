@@ -1422,17 +1422,29 @@ impl ScheduleService {
 
 fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();
-    let normalized = if expression.split_whitespace().count() == 5 {
-        format!("0 {expression}")
-    } else {
-        expression.to_owned()
-    };
-    if normalized.split_whitespace().count() != 6 {
+    if expression.is_empty() {
+        return Err(sqlx::Error::Protocol("cron expression cannot be empty".into()));
+    }
+
+    let fields_count = expression.split_whitespace().count();
+    if fields_count != 5 && fields_count != 6 {
         return Err(sqlx::Error::Protocol(
-            "cron expression must contain 5 or 6 fields".into(),
+            "cron expression must contain 5 fields (e.g., '0 * * * *') or 6 fields".into(),
         ));
     }
-    croner::Cron::new(&normalized)
+
+    if croner::Cron::new(expression).parse().is_ok() {
+        return Ok(());
+    }
+
+    if fields_count == 5 {
+        let with_seconds = format!("0 {expression}");
+        if croner::Cron::new(&with_seconds).parse().is_ok() {
+            return Ok(());
+        }
+    }
+
+    croner::Cron::new(expression)
         .parse()
         .map(|_| ())
         .map_err(|error| sqlx::Error::Protocol(format!("invalid cron expression: {error}")))

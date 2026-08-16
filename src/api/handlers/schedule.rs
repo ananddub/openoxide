@@ -354,6 +354,7 @@ fn map_sqlx_error(error: sqlx::Error) -> ApiError {
         sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
             (StatusCode::CONFLICT, database_error.message().into())
         }
+        sqlx::Error::Protocol(ref message) => (StatusCode::BAD_REQUEST, message.clone()),
         other => {
             tracing::error!(error = %other, "schedule database operation failed");
             (
