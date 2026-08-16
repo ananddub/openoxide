@@ -24,6 +24,7 @@ interface DatabaseHeaderProps {
 	setActiveTab: (tab: string) => void;
 	refetch: () => void;
 	onOpenDeleteDialog: () => void;
+	onAction?: (action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel') => Promise<void>;
 	tabs: readonly string[];
 }
 
@@ -37,9 +38,12 @@ export function DatabaseHeader({
 	setActiveTab,
 	refetch,
 	onOpenDeleteDialog,
+	onAction,
 	tabs,
 }: DatabaseHeaderProps) {
 	const kind = (detectedKind || 'postgres').toLowerCase();
+	const statusStr = (database?.status || database?.app_status || '').toUpperCase();
+	const isRunning = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'ACTIVE', 'OK'].includes(statusStr);
 
 	const getIcon = () => {
 		if (kind.includes('postgres')) return <PostgresqlIcon className="size-6 shrink-0" />;
@@ -52,7 +56,7 @@ export function DatabaseHeader({
 	};
 
 	return (
-		<header className="border-b border-border/40">
+		<header className="border-b border-border/40 pb-0">
 			{/* Breadcrumb */}
 			<div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3.5 font-semibold">
 				<Link to="/projects" className="hover:text-foreground flex items-center gap-1 transition-colors">
@@ -95,6 +99,32 @@ export function DatabaseHeader({
 						className="w-8 h-8 border-destructive/40 text-destructive hover:bg-destructive/10 rounded-lg">
 						<Trash2 className="w-3.5 h-3.5" />
 					</Button>
+
+					{/* Quick Lifecycle Control Buttons */}
+					{isRunning ? (
+						<Button
+							size="sm"
+							variant="destructive"
+							onClick={() => onAction?.('stop')}
+							disabled={actionLoading !== null}
+							className="h-8 text-xs font-semibold px-3 rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+						>
+							{actionLoading === 'stop' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+							{actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
+						</Button>
+					) : (
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => onAction?.('start')}
+							disabled={actionLoading !== null}
+							className="h-8 text-xs font-semibold px-3 border-border hover:bg-muted text-foreground rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+						>
+							{actionLoading === 'start' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+							{actionLoading === 'start' ? 'Starting...' : 'Start'}
+						</Button>
+					)}
+
 					<StatusBadge status={database?.status || database?.app_status || 'STOPPED'} isBuilding={isBuilding} actionLoading={actionLoading} />
 					<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none capitalize">
 						{kind} Database

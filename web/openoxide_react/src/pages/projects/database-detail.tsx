@@ -101,6 +101,7 @@ function DatabaseDetailPage() {
 				setActiveTab={setActiveTab}
 				refetch={refetchAll}
 				onOpenDeleteDialog={() => setIsDeleteDialogOpen(true)}
+				onAction={handleAction}
 				tabs={TABS}
 			/>
 
