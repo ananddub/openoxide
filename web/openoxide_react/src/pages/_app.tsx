@@ -113,6 +113,9 @@ function AppLayout() {
 										segment.charAt(0).toUpperCase() + segment.slice(1)
 									);
 
+									const activeEnvParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('env') : null;
+									const envSearchObj = activeEnvParam && !isNaN(Number(activeEnvParam)) ? { env: Number(activeEnvParam) } : undefined;
+
 									return (
 										<React.Fragment key={`${path}-${index}`}>
 											<span className="text-muted-foreground/30 font-normal">/</span>
@@ -121,6 +124,7 @@ function AppLayout() {
 											) : (
 												<Link
 													to={path as unknown as '.'}
+													search={isProjectParam || path.startsWith('/projects/') ? envSearchObj as any : undefined}
 													className="text-muted-foreground hover:text-foreground transition-colors">
 													{label}
 												</Link>
