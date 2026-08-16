@@ -62,3 +62,91 @@ impl<'a> ProcessBuilder<'a> {
         )
     }
 }
+
+pub struct PkillBuilder<'a> {
+    executor: &'a CommandExecutor,
+    signal: Option<String>,
+    full_match: bool,
+    exact_match: bool,
+    user: Option<String>,
+    pattern: Option<String>,
+    env_var: Option<(String, String)>,
+}
+
+impl<'a> PkillBuilder<'a> {
+    pub fn new(executor: &'a CommandExecutor) -> Self {
+        Self {
+            executor,
+            signal: None,
+            full_match: true,
+            exact_match: false,
+            user: None,
+            pattern: None,
+            env_var: None,
+        }
+    }
+
+    pub fn signal(mut self, sig: impl Into<String>) -> Self {
+        self.signal = Some(sig.into());
+        self
+    }
+
+    pub fn sigkill(mut self) -> Self {
+        self.signal = Some("9".to_string());
+        self
+    }
+
+    pub fn sigterm(mut self) -> Self {
+        self.signal = Some("15".to_string());
+        self
+    }
+
+    pub fn full_match(mut self, enabled: bool) -> Self {
+        self.full_match = enabled;
+        self
+    }
+
+    pub fn exact_match(mut self, enabled: bool) -> Self {
+        self.exact_match = enabled;
+        self
+    }
+
+    pub fn user(mut self, user: impl Into<String>) -> Self {
+        self.user = Some(user.into());
+        self
+    }
+
+    pub fn env(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.env_var = Some((key.into(), value.into()));
+        self
+    }
+
+    pub fn pattern(mut self, pattern: impl Into<String>) -> Self {
+        self.pattern = Some(pattern.into());
+        self
+    }
+
+    pub async fn run(self) -> crate::exec::ExecResult<crate::exec::ExecOutput> {
+        let mut args = Vec::new();
+        if let Some(sig) = &self.signal {
+            args.push(format!("-{}", sig));
+        }
+        if self.full_match {
+            args.push("-f".to_string());
+        }
+        if self.exact_match {
+            args.push("-x".to_string());
+        }
+        if let Some(u) = &self.user {
+            args.push("-u".to_string());
+            args.push(u.clone());
+        }
+        if let Some((k, v)) = &self.env_var {
+            args.push(format!("{}={}", k, v));
+        } else if let Some(p) = &self.pattern {
+            args.push(p.clone());
+        }
+
+        self.executor.run("pkill", &args).await
+    }
+}

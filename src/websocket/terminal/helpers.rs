@@ -55,7 +55,7 @@ pub fn spawn_output_task(
 
 pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
     tokio::spawn(async move {
-        let mut buffer = vec![0u8; 8192];
+        let mut buffer = [0u8; 4096];
         loop {
             match reader.read(&mut buffer).await {
                 Ok(0) => break,

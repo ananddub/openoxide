@@ -45,6 +45,9 @@ services:
       BUILD_MEMORY_LIMIT: "8G"
       BUILD_CPU_LIMIT: "8"
 
+      # ── Runtime Performance & Memory Optimization ──────────────────────────
+      TOKIO_WORKER_THREADS: "4"
+
       # ── Logging ───────────────────────────────────────────────────────────
       RUST_LOG: "openoxide=info"
 

@@ -16,10 +16,11 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
         .create_if_missing(true)
         .journal_mode(SqliteJournalMode::Wal)
         .busy_timeout(Duration::from_secs(15))
+        .pragma("cache_size", "-2000")
         .foreign_keys(true);
 
     let pool = SqlitePoolOptions::new()
-        .max_connections(25)
+        .max_connections(10)
         .after_connect(|connection, _metadata| {
             Box::pin(async move {
                 let mut handle = connection.lock_handle().await?;

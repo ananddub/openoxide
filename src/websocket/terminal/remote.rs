@@ -113,6 +113,7 @@ pub async fn spawn_remote_terminal(
             child: child_arc.clone(),
             session_id,
             cancel: cancel.clone(),
+            container: None,
         },
     );
 
@@ -234,10 +235,13 @@ pub async fn spawn_remote_docker_terminal(
         }
     }
 
+    let key_str = socket_key(&socket).to_string();
     args.push("docker".to_string());
     args.push("exec".to_string());
     args.push("-it".to_string());
-    args.push(target_container);
+    args.push("--env".to_string());
+    args.push(format!("OPENOXIDE_SOCKET_ID={}", key_str));
+    args.push(target_container.clone());
     args.push(shell_req);
 
     let (pty, pts) = match pty_process::open() {
@@ -287,6 +291,7 @@ pub async fn spawn_remote_docker_terminal(
             child: child_arc.clone(),
             session_id,
             cancel: cancel.clone(),
+            container: Some(target_container.clone()),
         },
     );
 

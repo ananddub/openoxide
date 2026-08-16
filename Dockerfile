@@ -48,10 +48,11 @@ COPY agent/   agent/
 COPY data/db.sqlite3 data/db.sqlite3
 
 ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
-ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static"
-
-RUN cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
-    strip target/x86_64-unknown-linux-musl/release/openoxide
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/src/openoxide/target \
+    cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
+    cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
+    strip /usr/src/openoxide/openoxide-binary
 
 
 # =============================================================================
@@ -116,7 +117,7 @@ COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
 
 # ── OpenOxide panel binary ────────────────────────────────────────────────────
 COPY --from=backend-builder \
-    /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/openoxide \
+    /usr/src/openoxide/openoxide-binary \
     /usr/local/bin/openoxide
 
 # ── React dashboard static assets ────────────────────────────────────────────

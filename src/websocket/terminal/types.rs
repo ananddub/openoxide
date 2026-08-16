@@ -200,6 +200,7 @@ pub enum TerminalSession {
         child: Arc<Mutex<Child>>,
         session_id: SessionId,
         cancel: tokio_util::sync::CancellationToken,
+        container: Option<String>,
     },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,
@@ -208,5 +209,12 @@ pub enum TerminalSession {
     Remote {
         input: mpsc::Sender<Vec<u8>>,
         cancel: tokio_util::sync::CancellationToken,
+    },
+    DockerSocket {
+        writer: Arc<Mutex<tokio::net::unix::OwnedWriteHalf>>,
+        cancel: tokio_util::sync::CancellationToken,
+        container: Option<String>,
+        exec_id: String,
+        socket_path: String,
     },
 }

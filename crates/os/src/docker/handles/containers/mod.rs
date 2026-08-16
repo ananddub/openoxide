@@ -1,8 +1,11 @@
 use crate::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
 
+pub mod socat;
+
 pub use copy::ContainerCopyBuilder;
 pub use create::ContainerCreate;
 pub use exec::ExecBuilder;
+pub use socat::{ContainerSocketExecStream, ContainerSocketStreamBuilder, resize_container_exec};
 pub use lifecycle::{
     ContainerKillBuilder, ContainerPauseBuilder, ContainerPortBuilder, ContainerRemoveBuilder,
     ContainerRenameBuilder, ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder,
@@ -26,6 +29,9 @@ impl<'a> ContainerHandle<'a> {
     }
     pub fn exec(&self, id: impl Into<String>) -> ExecBuilder<'_> {
         ExecBuilder::new(self.0, id)
+    }
+    pub fn socket_stream(&self, id: impl Into<String>) -> ContainerSocketStreamBuilder<'_> {
+        ContainerSocketStreamBuilder::new(self.0, id)
     }
     pub fn logs(&self, id: impl Into<String>) -> LogsBuilder<'_> {
         LogsBuilder::new(self.0, id)

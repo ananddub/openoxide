@@ -76,6 +76,9 @@ impl<'a> OsCli<'a> {
             executor: self.executor,
         }
     }
+    pub fn socat(&self) -> socat::SocatCli<'a> {
+        socat::SocatCli::new(self.executor)
+    }
     pub fn mount_api(&self) -> mount::MountCli<'a> {
         mount::MountCli {
             executor: self.executor,
@@ -432,6 +435,7 @@ pub mod process;
 pub mod rclone;
 pub mod resource;
 pub mod service;
+pub mod socat;
 pub mod ssh;
 pub mod symlink;
 pub mod system;

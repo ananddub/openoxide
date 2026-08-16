@@ -28,3 +28,4 @@ base64 = "0.22"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 sh_macros = { path = "../sh_macros" }
+pty-process = { version = "0.5.3", features = ["async", "tokio"] }

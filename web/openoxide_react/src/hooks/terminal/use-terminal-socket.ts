@@ -33,6 +33,9 @@ export function useTerminalSocket({
 		if (!isOpen) {
 			isFirstMountRef.current = true;
 			if (socketRef.current) {
+				if (socketRef.current.connected) {
+					socketRef.current.emit('stop');
+				}
 				socketRef.current.off('connect');
 				socketRef.current.off('started');
 				socketRef.current.off('output');
@@ -170,6 +173,9 @@ export function useTerminalSocket({
 			resizeDisposable?.dispose();
 			isFirstMountRef.current = true;
 			if (socketRef.current) {
+				if (socketRef.current.connected) {
+					socketRef.current.emit('stop');
+				}
 				socketRef.current.off('connect', handleConnect);
 				socketRef.current.off('started');
 				socketRef.current.off('output');
@@ -180,33 +186,6 @@ export function useTerminalSocket({
 			}
 		};
 	}, [isOpen, targetContainer, shell, isRemoteServer, serverId, termInstance]);
-
-	// Dynamic Shell / Target Container Switch
-	useEffect(() => {
-		if (isFirstMountRef.current) {
-			isFirstMountRef.current = false;
-			return;
-		}
-		if (!isOpen || !socketRef.current?.connected || !termInstance) return;
-
-		termInstance.reset();
-		const connectedTarget = activeHostIp || targetContainer;
-		if (isRemoteServer) {
-			termInstance.writeln(`\x1b[33mSwitching shell to [${shell}] on Remote Server [${connectedTarget}]...\x1b[0m\r\n`);
-		} else {
-			termInstance.writeln(`\x1b[33mSwitching shell to [${shell}] on Container [${connectedTarget}]...\x1b[0m\r\n`);
-		}
-		setStatus('connecting');
-
-		const cols = termInstance.cols || 80;
-		const rows = termInstance.rows || 24;
-
-		if (isRemoteServer && serverId) {
-			socketRef.current.emit('server:start', { server_id: serverId, shell, command: shell, cols, rows });
-		} else {
-			socketRef.current.emit('docker:start', { container: targetContainer, server_id: serverId || undefined, shell, cols, rows });
-		}
-	}, [targetContainer, shell, isOpen, isRemoteServer, serverId, termInstance, activeHostIp]);
 
 	return {
 		socket: socketRef.current,

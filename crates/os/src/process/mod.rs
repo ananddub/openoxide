@@ -6,7 +6,7 @@ pub mod builder;
 pub mod command;
 
 pub use action::ProcessActionBuilder;
-pub use builder::ProcessBuilder;
+pub use builder::{PkillBuilder, ProcessBuilder};
 pub use command::ProcessCommandBuilder;
 
 pub struct ProcessCli<'a> {
@@ -30,6 +30,9 @@ impl<'a> ProcessCli<'a> {
             "kill",
             vec!["-9".to_string(), pid.build_str()],
         )
+    }
+    pub fn pkill(&self) -> PkillBuilder<'a> {
+        PkillBuilder::new(self.executor)
     }
     pub fn signal_pid(
         &self,
