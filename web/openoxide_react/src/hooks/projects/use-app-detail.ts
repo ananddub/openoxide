@@ -4,7 +4,6 @@ import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
-	useApplicationGet,
 	useDomainListByApplication,
 	useScheduleListByApplication,
 } from 'virtual:openoxide-live';
@@ -14,52 +13,19 @@ import { useAppStore } from '#/stores/app-store';
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 
-	// Single Source of Truth: 100% Pure Realtime Zustand RAM Store Read
+	// 100% Pure Realtime Zustand RAM Store Read (0ms Instant)
 	const applications = useAppStore((state) => state.applications);
 	const overviewServices = useAppStore((state) => state.overviewServices);
 
-	// Fetch live application data and sync directly into Zustand store
-	const { data: liveApp } = useApplicationGet(BigInt(appId));
-
-	// Seed / Sync liveApp into Zustand store whenever liveApp arrives
-	useEffect(() => {
-		if (liveApp) {
-			const store = useAppStore.getState() as any;
-			store.addApplication?.(liveApp as any);
-		}
-	}, [liveApp]);
-
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
-	useEffect(() => {
-		if (liveApp) {
-			const fetchedStatus = ((liveApp as any).status || (liveApp as any).app_status || '').toUpperCase();
-			const storeApp = applications.find((a) => String(a.id) === String(appId));
-			if (fetchedStatus && (storeApp as any)?.status !== fetchedStatus) {
-				(useAppStore.getState() as any).updateServiceStatus?.(appId, fetchedStatus, 'application');
-			}
-			if (localStatusOverride) {
-				const overrideUpper = (localStatusOverride || '').toUpperCase();
-				if (
-					fetchedStatus === overrideUpper ||
-					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
-					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
-					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
-				) {
-					setLocalStatusOverride(null);
-				}
-			}
-		}
-	}, [liveApp, localStatusOverride, appId, applications]);
-
-	// Pure Zustand Store Application Resolution
+	// Pure Zustand Store Application Resolution (0ms Instant Render)
 	const app = useMemo(() => {
 		const storeApp = applications.find((a) => String(a.id) === String(appId));
 		const serviceApp = overviewServices.find(
 			(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
 		);
-		const raw = storeApp || liveApp || (serviceApp ? {
+		const raw = storeApp || (serviceApp ? {
 			id: serviceApp.id,
 			name: serviceApp.name,
 			app_name: serviceApp.name,
@@ -75,7 +41,23 @@ export function useAppDetail(appId: number) {
 			status: effectiveStatus,
 			app_status: effectiveStatus,
 		};
-	}, [applications, overviewServices, liveApp, appId, localStatusOverride]);
+	}, [applications, overviewServices, appId, localStatusOverride]);
+
+	// Auto-clear localStatusOverride when Zustand status updates
+	useEffect(() => {
+		if (app && localStatusOverride) {
+			const fetchedStatus = (app.status || app.app_status || '').toUpperCase();
+			const overrideUpper = localStatusOverride.toUpperCase();
+			if (
+				fetchedStatus === overrideUpper ||
+				(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+				(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
+				(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+			) {
+				setLocalStatusOverride(null);
+			}
+		}
+	}, [app, localStatusOverride]);
 
 	// 2. Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByApplication(BigInt(appId));

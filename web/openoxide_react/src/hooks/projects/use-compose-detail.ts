@@ -4,7 +4,6 @@ import {$api} from '#/api/query';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
-	useComposeGet,
 	useDomainListByCompose,
 	useScheduleListByCompose,
 } from 'virtual:openoxide-live';
@@ -14,65 +13,51 @@ import { useAppStore } from '#/stores/app-store';
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
 
-	// 0ms Instant Zustand Store Read with fallback to overviewServices
+	// 100% Pure Realtime Zustand RAM Store Read (0ms Instant)
 	const composes = useAppStore((state) => state.composes);
 	const overviewServices = useAppStore((state) => state.overviewServices);
 
-	const storeCompose = useMemo(() => {
-		const direct = composes.find((c) => String(c.id) === String(composeId));
-		if (direct) return direct;
-		const service = overviewServices.find(
-			(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
-		);
-		if (service) {
-			return {
-				id: service.id,
-				name: service.name,
-				app_name: service.name,
-				project_id: service.project_id,
-				status: service.status,
-				created_at: service.created_at,
-			} as any;
-		}
-		return undefined;
-	}, [composes, overviewServices, composeId]);
-
-	// 1. Central Compose Query — live push replaces refetchInterval
-	const {data: liveCompose} = useComposeGet(BigInt(composeId));
-
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
-	useEffect(() => {
-		if (liveCompose) {
-			const fetchedStatus = ((liveCompose as any).status || (liveCompose as any).compose_status || '').toUpperCase();
-			if (fetchedStatus && (storeCompose as any)?.status !== fetchedStatus) {
-				(useAppStore.getState() as any).updateServiceStatus?.(composeId, fetchedStatus, 'compose');
-			}
-			if (localStatusOverride) {
-				const overrideUpper = (localStatusOverride || '').toUpperCase();
-				if (
-					fetchedStatus === overrideUpper ||
-					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
-					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
-					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
-				) {
-					setLocalStatusOverride(null);
-				}
-			}
-		}
-	}, [liveCompose, localStatusOverride, composeId, (storeCompose as any)?.status]);
-
-	const raw = liveCompose || storeCompose;
+	// Pure Zustand Store Compose Resolution (0ms Instant Render)
 	const compose = useMemo(() => {
+		const storeCompose = composes.find((c) => String(c.id) === String(composeId));
+		const serviceCompose = overviewServices.find(
+			(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
+		);
+		const raw = storeCompose || (serviceCompose ? {
+			id: serviceCompose.id,
+			name: serviceCompose.name,
+			app_name: serviceCompose.name,
+			project_id: serviceCompose.project_id,
+			status: serviceCompose.status,
+			created_at: serviceCompose.created_at,
+		} as any : undefined);
+
 		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).compose_status || (storeCompose as any)?.status || 'STOPPED';
+		const effectiveStatus = localStatusOverride || (raw as any).compose_status || (raw as any).status || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
 			compose_status: effectiveStatus,
 		};
-	}, [raw, storeCompose, localStatusOverride]);
+	}, [composes, overviewServices, composeId, localStatusOverride]);
+
+	// Auto-clear localStatusOverride when Zustand status updates
+	useEffect(() => {
+		if (compose && localStatusOverride) {
+			const fetchedStatus = (compose.status || compose.compose_status || '').toUpperCase();
+			const overrideUpper = localStatusOverride.toUpperCase();
+			if (
+				fetchedStatus === overrideUpper ||
+				(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+				(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
+				(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+			) {
+				setLocalStatusOverride(null);
+			}
+		}
+	}, [compose, localStatusOverride]);
 
 	// 2. Central Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));
