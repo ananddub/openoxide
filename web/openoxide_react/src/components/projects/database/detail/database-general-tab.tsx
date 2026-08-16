@@ -231,7 +231,7 @@ export function DatabaseGeneralTab({
 
 					{/* Lifecycle Action Buttons */}
 					{/* 4-State Action Button: Stopping, Cancelling, Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
-					{activeLoading === 'stop' || (database?.app_status || '').toUpperCase() === 'STOPPING' ? (
+					{activeLoading === 'stop' || rawDbStatus === 'STOPPING' ? (
 						<Button
 							disabled
 							variant="outline"
@@ -241,7 +241,7 @@ export function DatabaseGeneralTab({
 							<RefreshCw className="w-4 h-4 animate-spin text-destructive" />
 							Stopping...
 						</Button>
-					) : activeLoading === 'cancel' || (database?.app_status || '').toUpperCase() === 'CANCELLING' ? (
+					) : activeLoading === 'cancel' || rawDbStatus === 'CANCELLING' ? (
 						<Button
 							disabled
 							variant="outline"
