@@ -76,13 +76,24 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const libsqlQ = useLibsqlGet(BigInt(dbId));
 
 	// Select active query result matching targetKind strictly
-	const database = storeDb ||
-		(activeKind.includes('redis') ? redisQ.data : null) ||
+	const fetchedDb = (activeKind.includes('redis') ? redisQ.data : null) ||
 		(activeKind.includes('postgres') ? postgresQ.data : null) ||
 		(activeKind.includes('mysql') ? mysqlQ.data : null) ||
 		(activeKind.includes('mariadb') ? mariadbQ.data : null) ||
 		(activeKind.includes('mongo') ? mongoQ.data : null) ||
-		(activeKind.includes('libsql') ? libsqlQ.data : null);
+		(activeKind.includes('libsql') ? libsqlQ.data : null) ||
+		postgresQ.data || mysqlQ.data || redisQ.data || mongoQ.data || mariadbQ.data || libsqlQ.data;
+
+	const database = useMemo(() => {
+		const raw = (fetchedDb && storeDb) ? { ...storeDb, ...fetchedDb } : (fetchedDb || storeDb);
+		if (!raw) return null;
+		const effectiveStatus = raw.status || raw.app_status || raw.application_status || 'STOPPED';
+		return {
+			...raw,
+			status: effectiveStatus,
+			app_status: effectiveStatus,
+		};
+	}, [fetchedDb, storeDb]);
 
 	const detectedKind = targetKind || (
 		redisQ.data ? 'redis'
@@ -96,8 +107,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const currentKind = (database?.kind || detectedKind || targetKind || 'postgres').toLowerCase();
 
-	const statusUpper = (database?.app_status || (database as any)?.status || (database as any)?.application_status || '').toUpperCase();
-	const isDeployed = statusUpper === 'RUNNING' || statusUpper === 'HEALTHY' || statusUpper === 'SUCCESS' || statusUpper === 'COMPLETED';
+	const statusUpper = (database?.status || database?.app_status || (database as any)?.application_status || '').toUpperCase();
+	const isDeployed = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'COMPLETED', 'UP', 'ACTIVE', 'OK'].includes(statusUpper);
 
 	// Schedules
 	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByDatabase(BigInt(dbId));

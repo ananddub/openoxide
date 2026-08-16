@@ -51,12 +51,13 @@ export function DatabaseGeneralTab({
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
 
-	const rawDbStatus = (database?.app_status || '').toUpperCase();
+	const dbStatusStr = database?.status || database?.app_status || '';
+	const rawDbStatus = dbStatusStr.toUpperCase();
 	const isStoppingOrCancelling = rawDbStatus === 'STOPPING' || rawDbStatus === 'CANCELLING' || propActionLoading === 'stop' || propActionLoading === 'cancel';
 	const activeLoading = propActionLoading || null;
 	const isProcessing = activeLoading !== null || isStoppingOrCancelling;
 
-	const rawStatus = (database?.app_status || '').toLowerCase();
+	const rawStatus = dbStatusStr.toLowerCase();
 	const isRunning = ['running', 'done', 'healthy', 'deployed', 'success', 'up', 'active', 'ok'].includes(rawStatus);
 	const isBuilding = ['starting', 'building', 'queued', 'preparing'].includes(rawStatus) || activeLoading === 'deploy' || activeLoading === 'reload';
 

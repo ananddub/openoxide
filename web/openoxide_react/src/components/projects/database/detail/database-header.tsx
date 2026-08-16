@@ -95,7 +95,7 @@ export function DatabaseHeader({
 						className="w-8 h-8 border-destructive/40 text-destructive hover:bg-destructive/10 rounded-lg">
 						<Trash2 className="w-3.5 h-3.5" />
 					</Button>
-					<StatusBadge status={database?.app_status || ''} isBuilding={isBuilding} actionLoading={actionLoading} />
+					<StatusBadge status={database?.status || database?.app_status || 'STOPPED'} isBuilding={isBuilding} actionLoading={actionLoading} />
 					<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none capitalize">
 						{kind} Database
 					</span>
