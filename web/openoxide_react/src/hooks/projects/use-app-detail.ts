@@ -40,7 +40,36 @@ export function useAppDetail(appId: number) {
 	// 1. App Query — live push replaces refetchInterval
 	const {data: liveApp} = useApplicationGet(BigInt(appId));
 
-	const app = liveApp || storeApp;
+	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+
+	// Auto-clear localStatusOverride once backend query syncs with backend state
+	useEffect(() => {
+		if (liveApp) {
+			const fetchedStatus = ((liveApp as any).status || (liveApp as any).app_status || '').toUpperCase();
+			if (localStatusOverride) {
+				const overrideUpper = (localStatusOverride || '').toUpperCase();
+				if (
+					fetchedStatus === overrideUpper ||
+					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
+					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+				) {
+					setLocalStatusOverride(null);
+				}
+			}
+		}
+	}, [liveApp, localStatusOverride]);
+
+	const raw = liveApp || storeApp;
+	const app = useMemo(() => {
+		if (!raw) return null;
+		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).app_status || (storeApp as any)?.status || 'STOPPED';
+		return {
+			...raw,
+			status: effectiveStatus,
+			app_status: effectiveStatus,
+		};
+	}, [raw, storeApp, localStatusOverride]);
 
 	// 2. Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByApplication(BigInt(appId));
@@ -84,6 +113,7 @@ export function useAppDetail(appId: number) {
 			: action === 'cancel' ? 'CANCELLING'
 			: action === 'start' ? 'STARTING'
 			: 'DEPLOYING';
+		setLocalStatusOverride(intermediateStatus);
 		(useAppStore.getState() as any).updateServiceStatus?.(appId, intermediateStatus);
 
 		try {
