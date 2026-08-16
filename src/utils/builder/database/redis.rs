@@ -36,7 +36,7 @@ pub async fn build_redis_stack(
             }
         }
         command = Some(full);
-    } else {
+    } else if !db.database_password.trim().is_empty() {
         command = Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
@@ -45,6 +45,8 @@ pub async fn build_redis_stack(
                 shell_single_quote(&db.database_password)
             ),
         ]);
+    } else {
+        command = None;
     }
 
     // Parse environment variables
