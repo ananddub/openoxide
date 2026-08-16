@@ -1,4 +1,4 @@
-import {useState, useMemo, useEffect} from 'react';
+import {useState, useEffect} from 'react';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
@@ -48,12 +48,7 @@ export function useAppDetail(appId: number) {
 		(state.deployments || []).filter((d: any) => Number(d.application_id) === Number(appId))
 	);
 
-	const isLoadingDomains = false;
-	const isLoadingSchedules = false;
-	const isLoadingBackups = false;
-	const isLoadingDeployments = false;
-
-	// 6. Central Live Container Monitoring Stream
+	// Central Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(appId, 'application');
 
 	// Live hooks auto-push updates — only trigger monitoring refresh
@@ -68,7 +63,6 @@ export function useAppDetail(appId: number) {
 	const stopMutation = $api.useMutation('post', '/applications/{id}/stop');
 	const cancelMutation = $api.useMutation('post', '/applications/{id}/cancel');
 	const patchMutation = $api.useMutation('patch', '/applications/{id}');
-	const deleteMutation = $api.useMutation('delete', '/applications/{id}');
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel') => {
 		const currentSt = (app?.app_status || app?.status || '').toUpperCase();
@@ -127,10 +121,10 @@ export function useAppDetail(appId: number) {
 		deployments,
 		monitoring,
 		isLoading: !app,
-		isLoadingDomains,
-		isLoadingSchedules,
-		isLoadingBackups,
-		isLoadingDeployments,
+		isLoadingDomains: false,
+		isLoadingSchedules: false,
+		isLoadingBackups: false,
+		isLoadingDeployments: false,
 		refetchAll,
 		activeTab,
 		setActiveTab,
