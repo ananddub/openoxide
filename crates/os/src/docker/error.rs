@@ -15,6 +15,8 @@ pub fn is_transient_docker_error(message: &str) -> bool {
         "context deadline exceeded",
         "command output parsing failed",
         "expected a sequence",
+        "no such service",
+        "not found",
     ]
     .iter()
     .any(|needle| message.contains(needle))
