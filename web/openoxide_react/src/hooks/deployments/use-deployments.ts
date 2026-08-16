@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 
 import {toast} from 'sonner';
@@ -13,7 +14,8 @@ export type SortKey = 'created_at' | 'title' | 'status';
 const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
 
 export function useDeployments() {
-	const [refreshing] = React.useState(false);
+	const queryClient = useQueryClient();
+	const [refreshing, setRefreshing] = React.useState(false);
 
 	// Filters and sorting state
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -35,10 +37,28 @@ export function useDeployments() {
 	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
 	const clearAllMutation = $api.useMutation('delete', '/deployments');
 
+	const { data: apiDeployments, isLoading: isApiLoading, refetch } = $api.useQuery('get', '/deployments', {
+		params: {
+			query: {
+				limit: 200,
+				offset: 0,
+			},
+		},
+	});
+
 	const storeDeployments = useAppStore((state) => state.deployments);
 
-	const deployments = (storeDeployments || []) as unknown as Deployment[];
-	const isLoading = false;
+	const deployments = React.useMemo(() => {
+		if (Array.isArray(storeDeployments) && storeDeployments.length > 0) {
+			return storeDeployments as unknown as Deployment[];
+		}
+		if (Array.isArray(apiDeployments)) {
+			return apiDeployments as unknown as Deployment[];
+		}
+		return [];
+	}, [storeDeployments, apiDeployments]);
+
+	const isLoading = isApiLoading && (!deployments || deployments.length === 0);
 
 	const activeQueue = React.useMemo(() => {
 		if (!deployments) return [];
@@ -48,8 +68,15 @@ export function useDeployments() {
 		});
 	}, [deployments]);
 
-	const handleRefresh = () => {
-		toast.success('Deployments list is live and auto-updating');
+	const handleRefresh = async () => {
+		setRefreshing(true);
+		try {
+			await refetch();
+			await queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			toast.success('Deployments refreshed');
+		} finally {
+			setRefreshing(false);
+		}
 	};
 
 	const handleCancelDeployment = async (id: number) => {
@@ -62,6 +89,8 @@ export function useDeployments() {
 				},
 			});
 			toast.success('Deployment cancellation requested');
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -77,6 +106,8 @@ export function useDeployments() {
 				},
 			});
 			toast.success(`Deployment #${id} deleted`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -89,6 +120,8 @@ export function useDeployments() {
 			});
 			const data = res as any;
 			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}

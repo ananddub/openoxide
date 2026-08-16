@@ -3,6 +3,7 @@ import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity, Trash2} from 'luc
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
+import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {
@@ -194,6 +195,8 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 		return 'text-muted-foreground bg-muted border-border';
 	};
 
+	const queryClient = useQueryClient();
+
 	const handleClearAppDeployments = async () => {
 		try {
 			const res = await clearAppMutation.mutateAsync({
@@ -205,6 +208,7 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 			});
 			const data = res as any;
 			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -221,6 +225,7 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 				},
 			});
 			toast.success(`Deployment #${id} deleted`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

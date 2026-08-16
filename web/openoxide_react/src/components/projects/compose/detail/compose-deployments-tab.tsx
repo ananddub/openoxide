@@ -3,6 +3,7 @@ import {Zap, RefreshCw, Terminal, X, XCircle, Activity} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
+import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
@@ -179,6 +180,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		};
 	}, [activeLogId, selectedEvent]);
 
+	const queryClient = useQueryClient();
 	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
 	const clearComposeMutation = $api.useMutation('delete', '/deployments/compose/{id}');
 
@@ -193,6 +195,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			});
 			const data = res as any;
 			toast.success(`Cleared ${data?.cleared_count || 0} compose deployment logs & history`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -208,6 +211,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 				},
 			});
 			toast.success(`Deployment #${id} deleted`);
+			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
