@@ -178,17 +178,6 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
 			refetchAll();
-
-			// Guarantee a smooth 1.5s visual feedback window so STOPPING / CANCELLING / STARTING states are clearly observable
-			setTimeout(() => {
-				const finalStatus = action === 'stop' ? 'STOPPED' 
-					: action === 'cancel' ? 'CANCELLED'
-					: action === 'start' ? 'RUNNING'
-					: 'RUNNING';
-				(useAppStore.getState() as any).updateServiceStatus?.(dbId, finalStatus);
-				setLocalStatusOverride(null);
-				refetchAll();
-			}, 1500);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 			setLocalStatusOverride(null);
