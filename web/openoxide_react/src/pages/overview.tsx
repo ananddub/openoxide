@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { Box, Globe, Clock, Rocket, Loader2, ExternalLink, Search } from 'lucide-react';
+import { Box, Globe, Clock, Rocket, Loader2, ExternalLink, Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '#/components/ui/tabs';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
@@ -63,6 +63,8 @@ function OverviewPage() {
 		copied,
 		handleCopyLogs,
 		handleCancelDeployment,
+		handleDeleteDeployment,
+		handleClearAllDeployments,
 	} = useDeployments();
 
 	// Filter & Sort Backups
@@ -479,6 +481,15 @@ function OverviewPage() {
 										<SelectItem value="running">Running</SelectItem>
 									</SelectContent>
 								</Select>
+
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleClearAllDeployments}
+									className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-9 text-xs"
+								>
+									<Trash2 className="size-3.5" /> Clear History
+								</Button>
 							</div>
 						)}
 					</div>
@@ -511,6 +522,7 @@ function OverviewPage() {
 												onViewLogs={() => setSelectedDeployment(dep)}
 												onViewError={() => setSelectedDeployment(dep)}
 												onCancel={handleCancelDeployment}
+												onDelete={handleDeleteDeployment}
 											/>
 										))}
 									</TableBody>
