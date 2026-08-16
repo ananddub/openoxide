@@ -217,11 +217,17 @@ pub async fn spawn_remote_docker_terminal(
     };
 
     let clean_container_req = container_req.trim_end_matches("_db").trim_end_matches("-db");
+    let container_q = crate::utils::exec::script::shell_single_quote(&container_req);
+    let clean_q = crate::utils::exec::script::shell_single_quote(clean_container_req);
+    let shell_q = crate::utils::exec::script::shell_single_quote(&shell_req);
+
     let remote_cmd = format!(
-        "CID=$(docker ps -q -f name={container_req} | head -n1); if [ -z \"$CID\" ]; then CID=$(docker ps -q -f name={clean_req} | head -n1); fi; if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={container_req} | head -n1); fi; if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={clean_req} | head -n1); fi; if [ -z \"$CID\" ]; then CID={container_req}; fi; exec docker exec -it $CID {shell_req}",
-        container_req = crate::utils::exec::script::shell_single_quote(&container_req),
-        clean_req = crate::utils::exec::script::shell_single_quote(clean_container_req),
-        shell_req = crate::utils::exec::script::shell_single_quote(&shell_req),
+        "CID=$(docker ps -q -f name={container_q} | head -n1); \
+         if [ -z \"$CID\" ]; then CID=$(docker ps -q -f name={clean_q} | head -n1); fi; \
+         if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={container_q} | head -n1); fi; \
+         if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={clean_q} | head -n1); fi; \
+         if [ -z \"$CID\" ]; then CID={container_q}; fi; \
+         exec docker exec -it $CID {shell_q}"
     );
 
     args.push("sh".to_string());
