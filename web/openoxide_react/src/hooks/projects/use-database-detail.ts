@@ -86,19 +86,27 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride once backend query syncs with backend state
+	// Auto-clear localStatusOverride once backend query syncs with backend state and update Zustand store
 	useEffect(() => {
-		if (fetchedDb?.status && localStatusOverride) {
-			const fetchedUpper = (fetchedDb.status || '').toUpperCase();
-			const overrideUpper = (localStatusOverride || '').toUpperCase();
-			if (fetchedUpper === overrideUpper || (overrideUpper === 'STARTING' && fetchedUpper === 'RUNNING') || (overrideUpper === 'STOPPING' && fetchedUpper === 'STOPPED')) {
-				setLocalStatusOverride(null);
+		if (fetchedDb?.status || (fetchedDb as any)?.app_status) {
+			const fetchedStatus = (fetchedDb.status || (fetchedDb as any).app_status || '').toUpperCase();
+			if (localStatusOverride) {
+				const overrideUpper = (localStatusOverride || '').toUpperCase();
+				if (
+					fetchedStatus === overrideUpper ||
+					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE')) ||
+					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+				) {
+					setLocalStatusOverride(null);
+				}
 			}
+			(useAppStore.getState() as any).updateServiceStatus?.(dbId, fetchedStatus);
 		}
-	}, [fetchedDb?.status, localStatusOverride]);
+	}, [fetchedDb?.status, (fetchedDb as any)?.app_status, localStatusOverride, dbId]);
 
 	const database = useMemo(() => {
-		const raw = (fetchedDb && storeDb) ? { ...fetchedDb, ...storeDb } : (fetchedDb || storeDb);
+		const raw = (storeDb && fetchedDb) ? { ...storeDb, ...fetchedDb } : (fetchedDb || storeDb);
 		if (!raw) return null;
 		const effectiveStatus = localStatusOverride || raw.status || raw.app_status || storeDb?.status || raw.application_status || 'STOPPED';
 		return {
