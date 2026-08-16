@@ -4,7 +4,6 @@ use crate::services::application::auto_excuter::app_new_cmd;
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
 use crate::utils::docker::DockerCli;
-use crate::utils::docker::query::filter::ServiceFilter;
 
 use super::{ApplicationOperation, ApplicationOperationResult, ApplicationService};
 
@@ -108,39 +107,56 @@ impl ApplicationService {
         tokio::spawn(async move {
             if let Ok(cmd) = app_new_cmd(db_ref, id).await {
                 let docker_cli = DockerCli::from_executor(cmd);
+                let app_n = app_user.app_name.clone();
+                let user_n = app_user.name.clone();
+
                 let candidates = [
-                    app_user.app_name.clone(),
-                    format!("{}_app", app_user.app_name),
-                    format!("{}-app", app_user.app_name),
-                    format!("{}_web", app_user.app_name),
-                    format!("{}_srv", app_user.app_name),
+                    format!("{}_{}", app_n, app_n),
+                    format!("{}_{}", user_n, user_n),
+                    app_n.clone(),
+                    user_n.clone(),
+                    format!("{}_app", app_n),
+                    format!("{}-app", app_n),
+                    format!("{}_web", app_n),
+                    format!("{}_srv", app_n),
+                    format!("{}_app", user_n),
+                    format!("{}-app", user_n),
                 ];
 
                 // 1. Remove Swarm stack if active
                 let _ = tokio::time::timeout(
                     std::time::Duration::from_secs(4),
-                    docker_cli.stacks().remove(&app_user.app_name).run(),
+                    docker_cli.stacks().remove(&app_n).run(),
                 )
                 .await;
 
-                // 2. Scale down any Swarm services matching app_name
+                if user_n != app_n {
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(4),
+                        docker_cli.stacks().remove(&user_n).run(),
+                    )
+                    .await;
+                }
+
+                // 2. Scale down any Swarm services matching app_name or user_name
                 if let Ok(services) = tokio::time::timeout(
-                    std::time::Duration::from_secs(4),
-                    docker_cli
-                        .services()
-                        .list()
-                        .filter(ServiceFilter::name(format!("{}_", app_user.app_name)))
-                        .run_json(),
+                    std::time::Duration::from_secs(5),
+                    docker_cli.services().list().run_json(),
                 )
                 .await
                 .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
                 {
-                    for s in services.iter() {
-                        let _ = tokio::time::timeout(
-                            std::time::Duration::from_secs(3),
-                            docker_cli.services().scale().service(&s.name, 0).run(),
-                        )
-                        .await;
+                    let app_n_low = app_n.to_lowercase();
+                    let user_n_low = user_n.to_lowercase();
+                    for s in services {
+                        let s_low = s.name.to_lowercase();
+                        if s_low.contains(&app_n_low) || s_low.contains(&user_n_low) {
+                            let _ = tokio::time::timeout(
+                                std::time::Duration::from_secs(3),
+                                docker_cli.services().scale().service(&s.name, 0).run(),
+                            )
+                            .await;
+                        }
                     }
                 }
 
