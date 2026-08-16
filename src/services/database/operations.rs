@@ -141,11 +141,14 @@ impl DatabaseService {
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
-        let _ = queue.cancel_queued_database(id).await?;
+        let _ = queue.cancel_queued_database(id).await;
 
         if let Ok(state) = resolve::<crate::utils::builder::hash_state::ApplicationState>().await {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
         }
+
+        let _ = self.repo_deploy.cancel_queued_for_database(id).await;
+        let _ = self.repo_deploy.request_cancel_database_deployment(id).await;
 
         let db_record = self.get_by_id(kind, id).await.ok();
         let app_name = db_record.as_ref().map(|d| d.app_name.clone());
