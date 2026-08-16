@@ -4,6 +4,295 @@
  */
 
 export interface paths {
+    "/api/ai/connection/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AiController::test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiController::list_generations"];
+        put?: never;
+        post: operations["AiController::generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/generations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiController::get_generation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/generations/{id}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AiController::deploy_generation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/generations/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["AiController::review_generation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/logs/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AiController::analyze_logs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/models/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AiController::discover_models"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiController::list_settings"];
+        put?: never;
+        post: operations["AiController::create_setting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/settings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiController::get_setting"];
+        put: operations["AiController::update_setting"];
+        post?: never;
+        delete: operations["AiController::delete_setting"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/settings/{id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiController::setting_models"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/settings/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AiController::test_setting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AlertRuleController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/events/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AlertRuleController::events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/events/{event_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AlertRuleController::acknowledge_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/events/{event_id}/silence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AlertRuleController::silence_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AlertRuleController::list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sends a sample alert through one configured channel, so an operator can */
+        post: operations["AlertRuleController::test_notification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/{id}/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AlertRuleController::get"];
+        put: operations["AlertRuleController::update"];
+        post?: never;
+        delete: operations["AlertRuleController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/monitoring": {
         parameters: {
             query?: never;
@@ -20,7 +309,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/monitoring/containers": {
+    "/api/monitoring/agents/{server_id}/reinstall": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,7 +318,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["MonitoringController::ingest_container_metrics"];
+        post: operations["MonitoringController::reinstall_agent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitoring/agents/{server_id}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonitoringController::restart_agent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitoring/agents/{server_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonitoringController::agent_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitoring/agents/{server_id}/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MonitoringController::rotate_agent_token"];
         delete?: never;
         options?: never;
         head?: never;
@@ -52,7 +389,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/monitoring/server": {
+    "/api/monitoring/maintenance/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonitoringController::maintenance_windows"];
+        put?: never;
+        post: operations["MonitoringController::create_maintenance_window"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitoring/maintenance/{organization_id}/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -61,7 +414,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["MonitoringController::ingest_server_metrics"];
+        post?: never;
+        delete: operations["MonitoringController::delete_maintenance_window"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitoring/policy/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MonitoringController::policy"];
+        put: operations["MonitoringController::update_policy"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -84,14 +453,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/monitoring/stream/containers": {
+    "/api/monitoring/server/{id}/export": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["MonitoringController::stream_container_metrics"];
+        get: operations["MonitoringController::export_server_metrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -100,14 +469,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/monitoring/stream/logs": {
+    "/api/monitoring/server/{id}/prometheus": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["MonitoringController::stream_logs"];
+        get: operations["MonitoringController::prometheus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -143,6 +512,230 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::import_application"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/middlewares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ApplicationMiddlewareController::list"];
+        put?: never;
+        post: operations["ApplicationMiddlewareController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/middlewares/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ApplicationMiddlewareController::update"];
+        post?: never;
+        delete: operations["ApplicationMiddlewareController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/mounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MountController::list"];
+        put?: never;
+        post: operations["MountController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/mounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["MountController::update"];
+        post?: never;
+        delete: operations["MountController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/networks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ApplicationNetworkController::get"];
+        put: operations["ApplicationNetworkController::update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/patches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PatchController::list"];
+        put?: never;
+        post: operations["PatchController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/patches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PatchController::update"];
+        post?: never;
+        delete: operations["PatchController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/ports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PortController::list"];
+        put?: never;
+        post: operations["PortController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/ports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PortController::update"];
+        post?: never;
+        delete: operations["PortController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/redirects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RedirectController::list"];
+        put?: never;
+        post: operations["RedirectController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/redirects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["RedirectController::update"];
+        post?: never;
+        delete: operations["RedirectController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/security": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SecurityController::list"];
+        put?: never;
+        post: operations["SecurityController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/security/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["SecurityController::update"];
+        post?: never;
+        delete: operations["SecurityController::delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -196,6 +789,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ApplicationController::dependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/{id}/deploy": {
         parameters: {
             query?: never;
@@ -210,6 +819,102 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/deployments/force-kill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::force_kill_deployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/deployments/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ApplicationController::clear_deployment_history"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/deployments/queue/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::cleanup_deployment_queue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ApplicationController::export_application"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::move_to_environment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ApplicationController::patch_preview"];
         trace?: never;
     };
     "/applications/{id}/rebuild": {
@@ -274,6 +979,54 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["ApplicationController::patch_resources"];
+        trace?: never;
+    };
+    "/applications/{id}/rollbacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ApplicationController::list_rollbacks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/rollbacks/{rollback_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ApplicationController::delete_rollback"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/rollbacks/{rollback_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::trigger_rollback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/applications/{id}/source/bitbucket": {
@@ -388,6 +1141,22 @@ export interface paths {
         patch: operations["ApplicationController::patch_gitlab_source"];
         trace?: never;
     };
+    "/applications/{id}/source/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::upload_drop_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/{id}/start": {
         parameters: {
             query?: never;
@@ -398,6 +1167,214 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ApplicationController::start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/webhook-token/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ApplicationController::rotate_webhook_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController::list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit-logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController::export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/2fa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthTwoFactorController::disable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/2fa/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthTwoFactorController::enable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/2fa/recovery-codes/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthTwoFactorController::regenerate_recovery_codes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/2fa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthTwoFactorController::setup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/2fa/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthTwoFactorController::status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/api-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthApiTokenController::list"];
+        put?: never;
+        post: operations["AuthApiTokenController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/api-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["AuthApiTokenController::revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-verification/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthEmailVerificationController::confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-verification/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthEmailVerificationController::request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-verification/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthEmailVerificationController::status"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -436,6 +1413,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthPasswordController::forgot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthPasswordController::reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/refresh": {
         parameters: {
             query?: never;
@@ -447,6 +1456,38 @@ export interface paths {
         put?: never;
         post: operations["AuthController::refresh"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthSessionController::list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["AuthSessionController::revoke"];
         options?: never;
         head?: never;
         patch?: never;
@@ -497,29 +1538,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["UpdateUserDto"];
-                };
-            };
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JwtSubject"];
-                    };
-                };
-            };
-        };
+        patch: operations["AuthController::update_user"];
         trace?: never;
     };
     "/auth/whoami": {
@@ -532,6 +1551,22 @@ export interface paths {
         get: operations["AuthController::who_am_i"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/compose/{compose_id}/config/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::run_compose_config_backup"];
         delete?: never;
         options?: never;
         head?: never;
@@ -596,6 +1631,182 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["BackupController::run_database_backup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::list_executions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/executions/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::retry_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::list_backup_files"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/files/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::download_backup_file"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/files/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::verify_backup_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/panel/restore/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::rollback_panel_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/panel/restore/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::stage_panel_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/panel/restore/{restore_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::panel_restore_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/panel/restore/{restore_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::panel_restore_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/panel/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BackupController::run_panel_backup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backups/retention/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BackupController::preview_retention"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -698,6 +1909,54 @@ export interface paths {
         patch: operations["CertificateController::patch"];
         trace?: never;
     };
+    "/certificates/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CertificateController::dependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/certificates/{id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CertificateController::renew"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/certificates/{id}/renewals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CertificateController::renewals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/compose": {
         parameters: {
             query?: never;
@@ -725,6 +1984,118 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/templates/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::install_template"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{compose_id}/mounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ComposeMountController::list"];
+        put?: never;
+        post: operations["ComposeMountController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{compose_id}/mounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ComposeMountController::update"];
+        post?: never;
+        delete: operations["ComposeMountController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{compose_id}/patches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ComposePatchController::list"];
+        put?: never;
+        post: operations["ComposePatchController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{compose_id}/patches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ComposePatchController::update"];
+        post?: never;
+        delete: operations["ComposePatchController::delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -762,6 +2133,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/compose/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ComposeController::dependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/compose/{id}/deploy": {
         parameters: {
             query?: never;
@@ -772,6 +2159,86 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ComposeController::deploy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/deployments/force-kill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::force_kill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/deployments/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ComposeManagementController::clear_history"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/deployments/queue/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::cleanup_queue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ComposeManagementController::export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::move_compose"];
         delete?: never;
         options?: never;
         head?: never;
@@ -804,6 +2271,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ComposeController::reload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ComposeManagementController::upsert_resource"];
+        post?: never;
+        delete: operations["ComposeManagementController::remove_resource"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/compose/{id}/services/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::remove_service"];
         delete?: never;
         options?: never;
         head?: never;
@@ -954,6 +2453,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/compose/{id}/webhook-token/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ComposeManagementController::rotate_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DatabaseManagementController::import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/postgres/{id}/advanced-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DatabaseManagementController::get_postgres_advanced_config"];
+        put: operations["DatabaseManagementController::update_postgres_advanced_config"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/{kind}/{id}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DatabaseManagementController::connection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/{kind}/{id}/credentials/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DatabaseManagementController::rotate_credentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/{kind}/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DatabaseManagementController::dependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/{kind}/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DatabaseManagementController::export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/database-management/{kind}/{id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DatabaseManagementController::validate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/database-networks": {
         parameters: {
             query?: never;
@@ -1002,6 +2629,22 @@ export interface paths {
         patch: operations["DatabaseNetworkController::patch"];
         trace?: never;
     };
+    "/database-networks/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DatabaseNetworkController::dependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deployments": {
         parameters: {
             query?: never;
@@ -1012,7 +2655,7 @@ export interface paths {
         get: operations["DeploymentController::list"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["DeploymentController::clear_all"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1029,6 +2672,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/application/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DeploymentController::clear_application_deployments"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1082,6 +2741,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deployments/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DeploymentController::clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/compose/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DeploymentController::clear_compose_deployments"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deployments/compose/{id}/events": {
         parameters: {
             query?: never;
@@ -1125,6 +2816,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/database/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DeploymentController::clear_database_deployments"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1194,6 +2901,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deployments/docker/compose/logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentController::export_docker_compose_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deployments/docker/container/{target}/logs": {
         parameters: {
             query?: never;
@@ -1202,6 +2925,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DeploymentController::docker_container_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/docker/container/{target}/logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentController::export_docker_container_logs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1258,6 +2997,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deployments/docker/service/{target}/logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentController::export_docker_service_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deployments/docker/stats": {
         parameters: {
             query?: never;
@@ -1266,6 +3021,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DeploymentController::docker_global_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/logs/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DeploymentController::cleanup_logs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deployments/logs/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentController::search_logs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1300,7 +3087,7 @@ export interface paths {
         get: operations["DeploymentController::get"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["DeploymentController::delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1354,7 +3141,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/destinations/test-raw": {
+    "/destinations/test": {
         parameters: {
             query?: never;
             header?: never;
@@ -1363,7 +3150,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["DestinationController::test_connection_raw"];
+        post: operations["DestinationController::test_destination"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1386,7 +3173,23 @@ export interface paths {
         patch: operations["DestinationController::patch"];
         trace?: never;
     };
-    "/destinations/{id}/test": {
+    "/dns-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DnsController::list"];
+        put?: never;
+        post: operations["DnsController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/test-connection": {
         parameters: {
             query?: never;
             header?: never;
@@ -1395,7 +3198,311 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["DestinationController::test_connection"];
+        post: operations["DnsController::test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DnsController::get"];
+        put: operations["DnsController::update"];
+        post?: never;
+        delete: operations["DnsController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DnsController::upsert_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DnsController::test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DnsController::list_zones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}/zones/{zone_id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DnsController::list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dns-providers/{id}/zones/{zone_id}/records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DnsController::delete_record"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/containers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::containers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/containers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DockerManagementController::remove_container"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/containers/{id}/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DockerManagementController::container_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/containers/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::download_container_file"];
+        put?: never;
+        post: operations["DockerManagementController::upload_container_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/containers/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::inspect_container"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/disk-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::disk_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::images"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/images/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::inspect_image"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/networks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::networks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/networks/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::inspect_network"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/prune": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DockerManagementController::prune"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::volumes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docker/volumes/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DockerManagementController::inspect_volume"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1523,6 +3630,374 @@ export interface paths {
         };
         get?: never;
         put: operations["EnvironmentController::set_default"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/bitbucket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::create_bitbucket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/gitea": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::create_gitea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::create_github"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/gitlab": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::create_gitlab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::get"];
+        put?: never;
+        post?: never;
+        delete: operations["GitProviderController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::authorize"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/bitbucket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["GitProviderController::update_bitbucket"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::branches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/collaborator-permission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::collaborator_permission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::disconnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/gitea": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["GitProviderController::update_gitea"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["GitProviderController::update_github"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/gitlab": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["GitProviderController::update_gitlab"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/oauth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::oauth_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::repositories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["GitProviderController::remove_webhook"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/webhook-secret/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::rotate_secret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/webhook/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::install_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/webhook/recreate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GitProviderController::recreate_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/git-providers/{id}/webhook/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GitProviderController::webhook_status"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2106,6 +4581,183 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/networking/cdn/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NetworkingController::purge_cdn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/networking/domains/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NetworkingController::diagnose_domain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/networking/root-network/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NetworkingController::diagnose_root_network"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/networking/root-network/repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NetworkingController::repair_root_network"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/bindings/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationController::bindings"];
+        put?: never;
+        post: operations["NotificationController::create_binding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/bindings/{id}/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["NotificationController::delete_binding"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/delivery-history/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationController::delivery_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationController::list_by_organization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{id}/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationController::get_by_id"];
+        /** Replaces both event settings and provider configuration. The tagged */
+        put: operations["NotificationController::replace"];
+        post?: never;
+        delete: operations["NotificationController::delete"];
+        options?: never;
+        head?: never;
+        patch: operations["NotificationController::patch"];
+        trace?: never;
+    };
+    "/notifications/{id}/organization/{organization_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationController::send_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations": {
         parameters: {
             query?: never;
@@ -2136,6 +4788,230 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["OrganizationController::patch"];
+        trace?: never;
+    };
+    "/overview/backups/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OverviewController::backups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overview/domains/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OverviewController::domains"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overview/services/organization/{organization_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OverviewController::services"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PermissionGroupController::list"];
+        put?: never;
+        post: operations["PermissionGroupController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PermissionGroupController::invites"];
+        put?: never;
+        post: operations["PermissionGroupController::invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/invites/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PermissionGroupController::accept_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/invites/{invite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["PermissionGroupController::cancel_invite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PermissionGroupController::members"];
+        put?: never;
+        post: operations["PermissionGroupController::add_member"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["PermissionGroupController::remove_member"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/members/{user_id}/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PermissionGroupController::assign_group"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/members/{user_id}/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PermissionGroupController::replace_user_policies"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/members/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PermissionGroupController::update_member_role"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PermissionGroupController::policies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/permission-groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PermissionGroupController::update"];
+        post?: never;
+        delete: operations["PermissionGroupController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/postgres": {
@@ -2282,6 +5158,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/preview-deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreviewDeploymentController::list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/preview-deployments/application/{application_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreviewDeploymentController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/preview-deployments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PreviewDeploymentController::get"];
+        put?: never;
+        post?: never;
+        delete: operations["PreviewDeploymentController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/preview-deployments/{id}/redeploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreviewDeploymentController::redeploy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects": {
         parameters: {
             query?: never;
@@ -2357,6 +5297,22 @@ export interface paths {
         get: operations["Public::list_branches"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/webhooks/{provider}/{provider_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WebhookController::receive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2523,7 +5479,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/registries/test-raw": {
+    "/registries/test": {
         parameters: {
             query?: never;
             header?: never;
@@ -2532,7 +5488,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["RegistryController::test_connection_raw"];
+        post: operations["RegistryController::test_registry"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2555,6 +5511,54 @@ export interface paths {
         patch: operations["RegistryController::patch"];
         trace?: never;
     };
+    "/registries/{id}/repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RegistryController::repositories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/registries/{id}/rotate-credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RegistryController::rotate_credentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/registries/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RegistryController::tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/registries/{id}/test": {
         parameters: {
             query?: never;
@@ -2564,7 +5568,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["RegistryController::test_connection"];
+        post: operations["RegistryController::test_saved_registry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/registries/{id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RegistryController::usage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2581,6 +5601,38 @@ export interface paths {
         get: operations["RemoteServerController::list"];
         put?: never;
         post: operations["RemoteServerController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/remote-servers/migrations/{migration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RemoteServerController::migration_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/remote-servers/migrations/{migration_id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RemoteServerController::rollback_migration"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2629,6 +5681,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["RemoteServerController::deactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/remote-servers/{id}/dependencies/migrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RemoteServerController::migrate_dependencies"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2699,6 +5767,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedules/database/{database_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::list_by_database"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schedules/organization/{organization_id}": {
         parameters: {
             query?: never;
@@ -2747,7 +5831,103 @@ export interface paths {
         patch: operations["ScheduleController::patch"];
         trace?: never;
     };
-    "/schedules/{id}/run": {
+    "/schedules/{id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::executions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/executions/{execution_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::execution_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/executions/{execution_id}/logs/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::execution_logs_stream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/logs/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::logs_stream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/runtime-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ScheduleController::runtime_policy"];
+        put: operations["ScheduleController::update_runtime_policy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -2756,7 +5936,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["ScheduleController::run_manual"];
+        post: operations["ScheduleController::trigger"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2853,6 +6033,262 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ServerController::test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServerManagementController::get"];
+        put: operations["ServerManagementController::update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/audit/repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::repair"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::backup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/cleanup/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServerManagementController::cleanup_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/cleanup/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::cleanup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::diagnostics"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/gpu/configure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::configure_gpu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/management/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerManagementController::upgrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServerPrivateNetworkController::get"];
+        put: operations["ServerPrivateNetworkController::update"];
+        post?: never;
+        delete: operations["ServerPrivateNetworkController::disable"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ServerPrivateNetworkController::health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/re-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerPrivateNetworkController::re_setup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerPrivateNetworkController::repair"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/rotate-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerPrivateNetworkController::rotate_keys"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerPrivateNetworkController::setup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servers/{server_id}/private-network/teardown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ServerPrivateNetworkController::teardown"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SettingsController::get"];
+        put: operations["SettingsController::update"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3084,6 +6520,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/config/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SystemController::config_test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SystemController::health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TagController::list_all"];
+        put?: never;
+        post: operations["TagController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags/project/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TagController::list_project_tags"];
+        put?: never;
+        post: operations["TagController::attach_project_tag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags/project/{project_id}/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["TagController::detach_project_tag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TagController::get_by_id"];
+        put?: never;
+        post?: never;
+        delete: operations["TagController::delete"];
+        options?: never;
+        head?: never;
+        patch: operations["TagController::update"];
+        trace?: never;
+    };
     "/traefik/files": {
         parameters: {
             query?: never;
@@ -3148,6 +6680,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/traefik/middlewares/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TraefikController::render_middleware"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/traefik/requests/logs": {
         parameters: {
             query?: never;
@@ -3196,10 +6744,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/traefik/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TraefikController::version"];
+        put?: never;
+        post: operations["TraefikController::update_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vault-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["VaultController::list"];
+        put?: never;
+        post: operations["VaultController::create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vault-providers/test-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["VaultController::test_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vault-providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["VaultController::get"];
+        put: operations["VaultController::update"];
+        post?: never;
+        delete: operations["VaultController::delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vault-providers/{id}/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["VaultController::list_secrets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vault-providers/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["VaultController::test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptOrganizationInviteDto */
+        AcceptOrganizationInviteDto: {
+            token: string;
+        };
         /** ActiveDeploymentDto */
         ActiveDeploymentDto: {
             /** Format: int64 */
@@ -3211,12 +6859,290 @@ export interface components {
             project_id: number;
             state: string;
         };
+        /** AddOrganizationMemberDto */
+        AddOrganizationMemberDto: {
+            email: string;
+            password?: string;
+            role: string;
+        };
+        /** AiComposeSuggestion */
+        AiComposeSuggestion: {
+            config_files: components["schemas"]["AiGeneratedFile"][];
+            description: string;
+            docker_compose: string;
+            domains: components["schemas"]["AiDomain"][];
+            env_variables: components["schemas"]["AiEnvironmentVariable"][];
+            id: string;
+            name: string;
+            short_description: string;
+        };
+        /** AiConnectionResponseDto */
+        AiConnectionResponseDto: {
+            message: string;
+            success: boolean;
+        };
+        /** AiDeploymentResponseDto */
+        AiDeploymentResponseDto: {
+            /** Format: int64 */
+            compose_id: number;
+            /** Format: int64 */
+            deployment_id?: number;
+            generation: components["schemas"]["AiGenerationResponseDto"];
+        };
+        /** AiDomain */
+        AiDomain: {
+            host: string;
+            /** Format: int64 */
+            port: number;
+            service_name: string;
+        };
+        /** AiEnvironmentVariable */
+        AiEnvironmentVariable: {
+            name: string;
+            value: string;
+        };
+        /** AiGeneratedFile */
+        AiGeneratedFile: {
+            content: string;
+            file_path: string;
+        };
+        /** AiGenerationListQueryDto */
+        AiGenerationListQueryDto: {
+            /** Format: int64 */
+            limit?: number;
+        };
+        /** AiGenerationOutput */
+        AiGenerationOutput: {
+            suggestions: components["schemas"]["AiComposeSuggestion"][];
+        };
+        /** AiGenerationResponseDto */
+        AiGenerationResponseDto: {
+            /** Format: int64 */
+            ai_setting_id: number;
+            /** Format: int64 */
+            compose_id?: number;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            created_by: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            organization_id: number;
+            output: components["schemas"]["AiGenerationOutput"];
+            prompt: string;
+            status: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        AiLogContextDto: "Build" | "Runtime";
+        /** AiModelsResponseDto */
+        AiModelsResponseDto: {
+            models: string[];
+        };
+        /** AiSettingResponseDto */
+        AiSettingResponseDto: {
+            api_url: string;
+            /** Format: int64 */
+            created_at: number;
+            has_api_key: boolean;
+            /** Format: int64 */
+            id: number;
+            is_enabled: boolean;
+            model: string;
+            name: string;
+            /** Format: int64 */
+            organization_id: number;
+            provider: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** AlertEventResponseDto */
+        AlertEventResponseDto: {
+            /** Format: int64 */
+            acknowledged_at?: number;
+            /** Format: int64 */
+            acknowledged_by?: number;
+            /** Format: int64 */
+            alert_rule_id: number;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            message: string;
+            notification_correlation_id?: string;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            resolved_at?: number;
+            /** Format: int64 */
+            silenced_until?: number;
+            state: components["schemas"]["AlertEventState"];
+            target_key: string;
+            /** Format: double */
+            threshold?: number;
+            /** Format: double */
+            value?: number;
+        };
+        /** @enum {string} */
+        AlertEventState: "FIRING" | "RESOLVED" | "NO_DATA";
+        /** AlertRuleResponseDto */
+        AlertRuleResponseDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int32 */
+            duration_seconds: number;
+            enabled: boolean;
+            /** Format: int64 */
+            id: number;
+            metric: components["schemas"]["MetricKind"];
+            name: string;
+            operator: components["schemas"]["Operator"];
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            target_id: number;
+            target_kind: components["schemas"]["TargetKind"];
+            /** Format: double */
+            threshold: number;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** AnalyzeLogsDto */
+        AnalyzeLogsDto: {
+            /** Format: int64 */
+            ai_setting_id: number;
+            context: components["schemas"]["AiLogContextDto"];
+            logs: string;
+        };
+        /** AnalyzeLogsResponseDto */
+        AnalyzeLogsResponseDto: {
+            analysis: string;
+        };
+        /** ApplicationCleanupResponseDto */
+        ApplicationCleanupResponseDto: {
+            /** Format: int64 */
+            affected: number;
+        };
+        /** ApplicationExportArchiveDto */
+        ApplicationExportArchiveDto: {
+            archive: string;
+            format: string;
+            /** Format: int64 */
+            schema_version: number;
+        };
+        /** ApplicationExportQueryDto */
+        ApplicationExportQueryDto: {
+            include_secrets: boolean;
+        };
+        /** ApplicationForceKillResponseDto */
+        ApplicationForceKillResponseDto: {
+            /** Format: int64 */
+            deployment_id: number;
+            status: string;
+        };
+        /** ApplicationMiddlewareResponseDto */
+        ApplicationMiddlewareResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            /** Format: int64 */
+            average?: number;
+            /** Format: int64 */
+            burst?: number;
+            /** Format: int64 */
+            created_at: number;
+            enabled: boolean;
+            headers: components["schemas"]["MiddlewareHeaderDto"][];
+            /** Format: int64 */
+            id: number;
+            middleware_type: string;
+            name: string;
+            source_ranges: string[];
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        ApplicationMiddlewareType: "COMPRESS" | "HEADERS" | "RATE_LIMIT" | "IP_ALLOWLIST";
+        /** ApplicationMountResponseDto */
+        ApplicationMountResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            content?: string;
+            /** Format: int64 */
+            created_at: number;
+            file_path?: string;
+            host_path?: string;
+            /** Format: int64 */
+            id: number;
+            mount_path: string;
+            mount_type: string;
+            /** Format: int64 */
+            updated_at: number;
+            volume_name?: string;
+        };
+        /** ApplicationNetworksResponseDto */
+        ApplicationNetworksResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            detach_rustploy_network: boolean;
+            networks: components["schemas"]["DatabaseNetworkResponseDto"][];
+        };
         /** ApplicationOperationResponseDto */
         ApplicationOperationResponseDto: {
             application: components["schemas"]["ApplicationResponseDto"];
             /** Format: int64 */
             deployment_id?: number;
             operation: string;
+        };
+        /** ApplicationPatchResponseDto */
+        ApplicationPatchResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            content: string;
+            /** Format: int64 */
+            created_at: number;
+            enabled: boolean;
+            file_path: string;
+            /** Format: int64 */
+            id: number;
+            patch_type: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        ApplicationPatchType: "CREATE" | "UPDATE" | "DELETE";
+        /** ApplicationPortResponseDto */
+        ApplicationPortResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            protocol: string;
+            publish_mode: string;
+            /** Format: int64 */
+            published_port: number;
+            /** Format: int64 */
+            target_port: number;
+        };
+        /** ApplicationRedirectResponseDto */
+        ApplicationRedirectResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            permanent: number;
+            regex: string;
+            replacement: string;
+            /** Format: int64 */
+            unique_config_key?: number;
+            /** Format: int64 */
+            updated_at: number;
         };
         /** ApplicationResponseDto */
         ApplicationResponseDto: {
@@ -3256,6 +7182,21 @@ export interface components {
             name: string;
             network_ids: string[];
             owner?: string;
+            preview_build_args?: string;
+            preview_build_secrets?: string;
+            preview_certificate_type: string;
+            preview_custom_cert_resolver?: string;
+            preview_env?: string;
+            preview_https: boolean;
+            preview_labels?: string;
+            /** Format: int64 */
+            preview_limit?: number;
+            preview_path?: string;
+            /** Format: int64 */
+            preview_port?: number;
+            preview_require_collaborator_permissions: boolean;
+            preview_wildcard?: string;
+            previews_active: boolean;
             /** Format: int64 */
             registry_id?: number;
             registry_url?: string;
@@ -3269,11 +7210,164 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** ApplicationRollbackResponseDto */
+        ApplicationRollbackResponseDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            deployment_id: number;
+            has_context: boolean;
+            /** Format: int64 */
+            id: number;
+            image?: string;
+            /** Format: int64 */
+            version: number;
+        };
+        /** ApplicationRollbackTriggerResponseDto */
+        ApplicationRollbackTriggerResponseDto: {
+            /** Format: int64 */
+            deployment_id: number;
+            message: string;
+        };
+        /** ApplicationSecurityResponseDto */
+        ApplicationSecurityResponseDto: {
+            /** Format: int64 */
+            application_id: number;
+            /** Format: int64 */
+            created_at: number;
+            has_password: boolean;
+            /** Format: int64 */
+            id: number;
+            username: string;
+        };
+        /** ApplicationWebhookTokenResponseDto */
+        ApplicationWebhookTokenResponseDto: {
+            token: string;
+        };
+        /** AssignPermissionGroupDto */
+        AssignPermissionGroupDto: {
+            /** Format: int64 */
+            group_id: number;
+        };
+        /** AttachProjectTagDto */
+        AttachProjectTagDto: {
+            /** Format: int64 */
+            tag_id: number;
+        };
+        /** AuditLogDto */
+        AuditLogDto: {
+            action: string;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id?: number;
+            metadata?: string;
+            /** Format: int64 */
+            organization_id?: number;
+            resource_id?: string;
+            resource_name?: string;
+            resource_type: string;
+            user_email: string;
+            /** Format: int64 */
+            user_id?: number;
+            user_role: string;
+        };
+        /** AuditLogPageDto */
+        AuditLogPageDto: {
+            items: components["schemas"]["AuditLogDto"][];
+            /** Format: int64 */
+            limit: number;
+            /** Format: int64 */
+            offset: number;
+            /** Format: int64 */
+            total: number;
+        };
+        /** AuditLogQueryDto */
+        AuditLogQueryDto: {
+            action?: string;
+            /** Format: int64 */
+            limit?: number;
+            /** Format: int64 */
+            offset?: number;
+            resource_type?: string;
+        };
         /** AuthResponseDto */
         AuthResponseDto: {
             tokens: components["schemas"]["TokenPair"];
             user: components["schemas"]["JwtSubject"];
         };
+        /** AuthSessionDto */
+        AuthSessionDto: {
+            active: boolean;
+            /** Format: int64 */
+            created_at: number;
+            current: boolean;
+            /** Format: int64 */
+            expires_at?: number;
+            session_id: string;
+        };
+        /** AuthorizationInfo */
+        AuthorizationInfo: {
+            state: string;
+            url: string;
+        };
+        /** BackupExecutionQueryDto */
+        BackupExecutionQueryDto: {
+            /** Format: int64 */
+            backup_id?: number;
+            backup_kind?: components["schemas"]["BackupKind"];
+            /** Format: int64 */
+            limit?: number;
+        };
+        /** BackupExecutionResponseDto */
+        BackupExecutionResponseDto: {
+            /** Format: int64 */
+            attempt: number;
+            /** Format: int64 */
+            backup_id?: number;
+            backup_kind: components["schemas"]["BackupKind"];
+            checksum_sha256?: string;
+            error?: string;
+            /** Format: int64 */
+            finished_at?: number;
+            /** Format: int64 */
+            id: number;
+            object_key?: string;
+            operation: components["schemas"]["BackupOperation"];
+            /** Format: int64 */
+            size_bytes?: number;
+            /** Format: int64 */
+            started_at: number;
+            status: components["schemas"]["BackupExecutionStatus"];
+        };
+        /** @enum {string} */
+        BackupExecutionStatus: "RUNNING" | "SUCCEEDED" | "FAILED";
+        /** BackupFileDto */
+        BackupFileDto: {
+            modified_at: string;
+            name: string;
+            path: string;
+            /** Format: int64 */
+            size_bytes: number;
+        };
+        /** BackupFilesQueryDto */
+        BackupFilesQueryDto: {
+            /** Format: int64 */
+            destination_id: number;
+            prefix?: string;
+        };
+        /** BackupIntegrityDto */
+        BackupIntegrityDto: {
+            actual_sha256: string;
+            expected_sha256: string;
+            /** Format: int64 */
+            size_bytes: number;
+            valid: boolean;
+        };
+        /** @enum {string} */
+        BackupKind: "DATABASE" | "VOLUME" | "PANEL" | "COMPOSE_CONFIG";
+        /** @enum {string} */
+        BackupOperation: "BACKUP" | "RESTORE";
         /** BackupResponseDto */
         BackupResponseDto: {
             app_name: string;
@@ -3317,6 +7411,54 @@ export interface components {
         BranchQuery: {
             query: string;
         };
+        /** @enum {string} */
+        CdnProvider: "CLOUDFLARE" | "FASTLY" | "BUNNY";
+        /** CdnPurgeDto */
+        CdnPurgeDto: {
+            api_token: string;
+            provider: components["schemas"]["CdnProvider"];
+            /** Format: int64 */
+            pull_zone_id?: number;
+            purge_all: boolean;
+            service_id?: string;
+            urls: string[];
+            zone_id?: string;
+        };
+        /** CdnPurgeResponseDto */
+        CdnPurgeResponseDto: {
+            message: string;
+            provider: string;
+            request_id?: string;
+            /** Format: uint16 */
+            status: number;
+            success: boolean;
+        };
+        /** CertificateDependencyCounts */
+        CertificateDependencyCounts: {
+            /** Format: int64 */
+            renewals: number;
+            /** Format: int64 */
+            running_renewals: number;
+        };
+        /** CertificateRenewalDto */
+        CertificateRenewalDto: {
+            /** Format: int64 */
+            certificate_id: number;
+            error?: string;
+            /** Format: int64 */
+            finished_at?: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            new_expires_at?: number;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            previous_expires_at?: number;
+            /** Format: int64 */
+            started_at: number;
+            status: string;
+        };
         /** CertificateResponseDto */
         CertificateResponseDto: {
             /** Format: int64 */
@@ -3334,6 +7476,41 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** @enum {string} */
+        CertificateType: "LETS_ENCRYPT" | "CUSTOM" | "NONE";
+        /** CollaboratorPermission */
+        CollaboratorPermission: {
+            can_admin: boolean;
+            can_write: boolean;
+            level: string;
+            username: string;
+        };
+        /** CollaboratorPermissionQueryDto */
+        CollaboratorPermissionQueryDto: {
+            owner: string;
+            repository: string;
+            username: string;
+        };
+        /** ComposeArchiveDto */
+        ComposeArchiveDto: {
+            archive: string;
+            format: string;
+            /** Format: int64 */
+            schema_version: number;
+        };
+        /** ComposeCleanupDto */
+        ComposeCleanupDto: {
+            /** Format: int64 */
+            affected: number;
+        };
+        /** ComposeConfigBackupDto */
+        ComposeConfigBackupDto: {
+            include_secrets?: boolean;
+        };
+        /** ComposeExportQueryDto */
+        ComposeExportQueryDto: {
+            include_secrets: boolean;
+        };
         /** ComposeLogQuery */
         ComposeLogQuery: {
             file?: string;
@@ -3343,9 +7520,29 @@ export interface components {
             /** Format: int64 */
             server_id?: number;
             service?: string;
+            since?: string;
+            stream?: components["schemas"]["DockerLogStream"];
             /** Format: uint64 */
             tail?: number;
             timestamps?: boolean;
+            until?: string;
+        };
+        /** ComposeMountResponseDto */
+        ComposeMountResponseDto: {
+            /** Format: int64 */
+            compose_id: number;
+            content?: string;
+            /** Format: int64 */
+            created_at: number;
+            file_path?: string;
+            host_path?: string;
+            /** Format: int64 */
+            id: number;
+            mount_path: string;
+            mount_type: string;
+            /** Format: int64 */
+            updated_at: number;
+            volume_name?: string;
         };
         /** ComposeOperationResponseDto */
         ComposeOperationResponseDto: {
@@ -3354,6 +7551,39 @@ export interface components {
             deployment_id?: number;
             operation: string;
         };
+        /** ComposePatchResponseDto */
+        ComposePatchResponseDto: {
+            /** Format: int64 */
+            compose_id: number;
+            content: string;
+            /** Format: int64 */
+            created_at: number;
+            enabled: boolean;
+            file_path: string;
+            /** Format: int64 */
+            id: number;
+            patch_type: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        ComposePatchType: "UPDATE" | "DELETE";
+        /** ComposePreviewDto */
+        ComposePreviewDto: {
+            app_name?: string;
+            compose_file: string;
+            isolated_deployment: boolean;
+            isolated_deployments_volume: boolean;
+            randomize: boolean;
+            suffix?: string;
+        };
+        /** ComposePreviewResponseDto */
+        ComposePreviewResponseDto: {
+            compose_file: string;
+            services: string[];
+        };
+        /** @enum {string} */
+        ComposeResourceKind: "CONFIG" | "SECRET";
         /** ComposeResponseDto */
         ComposeResponseDto: {
             app_name: string;
@@ -3388,6 +7618,7 @@ export interface components {
             /** Format: int64 */
             server_id?: number;
             service_networks: components["schemas"]["ComposeServiceNetworkDto"][];
+            services: string[];
             source_type: string;
             trigger_type: string;
             /** Format: int64 */
@@ -3400,40 +7631,38 @@ export interface components {
             network_ids: string[];
             service_name: string;
         };
-        /** ContainerLogSseEventDto */
-        ContainerLogSseEventDto: {
-            container_id: string;
-            is_stderr: boolean;
-            log_line: string;
-            /** Format: int64 */
-            timestamp: number;
+        /** ComposeTokenDto */
+        ComposeTokenDto: {
+            token: string;
         };
-        /** ContainerMetricSseEventDto */
-        ContainerMetricSseEventDto: {
-            /** Format: int64 */
-            application_id: number;
-            /** Format: int64 */
-            compose_id: number;
-            container_id: string;
-            container_name: string;
-            /** Format: double */
-            cpu_percent: number;
-            /** Format: double */
-            memory_limit_mb: number;
-            /** Format: double */
-            memory_used_mb: number;
-            /** Format: double */
-            net_rx_kbps: number;
-            /** Format: double */
-            net_tx_kbps: number;
-            /** Format: int64 */
-            server_id: number;
-            /** Format: int64 */
-            timestamp: number;
+        /** @enum {string} */
+        ConcurrencyPolicy: "SKIP" | "QUEUE" | "ALLOW";
+        /** ConfigTestDto */
+        ConfigTestDto: {
+            errors: string[];
+            valid: boolean;
+            warnings: string[];
+        };
+        /** @enum {string} */
+        ContainerActionDto: "START" | "STOP" | "RESTART" | "KILL" | "PAUSE" | "UNPAUSE";
+        /** ContainerActionRequestDto */
+        ContainerActionRequestDto: {
+            action: components["schemas"]["ContainerActionDto"];
         };
         /** ContainerQueryParam */
         ContainerQueryParam: {
             app_name?: string;
+            /** Format: int64 */
+            limit?: number;
+            /** Format: int64 */
+            organization_id: number;
+        };
+        /** ContainerRemoveRequestDto */
+        ContainerRemoveRequestDto: {
+            /** @default false */
+            force: boolean;
+            /** @default false */
+            volumes: boolean;
         };
         /** ContainerSummary */
         ContainerSummary: {
@@ -3450,6 +7679,33 @@ export interface components {
             size: string;
             state: string;
             status: string;
+        };
+        /** CreateAiSettingDto */
+        CreateAiSettingDto: {
+            api_key: string;
+            api_url: string;
+            is_enabled: boolean;
+            model: string;
+            name: string;
+        };
+        /** CreateAlertRuleDto */
+        CreateAlertRuleDto: {
+            /**
+             * Format: int32
+             * @description Seconds a breach must persist. Also drives the post-fire cooldown.
+             */
+            duration_seconds: number;
+            enabled: boolean;
+            metric: components["schemas"]["MetricKind"];
+            name: string;
+            operator: components["schemas"]["Operator"];
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            target_id: number;
+            target_kind: components["schemas"]["TargetKind"];
+            /** Format: double */
+            threshold: number;
         };
         /** CreateApplicationDto */
         CreateApplicationDto: {
@@ -3492,6 +7748,15 @@ export interface components {
             redis_id?: number;
             schedule: string;
             service_name?: string;
+        };
+        /** CreateBitbucketProviderDto */
+        CreateBitbucketProviderDto: {
+            api_token?: string;
+            app_password?: string;
+            email?: string;
+            provider: components["schemas"]["ProviderBaseDto"];
+            username?: string;
+            workspace?: string;
         };
         /** CreateCertificateDto */
         CreateCertificateDto: {
@@ -3562,7 +7827,6 @@ export interface components {
         /** CreateDestinationDto */
         CreateDestinationDto: {
             access_key: string;
-            additional_flags?: string;
             bucket: string;
             endpoint: string;
             name: string;
@@ -3571,6 +7835,12 @@ export interface components {
             provider: string;
             region: string;
             secret_access_key: string;
+        };
+        /** CreateDnsProviderDto */
+        CreateDnsProviderDto: {
+            credentials_json: string;
+            name: string;
+            provider_type: components["schemas"]["DnsProviderType"];
         };
         /** CreateDomainDto */
         CreateDomainDto: {
@@ -3601,11 +7871,107 @@ export interface components {
             /** Format: int64 */
             project_id: number;
         };
+        /** CreateGiteaProviderDto */
+        CreateGiteaProviderDto: {
+            access_token?: string;
+            client_id?: string;
+            client_secret?: string;
+            internal_url?: string;
+            provider: components["schemas"]["ProviderBaseDto"];
+            redirect_uri?: string;
+            refresh_token?: string;
+            scopes?: string;
+            url: string;
+        };
+        /** CreateGithubProviderDto */
+        CreateGithubProviderDto: {
+            /** Format: int64 */
+            app_id?: number;
+            app_name?: string;
+            client_id?: string;
+            client_secret?: string;
+            installation_id?: string;
+            private_key?: string;
+            provider: components["schemas"]["ProviderBaseDto"];
+        };
+        /** CreateGitlabProviderDto */
+        CreateGitlabProviderDto: {
+            access_token?: string;
+            application_id?: string;
+            group_name?: string;
+            internal_url?: string;
+            provider: components["schemas"]["ProviderBaseDto"];
+            redirect_uri?: string;
+            refresh_token?: string;
+            secret?: string;
+            url: string;
+        };
+        /** CreateMaintenanceWindowDto */
+        CreateMaintenanceWindowDto: {
+            /** Format: int64 */
+            ends_at: number;
+            reason: string;
+            /** Format: int64 */
+            server_id?: number;
+            /** Format: int64 */
+            starts_at: number;
+        };
+        /** CreateNotificationBindingDto */
+        CreateNotificationBindingDto: {
+            /** Format: int64 */
+            notification_id: number;
+            /** Format: int64 */
+            resource_id: number;
+            resource_type: components["schemas"]["NotificationResourceType"];
+        };
+        /** CreateNotificationDto */
+        CreateNotificationDto: {
+            name: string;
+            on_app_build_error: boolean;
+            on_app_deploy: boolean;
+            on_database_backup: boolean;
+            on_docker_cleanup: boolean;
+            on_panel_backup: boolean;
+            on_panel_restart: boolean;
+            on_schedule_failure: boolean;
+            on_schedule_success: boolean;
+            on_server_threshold: boolean;
+            on_volume_backup: boolean;
+            /** Format: int64 */
+            organization_id: number;
+        };
         /** CreateOrganizationDto */
         CreateOrganizationDto: {
             logo?: string;
             name: string;
             slug?: string;
+        };
+        /** CreateOrganizationInviteDto */
+        CreateOrganizationInviteDto: {
+            email: string;
+            /** Format: int64 */
+            group_id: number;
+            role: string;
+        };
+        /** CreatePersonalAccessTokenDto */
+        CreatePersonalAccessTokenDto: {
+            /** Format: int64 */
+            expires_at?: number;
+            name: string;
+            password: string;
+        };
+        /** CreatePreviewDeploymentDto */
+        CreatePreviewDeploymentDto: {
+            author?: string;
+            commit_sha?: string;
+            owner: string;
+            provider: string;
+            pull_request_number: string;
+            repository: string;
+            source_branch: string;
+            source_owner?: string;
+            source_repository?: string;
+            target_branch: string;
         };
         /** CreateProjectDto */
         CreateProjectDto: {
@@ -3633,7 +7999,7 @@ export interface components {
             name: string;
             /** Format: int64 */
             port: number;
-            server_type: string;
+            server_type: components["schemas"]["RemoteServerTypeDto"];
             /** Format: int64 */
             ssh_key_id?: number;
             username: string;
@@ -3669,6 +8035,22 @@ export interface components {
             private_key: string;
             public_key: string;
         };
+        /** CreateTagDto */
+        CreateTagDto: {
+            color: string;
+            name: string;
+            /** Format: int64 */
+            organization_id?: number;
+        };
+        /** CreateVaultProviderDto */
+        CreateVaultProviderDto: {
+            api_url: string;
+            auth_token: string;
+            config_json?: string;
+            name: string;
+            namespace?: string;
+            provider_type: components["schemas"]["VaultProviderType"];
+        };
         /** CreateVolumeBackupDto */
         CreateVolumeBackupDto: {
             app_name: string;
@@ -3678,7 +8060,7 @@ export interface components {
             compose_id?: number;
             cron_expression: string;
             /** Format: int64 */
-            destination_id: number;
+            destination_id?: number;
             /** Format: int64 */
             keep_latest_count?: number;
             /** Format: int64 */
@@ -3691,7 +8073,7 @@ export interface components {
             mysql_id?: number;
             name: string;
             /** Format: int64 */
-            organization_id: number;
+            organization_id?: number;
             /** Format: int64 */
             postgres_id?: number;
             prefix: string;
@@ -3702,6 +8084,46 @@ export interface components {
             /** Format: int64 */
             turn_off: number;
             volume_name: string;
+        };
+        /** CreatedGitProviderResponseDto */
+        CreatedGitProviderResponseDto: {
+            provider: components["schemas"]["GitProviderResponseDto"];
+            webhook_secret: string;
+        };
+        /** CreatedPersonalAccessTokenDto */
+        CreatedPersonalAccessTokenDto: {
+            details: components["schemas"]["PersonalAccessTokenDto"];
+            token: string;
+        };
+        /** DatabaseArchiveDto */
+        DatabaseArchiveDto: {
+            archive: string;
+            format: string;
+            /** Format: int64 */
+            schema_version: number;
+        };
+        /** DatabaseConnectionDto */
+        DatabaseConnectionDto: {
+            database?: string;
+            external_url?: string;
+            host: string;
+            internal_url: string;
+            kind: components["schemas"]["DatabaseKind"];
+            password: string;
+            /** Format: int64 */
+            port: number;
+            /** Format: int64 */
+            server_id?: number;
+            username?: string;
+        };
+        /** DatabaseCredentialRotationDto */
+        DatabaseCredentialRotationDto: {
+            password: string;
+            redeploy_required: boolean;
+        };
+        /** DatabaseExportQueryDto */
+        DatabaseExportQueryDto: {
+            include_secrets?: boolean;
         };
         /** @enum {string} */
         DatabaseKind: "postgres" | "mysql" | "mariadb" | "mongo" | "redis" | "libsql";
@@ -3759,6 +8181,32 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** DatabaseValidationDto */
+        DatabaseValidationDto: {
+            errors: string[];
+            valid: boolean;
+            warnings: string[];
+        };
+        /** DeleteComposeResourceDto */
+        DeleteComposeResourceDto: {
+            kind: components["schemas"]["ComposeResourceKind"];
+            name: string;
+        };
+        /** DependencyStatusDto */
+        DependencyStatusDto: {
+            detail: string;
+            healthy: boolean;
+            name: string;
+        };
+        /** DeployAiGenerationDto */
+        DeployAiGenerationDto: {
+            deploy_now: boolean;
+            /** Format: int64 */
+            environment_id: number;
+            /** Format: int64 */
+            server_id?: number;
+            suggestion_id: string;
+        };
         /** DeploymentListQuery */
         DeploymentListQuery: {
             /** Format: int64 */
@@ -3794,7 +8242,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             /** Format: int64 */
-            is_preview_deployment: number;
+            is_preview: number;
             /** Format: int64 */
             last_state_at?: number;
             log_path: string;
@@ -3820,7 +8268,6 @@ export interface components {
         /** DestinationResponseDto */
         DestinationResponseDto: {
             access_key: string;
-            additional_flags?: string;
             bucket: string;
             /** Format: int64 */
             created_at: number;
@@ -3835,20 +8282,151 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** DiscoverAiModelsDto */
+        DiscoverAiModelsDto: {
+            api_key: string;
+            api_url: string;
+        };
+        /** DispatchOutcome */
+        DispatchOutcome: {
+            /** Format: uint64 */
+            already_running: number;
+            /** Format: uint64 */
+            applications_queued: number;
+            author?: string;
+            commit?: string;
+            /** Format: uint64 */
+            compose_projects_queued: number;
+            event_type: string;
+            owner?: string;
+            /** Format: uint64 */
+            previews_created: number;
+            /** Format: uint64 */
+            previews_redeployed: number;
+            /** Format: uint64 */
+            previews_removed: number;
+            /** Format: uint64 */
+            previews_skipped_limit: number;
+            /** Format: uint64 */
+            previews_skipped_permission: number;
+            provider?: string;
+            pull_request_action?: string;
+            pull_request_number?: string;
+            repository?: string;
+            /** Format: uint64 */
+            skipped_by_watch_paths: number;
+            source_branch?: string;
+            source_owner?: string;
+            source_repository?: string;
+            target_branch?: string;
+        };
+        /** DnsProviderDto */
+        DnsProviderDto: {
+            /** Format: int64 */
+            created_at: number;
+            credentials_json: string;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            /** Format: int64 */
+            organization_id: number;
+            provider_type: components["schemas"]["DnsProviderType"];
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        DnsProviderType: "CLOUDFLARE" | "ROUTE53" | "HETZNER" | "DIGITAL_OCEAN" | "GODADDY";
+        /** DnsRecordDto */
+        DnsRecordDto: {
+            content: string;
+            id: string;
+            name: string;
+            proxied?: boolean;
+            record_type: string;
+            /** Format: uint32 */
+            ttl?: number;
+            zone_id: string;
+        };
+        /** DnsTestResultDto */
+        DnsTestResultDto: {
+            message: string;
+            success: boolean;
+        };
+        /** DnsZoneDto */
+        DnsZoneDto: {
+            id: string;
+            name: string;
+            status?: string;
+        };
+        /** DockerActionResponseDto */
+        DockerActionResponseDto: {
+            stderr: string;
+            stdout: string;
+        };
+        /** DockerFileQuery */
+        DockerFileQuery: {
+            path: string;
+            /** Format: int64 */
+            server_id?: number;
+        };
         /** DockerLogQuery */
         DockerLogQuery: {
             follow?: boolean;
             /** Format: int64 */
             server_id?: number;
+            since?: string;
+            stream?: components["schemas"]["DockerLogStream"];
             /** Format: uint64 */
             tail?: number;
             timestamps?: boolean;
+            until?: string;
+        };
+        /** @enum {string} */
+        DockerLogStream: "All" | "Stdout" | "Stderr";
+        /** DockerPruneRequestDto */
+        DockerPruneRequestDto: {
+            /** @default false */
+            containers: boolean;
+            /** @default false */
+            images: boolean;
+            /** @default false */
+            networks: boolean;
+            /** @default false */
+            volumes: boolean;
+        };
+        /** DockerPruneResponseDto */
+        DockerPruneResponseDto: {
+            operations: components["schemas"]["DockerActionResponseDto"][];
         };
         /** DockerStatsQuery */
         DockerStatsQuery: {
             /** Format: int64 */
             server_id?: number;
             stream?: boolean;
+        };
+        /** DockerTargetQuery */
+        DockerTargetQuery: {
+            /** Format: int64 */
+            server_id?: number;
+        };
+        /** DomainDiagnosticDto */
+        DomainDiagnosticDto: {
+            host: string;
+            https: boolean;
+            path?: string;
+            /** Format: uint16 */
+            port?: number;
+        };
+        /** DomainDiagnosticResponseDto */
+        DomainDiagnosticResponseDto: {
+            dns_ok: boolean;
+            error?: string;
+            host: string;
+            http_ok: boolean;
+            /** Format: uint16 */
+            http_status?: number;
+            resolved_addresses: string[];
+            tcp_ok: boolean;
         };
         /** DomainQuery */
         DomainQuery: {
@@ -3880,6 +8458,22 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** DownloadBackupFileDto */
+        DownloadBackupFileDto: {
+            /** Format: int64 */
+            destination_id: number;
+            object_key: string;
+        };
+        /** EmailVerificationConfirmDto */
+        EmailVerificationConfirmDto: {
+            token: string;
+        };
+        /** EmailVerificationStatusDto */
+        EmailVerificationStatusDto: {
+            verified: boolean;
+            /** Format: int64 */
+            verified_at?: number;
+        };
         /** EnvironmentResponseDto */
         EnvironmentResponseDto: {
             /** Format: int64 */
@@ -3894,6 +8488,12 @@ export interface components {
             project_id: number;
             /** Format: int64 */
             updated_at: number;
+        };
+        /** GenerateComposeDto */
+        GenerateComposeDto: {
+            /** Format: int64 */
+            ai_setting_id: number;
+            request: string;
         };
         /** GeneratePairRequestDto */
         GeneratePairRequestDto: {
@@ -3914,60 +8514,75 @@ export interface components {
         GeneratedDomainDto: {
             domain: string;
         };
-        /** IngestContainerMetricDto */
-        IngestContainerMetricDto: {
+        /** GitProviderResponseDto */
+        GitProviderResponseDto: {
+            configured: boolean;
             /** Format: int64 */
-            application_id: number;
+            created_at: number;
             /** Format: int64 */
-            compose_id: number;
-            container_id: string;
-            container_name: string;
-            /** Format: double */
-            cpu_percent: number;
-            /** Format: double */
-            memory_limit_mb: number;
-            /** Format: double */
-            memory_used_mb: number;
-            /** Format: double */
-            net_rx_kbps: number;
-            /** Format: double */
-            net_tx_kbps: number;
+            id: number;
+            name: string;
+            provider_type: string;
+            shared: boolean;
             /** Format: int64 */
-            server_id: number;
-            /** Format: int64 */
-            timestamp: number;
+            updated_at: number;
+            webhook_configured: boolean;
         };
-        /** IngestSystemMetricDto */
-        IngestSystemMetricDto: {
-            arch?: string;
-            /** Format: double */
-            cpu: number;
+        /** GitReferenceInfo */
+        GitReferenceInfo: {
+            commit?: string;
+            name: string;
+        };
+        /** ImageSummary */
+        ImageSummary: {
+            containers: string;
+            created_at: string;
+            created_since: string;
+            digest: string;
+            id: string;
+            repository: string;
+            shared_size: string;
+            size: string;
+            tag: string;
+            unique_size: string;
+        };
+        /** ImportApplicationDto */
+        ImportApplicationDto: {
+            archive: string;
+            name?: string;
             /** Format: int64 */
-            cpu_cores?: number;
-            cpu_model?: string;
+            target_environment_id: number;
             /** Format: int64 */
-            cpu_physical_cores?: number;
-            /** Format: double */
-            cpu_speed?: number;
-            /** Format: double */
-            disk_used: number;
-            distro?: string;
-            kernel?: string;
-            /** Format: double */
-            mem_total: number;
-            /** Format: double */
-            mem_used: number;
-            /** Format: double */
-            mem_used_gb: number;
-            /** Format: double */
-            network_in: number;
-            /** Format: double */
-            network_out: number;
-            os?: string;
-            /** Format: double */
-            total_disk: number;
+            target_server_id?: number;
+        };
+        /** ImportComposeDto */
+        ImportComposeDto: {
+            archive: string;
+            name?: string;
             /** Format: int64 */
-            uptime: number;
+            target_environment_id: number;
+            /** Format: int64 */
+            target_server_id?: number;
+        };
+        /** ImportDatabaseDto */
+        ImportDatabaseDto: {
+            archive: string;
+            /** Format: int64 */
+            environment_id: number;
+            name?: string;
+            /** Format: int64 */
+            server_id?: number;
+        };
+        /** InstallComposeTemplateDto */
+        InstallComposeTemplateDto: {
+            compose_file: string;
+            description?: string;
+            env_var?: string;
+            /** Format: int64 */
+            environment_id: number;
+            name: string;
+            /** Format: int64 */
+            server_id?: number;
         };
         /** JwtSubject */
         JwtSubject: {
@@ -3981,21 +8596,130 @@ export interface components {
             /** Format: int64 */
             user_id: number;
         };
+        /** LogSearchQuery */
+        LogSearchQuery: {
+            /** Format: uint64 */
+            limit?: number;
+            query?: string;
+        };
+        /** LogSearchResult */
+        LogSearchResult: {
+            /** Format: int64 */
+            deployment_id: number;
+            line: string;
+            /** Format: uint64 */
+            line_number: number;
+            title: string;
+        };
         /** LoginDto */
         LoginDto: {
             email: string;
             password: string;
+            recovery_code?: string;
+            two_factor_code?: string;
         };
-        /** MetricIngestResponseDto */
-        MetricIngestResponseDto: {
+        /** MaintenanceWindowDto */
+        MaintenanceWindowDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            ends_at: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            organization_id: number;
+            reason: string;
+            /** Format: int64 */
+            server_id?: number;
+            /** Format: int64 */
+            starts_at: number;
+        };
+        /** @enum {string} */
+        MetricKind: "CPU" | "MEMORY" | "DISK";
+        /** MiddlewareHeaderDto */
+        MiddlewareHeaderDto: {
+            name: string;
+            value: string;
+        };
+        /** MigrateServerDependenciesDto */
+        MigrateServerDependenciesDto: {
+            /** Format: int64 */
+            target_server_id: number;
+        };
+        /** @enum {string} */
+        MissedRunPolicy: "SKIP" | "RUN_ONCE";
+        /** MonitoringActionDto */
+        MonitoringActionDto: {
+            action: string;
             message: string;
             success: boolean;
+        };
+        /** MonitoringAgentStatusDto */
+        MonitoringAgentStatusDto: {
+            agent_version?: string;
+            /** Format: int64 */
+            last_seen_at?: number;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            server_id: number;
+            state: string;
+        };
+        /** MonitoringPolicyDto */
+        MonitoringPolicyDto: {
+            desired_agent_version?: string;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            retention_days: number;
+            /** Format: int64 */
+            updated_at: number;
         };
         /** MonitoringStatusResponseDto */
         MonitoringStatusResponseDto: {
             endpoints: string[];
             service: string;
             status: string;
+        };
+        /** MonitoringTokenResponseDto */
+        MonitoringTokenResponseDto: {
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            server_id: number;
+            token: string;
+        };
+        /** @enum {string} */
+        MountType: "VOLUME" | "BIND" | "FILE";
+        /** MoveApplicationDto */
+        MoveApplicationDto: {
+            /** Format: int64 */
+            target_environment_id: number;
+        };
+        /** MoveComposeDto */
+        MoveComposeDto: {
+            /** Format: int64 */
+            target_environment_id: number;
+        };
+        /** NetworkDependencyCounts */
+        NetworkDependencyCounts: {
+            /** Format: int64 */
+            applications: number;
+            /** Format: int64 */
+            compose_services: number;
+            /** Format: int64 */
+            databases: number;
+        };
+        /** NetworkSummary */
+        NetworkSummary: {
+            created_at: string;
+            driver: string;
+            id: string;
+            internal: string;
+            ipv6: string;
+            labels: string;
+            name: string;
+            scope: string;
         };
         /** NodeActionDto */
         NodeActionDto: {
@@ -4034,6 +8758,110 @@ export interface components {
         };
         /** @enum {string} */
         NodeRole: "worker" | "manager";
+        /** NotificationDeliveryAttemptDto */
+        NotificationDeliveryAttemptDto: {
+            /** Format: int64 */
+            attempt: number;
+            body: string;
+            correlation_id: string;
+            /** Format: int64 */
+            created_at: number;
+            error?: string;
+            /** Format: int64 */
+            finished_at?: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            notification_id: number;
+            /** Format: int64 */
+            organization_id: number;
+            status: string;
+            title: string;
+            trigger_name: string;
+        };
+        /** @enum {string} */
+        NotificationProvider: "SLACK" | "TELEGRAM" | "DISCORD" | "EMAIL" | "RESEND" | "GOTIFY" | "NTFY" | "MATTERMOST" | "PUSHOVER" | "CUSTOM" | "LARK" | "TEAMS";
+        /** NotificationResourceBindingDto */
+        NotificationResourceBindingDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            notification_id: number;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            resource_id: number;
+            resource_type: string;
+        };
+        /** @enum {string} */
+        NotificationResourceType: "SERVER" | "APPLICATION" | "COMPOSE" | "DATABASE";
+        /** NotificationResponseDto */
+        NotificationResponseDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            notification_type: components["schemas"]["NotificationProvider"];
+            on_app_build_error: boolean;
+            on_app_deploy: boolean;
+            on_database_backup: boolean;
+            on_docker_cleanup: boolean;
+            on_panel_backup: boolean;
+            on_panel_restart: boolean;
+            on_schedule_failure: boolean;
+            on_schedule_success: boolean;
+            on_server_threshold: boolean;
+            on_volume_backup: boolean;
+            /** Format: int64 */
+            organization_id: number;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** OAuthCallbackDto */
+        OAuthCallbackDto: {
+            code?: string;
+            installation_id?: string;
+            setup_action?: string;
+            state: string;
+        };
+        /** @enum {string} */
+        Operator: "GREATER_THAN" | "GREATER_OR_EQUAL" | "LESS_THAN" | "LESS_OR_EQUAL" | "EQUAL";
+        /** OrganizationInviteDto */
+        OrganizationInviteDto: {
+            /** Format: int64 */
+            created_at: number;
+            email: string;
+            /** Format: int64 */
+            expired_at: number;
+            /** Format: int64 */
+            group_id: number;
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            invited_by: number;
+            /** Format: int64 */
+            organization_id: number;
+            role?: string;
+        };
+        /** OrganizationMemberDto */
+        OrganizationMemberDto: {
+            avatar?: string;
+            /** Format: int64 */
+            created_at: number;
+            email: string;
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            organization_id: number;
+            role?: string;
+            /** Format: int64 */
+            updated_at: number;
+            /** Format: int64 */
+            user_id: number;
+        };
         /** OrganizationResponseDto */
         OrganizationResponseDto: {
             /** Format: int64 */
@@ -4047,6 +8875,76 @@ export interface components {
             slug: string;
             /** Format: int64 */
             updated_at: number;
+        };
+        /** OverviewBackupItemDto */
+        OverviewBackupItemDto: {
+            backup_type: string;
+            /** Format: int64 */
+            created_at: number;
+            destination: string;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            status: string;
+        };
+        /** OverviewDomainItemDto */
+        OverviewDomainItemDto: {
+            /** Format: int64 */
+            application_id?: number;
+            /** Format: int64 */
+            compose_id?: number;
+            host: string;
+            https: boolean;
+            /** Format: int64 */
+            id: number;
+            path?: string;
+            /** Format: int32 */
+            port?: number;
+            project_name: string;
+            service_name: string;
+        };
+        /** OverviewServiceItemDto */
+        OverviewServiceItemDto: {
+            /** Format: int64 */
+            created_at: number;
+            db_kind?: string;
+            /** Format: int64 */
+            environment_id: number;
+            environment_name: string;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            /** Format: int64 */
+            project_id: number;
+            project_name: string;
+            service_type: string;
+            status: string;
+        };
+        /** PanelBackupResponseDto */
+        PanelBackupResponseDto: {
+            checksum_sha256: string;
+            /** Format: int64 */
+            created_at: number;
+            path: string;
+            /** Format: int64 */
+            size_bytes: number;
+        };
+        /** PanelRestoreStatusDto */
+        PanelRestoreStatusDto: {
+            message: string;
+            restore_id: string;
+            status: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** PasswordResetConfirmDto */
+        PasswordResetConfirmDto: {
+            password: string;
+            token: string;
+        };
+        /** PasswordResetRequestDto */
+        PasswordResetRequestDto: {
+            email: string;
         };
         /** PatchApplicationDto */
         PatchApplicationDto: {
@@ -4246,7 +9144,6 @@ export interface components {
         /** PatchDestinationDto */
         PatchDestinationDto: {
             access_key?: string;
-            additional_flags?: string;
             bucket?: string;
             endpoint?: string;
             name?: string;
@@ -4319,11 +9216,72 @@ export interface components {
             gitlab_provider_id?: number;
             gitlab_repository: string;
         };
+        /** PatchNotificationDto */
+        PatchNotificationDto: {
+            access_token?: string;
+            api_key?: string;
+            api_token?: string;
+            app_token?: string;
+            bot_token?: string;
+            channel?: string;
+            chat_id?: string;
+            /** Format: int64 */
+            decoration?: number;
+            endpoint?: string;
+            /** Format: int64 */
+            expire?: number;
+            from_address?: string;
+            headers?: string;
+            message_thread_id?: string;
+            name?: string;
+            on_app_build_error?: boolean;
+            on_app_deploy?: boolean;
+            on_database_backup?: boolean;
+            on_docker_cleanup?: boolean;
+            on_panel_backup?: boolean;
+            on_panel_restart?: boolean;
+            on_schedule_failure?: boolean;
+            on_schedule_success?: boolean;
+            on_server_threshold?: boolean;
+            on_volume_backup?: boolean;
+            password?: string;
+            /** Format: int64 */
+            priority?: number;
+            /** Format: int64 */
+            retry?: number;
+            server_url?: string;
+            /** Format: int64 */
+            smtp_port?: number;
+            smtp_server?: string;
+            to_addresses?: string[];
+            topic?: string;
+            user_key?: string;
+            username?: string;
+            webhook_url?: string;
+        };
         /** PatchOrganizationDto */
         PatchOrganizationDto: {
             logo?: string;
             name?: string;
             slug?: string;
+        };
+        /** PatchPreviewConfigDto */
+        PatchPreviewConfigDto: {
+            active: boolean;
+            preview_build_args?: string;
+            preview_build_secrets?: string;
+            preview_certificate_type: components["schemas"]["CertificateType"];
+            preview_custom_cert_resolver?: string;
+            preview_env?: string;
+            preview_https: boolean;
+            preview_labels?: string;
+            /** Format: int64 */
+            preview_limit: number;
+            preview_path: string;
+            /** Format: int64 */
+            preview_port: number;
+            preview_wildcard?: string;
+            require_collaborator_permissions: boolean;
         };
         /** PatchProjectDto */
         PatchProjectDto: {
@@ -4354,8 +9312,8 @@ export interface components {
             name?: string;
             /** Format: int64 */
             port?: number;
-            server_status?: string;
-            server_type?: string;
+            server_status?: components["schemas"]["RemoteServerStatusDto"];
+            server_type?: components["schemas"]["RemoteServerTypeDto"];
             /** Format: int64 */
             ssh_key_id?: number;
             username?: string;
@@ -4418,12 +9376,136 @@ export interface components {
             turn_off?: number;
             volume_name?: string;
         };
+        /** PermissionGroupDto */
+        PermissionGroupDto: {
+            actions: string[];
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            is_system: boolean;
+            name: string;
+            /** Format: int64 */
+            organization_id?: number;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** PermissionPolicyDto */
+        PermissionPolicyDto: {
+            action: string;
+            /** Format: int64 */
+            id: number;
+        };
+        /** PersonalAccessTokenDto */
+        PersonalAccessTokenDto: {
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            expires_at?: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            last_used_at?: number;
+            name: string;
+            /** Format: int64 */
+            revoked_at?: number;
+            token_prefix: string;
+        };
         /** PortAvailabilityDto */
         PortAvailabilityDto: {
             available: boolean;
             /** Format: uint16 */
             port: number;
         };
+        /** @enum {string} */
+        PortProtocol: "TCP" | "UDP";
+        /** @enum {string} */
+        PortPublishMode: "HOST" | "INGRESS";
+        /** PostgresAdvancedConfigDto */
+        PostgresAdvancedConfigDto: {
+            primary_host?: string;
+            /** Format: int64 */
+            primary_port?: number;
+            replication_password?: string;
+            replication_role: components["schemas"]["PostgresReplicationRole"];
+            replication_user?: string;
+            settings: {
+                [key: string]: string;
+            };
+        };
+        /** PostgresAdvancedConfigResponseDto */
+        PostgresAdvancedConfigResponseDto: {
+            primary_host?: string;
+            /** Format: int64 */
+            primary_port?: number;
+            redeploy_required: boolean;
+            replication_password_configured: boolean;
+            replication_role: components["schemas"]["PostgresReplicationRole"];
+            replication_user?: string;
+            settings: {
+                [key: string]: string;
+            };
+        };
+        /** @enum {string} */
+        PostgresReplicationRole: "STANDALONE" | "PRIMARY" | "REPLICA";
+        /** PreviewDeploymentOutcome */
+        PreviewDeploymentOutcome: {
+            /** Format: int64 */
+            deployment_id?: number;
+            preview: components["schemas"]["PreviewDeploymentView"];
+        };
+        /** PreviewDeploymentView */
+        PreviewDeploymentView: {
+            author?: string;
+            /** Format: int64 */
+            base_application_id: number;
+            commit_sha?: string;
+            /** Format: int64 */
+            created_at: number;
+            domain: string;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            last_deployment_id?: number;
+            owner: string;
+            /** Format: int64 */
+            preview_application_id?: number;
+            /** Format: int64 */
+            provider_id: number;
+            provider_type: string;
+            pull_request_number: string;
+            repository: string;
+            source_branch: string;
+            source_owner?: string;
+            source_repository?: string;
+            status: string;
+            target_branch: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** PreviewListQueryDto */
+        PreviewListQueryDto: {
+            active_only?: boolean;
+        };
+        /** PrivateNetworkHealthDto */
+        PrivateNetworkHealthDto: {
+            /** Format: int64 */
+            checked_at: number;
+            error?: string;
+            interface_exists: boolean;
+            /** Format: int64 */
+            latest_handshake_at?: number;
+            private_ssh_reachable: boolean;
+            status: components["schemas"]["PrivateNetworkHealthStatusDto"];
+        };
+        /** @enum {string} */
+        PrivateNetworkHealthStatusDto: "UNKNOWN" | "HEALTHY" | "DEGRADED" | "UNREACHABLE" | "CONFIG_DRIFT";
+        /** @enum {string} */
+        PrivateNetworkProviderDto: "WIREGUARD" | "TAILSCALE" | "ZEROTIER" | "NETBIRD" | "CUSTOM";
+        /** @enum {string} */
+        PrivateNetworkRotationStateDto: "IDLE" | "ROTATING" | "ROLLING_BACK" | "FAILED";
+        /** @enum {string} */
+        PrivateNetworkStatusDto: "DISABLED" | "CONFIGURING" | "ACTIVE" | "FAILED";
         /** ProjectResponseDto */
         ProjectResponseDto: {
             /** Format: int64 */
@@ -4438,9 +9520,28 @@ export interface components {
             /** Format: int64 */
             updated_at: number;
         };
+        /** ProviderBaseDto */
+        ProviderBaseDto: {
+            name: string;
+            shared?: boolean;
+        };
+        /** ProviderWebhookInfo */
+        ProviderWebhookInfo: {
+            active: boolean;
+            id: string;
+            url: string;
+        };
+        /** RecoveryCodesResponseDto */
+        RecoveryCodesResponseDto: {
+            recovery_codes: string[];
+        };
         /** RefreshTokenDto */
         RefreshTokenDto: {
             refresh_token: string;
+        };
+        /** RegistryRepositoriesDto */
+        RegistryRepositoriesDto: {
+            repositories: string[];
         };
         /** RegistryResponseDto */
         RegistryResponseDto: {
@@ -4456,9 +9557,27 @@ export interface components {
             updated_at: number;
             username: string;
         };
+        /** RegistryTagsDto */
+        RegistryTagsDto: {
+            repository: string;
+            tags: string[];
+        };
+        /** RegistryTagsQuery */
+        RegistryTagsQuery: {
+            repository: string;
+        };
+        /** RegistryUsageDto */
+        RegistryUsageDto: {
+            resource_id: string;
+            resource_name: string;
+            resource_type: string;
+            usage_kind: string;
+        };
+        /** @enum {string} */
+        RemoteServerAction: "activate" | "deactivate" | "test-connection";
         /** RemoteServerActionResponseDto */
         RemoteServerActionResponseDto: {
-            action: string;
+            action: components["schemas"]["RemoteServerAction"];
             server: components["schemas"]["RemoteServerResponseDto"];
         };
         /** RemoteServerResponseDto */
@@ -4488,9 +9607,160 @@ export interface components {
             updated_at: number;
             username: string;
         };
+        /** @enum {string} */
+        RemoteServerStatusDto: "ACTIVE" | "INACTIVE";
+        /** @enum {string} */
+        RemoteServerTypeDto: "DEPLOY" | "BUILD";
+        /** RemoveComposeServiceDto */
+        RemoveComposeServiceDto: {
+            service_name: string;
+        };
+        /** RenewCertificateDto */
+        RenewCertificateDto: {
+            certificate_data: string;
+            private_key: string;
+        };
+        /** ReplaceUserPoliciesDto */
+        ReplaceUserPoliciesDto: {
+            policies: components["schemas"]["UserPolicyEntryDto"][];
+        };
+        /** RepositoryInfo */
+        RepositoryInfo: {
+            clone_url?: string;
+            default_branch?: string;
+            full_name: string;
+            name: string;
+            owner: string;
+            private: boolean;
+        };
+        /** RepositoryReferenceQueryDto */
+        RepositoryReferenceQueryDto: {
+            owner: string;
+            repository: string;
+        };
+        /** ResourceDependencyCounts */
+        ResourceDependencyCounts: {
+            /** Format: int64 */
+            active_deployments: number;
+            /** Format: int64 */
+            backups: number;
+            /** Format: int64 */
+            deployments: number;
+            /** Format: int64 */
+            domains: number;
+            /** Format: int64 */
+            enabled_backups: number;
+            /** Format: int64 */
+            middleware: number;
+            /** Format: int64 */
+            mounts: number;
+            /** Format: int64 */
+            patches: number;
+            /** Format: int64 */
+            ports: number;
+            /** Format: int64 */
+            preview_deployments: number;
+            /** Format: int64 */
+            redirects: number;
+            /** Format: int64 */
+            schedules: number;
+            /** Format: int64 */
+            security_rules: number;
+        };
         /** RestoreBackupDto */
         RestoreBackupDto: {
             backup_file: string;
+        };
+        /** RestorePanelBackupDto */
+        RestorePanelBackupDto: {
+            archive: string;
+            checksum_sha256?: string;
+        };
+        /** RetentionPreviewDto */
+        RetentionPreviewDto: {
+            delete: components["schemas"]["BackupFileDto"][];
+            keep: components["schemas"]["BackupFileDto"][];
+        };
+        /** RetentionPreviewQueryDto */
+        RetentionPreviewQueryDto: {
+            /** Format: int64 */
+            destination_id: number;
+            /** Format: int64 */
+            keep_latest: number;
+            prefix?: string;
+        };
+        /** ReviewAiGenerationDto */
+        ReviewAiGenerationDto: {
+            output: components["schemas"]["AiGenerationOutput"];
+        };
+        /** RollbackPanelRestoreDto */
+        RollbackPanelRestoreDto: {
+            recovery_database: string;
+        };
+        /** RootNetworkDto */
+        RootNetworkDto: {
+            /** Format: int64 */
+            server_id?: number;
+        };
+        /** RootNetworkStatusDto */
+        RootNetworkStatusDto: {
+            attachable?: boolean;
+            /** Format: int64 */
+            connected_resources: number;
+            driver?: string;
+            exists: boolean;
+            healthy: boolean;
+            issue?: string;
+            name: string;
+            repaired: boolean;
+            scope?: string;
+        };
+        /** RotateDatabaseCredentialsDto */
+        RotateDatabaseCredentialsDto: {
+            password?: string;
+        };
+        /** RotateMonitoringTokenDto */
+        RotateMonitoringTokenDto: {
+            /** Format: int64 */
+            organization_id: number;
+        };
+        /** RotateRegistryCredentialsDto */
+        RotateRegistryCredentialsDto: {
+            password: string;
+            username: string;
+        };
+        /** SavePermissionGroupDto */
+        SavePermissionGroupDto: {
+            actions: string[];
+            name: string;
+        };
+        /** ScheduleExecutionDto */
+        ScheduleExecutionDto: {
+            /** Format: int64 */
+            attempt: number;
+            /** Format: int64 */
+            finished_at?: number;
+            /** Format: int64 */
+            id: number;
+            message?: string;
+            /** Format: int64 */
+            organization_id?: number;
+            /** Format: int64 */
+            schedule_id: number;
+            /** Format: int64 */
+            scheduled_at: number;
+            /** Format: int64 */
+            started_at: number;
+            status: components["schemas"]["ScheduleExecutionStatus"];
+            stderr?: string;
+            stdout?: string;
+            trigger_kind: components["schemas"]["ScheduleTriggerKind"];
+        };
+        /** @enum {string} */
+        ScheduleExecutionStatus: "RUNNING" | "SUCCEEDED" | "FAILED" | "SKIPPED";
+        /** ScheduleLogDto */
+        ScheduleLogDto: {
+            content: string;
         };
         /** ScheduleResponseDto */
         ScheduleResponseDto: {
@@ -4532,6 +9802,33 @@ export interface components {
             stderr?: string;
             stdout?: string;
         };
+        /** ScheduleRuntimePolicyDto */
+        ScheduleRuntimePolicyDto: {
+            concurrency_policy: components["schemas"]["ConcurrencyPolicy"];
+            /** Format: int64 */
+            last_scheduled_at?: number;
+            /** Format: int64 */
+            lease_seconds: number;
+            missed_run_policy: components["schemas"]["MissedRunPolicy"];
+            notify_on_failure: boolean;
+            notify_on_success: boolean;
+            /** Format: int64 */
+            retry_count: number;
+            /** Format: int64 */
+            retry_delay_seconds: number;
+            /** Format: int64 */
+            schedule_id: number;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        ScheduleTriggerKind: "CRON" | "MANUAL" | "MISSED" | "RETRY";
+        /** ServerActionResultDto */
+        ServerActionResultDto: {
+            stderr: string;
+            stdout: string;
+            success: boolean;
+        };
         /** ServerAuditDto */
         ServerAuditDto: {
             architecture: string;
@@ -4548,6 +9845,35 @@ export interface components {
             rclone: components["schemas"]["ToolStateDto"];
             swarm_active: boolean;
         };
+        /** ServerBackupDto */
+        ServerBackupDto: {
+            /** Format: int64 */
+            created_at: number;
+            remote_path: string;
+        };
+        /** ServerCleanupExecutionDto */
+        ServerCleanupExecutionDto: {
+            /** Format: int64 */
+            finished_at?: number;
+            /** Format: int64 */
+            id: number;
+            policy: string;
+            /** Format: int64 */
+            server_id: number;
+            /** Format: int64 */
+            started_at: number;
+            status: string;
+            stderr?: string;
+            stdout?: string;
+        };
+        /** ServerCleanupPolicyDto */
+        ServerCleanupPolicyDto: {
+            containers: boolean;
+            images: boolean;
+            networks: boolean;
+            packages: boolean;
+            volumes: boolean;
+        };
         /** ServerConnectionDto */
         ServerConnectionDto: {
             host_key_fingerprint?: string;
@@ -4555,6 +9881,8 @@ export interface components {
             pool_size?: number;
             sudo_password?: string;
         };
+        /** @enum {string} */
+        ServerConnectionModeDto: "DIRECT_SSH" | "MANAGED_WIREGUARD" | "EXTERNAL_PRIVATE_NETWORK";
         /** ServerConnectionResponseDto */
         ServerConnectionResponseDto: {
             /** Format: uint64 */
@@ -4568,6 +9896,100 @@ export interface components {
             max_pool_size: number;
             /** Format: uint64 */
             reused_sessions: number;
+        };
+        /** ServerDependencyMigrationDto */
+        ServerDependencyMigrationDto: {
+            /** Format: int64 */
+            applications: number;
+            /** Format: int64 */
+            build_assignments: number;
+            /** Format: int64 */
+            certificates: number;
+            /** Format: int64 */
+            compose_projects: number;
+            /** Format: int64 */
+            databases: number;
+            error?: string;
+            migration_id: string;
+            /** Format: int64 */
+            queued_applications: number;
+            /** Format: int64 */
+            queued_compose_projects: number;
+            /** Format: int64 */
+            schedules: number;
+            /** Format: int64 */
+            source_server_id: number;
+            status: string;
+            /** Format: int64 */
+            target_server_id: number;
+        };
+        /** ServerManagementDto */
+        ServerManagementDto: {
+            cleanup_policy: components["schemas"]["ServerCleanupPolicyDto"];
+            gpu_enabled: boolean;
+            labels: {
+                [key: string]: string;
+            };
+            maintenance_message?: string;
+            maintenance_mode: boolean;
+            /** Format: int64 */
+            server_id: number;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** ServerPrivateNetworkDto */
+        ServerPrivateNetworkDto: {
+            /** Format: int64 */
+            config_version: number;
+            connection_mode: components["schemas"]["ServerConnectionModeDto"];
+            /** Format: int64 */
+            consecutive_failures: number;
+            dns_name?: string;
+            endpoint?: string;
+            health_error?: string;
+            health_status: components["schemas"]["PrivateNetworkHealthStatusDto"];
+            /** Format: int64 */
+            last_handshake_at?: number;
+            /** Format: int64 */
+            last_health_check_at?: number;
+            /** Format: uint16 */
+            listen_port?: number;
+            /** Format: uint16 */
+            persistent_keepalive?: number;
+            private_host?: string;
+            provider?: components["schemas"]["PrivateNetworkProviderDto"];
+            public_key?: string;
+            rotation_state: components["schemas"]["PrivateNetworkRotationStateDto"];
+            routes: string[];
+            /** Format: int64 */
+            server_id: number;
+            status: components["schemas"]["PrivateNetworkStatusDto"];
+            tunnel_address?: string;
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        SettingsCertificateTypeDto: "NONE" | "LETSENCRYPT" | "CUSTOM";
+        /** SettingsResponseDto */
+        SettingsResponseDto: {
+            certificate_type: string;
+            custom_cert_resolver?: string;
+            enable_docker_cleanup: boolean;
+            host?: string;
+            https: boolean;
+            /** Format: int64 */
+            id: number;
+            lets_encrypt_email?: string;
+            log_cleanup_cron?: string;
+            log_cleanup_enabled: boolean;
+            /** Format: int64 */
+            log_retention_days: number;
+            metrics_config: string;
+            panel_backup_cron: string;
+            panel_backup_enabled: boolean;
+            server_ip?: string;
+            /** Format: int64 */
+            updated_at: number;
         };
         /** SetupOutcomeDto */
         SetupOutcomeDto: {
@@ -4592,13 +10014,10 @@ export interface components {
             last_name?: string;
             password: string;
         };
-        /** UpdateUserDto */
-        UpdateUserDto: {
-            avatar?: string;
-            email?: string;
-            first_name?: string;
-            last_name?: string;
-            password?: string;
+        /** SilenceAlertDto */
+        SilenceAlertDto: {
+            /** Format: int64 */
+            until: number;
         };
         /** SshKeyResponseDto */
         SshKeyResponseDto: {
@@ -4615,6 +10034,31 @@ export interface components {
             public_key: string;
             /** Format: int64 */
             updated_at: number;
+        };
+        /** StagePanelRestoreDto */
+        StagePanelRestoreDto: {
+            checksum_sha256: string;
+            pending_marker: string;
+            restart_required: boolean;
+            restore_id: string;
+        };
+        /** StructuredMiddlewareDto */
+        StructuredMiddlewareDto: {
+            kind: components["schemas"]["StructuredMiddlewareKind"];
+            list: string[];
+            name: string;
+            values: {
+                [key: string]: string;
+            };
+        };
+        /** @enum {string} */
+        StructuredMiddlewareKind: "STRIP_PREFIX" | "ADD_PREFIX" | "REDIRECT_SCHEME" | "COMPRESS" | "RATE_LIMIT" | "IP_ALLOW_LIST" | "REQUEST_HEADERS" | "RESPONSE_HEADERS";
+        /** StructuredMiddlewareResponseDto */
+        StructuredMiddlewareResponseDto: {
+            labels: {
+                [key: string]: string;
+            };
+            reference: string;
         };
         /**
          * SwarmConnectionDto
@@ -4673,10 +10117,35 @@ export interface components {
             manager: string;
             worker: string;
         };
+        /** SystemHealthDto */
+        SystemHealthDto: {
+            dependencies: components["schemas"]["DependencyStatusDto"][];
+            healthy: boolean;
+            /** Format: int64 */
+            timestamp: number;
+        };
+        /** TagDto */
+        TagDto: {
+            color: string;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            /** Format: int64 */
+            organization_id: number;
+        };
+        /** @enum {string} */
+        TargetKind: "SERVER" | "APPLICATION" | "DATABASE" | "COMPOSE";
+        /** TestAiConnectionDto */
+        TestAiConnectionDto: {
+            api_key: string;
+            api_url: string;
+            model: string;
+        };
         /** TestDestinationDto */
         TestDestinationDto: {
             access_key: string;
-            additional_flags?: string;
             bucket: string;
             endpoint: string;
             provider: string;
@@ -4691,6 +10160,16 @@ export interface components {
             /** Format: int64 */
             ssh_key_id?: number;
             username: string;
+        };
+        /** TestNotificationDto */
+        TestNotificationDto: {
+            /** Format: int64 */
+            notification_id: number;
+        };
+        /** TestNotificationResponseDto */
+        TestNotificationResponseDto: {
+            delivered: boolean;
+            message: string;
         };
         /** TestRegistryDto */
         TestRegistryDto: {
@@ -4776,6 +10255,8 @@ export interface components {
             search?: string;
             /** Format: int64 */
             server_id?: number;
+            /** Format: uint16 */
+            status?: number;
         };
         /** TraefikStatsLogsResponseDto */
         TraefikStatsLogsResponseDto: {
@@ -4793,12 +10274,294 @@ export interface components {
             /** Format: int64 */
             server_id?: number;
         };
+        /** TraefikVersionDto */
+        TraefikVersionDto: {
+            current_image: string;
+            desired_version: string;
+            /** Format: int64 */
+            server_id?: number;
+        };
         /** TraefikWriteFileDto */
         TraefikWriteFileDto: {
             content: string;
             path: string;
             /** Format: int64 */
             server_id?: number;
+        };
+        /** TwoFactorCodeDto */
+        TwoFactorCodeDto: {
+            code: string;
+        };
+        /** TwoFactorDisableDto */
+        TwoFactorDisableDto: {
+            code: string;
+            password: string;
+        };
+        /** TwoFactorSetupDto */
+        TwoFactorSetupDto: {
+            password: string;
+        };
+        /** TwoFactorSetupResponseDto */
+        TwoFactorSetupResponseDto: {
+            otpauth_url: string;
+            recovery_codes: string[];
+            secret: string;
+        };
+        /** TwoFactorStatusDto */
+        TwoFactorStatusDto: {
+            configured: boolean;
+            enabled: boolean;
+        };
+        /** UpdateAiSettingDto */
+        UpdateAiSettingDto: {
+            api_key?: string;
+            api_url?: string;
+            is_enabled?: boolean;
+            model?: string;
+            name?: string;
+        };
+        /** UpdateAlertRuleDto */
+        UpdateAlertRuleDto: {
+            /** Format: int32 */
+            duration_seconds: number;
+            enabled: boolean;
+            metric: components["schemas"]["MetricKind"];
+            name: string;
+            operator: components["schemas"]["Operator"];
+            /** Format: int64 */
+            target_id: number;
+            target_kind: components["schemas"]["TargetKind"];
+            /** Format: double */
+            threshold: number;
+        };
+        /** UpdateApplicationNetworksDto */
+        UpdateApplicationNetworksDto: {
+            detach_rustploy_network: boolean;
+            network_ids: number[];
+        };
+        /** UpdateDnsProviderDto */
+        UpdateDnsProviderDto: {
+            credentials_json?: string;
+            name?: string;
+            provider_type?: components["schemas"]["DnsProviderType"];
+        };
+        /** UpdateMemberRoleDto */
+        UpdateMemberRoleDto: {
+            role: string;
+        };
+        /** UpdateMonitoringPolicyDto */
+        UpdateMonitoringPolicyDto: {
+            desired_agent_version?: string;
+            /** Format: int64 */
+            retention_days: number;
+        };
+        /** UpdatePrivateNetworkDto */
+        UpdatePrivateNetworkDto: {
+            connection_mode: components["schemas"]["ServerConnectionModeDto"];
+            dns_name?: string;
+            endpoint?: string;
+            /** Format: uint16 */
+            listen_port?: number;
+            /** Format: uint16 */
+            persistent_keepalive?: number;
+            private_host?: string;
+            provider?: components["schemas"]["PrivateNetworkProviderDto"];
+            public_key?: string;
+            routes: string[];
+            tunnel_address?: string;
+        };
+        /** UpdateScheduleRuntimePolicyDto */
+        UpdateScheduleRuntimePolicyDto: {
+            concurrency_policy: components["schemas"]["ConcurrencyPolicy"];
+            /** Format: int64 */
+            lease_seconds: number;
+            missed_run_policy: components["schemas"]["MissedRunPolicy"];
+            notify_on_failure: boolean;
+            notify_on_success: boolean;
+            /** Format: int64 */
+            retry_count: number;
+            /** Format: int64 */
+            retry_delay_seconds: number;
+        };
+        /** UpdateServerManagementDto */
+        UpdateServerManagementDto: {
+            cleanup_policy: components["schemas"]["ServerCleanupPolicyDto"];
+            gpu_enabled: boolean;
+            labels: {
+                [key: string]: string;
+            };
+            maintenance_message?: string;
+            maintenance_mode: boolean;
+        };
+        /** UpdateSettingsDto */
+        UpdateSettingsDto: {
+            certificate_type?: components["schemas"]["SettingsCertificateTypeDto"];
+            custom_cert_resolver?: string;
+            enable_docker_cleanup?: boolean;
+            host?: string;
+            https?: boolean;
+            lets_encrypt_email?: string;
+            log_cleanup_cron?: string;
+            log_cleanup_enabled?: boolean;
+            /** Format: int64 */
+            log_retention_days?: number;
+            metrics_config?: string;
+            panel_backup_cron?: string;
+            panel_backup_enabled?: boolean;
+            server_ip?: string;
+        };
+        /** UpdateTagDto */
+        UpdateTagDto: {
+            color?: string;
+            name?: string;
+        };
+        /** UpdateTraefikVersionDto */
+        UpdateTraefikVersionDto: {
+            /** Format: int64 */
+            server_id?: number;
+            version: string;
+        };
+        /** UpdateUserDto */
+        UpdateUserDto: {
+            avatar?: string;
+            email?: string;
+            first_name?: string;
+            last_name?: string;
+            password?: string;
+        };
+        /** UpdateVaultProviderDto */
+        UpdateVaultProviderDto: {
+            api_url?: string;
+            auth_token?: string;
+            config_json?: string;
+            name?: string;
+            namespace?: string;
+        };
+        /** UpsertApplicationMiddlewareDto */
+        UpsertApplicationMiddlewareDto: {
+            /** Format: int64 */
+            average?: number;
+            /** Format: int64 */
+            burst?: number;
+            enabled: boolean;
+            headers?: components["schemas"]["MiddlewareHeaderDto"][];
+            middleware_type: components["schemas"]["ApplicationMiddlewareType"];
+            name: string;
+            source_ranges?: string[];
+        };
+        /** UpsertApplicationMountDto */
+        UpsertApplicationMountDto: {
+            content?: string;
+            file_path?: string;
+            host_path?: string;
+            mount_path: string;
+            mount_type: components["schemas"]["MountType"];
+            volume_name?: string;
+        };
+        /** UpsertApplicationPatchDto */
+        UpsertApplicationPatchDto: {
+            content: string;
+            enabled: boolean;
+            file_path: string;
+            patch_type: components["schemas"]["ApplicationPatchType"];
+        };
+        /** UpsertApplicationPortDto */
+        UpsertApplicationPortDto: {
+            protocol: components["schemas"]["PortProtocol"];
+            publish_mode: components["schemas"]["PortPublishMode"];
+            /** Format: int64 */
+            published_port: number;
+            /** Format: int64 */
+            target_port: number;
+        };
+        /** UpsertApplicationRedirectDto */
+        UpsertApplicationRedirectDto: {
+            /** Format: int64 */
+            permanent: number;
+            regex: string;
+            replacement: string;
+            /** Format: int64 */
+            unique_config_key?: number;
+        };
+        /** UpsertApplicationSecurityDto */
+        UpsertApplicationSecurityDto: {
+            password: string;
+            username: string;
+        };
+        /** UpsertComposeMountDto */
+        UpsertComposeMountDto: {
+            content?: string;
+            file_path?: string;
+            host_path?: string;
+            mount_path: string;
+            mount_type: components["schemas"]["MountType"];
+            volume_name?: string;
+        };
+        /** UpsertComposePatchDto */
+        UpsertComposePatchDto: {
+            content: string;
+            enabled: boolean;
+            file_path: string;
+            patch_type: components["schemas"]["ComposePatchType"];
+        };
+        /** UpsertComposeResourceDto */
+        UpsertComposeResourceDto: {
+            external: boolean;
+            file?: string;
+            kind: components["schemas"]["ComposeResourceKind"];
+            name: string;
+            services: string[];
+        };
+        /** UpsertDnsRecordDto */
+        UpsertDnsRecordDto: {
+            content: string;
+            name: string;
+            proxied?: boolean;
+            record_type: string;
+            /** Format: uint32 */
+            ttl?: number;
+            zone_id: string;
+        };
+        /** UserPolicyEntryDto */
+        UserPolicyEntryDto: {
+            effect: string;
+            /** Format: int64 */
+            policy_id: number;
+        };
+        /** VaultProviderDto */
+        VaultProviderDto: {
+            api_url: string;
+            auth_token: string;
+            config_json?: string;
+            /** Format: int64 */
+            created_at: number;
+            /** Format: int64 */
+            id: number;
+            name: string;
+            namespace?: string;
+            /** Format: int64 */
+            organization_id: number;
+            provider_type: components["schemas"]["VaultProviderType"];
+            /** Format: int64 */
+            updated_at: number;
+        };
+        /** @enum {string} */
+        VaultProviderType: "HASHICORP" | "INFISICAL" | "DOPPLER" | "AWS" | "SCALEWAY" | "AZURE";
+        /** VaultSecretListDto */
+        VaultSecretListDto: {
+            secrets: string[];
+        };
+        /** VaultTestResultDto */
+        VaultTestResultDto: {
+            message: string;
+            success: boolean;
+        };
+        /** VerifyBackupFileDto */
+        VerifyBackupFileDto: {
+            checksum_sha256: string;
+            /** Format: int64 */
+            destination_id: number;
+            object_key: string;
         };
         /** VolumeBackupResponseDto */
         VolumeBackupResponseDto: {
@@ -4842,6 +10605,28 @@ export interface components {
             updated_at: number;
             volume_name: string;
         };
+        /** VolumeSummary */
+        VolumeSummary: {
+            availability: string;
+            driver: string;
+            group: string;
+            labels: string;
+            links: string;
+            mountpoint: string;
+            name: string;
+            scope: string;
+            size: string;
+        };
+        /** WebhookRepositoryDto */
+        WebhookRepositoryDto: {
+            callback_url: string;
+            owner: string;
+            repository: string;
+        };
+        /** WebhookSecretResponseDto */
+        WebhookSecretResponseDto: {
+            webhook_secret: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -4851,6 +10636,561 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "AiController::test_connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAiConnectionDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::list_generations": {
+        parameters: {
+            query: {
+                query: components["schemas"]["AiGenerationListQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiGenerationResponseDto"][];
+                };
+            };
+        };
+    };
+    "AiController::generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateComposeDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiGenerationResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::get_generation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiGenerationResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::deploy_generation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeployAiGenerationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiDeploymentResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::review_generation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAiGenerationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiGenerationResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::analyze_logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyzeLogsDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyzeLogsResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::discover_models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverAiModelsDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelsResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::list_settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingResponseDto"][];
+                };
+            };
+        };
+    };
+    "AiController::create_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAiSettingDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::get_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::update_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiSettingDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::delete_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AiController::setting_models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelsResponseDto"];
+                };
+            };
+        };
+    };
+    "AiController::test_setting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    "AlertRuleController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAlertRuleDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRuleResponseDto"];
+                };
+            };
+        };
+    };
+    "AlertRuleController::events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertEventResponseDto"][];
+                };
+            };
+        };
+    };
+    "AlertRuleController::acknowledge_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AlertRuleController::silence_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SilenceAlertDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AlertRuleController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRuleResponseDto"][];
+                };
+            };
+        };
+    };
+    "AlertRuleController::test_notification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestNotificationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestNotificationResponseDto"];
+                };
+            };
+        };
+    };
+    "AlertRuleController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRuleResponseDto"];
+                };
+            };
+        };
+    };
+    "AlertRuleController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAlertRuleDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRuleResponseDto"];
+                };
+            };
+        };
+    };
+    "AlertRuleController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     "MonitoringController::status_index": {
         parameters: {
             query?: never;
@@ -4871,16 +11211,84 @@ export interface operations {
             };
         };
     };
-    "MonitoringController::ingest_container_metrics": {
+    "MonitoringController::reinstall_agent": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringActionDto"];
+                };
+            };
+        };
+    };
+    "MonitoringController::restart_agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringActionDto"];
+                };
+            };
+        };
+    };
+    "MonitoringController::agent_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringAgentStatusDto"];
+                };
+            };
+        };
+    };
+    "MonitoringController::rotate_agent_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IngestContainerMetricDto"];
+                "application/json": components["schemas"]["RotateMonitoringTokenDto"];
             };
         };
         responses: {
@@ -4890,7 +11298,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MetricIngestResponseDto"];
+                    "application/json": components["schemas"]["MonitoringTokenResponseDto"];
                 };
             };
         };
@@ -4919,16 +11327,40 @@ export interface operations {
             };
         };
     };
-    "MonitoringController::ingest_server_metrics": {
+    "MonitoringController::maintenance_windows": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowDto"][];
+                };
+            };
+        };
+    };
+    "MonitoringController::create_maintenance_window": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IngestSystemMetricDto"];
+                "application/json": components["schemas"]["CreateMaintenanceWindowDto"];
             };
         };
         responses: {
@@ -4938,7 +11370,76 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MetricIngestResponseDto"];
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "MonitoringController::delete_maintenance_window": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "MonitoringController::policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringPolicyDto"];
+                };
+            };
+        };
+    };
+    "MonitoringController::update_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMonitoringPolicyDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringPolicyDto"];
                 };
             };
         };
@@ -4965,11 +11466,13 @@ export interface operations {
             };
         };
     };
-    "MonitoringController::stream_container_metrics": {
+    "MonitoringController::export_server_metrics": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -4979,17 +11482,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/event-stream": components["schemas"]["ContainerMetricSseEventDto"];
-                };
+                content?: never;
             };
         };
     };
-    "MonitoringController::stream_logs": {
+    "MonitoringController::prometheus": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -4999,9 +11502,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/event-stream": components["schemas"]["ContainerLogSseEventDto"];
-                };
+                content?: never;
             };
         };
     };
@@ -5048,6 +11549,654 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationResponseDto"][];
                 };
+            };
+        };
+    };
+    "ApplicationController::import_application": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportApplicationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationMiddlewareController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMiddlewareResponseDto"][];
+                };
+            };
+        };
+    };
+    "ApplicationMiddlewareController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationMiddlewareDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMiddlewareResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationMiddlewareController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationMiddlewareDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMiddlewareResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationMiddlewareController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "MountController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMountResponseDto"][];
+                };
+            };
+        };
+    };
+    "MountController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationMountDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMountResponseDto"];
+                };
+            };
+        };
+    };
+    "MountController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationMountDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMountResponseDto"];
+                };
+            };
+        };
+    };
+    "MountController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "ApplicationNetworkController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationNetworksResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationNetworkController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateApplicationNetworksDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationNetworksResponseDto"];
+                };
+            };
+        };
+    };
+    "PatchController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPatchResponseDto"][];
+                };
+            };
+        };
+    };
+    "PatchController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationPatchDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPatchResponseDto"];
+                };
+            };
+        };
+    };
+    "PatchController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationPatchDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPatchResponseDto"];
+                };
+            };
+        };
+    };
+    "PatchController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PortController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPortResponseDto"][];
+                };
+            };
+        };
+    };
+    "PortController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationPortDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPortResponseDto"];
+                };
+            };
+        };
+    };
+    "PortController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationPortDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPortResponseDto"];
+                };
+            };
+        };
+    };
+    "PortController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "RedirectController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRedirectResponseDto"][];
+                };
+            };
+        };
+    };
+    "RedirectController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationRedirectDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRedirectResponseDto"];
+                };
+            };
+        };
+    };
+    "RedirectController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationRedirectDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRedirectResponseDto"];
+                };
+            };
+        };
+    };
+    "RedirectController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "SecurityController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationSecurityResponseDto"][];
+                };
+            };
+        };
+    };
+    "SecurityController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationSecurityDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationSecurityResponseDto"];
+                };
+            };
+        };
+    };
+    "SecurityController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertApplicationSecurityDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationSecurityResponseDto"];
+                };
+            };
+        };
+    };
+    "SecurityController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5165,6 +12314,28 @@ export interface operations {
             };
         };
     };
+    "ApplicationController::dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceDependencyCounts"];
+                };
+            };
+        };
+    };
     "ApplicationController::deploy": {
         parameters: {
             query?: never;
@@ -5184,6 +12355,146 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationOperationResponseDto"];
                 };
+            };
+        };
+    };
+    "ApplicationController::force_kill_deployment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationForceKillResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::clear_deployment_history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationCleanupResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::cleanup_deployment_queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationCleanupResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::export_application": {
+        parameters: {
+            query: {
+                query: components["schemas"]["ApplicationExportQueryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationExportArchiveDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::move_to_environment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveApplicationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::patch_preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchPreviewConfigDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5275,6 +12586,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::list_rollbacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRollbackResponseDto"][];
+                };
+            };
+        };
+    };
+    "ApplicationController::delete_rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                rollback_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "ApplicationController::trigger_rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                rollback_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRollbackTriggerResponseDto"];
                 };
             };
         };
@@ -5461,6 +12838,28 @@ export interface operations {
             };
         };
     };
+    "ApplicationController::upload_drop_source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponseDto"];
+                };
+            };
+        };
+    };
     "ApplicationController::start": {
         parameters: {
             query?: never;
@@ -5479,6 +12878,306 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationOperationResponseDto"];
+                };
+            };
+        };
+    };
+    "ApplicationController::rotate_webhook_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationWebhookTokenResponseDto"];
+                };
+            };
+        };
+    };
+    "AuditController::list": {
+        parameters: {
+            query: {
+                query: components["schemas"]["AuditLogQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPageDto"];
+                };
+            };
+        };
+    };
+    "AuditController::export": {
+        parameters: {
+            query: {
+                query: components["schemas"]["AuditLogQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthTwoFactorController::disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorDisableDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthTwoFactorController::enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorCodeDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthTwoFactorController::regenerate_recovery_codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorDisableDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodesResponseDto"];
+                };
+            };
+        };
+    };
+    "AuthTwoFactorController::setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorSetupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorSetupResponseDto"];
+                };
+            };
+        };
+    };
+    "AuthTwoFactorController::status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorStatusDto"];
+                };
+            };
+        };
+    };
+    "AuthApiTokenController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAccessTokenDto"][];
+                };
+            };
+        };
+    };
+    "AuthApiTokenController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonalAccessTokenDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedPersonalAccessTokenDto"];
+                };
+            };
+        };
+    };
+    "AuthApiTokenController::revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthEmailVerificationController::confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerificationConfirmDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthEmailVerificationController::request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthEmailVerificationController::status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailVerificationStatusDto"];
                 };
             };
         };
@@ -5525,6 +13224,50 @@ export interface operations {
             };
         };
     };
+    "AuthPasswordController::forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "AuthPasswordController::reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     "AuthController::refresh": {
         parameters: {
             query?: never;
@@ -5546,6 +13289,46 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthResponseDto"];
                 };
+            };
+        };
+    };
+    "AuthSessionController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionDto"][];
+                };
+            };
+        };
+    };
+    "AuthSessionController::revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5593,6 +13376,30 @@ export interface operations {
             };
         };
     };
+    "AuthController::update_user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JwtSubject"];
+                };
+            };
+        };
+    };
     "AuthController::who_am_i": {
         parameters: {
             query?: never;
@@ -5609,6 +13416,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JwtSubject"];
+                };
+            };
+        };
+    };
+    "BackupController::run_compose_config_backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComposeConfigBackupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelBackupResponseDto"];
                 };
             };
         };
@@ -5766,6 +13599,248 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "BackupController::list_executions": {
+        parameters: {
+            query: {
+                query: components["schemas"]["BackupExecutionQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupExecutionResponseDto"][];
+                };
+            };
+        };
+    };
+    "BackupController::retry_execution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "BackupController::list_backup_files": {
+        parameters: {
+            query: {
+                query: components["schemas"]["BackupFilesQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupFileDto"][];
+                };
+            };
+        };
+    };
+    "BackupController::download_backup_file": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DownloadBackupFileDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "BackupController::verify_backup_file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyBackupFileDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupIntegrityDto"];
+                };
+            };
+        };
+    };
+    "BackupController::rollback_panel_restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RollbackPanelRestoreDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagePanelRestoreDto"];
+                };
+            };
+        };
+    };
+    "BackupController::stage_panel_restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestorePanelBackupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagePanelRestoreDto"];
+                };
+            };
+        };
+    };
+    "BackupController::panel_restore_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                restore_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["PanelRestoreStatusDto"];
+                };
+            };
+        };
+    };
+    "BackupController::panel_restore_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                restore_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelRestoreStatusDto"];
+                };
+            };
+        };
+    };
+    "BackupController::run_panel_backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelBackupResponseDto"];
+                };
+            };
+        };
+    };
+    "BackupController::preview_retention": {
+        parameters: {
+            query: {
+                query: components["schemas"]["RetentionPreviewQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionPreviewDto"];
+                };
             };
         };
     };
@@ -6037,6 +14112,76 @@ export interface operations {
             };
         };
     };
+    "CertificateController::dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateDependencyCounts"];
+                };
+            };
+        };
+    };
+    "CertificateController::renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewCertificateDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateResponseDto"];
+                };
+            };
+        };
+    };
+    "CertificateController::renewals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateRenewalDto"][];
+                };
+            };
+        };
+    };
     "ComposeController::create": {
         parameters: {
             query?: never;
@@ -6080,6 +14225,270 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ComposeResponseDto"][];
                 };
+            };
+        };
+    };
+    "ComposeManagementController::import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportComposeDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComposePreviewDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposePreviewResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::install_template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstallComposeTemplateDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeMountController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeMountResponseDto"][];
+                };
+            };
+        };
+    };
+    "ComposeMountController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertComposeMountDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeMountResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeMountController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertComposeMountDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeMountResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeMountController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "ComposePatchController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposePatchResponseDto"][];
+                };
+            };
+        };
+    };
+    "ComposePatchController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertComposePatchDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposePatchResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposePatchController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertComposePatchDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposePatchResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposePatchController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                compose_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6173,6 +14582,28 @@ export interface operations {
             };
         };
     };
+    "ComposeController::dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceDependencyCounts"];
+                };
+            };
+        };
+    };
     "ComposeController::deploy": {
         parameters: {
             query?: never;
@@ -6191,6 +14622,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposeOperationResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::force_kill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeCleanupDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::clear_history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeCleanupDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::cleanup_queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeCleanupDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::export": {
+        parameters: {
+            query: {
+                query: components["schemas"]["ComposeExportQueryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeArchiveDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::move_compose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveComposeDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
                 };
             };
         };
@@ -6235,6 +14782,84 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposeOperationResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::upsert_resource": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertComposeResourceDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::remove_resource": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteComposeResourceDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
+                };
+            };
+        };
+    };
+    "ComposeManagementController::remove_service": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveComposeServiceDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeResponseDto"];
                 };
             };
         };
@@ -6461,6 +15086,221 @@ export interface operations {
             };
         };
     };
+    "ComposeManagementController::rotate_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposeTokenDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportDatabaseDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseResponseDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::get_postgres_advanced_config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostgresAdvancedConfigResponseDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::update_postgres_advanced_config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostgresAdvancedConfigDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostgresAdvancedConfigResponseDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseConnectionDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::rotate_credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotateDatabaseCredentialsDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseCredentialRotationDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceDependencyCounts"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::export": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DatabaseExportQueryDto"];
+            };
+            header?: never;
+            path: {
+                kind: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseArchiveDto"];
+                };
+            };
+        };
+    };
+    "DatabaseManagementController::validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseValidationDto"];
+                };
+            };
+        };
+    };
     "DatabaseNetworkController::list": {
         parameters: {
             query?: never;
@@ -6595,6 +15435,28 @@ export interface operations {
             };
         };
     };
+    "DatabaseNetworkController::dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetworkDependencyCounts"];
+                };
+            };
+        };
+    };
     "DeploymentController::list": {
         parameters: {
             query: {
@@ -6617,6 +15479,28 @@ export interface operations {
             };
         };
     };
+    "DeploymentController::clear_all": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DeploymentListQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     "DeploymentController::active": {
         parameters: {
             query?: never;
@@ -6633,6 +15517,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActiveDeploymentDto"][];
+                };
+            };
+        };
+    };
+    "DeploymentController::clear_application_deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -6705,6 +15611,50 @@ export interface operations {
             };
         };
     };
+    "DeploymentController::clear_post": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DeploymentListQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DeploymentController::clear_compose_deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     "DeploymentController::compose_events": {
         parameters: {
             query?: never;
@@ -6769,6 +15719,28 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": components["schemas"]["DeploymentSseEventDto"];
+                };
+            };
+        };
+    };
+    "DeploymentController::clear_database_deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -6863,6 +15835,26 @@ export interface operations {
             };
         };
     };
+    "DeploymentController::export_docker_compose_logs": {
+        parameters: {
+            query: {
+                query: components["schemas"]["ComposeLogQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     "DeploymentController::docker_container_logs": {
         parameters: {
             query: {
@@ -6884,6 +15876,28 @@ export interface operations {
                 content: {
                     "text/event-stream": components["schemas"]["DeploymentSseEventDto"];
                 };
+            };
+        };
+    };
+    "DeploymentController::export_docker_container_logs": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerLogQuery"];
+            };
+            header?: never;
+            path: {
+                target: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6957,6 +15971,28 @@ export interface operations {
             };
         };
     };
+    "DeploymentController::export_docker_service_logs": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerLogQuery"];
+            };
+            header?: never;
+            path: {
+                target: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     "DeploymentController::docker_global_stats": {
         parameters: {
             query: {
@@ -6975,6 +16011,48 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": components["schemas"]["DeploymentSseEventDto"];
+                };
+            };
+        };
+    };
+    "DeploymentController::cleanup_logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DeploymentController::search_logs": {
+        parameters: {
+            query: {
+                query: components["schemas"]["LogSearchQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogSearchResult"][];
                 };
             };
         };
@@ -7020,6 +16098,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DeploymentResponseDto"];
                 };
+            };
+        };
+    };
+    "DeploymentController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -7109,7 +16207,7 @@ export interface operations {
             };
         };
     };
-    "DestinationController::test_connection_raw": {
+    "DestinationController::test_destination": {
         parameters: {
             query?: never;
             header?: never;
@@ -7199,9 +16297,340 @@ export interface operations {
             };
         };
     };
-    "DestinationController::test_connection": {
+    "DnsController::list": {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsProviderDto"][];
+                };
+            };
+        };
+    };
+    "DnsController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDnsProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsProviderDto"];
+                };
+            };
+        };
+    };
+    "DnsController::test_connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDnsProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsTestResultDto"];
+                };
+            };
+        };
+    };
+    "DnsController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsProviderDto"];
+                };
+            };
+        };
+    };
+    "DnsController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDnsProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsProviderDto"];
+                };
+            };
+        };
+    };
+    "DnsController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "DnsController::upsert_record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertDnsRecordDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsRecordDto"];
+                };
+            };
+        };
+    };
+    "DnsController::test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsTestResultDto"];
+                };
+            };
+        };
+    };
+    "DnsController::list_zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsZoneDto"][];
+                };
+            };
+        };
+    };
+    "DnsController::list_records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                zone_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DnsRecordDto"][];
+                };
+            };
+        };
+    };
+    "DnsController::delete_record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                zone_id: string;
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "DockerManagementController::containers": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContainerSummary"][];
+                };
+            };
+        };
+    };
+    "DockerManagementController::remove_container": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContainerRemoveRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockerActionResponseDto"];
+                };
+            };
+        };
+    };
+    "DockerManagementController::container_action": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContainerActionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockerActionResponseDto"];
+                };
+            };
+        };
+    };
+    "DockerManagementController::download_container_file": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerFileQuery"];
+            };
             header?: never;
             path: {
                 id: string;
@@ -7216,6 +16645,240 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "DockerManagementController::upload_container_file": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockerActionResponseDto"];
+                };
+            };
+        };
+    };
+    "DockerManagementController::inspect_container": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DockerManagementController::disk_usage": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DockerManagementController::images": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageSummary"][];
+                };
+            };
+        };
+    };
+    "DockerManagementController::inspect_image": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DockerManagementController::networks": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetworkSummary"][];
+                };
+            };
+        };
+    };
+    "DockerManagementController::inspect_network": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "DockerManagementController::prune": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockerPruneRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockerPruneResponseDto"];
+                };
+            };
+        };
+    };
+    "DockerManagementController::volumes": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VolumeSummary"][];
+                };
+            };
+        };
+    };
+    "DockerManagementController::inspect_volume": {
+        parameters: {
+            query: {
+                query: components["schemas"]["DockerTargetQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
         };
     };
@@ -7487,6 +17150,568 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnvironmentResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"][];
+                };
+            };
+        };
+    };
+    "GitProviderController::create_bitbucket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBitbucketProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedGitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::create_gitea": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGiteaProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedGitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::create_github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGithubProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedGitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::create_gitlab": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGitlabProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedGitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GitProviderController::authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizationInfo"];
+                };
+            };
+        };
+    };
+    "GitProviderController::update_bitbucket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBitbucketProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::branches": {
+        parameters: {
+            query: {
+                query: components["schemas"]["RepositoryReferenceQueryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitReferenceInfo"][];
+                };
+            };
+        };
+    };
+    "GitProviderController::collaborator_permission": {
+        parameters: {
+            query: {
+                query: components["schemas"]["CollaboratorPermissionQueryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollaboratorPermission"];
+                };
+            };
+        };
+    };
+    "GitProviderController::disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GitProviderController::update_gitea": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGiteaProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::update_github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGithubProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::update_gitlab": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGitlabProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::oauth_callback": {
+        parameters: {
+            query: {
+                query: components["schemas"]["OAuthCallbackDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitProviderResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepositoryInfo"][];
+                };
+            };
+        };
+    };
+    "GitProviderController::tags": {
+        parameters: {
+            query: {
+                query: components["schemas"]["RepositoryReferenceQueryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitReferenceInfo"][];
+                };
+            };
+        };
+    };
+    "GitProviderController::test_connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GitProviderController::remove_webhook": {
+        parameters: {
+            query: {
+                query: components["schemas"]["WebhookRepositoryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GitProviderController::rotate_secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSecretResponseDto"];
+                };
+            };
+        };
+    };
+    "GitProviderController::install_webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookRepositoryDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderWebhookInfo"];
+                };
+            };
+        };
+    };
+    "GitProviderController::recreate_webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookRepositoryDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderWebhookInfo"];
+                };
+            };
+        };
+    };
+    "GitProviderController::webhook_status": {
+        parameters: {
+            query: {
+                query: components["schemas"]["WebhookRepositoryDto"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderWebhookInfo"];
                 };
             };
         };
@@ -8467,6 +18692,358 @@ export interface operations {
             };
         };
     };
+    "NetworkingController::purge_cdn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CdnPurgeDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CdnPurgeResponseDto"];
+                };
+            };
+        };
+    };
+    "NetworkingController::diagnose_domain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DomainDiagnosticDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainDiagnosticResponseDto"];
+                };
+            };
+        };
+    };
+    "NetworkingController::diagnose_root_network": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RootNetworkDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RootNetworkStatusDto"];
+                };
+            };
+        };
+    };
+    "NetworkingController::repair_root_network": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RootNetworkDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RootNetworkStatusDto"];
+                };
+            };
+        };
+    };
+    "NotificationController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNotificationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"];
+                };
+            };
+        };
+    };
+    "NotificationController::bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResourceBindingDto"][];
+                };
+            };
+        };
+    };
+    "NotificationController::create_binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNotificationBindingDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "NotificationController::delete_binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "NotificationController::delivery_history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDeliveryAttemptDto"][];
+                };
+            };
+        };
+    };
+    "NotificationController::list_by_organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"][];
+                };
+            };
+        };
+    };
+    "NotificationController::get_by_id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"];
+                };
+            };
+        };
+    };
+    "NotificationController::replace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNotificationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"];
+                };
+            };
+        };
+    };
+    "NotificationController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "NotificationController::patch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchNotificationDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"];
+                };
+            };
+        };
+    };
+    "NotificationController::send_test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     "OrganizationController::list_by_owner": {
         parameters: {
             query?: never;
@@ -8576,6 +19153,400 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrganizationResponseDto"];
                 };
+            };
+        };
+    };
+    "OverviewController::backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewBackupItemDto"][];
+                };
+            };
+        };
+    };
+    "OverviewController::domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewDomainItemDto"][];
+                };
+            };
+        };
+    };
+    "OverviewController::services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewServiceItemDto"][];
+                };
+            };
+        };
+    };
+    "PermissionGroupController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionGroupDto"][];
+                };
+            };
+        };
+    };
+    "PermissionGroupController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePermissionGroupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "PermissionGroupController::invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationInviteDto"][];
+                };
+            };
+        };
+    };
+    "PermissionGroupController::invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationInviteDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    "PermissionGroupController::accept_invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptOrganizationInviteDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::cancel_invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invite_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationMemberDto"][];
+                };
+            };
+        };
+    };
+    "PermissionGroupController::add_member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddOrganizationMemberDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::remove_member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::assign_group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignPermissionGroupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::replace_user_policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceUserPoliciesDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::update_member_role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMemberRoleDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionPolicyDto"][];
+                };
+            };
+        };
+    };
+    "PermissionGroupController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePermissionGroupDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PermissionGroupController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8823,6 +19794,118 @@ export interface operations {
             };
         };
     };
+    "PreviewDeploymentController::list": {
+        parameters: {
+            query: {
+                query: components["schemas"]["PreviewListQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewDeploymentView"][];
+                };
+            };
+        };
+    };
+    "PreviewDeploymentController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePreviewDeploymentDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewDeploymentOutcome"];
+                };
+            };
+        };
+    };
+    "PreviewDeploymentController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewDeploymentView"];
+                };
+            };
+        };
+    };
+    "PreviewDeploymentController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "PreviewDeploymentController::redeploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewDeploymentOutcome"];
+                };
+            };
+        };
+    };
     "ProjectController::create": {
         parameters: {
             query?: never;
@@ -8977,6 +20060,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    "WebhookController::receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+                provider_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DispatchOutcome"];
                 };
             };
         };
@@ -9269,7 +20375,7 @@ export interface operations {
             };
         };
     };
-    "RegistryController::test_connection_raw": {
+    "RegistryController::test_registry": {
         parameters: {
             query?: never;
             header?: never;
@@ -9359,7 +20465,79 @@ export interface operations {
             };
         };
     };
-    "RegistryController::test_connection": {
+    "RegistryController::repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryRepositoriesDto"];
+                };
+            };
+        };
+    };
+    "RegistryController::rotate_credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotateRegistryCredentialsDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryResponseDto"];
+                };
+            };
+        };
+    };
+    "RegistryController::tags": {
+        parameters: {
+            query: {
+                query: components["schemas"]["RegistryTagsQuery"];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryTagsDto"];
+                };
+            };
+        };
+    };
+    "RegistryController::test_saved_registry": {
         parameters: {
             query?: never;
             header?: never;
@@ -9376,6 +20554,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "RegistryController::usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryUsageDto"][];
+                };
             };
         };
     };
@@ -9419,6 +20619,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RemoteServerResponseDto"];
+                };
+            };
+        };
+    };
+    "RemoteServerController::migration_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                migration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDependencyMigrationDto"];
+                };
+            };
+        };
+    };
+    "RemoteServerController::rollback_migration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                migration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDependencyMigrationDto"];
                 };
             };
         };
@@ -9535,6 +20779,32 @@ export interface operations {
             };
         };
     };
+    "RemoteServerController::migrate_dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrateServerDependenciesDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerDependencyMigrationDto"];
+                };
+            };
+        };
+    };
     "RemoteServerController::test_connection": {
         parameters: {
             query?: never;
@@ -9609,6 +20879,28 @@ export interface operations {
             header?: never;
             path: {
                 compose_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleResponseDto"][];
+                };
+            };
+        };
+    };
+    "ScheduleController::list_by_database": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                database_id: number;
             };
             cookie?: never;
         };
@@ -9737,7 +21029,167 @@ export interface operations {
             };
         };
     };
-    "ScheduleController::run_manual": {
+    "ScheduleController::executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleExecutionDto"][];
+                };
+            };
+        };
+    };
+    "ScheduleController::execution_logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                execution_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleLogDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::execution_logs_stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                execution_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["ScheduleLogDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleLogDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::logs_stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["ScheduleLogDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::runtime_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleRuntimePolicyDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::update_runtime_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateScheduleRuntimePolicyDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleRuntimePolicyDto"];
+                };
+            };
+        };
+    };
+    "ScheduleController::trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -9925,6 +21377,450 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServerConnectionResponseDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerManagementDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServerManagementDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerManagementDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerActionResultDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerBackupDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::cleanup_history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerCleanupExecutionDto"][];
+                };
+            };
+        };
+    };
+    "ServerManagementController::cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerActionResultDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerActionResultDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::configure_gpu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerActionResultDto"];
+                };
+            };
+        };
+    };
+    "ServerManagementController::upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerActionResultDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrivateNetworkDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "ServerPrivateNetworkController::health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivateNetworkHealthDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::re_setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::rotate_keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerPrivateNetworkDto"];
+                };
+            };
+        };
+    };
+    "ServerPrivateNetworkController::teardown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "SettingsController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
+    "SettingsController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsResponseDto"];
                 };
             };
         };
@@ -10315,6 +22211,225 @@ export interface operations {
             };
         };
     };
+    "SystemController::config_test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigTestDto"];
+                };
+            };
+        };
+    };
+    "SystemController::health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthDto"];
+                };
+            };
+        };
+    };
+    "TagController::list_all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagDto"][];
+                };
+            };
+        };
+    };
+    "TagController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagDto"];
+                };
+            };
+        };
+    };
+    "TagController::list_project_tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagDto"][];
+                };
+            };
+        };
+    };
+    "TagController::attach_project_tag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachProjectTagDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "TagController::detach_project_tag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+                tag_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "TagController::get_by_id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagDto"];
+                };
+            };
+        };
+    };
+    "TagController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "TagController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagDto"];
+                };
+            };
+        };
+    };
     "TraefikController::list_files": {
         parameters: {
             query: {
@@ -10425,6 +22540,30 @@ export interface operations {
             };
         };
     };
+    "TraefikController::render_middleware": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StructuredMiddlewareDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StructuredMiddlewareResponseDto"];
+                };
+            };
+        };
+    };
     "TraefikController::read_stats_logs": {
         parameters: {
             query: {
@@ -10489,6 +22628,232 @@ export interface operations {
                 };
                 content: {
                     "application/json": boolean;
+                };
+            };
+        };
+    };
+    "TraefikController::version": {
+        parameters: {
+            query: {
+                query: components["schemas"]["TraefikFileQueryDto"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraefikVersionDto"];
+                };
+            };
+        };
+    };
+    "TraefikController::update_version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTraefikVersionDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraefikVersionDto"];
+                };
+            };
+        };
+    };
+    "VaultController::list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultProviderDto"][];
+                };
+            };
+        };
+    };
+    "VaultController::create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVaultProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultProviderDto"];
+                };
+            };
+        };
+    };
+    "VaultController::test_connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVaultProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultTestResultDto"];
+                };
+            };
+        };
+    };
+    "VaultController::get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultProviderDto"];
+                };
+            };
+        };
+    };
+    "VaultController::update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVaultProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultProviderDto"];
+                };
+            };
+        };
+    };
+    "VaultController::delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "VaultController::list_secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultSecretListDto"];
+                };
+            };
+        };
+    };
+    "VaultController::test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaultTestResultDto"];
                 };
             };
         };

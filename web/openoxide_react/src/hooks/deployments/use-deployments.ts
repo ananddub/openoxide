@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
-import {authFetch} from '#/api/client';
 
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
