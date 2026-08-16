@@ -83,15 +83,9 @@ impl ApplicationBuilder {
 
         self.ctx.emit(BuilderEvent::Deploying).await;
 
-        let mkdir_cmd = format!(
-            "mkdir -p {}",
-            crate::utils::exec::script::shell_single_quote(&app_dir)
-        );
-        let write_yaml_cmd = format!(
-            "cat << 'EOF' > {}\n{}\nEOF",
-            crate::utils::exec::script::shell_single_quote(&stack_file),
-            stack_yaml
-        );
+        let os = crate::utils::os::OsCli::new(&self.ctx.executor);
+        let mkdir_cmd = os.dir(&app_dir).create().parents(true);
+        let write_yaml_cmd = os.file(&stack_file).write(&stack_yaml);
 
         let stacks = self.ctx.docker.stacks();
         let deploy_cmd = stacks

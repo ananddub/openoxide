@@ -12,7 +12,6 @@ use crate::utils::{
     },
     exec::{CommandExecutor, ExecResult},
 };
-use os::exec::IntoCommand;
 use os::pipeline;
 use tokio_util::sync::CancellationToken;
 
@@ -167,17 +166,15 @@ impl ComposeBuilder {
             .retry(3)
             .cancel_with(cancel.clone());
 
-        let config_cmd = format!(
-            "{} > {}",
-            compose
-                .config()
-                .env_file(&spec.env_file)
-                .file(&spec.compose_file_path())
-                .retry(3)
-                .cancel_with(cancel.clone())
-                .build_str(),
-            crate::utils::exec::script::shell_single_quote(&spec.rendered_stack_file)
-        );
+        let config_builder = compose
+            .config()
+            .env_file(&spec.env_file)
+            .file(&spec.compose_file_path())
+            .retry(3)
+            .cancel_with(cancel.clone());
+
+        let os = crate::utils::os::OsCli::new(&self.ctx.executor);
+        let config_cmd = os.file(&spec.rendered_stack_file).write(config_builder);
 
         let stacks = self.ctx.docker.stacks();
         let deploy_cmd = stacks
