@@ -42,10 +42,13 @@ export function useAppDetail(appId: number) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride once backend query syncs with backend state
+	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
 	useEffect(() => {
 		if (liveApp) {
 			const fetchedStatus = ((liveApp as any).status || (liveApp as any).app_status || '').toUpperCase();
+			if (fetchedStatus && (storeApp as any)?.status !== fetchedStatus) {
+				(useAppStore.getState() as any).updateServiceStatus?.(appId, fetchedStatus, 'application');
+			}
 			if (localStatusOverride) {
 				const overrideUpper = (localStatusOverride || '').toUpperCase();
 				if (
@@ -58,7 +61,7 @@ export function useAppDetail(appId: number) {
 				}
 			}
 		}
-	}, [liveApp, localStatusOverride]);
+	}, [liveApp, localStatusOverride, appId, (storeApp as any)?.status]);
 
 	const raw = liveApp || storeApp;
 	const app = useMemo(() => {

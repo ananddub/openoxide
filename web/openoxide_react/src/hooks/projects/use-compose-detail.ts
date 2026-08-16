@@ -42,10 +42,13 @@ export function useComposeDetail(composeId: number) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride once backend query syncs with backend state
+	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
 	useEffect(() => {
 		if (liveCompose) {
 			const fetchedStatus = ((liveCompose as any).status || (liveCompose as any).compose_status || '').toUpperCase();
+			if (fetchedStatus && (storeCompose as any)?.status !== fetchedStatus) {
+				(useAppStore.getState() as any).updateServiceStatus?.(composeId, fetchedStatus, 'compose');
+			}
 			if (localStatusOverride) {
 				const overrideUpper = (localStatusOverride || '').toUpperCase();
 				if (
@@ -58,7 +61,7 @@ export function useComposeDetail(composeId: number) {
 				}
 			}
 		}
-	}, [liveCompose, localStatusOverride]);
+	}, [liveCompose, localStatusOverride, composeId, (storeCompose as any)?.status]);
 
 	const raw = liveCompose || storeCompose;
 	const compose = useMemo(() => {

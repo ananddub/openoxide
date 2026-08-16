@@ -92,10 +92,14 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride once backend query syncs with backend state
+	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
 	useEffect(() => {
 		if (liveDb) {
 			const fetchedStatus = ((liveDb as any).status || (liveDb as any).app_status || '').toUpperCase();
+			const dbKind = (detectedKind || currentKind || targetKind || 'postgres').toLowerCase();
+			if (fetchedStatus && (storeDb as any)?.status !== fetchedStatus) {
+				(useAppStore.getState() as any).updateServiceStatus?.(dbId, fetchedStatus, dbKind);
+			}
 			if (localStatusOverride) {
 				const overrideUpper = (localStatusOverride || '').toUpperCase();
 				if (
@@ -108,7 +112,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 				}
 			}
 		}
-	}, [liveDb, localStatusOverride]);
+	}, [liveDb, localStatusOverride, dbId, detectedKind, currentKind, targetKind, (storeDb as any)?.status]);
 
 	const raw = liveDb || storeDb;
 	const database = useMemo(() => {
