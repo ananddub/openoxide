@@ -506,6 +506,60 @@ impl DeploymentController {
         })))
     }
 
+    #[delete("/application/{id}")]
+    async fn clear_application_deployments(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+    ) -> Result<Json<serde_json::Value>, ApiError> {
+        let cleared_count = self
+            .service
+            .clear_all(Some(id), None, None, None)
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Json(serde_json::json!({
+            "status": "success",
+            "cleared_count": cleared_count
+        })))
+    }
+
+    #[delete("/compose/{id}")]
+    async fn clear_compose_deployments(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+    ) -> Result<Json<serde_json::Value>, ApiError> {
+        let cleared_count = self
+            .service
+            .clear_all(None, Some(id), None, None)
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Json(serde_json::json!({
+            "status": "success",
+            "cleared_count": cleared_count
+        })))
+    }
+
+    #[delete("/database/{id}")]
+    async fn clear_database_deployments(
+        &self,
+        _claims: crate::utils::jwt::claim::Claims,
+        Path(id): Path<i64>,
+    ) -> Result<Json<serde_json::Value>, ApiError> {
+        let cleared_count = self
+            .service
+            .clear_all(None, None, Some(id), None)
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Json(serde_json::json!({
+            "status": "success",
+            "cleared_count": cleared_count
+        })))
+    }
+
     #[get("/{id}/logs", sse = DeploymentSseEventDto)]
     async fn stream_logs(
         &self,
