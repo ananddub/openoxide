@@ -167,8 +167,9 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			: action === 'start' ? 'STARTING'
 			: 'DEPLOYING';
 
+		const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(dbId, intermediateStatus);
+		(useAppStore.getState() as any).updateServiceStatus?.(dbId, intermediateStatus, kind);
 
 		try {
 			const kind = (currentKind || targetKind || 'postgres').toLowerCase();

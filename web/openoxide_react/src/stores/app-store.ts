@@ -338,14 +338,30 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	deleteServer: (id) =>
 		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
 
-	setOverviewServices: (services) => set({ overviewServices: services }),
-	updateServiceStatus: (id, status) =>
-		set((state) => ({
-			databases: state.databases.map((d: any) => (String(d.id) === String(id) ? { ...d, status, app_status: status } : d)),
-			applications: state.applications.map((a: any) => (String(a.id) === String(id) ? { ...a, status, app_status: status } : a)),
-			composes: state.composes.map((c: any) => (String(c.id) === String(id) ? { ...c, status, app_status: status } : c)),
-			overviewServices: state.overviewServices.map((s: any) => (String(s.id) === String(id) ? { ...s, status, app_status: status } : s)),
-		})),
+	updateServiceStatus: (id, status, kind?) =>
+		set((state) => {
+			const targetK = (kind || '').toLowerCase();
+			return {
+				databases: state.databases.map((d: any) => {
+					if (String(d.id) !== String(id)) return d;
+					if (targetK) {
+						const dk = String(d.kind || d.type || '').toLowerCase();
+						if (!dk.includes(targetK) && !targetK.includes(dk)) return d;
+					}
+					return { ...d, status, app_status: status };
+				}),
+				applications: state.applications.map((a: any) => (String(a.id) === String(id) ? { ...a, status, app_status: status } : a)),
+				composes: state.composes.map((c: any) => (String(c.id) === String(id) ? { ...c, status, app_status: status } : c)),
+				overviewServices: state.overviewServices.map((s: any) => {
+					if (String(s.id) !== String(id)) return s;
+					if (targetK && (s.service_type === 'DATABASE' || s.db_kind || s.dbKind)) {
+						const sk = String(s.db_kind || s.dbKind || s.kind || '').toLowerCase();
+						if (!sk.includes(targetK) && !targetK.includes(sk)) return s;
+					}
+					return { ...s, status, app_status: status };
+				}),
+			};
+		}),
 	setDeployments: (deployments) => set({ deployments }),
 	deleteDeployment: (id) =>
 		set((state) => ({ deployments: state.deployments.filter((d) => String(d.id) !== String(id)) })),
