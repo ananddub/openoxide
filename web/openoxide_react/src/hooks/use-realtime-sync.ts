@@ -65,55 +65,12 @@ export function useRealtimeSync() {
 	const { data: liveDomains } = useOverviewDomains(BigInt(orgId));
 	const { data: liveBackups } = useOverviewBackups(BigInt(orgId));
 
-	// Sync Live Realtime Streams directly into Zustand Store
+	// Sync Live Realtime Streams directly into Zustand Store (Zero Ping-Pong Infinite Loop)
 	useEffect(() => {
 		if (liveServices && Array.isArray(liveServices)) {
 			setOverviewServices(liveServices as any);
-
-			const dbs: any[] = liveServices
-				.filter((s: any) => s.service_type === 'DATABASE' || s.db_kind || s.kind)
-				.map((s: any) => ({
-					id: s.id,
-					name: s.name,
-					database_name: s.name,
-					kind: s.db_kind || s.kind || 'postgres',
-					type: s.db_kind || s.kind || 'postgres',
-					project_id: s.project_id,
-					environment_id: s.environment_id,
-					status: s.status,
-					app_status: s.status,
-					created_at: s.created_at,
-				}));
-			if (dbs.length > 0) setDatabases(dbs);
-
-			const apps: any[] = liveServices
-				.filter((s: any) => s.service_type === 'APP')
-				.map((s: any) => ({
-					id: s.id,
-					name: s.name,
-					app_name: s.name,
-					project_id: s.project_id,
-					environment_id: s.environment_id,
-					status: s.status,
-					app_status: s.status,
-					created_at: s.created_at,
-				}));
-			if (apps.length > 0) setApplications(apps);
-
-			const composes: any[] = liveServices
-				.filter((s: any) => s.service_type === 'COMPOSE')
-				.map((s: any) => ({
-					id: s.id,
-					name: s.name,
-					project_id: s.project_id,
-					environment_id: s.environment_id,
-					status: s.status,
-					compose_status: s.status,
-					created_at: s.created_at,
-				}));
-			if (composes.length > 0) setComposes(composes);
 		}
-	}, [liveServices, setOverviewServices, setDatabases, setApplications, setComposes]);
+	}, [liveServices, setOverviewServices]);
 
 	useEffect(() => {
 		if (liveMembers && Array.isArray(liveMembers)) setMembers(liveMembers as any);
@@ -145,29 +102,8 @@ export function useRealtimeSync() {
 	useEffect(() => {
 		if (liveProjects && Array.isArray(liveProjects)) {
 			setProjects(liveProjects as any);
-
-			// Extract nested databases, applications, composes from liveProjects if available
-			const extractedDbs: any[] = [];
-			const extractedApps: any[] = [];
-			const extractedComposes: any[] = [];
-
-			for (const p of liveProjects as any[]) {
-				if (Array.isArray(p.postgresDbs)) extractedDbs.push(...p.postgresDbs.map((d: any) => ({ ...d, kind: 'postgres' })));
-				if (Array.isArray(p.mysqlDbs)) extractedDbs.push(...p.mysqlDbs.map((d: any) => ({ ...d, kind: 'mysql' })));
-				if (Array.isArray(p.mariadbDbs)) extractedDbs.push(...p.mariadbDbs.map((d: any) => ({ ...d, kind: 'mariadb' })));
-				if (Array.isArray(p.mongoDbs)) extractedDbs.push(...p.mongoDbs.map((d: any) => ({ ...d, kind: 'mongo' })));
-				if (Array.isArray(p.redisDbs)) extractedDbs.push(...p.redisDbs.map((d: any) => ({ ...d, kind: 'redis' })));
-				if (Array.isArray(p.libsqlDbs)) extractedDbs.push(...p.libsqlDbs.map((d: any) => ({ ...d, kind: 'libsql' })));
-
-				if (Array.isArray(p.applications)) extractedApps.push(...p.applications);
-				if (Array.isArray(p.composes)) extractedComposes.push(...p.composes);
-			}
-
-			if (extractedDbs.length > 0) setDatabases(extractedDbs);
-			if (extractedApps.length > 0) setApplications(extractedApps);
-			if (extractedComposes.length > 0) setComposes(extractedComposes);
 		}
-	}, [liveProjects, setProjects, setDatabases, setApplications, setComposes]);
+	}, [liveProjects, setProjects]);
 
 	useEffect(() => {
 		if (liveServers && Array.isArray(liveServers)) setServers(liveServers as any);
