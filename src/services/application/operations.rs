@@ -82,7 +82,7 @@ impl ApplicationService {
 
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
-        let _ = self.repo_app.update_status(id, "STOPPING").await;
+        let _ = self.repo_app.update_status(id, "CANCELLING").await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
@@ -121,7 +121,7 @@ impl ApplicationService {
             }
         }
 
-        self.repo_app.update_status(id, "STOPPED").await?;
+        self.repo_app.update_status(id, "CANCELLED").await?;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
