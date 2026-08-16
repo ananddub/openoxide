@@ -113,22 +113,22 @@ impl DatabaseService {
     pub async fn cancel_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
         match kind {
             DatabaseKind::Postgres => {
-                let _ = self.repo_postgres.update_status(id, "STOPPING").await;
+                let _ = self.repo_postgres.update_status(id, "CANCELLING").await;
             }
             DatabaseKind::Mysql => {
-                let _ = self.repo_mysql.update_status(id, "STOPPING").await;
+                let _ = self.repo_mysql.update_status(id, "CANCELLING").await;
             }
             DatabaseKind::Mariadb => {
-                let _ = self.repo_mariadb.update_status(id, "STOPPING").await;
+                let _ = self.repo_mariadb.update_status(id, "CANCELLING").await;
             }
             DatabaseKind::Mongo => {
-                let _ = self.repo_mongo.update_status(id, "STOPPING").await;
+                let _ = self.repo_mongo.update_status(id, "CANCELLING").await;
             }
             DatabaseKind::Redis => {
-                let _ = self.repo_redis.update_status(id, "STOPPING").await;
+                let _ = self.repo_redis.update_status(id, "CANCELLING").await;
             }
             DatabaseKind::Libsql => {
-                let _ = self.repo_libsql.update_status(id, "STOPPING").await;
+                let _ = self.repo_libsql.update_status(id, "CANCELLING").await;
             }
         }
         self.cache
@@ -215,12 +215,12 @@ impl DatabaseService {
             }
 
             match kind {
-                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, "STOPPED").await; }
-                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, "STOPPED").await; }
-                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, "STOPPED").await; }
-                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, "STOPPED").await; }
-                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, "STOPPED").await; }
-                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, "STOPPED").await; }
+                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, "CANCELLED").await; }
             }
             cache.invalidate(&crate::core::cache::CacheKey::Database(id)).await;
         });
