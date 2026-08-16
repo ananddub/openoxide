@@ -1,4 +1,4 @@
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 import {Calendar, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -8,6 +8,7 @@ import {formatApiError} from '#/api/utils';
 import { useAppStore } from '#/stores/app-store';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
+import {buildRawGitUrl, getComposeServiceNames} from '#/utils/compose-services';
 
 interface ComposeSchedulesTabProps {
 	compose: any;
@@ -15,49 +16,35 @@ interface ComposeSchedulesTabProps {
 	isLoading?: boolean;
 }
 
-// Extract service names defined under 'services:' in docker-compose.yml content
-const extractServicesFromYaml = (yamlStr?: string): string[] => {
-	if (!yamlStr) return [];
-	const lines = yamlStr.split('\n');
-	const services: string[] = [];
-	let inServicesBlock = false;
-	let servicesIndent = 0;
-
-	for (const line of lines) {
-		const trimmed = line.trimEnd();
-		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-
-		const indent = line.search(/\S/);
-		const text = trimmed.trim();
-
-		if (text === 'services:' || text.startsWith('services:')) {
-			inServicesBlock = true;
-			servicesIndent = indent;
-			continue;
-		}
-
-		if (inServicesBlock) {
-			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServicesBlock = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
-				const serviceName = text.slice(0, -1).trim();
-				if (serviceName && !services.includes(serviceName)) {
-					services.push(serviceName);
-				}
-			}
-		}
-	}
-	return services;
-};
-
 export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoading: passedIsLoading}: ComposeSchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
-	const availableServices = useMemo(() => {
-		return extractServicesFromYaml(compose?.compose_file);
-	}, [compose?.compose_file]);
+	useEffect(() => {
+		if (compose?.compose_file && compose.compose_file.trim()) {
+			setFetchedYaml(compose.compose_file);
+			return;
+		}
+		const rawUrl = buildRawGitUrl(compose);
+		if (rawUrl) {
+			let isMounted = true;
+			fetch(rawUrl)
+				.then((res) => (res.ok ? res.text() : ''))
+				.then((text) => {
+					if (isMounted && text && text.trim()) {
+						setFetchedYaml(text);
+					}
+				})
+				.catch(() => {});
+			return () => {
+				isMounted = false;
+			};
+		}
+	}, [compose]);
 
-	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
+	const servicesList = useMemo(() => {
+		return getComposeServiceNames(compose, fetchedYaml);
+	}, [compose, fetchedYaml]);
 
 	// Read schedules directly from Zustand RAM Store
 	const composeId = compose?.id;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Globe, Plus } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Badge } from '#/components/ui/badge';
@@ -7,6 +7,7 @@ import { $api } from '#/api/query';
 import { formatApiError } from '#/api/utils';
 import { ComposeDomainsTable } from './domains/compose-domains-table';
 import { ComposeDomainModal } from './domains/compose-domain-modal';
+import { buildRawGitUrl, getComposeServiceNames } from '#/utils/compose-services';
 
 interface ComposeDomainsTabProps {
 	composeId: number;
@@ -14,41 +15,6 @@ interface ComposeDomainsTabProps {
 	domains?: any[];
 	isLoading?: boolean;
 }
-
-// Extract service names defined under 'services:' in docker-compose.yml content
-const extractServicesFromYaml = (yamlStr?: string): string[] => {
-	if (!yamlStr) return [];
-	const lines = yamlStr.split('\n');
-	const services: string[] = [];
-	let inServicesBlock = false;
-	let servicesIndent = 0;
-
-	for (const line of lines) {
-		const trimmed = line.trimEnd();
-		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-
-		const indent = line.search(/\S/);
-		const text = trimmed.trim();
-
-		if (text === 'services:' || text.startsWith('services:')) {
-			inServicesBlock = true;
-			servicesIndent = indent;
-			continue;
-		}
-
-		if (inServicesBlock) {
-			if (indent <= servicesIndent && text.endsWith(':') && !text.startsWith('-')) {
-				inServicesBlock = false;
-			} else if (indent > servicesIndent && text.endsWith(':') && !text.includes(' ') && !text.includes('.')) {
-				const serviceName = text.slice(0, -1).trim();
-				if (serviceName && !services.includes(serviceName)) {
-					services.push(serviceName);
-				}
-			}
-		}
-	}
-	return services;
-};
 
 export function ComposeDomainsTab({
 	composeId,
@@ -58,20 +24,34 @@ export function ComposeDomainsTab({
 }: ComposeDomainsTabProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingDomain, setEditingDomain] = useState<any | null>(null);
+	const [fetchedYaml, setFetchedYaml] = useState<string>('');
+
+	useEffect(() => {
+		if (compose?.compose_file && compose.compose_file.trim()) {
+			setFetchedYaml(compose.compose_file);
+			return;
+		}
+		const rawUrl = buildRawGitUrl(compose);
+		if (rawUrl) {
+			let isMounted = true;
+			fetch(rawUrl)
+				.then((res) => (res.ok ? res.text() : ''))
+				.then((text) => {
+					if (isMounted && text && text.trim()) {
+						setFetchedYaml(text);
+					}
+				})
+				.catch(() => {});
+			return () => {
+				isMounted = false;
+			};
+		}
+	}, [compose]);
 
 	// Extract list of compose service names
 	const servicesList = useMemo(() => {
-		const fromApi = Array.isArray((compose as any)?.services) ? (compose as any).services : [];
-		const extracted = extractServicesFromYaml(compose?.compose_file);
-		const defaults = ['app', 'web', 'frontend', 'backend', 'api', 'server'];
-		if (compose?.name && !defaults.includes(compose.name)) {
-			defaults.push(compose.name);
-		}
-		if (compose?.app_name && !defaults.includes(compose.app_name)) {
-			defaults.push(compose.app_name);
-		}
-		return Array.from(new Set([...fromApi, ...extracted, ...defaults]));
-	}, [(compose as any)?.services, compose?.compose_file, compose?.name, compose?.app_name]);
+		return getComposeServiceNames(compose, fetchedYaml);
+	}, [compose, fetchedYaml]);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
