@@ -86,7 +86,25 @@ const renderIcon = (type: string, dbKind?: string) => {
 const renderStatusBadge = (statusStr: string) => {
 	const s = (statusStr || 'done').toLowerCase();
 
-	if (s.includes('stopping') || s.includes('cancelling')) {
+	if (s.includes('queued')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
+				<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+				<span>Queued</span>
+			</div>
+		);
+	}
+
+	if (s.includes('cancelling')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
+				<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+				<span>Cancelling</span>
+			</div>
+		);
+	}
+
+	if (s.includes('stopping')) {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 text-xs font-semibold text-orange-500">
 				<span className="size-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
@@ -95,11 +113,29 @@ const renderStatusBadge = (statusStr: string) => {
 		);
 	}
 
-	if (s.includes('starting') || s.includes('deploying') || s.includes('building') || s.includes('loading')) {
+	if (s.includes('starting')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
+				<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+				<span>Starting</span>
+			</div>
+		);
+	}
+
+	if (s.includes('deploying') || s.includes('building') || s.includes('loading')) {
 		return (
 			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-500">
 				<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
 				<span>Deploying</span>
+			</div>
+		);
+	}
+
+	if (s.includes('cancelled')) {
+		return (
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/10 text-xs font-semibold text-zinc-400">
+				<span className="size-2 rounded-full bg-zinc-400 shrink-0" />
+				<span>Cancelled</span>
 			</div>
 		);
 	}
@@ -123,9 +159,9 @@ const renderStatusBadge = (statusStr: string) => {
 	}
 
 	return (
-		<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 text-xs font-semibold text-muted-foreground">
-			<span className="size-2 rounded-full bg-muted-foreground/40 shrink-0" />
-			<span>Idle</span>
+		<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/10 text-xs font-semibold text-zinc-400">
+			<span className="size-2 rounded-full bg-zinc-400 shrink-0" />
+			<span>Stopped</span>
 		</div>
 	);
 };
