@@ -352,7 +352,11 @@ impl RemoteExecutor {
                 .unwrap_or_else(RemoteCancelJob::new)
         });
         let command = if let Some(job) = &cancel_job {
-            cancellable_remote_command(&base_command, &job.pid_file)
+            if stdin.is_empty() {
+                cancellable_remote_command(&base_command, &job.pid_file)
+            } else {
+                base_command.clone()
+            }
         } else {
             base_command
         };

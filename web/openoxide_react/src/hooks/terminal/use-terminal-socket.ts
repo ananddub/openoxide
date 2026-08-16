@@ -73,7 +73,7 @@ export function useTerminalSocket({
 			if (isRemoteServer && serverId) {
 				sock.emit('server:start', { server_id: serverId, shell: shellMode, command: shellMode, cols, rows });
 			} else {
-				sock.emit('docker:start', { container: targetContainer, shell: shellMode, cols, rows });
+				sock.emit('docker:start', { container: targetContainer, server_id: serverId || undefined, shell: shellMode, cols, rows });
 			}
 		};
 
@@ -204,7 +204,7 @@ export function useTerminalSocket({
 		if (isRemoteServer && serverId) {
 			socketRef.current.emit('server:start', { server_id: serverId, shell, command: shell, cols, rows });
 		} else {
-			socketRef.current.emit('docker:start', { container: targetContainer, shell, cols, rows });
+			socketRef.current.emit('docker:start', { container: targetContainer, server_id: serverId || undefined, shell, cols, rows });
 		}
 	}, [targetContainer, shell, isOpen, isRemoteServer, serverId, termInstance, activeHostIp]);
 
