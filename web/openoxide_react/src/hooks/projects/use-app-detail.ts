@@ -45,18 +45,16 @@ export function useAppDetail(appId: number) {
 	// 3. Schedules Query
 	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByApplication(BigInt(appId));
 
-	// Read backups and deployments directly from Zustand RAM store
-	const storeBackups = useAppStore((state) => state.backups || []);
-	const storeDeployments = useAppStore((state) => state.deployments || []);
+	// Read backups and deployments scoped specifically to this application (0ms unnecessary re-render prevention)
+	const backups = useAppStore((state) =>
+		(state.backups || []).filter((b: any) => Number(b.application_id) === Number(appId))
+	);
+	const deployments = useAppStore((state) =>
+		(state.deployments || []).filter((d: any) => Number(d.application_id) === Number(appId))
+	);
 
 	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
 	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
-	const backups = useMemo(() => {
-		return storeBackups.filter((b: any) => Number(b.application_id) === Number(appId));
-	}, [storeBackups, appId]);
-	const deployments = useMemo(() => {
-		return storeDeployments.filter((d: any) => Number(d.application_id) === Number(appId));
-	}, [storeDeployments, appId]);
 	const isLoadingBackups = false;
 	const isLoadingDeployments = false;
 
