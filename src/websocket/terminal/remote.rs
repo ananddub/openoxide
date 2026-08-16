@@ -166,3 +166,163 @@ pub async fn spawn_remote_terminal(
         }
     });
 }
+
+pub async fn spawn_remote_docker_terminal(
+    socket: SocketRef,
+    sessions: &SessionMap,
+    db: &sqlx::SqlitePool,
+    server_id: i64,
+    input: super::types::DockerTerminalStart,
+) {
+    let key = socket_key(&socket);
+
+    let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
+        Ok(executor) => executor,
+        Err(error) => {
+            tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_docker_terminal");
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(
+                &socket,
+                format!("could not create remote executor: {error}"),
+            );
+            return;
+        }
+    };
+
+    let actual_host = executor.host().to_string();
+    let shell_req = input.shell.as_deref().unwrap_or("sh").to_string();
+    let container_req = input.container.clone();
+
+    let builder = crate::utils::ssh::SshBuilder::new(
+        actual_host.clone(),
+        executor.username().to_string(),
+        executor.auth().clone(),
+        executor.host_key().clone(),
+    )
+    .port(executor.port())
+    .connect_timeout(5)
+    .disable_multiplexing()
+    .quiet(true)
+    .tty(crate::utils::ssh::TtyMode::ForceTty);
+
+    let (mut args, agent_session, temp_askpass, agent_socket) = match builder.build_args().await {
+        Ok(res) => res,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not build SSH authentication arguments: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not build SSH args: {error}"));
+            return;
+        }
+    };
+
+    let remote_cmd = format!(
+        "CID=$(docker ps -q -f name={container_req} | head -n1); if [ -z \"$CID\" ]; then CID=$(docker ps -q -f name={container_req}_ | head -n1); fi; if [ -z \"$CID\" ]; then CID={container_req}; fi; exec docker exec -it $CID {shell_req}",
+        container_req = crate::utils::exec::script::shell_single_quote(&container_req),
+        shell_req = crate::utils::exec::script::shell_single_quote(&shell_req),
+    );
+
+    args.push("sh".to_string());
+    args.push("-c".to_string());
+    args.push(remote_cmd);
+
+    let (pty, pts) = match pty_process::open() {
+        Ok(res) => res,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not open PTY for SSH docker terminal: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not open PTY: {error}"));
+            return;
+        }
+    };
+    let _ = pty.resize(input.size());
+
+    let pty_cmd = PtyCommand::new("ssh")
+        .args(&args)
+        .env("TERM", "xterm-256color");
+    let mut cmd = pty_cmd;
+    if let Some(socket_path) = agent_socket {
+        cmd = cmd.env("SSH_AUTH_SOCK", socket_path);
+    }
+    if let Some(ref askpass) = temp_askpass {
+        cmd = cmd
+            .env("SSH_ASKPASS", askpass.as_os_str())
+            .env("SSH_ASKPASS_REQUIRE", "force")
+            .env("DISPLAY", ":0");
+    }
+
+    let child = match cmd.spawn(pts) {
+        Ok(child) => child,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not spawn SSH docker terminal process: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not start SSH docker terminal: {error}"));
+            return;
+        }
+    };
+
+    let (reader, writer) = pty.into_split();
+    let child_arc = Arc::new(Mutex::new(child));
+    let session_id = next_session_id();
+    let cancel = tokio_util::sync::CancellationToken::new();
+
+    sessions.insert(
+        key.clone(),
+        TerminalSession::Pty {
+            writer: Arc::new(Mutex::new(writer)),
+            child: child_arc.clone(),
+            session_id,
+            cancel: cancel.clone(),
+        },
+    );
+
+    let _ = socket.emit(
+        "started",
+        &TerminalStarted {
+            kind: TerminalKind::Docker,
+            host: Some(&actual_host),
+        },
+    );
+
+    spawn_pty_reader(socket.clone(), reader);
+
+    let sessions_clone = sessions.clone();
+    let socket_clone = socket.clone();
+    let server_host = actual_host.clone();
+    let container_log = container_req.clone();
+    tokio::spawn(async move {
+        let _keep_alive_agent = agent_session;
+        let _keep_alive_askpass = temp_askpass;
+
+        let status = tokio::select! {
+            s = async { child_arc.lock().await.wait().await } => {
+                Some(s)
+            }
+            _ = cancel.cancelled() => {
+                let _ = child_arc.lock().await.kill().await;
+                None
+            }
+        };
+
+        let is_current = match sessions_clone.get(&key) {
+            Some(entry) => match entry.value() {
+                TerminalSession::Pty { session_id: sid, .. } => *sid == session_id,
+                _ => false,
+            },
+            None => false,
+        };
+
+        if is_current {
+            sessions_clone.remove(&key);
+            let code = status.and_then(|s| s.ok()).and_then(|s| s.code());
+            tracing::info!(container = %container_log, exit_code = ?code, host = %server_host, "remote docker terminal session exited");
+            if let Some(c) = code {
+                if c != 0 {
+                    let err_msg = format!("\r\n\x1b[31m[Error] Remote container terminal session for '{container_log}' on '{server_host}' exited with code {c}.\x1b[0m\r\n");
+                    emit_terminal_bytes(&socket_clone, "stdout", err_msg.as_bytes());
+                }
+            }
+            let _ = socket_clone.emit("exit", &TerminalExit { code });
+        }
+    });
+}

@@ -18,7 +18,7 @@ use tokio::{io::AsyncWriteExt, process::Command};
 
 use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
-use remote::spawn_remote_terminal;
+use remote::{spawn_remote_docker_terminal, spawn_remote_terminal};
 pub use types::{
     DockerTerminalStart, ServerTerminalStart, SocketKey, TerminalInputPayload, TerminalKind,
     TerminalResize, TerminalSession,
@@ -79,6 +79,11 @@ impl TerminalSocket {
     async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
+
+        if let Some(server_id) = input.server_id {
+            spawn_remote_docker_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
+            return;
+        }
 
         spawn_docker_terminal(socket, &self.sessions, input).await;
     }
