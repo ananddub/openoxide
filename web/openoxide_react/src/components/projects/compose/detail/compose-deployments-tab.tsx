@@ -180,6 +180,8 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			isMounted = false;
 			controller.abort();
 		};
+	}, [activeLogId, selectedEvent]);
+
 	const queryClient = useQueryClient();
 
 	const handleClearComposeDeployments = async () => {
