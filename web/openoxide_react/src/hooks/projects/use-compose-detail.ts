@@ -19,29 +19,25 @@ export function useComposeDetail(composeId: number) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Pure Zustand Store Compose Resolution (0ms Instant Render)
-	const compose = useMemo(() => {
-		const storeCompose = composes.find((c) => String(c.id) === String(composeId));
-		const serviceCompose = overviewServices.find(
-			(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
-		);
-		const raw = storeCompose || (serviceCompose ? {
-			id: serviceCompose.id,
-			name: serviceCompose.name,
-			app_name: serviceCompose.name,
-			project_id: serviceCompose.project_id,
-			status: serviceCompose.status,
-			created_at: serviceCompose.created_at,
-		} as any : undefined);
+	// Pure Zustand Store Compose Resolution (React Compiler Auto-Memoized)
+	const storeCompose = composes.find((c) => String(c.id) === String(composeId));
+	const serviceCompose = overviewServices.find(
+		(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
+	);
+	const rawCompose = storeCompose || (serviceCompose ? {
+		id: serviceCompose.id,
+		name: serviceCompose.name,
+		app_name: serviceCompose.name,
+		project_id: serviceCompose.project_id,
+		status: serviceCompose.status,
+		created_at: serviceCompose.created_at,
+	} as any : undefined);
 
-		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || (raw as any).compose_status || (raw as any).status || 'STOPPED';
-		return {
-			...raw,
-			status: effectiveStatus,
-			compose_status: effectiveStatus,
-		};
-	}, [composes, overviewServices, composeId, localStatusOverride]);
+	const compose = rawCompose ? {
+		...rawCompose,
+		status: localStatusOverride || (rawCompose as any).compose_status || (rawCompose as any).status || 'STOPPED',
+		compose_status: localStatusOverride || (rawCompose as any).compose_status || (rawCompose as any).status || 'STOPPED',
+	} : null;
 
 	// Auto-clear localStatusOverride when Zustand status updates
 	useEffect(() => {

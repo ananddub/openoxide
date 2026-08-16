@@ -19,29 +19,25 @@ export function useAppDetail(appId: number) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Pure Zustand Store Application Resolution (0ms Instant Render)
-	const app = useMemo(() => {
-		const storeApp = applications.find((a) => String(a.id) === String(appId));
-		const serviceApp = overviewServices.find(
-			(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
-		);
-		const raw = storeApp || (serviceApp ? {
-			id: serviceApp.id,
-			name: serviceApp.name,
-			app_name: serviceApp.name,
-			project_id: serviceApp.project_id,
-			status: serviceApp.status,
-			created_at: serviceApp.created_at,
-		} as any : undefined);
+	// Pure Zustand Store Application Resolution (React Compiler Auto-Memoized)
+	const storeApp = applications.find((a) => String(a.id) === String(appId));
+	const serviceApp = overviewServices.find(
+		(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
+	);
+	const rawApp = storeApp || (serviceApp ? {
+		id: serviceApp.id,
+		name: serviceApp.name,
+		app_name: serviceApp.name,
+		project_id: serviceApp.project_id,
+		status: serviceApp.status,
+		created_at: serviceApp.created_at,
+	} as any : undefined);
 
-		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || (raw as any).app_status || (raw as any).status || 'STOPPED';
-		return {
-			...raw,
-			status: effectiveStatus,
-			app_status: effectiveStatus,
-		};
-	}, [applications, overviewServices, appId, localStatusOverride]);
+	const app = rawApp ? {
+		...rawApp,
+		status: localStatusOverride || (rawApp as any).app_status || (rawApp as any).status || 'STOPPED',
+		app_status: localStatusOverride || (rawApp as any).app_status || (rawApp as any).status || 'STOPPED',
+	} : null;
 
 	// Auto-clear localStatusOverride when Zustand status updates
 	useEffect(() => {
