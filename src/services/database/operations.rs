@@ -47,10 +47,17 @@ impl DatabaseService {
             .assert_deployable(server_id)
             .await?;
 
+        if matches!(operation, DatabaseOperation::Stop) {
+            let _ = self.cancel_operation(kind, id).await;
+            return Ok(DatabaseOperationResult {
+                database: self.get_by_id(kind, id).await?,
+                operation,
+            });
+        }
+
         let target_status = match operation {
             DatabaseOperation::Deploy | DatabaseOperation::Redeploy => "DEPLOYING",
-            DatabaseOperation::Start | DatabaseOperation::Reload => "STARTING",
-            DatabaseOperation::Stop => "STOPPING",
+            _ => "STARTING",
         };
 
         match kind {
