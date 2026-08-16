@@ -47,7 +47,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		});
 
 		if (service) {
-			const resolvedKind = service.db_kind || service.dbKind || (service.kind && service.kind !== 'database' ? service.kind : undefined) || targetKind || 'postgres';
+			const resolvedKind = service.db_kind || service.dbKind || (service.kind && service.kind !== 'database' ? service.kind : undefined) || targetKind;
 			return {
 				id: service.id,
 				name: service.name,
@@ -67,12 +67,20 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			overviewServices.find((s) => String(s.id) === String(dbId));
 	}, [databases, overviewServices, dbId, targetKind]);
 
+	const activeKind = (
+		storeDb?.kind ||
+		storeDb?.type ||
+		(storeDb as any)?.db_kind ||
+		targetKind ||
+		''
+	).toLowerCase();
+
 	const isRedis = activeKind.includes('redis');
 	const isMysql = activeKind.includes('mysql');
 	const isMariadb = activeKind.includes('mariadb');
 	const isMongo = activeKind.includes('mongo');
 	const isLibsql = activeKind.includes('libsql');
-	const isPostgres = !isRedis && !isMysql && !isMariadb && !isMongo && !isLibsql;
+	const isPostgres = activeKind.includes('postgres') || (!isRedis && !isMysql && !isMariadb && !isMongo && !isLibsql && activeKind === 'postgres');
 
 	// Target query selection with 0n ID guard for inactive queries to save CPU & network
 	const postgresQ = usePostgresGet(isPostgres ? BigInt(dbId) : 0n);

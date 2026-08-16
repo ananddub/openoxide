@@ -41,7 +41,7 @@ export function DatabaseHeader({
 	onAction,
 	tabs,
 }: DatabaseHeaderProps) {
-	const kind = (detectedKind || 'postgres').toLowerCase();
+	const kind = (database?.kind || (database as any)?.db_kind || detectedKind || '').toLowerCase();
 	const statusStr = (database?.status || database?.app_status || '').toUpperCase();
 	const isRunning = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'ACTIVE', 'OK'].includes(statusStr);
 
