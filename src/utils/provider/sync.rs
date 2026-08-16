@@ -81,10 +81,10 @@ impl<'a> ProviderSyncBuilder<'a> {
         // 2. Else branch (if .git does not exist)
         let mut else_branch = ScriptPipeline::new();
         if let Some(parent) = Path::new(self.destination).parent() {
-            else_branch = else_branch.cmd(format!(
-                "mkdir -p {}",
-                shell_single_quote(&parent.to_string_lossy())
-            ));
+            let default_exec = CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
+            let exec_ref = self.executor.as_ref().unwrap_or(&default_exec);
+            let os = crate::utils::os::OsCli::new(exec_ref);
+            else_branch = else_branch.cmd(os.dir(parent.to_string_lossy().as_ref()).create().parents(true));
         }
 
         let clone_git = GitCli::new_local();
@@ -176,10 +176,6 @@ impl<'a> ProviderSyncBuilder<'a> {
 
         Ok(())
     }
-}
-
-fn shell_single_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "'\\''"))
 }
 
 #[cfg(test)]
