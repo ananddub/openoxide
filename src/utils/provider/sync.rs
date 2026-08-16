@@ -161,9 +161,18 @@ impl<'a> ProviderSyncBuilder<'a> {
         }
 
         let script = self.to_script(branch);
-        executor
+        let output = executor
             .run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel)
             .await?;
+
+        if let Some(ctx) = self.ctx {
+            if !output.stdout.is_empty() {
+                ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+            }
+            if !output.stderr.is_empty() {
+                ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+            }
+        }
 
         Ok(())
     }

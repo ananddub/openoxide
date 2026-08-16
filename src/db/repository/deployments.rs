@@ -362,6 +362,19 @@ impl DeploymentRepository {
         .bind(deployment_status).bind(deployment_status).bind(error_message).bind(id)
         .execute(&mut *tx).await?;
 
+        if let Some(msg) = error_message {
+            if !msg.is_empty() {
+                let formatted_err = format!("\n[ERROR] {}\n", msg);
+                let _ = sqlx::query(
+                    "UPDATE deployments SET logs = COALESCE(logs, '') || ? WHERE id = ?",
+                )
+                .bind(&formatted_err)
+                .bind(id)
+                .execute(&mut *tx)
+                .await;
+            }
+        }
+
         if let Some(resource_id) = application_id {
             sqlx::query("UPDATE applications SET app_status=? WHERE id=?")
                 .bind(resource_status)
