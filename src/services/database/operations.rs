@@ -147,41 +147,53 @@ impl DatabaseService {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
         }
 
-        if let (Ok(app_name), Ok((server_id, _))) = (
-            self.repo_deploy
-                .get_database_app_name(id, kind.as_str())
-                .await,
-            self.database_server_id_and_name(kind, id).await,
-        ) {
-            let docker_cli = self.database_docker(server_id).await?;
-            if let Ok(services) = docker_cli
-                .services()
-                .list()
-                .filter(crate::utils::docker::query::ServiceFilter::name(format!(
-                    "{}_",
-                    app_name
-                )))
-                .run_json()
-                .await
-            {
-                for s in services {
-                    if &s.replicas != "0/0" {
-                        let _ = docker_cli
-                            .services()
-                            .scale()
-                            .service(&s.name, 0)
-                            .run()
-                            .await;
+        let db_record = self.get_by_id(kind, id).await.ok();
+        let app_name = db_record.as_ref().map(|d| d.app_name.clone());
+        let server_id = db_record.as_ref().and_then(|d| d.server_id);
+
+        if let Some(ref app_name) = app_name {
+            if let Ok(docker_cli) = self.database_docker(server_id).await {
+                let candidates = [
+                    app_name.clone(),
+                    format!("{}_db", app_name),
+                    format!("{}-db", app_name),
+                ];
+
+                if let Ok(services) = docker_cli
+                    .services()
+                    .list()
+                    .filter(crate::utils::docker::query::ServiceFilter::name(format!(
+                        "{}_",
+                        app_name
+                    )))
+                    .run_json()
+                    .await
+                {
+                    for s in services {
+                        if &s.replicas != "0/0" {
+                            let _ = docker_cli
+                                .services()
+                                .scale()
+                                .service(&s.name, 0)
+                                .run()
+                                .await;
+                        }
                     }
                 }
-            } else {
-                let service_name = format!("{}_db", app_name);
-                let _ = docker_cli
-                    .services()
-                    .scale()
-                    .service(&service_name, 0)
-                    .run()
-                    .await;
+
+                for candidate in &candidates {
+                    let _ = docker_cli
+                        .services()
+                        .scale()
+                        .service(candidate, 0)
+                        .run()
+                        .await;
+                    let _ = docker_cli
+                        .container(candidate)
+                        .stop()
+                        .run()
+                        .await;
+                }
             }
         }
 
@@ -200,6 +212,7 @@ impl DatabaseService {
         Ok(true)
     }
 
+    #[allow(dead_code)]
     async fn database_server_id_and_name(
         &self,
         kind: DatabaseKind,
