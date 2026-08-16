@@ -1,5 +1,6 @@
 import {useState, useMemo} from 'react';
-import {$api} from '#/api/query';
+import {client} from '#/api/client';
+import {formatApiError} from '#/api/utils';
 import {toast} from 'sonner';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
@@ -112,31 +113,25 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		monitoring.triggerRefresh();
 	};
 
-	const deployMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/deploy` as any);
-	const reloadMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/reload` as any);
-	const startMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/start` as any);
-	const stopMutation = $api.useMutation('post', `/${currentKind as 'postgres'}/{id}/stop` as any);
-	const patchMutation = $api.useMutation('patch', `/${currentKind as 'postgres'}/{id}` as any);
-
 	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop') => {
 		setActionLoading(action);
 		try {
-			if (action === 'deploy') {
-				await deployMutation.mutateAsync({params: {path: {id: dbId}}} as any);
-				toast.success(`${currentKind.toUpperCase()} deployment triggered`);
-			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({params: {path: {id: dbId}}} as any);
-				toast.success(`${currentKind.toUpperCase()} reloaded`);
-			} else if (action === 'start') {
-				await startMutation.mutateAsync({params: {path: {id: dbId}}} as any);
-				toast.success(`${currentKind.toUpperCase()} started`);
-			} else if (action === 'stop') {
-				await stopMutation.mutateAsync({params: {path: {id: dbId}}} as any);
-				toast.success(`${currentKind.toUpperCase()} stopped`);
+			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
+			const endpoint = `/${kind}/{id}/${action}` as any;
+			const res = await client.POST(endpoint, {
+				params: { path: { id: dbId } },
+			} as any);
+
+			const resObj = res as Record<string, unknown>;
+			if (resObj?.error) {
+				toast.error(formatApiError(resObj.error));
+				return;
 			}
+
+			toast.success(`${kind.toUpperCase()} ${action} triggered`);
 			refetchAll();
-		} catch (err) {
-			toast.error(`Action failed: ${action}`);
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		} finally {
 			setActionLoading(null);
 		}
@@ -144,14 +139,23 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const handleUpdateEnv = async (patchData: Record<string, unknown>) => {
 		try {
-			await patchMutation.mutateAsync({
-				params: {path: {id: dbId}},
+			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
+			const endpoint = `/${kind}/{id}` as any;
+			const res = await client.PATCH(endpoint, {
+				params: { path: { id: dbId } },
 				body: patchData,
 			} as any);
+
+			const resObj = res as Record<string, unknown>;
+			if (resObj?.error) {
+				toast.error(formatApiError(resObj.error));
+				return;
+			}
+
 			toast.success('Database settings updated');
 			refetchAll();
-		} catch (err) {
-			toast.error('Failed to update database settings');
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		}
 	};
 
