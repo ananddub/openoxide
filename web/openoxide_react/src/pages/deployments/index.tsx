@@ -57,6 +57,8 @@ function DeploymentsPage() {
 		errorDetailDeployment,
 		setErrorDetailDeployment,
 		handleCancelDeployment,
+		handleDeleteDeployment,
+		handleClearAllDeployments,
 		filteredAndSorted,
 		activeQueue,
 		clearFilters,
@@ -67,7 +69,7 @@ function DeploymentsPage() {
 	return (
 		<div className="flex flex-col gap-6 w-full pb-10">
 			{/* Main Page Header */}
-			<DeploymentsHeader refreshing={refreshing} onRefresh={handleRefresh} />
+			<DeploymentsHeader refreshing={refreshing} onRefresh={handleRefresh} onClearAll={handleClearAllDeployments} />
 
 			{/* Interactive Tabs for History & Queue */}
 			<Tabs defaultValue="history" className="w-full space-y-6">
@@ -136,6 +138,7 @@ function DeploymentsPage() {
 												onViewLogs={setSelectedDeployment as any}
 												onViewError={setErrorDetailDeployment as any}
 												onCancel={handleCancelDeployment}
+												onDelete={handleDeleteDeployment}
 											/>
 										))}
 									</TableBody>

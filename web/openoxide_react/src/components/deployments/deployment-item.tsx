@@ -6,6 +6,7 @@ import {
 	AlertCircle,
 	Database,
 	Clock,
+	Trash2,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -17,6 +18,7 @@ interface DeploymentItemProps {
 	onViewLogs: (d: Deployment) => void;
 	onViewError: (d: Deployment) => void;
 	onCancel: (id: number) => void;
+	onDelete?: (id: number) => void;
 }
 
 export function DeploymentItem({
@@ -24,6 +26,7 @@ export function DeploymentItem({
 	onViewLogs,
 	onViewError,
 	onCancel,
+	onDelete,
 }: DeploymentItemProps) {
 	const d = deployment;
 	const hasApp = d.application_id !== null && d.application_id !== undefined;
@@ -172,6 +175,15 @@ export function DeploymentItem({
 							onClick={() => onCancel(d.id!)}
 							className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
 							<XCircle className="w-3 h-3" /> Cancel
+						</Button>
+					)}
+					{!isRunningOrQueued && d.id !== undefined && (
+						<Button
+							size="sm"
+							variant="ghost"
+							onClick={() => onDelete?.(d.id!)}
+							className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-1.5 rounded-lg font-semibold flex items-center gap-1">
+							<Trash2 className="w-3 h-3" />
 						</Button>
 					)}
 				</div>

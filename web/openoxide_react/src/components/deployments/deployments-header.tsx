@@ -1,13 +1,14 @@
-import {RefreshCw} from 'lucide-react';
+import {RefreshCw, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
 
 interface DeploymentsHeaderProps {
 	refreshing: boolean;
 	onRefresh: () => void;
+	onClearAll?: () => void;
 }
 
-export function DeploymentsHeader({refreshing, onRefresh}: DeploymentsHeaderProps) {
+export function DeploymentsHeader({refreshing, onRefresh, onClearAll}: DeploymentsHeaderProps) {
 	return (
 		<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/30 pb-5">
 			<div>
@@ -20,6 +21,15 @@ export function DeploymentsHeader({refreshing, onRefresh}: DeploymentsHeaderProp
 			</div>
 
 			<div className="flex items-center gap-3">
+				{onClearAll && (
+					<Button
+						variant="outline"
+						onClick={onClearAll}
+						className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold h-9 px-3.5 text-xs rounded-lg flex items-center gap-2 shadow-2xs">
+						<Trash2 className="size-3.5" />
+						Clear History
+					</Button>
+				)}
 				<Button
 					variant="outline"
 					onClick={onRefresh}

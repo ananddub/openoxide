@@ -196,6 +196,24 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 
 
+	const handleClearAppDeployments = async () => {
+		try {
+			const token = localStorage.getItem('token') || '';
+			const res = await fetch(`/api/deployments/application/${appId}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			if (!res.ok) throw new Error('Failed to clear application deployments');
+			const data = await res.json();
+			toast.success(`Cleared ${data.cleared_count || 0} deployment logs & history`);
+			onRefresh?.();
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
 	const isActionPending = isTriggering || deployMutation.isPending || redeployMutation.isPending || cancelMutation.isPending;
 
 	return (
@@ -215,6 +233,9 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 				</div>
 
 				<div className="flex items-center gap-2">
+					<Button variant="outline" size="sm" onClick={handleClearAppDeployments} disabled={isActionPending} className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-8 text-xs">
+						Clear History
+					</Button>
 					<Button variant="outline" size="sm" onClick={() => onRefresh?.()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
 						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
 					</Button>

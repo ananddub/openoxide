@@ -60,7 +60,39 @@ export function useDeployments() {
 				},
 			});
 			toast.success('Deployment cancellation requested');
-			// Live hook auto-updates via WebSocket — no manual refetch needed
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	const handleDeleteDeployment = async (id: number) => {
+		try {
+			const token = localStorage.getItem('token') || '';
+			const res = await fetch(`/api/deployments/${id}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			if (!res.ok) throw new Error('Failed to delete deployment');
+			toast.success(`Deployment #${id} deleted`);
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	const handleClearAllDeployments = async () => {
+		try {
+			const token = localStorage.getItem('token') || '';
+			const res = await fetch('/api/deployments', {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			if (!res.ok) throw new Error('Failed to clear deployments');
+			const data = await res.json();
+			toast.success(`Cleared ${data.cleared_count || 0} deployment logs & history`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -146,6 +178,8 @@ export function useDeployments() {
 		errorDetailDeployment,
 		setErrorDetailDeployment,
 		handleCancelDeployment,
+		handleDeleteDeployment,
+		handleClearAllDeployments,
 		filteredAndSorted,
 		activeQueue,
 		clearFilters,
