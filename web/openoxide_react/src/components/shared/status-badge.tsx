@@ -11,12 +11,20 @@ export function StatusBadge({status, isBuilding, actionLoading}: StatusBadgeProp
 		['QUEUED', 'STARTING', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING'].includes(st) ||
 		isBuilding ||
 		actionLoading === 'start' ||
-		actionLoading === 'deploy'
+		actionLoading === 'deploy' ||
+		actionLoading === 'redeploy'
 	) {
+		const label = st === 'QUEUED' ? 'QUEUED' 
+			: st === 'BUILDING' ? 'BUILDING...'
+			: st === 'DEPLOYING' ? 'DEPLOYING...'
+			: st === 'REBUILDING' || st === 'REDEPLOYING' ? 'REDEPLOYING...'
+			: actionLoading === 'deploy' || actionLoading === 'redeploy' ? 'DEPLOYING...'
+			: 'STARTING...';
+
 		return (
 			<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border font-bold select-none bg-amber-500/10 text-amber-500 border-amber-500/30">
 				<span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-				{st === 'QUEUED' ? 'QUEUED' : 'STARTING...'}
+				{label}
 			</span>
 		);
 	}

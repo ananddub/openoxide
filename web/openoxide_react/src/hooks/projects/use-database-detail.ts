@@ -168,7 +168,10 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			}
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
-			const nextStatus = action === 'stop' ? 'STOPPED' : action === 'start' ? 'STARTING' : 'BUILDING';
+			const nextStatus = action === 'stop' ? 'STOPPING' 
+				: action === 'cancel' ? 'CANCELLING'
+				: action === 'start' ? 'STARTING'
+				: 'DEPLOYING';
 			setLocalStatusOverride(nextStatus);
 			(useAppStore.getState() as any).updateServiceStatus?.(dbId, nextStatus);
 			refetchAll();
