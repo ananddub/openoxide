@@ -75,6 +75,9 @@ impl BuilderQueue {
             Err(_) => "ERROR",
         };
         let error_message = result.err().map(|e| e.to_string());
+        if let Some(ref err) = error_message {
+            tracing::error!(deployment_id, error = %err, "builder queue: job failed with error");
+        }
 
         let repo = match resolve::<crate::repository::DeploymentRepository>().await {
             Ok(r) => r,
