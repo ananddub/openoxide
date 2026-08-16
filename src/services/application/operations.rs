@@ -80,18 +80,16 @@ impl ApplicationService {
         })
     }
 
-    pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
+    pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
-        let _ = self.repo_app.update_status(id, "CANCELLING").await;
+        let _ = self.repo_app.update_status(id, "STOPPING").await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
 
-        let queue = resolve::<BuilderQueue>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-
-        let _ = queue.cancel_queued_application(id).await?;
+        if let Ok(queue) = resolve::<BuilderQueue>().await {
+            let _ = queue.cancel_queued_application(id).await;
+        }
 
         if let Ok(state) = resolve::<ApplicationState>().await {
             state.cancel_by_id(IdType::AppId(id));
@@ -99,32 +97,94 @@ impl ApplicationService {
 
         let _ = self.repo_deploy.request_cancel_deployment(id).await;
 
-        if let Ok(cmd) = app_new_cmd(self.db.clone(), id).await {
-            let docker_cli = DockerCli::from_executor(cmd);
-            if let Ok(services) = docker_cli
-                .services()
-                .list()
-                .filter(ServiceFilter::name(format!("{}_", app_user.app_name)))
-                .run_json()
+        let db_ref = self.db.clone();
+        let repo_app = self.repo_app.clone();
+        let cache = self.cache.clone();
+
+        tokio::spawn(async move {
+            if let Ok(cmd) = app_new_cmd(db_ref, id).await {
+                let docker_cli = DockerCli::from_executor(cmd);
+                if let Ok(services) = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli
+                        .services()
+                        .list()
+                        .filter(ServiceFilter::name(format!("{}_", app_user.app_name)))
+                        .run_json(),
+                )
                 .await
-            {
-                for s in services.iter() {
-                    if &s.replicas != "0/0" {
-                        let _ = docker_cli
-                            .services()
-                            .scale()
-                            .service(&s.name, 0)
-                            .run()
+                .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
+                {
+                    for s in services.iter() {
+                        if &s.replicas != "0/0" {
+                            let _ = tokio::time::timeout(
+                                std::time::Duration::from_secs(3),
+                                docker_cli.services().scale().service(&s.name, 0).run(),
+                            )
                             .await;
+                        }
                     }
                 }
             }
-        }
 
-        self.repo_app.update_status(id, "CANCELLED").await?;
+            let _ = repo_app.update_status(id, "STOPPED").await;
+            cache.invalidate(&crate::core::cache::CacheKey::Application(id)).await;
+        });
+
+        Ok(true)
+    }
+
+    pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
+        let app_user = self.get_by_id(id).await?;
+        let _ = self.repo_app.update_status(id, "CANCELLING").await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
+
+        if let Ok(queue) = resolve::<BuilderQueue>().await {
+            let _ = queue.cancel_queued_application(id).await;
+        }
+
+        if let Ok(state) = resolve::<ApplicationState>().await {
+            state.cancel_by_id(IdType::AppId(id));
+        }
+
+        let _ = self.repo_deploy.request_cancel_deployment(id).await;
+
+        let db_ref = self.db.clone();
+        let repo_app = self.repo_app.clone();
+        let cache = self.cache.clone();
+
+        tokio::spawn(async move {
+            if let Ok(cmd) = app_new_cmd(db_ref, id).await {
+                let docker_cli = DockerCli::from_executor(cmd);
+                if let Ok(services) = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli
+                        .services()
+                        .list()
+                        .filter(ServiceFilter::name(format!("{}_", app_user.app_name)))
+                        .run_json(),
+                )
+                .await
+                .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
+                {
+                    for s in services.iter() {
+                        if &s.replicas != "0/0" {
+                            let _ = tokio::time::timeout(
+                                std::time::Duration::from_secs(3),
+                                docker_cli.services().scale().service(&s.name, 0).run(),
+                            )
+                            .await;
+                        }
+                    }
+                }
+            }
+
+            let _ = repo_app.update_status(id, "CANCELLED").await;
+            cache.invalidate(&crate::core::cache::CacheKey::Application(id)).await;
+        });
+
         Ok(true)
     }
 }

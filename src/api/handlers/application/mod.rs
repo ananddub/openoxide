@@ -366,6 +366,18 @@ impl ApplicationController {
         self.operation(id, ApplicationOperation::Start).await
     }
 
+    #[post("/{id}/stop")]
+    async fn stop(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
+        Path(id): Path<i64>,
+    ) -> Result<StatusCode, ApiError> {
+        match self.service.stop_operation(id).await {
+            Ok(_) => Ok(StatusCode::OK),
+            Err(error) => Err(map_sqlx_error(error)),
+        }
+    }
+
     #[post("/{id}/cancel")]
     async fn cancel(
         &self,
