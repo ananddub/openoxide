@@ -67,26 +67,32 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			overviewServices.find((s) => String(s.id) === String(dbId));
 	}, [databases, overviewServices, dbId, targetKind]);
 
-	// Target query selection with selective query execution
-	const postgresQ = usePostgresGet(BigInt(dbId));
-	const mysqlQ = useMysqlGet(BigInt(dbId));
-	const mariadbQ = useMariadbGet(BigInt(dbId));
-	const mongoQ = useMongoGet(BigInt(dbId));
-	const redisQ = useRedisGet(BigInt(dbId));
-	const libsqlQ = useLibsqlGet(BigInt(dbId));
+	const isRedis = activeKind.includes('redis');
+	const isMysql = activeKind.includes('mysql');
+	const isMariadb = activeKind.includes('mariadb');
+	const isMongo = activeKind.includes('mongo');
+	const isLibsql = activeKind.includes('libsql');
+	const isPostgres = !isRedis && !isMysql && !isMariadb && !isMongo && !isLibsql;
+
+	// Target query selection with 0n ID guard for inactive queries to save CPU & network
+	const postgresQ = usePostgresGet(isPostgres ? BigInt(dbId) : 0n);
+	const mysqlQ = useMysqlGet(isMysql ? BigInt(dbId) : 0n);
+	const mariadbQ = useMariadbGet(isMariadb ? BigInt(dbId) : 0n);
+	const mongoQ = useMongoGet(isMongo ? BigInt(dbId) : 0n);
+	const redisQ = useRedisGet(isRedis ? BigInt(dbId) : 0n);
+	const libsqlQ = useLibsqlGet(isLibsql ? BigInt(dbId) : 0n);
 
 	// Select active query result matching targetKind strictly
-	const fetchedDb = (activeKind.includes('redis') ? redisQ.data : null) ||
-		(activeKind.includes('postgres') ? postgresQ.data : null) ||
-		(activeKind.includes('mysql') ? mysqlQ.data : null) ||
-		(activeKind.includes('mariadb') ? mariadbQ.data : null) ||
-		(activeKind.includes('mongo') ? mongoQ.data : null) ||
-		(activeKind.includes('libsql') ? libsqlQ.data : null) ||
-		postgresQ.data || mysqlQ.data || redisQ.data || mongoQ.data || mariadbQ.data || libsqlQ.data;
+	const fetchedDb = (isRedis ? redisQ.data : null) ||
+		(isPostgres ? postgresQ.data : null) ||
+		(isMysql ? mysqlQ.data : null) ||
+		(isMariadb ? mariadbQ.data : null) ||
+		(isMongo ? mongoQ.data : null) ||
+		(isLibsql ? libsqlQ.data : null);
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride once backend query syncs with backend state and update Zustand store
+	// Auto-clear localStatusOverride once backend query syncs with backend state
 	useEffect(() => {
 		if (fetchedDb?.status || (fetchedDb as any)?.app_status) {
 			const fetchedStatus = (fetchedDb.status || (fetchedDb as any).app_status || '').toUpperCase();
@@ -101,9 +107,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 					setLocalStatusOverride(null);
 				}
 			}
-			(useAppStore.getState() as any).updateServiceStatus?.(dbId, fetchedStatus);
 		}
-	}, [fetchedDb?.status, (fetchedDb as any)?.app_status, localStatusOverride, dbId]);
+	}, [fetchedDb?.status, (fetchedDb as any)?.app_status, localStatusOverride]);
 
 	const database = useMemo(() => {
 		const raw = (storeDb && fetchedDb) ? { ...storeDb, ...fetchedDb } : (fetchedDb || storeDb);
