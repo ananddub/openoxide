@@ -196,12 +196,15 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 	const handleClearAppDeployments = async () => {
 		try {
-			const res = await authFetch(`/deployments/application/${appId}`, {
-				method: 'DELETE',
+			const res = await clearAppMutation.mutateAsync({
+				params: {
+					path: {
+						id: appId,
+					},
+				},
 			});
-			if (!res.ok) throw new Error('Failed to clear application deployments');
-			const data = await res.json();
-			toast.success(`Cleared ${data.cleared_count || 0} deployment logs & history`);
+			const data = res as any;
+			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -210,10 +213,13 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 	const handleDeleteSingleAppDeployment = async (id: number) => {
 		try {
-			const res = await authFetch(`/deployments/${id}`, {
-				method: 'DELETE',
+			await deleteMutation.mutateAsync({
+				params: {
+					path: {
+						id,
+					},
+				},
 			});
-			if (!res.ok) throw new Error('Failed to delete deployment');
 			toast.success(`Deployment #${id} deleted`);
 			onRefresh?.();
 		} catch (err: unknown) {

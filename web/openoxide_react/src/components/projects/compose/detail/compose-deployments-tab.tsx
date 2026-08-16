@@ -180,14 +180,20 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		};
 	}, [activeLogId, selectedEvent]);
 
+	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
+	const clearComposeMutation = $api.useMutation('delete', '/deployments/compose/{id}');
+
 	const handleClearComposeDeployments = async () => {
 		try {
-			const res = await authFetch(`/deployments/compose/${composeId}`, {
-				method: 'DELETE',
+			const res = await clearComposeMutation.mutateAsync({
+				params: {
+					path: {
+						id: composeId,
+					},
+				},
 			});
-			if (!res.ok) throw new Error('Failed to clear compose deployments');
-			const data = await res.json();
-			toast.success(`Cleared ${data.cleared_count || 0} compose deployment logs & history`);
+			const data = res as any;
+			toast.success(`Cleared ${data?.cleared_count || 0} compose deployment logs & history`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -195,10 +201,13 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 
 	const handleDeleteSingleComposeDeployment = async (id: number) => {
 		try {
-			const res = await authFetch(`/deployments/${id}`, {
-				method: 'DELETE',
+			await deleteMutation.mutateAsync({
+				params: {
+					path: {
+						id,
+					},
+				},
 			});
-			if (!res.ok) throw new Error('Failed to delete deployment');
 			toast.success(`Deployment #${id} deleted`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

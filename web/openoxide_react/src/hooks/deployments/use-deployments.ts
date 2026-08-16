@@ -33,6 +33,8 @@ export function useDeployments() {
 	const [errorDetailDeployment, setErrorDetailDeployment] = React.useState<Deployment | null>(null);
 
 	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
+	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
+	const clearAllMutation = $api.useMutation('delete', '/deployments');
 
 	const storeDeployments = useAppStore((state) => state.deployments);
 
@@ -68,10 +70,13 @@ export function useDeployments() {
 
 	const handleDeleteDeployment = async (id: number) => {
 		try {
-			const res = await authFetch(`/deployments/${id}`, {
-				method: 'DELETE',
+			await deleteMutation.mutateAsync({
+				params: {
+					path: {
+						id,
+					},
+				},
 			});
-			if (!res.ok) throw new Error('Failed to delete deployment');
 			toast.success(`Deployment #${id} deleted`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -80,12 +85,11 @@ export function useDeployments() {
 
 	const handleClearAllDeployments = async () => {
 		try {
-			const res = await authFetch('/deployments', {
-				method: 'DELETE',
+			const res = await clearAllMutation.mutateAsync({
+				params: { query: {} },
 			});
-			if (!res.ok) throw new Error('Failed to clear deployments');
-			const data = await res.json();
-			toast.success(`Cleared ${data.cleared_count || 0} deployment logs & history`);
+			const data = res as any;
+			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
