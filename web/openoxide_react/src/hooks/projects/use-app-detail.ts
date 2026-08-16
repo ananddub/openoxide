@@ -36,18 +36,27 @@ export function useAppDetail(appId: number) {
 		}
 	}, [appStatus, localStatusOverride]);
 
-	// Read domains, schedules, backups, and deployments 100% directly from Zustand RAM store (0ms Instant & 0 extra queries)
-	const domains = useAppStore((state) =>
-		(state.domains || []).filter((d: any) => Number(d.application_id) === Number(appId))
+	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
+	const storeDomains = useAppStore((state) => state.domains);
+	const storeSchedules = useAppStore((state) => state.schedules);
+	const storeBackups = useAppStore((state) => state.backups);
+	const storeDeployments = useAppStore((state) => state.deployments);
+
+	const domains = useMemo(() =>
+		(storeDomains || []).filter((d: any) => Number(d.application_id) === Number(appId)),
+		[storeDomains, appId]
 	);
-	const schedules = useAppStore((state) =>
-		(state.schedules || []).filter((s: any) => Number(s.application_id) === Number(appId))
+	const schedules = useMemo(() =>
+		(storeSchedules || []).filter((s: any) => Number(s.application_id) === Number(appId)),
+		[storeSchedules, appId]
 	);
-	const backups = useAppStore((state) =>
-		(state.backups || []).filter((b: any) => Number(b.application_id) === Number(appId))
+	const backups = useMemo(() =>
+		(storeBackups || []).filter((b: any) => Number(b.application_id) === Number(appId)),
+		[storeBackups, appId]
 	);
-	const deployments = useAppStore((state) =>
-		(state.deployments || []).filter((d: any) => Number(d.application_id) === Number(appId))
+	const deployments = useMemo(() =>
+		(storeDeployments || []).filter((d: any) => Number(d.application_id) === Number(appId)),
+		[storeDeployments, appId]
 	);
 
 	// Central Live Container Monitoring Stream

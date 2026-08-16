@@ -41,24 +41,30 @@ export function useComposeDetail(composeId: number) {
 		}
 	}, [composeStatus, localStatusOverride]);
 
-	// 2. Central Domains Query
-	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));
+	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
+	const storeDomains = useAppStore((state) => state.domains);
+	const storeSchedules = useAppStore((state) => state.schedules);
+	const storeBackups = useAppStore((state) => state.backups);
+	const storeDeployments = useAppStore((state) => state.deployments);
 
-	// 3. Central Schedules Query
-	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByCompose(BigInt(composeId));
-
-	// Read backups and deployments directly from Zustand RAM store
-	const storeBackups = useAppStore((state) => state.backups || []);
-	const storeDeployments = useAppStore((state) => state.deployments || []);
-
-	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
-	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
-	const backups = useMemo(() => {
-		return storeBackups.filter((b: any) => Number(b.compose_id) === Number(composeId));
-	}, [storeBackups, composeId]);
-	const deployments = useMemo(() => {
-		return storeDeployments.filter((d: any) => Number(d.compose_id) === Number(composeId));
-	}, [storeDeployments, composeId]);
+	const domains = useMemo(() =>
+		(storeDomains || []).filter((d: any) => Number(d.compose_id) === Number(composeId)),
+		[storeDomains, composeId]
+	);
+	const schedules = useMemo(() =>
+		(storeSchedules || []).filter((s: any) => Number(s.compose_id) === Number(composeId)),
+		[storeSchedules, composeId]
+	);
+	const backups = useMemo(() =>
+		(storeBackups || []).filter((b: any) => Number(b.compose_id) === Number(composeId)),
+		[storeBackups, composeId]
+	);
+	const deployments = useMemo(() =>
+		(storeDeployments || []).filter((d: any) => Number(d.compose_id) === Number(composeId)),
+		[storeDeployments, composeId]
+	);
+	const isLoadingDomains = false;
+	const isLoadingSchedules = false;
 	const isLoadingBackups = false;
 	const isLoadingDeployments = false;
 
