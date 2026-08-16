@@ -18,10 +18,12 @@ export function useAppDetail(appId: number) {
 		app_status: localStatusOverride || (rawApp as any).app_status || (rawApp as any).status || 'STOPPED',
 	} : null;
 
-	// Auto-clear localStatusOverride when Zustand status updates
+	const appStatus = (rawApp as any)?.app_status || (rawApp as any)?.status;
+
+	// Auto-clear localStatusOverride when Zustand status updates (using primitive string to prevent infinite loop)
 	useEffect(() => {
-		if (app && localStatusOverride) {
-			const fetchedStatus = (app.status || app.app_status || '').toUpperCase();
+		if (localStatusOverride && appStatus) {
+			const fetchedStatus = String(appStatus).toUpperCase();
 			const overrideUpper = localStatusOverride.toUpperCase();
 			if (
 				fetchedStatus === overrideUpper ||
@@ -32,7 +34,7 @@ export function useAppDetail(appId: number) {
 				setLocalStatusOverride(null);
 			}
 		}
-	}, [app, localStatusOverride]);
+	}, [appStatus, localStatusOverride]);
 
 	// Read domains, schedules, backups, and deployments 100% directly from Zustand RAM store (0ms Instant & 0 extra queries)
 	const domains = useAppStore((state) =>

@@ -23,10 +23,12 @@ export function useComposeDetail(composeId: number) {
 		compose_status: localStatusOverride || (rawCompose as any).compose_status || (rawCompose as any).status || 'STOPPED',
 	} : null;
 
-	// Auto-clear localStatusOverride when Zustand status updates
+	const composeStatus = (rawCompose as any)?.compose_status || (rawCompose as any)?.status;
+
+	// Auto-clear localStatusOverride when Zustand status updates (using primitive string to prevent infinite loop)
 	useEffect(() => {
-		if (compose && localStatusOverride) {
-			const fetchedStatus = (compose.status || compose.compose_status || '').toUpperCase();
+		if (localStatusOverride && composeStatus) {
+			const fetchedStatus = String(composeStatus).toUpperCase();
 			const overrideUpper = localStatusOverride.toUpperCase();
 			if (
 				fetchedStatus === overrideUpper ||
@@ -37,7 +39,7 @@ export function useComposeDetail(composeId: number) {
 				setLocalStatusOverride(null);
 			}
 		}
-	}, [compose, localStatusOverride]);
+	}, [composeStatus, localStatusOverride]);
 
 	// 2. Central Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));
