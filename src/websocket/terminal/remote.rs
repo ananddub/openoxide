@@ -216,23 +216,29 @@ pub async fn spawn_remote_docker_terminal(
         }
     };
 
-    let clean_container_req = container_req.trim_end_matches("_db").trim_end_matches("-db");
-    let container_q = crate::utils::exec::script::shell_single_quote(&container_req);
-    let clean_q = crate::utils::exec::script::shell_single_quote(clean_container_req);
-    let shell_q = crate::utils::exec::script::shell_single_quote(&shell_req);
+    let docker_cli = crate::utils::docker::DockerCli::from_remote_executor(executor.clone());
+    let mut target_container = input.container.clone();
 
-    let remote_cmd = format!(
-        "CID=$(docker ps -q -f name={container_q} | head -n1); \
-         if [ -z \"$CID\" ]; then CID=$(docker ps -q -f name={clean_q} | head -n1); fi; \
-         if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={container_q} | head -n1); fi; \
-         if [ -z \"$CID\" ]; then CID=$(docker ps -a -q -f name={clean_q} | head -n1); fi; \
-         if [ -z \"$CID\" ]; then CID={container_q}; fi; \
-         exec docker exec -it $CID {shell_q}"
-    );
+    if let Ok(containers) = docker_cli.containers().ps().all().list().await {
+        let search = input.container.to_lowercase();
+        let clean_search = search.trim_end_matches("_db").trim_end_matches("-db");
+        if let Some(matching) = containers.iter().find(|c| {
+            let n = c.names.to_lowercase();
+            n.contains(&search)
+                || n.trim_start_matches('/').starts_with(&search)
+                || n.contains(&format!("{}_", search))
+                || n.contains(&format!("{}.", search))
+                || (!clean_search.is_empty() && (n.contains(clean_search) || n.trim_start_matches('/').starts_with(clean_search)))
+        }) {
+            target_container = matching.names.trim_start_matches('/').to_string();
+        }
+    }
 
-    args.push("sh".to_string());
-    args.push("-c".to_string());
-    args.push(remote_cmd);
+    args.push("docker".to_string());
+    args.push("exec".to_string());
+    args.push("-it".to_string());
+    args.push(target_container);
+    args.push(shell_req);
 
     let (pty, pts) = match pty_process::open() {
         Ok(res) => res,
