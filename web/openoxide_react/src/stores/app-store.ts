@@ -424,3 +424,44 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	setHydrated: (hydrated) => set({ isHydrated: hydrated }),
 	setWsConnected: (connected) => set({ isWsConnected: connected }),
 }));
+
+// Centralized Selectors for 100% Pure Zustand Store Resolutions
+export const selectApplicationById = (state: AppState, id: number) => {
+	const direct = state.applications.find((a) => String(a.id) === String(id));
+	if (direct) return direct;
+	const service = state.overviewServices.find(
+		(s) => String(s.id) === String(id) && (s.type === 'application' || s.kind === 'application' || !s.type)
+	);
+	if (service) {
+		return {
+			id: service.id,
+			name: service.name,
+			app_name: service.name,
+			project_id: service.project_id,
+			status: service.status || 'STOPPED',
+			app_status: service.status || 'STOPPED',
+			created_at: service.createdAt || Date.now(),
+		} as any;
+	}
+	return null;
+};
+
+export const selectComposeById = (state: AppState, id: number) => {
+	const direct = state.composes.find((c) => String(c.id) === String(id));
+	if (direct) return direct;
+	const service = state.overviewServices.find(
+		(s) => String(s.id) === String(id) && (s.type === 'compose' || s.kind === 'compose')
+	);
+	if (service) {
+		return {
+			id: service.id,
+			name: service.name,
+			app_name: service.name,
+			project_id: service.project_id,
+			status: service.status || 'STOPPED',
+			compose_status: service.status || 'STOPPED',
+			created_at: service.createdAt || Date.now(),
+		} as any;
+	}
+	return null;
+};

@@ -8,30 +8,14 @@ import {
 	useScheduleListByCompose,
 } from 'virtual:openoxide-live';
 
-import { useAppStore } from '#/stores/app-store';
+import { useAppStore, selectComposeById } from '#/stores/app-store';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
-
-	// 100% Pure Realtime Zustand RAM Store Read (0ms Instant)
-	const composes = useAppStore((state) => state.composes);
-	const overviewServices = useAppStore((state) => state.overviewServices);
-
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Pure Zustand Store Compose Resolution (React Compiler Auto-Memoized)
-	const storeCompose = composes.find((c) => String(c.id) === String(composeId));
-	const serviceCompose = overviewServices.find(
-		(s) => String(s.id) === String(composeId) && (s.type === 'compose' || s.kind === 'compose')
-	);
-	const rawCompose = storeCompose || (serviceCompose ? {
-		id: serviceCompose.id,
-		name: serviceCompose.name,
-		app_name: serviceCompose.name,
-		project_id: serviceCompose.project_id,
-		status: serviceCompose.status,
-		created_at: serviceCompose.created_at,
-	} as any : undefined);
+	// 100% Pure Centralized Zustand Store Resolution
+	const rawCompose = useAppStore((state) => selectComposeById(state, composeId));
 
 	const compose = rawCompose ? {
 		...rawCompose,

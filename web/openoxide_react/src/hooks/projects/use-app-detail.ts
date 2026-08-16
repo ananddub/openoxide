@@ -8,30 +8,14 @@ import {
 	useScheduleListByApplication,
 } from 'virtual:openoxide-live';
 
-import { useAppStore } from '#/stores/app-store';
+import { useAppStore, selectApplicationById } from '#/stores/app-store';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
-
-	// 100% Pure Realtime Zustand RAM Store Read (0ms Instant)
-	const applications = useAppStore((state) => state.applications);
-	const overviewServices = useAppStore((state) => state.overviewServices);
-
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Pure Zustand Store Application Resolution (React Compiler Auto-Memoized)
-	const storeApp = applications.find((a) => String(a.id) === String(appId));
-	const serviceApp = overviewServices.find(
-		(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
-	);
-	const rawApp = storeApp || (serviceApp ? {
-		id: serviceApp.id,
-		name: serviceApp.name,
-		app_name: serviceApp.name,
-		project_id: serviceApp.project_id,
-		status: serviceApp.status,
-		created_at: serviceApp.created_at,
-	} as any : undefined);
+	// 100% Pure Centralized Zustand Store Resolution
+	const rawApp = useAppStore((state) => selectApplicationById(state, appId));
 
 	const app = rawApp ? {
 		...rawApp,
