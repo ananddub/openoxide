@@ -179,6 +179,39 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		};
 	}, [activeLogId, selectedEvent]);
 
+	const handleClearComposeDeployments = async () => {
+		try {
+			const token = localStorage.getItem('token') || '';
+			const res = await fetch(`/api/deployments/compose/${composeId}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			if (!res.ok) throw new Error('Failed to clear compose deployments');
+			const data = await res.json();
+			toast.success(`Cleared ${data.cleared_count || 0} compose deployment logs & history`);
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	const handleDeleteSingleComposeDeployment = async (id: number) => {
+		try {
+			const token = localStorage.getItem('token') || '';
+			const res = await fetch(`/api/deployments/${id}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			if (!res.ok) throw new Error('Failed to delete deployment');
+			toast.success(`Deployment #${id} deleted`);
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
 	const isActionPending = isTriggering || deployMutation.isPending || redeployMutation.isPending || cancelMutation.isPending;
 
 	return (
@@ -198,6 +231,9 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 				</div>
 
 				<div className="flex items-center gap-2">
+					<Button variant="outline" size="sm" onClick={handleClearComposeDeployments} disabled={isActionPending} className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-8 text-xs">
+						Clear History
+					</Button>
 					<Button variant="outline" size="sm" disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
 						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
 					</Button>
@@ -226,6 +262,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 				isLoading={isLoading}
 				onOpenStream={setActiveLogId}
 				onCancelBuild={() => setIsConfirmCancelOpen(true)}
+				onDeleteDeployment={handleDeleteSingleComposeDeployment}
 			/>
 
 			{/* Cancel Confirmation Dialog */}

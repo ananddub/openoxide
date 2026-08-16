@@ -1,4 +1,4 @@
-import {Clock, RefreshCw, Terminal, XCircle, Zap} from 'lucide-react';
+import {Clock, RefreshCw, Terminal, XCircle, Zap, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 
 interface ComposeDeploymentsListProps {
@@ -6,6 +6,7 @@ interface ComposeDeploymentsListProps {
 	isLoading: boolean;
 	onOpenStream: (id: number) => void;
 	onCancelBuild?: (id: number) => void;
+	onDeleteDeployment?: (id: number) => void;
 }
 
 const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
@@ -20,7 +21,7 @@ const isBuildActive = (e: any) => {
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
-export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, onCancelBuild}: ComposeDeploymentsListProps) {
+export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, onCancelBuild, onDeleteDeployment}: ComposeDeploymentsListProps) {
 	const getStatusBadge = (e: any) => {
 		const s = (e.status || e.state || '').toUpperCase();
 		if (s === 'DONE' || s === 'HEALTHY' || s === 'SUCCESS' || s === 'DEPLOYED') 
@@ -98,6 +99,17 @@ export function ComposeDeploymentsList({deployments, isLoading, onOpenStream, on
 											className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1"
 										>
 											<XCircle className="w-3 h-3" /> Cancel
+										</Button>
+									)}
+
+									{!isActive && onDeleteDeployment && (
+										<Button
+											size="sm"
+											variant="ghost"
+											onClick={() => onDeleteDeployment(e.id)}
+											className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-1.5 rounded-lg font-semibold flex items-center gap-1"
+										>
+											<Trash2 className="w-3.5 h-3.5" />
 										</Button>
 									)}
 								</div>
