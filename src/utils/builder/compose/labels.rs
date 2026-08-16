@@ -91,30 +91,41 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
     }
 
     for domain in &spec.domains {
-        let service_name = domain.service_name.as_deref().ok_or_else(|| {
-            command_error(format!("domain {} is missing service_name", domain.host))
-        })?;
-        let service = services
-            .get_mut(Value::String(service_name.into()))
-            .ok_or_else(|| {
-                command_error(format!(
-                    "domain {} points to missing compose service {}",
-                    domain.host, service_name
-                ))
-            })?;
+        let service_name = domain.service_name.as_deref().unwrap_or("");
+        let service = if let Some(s) = services.get_mut(Value::String(service_name.into())) {
+            s
+        } else if services.len() == 1 {
+            services.values_mut().next().unwrap()
+        } else {
+            let avail: Vec<String> = services
+                .keys()
+                .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                .collect();
+            return Err(command_error(format!(
+                "domain {} points to missing compose service '{}'. Available services in compose file: {:?}",
+                domain.host, service_name, avail
+            )));
+        };
         inject_labels_for_service(service, spec, domain)?;
         add_named_network_to_service(service, TRAEFIK_NETWORK)?;
     }
 
     for service_network in &spec.service_networks {
-        let service = services
-            .get_mut(Value::String(service_network.service_name.clone()))
-            .ok_or_else(|| {
-                command_error(format!(
-                    "network config points to missing compose service {}",
-                    service_network.service_name
-                ))
-            })?;
+        let service_name = &service_network.service_name;
+        let service = if let Some(s) = services.get_mut(Value::String(service_name.clone().into())) {
+            s
+        } else if services.len() == 1 {
+            services.values_mut().next().unwrap()
+        } else {
+            let avail: Vec<String> = services
+                .keys()
+                .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                .collect();
+            return Err(command_error(format!(
+                "network config points to missing compose service '{}'. Available services in compose file: {:?}",
+                service_name, avail
+            )));
+        };
         for network in &service_network.networks {
             add_named_network_to_service(service, network)?;
         }
