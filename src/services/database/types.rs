@@ -93,18 +93,37 @@ pub struct DatabaseRecord {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DatabaseRuntimeStatus {
     Idle,
+    Queued,
+    Building,
+    Deploying,
+    Starting,
     Running,
+    Healthy,
+    Stopping,
+    Stopped,
+    Cancelling,
+    Cancelled,
     Done,
     Failed,
 }
+
 impl TryFrom<&str> for DatabaseRuntimeStatus {
     type Error = String;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.trim().to_ascii_uppercase().as_str() {
             "IDLE" => Ok(Self::Idle),
+            "QUEUED" => Ok(Self::Queued),
+            "BUILDING" => Ok(Self::Building),
+            "DEPLOYING" => Ok(Self::Deploying),
+            "STARTING" => Ok(Self::Starting),
             "RUNNING" => Ok(Self::Running),
-            "DONE" => Ok(Self::Done),
-            "ERROR" => Ok(Self::Failed),
+            "HEALTHY" | "OK" => Ok(Self::Healthy),
+            "STOPPING" => Ok(Self::Stopping),
+            "STOPPED" => Ok(Self::Stopped),
+            "CANCELLING" => Ok(Self::Cancelling),
+            "CANCELLED" => Ok(Self::Cancelled),
+            "DONE" | "SUCCESS" => Ok(Self::Done),
+            "FAILED" | "ERROR" => Ok(Self::Failed),
             other => Err(format!("invalid database runtime status: {other}")),
         }
     }
