@@ -83,7 +83,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const libsqlQ = useLibsqlGet(isLibsql ? BigInt(dbId) : 0n);
 
 	// Select active query result matching targetKind strictly
-	const fetchedDb = (isRedis ? redisQ.data : null) ||
+	const liveDb = (isRedis ? redisQ.data : null) ||
 		(isPostgres ? postgresQ.data : null) ||
 		(isMysql ? mysqlQ.data : null) ||
 		(isMariadb ? mariadbQ.data : null) ||
@@ -94,8 +94,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	// Auto-clear localStatusOverride once backend query syncs with backend state
 	useEffect(() => {
-		if (fetchedDb?.status || (fetchedDb as any)?.app_status) {
-			const fetchedStatus = (fetchedDb.status || (fetchedDb as any).app_status || '').toUpperCase();
+		if (liveDb) {
+			const fetchedStatus = ((liveDb as any).status || (liveDb as any).app_status || '').toUpperCase();
 			if (localStatusOverride) {
 				const overrideUpper = (localStatusOverride || '').toUpperCase();
 				if (
@@ -108,18 +108,18 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 				}
 			}
 		}
-	}, [fetchedDb?.status, (fetchedDb as any)?.app_status, localStatusOverride]);
+	}, [liveDb, localStatusOverride]);
 
+	const raw = liveDb || storeDb;
 	const database = useMemo(() => {
-		const raw = (storeDb && fetchedDb) ? { ...storeDb, ...fetchedDb } : (fetchedDb || storeDb);
 		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || raw.status || raw.app_status || storeDb?.status || raw.application_status || 'STOPPED';
+		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).app_status || (storeDb as any)?.status || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
 			app_status: effectiveStatus,
 		};
-	}, [fetchedDb, storeDb, localStatusOverride]);
+	}, [raw, storeDb, localStatusOverride]);
 
 	const detectedKind = targetKind || (
 		redisQ.data ? 'redis'
