@@ -90,6 +90,18 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		(isMongo ? mongoQ.data : null) ||
 		(isLibsql ? libsqlQ.data : null);
 
+	const detectedKind = targetKind || (
+		redisQ.data ? 'redis'
+		: postgresQ.data ? 'postgres'
+		: mysqlQ.data ? 'mysql'
+		: mariadbQ.data ? 'mariadb'
+		: mongoQ.data ? 'mongo'
+		: libsqlQ.data ? 'libsql'
+		: null
+	);
+
+	const currentKind = (storeDb?.kind || detectedKind || targetKind || 'postgres').toLowerCase();
+
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
 	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
@@ -124,18 +136,6 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			app_status: effectiveStatus,
 		};
 	}, [raw, storeDb, localStatusOverride]);
-
-	const detectedKind = targetKind || (
-		redisQ.data ? 'redis'
-		: postgresQ.data ? 'postgres'
-		: mysqlQ.data ? 'mysql'
-		: mariadbQ.data ? 'mariadb'
-		: mongoQ.data ? 'mongo'
-		: libsqlQ.data ? 'libsql'
-		: null
-	);
-
-	const currentKind = (database?.kind || detectedKind || targetKind || 'postgres').toLowerCase();
 
 	const statusUpper = (database?.status || database?.app_status || (database as any)?.application_status || '').toUpperCase();
 	const isDeployed = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'COMPLETED', 'UP', 'ACTIVE', 'OK'].includes(statusUpper);
