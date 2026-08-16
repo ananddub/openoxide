@@ -159,6 +159,22 @@ impl DomainRepository {
         .await
     }
 
+    pub async fn list_all(
+        &self,
+    ) -> Result<Vec<crate::services::domain::DomainRecord>, sqlx::Error> {
+        sqlx::query_as!(
+            crate::services::domain::DomainRecord,
+            r#"SELECT id AS "id!: i64", host, https, port, path, internal_path,
+               custom_entrypoint, service_name, custom_cert_resolver, strip_path,
+               middlewares, domain_type, certificate_type, application_id, compose_id,
+               created_at, updated_at
+               FROM domains
+               ORDER BY created_at DESC, id DESC"#
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+    }
+
     pub async fn list_by_application_raw(
         &self,
         application_id: i64,

@@ -79,6 +79,10 @@ impl DomainService {
         self.repo_domain.list_by_compose(compose_id).await
     }
 
+    pub async fn list_all(&self) -> sqlx::Result<Vec<DomainRecord>> {
+        self.repo_domain.list_all().await
+    }
+
     pub async fn create(&self, input: CreateDomainDto) -> sqlx::Result<DomainRecord> {
         validate_owner(input.application_id, input.compose_id)?;
         self.validate_route_available(&input.host, &input.path, None)

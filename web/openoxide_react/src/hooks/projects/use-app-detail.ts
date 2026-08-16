@@ -3,11 +3,6 @@ import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {
-	useDomainListByApplication,
-	useScheduleListByApplication,
-} from 'virtual:openoxide-live';
-
 import { useAppStore, selectApplicationById } from '#/stores/app-store';
 
 export function useAppDetail(appId: number) {
@@ -39,13 +34,13 @@ export function useAppDetail(appId: number) {
 		}
 	}, [app, localStatusOverride]);
 
-	// 2. Domains Query
-	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByApplication(BigInt(appId));
-
-	// 3. Schedules Query
-	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByApplication(BigInt(appId));
-
-	// Read backups and deployments scoped specifically to this application (0ms unnecessary re-render prevention)
+	// Read domains, schedules, backups, and deployments 100% directly from Zustand RAM store (0ms Instant & 0 extra queries)
+	const domains = useAppStore((state) =>
+		(state.domains || []).filter((d: any) => Number(d.application_id) === Number(appId))
+	);
+	const schedules = useAppStore((state) =>
+		(state.schedules || []).filter((s: any) => Number(s.application_id) === Number(appId))
+	);
 	const backups = useAppStore((state) =>
 		(state.backups || []).filter((b: any) => Number(b.application_id) === Number(appId))
 	);
@@ -53,8 +48,8 @@ export function useAppDetail(appId: number) {
 		(state.deployments || []).filter((d: any) => Number(d.application_id) === Number(appId))
 	);
 
-	const domains = useMemo(() => (Array.isArray(rawDomains) ? rawDomains : []), [rawDomains]);
-	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
+	const isLoadingDomains = false;
+	const isLoadingSchedules = false;
 	const isLoadingBackups = false;
 	const isLoadingDeployments = false;
 

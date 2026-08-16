@@ -24,6 +24,23 @@ impl DomainController {
         Self { service, cache }
     }
 
+    #[get]
+    #[live(table = "domains")]
+    async fn list_all(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
+    ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
+        let items = self
+            .service
+            .list_all()
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(Json(
+            items.into_iter().map(DomainResponseDto::from).collect(),
+        ))
+    }
+
     #[get("/{id}")]
     #[live(table = "domains")]
     async fn get(
