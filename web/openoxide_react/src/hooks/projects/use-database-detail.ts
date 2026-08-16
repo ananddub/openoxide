@@ -86,10 +86,21 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
+	// Auto-clear localStatusOverride once backend query syncs with backend state
+	useEffect(() => {
+		if (fetchedDb?.status && localStatusOverride) {
+			const fetchedUpper = (fetchedDb.status || '').toUpperCase();
+			const overrideUpper = (localStatusOverride || '').toUpperCase();
+			if (fetchedUpper === overrideUpper || (overrideUpper === 'STARTING' && fetchedUpper === 'RUNNING') || (overrideUpper === 'STOPPING' && fetchedUpper === 'STOPPED')) {
+				setLocalStatusOverride(null);
+			}
+		}
+	}, [fetchedDb?.status, localStatusOverride]);
+
 	const database = useMemo(() => {
 		const raw = (fetchedDb && storeDb) ? { ...fetchedDb, ...storeDb } : (fetchedDb || storeDb);
 		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || storeDb?.status || raw.status || raw.app_status || raw.application_status || 'STOPPED';
+		const effectiveStatus = localStatusOverride || raw.status || raw.app_status || storeDb?.status || raw.application_status || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
@@ -157,7 +168,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			}
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
-			const nextStatus = action === 'stop' ? 'STOPPED' : action === 'start' ? 'RUNNING' : 'BUILDING';
+			const nextStatus = action === 'stop' ? 'STOPPED' : action === 'start' ? 'STARTING' : 'BUILDING';
 			setLocalStatusOverride(nextStatus);
 			(useAppStore.getState() as any).updateServiceStatus?.(dbId, nextStatus);
 			refetchAll();
