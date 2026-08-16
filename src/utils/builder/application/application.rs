@@ -106,16 +106,26 @@ impl ApplicationBuilder {
             deploy_cmd;
         };
 
-        if let Err(error) = pipeline.execute_cancelled(&self.ctx.executor, cancel).await {
-            let _ = self
-                .ctx
-                .docker
-                .services()
-                .rollback(spec.service_name().as_str())
-                .run()
-                .await;
-            self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
-            return Err(error);
+        match pipeline.execute_cancelled(&self.ctx.executor, cancel).await {
+            Ok(output) => {
+                if !output.stdout.is_empty() {
+                    self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+                }
+                if !output.stderr.is_empty() {
+                    self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+                }
+            }
+            Err(error) => {
+                let _ = self
+                    .ctx
+                    .docker
+                    .services()
+                    .rollback(spec.service_name().as_str())
+                    .run()
+                    .await;
+                self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
+                return Err(error);
+            }
         }
 
         self.ctx.cancelled(cancel)?;
