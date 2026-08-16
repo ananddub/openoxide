@@ -100,19 +100,7 @@ export function DatabaseHeader({
 						<Trash2 className="w-3.5 h-3.5" />
 					</Button>
 
-					{/* Quick Lifecycle Control Buttons (Stop shown when running; Start hidden for DB) */}
-					{isRunning && (
-						<Button
-							size="sm"
-							variant="destructive"
-							onClick={() => onAction?.('stop')}
-							disabled={actionLoading !== null}
-							className="h-8 text-xs font-semibold px-3 rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-						>
-							{actionLoading === 'stop' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
-							{actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
-						</Button>
-					)}
+
 
 					<StatusBadge status={database?.status || database?.app_status || 'STOPPED'} isBuilding={isBuilding} actionLoading={actionLoading} />
 					<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none capitalize">

@@ -342,32 +342,29 @@ export function ServiceCard({
 								</DropdownMenuItem>
 							)}
 
-							{/* Stop/Cancel Option:
-							    1. When isStopping: disabled Stop
-							    2. When isStartingOrDeploying: Cancel (active)
-							    3. When isRunning: Stop (active)
-							    4. When isStopped: Stop (disabled)
-							*/}
-							{isStartingOrDeploying ? (
-								<DropdownMenuItem
-									onClick={handleCancel}
-									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
-								>
-									<XCircle className="size-3.5 text-foreground" />
-									Cancel
-								</DropdownMenuItem>
-							) : (
-								<DropdownMenuItem
-									disabled={isStopped || isStopping}
-									onClick={handleStop}
-									className={cn(
-										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-										(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
-									)}
-								>
-									<Square className="size-3.5 text-foreground" />
-									Stop
-								</DropdownMenuItem>
+							{/* Stop/Cancel Option: Only for APP and COMPOSE (Hidden for DATABASE as requested) */}
+							{type !== 'DATABASE' && (
+								isStartingOrDeploying ? (
+									<DropdownMenuItem
+										onClick={handleCancel}
+										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+									>
+										<XCircle className="size-3.5 text-foreground" />
+										Cancel
+									</DropdownMenuItem>
+								) : (
+									<DropdownMenuItem
+										disabled={isStopped || isStopping}
+										onClick={handleStop}
+										className={cn(
+											'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+											(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
+										)}
+									>
+										<Square className="size-3.5 text-foreground" />
+										Stop
+									</DropdownMenuItem>
+								)
 							)}
 
 							{/* Deploy Option: Disabled while starting, deploying, or stopping */}
