@@ -180,11 +180,7 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			isMounted = false;
 			controller.abort();
 		};
-	}, [activeLogId, selectedEvent]);
-
 	const queryClient = useQueryClient();
-	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
-	const clearComposeMutation = $api.useMutation('delete', '/deployments/compose/{id}');
 
 	const handleClearComposeDeployments = async () => {
 		try {
