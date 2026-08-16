@@ -108,6 +108,22 @@ impl ApplicationService {
         tokio::spawn(async move {
             if let Ok(cmd) = app_new_cmd(db_ref, id).await {
                 let docker_cli = DockerCli::from_executor(cmd);
+                let candidates = [
+                    app_user.app_name.clone(),
+                    format!("{}_app", app_user.app_name),
+                    format!("{}-app", app_user.app_name),
+                    format!("{}_web", app_user.app_name),
+                    format!("{}_srv", app_user.app_name),
+                ];
+
+                // 1. Remove Swarm stack if active
+                let _ = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli.stacks().remove(&app_user.app_name).run(),
+                )
+                .await;
+
+                // 2. Scale down any Swarm services matching app_name
                 if let Ok(services) = tokio::time::timeout(
                     std::time::Duration::from_secs(4),
                     docker_cli
@@ -120,14 +136,21 @@ impl ApplicationService {
                 .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
                 {
                     for s in services.iter() {
-                        if &s.replicas != "0/0" {
-                            let _ = tokio::time::timeout(
-                                std::time::Duration::from_secs(3),
-                                docker_cli.services().scale().service(&s.name, 0).run(),
-                            )
-                            .await;
-                        }
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(3),
+                            docker_cli.services().scale().service(&s.name, 0).run(),
+                        )
+                        .await;
                     }
+                }
+
+                // 3. Stop candidate containers
+                for candidate in &candidates {
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        docker_cli.container(candidate).stop().run(),
+                    )
+                    .await;
                 }
             }
 
