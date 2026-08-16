@@ -250,10 +250,12 @@ impl RemoteExecutor {
     }
 
     pub async fn kill_pid_file(&self, pid_file: impl AsRef<str>) -> ExecResult<()> {
+        let has_pwd = self.sudo_password.as_deref().map(|p| !p.is_empty()).unwrap_or(false);
         let command = remote_command(
             "sh",
             &["-c".into(), remote_cancel_script(pid_file.as_ref())],
             self.sudo_password.is_some(),
+            has_pwd,
         );
         self.execute_raw_once(command, true, Duration::from_secs(8))
             .await
@@ -341,7 +343,8 @@ impl RemoteExecutor {
             builder = builder.disable_multiplexing();
         }
 
-        let base_command = remote_command(program, args, self.sudo_password.is_some());
+        let has_pwd = self.sudo_password.as_deref().map(|p| !p.is_empty()).unwrap_or(false);
+        let base_command = remote_command(program, args, self.sudo_password.is_some(), has_pwd);
         let cancel_job = cancel.map(|_| {
             self.job_pid_file
                 .as_ref()
@@ -661,16 +664,25 @@ fn quote(value: &str) -> String {
     }
     format!("'{}'", value.replace('\'', "'\\''"))
 }
-fn remote_command(program: &str, args: &[String], sudo: bool) -> String {
+fn remote_command(program: &str, args: &[String], sudo: bool, has_password: bool) -> String {
     let prefix = if sudo {
-        vec![
-            "sudo".into(),
-            "-S".into(),
-            "-p".into(),
-            String::new(),
-            "--".into(),
-            program.into(),
-        ]
+        if has_password {
+            vec![
+                "sudo".into(),
+                "-S".into(),
+                "-p".into(),
+                String::new(),
+                "--".into(),
+                program.into(),
+            ]
+        } else {
+            vec![
+                "sudo".into(),
+                "-n".into(),
+                "--".into(),
+                program.into(),
+            ]
+        }
     } else {
         vec![program.into()]
     };
@@ -695,7 +707,7 @@ exit "$status""#,
         pid_file = quote(pid_file),
         command = quote(command),
     );
-    remote_command("sh", &["-c".into(), script], false)
+    remote_command("sh", &["-c".into(), script], false, false)
 }
 
 fn remote_cancel_script(pid_file: &str) -> String {
