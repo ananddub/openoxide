@@ -1,4 +1,4 @@
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import type {ComposeResponse} from '#/types/api-helpers';
@@ -40,7 +40,36 @@ export function useComposeDetail(composeId: number) {
 	// 1. Central Compose Query — live push replaces refetchInterval
 	const {data: liveCompose} = useComposeGet(BigInt(composeId));
 
-	const compose = liveCompose || storeCompose;
+	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+
+	// Auto-clear localStatusOverride once backend query syncs with backend state
+	useEffect(() => {
+		if (liveCompose) {
+			const fetchedStatus = ((liveCompose as any).status || (liveCompose as any).compose_status || '').toUpperCase();
+			if (localStatusOverride) {
+				const overrideUpper = (localStatusOverride || '').toUpperCase();
+				if (
+					fetchedStatus === overrideUpper ||
+					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
+					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+				) {
+					setLocalStatusOverride(null);
+				}
+			}
+		}
+	}, [liveCompose, localStatusOverride]);
+
+	const raw = liveCompose || storeCompose;
+	const compose = useMemo(() => {
+		if (!raw) return null;
+		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).compose_status || (storeCompose as any)?.status || 'STOPPED';
+		return {
+			...raw,
+			status: effectiveStatus,
+			compose_status: effectiveStatus,
+		};
+	}, [raw, storeCompose, localStatusOverride]);
 
 	// 2. Central Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByCompose(BigInt(composeId));
@@ -75,9 +104,17 @@ export function useComposeDetail(composeId: number) {
 	const reloadMutation = $api.useMutation('post', '/composes/{id}/reload');
 	const startMutation = $api.useMutation('post', '/composes/{id}/start');
 	const stopMutation = $api.useMutation('post', '/composes/{id}/stop');
+	const cancelMutation = $api.useMutation('post', '/composes/{id}/cancel');
 	const patchMutation = $api.useMutation('patch', '/composes/{id}');
 
-	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop') => {
+	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel') => {
+		const intermediateStatus = action === 'stop' ? 'STOPPING' 
+			: action === 'cancel' ? 'CANCELLING'
+			: action === 'start' ? 'STARTING'
+			: 'DEPLOYING';
+		setLocalStatusOverride(intermediateStatus);
+		(useAppStore.getState() as any).updateServiceStatus?.(composeId, intermediateStatus, 'compose');
+
 		try {
 			if (action === 'deploy') {
 				await deployMutation.mutateAsync({params: {path: {id: composeId}}});
@@ -91,6 +128,9 @@ export function useComposeDetail(composeId: number) {
 			} else if (action === 'stop') {
 				await stopMutation.mutateAsync({params: {path: {id: composeId}}});
 				toast.success('Compose stack stopped');
+			} else if (action === 'cancel') {
+				await cancelMutation.mutateAsync({params: {path: {id: composeId}}});
+				toast.success('Compose stack cancellation requested');
 			}
 			refetchAll();
 		} catch (err) {

@@ -107,11 +107,19 @@ impl ComposeService {
         })
     }
 
+    pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
+        self.stop_or_cancel_compose(id, ComposeStatus::Stopping.as_str(), ComposeStatus::Stopped.as_str()).await
+    }
+
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
+        self.stop_or_cancel_compose(id, ComposeStatus::Cancelling.as_str(), ComposeStatus::Cancelled.as_str()).await
+    }
+
+    async fn stop_or_cancel_compose(&self, id: i64, intermediate: &'static str, final_st: &'static str) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
         let _ = self
             .repo_compose
-            .update_status(id, ComposeStatus::Stopping.as_str())
+            .update_status(id, intermediate)
             .await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Compose(id))
@@ -127,18 +135,21 @@ impl ComposeService {
 
         let _ = self.repo_deploy.request_cancel_compose_deployment(id).await;
 
-        if let Err(e) =
-            scale_down_compose(self.db.clone(), id, &compose.app_name, compose.compose_type).await
-        {
-            tracing::warn!(compose_id = id, error = %e, "could not scale down compose on cancel");
-        }
+        let db_ref = self.db.clone();
+        let repo_compose = self.repo_compose.clone();
+        let cache = self.cache.clone();
+        let app_name = compose.app_name.clone();
+        let compose_type = compose.compose_type;
 
-        self.repo_compose
-            .update_status(id, ComposeStatus::Stopped.as_str())
-            .await?;
-        self.cache
-            .invalidate(&crate::core::cache::CacheKey::Compose(id))
-            .await;
+        tokio::spawn(async move {
+            if let Err(e) = scale_down_compose(db_ref, id, &app_name, compose_type).await {
+                tracing::warn!(compose_id = id, error = %e, "could not scale down compose on stop/cancel");
+            }
+
+            let _ = repo_compose.update_status(id, final_st).await;
+            cache.invalidate(&crate::core::cache::CacheKey::Compose(id)).await;
+        });
+
         Ok(true)
     }
 }
@@ -155,35 +166,40 @@ async fn scale_down_compose(
     let docker = DockerCli::from_executor(cmd);
 
     match compose_type {
-        ComposeType::DockerCompose => docker
-            .compose()
-            .down()
-            .project(app_name)
-            .run()
-            .await
-            .map(|_| ())
-            .map_err(|e| format!("compose down failed: {e}")),
+        ComposeType::DockerCompose => {
+            let _ = tokio::time::timeout(
+                std::time::Duration::from_secs(6),
+                docker.compose().down().project(app_name).run(),
+            )
+            .await;
+            Ok(())
+        }
         ComposeType::Stack => {
-            let services = docker
-                .services()
-                .list()
-                .filter(ServiceFilter::Name(app_name.to_string()))
-                .run_json()
-                .await
-                .map_err(|e| format!("could not get stack service: {e}"))?;
+            let _ = tokio::time::timeout(
+                std::time::Duration::from_secs(4),
+                docker.stacks().remove(app_name).run(),
+            )
+            .await;
 
-            if services.is_empty() {
-                return Ok(());
-            }
-            for service in services {
-                if service.replicas != "0/0" {
-                    docker
-                        .services()
-                        .scale()
-                        .service(&service.name, 0)
-                        .run()
-                        .await
-                        .map_err(|e| format!("service scale 0 failed: {e}"))?;
+            if let Ok(services) = tokio::time::timeout(
+                std::time::Duration::from_secs(4),
+                docker
+                    .services()
+                    .list()
+                    .filter(ServiceFilter::Name(app_name.to_string()))
+                    .run_json(),
+            )
+            .await
+            .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
+            {
+                for service in services {
+                    if service.replicas != "0/0" {
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(3),
+                            docker.services().scale().service(&service.name, 0).run(),
+                        )
+                        .await;
+                    }
                 }
             }
             Ok(())

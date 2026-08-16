@@ -240,7 +240,7 @@ impl ComposeController {
         Path(id): Path<i64>,
     ) -> Result<Json<ComposeOperationResponseDto>, ApiError> {
         self.service
-            .cancel_operation(id)
+            .stop_operation(id)
             .await
             .map_err(map_sqlx_error)?;
         let compose = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
