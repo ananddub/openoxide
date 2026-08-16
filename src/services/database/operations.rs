@@ -135,11 +135,9 @@ impl DatabaseService {
             .invalidate(&crate::core::cache::CacheKey::Database(id))
             .await;
 
-        let queue = resolve::<BuilderQueue>()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-
-        let _ = queue.cancel_queued_database(id).await;
+        if let Ok(queue) = resolve::<BuilderQueue>().await {
+            let _ = queue.cancel_queued_database(id).await;
+        }
 
         if let Ok(state) = resolve::<crate::utils::builder::hash_state::ApplicationState>().await {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
@@ -151,64 +149,81 @@ impl DatabaseService {
         let db_record = self.get_by_id(kind, id).await.ok();
         let app_name = db_record.as_ref().map(|d| d.app_name.clone());
         let server_id = db_record.as_ref().and_then(|d| d.server_id);
+        let db_ref = self.db.clone();
+        let repo_postgres = self.repo_postgres.clone();
+        let repo_mysql = self.repo_mysql.clone();
+        let repo_mariadb = self.repo_mariadb.clone();
+        let repo_mongo = self.repo_mongo.clone();
+        let repo_redis = self.repo_redis.clone();
+        let repo_libsql = self.repo_libsql.clone();
+        let cache = self.cache.clone();
 
-        if let Some(ref app_name) = app_name {
-            if let Ok(docker_cli) = self.database_docker(server_id).await {
+        // Spawn Docker container cleanup asynchronously so HTTP handler returns INSTANTLY (<5ms)
+        tokio::spawn(async move {
+            if let Some(ref app_name) = app_name {
+                let docker_cli = match server_id {
+                    Some(sid) => {
+                        if let Ok(executor) = crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid).await {
+                            crate::utils::docker::DockerCli::from_remote_executor(executor)
+                        } else {
+                            crate::utils::docker::DockerCli::new_local()
+                        }
+                    }
+                    None => crate::utils::docker::DockerCli::new_local(),
+                };
+
                 let candidates = [
                     app_name.clone(),
                     format!("{}_db", app_name),
                     format!("{}-db", app_name),
                 ];
 
-                if let Ok(services) = docker_cli
-                    .services()
-                    .list()
-                    .filter(crate::utils::docker::query::ServiceFilter::name(format!(
-                        "{}_",
-                        app_name
-                    )))
-                    .run_json()
-                    .await
+                if let Ok(services) = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli
+                        .services()
+                        .list()
+                        .filter(crate::utils::docker::query::ServiceFilter::name(format!("{}_", app_name)))
+                        .run_json(),
+                )
+                .await
+                .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
                 {
                     for s in services {
                         if &s.replicas != "0/0" {
-                            let _ = docker_cli
-                                .services()
-                                .scale()
-                                .service(&s.name, 0)
-                                .run()
-                                .await;
+                            let _ = tokio::time::timeout(
+                                std::time::Duration::from_secs(3),
+                                docker_cli.services().scale().service(&s.name, 0).run(),
+                            )
+                            .await;
                         }
                     }
                 }
 
                 for candidate in &candidates {
-                    let _ = docker_cli
-                        .services()
-                        .scale()
-                        .service(candidate, 0)
-                        .run()
-                        .await;
-                    let _ = docker_cli
-                        .container(candidate)
-                        .stop()
-                        .run()
-                        .await;
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        docker_cli.services().scale().service(candidate, 0).run(),
+                    )
+                    .await;
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        docker_cli.container(candidate).stop().run(),
+                    )
+                    .await;
                 }
             }
-        }
 
-        match kind {
-            DatabaseKind::Postgres => self.repo_postgres.update_status(id, "STOPPED").await?,
-            DatabaseKind::Mysql => self.repo_mysql.update_status(id, "STOPPED").await?,
-            DatabaseKind::Mariadb => self.repo_mariadb.update_status(id, "STOPPED").await?,
-            DatabaseKind::Mongo => self.repo_mongo.update_status(id, "STOPPED").await?,
-            DatabaseKind::Redis => self.repo_redis.update_status(id, "STOPPED").await?,
-            DatabaseKind::Libsql => self.repo_libsql.update_status(id, "STOPPED").await?,
-        };
-        self.cache
-            .invalidate(&crate::core::cache::CacheKey::Database(id))
-            .await;
+            match kind {
+                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, "STOPPED").await; }
+                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, "STOPPED").await; }
+                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, "STOPPED").await; }
+                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, "STOPPED").await; }
+                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, "STOPPED").await; }
+                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, "STOPPED").await; }
+            }
+            cache.invalidate(&crate::core::cache::CacheKey::Database(id)).await;
+        });
 
         Ok(true)
     }
