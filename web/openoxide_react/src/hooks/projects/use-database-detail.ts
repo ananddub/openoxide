@@ -47,18 +47,22 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		});
 
 		if (service) {
+			const resolvedKind = service.db_kind || service.dbKind || (service.kind && service.kind !== 'database' ? service.kind : undefined) || targetKind || 'postgres';
 			return {
 				id: service.id,
 				name: service.name,
 				database_name: service.name,
-				kind: service.kind || targetKind || 'postgres',
+				kind: resolvedKind,
 				project_id: service.project_id,
+				environment_id: service.environment_id,
 				status: service.status,
 				created_at: service.created_at,
 			} as any;
 		}
 
-		// 3. Fallback to any matching ID if no kind match
+		// 3. Do not fall back to an ID match of a different kind if targetKind is specified
+		if (targetK) return undefined;
+
 		return databases.find((d) => String(d.id) === String(dbId)) ||
 			overviewServices.find((s) => String(s.id) === String(dbId));
 	}, [databases, overviewServices, dbId, targetKind]);

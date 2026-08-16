@@ -27,11 +27,27 @@ export function useProjectDetails(projectId: number) {
 	const project = liveProject || storeProject;
 	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
 
-	const [userSelectedEnvId, setUserSelectedEnvId] = useState<number | null>(null);
+	// Read URL search params for persistent environment selection across navigations
+	const urlEnvId = useMemo(() => {
+		if (typeof window === 'undefined') return null;
+		const val = new URLSearchParams(window.location.search).get('env');
+		return val && !isNaN(Number(val)) ? Number(val) : null;
+	}, []);
+
+	const [userSelectedEnvId, setUserSelectedEnvIdState] = useState<number | null>(urlEnvId);
+
+	const setUserSelectedEnvId = (envId: number | null) => {
+		setUserSelectedEnvIdState(envId);
+		if (typeof window !== 'undefined' && envId) {
+			const url = new URL(window.location.href);
+			url.searchParams.set('env', String(envId));
+			window.history.replaceState({}, '', url.toString());
+		}
+	};
 
 	// Reset user selected environment choice whenever projectId changes
 	useEffect(() => {
-		setUserSelectedEnvId(null);
+		setUserSelectedEnvIdState(null);
 	}, [projectId]);
 
 	// Synchronously compute active environment ID during render (0ms delay)
@@ -40,9 +56,12 @@ export function useProjectDetails(projectId: number) {
 		if (userSelectedEnvId !== null && envs.some(e => Number(e.id) === Number(userSelectedEnvId))) {
 			return userSelectedEnvId;
 		}
+		if (urlEnvId !== null && envs.some(e => Number(e.id) === Number(urlEnvId))) {
+			return urlEnvId;
+		}
 		const def = envs.find(e => e.is_default) || envs[0];
 		return def ? Number(def.id) : null;
-	}, [envs, userSelectedEnvId]);
+	}, [envs, userSelectedEnvId, urlEnvId]);
 
 	const selectedEnv = useMemo(
 		() => (activeEnvId !== null ? envs.find(e => Number(e.id) === Number(activeEnvId)) || null : null),
