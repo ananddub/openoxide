@@ -41,7 +41,7 @@ CREATE TABLE postgres_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT pg_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
+	CONSTRAINT pg_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED'))
 ) STRICT;
 
 -- MySQL managed instances
@@ -82,7 +82,7 @@ CREATE TABLE mysql_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mysql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
+	CONSTRAINT mysql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED'))
 ) STRICT;
 
 -- MariaDB managed instances
@@ -123,7 +123,7 @@ CREATE TABLE mariadb_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mariadb_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
+	CONSTRAINT mariadb_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED'))
 ) STRICT;
 
 -- MongoDB managed instances
@@ -163,7 +163,7 @@ CREATE TABLE mongo_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT mongo_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
+	CONSTRAINT mongo_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED'))
 ) STRICT;
 
 -- Redis managed instances
@@ -201,7 +201,7 @@ CREATE TABLE redis_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT redis_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED'))
+	CONSTRAINT redis_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED'))
 ) STRICT;
 
 -- LibSQL managed instances
@@ -246,7 +246,7 @@ CREATE TABLE libsql_dbs (
 	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
 	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-	CONSTRAINT libsql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPED')),
+	CONSTRAINT libsql_status_check CHECK (app_status IN ('IDLE', 'RUNNING', 'DONE', 'ERROR', 'QUEUED', 'STARTING', 'STOPPING', 'STOPPED', 'BUILDING', 'DEPLOYING', 'REBUILDING', 'REDEPLOYING', 'CANCELLING', 'CANCELLED', 'HEALTHY', 'OK', 'SUCCESS', 'FAILED')),
 	CONSTRAINT libsql_node_check CHECK (sqld_node IN ('PRIMARY', 'REPLICA'))
 ) STRICT;
 
