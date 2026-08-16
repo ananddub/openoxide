@@ -108,8 +108,10 @@ export function useComposeDetail(composeId: number) {
 	const patchMutation = $api.useMutation('patch', '/composes/{id}');
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel') => {
-		const intermediateStatus = action === 'stop' ? 'STOPPING' 
-			: action === 'cancel' ? 'CANCELLING'
+		const currentSt = (compose?.compose_status || compose?.status || '').toUpperCase();
+		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
+		const intermediateStatus = (action === 'stop' || action === 'cancel')
+			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
 			: action === 'start' ? 'STARTING'
 			: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);

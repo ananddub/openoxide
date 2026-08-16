@@ -110,8 +110,10 @@ export function useAppDetail(appId: number) {
 	const deleteMutation = $api.useMutation('delete', '/applications/{id}');
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel') => {
-		const intermediateStatus = action === 'stop' ? 'STOPPING' 
-			: action === 'cancel' ? 'CANCELLING'
+		const currentSt = (app?.app_status || app?.status || '').toUpperCase();
+		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
+		const intermediateStatus = (action === 'stop' || action === 'cancel')
+			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
 			: action === 'start' ? 'STARTING'
 			: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);

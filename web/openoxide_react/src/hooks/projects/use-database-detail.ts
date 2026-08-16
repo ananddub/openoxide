@@ -167,8 +167,10 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel') => {
 		setActionLoading(action as any);
-		const intermediateStatus = action === 'stop' ? 'STOPPING' 
-			: action === 'cancel' ? 'CANCELLING'
+		const currentSt = (database?.app_status || database?.status || '').toUpperCase();
+		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
+		const intermediateStatus = (action === 'stop' || action === 'cancel')
+			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
 			: action === 'start' ? 'STARTING'
 			: 'DEPLOYING';
 
