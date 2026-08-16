@@ -154,6 +154,14 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel') => {
 		setActionLoading(action as any);
+		const intermediateStatus = action === 'stop' ? 'STOPPING' 
+			: action === 'cancel' ? 'CANCELLING'
+			: action === 'start' ? 'STARTING'
+			: 'DEPLOYING';
+
+		setLocalStatusOverride(intermediateStatus);
+		(useAppStore.getState() as any).updateServiceStatus?.(dbId, intermediateStatus);
+
 		try {
 			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 			const endpoint = `/${kind}/{id}/${action}` as any;
@@ -164,19 +172,26 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			const resObj = res as Record<string, unknown>;
 			if (resObj?.error) {
 				toast.error(formatApiError(resObj.error));
+				setLocalStatusOverride(null);
 				return;
 			}
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
-			const nextStatus = action === 'stop' ? 'STOPPING' 
-				: action === 'cancel' ? 'CANCELLING'
-				: action === 'start' ? 'STARTING'
-				: 'DEPLOYING';
-			setLocalStatusOverride(nextStatus);
-			(useAppStore.getState() as any).updateServiceStatus?.(dbId, nextStatus);
 			refetchAll();
+
+			// Guarantee a smooth 1.5s visual feedback window so STOPPING / CANCELLING / STARTING states are clearly observable
+			setTimeout(() => {
+				const finalStatus = action === 'stop' ? 'STOPPED' 
+					: action === 'cancel' ? 'CANCELLED'
+					: action === 'start' ? 'RUNNING'
+					: 'RUNNING';
+				(useAppStore.getState() as any).updateServiceStatus?.(dbId, finalStatus);
+				setLocalStatusOverride(null);
+				refetchAll();
+			}, 1500);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
+			setLocalStatusOverride(null);
 		} finally {
 			setActionLoading(null);
 		}
