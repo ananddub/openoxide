@@ -15,12 +15,15 @@ export function useProjectDetails(projectId: number) {
 	const [showCreateCompose, setShowCreateCompose] = useState(false);
 	const [showCreateDatabase, setShowCreateDatabase] = useState(false);
 
-	// 0ms Instant Zustand Store Reads (ZERO Extra WebSockets or HTTP Requests!)
+	// 0ms Instant Zustand Store Reads for Applications, Databases, Compose, and Overview Services
 	const storeProject = useAppStore((state) =>
 		state.projects.find((p) => String(p.id) === String(projectId))
 	);
 	const servers = useAppStore((state) => state.servers);
-	const overviewServices = useAppStore((state) => state.overviewServices);
+	const applications = useAppStore((state) => state.applications || []);
+	const databases = useAppStore((state) => state.databases || []);
+	const composes = useAppStore((state) => state.composes || []);
+	const overviewServices = useAppStore((state) => state.overviewServices || []);
 
 	// Queries
 	const {data: liveProject} = useProjectGet(BigInt(projectId));
@@ -68,16 +71,107 @@ export function useProjectDetails(projectId: number) {
 		[envs, activeEnvId]
 	);
 
-	// Instant Filtered Services directly from Realtime Zustand Store
+	// Instant Filtered Services directly from Realtime Zustand Store (Applications + Compose + Databases + Overview)
 	const projectServices = useMemo(() => {
-		return (overviewServices || []).filter((s: any) => {
-			if (!s || String(s.project_id) !== String(projectId)) return false;
-			if (activeEnvId !== null && s.environment_id !== undefined && s.environment_id !== null) {
-				return Number(s.environment_id) === Number(activeEnvId);
+		const result: any[] = [];
+		const seenKeys = new Set<string>();
+
+		// 1. Applications from Zustand store
+		applications.forEach((app: any) => {
+			if (String(app.project_id || app.projectId) === String(projectId)) {
+				const envId = app.environment_id ?? app.environmentId;
+				if (activeEnvId === null || envId === undefined || envId === null || Number(envId) === Number(activeEnvId)) {
+					const key = `APP-${app.id}`;
+					seenKeys.add(key);
+					const status = app.app_status || app.status || 'STOPPED';
+					result.push({
+						id: app.id,
+						type: 'APP',
+						name: app.name || app.app_name,
+						subtitle: app.app_name || app.name,
+						status,
+						createdAt: app.created_at || Date.now(),
+						projectId: Number(app.project_id || projectId),
+						environmentId: envId,
+					});
+				}
 			}
-			return true;
 		});
-	}, [overviewServices, projectId, activeEnvId]);
+
+		// 2. Compose stacks from Zustand store
+		composes.forEach((c: any) => {
+			if (String(c.project_id || c.projectId) === String(projectId)) {
+				const envId = c.environment_id ?? c.environmentId;
+				if (activeEnvId === null || envId === undefined || envId === null || Number(envId) === Number(activeEnvId)) {
+					const key = `COMPOSE-${c.id}`;
+					seenKeys.add(key);
+					const status = c.compose_status || c.status || 'STOPPED';
+					result.push({
+						id: c.id,
+						type: 'COMPOSE',
+						name: c.name || c.app_name,
+						subtitle: c.app_name || c.name,
+						status,
+						createdAt: c.created_at || Date.now(),
+						projectId: Number(c.project_id || projectId),
+						environmentId: envId,
+					});
+				}
+			}
+		});
+
+		// 3. Databases from Zustand store
+		databases.forEach((db: any) => {
+			if (String(db.project_id || db.projectId) === String(projectId)) {
+				const envId = db.environment_id ?? db.environmentId;
+				if (activeEnvId === null || envId === undefined || envId === null || Number(envId) === Number(activeEnvId)) {
+					const key = `DATABASE-${db.id}`;
+					seenKeys.add(key);
+					const status = db.app_status || db.status || 'STOPPED';
+					const dbKind = db.kind || db.type || 'postgres';
+					result.push({
+						id: db.id,
+						type: 'DATABASE',
+						name: db.name || db.app_name,
+						subtitle: dbKind.toUpperCase(),
+						status,
+						createdAt: db.created_at || Date.now(),
+						dbKind,
+						projectId: Number(db.project_id || projectId),
+						environmentId: envId,
+					});
+				}
+			}
+		});
+
+		// 4. Fallback to Overview Services for any items not in direct stores
+		overviewServices.forEach((s: any) => {
+			if (!s || String(s.project_id || s.projectId) !== String(projectId)) return;
+			const envId = s.environment_id ?? s.environmentId;
+			if (activeEnvId !== null && envId !== undefined && envId !== null && Number(envId) !== Number(activeEnvId)) return;
+
+			const sType = (s.service_type || s.type || 'APP').toUpperCase();
+			const normalizedType = sType.includes('DATABASE') || sType.includes('DB') ? 'DATABASE' : sType.includes('COMPOSE') ? 'COMPOSE' : 'APP';
+			const key = `${normalizedType}-${s.id}`;
+
+			if (!seenKeys.has(key)) {
+				seenKeys.add(key);
+				result.push({
+					id: s.id,
+					type: normalizedType,
+					name: s.name,
+					subtitle: s.db_kind || s.dbKind || s.name,
+					status: s.status || s.app_status || 'STOPPED',
+					createdAt: s.created_at || Date.now(),
+					dbKind: s.db_kind || s.dbKind || 'postgres',
+					projectId: Number(s.project_id || projectId),
+					environmentId: envId,
+				});
+			}
+		});
+
+		return result;
+	}, [applications, databases, composes, overviewServices, projectId, activeEnvId]);
 
 	// Live hooks auto-push updates — no manual refetch needed
 	const handleRefresh = () => {};
