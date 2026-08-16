@@ -31,11 +31,10 @@ export function useProjectDetails(projectId: number) {
 	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
 
 	// Read URL search params for persistent environment selection across navigations
-	const urlEnvId = useMemo(() => {
-		if (typeof window === 'undefined') return null;
+	const urlEnvId = typeof window !== 'undefined' ? (() => {
 		const val = new URLSearchParams(window.location.search).get('env');
 		return val && !isNaN(Number(val)) ? Number(val) : null;
-	}, []);
+	})() : null;
 
 	const [userSelectedEnvId, setUserSelectedEnvIdState] = useState<number | null>(urlEnvId);
 

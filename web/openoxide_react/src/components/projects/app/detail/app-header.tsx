@@ -30,7 +30,10 @@ export function AppHeader({
 					<FolderOpen className="size-3.5" /> Projects
 				</Link>
 				<ChevronRight className="size-3 opacity-40" />
-				<Link to={`/projects/${id}` as any} className="hover:text-foreground transition-colors">
+				<Link 
+					to={`/projects/${id}` as any} 
+					search={(app as any)?.environment_id ? { env: Number((app as any).environment_id) } : undefined}
+					className="hover:text-foreground transition-colors">
 					Project Details
 				</Link>
 				<ChevronRight className="size-3 opacity-40" />
