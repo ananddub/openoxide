@@ -14,31 +14,20 @@ import { useAppStore } from '#/stores/app-store';
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 
-	// 0ms Instant Zustand Store Read with fallback to overviewServices
+	// Single Source of Truth: 100% Pure Realtime Zustand RAM Store Read
 	const applications = useAppStore((state) => state.applications);
 	const overviewServices = useAppStore((state) => state.overviewServices);
 
-	const storeApp = useMemo(() => {
-		const direct = applications.find((a) => String(a.id) === String(appId));
-		if (direct) return direct;
-		const service = overviewServices.find(
-			(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
-		);
-		if (service) {
-			return {
-				id: service.id,
-				name: service.name,
-				app_name: service.name,
-				project_id: service.project_id,
-				status: service.status,
-				created_at: service.created_at,
-			} as any;
-		}
-		return undefined;
-	}, [applications, overviewServices, appId]);
+	// Fetch live application data and sync directly into Zustand store
+	const { data: liveApp } = useApplicationGet(BigInt(appId));
 
-	// 1. App Query — live push replaces refetchInterval
-	const {data: liveApp} = useApplicationGet(BigInt(appId));
+	// Seed / Sync liveApp into Zustand store whenever liveApp arrives
+	useEffect(() => {
+		if (liveApp) {
+			const store = useAppStore.getState() as any;
+			store.addApplication?.(liveApp as any);
+		}
+	}, [liveApp]);
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
@@ -46,6 +35,7 @@ export function useAppDetail(appId: number) {
 	useEffect(() => {
 		if (liveApp) {
 			const fetchedStatus = ((liveApp as any).status || (liveApp as any).app_status || '').toUpperCase();
+			const storeApp = applications.find((a) => String(a.id) === String(appId));
 			if (fetchedStatus && (storeApp as any)?.status !== fetchedStatus) {
 				(useAppStore.getState() as any).updateServiceStatus?.(appId, fetchedStatus, 'application');
 			}
@@ -61,18 +51,31 @@ export function useAppDetail(appId: number) {
 				}
 			}
 		}
-	}, [liveApp, localStatusOverride, appId, (storeApp as any)?.status]);
+	}, [liveApp, localStatusOverride, appId, applications]);
 
-	const raw = liveApp || storeApp;
+	// Pure Zustand Store Application Resolution
 	const app = useMemo(() => {
+		const storeApp = applications.find((a) => String(a.id) === String(appId));
+		const serviceApp = overviewServices.find(
+			(s) => String(s.id) === String(appId) && (s.type === 'application' || s.kind === 'application' || !s.type)
+		);
+		const raw = storeApp || liveApp || (serviceApp ? {
+			id: serviceApp.id,
+			name: serviceApp.name,
+			app_name: serviceApp.name,
+			project_id: serviceApp.project_id,
+			status: serviceApp.status,
+			created_at: serviceApp.created_at,
+		} as any : undefined);
+
 		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).app_status || (storeApp as any)?.status || 'STOPPED';
+		const effectiveStatus = localStatusOverride || (raw as any).app_status || (raw as any).status || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
 			app_status: effectiveStatus,
 		};
-	}, [raw, storeApp, localStatusOverride]);
+	}, [applications, overviewServices, liveApp, appId, localStatusOverride]);
 
 	// 2. Domains Query
 	const {data: rawDomains, loading: isLoadingDomains} = useDomainListByApplication(BigInt(appId));
