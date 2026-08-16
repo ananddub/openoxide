@@ -80,6 +80,12 @@ export function useAppDetail(appId: number) {
 	const deleteMutation = $api.useMutation('delete', '/applications/{id}');
 
 	const handleAction = async (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel') => {
+		const intermediateStatus = action === 'stop' ? 'STOPPING' 
+			: action === 'cancel' ? 'CANCELLING'
+			: action === 'start' ? 'STARTING'
+			: 'DEPLOYING';
+		(useAppStore.getState() as any).updateServiceStatus?.(appId, intermediateStatus);
+
 		try {
 			if (action === 'deploy') {
 				await deployMutation.mutateAsync({params: {path: {id: appId}}});
@@ -94,10 +100,7 @@ export function useAppDetail(appId: number) {
 				await startMutation.mutateAsync({params: {path: {id: appId}}});
 				toast.success('Application started successfully');
 			} else if (action === 'stop') {
-				await patchMutation.mutateAsync({
-					params: {path: {id: appId}},
-					body: {status: 'STOPPED'},
-				});
+				await cancelMutation.mutateAsync({params: {path: {id: appId}}});
 				toast.success('Application stopped successfully');
 			} else if (action === 'cancel') {
 				await cancelMutation.mutateAsync({params: {path: {id: appId}}});
