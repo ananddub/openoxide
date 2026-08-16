@@ -86,7 +86,7 @@ export function DatabaseDeploymentsTab({
 					headers['Authorization'] = `Bearer ${accessToken}`;
 				}
 
-				const response = await fetch(`/api/deployments/${activeLogId}/logs/stream`, {
+				const response = await fetch(`/api/deployments/${activeLogId}/logs`, {
 					headers,
 					signal: controller.signal,
 				});
