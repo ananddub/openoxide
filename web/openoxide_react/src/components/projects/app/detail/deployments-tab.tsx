@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
-import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity} from 'lucide-react';
+import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
