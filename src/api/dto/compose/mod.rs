@@ -142,14 +142,59 @@ pub struct ComposeResponseDto {
     pub command: String,
     pub compose_path: String,
     pub service_networks: Vec<ComposeServiceNetworkDto>,
+    pub services: Vec<String>,
     pub environment_id: i64,
     pub server_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
+pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
+    if !record.compose_file.trim().is_empty() {
+        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&record.compose_file) {
+            if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
+                let keys: Vec<String> = services
+                    .keys()
+                    .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                    .collect();
+                if !keys.is_empty() {
+                    return keys;
+                }
+            }
+        }
+    }
+
+    let clean_path = record.compose_path.trim_start_matches("./");
+    let candidates = [
+        format!(".runtime/rustploy/compose/{}/source/docker-compose.yml", record.app_name),
+        format!(".runtime/rustploy/compose/{}/source/docker-compose.yaml", record.app_name),
+        format!(".runtime/rustploy/compose/{}/source/compose.yml", record.app_name),
+        format!(".runtime/rustploy/compose/{}/source/compose.yaml", record.app_name),
+        format!(".runtime/rustploy/compose/{}/source/{}", record.app_name, clean_path),
+    ];
+
+    for path in &candidates {
+        if let Ok(content) = std::fs::read_to_string(path) {
+            if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&content) {
+                if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
+                    let keys: Vec<String> = services
+                        .keys()
+                        .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                        .collect();
+                    if !keys.is_empty() {
+                        return keys;
+                    }
+                }
+            }
+        }
+    }
+
+    vec!["app".to_string()]
+}
+
 impl From<ComposeRecord> for ComposeResponseDto {
     fn from(value: ComposeRecord) -> Self {
+        let services = detect_compose_service_names(&value);
         Self {
             id: value.id,
             name: value.name,
@@ -178,6 +223,7 @@ impl From<ComposeRecord> for ComposeResponseDto {
             command: value.command,
             compose_path: value.compose_path,
             service_networks: parse_service_networks(&value.service_networks),
+            services,
             environment_id: value.environment_id,
             server_id: value.server_id,
             created_at: value.created_at,

@@ -61,6 +61,7 @@ export function ComposeDomainsTab({
 
 	// Extract list of compose service names
 	const servicesList = useMemo(() => {
+		const fromApi = Array.isArray((compose as any)?.services) ? (compose as any).services : [];
 		const extracted = extractServicesFromYaml(compose?.compose_file);
 		const defaults = ['app', 'web', 'frontend', 'backend', 'api', 'server'];
 		if (compose?.name && !defaults.includes(compose.name)) {
@@ -69,8 +70,8 @@ export function ComposeDomainsTab({
 		if (compose?.app_name && !defaults.includes(compose.app_name)) {
 			defaults.push(compose.app_name);
 		}
-		return Array.from(new Set([...extracted, ...defaults]));
-	}, [compose?.compose_file, compose?.name, compose?.app_name]);
+		return Array.from(new Set([...fromApi, ...extracted, ...defaults]));
+	}, [(compose as any)?.services, compose?.compose_file, compose?.name, compose?.app_name]);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
