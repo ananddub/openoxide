@@ -1,0 +1,58 @@
+services:
+  openoxide:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openoxide:latest
+    container_name: openoxide
+    restart: unless-stopped
+
+    ports:
+      - "4000:4000"
+
+    volumes:
+      # Panel database + runtime data (backups, logs, traefik config, etc.)
+      - openoxide_data:/app/data
+      # Docker socket — panel drives the local Docker daemon for deployments,
+      # container ops, Compose, Swarm and build queue.
+      # WARNING: socket access = host-root equivalent. Run on trusted infra only.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      DATABASE_URL: "sqlite:///app/data/db.sqlite3"
+
+      # ── Secrets — override all of these before going to production ─────────
+      SECRET_KEY: "change_me_in_production"
+      JWT_ACCESS_SECRET: "change_me_jwt_access"
+      JWT_REFRESH_SECRET: "change_me_jwt_refresh"
+
+      # Shared secret between panel and monitoring agents.
+      # Empty string disables agent ingestion entirely.
+      METRICS_TOKEN: "change_me_metrics_token"
+
+      # ── Public URLs ────────────────────────────────────────────────────────
+      # Used in password-reset / email-verification links sent to users.
+      # OPENOXIDE_PUBLIC_URL: "https://panel.example.com"
+      # URL agents and remote-server setup use to reach this panel.
+      # OPENOXIDE_SERVER_URL: "http://YOUR_HOST_IP:4000"
+
+      # ── Docker ────────────────────────────────────────────────────────────
+      SOCKET_PATH: "/var/run/docker.sock"
+
+      # ── Build resource limits (applied per deployment) ────────────────────
+      BUILD_MEMORY_LIMIT: "8G"
+      BUILD_CPU_LIMIT: "8"
+
+      # ── Logging ───────────────────────────────────────────────────────────
+      RUST_LOG: "openoxide=info"
+
+    # Give the panel enough room; tune down if the host is constrained.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  openoxide_data:

@@ -84,9 +84,15 @@ tonic-build = "0.12.3"
 prost-build = "0.13.5"
 protoc-bin-vendored = "3.0.0"
 
+[profile.dev]
+opt-level = 0          # zero optimization — fastest compile
+debug = 1              # minimal debug info (full=2, par slow hota hai)
+incremental = true     # sirf changed files recompile karo
+codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use karega
+
 [profile.release]
 opt-level = "z"        # size ke liye optimize (speed ke liye "3" use karo)
-lto = true             # Link Time Optimization — dead code remove karta hai
-codegen-units = 1      # better optimization, slow compile
+lto = "thin"           # Thin LTO — fast parallel link-time optimization
+codegen-units = 16     # 16 parallel codegen units for fast multi-core compilation
 panic = "abort"        # unwinding code hata deta hai
 strip = true           # debug symbols binary se remove karta hai

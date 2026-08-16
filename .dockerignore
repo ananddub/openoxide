@@ -14,7 +14,7 @@ web/rustploy_react/dist/
 *.db
 *.db-shm
 *.db-wal
-*.sqlite3
-data/
+data/*
+!data/db.sqlite3
 .env
 .envrc

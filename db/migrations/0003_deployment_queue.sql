@@ -28,8 +28,8 @@ INSERT INTO deployments_new (
 	application_id, compose_id, server_id, created_at
 )
 SELECT
-	id, title, description, status, state, log_path, pid, error_message, NULL,
-	is_preview_deployment, started_at, last_state_at, finished_at,
+	id, title, description, status, 'QUEUE', log_path, pid, error_message, NULL,
+	is_preview_deployment, started_at, NULL, finished_at,
 	application_id, compose_id, server_id, created_at
 FROM deployments;
 

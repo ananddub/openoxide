@@ -1,55 +1,137 @@
-# Stage 1: Build Frontend
-FROM node:22-alpine AS frontend-builder
-WORKDIR /app/web/openoxide
-RUN corepack enable && corepack prepare pnpm@latest --activate
-COPY web/openoxide/package.json ./
-RUN pnpm install
-COPY web/openoxide/ ./
-RUN pnpm build
+# syntax=docker/dockerfile:1
 
-# Stage 2: Build Backend Binary
-FROM rust:latest AS backend-builder
-WORKDIR /usr/src/openoxide
-
-COPY Cargo.toml Cargo.lock ./
-COPY crates ./crates
-COPY agent ./agent
-COPY db ./db
-COPY data ./data
-COPY src ./src
-
-ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
-
-RUN cargo build --release -p openoxide
-
-# Stage 3: Production Runtime Image
-FROM debian:bookworm-slim
+# =============================================================================
+# Stage 1: Rust static musl build
+# =============================================================================
+FROM rust:slim-bookworm AS backend-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    rustup target add x86_64-unknown-linux-musl
+
+WORKDIR /usr/src/openoxide
+
+# ── dependency pre-cache ──────────────────────────────────────────────────────
+COPY Cargo.toml Cargo.lock ./
+COPY crates/html/rt/Cargo.toml            crates/html/rt/Cargo.toml
+COPY crates/html/macro/Cargo.toml         crates/html/macro/Cargo.toml
+COPY crates/sh_macros/Cargo.toml          crates/sh_macros/Cargo.toml
+COPY crates/auto/route/Cargo.toml         crates/auto/route/Cargo.toml
+COPY crates/auto/route_macros/Cargo.toml  crates/auto/route_macros/Cargo.toml
+COPY crates/auto/socket/Cargo.toml        crates/auto/socket/Cargo.toml
+COPY crates/auto/socket_macros/Cargo.toml crates/auto/socket_macros/Cargo.toml
+COPY crates/os/Cargo.toml                 crates/os/Cargo.toml
+COPY crates/todo-test/Cargo.toml          crates/todo-test/Cargo.toml
+COPY agent/Cargo.toml                     agent/Cargo.toml
+
+RUN for manifest in \
+        crates/html/rt crates/html/macro crates/sh_macros \
+        crates/auto/route crates/auto/route_macros \
+        crates/auto/socket crates/auto/socket_macros \
+        crates/os agent ; do \
+    mkdir -p "$manifest/src" && echo "pub fn dummy() {}" > "$manifest/src/lib.rs" ; \
+    done && \
+    # todo-test: default-run = "openoxide-todo-test" maps to src/main.rs (implicit binary)
+    mkdir -p crates/todo-test/src && \
+    echo "fn main() {}" > crates/todo-test/src/main.rs && \
+    mkdir -p src && echo "fn main() {}" > src/main.rs
+
+RUN cargo fetch
+
+COPY proto/   proto/
+COPY build.rs build.rs
+COPY db/      db/
+COPY src/     src/
+COPY crates/  crates/
+COPY agent/   agent/
+COPY data/db.sqlite3 data/db.sqlite3
+
+ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static"
+
+RUN cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
+    strip target/x86_64-unknown-linux-musl/release/openoxide
+
+
+# =============================================================================
+# Stage 2: Alpine runtime — panel binary + all required CLI tools
+# =============================================================================
+FROM alpine:3.21
+
+ARG NIXPACKS_VERSION=1.41.0
+ARG RAILPACK_VERSION=0.36.4
+ARG PACK_VERSION=0.40.9
+
+# ── System packages ───────────────────────────────────────────────────────────
+RUN apk add --no-cache \
+    # TLS roots
     ca-certificates \
-    curl \
-    sqlite3 \
+    # Container operations (docker buildkit, compose, swarm)
+    docker-cli \
+    docker-cli-compose \
+    # Application git-source cloning + LFS
     git \
-    docker.io \
-    dnsutils \
+    git-lfs \
+    # WireGuard private networking
     wireguard-tools \
+    # ip, ss — route/interface management
     iproute2 \
-    iputils-ping \
-    && rm -rf /var/lib/apt/lists/*
+    # Remote server SSH connections
+    openssh-client \
+    # SQLite CLI (manual inspection + migration repair)
+    sqlite \
+    # DNS diagnostics
+    bind-tools \
+    # Health checks, certificate downloads, rclone install
+    curl \
+    # Connectivity diagnostics
+    iputils \
+    # Archive operations (backup/restore)
+    tar \
+    zip \
+    unzip \
+    # rclone needs these for some remote storage backends
+    fuse3 \
+    && git lfs install --system
+
+# ── Docker Engine (daemon + BuildKit) ────────────────────────────────────────
+# docker-engine is in the Alpine community repo
+RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.21/community docker-engine
+
+# ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
+RUN curl -fsSL https://rclone.org/install.sh | bash
+
+# ── Nixpacks (Heroku-style auto buildpacks) ───────────────────────────────────
+RUN curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
+    && chmod +x /tmp/nixpacks-install.sh \
+    && VERSION=${NIXPACKS_VERSION} /tmp/nixpacks-install.sh \
+    && rm /tmp/nixpacks-install.sh
+
+# ── Railpack (next-gen buildpack engine) ──────────────────────────────────────
+RUN curl -sSL https://railpack.com/install.sh | bash
+
+# ── Cloud Native Buildpacks — pack CLI ───────────────────────────────────────
+COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
+
+# ── OpenOxide panel binary ────────────────────────────────────────────────────
+COPY --from=backend-builder \
+    /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/openoxide \
+    /usr/local/bin/openoxide
+
+# ── React dashboard static assets ────────────────────────────────────────────
+COPY web/openoxide_react/dist ./web/dist
 
 WORKDIR /app
+RUN mkdir -p /app/data
 
-# Copy Rust backend binary
-COPY --from=backend-builder /usr/src/openoxide/target/release/openoxide /usr/local/bin/openoxide
+ENV PORT=4000 \
+    HOST=0.0.0.0 \
+    DATABASE_URL="sqlite:///app/data/db.sqlite3"
 
-# Copy Frontend static assets from SvelteKit output
-COPY --from=frontend-builder /app/web/openoxide/.svelte-kit/output/client ./web/static
+EXPOSE 4000
 
-# Environment defaults
-ENV PORT=3000
-ENV HOST=0.0.0.0
-ENV DATABASE_URL="sqlite:///app/data/db.sqlite3"
-
-EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fs http://localhost:4000/ || exit 0
 
 CMD ["openoxide"]
