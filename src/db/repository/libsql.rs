@@ -113,9 +113,10 @@ impl LibsqlRepository {
     }
 
     pub async fn update_status(&self, id: i64, status: &str) -> sqlx::Result<()> {
+        let upper = status.to_uppercase();
         sqlx::query!(
             "UPDATE libsql_dbs SET app_status = ? WHERE id = ?",
-            status,
+            upper,
             id
         )
         .execute(self.pool.as_ref())
