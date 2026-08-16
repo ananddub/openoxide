@@ -20,13 +20,16 @@ pub(crate) async fn remote_executor(
         server_id,
         "deployment SSH host key verification is disabled because no fingerprint is stored for this server"
     );
-    let executor = RemoteExecutor::new(
+    let username = row.2;
+    let mut executor = RemoteExecutor::new(
         row.0,
         port,
-        row.2,
+        username.clone(),
         SshAuth::key_pair(row.3, row.4),
         SshHostKey::InsecureAcceptAny,
-    )
-    .with_sudo();
+    );
+    if username != "root" {
+        executor = executor.with_sudo();
+    }
     Ok(executor)
 }
