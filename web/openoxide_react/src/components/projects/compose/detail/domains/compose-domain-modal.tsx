@@ -109,19 +109,29 @@ export function ComposeDomainModal({
 					</div>
 
 					<div className="flex flex-col gap-1.5 w-full">
-						<Label className="text-xs font-semibold">Target Compose Service *</Label>
-						<Select value={serviceName} onValueChange={val => val && setServiceName(val)}>
-							<SelectTrigger className="h-9 text-xs w-full">
-								<SelectValue placeholder="Select service" />
-							</SelectTrigger>
-							<SelectContent>
-								{servicesList.map((srv) => (
-									<SelectItem key={srv} value={srv} className="text-xs">
-										{srv}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<div className="flex items-center justify-between">
+							<Label className="text-xs font-semibold">Target Compose Service *</Label>
+						</div>
+						<div className="flex gap-2">
+							<Input
+								value={serviceName}
+								onChange={e => setServiceName(e.target.value)}
+								placeholder="app"
+								className="h-9 text-xs font-mono flex-1"
+							/>
+							<Select value={servicesList.includes(serviceName) ? serviceName : ''} onValueChange={val => val && setServiceName(val)}>
+								<SelectTrigger className="h-9 text-xs w-[130px]">
+									<SelectValue placeholder="Presets" />
+								</SelectTrigger>
+								<SelectContent>
+									{Array.from(new Set([...servicesList, serviceName].filter(Boolean))).map((srv) => (
+										<SelectItem key={srv} value={srv} className="text-xs font-mono">
+											{srv}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 
 					<div className="flex flex-col gap-1.5 w-full">

@@ -60,11 +60,17 @@ export function ComposeDomainsTab({
 	const [editingDomain, setEditingDomain] = useState<any | null>(null);
 
 	// Extract list of compose service names
-	const availableServices = useMemo(() => {
-		return extractServicesFromYaml(compose?.compose_file);
-	}, [compose?.compose_file]);
-
-	const servicesList = availableServices.length > 0 ? availableServices : ['app'];
+	const servicesList = useMemo(() => {
+		const extracted = extractServicesFromYaml(compose?.compose_file);
+		const defaults = ['app', 'web', 'frontend', 'backend', 'api', 'server'];
+		if (compose?.name && !defaults.includes(compose.name)) {
+			defaults.push(compose.name);
+		}
+		if (compose?.app_name && !defaults.includes(compose.app_name)) {
+			defaults.push(compose.app_name);
+		}
+		return Array.from(new Set([...extracted, ...defaults]));
+	}, [compose?.compose_file, compose?.name, compose?.app_name]);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
