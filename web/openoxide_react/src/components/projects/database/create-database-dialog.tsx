@@ -85,7 +85,7 @@ export function CreateDatabaseDialog({
 			setDockerImage('postgres:17');
 			setServerId(availableServers[0]?.id ? String(availableServers[0].id) : 'local');
 		}
-	}, [isOpen, servers]);
+	}, [isOpen]);
 
 	const selectKind = (kind: string) => {
 		setSelectedKind(kind);
