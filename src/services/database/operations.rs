@@ -56,7 +56,7 @@ impl DatabaseService {
         }
 
         let target_status = match operation {
-            DatabaseOperation::Deploy | DatabaseOperation::Redeploy => "DEPLOYING",
+            DatabaseOperation::Deploy | DatabaseOperation::Redeploy => "STARTING",
             _ => "STARTING",
         };
 
