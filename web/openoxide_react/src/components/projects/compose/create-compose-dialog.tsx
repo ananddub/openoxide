@@ -16,17 +16,19 @@ import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
 interface CreateComposeDialogProps {
-	projectId: number;
+	projectId?: number;
 	environmentId: number;
 	isOpen: boolean;
-	onOpenChange: (open: boolean) => void;
-	onCreated?: () => void;
+	onClose?: () => void;
+	onOpenChange?: (open: boolean) => void;
+	onCreated?: (compose?: any) => void;
 }
 
 export function CreateComposeDialog({
 	projectId,
 	environmentId,
 	isOpen,
+	onClose,
 	onOpenChange,
 	onCreated,
 }: CreateComposeDialogProps) {
@@ -38,6 +40,11 @@ export function CreateComposeDialog({
 
 	const createMutation = $api.useMutation('post', '/compose');
 	const serversList = useAppStore((state) => state.servers || []);
+
+	const handleClose = () => {
+		onClose?.();
+		onOpenChange?.(false);
+	};
 
 	useEffect(() => {
 		if (isOpen) {
@@ -54,7 +61,7 @@ export function CreateComposeDialog({
 
 		setIsSubmitting(true);
 		try {
-			await createMutation.mutateAsync({
+			const res = await createMutation.mutateAsync({
 				body: {
 					name: name.trim(),
 					compose_type: composeType,
@@ -63,8 +70,10 @@ export function CreateComposeDialog({
 					server_id: serverId === 'local' ? undefined : Number(serverId),
 				},
 			});
-			onCreated?.();
-			onOpenChange(false);
+			const resObj = res as Record<string, unknown>;
+			const composeObj = (resObj?.data || res) as any;
+			handleClose();
+			onCreated?.(composeObj);
 		} catch (err) {
 			alert(formatApiError(err));
 		} finally {
@@ -73,7 +82,7 @@ export function CreateComposeDialog({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<DialogContent className="sm:max-w-[440px]">
 				<form onSubmit={handleSubmit}>
 					<DialogHeader>

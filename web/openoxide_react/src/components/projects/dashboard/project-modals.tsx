@@ -88,8 +88,15 @@ export function ProjectModals({
 				<CreateAppDialog
 					isOpen={showCreateApp}
 					onClose={() => setShowCreateApp(false)}
+					onOpenChange={(open) => setShowCreateApp(open)}
 					environmentId={selectedEnvId}
-					onCreated={handleRefresh}
+					onCreated={(app) => {
+						setShowCreateApp(false);
+						handleRefresh();
+						if (app?.id) {
+							navigate({ to: `/projects/${projectId}/app/${app.id}` as any });
+						}
+					}}
 				/>
 			)}
 
@@ -97,8 +104,10 @@ export function ProjectModals({
 				<CreateComposeDialog
 					isOpen={showCreateCompose}
 					onClose={() => setShowCreateCompose(false)}
+					onOpenChange={(open) => setShowCreateCompose(open)}
 					environmentId={selectedEnvId}
 					onCreated={(compose) => {
+						setShowCreateCompose(false);
 						handleRefresh();
 						if (compose?.id) {
 							navigate({ to: `/projects/${projectId}/compose/${compose.id}` as any });

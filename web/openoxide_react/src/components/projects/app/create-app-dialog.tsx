@@ -16,17 +16,19 @@ import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
 interface CreateAppDialogProps {
-	projectId: number;
+	projectId?: number;
 	environmentId: number;
 	isOpen: boolean;
-	onOpenChange: (open: boolean) => void;
-	onCreated?: () => void;
+	onClose?: () => void;
+	onOpenChange?: (open: boolean) => void;
+	onCreated?: (app?: any) => void;
 }
 
 export function CreateAppDialog({
 	projectId,
 	environmentId,
 	isOpen,
+	onClose,
 	onOpenChange,
 	onCreated,
 }: CreateAppDialogProps) {
@@ -37,6 +39,11 @@ export function CreateAppDialog({
 
 	const createMutation = $api.useMutation('post', '/applications');
 	const serversList = useAppStore((state) => state.servers || []);
+
+	const handleClose = () => {
+		onClose?.();
+		onOpenChange?.(false);
+	};
 
 	useEffect(() => {
 		if (isOpen) {
@@ -52,7 +59,7 @@ export function CreateAppDialog({
 
 		setIsSubmitting(true);
 		try {
-			await createMutation.mutateAsync({
+			const res = await createMutation.mutateAsync({
 				body: {
 					name: name.trim(),
 					description: description.trim() || undefined,
@@ -60,8 +67,10 @@ export function CreateAppDialog({
 					server_id: serverId === 'local' ? undefined : Number(serverId),
 				},
 			});
-			onCreated?.();
-			onOpenChange(false);
+			const resObj = res as Record<string, unknown>;
+			const appObj = (resObj?.data || res) as any;
+			handleClose();
+			onCreated?.(appObj);
 		} catch (err) {
 			alert(formatApiError(err));
 		} finally {
@@ -70,7 +79,7 @@ export function CreateAppDialog({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<DialogContent className="sm:max-w-[440px]">
 				<form onSubmit={handleSubmit}>
 					<DialogHeader>
