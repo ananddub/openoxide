@@ -149,6 +149,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			}
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
+			const nextStatus = action === 'stop' ? 'STOPPED' : action === 'start' ? 'RUNNING' : 'BUILDING';
+			(useAppStore.getState() as any).updateServiceStatus?.(dbId, nextStatus);
 			refetchAll();
 		} catch (err: any) {
 			toast.error(formatApiError(err));

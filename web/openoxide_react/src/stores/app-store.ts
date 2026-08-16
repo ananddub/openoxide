@@ -339,6 +339,13 @@ export const useAppStore = create<AppStoreState>((set) => ({
 		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
 
 	setOverviewServices: (services) => set({ overviewServices: services }),
+	updateServiceStatus: (id, status) =>
+		set((state) => ({
+			databases: state.databases.map((d: any) => (String(d.id) === String(id) ? { ...d, status, app_status: status } : d)),
+			applications: state.applications.map((a: any) => (String(a.id) === String(id) ? { ...a, status, app_status: status } : a)),
+			composes: state.composes.map((c: any) => (String(c.id) === String(id) ? { ...c, status, app_status: status } : c)),
+			overviewServices: state.overviewServices.map((s: any) => (String(s.id) === String(id) ? { ...s, status, app_status: status } : s)),
+		})),
 	setDeployments: (deployments) => set({ deployments }),
 	deleteDeployment: (id) =>
 		set((state) => ({ deployments: state.deployments.filter((d) => String(d.id) !== String(id)) })),
