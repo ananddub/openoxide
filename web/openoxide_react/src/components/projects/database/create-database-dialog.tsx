@@ -210,7 +210,15 @@ export function CreateDatabaseDialog({
 							<Server className="w-3.5 h-3.5 text-muted-foreground" /> Target Server *
 						</label>
 						<Select value={serverId} onValueChange={val => setServerId(val ?? '')}>
-							<SelectTrigger className="h-9 w-full"><SelectValue placeholder="Select server" /></SelectTrigger>
+							<SelectTrigger className="h-9 w-full">
+								<SelectValue placeholder="Select server">
+									{(() => {
+										const found = availableServers.find(s => String(s.id) === String(serverId));
+										if (!found) return serverId;
+										return `${found.name}${found.ip_address ? ` (${found.ip_address})` : ''}`;
+									})()}
+								</SelectValue>
+							</SelectTrigger>
 							<SelectContent className="bg-card border-border">
 								{availableServers.map(srv => (
 									<SelectItem key={srv.id} value={String(srv.id)}>

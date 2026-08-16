@@ -108,7 +108,13 @@ export function CreateComposeDialog({
 							<label className="text-xs font-semibold text-foreground">Target Server</label>
 							<Select value={serverId} onValueChange={setServerId}>
 								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select server" />
+									<SelectValue placeholder="Select server">
+										{(() => {
+											if (serverId === 'local') return 'Localhost (Default)';
+											const found = serversList.find((s: any) => String(s.id) === String(serverId));
+											return found ? `${found.name} (${found.ip_address || found.ip || ''})` : serverId;
+										})()}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="local">Localhost (Default)</SelectItem>
@@ -116,7 +122,7 @@ export function CreateComposeDialog({
 										<SelectItem key={srv.id} value={String(srv.id)}>
 											<div className="flex items-center gap-2">
 												<Server className="size-3.5 text-muted-foreground" />
-												<span>{srv.name} ({srv.ip})</span>
+												<span>{srv.name} ({srv.ip_address || srv.ip || ''})</span>
 											</div>
 										</SelectItem>
 									))}
