@@ -117,25 +117,43 @@ impl DatabaseService {
         })
     }
 
+    pub async fn stop_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
+        self.cancel_operation(kind, id).await
+    }
+
     pub async fn cancel_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
+        let db_record = self.get_by_id(kind, id).await.ok();
+        let current_status = db_record.as_ref().map(|d| d.app_status.to_uppercase()).unwrap_or_default();
+
+        let is_building = matches!(
+            current_status.as_str(),
+            "QUEUED" | "BUILDING" | "STARTING" | "DEPLOYING" | "PREPARING" | "PENDING" | "CANCELLING"
+        );
+
+        let (intermediate, final_st) = if is_building {
+            ("CANCELLING", "CANCELLED")
+        } else {
+            ("STOPPING", "STOPPED")
+        };
+
         match kind {
             DatabaseKind::Postgres => {
-                let _ = self.repo_postgres.update_status(id, "CANCELLING").await;
+                let _ = self.repo_postgres.update_status(id, intermediate).await;
             }
             DatabaseKind::Mysql => {
-                let _ = self.repo_mysql.update_status(id, "CANCELLING").await;
+                let _ = self.repo_mysql.update_status(id, intermediate).await;
             }
             DatabaseKind::Mariadb => {
-                let _ = self.repo_mariadb.update_status(id, "CANCELLING").await;
+                let _ = self.repo_mariadb.update_status(id, intermediate).await;
             }
             DatabaseKind::Mongo => {
-                let _ = self.repo_mongo.update_status(id, "CANCELLING").await;
+                let _ = self.repo_mongo.update_status(id, intermediate).await;
             }
             DatabaseKind::Redis => {
-                let _ = self.repo_redis.update_status(id, "CANCELLING").await;
+                let _ = self.repo_redis.update_status(id, intermediate).await;
             }
             DatabaseKind::Libsql => {
-                let _ = self.repo_libsql.update_status(id, "CANCELLING").await;
+                let _ = self.repo_libsql.update_status(id, intermediate).await;
             }
         }
         self.cache
@@ -153,7 +171,6 @@ impl DatabaseService {
         let _ = self.repo_deploy.cancel_queued_for_database(id).await;
         let _ = self.repo_deploy.request_cancel_database_deployment(id).await;
 
-        let db_record = self.get_by_id(kind, id).await.ok();
         let app_name = db_record.as_ref().map(|d| d.app_name.clone());
         let server_id = db_record.as_ref().and_then(|d| d.server_id);
         let db_ref = self.db.clone();
@@ -222,12 +239,12 @@ impl DatabaseService {
             }
 
             match kind {
-                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, "CANCELLED").await; }
-                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, "CANCELLED").await; }
-                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, "CANCELLED").await; }
-                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, "CANCELLED").await; }
-                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, "CANCELLED").await; }
-                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, "CANCELLED").await; }
+                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, final_st).await; }
+                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, final_st).await; }
+                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, final_st).await; }
+                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, final_st).await; }
+                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, final_st).await; }
+                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, final_st).await; }
             }
             cache.invalidate(&crate::core::cache::CacheKey::Database(id)).await;
         });

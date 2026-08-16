@@ -80,15 +80,28 @@ impl ApplicationService {
     }
 
     pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
-        self.stop_or_cancel(id, "STOPPING", "STOPPED").await
+        self.stop_or_cancel_smart(id).await
     }
 
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
-        self.stop_or_cancel(id, "CANCELLING", "CANCELLED").await
+        self.stop_or_cancel_smart(id).await
     }
 
-    async fn stop_or_cancel(&self, id: i64, intermediate: &'static str, final_st: &'static str) -> sqlx::Result<bool> {
+    pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
+        let current_status = app_user.app_status.to_uppercase();
+
+        let is_building = matches!(
+            current_status.as_str(),
+            "QUEUED" | "BUILDING" | "STARTING" | "PREPARING" | "PENDING" | "CANCELLING"
+        );
+
+        let (intermediate, final_st) = if is_building {
+            ("CANCELLING", "CANCELLED")
+        } else {
+            ("STOPPING", "STOPPED")
+        };
+
         let _ = self.repo_app.update_status(id, intermediate).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
