@@ -194,20 +194,27 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 		return 'text-muted-foreground bg-muted border-border';
 	};
 
-
-
 	const handleClearAppDeployments = async () => {
 		try {
-			const token = localStorage.getItem('token') || '';
-			const res = await fetch(`/api/deployments/application/${appId}`, {
+			const res = await authFetch(`/deployments/application/${appId}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
 			});
 			if (!res.ok) throw new Error('Failed to clear application deployments');
 			const data = await res.json();
 			toast.success(`Cleared ${data.cleared_count || 0} deployment logs & history`);
+			onRefresh?.();
+		} catch (err: unknown) {
+			toast.error(formatApiError(err));
+		}
+	};
+
+	const handleDeleteSingleAppDeployment = async (id: number) => {
+		try {
+			const res = await authFetch(`/deployments/${id}`, {
+				method: 'DELETE',
+			});
+			if (!res.ok) throw new Error('Failed to delete deployment');
+			toast.success(`Deployment #${id} deleted`);
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -234,7 +241,7 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="sm" onClick={handleClearAppDeployments} disabled={isActionPending} className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-8 text-xs">
-						Clear History
+						<Trash2 className="w-3.5 h-3.5" /> Clear History
 					</Button>
 					<Button variant="outline" size="sm" onClick={() => onRefresh?.()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
 						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
@@ -292,6 +299,12 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 										{isActive && (
 											<Button size="sm" variant="ghost" onClick={() => setCancelingId(e.id)} className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
 												<XCircle className="w-3 h-3" /> Cancel
+											</Button>
+										)}
+
+										{!isActive && e.id !== undefined && (
+											<Button size="sm" variant="ghost" onClick={() => handleDeleteSingleAppDeployment(e.id)} className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-1.5 rounded-lg font-semibold flex items-center gap-1">
+												<Trash2 className="w-3.5 h-3.5" />
 											</Button>
 										)}
 									</div>

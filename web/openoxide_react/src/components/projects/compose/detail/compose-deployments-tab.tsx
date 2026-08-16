@@ -4,6 +4,7 @@ import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {authFetch} from '#/api/client';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 import { useAppStore } from '#/stores/app-store';
@@ -181,12 +182,8 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 
 	const handleClearComposeDeployments = async () => {
 		try {
-			const token = localStorage.getItem('token') || '';
-			const res = await fetch(`/api/deployments/compose/${composeId}`, {
+			const res = await authFetch(`/deployments/compose/${composeId}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
 			});
 			if (!res.ok) throw new Error('Failed to clear compose deployments');
 			const data = await res.json();
@@ -198,12 +195,8 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 
 	const handleDeleteSingleComposeDeployment = async (id: number) => {
 		try {
-			const token = localStorage.getItem('token') || '';
-			const res = await fetch(`/api/deployments/${id}`, {
+			const res = await authFetch(`/deployments/${id}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
 			});
 			if (!res.ok) throw new Error('Failed to delete deployment');
 			toast.success(`Deployment #${id} deleted`);

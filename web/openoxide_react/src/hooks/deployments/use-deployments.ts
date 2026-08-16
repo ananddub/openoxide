@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
+import {authFetch} from '#/api/client';
 
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -67,12 +68,8 @@ export function useDeployments() {
 
 	const handleDeleteDeployment = async (id: number) => {
 		try {
-			const token = localStorage.getItem('token') || '';
-			const res = await fetch(`/api/deployments/${id}`, {
+			const res = await authFetch(`/deployments/${id}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
 			});
 			if (!res.ok) throw new Error('Failed to delete deployment');
 			toast.success(`Deployment #${id} deleted`);
@@ -83,12 +80,8 @@ export function useDeployments() {
 
 	const handleClearAllDeployments = async () => {
 		try {
-			const token = localStorage.getItem('token') || '';
-			const res = await fetch('/api/deployments', {
+			const res = await authFetch('/deployments', {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
 			});
 			if (!res.ok) throw new Error('Failed to clear deployments');
 			const data = await res.json();
