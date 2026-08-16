@@ -113,12 +113,17 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	// Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(dbId, currentKind || 'postgres');
 
+	const allDeployments = useAppStore((state) => state.deployments || []);
+	const dbDeployments = useMemo(() => {
+		return allDeployments.filter((d: any) => String(d.database_id) === String(dbId));
+	}, [allDeployments, dbId]);
+
 	const refetchAll = () => {
 		monitoring.triggerRefresh();
 	};
 
-	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop') => {
-		setActionLoading(action);
+	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel') => {
+		setActionLoading(action as any);
 		try {
 			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 			const endpoint = `/${kind}/{id}/${action}` as any;
@@ -169,6 +174,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		isDeployed,
 		schedules,
 		backups,
+		deployments: dbDeployments,
 		monitoring,
 		isLoading: !database,
 		isLoadingSchedules,

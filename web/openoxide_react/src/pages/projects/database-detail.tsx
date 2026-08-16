@@ -14,6 +14,7 @@ import {DatabaseLogsTab} from '#/components/projects/database/detail/database-lo
 import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {DatabaseAdvancedTab} from '#/components/projects/database/detail/database-advanced-tab';
+import {DatabaseDeploymentsTab} from '#/components/projects/database/detail/database-deployments-tab';
 import {DeleteDatabaseDialog} from '#/components/projects/database/delete-database-dialog';
 
 export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
@@ -27,6 +28,7 @@ const TABS = [
 	'General',
 	'Architecture',
 	'Environment',
+	'Deployments',
 	'Backups',
 	'Logs',
 	'Monitoring',
@@ -45,6 +47,7 @@ function DatabaseDetailPage() {
 		database,
 		schedules,
 		backups,
+		deployments,
 		monitoring,
 		isLoading,
 		actionLoading,
@@ -117,6 +120,16 @@ function DatabaseDetailPage() {
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={database} handleUpdate={handleUpdateEnv} />
+				)}
+				{activeTab === 'Deployments' && (
+					<DatabaseDeploymentsTab
+						dbId={parsedDbId}
+						kind={detectedKind || 'postgres'}
+						database={database}
+						deployments={deployments}
+						onRefresh={refetchAll}
+						onAction={handleAction}
+					/>
 				)}
 				{activeTab === 'Backups' && (
 					<ComposeBackupsTab compose={database} />
