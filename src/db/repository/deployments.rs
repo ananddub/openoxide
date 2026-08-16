@@ -254,6 +254,63 @@ impl DeploymentRepository {
         Ok(result.rows_affected())
     }
 
+    pub async fn delete_filtered_finished(
+        &self,
+        application_id: Option<i64>,
+        compose_id: Option<i64>,
+        database_id: Option<i64>,
+        server_id: Option<i64>,
+    ) -> Result<Vec<String>, sqlx::Error> {
+        let mut builder = sqlx::QueryBuilder::new(
+            "SELECT log_path FROM deployments WHERE status NOT IN ('QUEUED', 'RUNNING')",
+        );
+
+        if let Some(app_id) = application_id {
+            builder.push(" AND application_id = ");
+            builder.push_bind(app_id);
+        }
+        if let Some(cmp_id) = compose_id {
+            builder.push(" AND compose_id = ");
+            builder.push_bind(cmp_id);
+        }
+        if let Some(db_id) = database_id {
+            builder.push(" AND database_id = ");
+            builder.push_bind(db_id);
+        }
+        if let Some(srv_id) = server_id {
+            builder.push(" AND server_id = ");
+            builder.push_bind(srv_id);
+        }
+
+        let query = builder.build_query_scalar::<String>();
+        let log_paths = query.fetch_all(self.pool.as_ref()).await?;
+
+        let mut del_builder = sqlx::QueryBuilder::new(
+            "DELETE FROM deployments WHERE status NOT IN ('QUEUED', 'RUNNING')",
+        );
+
+        if let Some(app_id) = application_id {
+            del_builder.push(" AND application_id = ");
+            del_builder.push_bind(app_id);
+        }
+        if let Some(cmp_id) = compose_id {
+            del_builder.push(" AND compose_id = ");
+            del_builder.push_bind(cmp_id);
+        }
+        if let Some(db_id) = database_id {
+            del_builder.push(" AND database_id = ");
+            del_builder.push_bind(db_id);
+        }
+        if let Some(srv_id) = server_id {
+            del_builder.push(" AND server_id = ");
+            del_builder.push_bind(srv_id);
+        }
+
+        del_builder.build().execute(self.pool.as_ref()).await?;
+
+        Ok(log_paths)
+    }
+
     pub async fn cancel_queued_for_compose_count(
         &self,
         compose_id: i64,

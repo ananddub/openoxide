@@ -132,6 +132,53 @@ impl DeploymentService {
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         Ok(state.subscribe(component_id))
     }
+
+    pub async fn delete(&self, id: i64) -> sqlx::Result<bool> {
+        let deployment = match self.repo_deploy.get_by_id(id).await? {
+            Some(d) => d,
+            None => return Ok(false),
+        };
+
+        if deployment.status == "QUEUED" || deployment.status == "RUNNING" {
+            let _ = self.cancel(id).await;
+        }
+
+        self.repo_deploy.delete(id).await?;
+
+        if !deployment.log_path.is_empty() {
+            let path = std::path::Path::new(&deployment.log_path);
+            if path.exists() {
+                let _ = tokio::fs::remove_file(path).await;
+            }
+        }
+
+        Ok(true)
+    }
+
+    pub async fn clear_all(
+        &self,
+        application_id: Option<i64>,
+        compose_id: Option<i64>,
+        database_id: Option<i64>,
+        server_id: Option<i64>,
+    ) -> sqlx::Result<u64> {
+        let log_paths = self
+            .repo_deploy
+            .delete_filtered_finished(application_id, compose_id, database_id, server_id)
+            .await?;
+
+        let count = log_paths.len() as u64;
+        for log_path in log_paths {
+            if !log_path.is_empty() {
+                let path = std::path::Path::new(&log_path);
+                if path.exists() {
+                    let _ = tokio::fs::remove_file(path).await;
+                }
+            }
+        }
+
+        Ok(count)
+    }
 }
 
 fn normalize_filter_text(value: Option<String>) -> Option<String> {
