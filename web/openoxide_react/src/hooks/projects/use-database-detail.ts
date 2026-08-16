@@ -84,16 +84,18 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		(activeKind.includes('libsql') ? libsqlQ.data : null) ||
 		postgresQ.data || mysqlQ.data || redisQ.data || mongoQ.data || mariadbQ.data || libsqlQ.data;
 
+	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+
 	const database = useMemo(() => {
-		const raw = (fetchedDb && storeDb) ? { ...storeDb, ...fetchedDb } : (fetchedDb || storeDb);
+		const raw = (fetchedDb && storeDb) ? { ...fetchedDb, ...storeDb } : (fetchedDb || storeDb);
 		if (!raw) return null;
-		const effectiveStatus = raw.status || raw.app_status || raw.application_status || 'STOPPED';
+		const effectiveStatus = localStatusOverride || storeDb?.status || raw.status || raw.app_status || raw.application_status || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
 			app_status: effectiveStatus,
 		};
-	}, [fetchedDb, storeDb]);
+	}, [fetchedDb, storeDb, localStatusOverride]);
 
 	const detectedKind = targetKind || (
 		redisQ.data ? 'redis'
@@ -130,6 +132,12 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	}, [allDeployments, dbId]);
 
 	const refetchAll = () => {
+		postgresQ.refetch?.();
+		mysqlQ.refetch?.();
+		mariadbQ.refetch?.();
+		mongoQ.refetch?.();
+		redisQ.refetch?.();
+		libsqlQ.refetch?.();
 		monitoring.triggerRefresh();
 	};
 
@@ -150,6 +158,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 			toast.success(`${kind.toUpperCase()} ${action} triggered`);
 			const nextStatus = action === 'stop' ? 'STOPPED' : action === 'start' ? 'RUNNING' : 'BUILDING';
+			setLocalStatusOverride(nextStatus);
 			(useAppStore.getState() as any).updateServiceStatus?.(dbId, nextStatus);
 			refetchAll();
 		} catch (err: any) {
