@@ -338,6 +338,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
 	deleteServer: (id) =>
 		set((state) => ({ servers: state.servers.filter((s) => String(s.id) !== String(id)) })),
 
+	setOverviewServices: (services) => set({ overviewServices: services }),
 	updateServiceStatus: (id, status, kind?) =>
 		set((state) => {
 			const targetK = (kind || '').toLowerCase();
