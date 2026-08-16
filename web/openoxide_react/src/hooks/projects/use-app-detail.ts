@@ -104,6 +104,7 @@ export function useAppDetail(appId: number) {
 	const reloadMutation = $api.useMutation('post', '/applications/{id}/reload');
 	const rebuildMutation = $api.useMutation('post', '/applications/{id}/rebuild');
 	const startMutation = $api.useMutation('post', '/applications/{id}/start');
+	const stopMutation = $api.useMutation('post', '/applications/{id}/stop');
 	const cancelMutation = $api.useMutation('post', '/applications/{id}/cancel');
 	const patchMutation = $api.useMutation('patch', '/applications/{id}');
 	const deleteMutation = $api.useMutation('delete', '/applications/{id}');
@@ -130,7 +131,7 @@ export function useAppDetail(appId: number) {
 				await startMutation.mutateAsync({params: {path: {id: appId}}});
 				toast.success('Application started successfully');
 			} else if (action === 'stop') {
-				await cancelMutation.mutateAsync({params: {path: {id: appId}}});
+				await stopMutation.mutateAsync({params: {path: {id: appId}}});
 				toast.success('Application stopped successfully');
 			} else if (action === 'cancel') {
 				await cancelMutation.mutateAsync({params: {path: {id: appId}}});

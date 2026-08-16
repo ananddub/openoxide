@@ -80,12 +80,16 @@ impl ApplicationService {
     }
 
     pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
-        self.cancel_operation(id).await
+        self.stop_or_cancel(id, "STOPPING", "STOPPED").await
     }
 
     pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
+        self.stop_or_cancel(id, "CANCELLING", "CANCELLED").await
+    }
+
+    async fn stop_or_cancel(&self, id: i64, intermediate: &'static str, final_st: &'static str) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
-        let _ = self.repo_app.update_status(id, "CANCELLING").await;
+        let _ = self.repo_app.update_status(id, intermediate).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
@@ -170,7 +174,7 @@ impl ApplicationService {
                 }
             }
 
-            let _ = repo_app.update_status(id, "CANCELLED").await;
+            let _ = repo_app.update_status(id, final_st).await;
             cache.invalidate(&crate::core::cache::CacheKey::Application(id)).await;
         });
 
