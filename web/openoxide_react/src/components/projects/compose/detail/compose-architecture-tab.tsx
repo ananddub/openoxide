@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useMemo, useState, useEffect} from 'react';
 import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
@@ -9,6 +9,43 @@ import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeDirectContainerLogsModal} from './logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from './deployments/compose-direct-deploy-logs-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
+
+function buildRawGitUrl(compose: any): string | null {
+	if (!compose) return null;
+	const repo = compose.repository || compose.custom_git_url || compose.gitlab_repository || compose.gitea_repository || compose.bitbucket_repository;
+	if (!repo || typeof repo !== 'string') return null;
+
+	let cleanRepo = repo.trim().replace(/\.git$/, '');
+	const branch = compose.branch || compose.custom_git_branch || compose.gitlab_branch || compose.gitea_branch || compose.bitbucket_branch || 'main';
+	const rawPath = (compose.compose_path || 'docker-compose.yml').replace(/^\.\//, '');
+
+	if (cleanRepo.includes('github.com')) {
+		let pathPart = cleanRepo;
+		if (pathPart.startsWith('https://github.com/')) pathPart = pathPart.replace('https://github.com/', '');
+		else if (pathPart.startsWith('http://github.com/')) pathPart = pathPart.replace('http://github.com/', '');
+		else if (pathPart.startsWith('github.com/')) pathPart = pathPart.replace('github.com/', '');
+		const parts = pathPart.split('/').filter(Boolean);
+		if (parts.length >= 2) {
+			return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${branch}/${rawPath}`;
+		}
+	} else if (cleanRepo.includes('gitlab.com')) {
+		let pathPart = cleanRepo;
+		if (pathPart.startsWith('https://gitlab.com/')) pathPart = pathPart.replace('https://gitlab.com/', '');
+		else if (pathPart.startsWith('gitlab.com/')) pathPart = pathPart.replace('gitlab.com/', '');
+		const parts = pathPart.split('/').filter(Boolean);
+		if (parts.length >= 2) {
+			return `https://gitlab.com/${parts[0]}/${parts[1]}/-/raw/${branch}/${rawPath}`;
+		}
+	} else if (cleanRepo.includes('bitbucket.org')) {
+		let pathPart = cleanRepo;
+		if (pathPart.startsWith('https://bitbucket.org/')) pathPart = pathPart.replace('https://bitbucket.org/', '');
+		const parts = pathPart.split('/').filter(Boolean);
+		if (parts.length >= 2) {
+			return `https://bitbucket.org/${parts[0]}/${parts[1]}/raw/${branch}/${rawPath}`;
+		}
+	}
+	return null;
+}
 
 interface ComposeArchitectureTabProps {
 	compose: any;
@@ -32,6 +69,30 @@ export function ComposeArchitectureTab({
 	// Modals State
 	const [activeModal, setActiveModal] = useState<'domain' | 'schedule' | 'backup' | 'terminal' | 'logs' | 'deployLogs' | null>(null);
 	const [selectedService, setSelectedService] = useState<ComposeService | null>(null);
+	const [fetchedComposeFile, setFetchedComposeFile] = useState<string>('');
+
+	// Fetch raw docker-compose.yml directly over HTTPS from GitHub/GitLab if DB compose_file is empty
+	useEffect(() => {
+		if (compose?.compose_file && compose.compose_file.trim()) {
+			setFetchedComposeFile(compose.compose_file);
+			return;
+		}
+		const rawUrl = buildRawGitUrl(compose);
+		if (rawUrl) {
+			let isMounted = true;
+			fetch(rawUrl)
+				.then((res) => (res.ok ? res.text() : ''))
+				.then((text) => {
+					if (isMounted && text && text.trim()) {
+						setFetchedComposeFile(text);
+					}
+				})
+				.catch(() => {});
+			return () => {
+				isMounted = false;
+			};
+		}
+	}, [compose]);
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
@@ -313,7 +374,7 @@ export function ComposeArchitectureTab({
 			</div>
 
 			<ComposeVisualizer
-				composeFile={compose?.compose_file || ''}
+				composeFile={fetchedComposeFile || compose?.compose_file || ''}
 				stackName={compose?.name || compose?.app_name}
 				gitBuildPath={gitBuildPath}
 				isGitSource={isGit}

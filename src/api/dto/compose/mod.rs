@@ -149,19 +149,9 @@ pub struct ComposeResponseDto {
     pub updated_at: i64,
 }
 
-pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
+pub fn detect_compose_file_content(record: &ComposeRecord) -> String {
     if !record.compose_file.trim().is_empty() {
-        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&record.compose_file) {
-            if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
-                let keys: Vec<String> = services
-                    .keys()
-                    .filter_map(|k| k.as_str().map(|s| s.to_string()))
-                    .collect();
-                if !keys.is_empty() {
-                    return keys;
-                }
-            }
-        }
+        return record.compose_file.clone();
     }
 
     let clean_path = record.compose_path.trim_start_matches("./");
@@ -175,15 +165,26 @@ pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
 
     for path in &candidates {
         if let Ok(content) = std::fs::read_to_string(path) {
-            if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&content) {
-                if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
-                    let keys: Vec<String> = services
-                        .keys()
-                        .filter_map(|k| k.as_str().map(|s| s.to_string()))
-                        .collect();
-                    if !keys.is_empty() {
-                        return keys;
-                    }
+            if !content.trim().is_empty() {
+                return content;
+            }
+        }
+    }
+
+    String::new()
+}
+
+pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
+    let content = detect_compose_file_content(record);
+    if !content.trim().is_empty() {
+        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&content) {
+            if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
+                let keys: Vec<String> = services
+                    .keys()
+                    .filter_map(|k| k.as_str().map(|s| s.to_string()))
+                    .collect();
+                if !keys.is_empty() {
+                    return keys;
                 }
             }
         }
@@ -194,6 +195,7 @@ pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
 
 impl From<ComposeRecord> for ComposeResponseDto {
     fn from(value: ComposeRecord) -> Self {
+        let compose_file_content = detect_compose_file_content(&value);
         let services = detect_compose_service_names(&value);
         Self {
             id: value.id,
@@ -201,7 +203,7 @@ impl From<ComposeRecord> for ComposeResponseDto {
             app_name: value.app_name,
             description: value.description,
             env_var: value.env_var,
-            compose_file: value.compose_file,
+            compose_file: compose_file_content,
             source_type: value.source_type,
             compose_type: value.compose_type.as_str().to_string(),
             compose_status: value.compose_status,
