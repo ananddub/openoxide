@@ -100,8 +100,8 @@ export function DatabaseHeader({
 						<Trash2 className="w-3.5 h-3.5" />
 					</Button>
 
-					{/* Quick Lifecycle Control Buttons */}
-					{isRunning ? (
+					{/* Quick Lifecycle Control Buttons (Stop shown when running; Start hidden for DB) */}
+					{isRunning && (
 						<Button
 							size="sm"
 							variant="destructive"
@@ -111,17 +111,6 @@ export function DatabaseHeader({
 						>
 							{actionLoading === 'stop' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
 							{actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
-						</Button>
-					) : (
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => onAction?.('start')}
-							disabled={actionLoading !== null}
-							className="h-8 text-xs font-semibold px-3 border-border hover:bg-muted text-foreground rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-						>
-							{actionLoading === 'start' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
-							{actionLoading === 'start' ? 'Starting...' : 'Start'}
 						</Button>
 					)}
 

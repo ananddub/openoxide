@@ -327,18 +327,20 @@ export function ServiceCard({
 								View details
 							</DropdownMenuItem>
 
-							{/* Start Option: Disabled if running, starting/deploying, or stopping */}
-							<DropdownMenuItem
-								disabled={isRunning || isStartingOrDeploying || isStopping}
-								onClick={handleStart}
-								className={cn(
-									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
-								)}
-							>
-								<Play className="size-3.5 text-foreground" />
-								Start
-							</DropdownMenuItem>
+							{/* Start Option: Only for APP and COMPOSE (Hidden for DATABASE as requested) */}
+							{type !== 'DATABASE' && (
+								<DropdownMenuItem
+									disabled={isRunning || isStartingOrDeploying || isStopping}
+									onClick={handleStart}
+									className={cn(
+										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+										(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
+									)}
+								>
+									<Play className="size-3.5 text-foreground" />
+									Start
+								</DropdownMenuItem>
+							)}
 
 							{/* Stop/Cancel Option:
 							    1. When isStopping: disabled Stop
