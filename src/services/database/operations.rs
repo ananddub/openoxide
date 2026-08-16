@@ -48,10 +48,8 @@ impl DatabaseService {
             .await?;
 
         let target_status = match operation {
-            DatabaseOperation::Start
-            | DatabaseOperation::Deploy
-            | DatabaseOperation::Redeploy
-            | DatabaseOperation::Reload => "STARTING",
+            DatabaseOperation::Deploy | DatabaseOperation::Redeploy => "DEPLOYING",
+            DatabaseOperation::Start | DatabaseOperation::Reload => "STARTING",
             DatabaseOperation::Stop => "STOPPING",
         };
 
