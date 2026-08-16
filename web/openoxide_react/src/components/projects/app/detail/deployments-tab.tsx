@@ -48,6 +48,8 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 	const deployMutation = $api.useMutation('post', '/applications/{id}/deploy');
 	const redeployMutation = $api.useMutation('post', '/applications/{id}/redeploy');
 	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
+	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
+	const clearAppMutation = $api.useMutation('delete', '/deployments/application/{id}');
 
 	// Realtime SSE log stream listener with JWT Authorization header
 	useEffect(() => {

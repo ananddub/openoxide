@@ -57,6 +57,8 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy') as any;
 	const redeployMutation = $api.useMutation('post', '/compose/{id}/redeploy') as any;
 	const cancelMutation = $api.useMutation('post', '/compose/{id}/cancel') as any;
+	const deleteMutation = $api.useMutation('delete', '/deployments/{id}') as any;
+	const clearComposeMutation = $api.useMutation('delete', '/deployments/compose/{id}') as any;
 
 	const handleDeploy = async () => {
 		setIsTriggering(true);
