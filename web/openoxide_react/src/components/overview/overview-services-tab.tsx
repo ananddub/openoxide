@@ -66,7 +66,7 @@ export function OverviewServicesTab() {
 		if (!rawServices || !Array.isArray(rawServices)) return [];
 
 		return rawServices.map((svc: any) => ({
-			key: `${svc.service_type}-${svc.id}`,
+			key: `${svc.service_type}-${svc.db_kind || ''}-${svc.id}`,
 			id: Number(svc.id),
 			name: svc.name,
 			type: (svc.service_type || 'APP') as 'APP' | 'COMPOSE' | 'DATABASE',
