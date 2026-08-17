@@ -175,3 +175,20 @@ down-monitor:
 # Tail the monitoring agent's logs
 logs-monitor:
     docker compose -f docker-compose.monitor.yml logs -f
+
+# Start the main OpenOxide compose stack (builder/panel)
+compose-up:
+    docker compose up -d --build
+
+# Stop the main OpenOxide compose stack
+compose-down:
+    docker compose down
+
+# Tail the main OpenOxide compose logs
+compose-logs:
+    docker compose logs -f
+
+# Short aliases for compose up / down / logs
+up: compose-up
+down: compose-down
+logs: compose-logs
