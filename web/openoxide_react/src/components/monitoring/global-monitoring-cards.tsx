@@ -5,6 +5,7 @@ import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
 import {useDeploymentRunning} from 'virtual:openoxide-live';
 import {useAppStore} from '#/stores/app-store';
+import {useAuthStore} from '#/stores/auth-store';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -77,11 +78,16 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 
 function getAccessToken(): string {
 	try {
-		const session = JSON.parse(localStorage.getItem('openoxide-auth-session') || '{}');
-		return session?.tokens?.access_token || '';
-	} catch {
-		return '';
-	}
+		const storeState = useAuthStore.getState();
+		if (storeState.tokens?.access_token) return storeState.tokens.access_token;
+
+		const sessionRaw = localStorage.getItem('openoxide-auth-session');
+		if (sessionRaw) {
+			const session = JSON.parse(sessionRaw);
+			return session?.state?.tokens?.access_token || session?.tokens?.access_token || '';
+		}
+	} catch {}
+	return '';
 }
 
 function getSmoothPath(coords: Array<{x: number; y: number}>): string {

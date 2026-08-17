@@ -1,4 +1,5 @@
 import {useState, useEffect, useCallback} from 'react';
+import {useAuthStore} from '#/stores/auth-store';
 
 export type MonitoringEntityType = 'application' | 'database' | 'compose';
 
@@ -154,13 +155,15 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 
 		const startStream = async () => {
 			try {
-				let accessToken = '';
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.access_token || '';
-					} catch {}
+				let accessToken = useAuthStore.getState().tokens?.access_token || '';
+				if (!accessToken) {
+					const sessionRaw = localStorage.getItem('openoxide-auth-session');
+					if (sessionRaw) {
+						try {
+							const session = JSON.parse(sessionRaw);
+							accessToken = session?.state?.tokens?.access_token || session?.tokens?.access_token || '';
+						} catch {}
+					}
 				}
 
 				const url = buildStatsUrl(entityType, id, isLive);
