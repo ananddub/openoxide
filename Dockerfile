@@ -6,9 +6,10 @@
 FROM rust:slim-bookworm AS backend-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates upx && \
+    clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates curl xz-utils && \
     rm -rf /var/lib/apt/lists/* && \
-    rustup target add x86_64-unknown-linux-musl
+    rustup target add x86_64-unknown-linux-musl && \
+    curl -fsSL https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar -xJ --strip-components=1 -C /usr/local/bin upx-4.2.4-amd64_linux/upx
 
 WORKDIR /usr/src/openoxide
 
