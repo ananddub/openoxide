@@ -67,10 +67,7 @@ RUN apk add --no-cache \
 RUN wget -qO- https://rclone.org/install.sh | bash
 
 # Nixpacks (Heroku-style zero-config builds)
-RUN wget -qO /tmp/nixpacks-install.sh https://nixpacks.com/install.sh \
-    && chmod +x /tmp/nixpacks-install.sh \
-    && VERSION=${NIXPACKS_VERSION} /tmp/nixpacks-install.sh \
-    && rm /tmp/nixpacks-install.sh
+COPY --from=ghcr.io/railwayapp/nixpacks:latest /usr/local/bin/nixpacks /usr/local/bin/nixpacks
 
 # Railpack (Next-Gen Buildpack Engine)
 RUN wget -qO- https://railpack.com/install.sh | bash
