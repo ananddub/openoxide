@@ -4,6 +4,7 @@ import {Card, CardContent, CardHeader, CardTitle} from '#/components/ui/card';
 import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
 import {useDeploymentRunning} from 'virtual:openoxide-live';
+import {useAppStore} from '#/stores/app-store';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
