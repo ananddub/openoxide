@@ -80,6 +80,117 @@ function getAccessToken(): string {
 	}
 }
 
+function GlobalAreaChart({
+	title,
+	icon: Icon,
+	color,
+	gradientId,
+	data = [],
+	dataKey,
+	unit = '%',
+	maxVal = 100,
+}: {
+	title: string;
+	icon: any;
+	color: string;
+	gradientId: string;
+	data?: Array<{time: string; [key: string]: any}>;
+	dataKey: string;
+	unit?: string;
+	maxVal?: number;
+}) {
+	const points = data.map(d => Number(d[dataKey]) || 0);
+	const latest = points.length > 0 ? points[points.length - 1] : 0;
+	
+	const width = 500;
+	const height = 130;
+	const padding = 15;
+
+	const chartWidth = width - padding * 2;
+	const chartHeight = height - padding * 2;
+
+	const coords = points.map((val, idx) => {
+		const x = padding + (idx / Math.max(points.length - 1, 1)) * chartWidth;
+		const normalizedVal = Math.min(Math.max(val, 0), maxVal);
+		const y = height - padding - (normalizedVal / maxVal) * chartHeight;
+		return {x, y, val};
+	});
+
+	const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
+	const areaPath = coords.length > 0 
+		? `${linePath} L ${coords[coords.length - 1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z`
+		: '';
+
+	return (
+		<div className="bg-card border border-border rounded-xl p-4 shadow-xs flex flex-col gap-3">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<Icon className={`size-4 ${color}`} />
+					<span className="text-xs font-bold text-foreground">{title}</span>
+				</div>
+				<span className={`text-sm font-mono font-extrabold ${color}`}>
+					{latest.toFixed(1)}{unit}
+				</span>
+			</div>
+
+			<div className="w-full h-32 relative">
+				{coords.length < 2 ? (
+					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
+						Collecting live telemetry points…
+					</div>
+				) : (
+					<svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+						<defs>
+							<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+								<stop offset="100%" stopColor="currentColor" stopOpacity="0.0" />
+							</linearGradient>
+						</defs>
+
+						{[0.25, 0.5, 0.75].map((ratio) => (
+							<line
+								key={ratio}
+								x1={padding}
+								y1={height - padding - ratio * chartHeight}
+								x2={width - padding}
+								y2={height - padding - ratio * chartHeight}
+								stroke="currentColor"
+								strokeDasharray="3 3"
+								className="text-border/40"
+							/>
+						))}
+
+						<path d={areaPath} fill={`url(#${gradientId})`} className={color} />
+						<path d={linePath} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={color} />
+
+						{coords.length > 0 && (
+							<circle
+								cx={coords[coords.length - 1].x}
+								cy={coords[coords.length - 1].y}
+								r="4"
+								className={`${color} fill-current animate-ping`}
+							/>
+						)}
+						{coords.length > 0 && (
+							<circle
+								cx={coords[coords.length - 1].x}
+								cy={coords[coords.length - 1].y}
+								r="4"
+								className={`${color} fill-current`}
+							/>
+						)}
+					</svg>
+				)}
+			</div>
+
+			<div className="flex justify-between text-[10px] text-muted-foreground font-mono px-1">
+				<span>{data[0]?.time || 'Start'}</span>
+				<span>{data[data.length - 1]?.time || 'Live'}</span>
+			</div>
+		</div>
+	);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalMonitoringCards() {
@@ -142,6 +253,26 @@ export function GlobalMonitoringCards() {
 		};
 	}, []);
 
+	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number}>>([]);
+
+	useEffect(() => {
+		if (containersList.length > 0) {
+			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
+			for (const c of containersList) {
+				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
+				const mem = String(c.MemUsage || '');
+				if (mem.includes('/')) {
+					const [u, l] = mem.split('/').map(s => s.trim());
+					memUsedSum += parseBytes(u);
+					if (!memLimitSum) memLimitSum = parseBytes(l);
+				}
+			}
+			const mPct = memLimitSum > 0 ? (memUsedSum / memLimitSum) * 100 : 0;
+			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct}]);
+		}
+	}, [containersList]);
+
 	// ─── Aggregate metrics ────────────────────────────────────────────────────
 	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
 	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
@@ -182,15 +313,37 @@ export function GlobalMonitoringCards() {
 	return (
 		<div className="flex flex-col gap-5">
 			{/* Header bar */}
-		<div className="flex items-center gap-2.5 bg-card border border-border rounded-xl p-4 shadow-xs">
-			<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
-			<span className="text-xs font-semibold text-foreground">
-				Docker Telemetry Engine
-			</span>
-			<span className="text-xs text-muted-foreground">
-				— {activeContainersCount} Active System Containers
-			</span>
-		</div>
+			<div className="flex items-center gap-2.5 bg-card border border-border rounded-xl p-4 shadow-xs">
+				<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+				<span className="text-xs font-semibold text-foreground">
+					Docker Telemetry Engine
+				</span>
+				<span className="text-xs text-muted-foreground">
+					— {activeContainersCount} Active System Containers
+				</span>
+			</div>
+
+			{/* Real-time Telemetry Graphs (CPU & Memory) */}
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+				<GlobalAreaChart
+					title="Global CPU Utilization Graph"
+					icon={Cpu}
+					color="text-primary"
+					gradientId="global-cpu-grad"
+					data={history}
+					dataKey="cpu"
+					unit="%"
+				/>
+				<GlobalAreaChart
+					title="Global RAM Utilization Graph"
+					icon={HardDrive}
+					color="text-emerald-500"
+					gradientId="global-mem-grad"
+					data={history}
+					dataKey="mem"
+					unit="%"
+				/>
+			</div>
 
 			{/* Cards */}
 			<div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
