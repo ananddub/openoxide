@@ -51,6 +51,8 @@ RUN apk add --no-cache \
     docker-cli \
     docker-cli-compose \
     git \
+    wireguard-tools \
+    iproute2 \
     openssh-client \
     sqlite \
     curl \
