@@ -104,124 +104,133 @@ function getSmoothPath(coords: Array<{x: number; y: number}>): string {
 }
 
 function GlobalAreaChart({
-	title,
-	icon: Icon,
-	color,
 	gradientId,
+	colorHex,
 	data = [],
 	dataKey,
-	unit = '%',
 	maxVal = 100,
+	yTicks = ['0%', '25%', '50%', '75%', '100%'],
+	legendLabel,
 }: {
-	title: string;
-	icon: any;
-	color: string;
 	gradientId: string;
-	data?: Array<{time: string; [key: string]: any}>;
+	colorHex: string;
+	data: Array<any>;
 	dataKey: string;
-	unit?: string;
 	maxVal?: number;
+	yTicks?: string[];
+	legendLabel: string;
 }) {
 	const points = data.map(d => Number(d[dataKey]) || 0);
-	const latest = points.length > 0 ? points[points.length - 1] : 0;
-	
 	const width = 500;
 	const height = 130;
-	const padding = 15;
+	const paddingLeft = 55;
+	const paddingRight = 15;
+	const paddingTop = 10;
+	const paddingBottom = 20;
 
-	const chartWidth = width - padding * 2;
-	const chartHeight = height - padding * 2;
+	const chartWidth = width - paddingLeft - paddingRight;
+	const chartHeight = height - paddingTop - paddingBottom;
 
 	const coords = points.map((val, idx) => {
-		const x = padding + (idx / Math.max(points.length - 1, 1)) * chartWidth;
+		const x = paddingLeft + (idx / Math.max(points.length - 1, 1)) * chartWidth;
 		const normalizedVal = Math.min(Math.max(val, 0), maxVal);
-		const y = height - padding - (normalizedVal / maxVal) * chartHeight;
+		const y = height - paddingBottom - (normalizedVal / Math.max(maxVal, 0.001)) * chartHeight;
 		return {x, y, val};
 	});
 
 	const linePath = getSmoothPath(coords);
-	const areaPath = coords.length > 0 
-		? `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${height - padding} L ${coords[0].x.toFixed(1)} ${height - padding} Z`
+	const areaPath = coords.length > 0
+		? `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords[0].x.toFixed(1)} ${height - paddingBottom} Z`
 		: '';
 
 	return (
-		<div className="bg-card border border-border rounded-xl p-4 shadow-xs flex flex-col gap-3">
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<Icon className={`size-4 ${color}`} />
-					<span className="text-xs font-bold text-foreground">{title}</span>
-				</div>
-				<span className={`text-sm font-mono font-extrabold ${color} transition-all duration-300`}>
-					{latest.toFixed(1)}{unit}
-				</span>
-			</div>
-
-			<div className="w-full h-32 relative overflow-hidden">
+		<div className="flex flex-col gap-2 w-full">
+			<div className="w-full h-36 relative">
 				{coords.length < 2 ? (
 					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
-						Collecting live telemetry points…
+						Collecting telemetry points...
 					</div>
 				) : (
 					<svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
 						<defs>
 							<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
-								<stop offset="100%" stopColor="currentColor" stopOpacity="0.0" />
+								<stop offset="5%" stopColor={colorHex} stopOpacity={0.45} />
+								<stop offset="95%" stopColor={colorHex} stopOpacity={0.05} />
 							</linearGradient>
 						</defs>
 
-						{[0.25, 0.5, 0.75].map((ratio) => (
-							<line
-								key={ratio}
-								x1={padding}
-								y1={height - padding - ratio * chartHeight}
-								x2={width - padding}
-								y2={height - padding - ratio * chartHeight}
-								stroke="currentColor"
-								strokeDasharray="3 3"
-								className="text-border/40"
-							/>
-						))}
+						{/* Horizontal Gridlines & Y-Axis Labels */}
+						{yTicks.map((tick, idx) => {
+							const ratio = idx / Math.max(yTicks.length - 1, 1);
+							const y = height - paddingBottom - ratio * chartHeight;
+							return (
+								<g key={tick}>
+									<line
+										x1={paddingLeft}
+										y1={y}
+										x2={width - paddingRight}
+										y2={y}
+										stroke="currentColor"
+										strokeDasharray="3 3"
+										className="text-border/30"
+									/>
+									<text
+										x={paddingLeft - 8}
+										y={y + 3}
+										textAnchor="end"
+										className="text-[10px] fill-muted-foreground font-mono"
+									>
+										{tick}
+									</text>
+								</g>
+							);
+						})}
 
+						{/* Area Fill */}
 						<path
 							d={areaPath}
 							fill={`url(#${gradientId})`}
-							className={`${color} transition-all duration-700 ease-in-out`}
+							className="transition-all duration-700 ease-in-out"
 						/>
 
+						{/* Line Stroke */}
 						<path
 							d={linePath}
 							fill="none"
-							stroke="currentColor"
-							strokeWidth="2.5"
+							stroke={colorHex}
+							strokeWidth="2"
 							strokeLinecap="round"
 							strokeLinejoin="round"
-							className={`${color} transition-all duration-700 ease-in-out`}
+							className="transition-all duration-700 ease-in-out"
 						/>
 
+						{/* Live Pulse Dot */}
 						{coords.length > 0 && (
 							<circle
 								cx={coords[coords.length - 1].x}
 								cy={coords[coords.length - 1].y}
-								r="4"
-								className={`${color} fill-current animate-ping transition-all duration-700 ease-out`}
+								r="3.5"
+								fill={colorHex}
+								className="animate-ping transition-all duration-700 ease-out"
 							/>
 						)}
 						{coords.length > 0 && (
 							<circle
 								cx={coords[coords.length - 1].x}
 								cy={coords[coords.length - 1].y}
-								r="4"
-								className={`${color} fill-current transition-all duration-700 ease-out`}
+								r="3.5"
+								fill={colorHex}
+								className="transition-all duration-700 ease-out"
 							/>
 						)}
 					</svg>
 				)}
 			</div>
 
-			<div className="flex justify-between text-[10px] text-muted-foreground font-mono px-1">
-				<span>{data[0]?.time || 'Start'}</span>
-				<span>{data[data.length - 1]?.time || 'Live'}</span>
+			{/* Dokploy Chart Legend */}
+			<div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium pt-1">
+				<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex}} />
+				<span>{legendLabel}</span>
 			</div>
 		</div>
 	);
