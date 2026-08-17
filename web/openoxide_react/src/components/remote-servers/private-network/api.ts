@@ -9,9 +9,10 @@ function authHeaders(json = false): HeadersInit {
 	const sessionRaw = localStorage.getItem('openoxide-auth-session');
 	let token = '';
 	try {
-		token = sessionRaw
-			? JSON.parse(sessionRaw)?.tokens?.access_token || ''
-			: '';
+		if (sessionRaw) {
+			const parsed = JSON.parse(sessionRaw);
+			token = parsed?.state?.tokens?.access_token || parsed?.tokens?.access_token || '';
+		}
 	} catch {
 		// Invalid sessions are handled by the global authentication flow.
 	}
