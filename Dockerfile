@@ -69,9 +69,6 @@ COPY --from=backend-builder \
     /usr/src/openoxide/openoxide-binary \
     /usr/local/bin/openoxide
 
-# ── React dashboard static assets ────────────────────────────────────────────
-COPY web/openoxide_react/dist ./web/dist
-
 WORKDIR /app
 RUN mkdir -p /app/data
 
