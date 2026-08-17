@@ -57,6 +57,9 @@ RUN apk add --no-cache \
     zip \
     unzip
 
+# ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
+RUN curl -fsSL https://rclone.org/install.sh | bash
+
 # ── Nixpacks (Heroku-style auto buildpacks) ───────────────────────────────────
 RUN curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
     && chmod +x /tmp/nixpacks-install.sh \
