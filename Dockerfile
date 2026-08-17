@@ -53,7 +53,9 @@ RUN apk add --no-cache \
     iproute2 \
     openssh-client \
     curl \
-    tar
+    tar \
+    zip \
+    unzip
 
 # ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
 RUN curl -fsSL https://rclone.org/install.sh | bash
