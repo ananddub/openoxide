@@ -20,6 +20,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
+import { DeleteServiceDialog } from './delete-service-dialog';
 
 interface ServiceCardProps {
 	projectId: number;
@@ -46,6 +47,7 @@ export function ServiceCard({
 }: ServiceCardProps) {
 	const navigate = useNavigate();
 	const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 	const routeConfig = useMemo(() => {
 		if (type === 'APP') {
@@ -262,10 +264,13 @@ export function ServiceCard({
 		}
 	};
 
-	const handleDelete = async (e?: React.MouseEvent) => {
+	const handleDelete = (e?: React.MouseEvent) => {
 		e?.stopPropagation();
 		setContextMenu(null);
-		if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+		setIsDeleteDialogOpen(true);
+	};
+
+	const confirmDeleteService = async () => {
 		try {
 			if (type === 'APP') {
 				await appDelete.mutateAsync({ params: { path: { id } } });
@@ -278,6 +283,7 @@ export function ServiceCard({
 			onDeleted?.();
 		} catch (err) {
 			toast.error(formatApiError(err));
+			throw err;
 		}
 	};
 
@@ -482,6 +488,14 @@ export function ServiceCard({
 					</button>
 				</div>
 			)}
+
+			<DeleteServiceDialog
+				isOpen={isDeleteDialogOpen}
+				onClose={() => setIsDeleteDialogOpen(false)}
+				serviceName={name}
+				serviceType={type === 'DATABASE' ? (dbKind || 'Database') : type}
+				onConfirm={confirmDeleteService}
+			/>
 		</>
 	);
 }
