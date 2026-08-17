@@ -28,8 +28,22 @@ impl LocalExecutor {
         S: AsRef<OsStr>,
     {
         let resolved = resolve_binary_path(program);
-        let mut c = if self.non_interactive_sudo {
-            let mut command = Command::new("sudo");
+        let is_root = unsafe { libc::getuid() == 0 };
+        let has_sudo = std::path::Path::new("/usr/bin/sudo").exists()
+            || std::path::Path::new("/bin/sudo").exists()
+            || std::path::Path::new("/usr/sbin/sudo").exists();
+
+        let use_sudo = self.non_interactive_sudo && !is_root && has_sudo;
+
+        let mut c = if use_sudo {
+            let sudo_bin = if std::path::Path::new("/usr/bin/sudo").exists() {
+                "/usr/bin/sudo"
+            } else if std::path::Path::new("/bin/sudo").exists() {
+                "/bin/sudo"
+            } else {
+                "sudo"
+            };
+            let mut command = Command::new(sudo_bin);
             command.args(["-n", "--", &resolved]);
             command
         } else {

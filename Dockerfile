@@ -56,6 +56,7 @@ RUN apk add --no-cache \
     docker-cli \
     docker-cli-compose \
     wireguard-tools \
+    sudo \
     curl \
     git \
     git-lfs \
