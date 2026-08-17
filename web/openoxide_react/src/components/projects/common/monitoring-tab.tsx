@@ -83,8 +83,8 @@ export function MonitoringTab({app, appId, entityType = 'application', monitorin
 				</div>
 			)}
 
-			{/* Render Resource Metric Cards only when we have real data */}
-			{metrics && <MonitoringCards metrics={metrics} />}
+			{/* Render Resource Metric Cards and Live SVG Graphs when we have real data */}
+			{metrics && <MonitoringCards metrics={metrics} history={activeMonitoring.history} />}
 		</div>
 	);
 }
