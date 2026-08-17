@@ -451,30 +451,65 @@ function GlobalDockerDiskDonutChart({
 					<span>Containers ({containersStr})</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-xs bg-emerald-500" />
-					<span>Images ({imagesStr})</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-xs bg-purple-500" />
-					<span>Volumes ({volumesStr})</span>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export function GlobalMonitoringCards() {
 	const overviewServices = useAppStore((state) => state.overviewServices || []);
 	const {data: rawDockerContainers = []} =
 		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}});
+
+	const {data: rawDiskUsage} =
+		$api.useQuery('get', '/deployments/docker/disk-usage', {params: {query: {server_id: undefined} as any}});
+
+	const {data: rawServerMetrics} =
+		$api.useQuery('get', '/monitoring/server/{id}', {params: {path: {id: 1} as any}});
 
 	const {data: rawRunning} = useDeploymentRunning({
 		status: null, state: null,
 		application_id: null, compose_id: null, database_id: null, server_id: null,
 		limit: 50n, offset: null,
 	});
+
+	const diskUsageFormatted = useMemo(() => {
+		if (!rawDiskUsage || typeof rawDiskUsage !== 'object') {
+			return {containersStr: '0 B', imagesStr: '0 B', volumesStr: '0 B', totalStr: '0 B', totalBytes: 0};
+		}
+		const obj = rawDiskUsage as Record<string, any>;
+		const containers = Array.isArray(obj.Containers) ? obj.Containers : [];
+		const images = Array.isArray(obj.Images) ? obj.Images : [];
+		const volumes = Array.isArray(obj.Volumes) ? obj.Volumes : [];
+
+		const cBytes = containers.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
+		const iBytes = images.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
+		const vBytes = volumes.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
+		const total = cBytes + iBytes + vBytes;
+
+		const formatBytes = (bytes: number) => {
+			if (bytes >= 1024 ** 3) return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
+			if (bytes >= 1024 ** 2) return `${(bytes / (1024 ** 2)).toFixed(1)} MB`;
+			if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+			return `${bytes} B`;
+		};
+
+		return {
+			containersStr: formatBytes(cBytes),
+			imagesStr: formatBytes(iBytes),
+			volumesStr: formatBytes(vBytes),
+			totalStr: formatBytes(total),
+			totalBytes: total,
+		};
+	}, [rawDiskUsage]);
+
+	const hostDiskSpace = useMemo(() => {
+		if (Array.isArray(rawServerMetrics) && rawServerMetrics.length > 0) {
+			const m = rawServerMetrics[rawServerMetrics.length - 1] as any;
+			if (m && m.total_disk > 0) {
+				return {
+					diskUsedGB: (m.disk_used || 0) / (1024 ** 3),
+					diskTotalGB: (m.total_disk || 0) / (1024 ** 3),
+				};
+			}
+		}
+		return null;
+	}, [rawServerMetrics]);
 
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);
 
@@ -533,6 +568,7 @@ export function GlobalMonitoringCards() {
 			memLimitGB: number;
 			diskUsedGB: number;
 			diskTotalGB: number;
+			dockerDiskGB: number;
 			blockReadMB: number;
 			blockWriteMB: number;
 			netRxMB: number;
@@ -576,8 +612,8 @@ export function GlobalMonitoringCards() {
 
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
 			const finalMemLimitGB = memLimitSum > 0 ? memLimitSum / (1024 ** 3) : (memUsedSum > 0 ? (memUsedSum * 1.5) / (1024 ** 3) : 1);
-			const finalDiskUsedGB = diskUsedSum / (1024 ** 3);
-			const finalDiskTotalGB = diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1);
+			const finalDiskUsedGB = hostDiskSpace?.diskUsedGB || (diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : (diskUsageFormatted.totalBytes / (1024 ** 3)));
+			const finalDiskTotalGB = hostDiskSpace?.diskTotalGB || (diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1));
 
 			setHistory(prev => [
 				...prev.slice(-49),
@@ -588,7 +624,7 @@ export function GlobalMonitoringCards() {
 					memLimitGB: finalMemLimitGB,
 					diskUsedGB: finalDiskUsedGB,
 					diskTotalGB: finalDiskTotalGB,
-					dockerDiskGB: finalDiskUsedGB,
+					dockerDiskGB: diskUsageFormatted.totalBytes / (1024 ** 3),
 					blockReadMB: blkReadSum / (1024 * 1024),
 					blockWriteMB: blkWriteSum / (1024 * 1024),
 					netRxMB: netRxSum / (1024 * 1024),
@@ -596,7 +632,7 @@ export function GlobalMonitoringCards() {
 				},
 			]);
 		}
-	}, [containersList]);
+	}, [containersList, hostDiskSpace, diskUsageFormatted]);
 
 	// ─── Aggregate metrics ────────────────────────────────────────────────────
 	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
@@ -609,9 +645,8 @@ export function GlobalMonitoringCards() {
 	const rawMemLimit = last?.memLimitGB || 1;
 	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.1);
 
-	const latestDiskUsed = last?.diskUsedGB || 0;
-	const rawDiskTotal = last?.diskTotalGB || 1;
-	const latestDiskTotal = Math.max(rawDiskTotal, latestDiskUsed, 0.1);
+	const latestDiskUsed = hostDiskSpace?.diskUsedGB || last?.diskUsedGB || (diskUsageFormatted.totalBytes / (1024 ** 3));
+	const latestDiskTotal = hostDiskSpace?.diskTotalGB || last?.diskTotalGB || Math.max(latestDiskUsed * 1.5, 1);
 
 	const latestBlockR = last?.blockReadMB || 0;
 	const latestBlockW = last?.blockWriteMB || 0;
@@ -723,15 +758,15 @@ export function GlobalMonitoringCards() {
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">Docker Disk Usage</CardTitle>
 						<span className="text-xs font-mono text-muted-foreground">
-							Total: <span className="font-bold text-foreground">{formatGB(latestDiskUsed)}</span>
+							Total: <span className="font-bold text-foreground">{diskUsageFormatted.totalStr}</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
 						<GlobalDockerDiskDonutChart
-							totalStr={formatGB(latestDiskUsed)}
-							containersStr={formatGB(latestDiskUsed)}
-							imagesStr="0 MB"
-							volumesStr="0 MB"
+							totalStr={diskUsageFormatted.totalStr}
+							containersStr={diskUsageFormatted.containersStr}
+							imagesStr={diskUsageFormatted.imagesStr}
+							volumesStr={diskUsageFormatted.volumesStr}
 						/>
 					</CardContent>
 				</Card>
