@@ -47,7 +47,10 @@ ARG RAILPACK_VERSION=0.36.4
 
 WORKDIR /app
 
-# Minimal System Packages (WireGuard, Git, Archives, SSL Certificates, Docker CLI)
+# Cloud Native Buildpacks (pack CLI)
+COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
+
+# Minimal System Packages + Rclone + Nixpacks + Railpack (Single Layer Symbol Stripping)
 RUN apk add --no-cache \
     ca-certificates \
     docker-cli \
@@ -61,19 +64,11 @@ RUN apk add --no-cache \
     unzip \
     bash \
     openssh-client \
-    && git lfs install --system
-
-# Rclone (Remote Cloud Backups)
-RUN wget -qO- https://rclone.org/install.sh | bash
-
-# Nixpacks (Heroku-style zero-config builds)
-RUN curl -fsSL https://github.com/railwayapp/nixpacks/releases/download/v${NIXPACKS_VERSION}/nixpacks-v${NIXPACKS_VERSION}-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin
-
-# Railpack (Next-Gen Buildpack Engine)
-RUN wget -qO- https://railpack.com/install.sh | bash
-
-# Cloud Native Buildpacks (pack CLI)
-COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
+    && git lfs install --system \
+    && wget -qO- https://rclone.org/install.sh | bash \
+    && curl -fsSL https://github.com/railwayapp/nixpacks/releases/download/v${NIXPACKS_VERSION}/nixpacks-v${NIXPACKS_VERSION}-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin \
+    && wget -qO- https://railpack.com/install.sh | bash \
+    && strip /usr/local/bin/pack /usr/local/bin/rclone /usr/local/bin/nixpacks /usr/local/bin/railpack 2>/dev/null || true
 
 # Copy Compiled OpenOxide Server Static Binary
 COPY --from=backend-builder \
