@@ -201,28 +201,6 @@ function GlobalAreaChart({
 							strokeWidth="2"
 							strokeLinecap="round"
 							strokeLinejoin="round"
-							className="transition-all duration-700 ease-in-out"
-						/>
-
-						{/* Live Pulse Dot */}
-						{coords.length > 0 && (
-							<circle
-								cx={coords[coords.length - 1].x}
-								cy={coords[coords.length - 1].y}
-								r="3.5"
-								fill={colorHex}
-								className="animate-ping transition-all duration-700 ease-out"
-							/>
-						)}
-						{coords.length > 0 && (
-							<circle
-								cx={coords[coords.length - 1].x}
-								cy={coords[coords.length - 1].y}
-								r="3.5"
-								fill={colorHex}
-								className="transition-all duration-700 ease-out"
-							/>
-						)}
 					</svg>
 				)}
 			</div>
