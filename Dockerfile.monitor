@@ -38,7 +38,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 WORKDIR /app
 ENV MONITOR_DATABASE_URL="sqlite:///app/data/monitor.db" \
     GRPC_PORT=50051 \
-    REFRESH_RATE=60 \
+    REFRESH_RATE=2 \
     RETENTION_DAYS=7 \
     RUST_LOG=agent=info
 
