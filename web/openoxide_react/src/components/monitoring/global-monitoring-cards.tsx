@@ -80,6 +80,29 @@ function getAccessToken(): string {
 	}
 }
 
+function getSmoothPath(coords: Array<{x: number; y: number}>): string {
+	if (coords.length === 0) return '';
+	if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
+
+	let path = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
+
+	for (let i = 0; i < coords.length - 1; i++) {
+		const p0 = coords[Math.max(i - 1, 0)];
+		const p1 = coords[i];
+		const p2 = coords[i + 1];
+		const p3 = coords[Math.min(i + 2, coords.length - 1)];
+
+		const cp1x = p1.x + (p2.x - p0.x) * 0.15;
+		const cp1y = p1.y + (p2.y - p0.y) * 0.15;
+		const cp2x = p2.x - (p3.x - p1.x) * 0.15;
+		const cp2y = p2.y - (p3.y - p1.y) * 0.15;
+
+		path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+	}
+
+	return path;
+}
+
 function GlobalAreaChart({
 	title,
 	icon: Icon,
@@ -116,9 +139,9 @@ function GlobalAreaChart({
 		return {x, y, val};
 	});
 
-	const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
+	const linePath = getSmoothPath(coords);
 	const areaPath = coords.length > 0 
-		? `${linePath} L ${coords[coords.length - 1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z`
+		? `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${height - padding} L ${coords[0].x.toFixed(1)} ${height - padding} Z`
 		: '';
 
 	return (
@@ -128,12 +151,12 @@ function GlobalAreaChart({
 					<Icon className={`size-4 ${color}`} />
 					<span className="text-xs font-bold text-foreground">{title}</span>
 				</div>
-				<span className={`text-sm font-mono font-extrabold ${color}`}>
+				<span className={`text-sm font-mono font-extrabold ${color} transition-all duration-300`}>
 					{latest.toFixed(1)}{unit}
 				</span>
 			</div>
 
-			<div className="w-full h-32 relative">
+			<div className="w-full h-32 relative overflow-hidden">
 				{coords.length < 2 ? (
 					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
 						Collecting live telemetry points…
@@ -160,15 +183,28 @@ function GlobalAreaChart({
 							/>
 						))}
 
-						<path d={areaPath} fill={`url(#${gradientId})`} className={color} />
-						<path d={linePath} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={color} />
+						<path
+							d={areaPath}
+							fill={`url(#${gradientId})`}
+							className={`${color} transition-all duration-700 ease-in-out`}
+						/>
+
+						<path
+							d={linePath}
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className={`${color} transition-all duration-700 ease-in-out`}
+						/>
 
 						{coords.length > 0 && (
 							<circle
 								cx={coords[coords.length - 1].x}
 								cy={coords[coords.length - 1].y}
 								r="4"
-								className={`${color} fill-current animate-ping`}
+								className={`${color} fill-current animate-ping transition-all duration-700 ease-out`}
 							/>
 						)}
 						{coords.length > 0 && (
@@ -176,7 +212,7 @@ function GlobalAreaChart({
 								cx={coords[coords.length - 1].x}
 								cy={coords[coords.length - 1].y}
 								r="4"
-								className={`${color} fill-current`}
+								className={`${color} fill-current transition-all duration-700 ease-out`}
 							/>
 						)}
 					</svg>
