@@ -451,6 +451,20 @@ function GlobalDockerDiskDonutChart({
 					<span>Containers ({containersStr})</span>
 				</div>
 				<div className="flex items-center gap-1.5">
+					<span className="size-2.5 rounded-xs bg-emerald-500" />
+					<span>Images ({imagesStr})</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<span className="size-2.5 rounded-xs bg-purple-500" />
+					<span>Volumes ({volumesStr})</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function GlobalMonitoringCards() {
 	const overviewServices = useAppStore((state) => state.overviewServices || []);
 	const {data: rawDockerContainers = []} =
