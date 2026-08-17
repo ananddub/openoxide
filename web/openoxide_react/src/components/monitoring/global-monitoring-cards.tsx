@@ -431,6 +431,7 @@ export function GlobalMonitoringCards() {
 		if (containersList.length > 0) {
 			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
 			let blkReadSum = 0, blkWriteSum = 0, netRxSum = 0, netTxSum = 0;
+			let diskUsedSum = 0, diskTotalSum = 0;
 
 			for (const c of containersList) {
 				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
@@ -454,6 +455,9 @@ export function GlobalMonitoringCards() {
 					netRxSum += parseBytes(rx);
 					netTxSum += parseBytes(tx);
 				}
+
+				if (c.DiskUsed) diskUsedSum += parseBytes(String(c.DiskUsed));
+				if (c.DiskTotal && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal));
 			}
 
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
@@ -464,8 +468,8 @@ export function GlobalMonitoringCards() {
 					cpu: cpuSum,
 					memUsedGB: memUsedSum / (1024 ** 3),
 					memLimitGB: (memLimitSum || 3.32 * 1024 ** 3) / (1024 ** 3),
-					diskUsedGB: 12.24,
-					diskTotalGB: 38.09,
+					diskUsedGB: diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : 12.24,
+					diskTotalGB: diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : 38.09,
 					blockReadMB: blkReadSum / (1024 * 1024),
 					blockWriteMB: blkWriteSum / (1024 * 1024),
 					netRxMB: netRxSum / (1024 * 1024),
@@ -483,7 +487,13 @@ export function GlobalMonitoringCards() {
 	const last = history[history.length - 1];
 	const latestCpu = last?.cpu || 0;
 	const latestMemUsed = last?.memUsedGB || 0;
-	const latestMemLimit = last?.memLimitGB || 3.32;
+	const rawMemLimit = last?.memLimitGB || 3.32;
+	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.5);
+
+	const latestDiskUsed = last?.diskUsedGB || 12.24;
+	const rawDiskTotal = last?.diskTotalGB || 38.09;
+	const latestDiskTotal = Math.max(rawDiskTotal, latestDiskUsed, 10);
+
 	const latestBlockR = last?.blockReadMB || 0;
 	const latestBlockW = last?.blockWriteMB || 0;
 	const latestNetRx = last?.netRxMB || 0;
@@ -544,7 +554,13 @@ export function GlobalMonitoringCards() {
 							data={history}
 							dataKey="memUsedGB"
 							maxVal={latestMemLimit}
-							yTicks={['0 GB', '0.85GB', '1.7 GB', '2.55 GB', `${latestMemLimit.toFixed(2)}GB`]}
+							yTicks={[
+								'0 GB',
+								(latestMemLimit * 0.25).toFixed(2) + ' GB',
+								(latestMemLimit * 0.5).toFixed(2) + ' GB',
+								(latestMemLimit * 0.75).toFixed(2) + ' GB',
+								latestMemLimit.toFixed(2) + ' GB',
+							]}
 							legendLabel="Memory (GB)"
 						/>
 					</CardContent>
@@ -555,8 +571,8 @@ export function GlobalMonitoringCards() {
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
 						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">12.24 GB</span> / Limit:{' '}
-							<span className="font-bold text-foreground">38.09 GB</span>
+							Used: <span className="font-bold text-foreground">{latestDiskUsed.toFixed(2)} GB</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{latestDiskTotal.toFixed(2)} GB</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -565,8 +581,14 @@ export function GlobalMonitoringCards() {
 							colorHex="#a855f7"
 							data={history}
 							dataKey="diskUsedGB"
-							maxVal={38.09}
-							yTicks={['10 GB', '20 GB', '30 GB', '38.09GB']}
+							maxVal={latestDiskTotal}
+							yTicks={[
+								'0 GB',
+								(latestDiskTotal * 0.25).toFixed(1) + ' GB',
+								(latestDiskTotal * 0.5).toFixed(1) + ' GB',
+								(latestDiskTotal * 0.75).toFixed(1) + ' GB',
+								latestDiskTotal.toFixed(2) + ' GB',
+							]}
 							legendLabel="Disk Space"
 						/>
 					</CardContent>

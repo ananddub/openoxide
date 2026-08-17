@@ -291,9 +291,12 @@ function DokployDualChart({
 }
 
 export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
-	// Parse memory limit GB for Y-Axis domain
+	// Dynamic Max bounds for Y-Axis domains
 	const lastPoint = history[history.length - 1];
-	const memLimitGB = lastPoint?.memLimitGB || 3.32;
+	const maxMemUsed = Math.max(0, ...(history.map(h => h.memUsedGB || 0)));
+	const maxMemLimit = lastPoint?.memLimitGB || 0;
+	const memLimitGB = Math.max(maxMemLimit, maxMemUsed, 0.5);
+
 	const memTicks = [
 		'0 GB',
 		(memLimitGB * 0.25).toFixed(2) + ' GB',
@@ -302,7 +305,10 @@ export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
 		memLimitGB.toFixed(2) + ' GB',
 	];
 
-	const diskTotalGB = lastPoint?.diskTotalGB || 38.09;
+	const maxDiskUsed = Math.max(0, ...(history.map(h => h.diskUsedGB || 0)));
+	const maxDiskTotal = lastPoint?.diskTotalGB || 0;
+	const diskTotalGB = Math.max(maxDiskTotal, maxDiskUsed, 10);
+
 	const diskTicks = [
 		'0 GB',
 		(diskTotalGB * 0.25).toFixed(1) + ' GB',
