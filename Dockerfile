@@ -37,34 +37,48 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 
 
 # =============================================================================
-# Stage 2: Alpine runtime — panel binary + all required CLI tools
-# =============================================================================
-FROM alpine:3.21
+# ===================================================================
+# Stage 2: Alpine Runtime Image
+# ===================================================================
+FROM alpine:3.21 AS runtime
 
 ARG NIXPACKS_VERSION=1.41.0
+ARG RAILPACK_VERSION=0.36.4
 
-# ── System packages + rclone + nixpacks (Single Layer Optimization) ──────────
+WORKDIR /app
+
+# Minimal System Packages (WireGuard, Git, Archives, SSL Certificates, Docker CLI)
 RUN apk add --no-cache \
     ca-certificates \
     docker-cli \
     docker-cli-compose \
-    git \
     wireguard-tools \
-    iproute2 \
-    openssh-client \
     curl \
+    git \
+    git-lfs \
     tar \
     zip \
     unzip \
-    && curl -fsSL https://rclone.org/install.sh | bash \
-    && curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
+    bash \
+    openssh-client \
+    && git lfs install --system
+
+# Rclone (Remote Cloud Backups)
+RUN wget -qO- https://rclone.org/install.sh | bash
+
+# Nixpacks (Heroku-style zero-config builds)
+RUN wget -qO /tmp/nixpacks-install.sh https://nixpacks.com/install.sh \
     && chmod +x /tmp/nixpacks-install.sh \
     && VERSION=${NIXPACKS_VERSION} /tmp/nixpacks-install.sh \
-    && rm -f /tmp/nixpacks-install.sh \
-    && strip /usr/local/bin/nixpacks 2>/dev/null || true \
-    && strip /usr/local/bin/rclone 2>/dev/null || true
+    && rm /tmp/nixpacks-install.sh
 
-# ── OpenOxide panel binary ────────────────────────────────────────────────────
+# Railpack (Next-Gen Buildpack Engine)
+RUN wget -qO- https://railpack.com/install.sh | bash
+
+# Cloud Native Buildpacks (pack CLI)
+COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
+
+# Copy Compiled OpenOxide Server Static Binary
 COPY --from=backend-builder \
     /usr/src/openoxide/openoxide-binary \
     /usr/local/bin/openoxide
