@@ -77,10 +77,6 @@ RUN apk add --no-cache \
     fuse3 \
     && git lfs install --system
 
-# ── Docker Engine (daemon + BuildKit) ────────────────────────────────────────
-# docker-engine is in the Alpine community repo
-RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.21/community docker-engine
-
 # ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
 RUN curl -fsSL https://rclone.org/install.sh | bash
 
@@ -89,12 +85,6 @@ RUN curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
     && chmod +x /tmp/nixpacks-install.sh \
     && VERSION=${NIXPACKS_VERSION} /tmp/nixpacks-install.sh \
     && rm /tmp/nixpacks-install.sh
-
-# ── Railpack (next-gen buildpack engine) ──────────────────────────────────────
-RUN curl -sSL https://railpack.com/install.sh | bash
-
-# ── Cloud Native Buildpacks — pack CLI ───────────────────────────────────────
-COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
 
 # ── OpenOxide panel binary ────────────────────────────────────────────────────
 COPY --from=backend-builder \
