@@ -43,7 +43,7 @@ FROM alpine:3.21
 
 ARG NIXPACKS_VERSION=1.41.0
 
-# ── System packages ───────────────────────────────────────────────────────────
+# ── System packages + rclone + nixpacks (Single Layer Optimization) ──────────
 RUN apk add --no-cache \
     ca-certificates \
     docker-cli \
@@ -55,16 +55,14 @@ RUN apk add --no-cache \
     curl \
     tar \
     zip \
-    unzip
-
-# ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
-RUN curl -fsSL https://rclone.org/install.sh | bash
-
-# ── Nixpacks (Heroku-style auto buildpacks) ───────────────────────────────────
-RUN curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
+    unzip \
+    && curl -fsSL https://rclone.org/install.sh | bash \
+    && curl -sSL https://nixpacks.com/install.sh -o /tmp/nixpacks-install.sh \
     && chmod +x /tmp/nixpacks-install.sh \
     && VERSION=${NIXPACKS_VERSION} /tmp/nixpacks-install.sh \
-    && rm /tmp/nixpacks-install.sh
+    && rm -f /tmp/nixpacks-install.sh \
+    && strip /usr/local/bin/nixpacks 2>/dev/null || true \
+    && strip /usr/local/bin/rclone 2>/dev/null || true
 
 # ── OpenOxide panel binary ────────────────────────────────────────────────────
 COPY --from=backend-builder \
