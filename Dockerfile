@@ -42,8 +42,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM alpine:3.21
 
 ARG NIXPACKS_VERSION=1.41.0
-ARG RAILPACK_VERSION=0.36.4
-ARG PACK_VERSION=0.40.9
 
 # ── System packages ───────────────────────────────────────────────────────────
 RUN apk add --no-cache \
@@ -55,9 +53,7 @@ RUN apk add --no-cache \
     iproute2 \
     openssh-client \
     curl \
-    tar \
-    zip \
-    unzip
+    tar
 
 # ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
 RUN curl -fsSL https://rclone.org/install.sh | bash
