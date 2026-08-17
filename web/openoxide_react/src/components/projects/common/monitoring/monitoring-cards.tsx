@@ -404,30 +404,34 @@ function DockerDiskDonutChart({
 }
 
 export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
-	// Dynamic Max bounds for Y-Axis domains
+	const formatGB = (gb: number) => {
+		if (gb >= 1) return `${gb.toFixed(2)} GiB`;
+		return `${(gb * 1024).toFixed(0)} MiB`;
+	};
+
 	const lastPoint = history[history.length - 1];
 	const maxMemUsed = Math.max(0, ...(history.map(h => h.memUsedGB || 0)));
 	const maxMemLimit = lastPoint?.memLimitGB || 0;
-	const memLimitGB = Math.max(maxMemLimit, maxMemUsed, 0.5);
+	const memLimitGB = Math.max(maxMemLimit, maxMemUsed, 0.1);
 
 	const memTicks = [
 		'0 GB',
-		(memLimitGB * 0.25).toFixed(2) + ' GB',
-		(memLimitGB * 0.5).toFixed(2) + ' GB',
-		(memLimitGB * 0.75).toFixed(2) + ' GB',
-		memLimitGB.toFixed(2) + ' GB',
+		formatGB(memLimitGB * 0.25),
+		formatGB(memLimitGB * 0.5),
+		formatGB(memLimitGB * 0.75),
+		formatGB(memLimitGB),
 	];
 
 	const maxDiskUsed = Math.max(0, ...(history.map(h => h.diskUsedGB || 0)));
 	const maxDiskTotal = lastPoint?.diskTotalGB || 0;
-	const diskTotalGB = Math.max(maxDiskTotal, maxDiskUsed, 10);
+	const diskTotalGB = Math.max(maxDiskTotal, maxDiskUsed, 0.1);
 
 	const diskTicks = [
 		'0 GB',
-		(diskTotalGB * 0.25).toFixed(1) + ' GB',
-		(diskTotalGB * 0.5).toFixed(1) + ' GB',
-		(diskTotalGB * 0.75).toFixed(1) + ' GB',
-		diskTotalGB.toFixed(2) + ' GB',
+		formatGB(diskTotalGB * 0.25),
+		formatGB(diskTotalGB * 0.5),
+		formatGB(diskTotalGB * 0.75),
+		formatGB(diskTotalGB),
 	];
 
 	return (

@@ -569,20 +569,26 @@ export function GlobalMonitoringCards() {
 					netTxSum += parseBytes(tx);
 				}
 
+				if (c.SizeRw) diskUsedSum += parseBytes(String(c.SizeRw));
 				if (c.DiskUsed) diskUsedSum += parseBytes(String(c.DiskUsed));
 				if (c.DiskTotal && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal));
 			}
 
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+			const finalMemLimitGB = memLimitSum > 0 ? memLimitSum / (1024 ** 3) : (memUsedSum > 0 ? (memUsedSum * 1.5) / (1024 ** 3) : 1);
+			const finalDiskUsedGB = diskUsedSum / (1024 ** 3);
+			const finalDiskTotalGB = diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1);
+
 			setHistory(prev => [
 				...prev.slice(-49),
 				{
 					time: timeStr,
 					cpu: cpuSum,
 					memUsedGB: memUsedSum / (1024 ** 3),
-					memLimitGB: (memLimitSum || 3.32 * 1024 ** 3) / (1024 ** 3),
-					diskUsedGB: diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : 12.24,
-					diskTotalGB: diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : 38.09,
+					memLimitGB: finalMemLimitGB,
+					diskUsedGB: finalDiskUsedGB,
+					diskTotalGB: finalDiskTotalGB,
+					dockerDiskGB: finalDiskUsedGB,
 					blockReadMB: blkReadSum / (1024 * 1024),
 					blockWriteMB: blkWriteSum / (1024 * 1024),
 					netRxMB: netRxSum / (1024 * 1024),
@@ -600,17 +606,22 @@ export function GlobalMonitoringCards() {
 	const last = history[history.length - 1];
 	const latestCpu = last?.cpu || 0;
 	const latestMemUsed = last?.memUsedGB || 0;
-	const rawMemLimit = last?.memLimitGB || 3.32;
-	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.5);
+	const rawMemLimit = last?.memLimitGB || 1;
+	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.1);
 
-	const latestDiskUsed = last?.diskUsedGB || 12.24;
-	const rawDiskTotal = last?.diskTotalGB || 38.09;
-	const latestDiskTotal = Math.max(rawDiskTotal, latestDiskUsed, 10);
+	const latestDiskUsed = last?.diskUsedGB || 0;
+	const rawDiskTotal = last?.diskTotalGB || 1;
+	const latestDiskTotal = Math.max(rawDiskTotal, latestDiskUsed, 0.1);
 
 	const latestBlockR = last?.blockReadMB || 0;
 	const latestBlockW = last?.blockWriteMB || 0;
 	const latestNetRx = last?.netRxMB || 0;
 	const latestNetTx = last?.netTxMB || 0;
+
+	const formatGB = (gb: number) => {
+		if (gb >= 1) return `${gb.toFixed(2)} GiB`;
+		return `${(gb * 1024).toFixed(0)} MiB`;
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -656,8 +667,8 @@ export function GlobalMonitoringCards() {
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">Memory Usage</CardTitle>
 						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{latestMemUsed.toFixed(2)}GiB</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{latestMemLimit.toFixed(2)}GiB</span>
+							Used: <span className="font-bold text-foreground">{formatGB(latestMemUsed)}</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{formatGB(latestMemLimit)}</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -669,12 +680,12 @@ export function GlobalMonitoringCards() {
 							maxVal={latestMemLimit}
 							yTicks={[
 								'0 GB',
-								(latestMemLimit * 0.25).toFixed(2) + ' GB',
-								(latestMemLimit * 0.5).toFixed(2) + ' GB',
-								(latestMemLimit * 0.75).toFixed(2) + ' GB',
-								latestMemLimit.toFixed(2) + ' GB',
+								formatGB(latestMemLimit * 0.25),
+								formatGB(latestMemLimit * 0.5),
+								formatGB(latestMemLimit * 0.75),
+								formatGB(latestMemLimit),
 							]}
-							legendLabel="Memory (GB)"
+							legendLabel="Memory"
 						/>
 					</CardContent>
 				</Card>
@@ -684,8 +695,8 @@ export function GlobalMonitoringCards() {
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
 						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{latestDiskUsed.toFixed(2)} GB</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{latestDiskTotal.toFixed(2)} GB</span>
+							Used: <span className="font-bold text-foreground">{formatGB(latestDiskUsed)}</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{formatGB(latestDiskTotal)}</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -697,10 +708,10 @@ export function GlobalMonitoringCards() {
 							maxVal={latestDiskTotal}
 							yTicks={[
 								'0 GB',
-								(latestDiskTotal * 0.25).toFixed(1) + ' GB',
-								(latestDiskTotal * 0.5).toFixed(1) + ' GB',
-								(latestDiskTotal * 0.75).toFixed(1) + ' GB',
-								latestDiskTotal.toFixed(2) + ' GB',
+								formatGB(latestDiskTotal * 0.25),
+								formatGB(latestDiskTotal * 0.5),
+								formatGB(latestDiskTotal * 0.75),
+								formatGB(latestDiskTotal),
 							]}
 							legendLabel="Disk Space"
 						/>
@@ -712,13 +723,13 @@ export function GlobalMonitoringCards() {
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">Docker Disk Usage</CardTitle>
 						<span className="text-xs font-mono text-muted-foreground">
-							Total: <span className="font-bold text-foreground">5.45 GB</span>
+							Total: <span className="font-bold text-foreground">{formatGB(latestDiskUsed)}</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
 						<GlobalDockerDiskDonutChart
-							totalStr="5.45 GB"
-							containersStr="5.45 GB"
+							totalStr={formatGB(latestDiskUsed)}
+							containersStr={formatGB(latestDiskUsed)}
 							imagesStr="0 MB"
 							volumesStr="0 MB"
 						/>
