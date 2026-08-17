@@ -443,6 +443,7 @@ export function PrivateNetworkModal({
 						</>
 					)}
 					<Button
+						size="sm"
 						onClick={() => save(mode === 'MANAGED_WIREGUARD')}
 						disabled={busy}>
 						{busy ? (
