@@ -6,7 +6,7 @@
 FROM rust:slim-bookworm AS backend-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates && \
+    clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates upx-ucl && \
     rm -rf /var/lib/apt/lists/* && \
     rustup target add x86_64-unknown-linux-musl
 
@@ -33,7 +33,8 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/openoxide/target \
     cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
     cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
-    strip /usr/src/openoxide/openoxide-binary
+    strip /usr/src/openoxide/openoxide-binary && \
+    upx --best /usr/src/openoxide/openoxide-binary || true
 
 
 # =============================================================================
@@ -50,7 +51,7 @@ WORKDIR /app
 # Cloud Native Buildpacks (pack CLI)
 COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
 
-# Minimal System Packages + Rclone + Nixpacks + Railpack (Single Layer Symbol Stripping)
+# Minimal System Packages + Rclone + Nixpacks + Railpack (Single Layer Symbol Stripping & Cache Cleanup)
 RUN apk add --no-cache \
     ca-certificates \
     docker-cli \
@@ -68,7 +69,7 @@ RUN apk add --no-cache \
     && wget -qO- https://rclone.org/install.sh | bash \
     && curl -fsSL https://github.com/railwayapp/nixpacks/releases/download/v${NIXPACKS_VERSION}/nixpacks-v${NIXPACKS_VERSION}-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin \
     && wget -qO- https://railpack.com/install.sh | bash \
-    && strip /usr/local/bin/pack /usr/local/bin/rclone /usr/local/bin/nixpacks /usr/local/bin/railpack 2>/dev/null || true
+    && rm -rf /tmp/* /var/cache/apk/* /root/.cache
 
 # Copy Compiled OpenOxide Server Static Binary
 COPY --from=backend-builder \
