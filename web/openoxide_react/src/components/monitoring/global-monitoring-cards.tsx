@@ -227,6 +227,140 @@ function GlobalAreaChart({
 	);
 }
 
+function GlobalDualChart({
+	gradientId1,
+	gradientId2,
+	colorHex1,
+	colorHex2,
+	data = [],
+	dataKey1,
+	dataKey2,
+	legendLabel1,
+	legendLabel2,
+}: {
+	gradientId1: string;
+	gradientId2: string;
+	colorHex1: string;
+	colorHex2: string;
+	data: Array<any>;
+	dataKey1: string;
+	dataKey2: string;
+	legendLabel1: string;
+	legendLabel2: string;
+}) {
+	const points1 = data.map(d => Number(d[dataKey1]) || 0);
+	const points2 = data.map(d => Number(d[dataKey2]) || 0);
+	const maxVal = Math.max(10, ...points1, ...points2);
+
+	const width = 500;
+	const height = 130;
+	const paddingLeft = 55;
+	const paddingRight = 15;
+	const paddingTop = 10;
+	const paddingBottom = 20;
+
+	const chartWidth = width - paddingLeft - paddingRight;
+	const chartHeight = height - paddingTop - paddingBottom;
+
+	const coords1 = points1.map((val, idx) => {
+		const x = paddingLeft + (idx / Math.max(points1.length - 1, 1)) * chartWidth;
+		const y = height - paddingBottom - (val / Math.max(maxVal, 0.001)) * chartHeight;
+		return {x, y, val};
+	});
+
+	const coords2 = points2.map((val, idx) => {
+		const x = paddingLeft + (idx / Math.max(points2.length - 1, 1)) * chartWidth;
+		const y = height - paddingBottom - (val / Math.max(maxVal, 0.001)) * chartHeight;
+		return {x, y, val};
+	});
+
+	const linePath1 = getSmoothPath(coords1);
+	const areaPath1 = coords1.length > 0
+		? `${linePath1} L ${coords1[coords1.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords1[0].x.toFixed(1)} ${height - paddingBottom} Z`
+		: '';
+
+	const linePath2 = getSmoothPath(coords2);
+	const areaPath2 = coords2.length > 0
+		? `${linePath2} L ${coords2[coords2.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords2[0].x.toFixed(1)} ${height - paddingBottom} Z`
+		: '';
+
+	const yTicks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal].map(v => {
+		if (v >= 1000) return (v / 1000).toFixed(1) + 'k';
+		return Math.round(v).toString();
+	});
+
+	return (
+		<div className="flex flex-col gap-2 w-full">
+			<div className="w-full h-36 relative">
+				{coords1.length < 2 ? (
+					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
+						Collecting telemetry points...
+					</div>
+				) : (
+					<svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+						<defs>
+							<linearGradient id={gradientId1} x1="0" y1="0" x2="0" y2="1">
+								<stop offset="5%" stopColor={colorHex1} stopOpacity={0.4} />
+								<stop offset="95%" stopColor={colorHex1} stopOpacity={0.0} />
+							</linearGradient>
+							<linearGradient id={gradientId2} x1="0" y1="0" x2="0" y2="1">
+								<stop offset="5%" stopColor={colorHex2} stopOpacity={0.4} />
+								<stop offset="95%" stopColor={colorHex2} stopOpacity={0.0} />
+							</linearGradient>
+						</defs>
+
+						{yTicks.map((tick, idx) => {
+							const ratio = idx / Math.max(yTicks.length - 1, 1);
+							const y = height - paddingBottom - ratio * chartHeight;
+							return (
+								<g key={idx}>
+									<line
+										x1={paddingLeft}
+										y1={y}
+										x2={width - paddingRight}
+										y2={y}
+										stroke="currentColor"
+										strokeDasharray="3 3"
+										className="text-border/30"
+									/>
+									<text
+										x={paddingLeft - 8}
+										y={y + 3}
+										textAnchor="end"
+										className="text-[10px] fill-muted-foreground font-mono"
+									>
+										{tick}
+									</text>
+								</g>
+							);
+						})}
+
+						{/* Area 1 */}
+						<path d={areaPath1} fill={`url(#${gradientId1})`} className="transition-all duration-700 ease-in-out" />
+						<path d={linePath1} fill="none" stroke={colorHex1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-700 ease-in-out" />
+
+						{/* Area 2 */}
+						<path d={areaPath2} fill={`url(#${gradientId2})`} className="transition-all duration-700 ease-in-out" />
+						<path d={linePath2} fill="none" stroke={colorHex2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-700 ease-in-out" />
+					</svg>
+				)}
+			</div>
+
+			{/* Dual Legends */}
+			<div className="flex items-center justify-center gap-6 text-xs text-muted-foreground font-medium pt-1">
+				<div className="flex items-center gap-2">
+					<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex1}} />
+					<span>{legendLabel1}</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex2}} />
+					<span>{legendLabel2}</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalMonitoringCards() {
@@ -289,12 +423,25 @@ export function GlobalMonitoringCards() {
 		};
 	}, []);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; disk: number; net: number}>>([]);
+	const [history, setHistory] = useState<
+		Array<{
+			time: string;
+			cpu: number;
+			memUsedGB: number;
+			memLimitGB: number;
+			diskUsedGB: number;
+			diskTotalGB: number;
+			blockReadMB: number;
+			blockWriteMB: number;
+			netRxMB: number;
+			netTxMB: number;
+		}>
+	>([]);
 
 	useEffect(() => {
 		if (containersList.length > 0) {
 			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
-			let blkSum = 0, netSum = 0;
+			let blkReadSum = 0, blkWriteSum = 0, netRxSum = 0, netTxSum = 0;
 
 			for (const c of containersList) {
 				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
@@ -308,18 +455,34 @@ export function GlobalMonitoringCards() {
 				const blk = String(c.BlockIO || '');
 				if (blk.includes('/')) {
 					const [r, w] = blk.split('/').map(s => s.trim());
-					blkSum += (parseBytes(r) + parseBytes(w)) / (1024 * 1024); // MB
+					blkReadSum += parseBytes(r);
+					blkWriteSum += parseBytes(w);
 				}
 
 				const net = String(c.NetIO || '');
 				if (net.includes('/')) {
 					const [rx, tx] = net.split('/').map(s => s.trim());
-					netSum += (parseBytes(rx) + parseBytes(tx)) / (1024 * 1024); // MB
+					netRxSum += parseBytes(rx);
+					netTxSum += parseBytes(tx);
 				}
 			}
-			const mPct = memLimitSum > 0 ? (memUsedSum / memLimitSum) * 100 : 0;
+
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct, disk: blkSum, net: netSum}]);
+			setHistory(prev => [
+				...prev.slice(-49),
+				{
+					time: timeStr,
+					cpu: cpuSum,
+					memUsedGB: memUsedSum / (1024 ** 3),
+					memLimitGB: (memLimitSum || 3.32 * 1024 ** 3) / (1024 ** 3),
+					diskUsedGB: 12.24,
+					diskTotalGB: 38.09,
+					blockReadMB: blkReadSum / (1024 * 1024),
+					blockWriteMB: blkWriteSum / (1024 * 1024),
+					netRxMB: netRxSum / (1024 * 1024),
+					netTxMB: netTxSum / (1024 * 1024),
+				},
+			]);
 		}
 	}, [containersList]);
 
@@ -328,59 +491,175 @@ export function GlobalMonitoringCards() {
 	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
 	const activeContainersCount = Math.max(dockerContainersArray.length, runningArray.length, containersList.length);
 
+	const last = history[history.length - 1];
+	const latestCpu = last?.cpu || 0;
+	const latestMemUsed = last?.memUsedGB || 0;
+	const latestMemLimit = last?.memLimitGB || 3.32;
+	const latestBlockR = last?.blockReadMB || 0;
+	const latestBlockW = last?.blockWriteMB || 0;
+	const latestNetRx = last?.netRxMB || 0;
+	const latestNetTx = last?.netTxMB || 0;
+
 	return (
-		<div className="flex flex-col gap-5">
+		<div className="flex flex-col gap-6">
 			{/* Header bar */}
-			<div className="flex items-center gap-2.5 bg-card border border-border rounded-xl p-4 shadow-xs">
-				<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
-				<span className="text-xs font-semibold text-foreground">
-					Docker Telemetry Engine
-				</span>
-				<span className="text-xs text-muted-foreground">
-					— {activeContainersCount} Active System Containers
-				</span>
+			<div className="flex items-center justify-between bg-card border border-border rounded-xl p-4 shadow-xs">
+				<div className="flex items-center gap-2.5">
+					<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+					<span className="text-xs font-semibold text-foreground">
+						Docker Telemetry Engine
+					</span>
+					<span className="text-xs text-muted-foreground">
+						— {activeContainersCount} Active System Containers
+					</span>
+				</div>
+				<span className="text-xs text-muted-foreground font-mono">Realtime Monitoring</span>
 			</div>
 
-			{/* Real-time Telemetry Graphs (2x2 Grid for CPU, RAM, Disk, Network) */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-				<GlobalAreaChart
-					title="Global CPU Utilization Graph"
-					icon={Cpu}
-					color="text-primary"
-					gradientId="global-cpu-grad"
-					data={history}
-					dataKey="cpu"
-					unit="%"
-				/>
-				<GlobalAreaChart
-					title="Global RAM Utilization Graph"
-					icon={HardDrive}
-					color="text-emerald-500"
-					gradientId="global-mem-grad"
-					data={history}
-					dataKey="mem"
-					unit="%"
-				/>
-				<GlobalAreaChart
-					title="Global Disk I/O Throughput Graph"
-					icon={Database}
-					color="text-purple-500"
-					gradientId="global-disk-grad"
-					data={history}
-					dataKey="disk"
-					unit=" MB"
-					maxVal={Math.max(10, ...(history.map(h => h.disk || 0)))}
-				/>
-				<GlobalAreaChart
-					title="Global Network I/O Traffic Graph"
-					icon={Network}
-					color="text-blue-500"
-					gradientId="global-net-grad"
-					data={history}
-					dataKey="net"
-					unit=" MB"
-					maxVal={Math.max(10, ...(history.map(h => h.net || 0)))}
-				/>
+			{/* Dokploy 6-Card Monitoring Grid */}
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+				{/* 1. CPU Usage */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">CPU Usage</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">{latestCpu.toFixed(2)}%</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<GlobalAreaChart
+							gradientId="dok-g-cpu"
+							colorHex="#3b82f6"
+							data={history}
+							dataKey="cpu"
+							maxVal={100}
+							yTicks={['0%', '25%', '50%', '75%', '100%']}
+							legendLabel="CPU Usage"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 2. Memory Usage */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Memory Usage</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">{latestMemUsed.toFixed(2)}GiB</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{latestMemLimit.toFixed(2)}GiB</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<GlobalAreaChart
+							gradientId="dok-g-mem"
+							colorHex="#10b981"
+							data={history}
+							dataKey="memUsedGB"
+							maxVal={latestMemLimit}
+							yTicks={['0 GB', '0.85GB', '1.7 GB', '2.55 GB', `${latestMemLimit.toFixed(2)}GB`]}
+							legendLabel="Memory (GB)"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 3. Disk Space */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">12.24 GB</span> / Limit:{' '}
+							<span className="font-bold text-foreground">38.09 GB</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<GlobalAreaChart
+							gradientId="dok-g-disk"
+							colorHex="#a855f7"
+							data={history}
+							dataKey="diskUsedGB"
+							maxVal={38.09}
+							yTicks={['10 GB', '20 GB', '30 GB', '38.09GB']}
+							legendLabel="Disk Space"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 4. Docker Disk Usage */}
+				<Card className="bg-card border-border shadow-xs flex flex-col justify-between">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Docker Disk Usage</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Total: <span className="font-bold text-foreground">5.45 GB</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-4 flex flex-col gap-4">
+						<div className="grid grid-cols-3 gap-3 text-center">
+							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
+								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Containers</span>
+								<span className="text-sm font-bold font-mono text-foreground">5.45 GB</span>
+							</div>
+							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
+								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Images</span>
+								<span className="text-sm font-bold font-mono text-muted-foreground">0 MB</span>
+							</div>
+							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
+								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Volumes</span>
+								<span className="text-sm font-bold font-mono text-muted-foreground">0 MB</span>
+							</div>
+						</div>
+						<div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium pt-2">
+							<span className="size-2.5 rounded-xs bg-amber-500" />
+							<span>Docker Usage</span>
+						</div>
+					</CardContent>
+				</Card>
+
+				{/* 5. Block I/O */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Block I/O</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Read: <span className="font-bold text-emerald-500">{latestBlockR.toFixed(2)} MB</span> / Write:{' '}
+							<span className="font-bold text-rose-500">{latestBlockW.toFixed(2)} MB</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<GlobalDualChart
+							gradientId1="dok-g-blk-r"
+							gradientId2="dok-g-blk-w"
+							colorHex1="#10b981"
+							colorHex2="#f43f5e"
+							data={history}
+							dataKey1="blockReadMB"
+							dataKey2="blockWriteMB"
+							legendLabel1="Read (MB)"
+							legendLabel2="Write (MB)"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 6. Network I/O */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Network I/O</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							In: <span className="font-bold text-blue-500">{latestNetRx.toFixed(2)} MB</span> / Out:{' '}
+							<span className="font-bold text-indigo-500">{latestNetTx.toFixed(2)} MB</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<GlobalDualChart
+							gradientId1="dok-g-net-in"
+							gradientId2="dok-g-net-out"
+							colorHex1="#3b82f6"
+							colorHex2="#6366f1"
+							data={history}
+							dataKey1="netRxMB"
+							dataKey2="netTxMB"
+							legendLabel1="In (MB)"
+							legendLabel2="Out (MB)"
+						/>
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

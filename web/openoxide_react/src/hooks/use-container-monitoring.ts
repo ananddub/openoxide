@@ -233,15 +233,52 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 		};
 	}, [id, entityType, isLive, refetchTrigger]);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; disk: number; net: number}>>([]);
+	const [history, setHistory] = useState<
+		Array<{
+			time: string;
+			cpu: number;
+			memUsedGB: number;
+			memLimitGB: number;
+			diskUsedGB: number;
+			diskTotalGB: number;
+			dockerDiskGB: number;
+			blockReadMB: number;
+			blockWriteMB: number;
+			netRxMB: number;
+			netTxMB: number;
+		}>
+	>([]);
 
 	useEffect(() => {
 		const parsed = parseStats(rawStats);
 		if (parsed) {
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			const netMb = (parseBytes(parsed.netRx) + parseBytes(parsed.netTx)) / (1024 * 1024);
-			const diskPct = parsed.diskSpacePercent || parsed.dockerDiskPercent || 0;
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: parsed.cpuPercent, mem: parsed.memPercent, disk: diskPct, net: netMb}]);
+			const memUsedGB = parseBytes(parsed.memUsage) / (1024 ** 3);
+			const memLimitGB = parseBytes(parsed.memLimit) / (1024 ** 3);
+			const diskUsedGB = parseBytes(parsed.diskSpaceUsed) / (1024 ** 3);
+			const diskTotalGB = parseBytes(parsed.diskSpaceTotal) / (1024 ** 3);
+			const dockerDiskGB = parseBytes(parsed.dockerDiskUsage) / (1024 ** 3);
+			const blockReadMB = parseBytes(parsed.blockRead) / (1024 * 1024);
+			const blockWriteMB = parseBytes(parsed.blockWrite) / (1024 * 1024);
+			const netRxMB = parseBytes(parsed.netRx) / (1024 * 1024);
+			const netTxMB = parseBytes(parsed.netTx) / (1024 * 1024);
+
+			setHistory(prev => [
+				...prev.slice(-49),
+				{
+					time: timeStr,
+					cpu: parsed.cpuPercent,
+					memUsedGB,
+					memLimitGB,
+					diskUsedGB,
+					diskTotalGB,
+					dockerDiskGB,
+					blockReadMB,
+					blockWriteMB,
+					netRxMB,
+					netTxMB,
+				},
+			]);
 		}
 	}, [rawStats]);
 
