@@ -263,63 +263,6 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 	>([]);
 
 	useEffect(() => {
-		let isMounted = true;
-		if (!id) return;
-
-		// Fetch historical metrics from openoxide_monitor agent if available
-		const fetchAgentMetrics = async () => {
-			try {
-				let accessToken = '';
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.access_token || '';
-					} catch {}
-				}
-
-				const res = await fetch(`/api/monitoring/containers/${id}`, {
-					headers: {Authorization: accessToken ? `Bearer ${accessToken}` : ''},
-				});
-				if (res.ok) {
-					const data = await res.json();
-					if (Array.isArray(data) && data.length > 0 && isMounted) {
-						const mapped = data.map((item: any) => {
-							let jsonObj: any = {};
-							if (typeof item.metrics_json === 'string') {
-								try {
-									jsonObj = JSON.parse(item.metrics_json);
-								} catch {}
-							} else if (typeof item.metrics_json === 'object') {
-								jsonObj = item.metrics_json || {};
-							}
-
-							const t = item.timestamp
-								? new Date(item.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'})
-								: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-
-							return {
-								time: t,
-								cpu: jsonObj.cpu_percent || 0,
-								memUsedGB: (jsonObj.memory_used_mb || 0) / 1024,
-								memLimitGB: (jsonObj.memory_limit_mb || 3399) / 1024,
-								diskUsedGB: 12.24,
-								diskTotalGB: 38.09,
-								dockerDiskGB: 5.45,
-								blockReadMB: jsonObj.block_read_mb || 0,
-								blockWriteMB: jsonObj.block_write_mb || 0,
-								netRxMB: (jsonObj.net_rx_kbps || 0) / 1024,
-								netTxMB: (jsonObj.net_tx_kbps || 0) / 1024,
-							};
-						});
-						setHistory(mapped.slice(-50));
-					}
-				}
-			} catch {}
-		};
-
-		fetchAgentMetrics();
-
 		const parsed = parseStats(rawStats);
 		if (parsed) {
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
@@ -350,11 +293,7 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 				},
 			]);
 		}
-
-		return () => {
-			isMounted = false;
-		};
-	}, [rawStats, id]);
+	}, [rawStats]);
 
 	return {
 		isLive,
