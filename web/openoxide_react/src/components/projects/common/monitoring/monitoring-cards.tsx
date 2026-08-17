@@ -386,6 +386,119 @@ export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
 					</CardContent>
 				</Card>
 
+function DockerDiskDonutChart({
+	totalStr = '5.45 GB',
+	containersStr = '5.45 GB',
+	imagesStr = '0 MB',
+	volumesStr = '0 MB',
+}: {
+	totalStr?: string;
+	containersStr?: string;
+	imagesStr?: string;
+	volumesStr?: string;
+}) {
+	const cVal = parseBytes(containersStr) || 1;
+	const iVal = parseBytes(imagesStr) || 0;
+	const vVal = parseBytes(volumesStr) || 0;
+	const totalVal = cVal + iVal + vVal || 1;
+
+	const cPercent = cVal / totalVal;
+	const iPercent = iVal / totalVal;
+	const vPercent = vVal / totalVal;
+
+	const radius = 45;
+	const circumference = 2 * Math.PI * radius;
+
+	const cStroke = cPercent * circumference;
+	const iStroke = iPercent * circumference;
+	const vStroke = vPercent * circumference;
+
+	const cOffset = 0;
+	const iOffset = -cStroke;
+	const vOffset = -(cStroke + iStroke);
+
+	return (
+		<div className="flex flex-col items-center justify-center gap-3 py-1 w-full">
+			<div className="relative size-36 flex items-center justify-center">
+				<svg viewBox="0 0 120 120" className="size-full -rotate-90 overflow-visible">
+					<circle
+						cx="60"
+						cy="60"
+						r={radius}
+						fill="transparent"
+						stroke="currentColor"
+						strokeWidth="14"
+						className="text-secondary/40"
+					/>
+					{cPercent > 0 && (
+						<circle
+							cx="60"
+							cy="60"
+							r={radius}
+							fill="transparent"
+							stroke="#3b82f6"
+							strokeWidth="14"
+							strokeDasharray={`${cStroke} ${circumference - cStroke}`}
+							strokeDashoffset={cOffset}
+							className="transition-all duration-700 ease-in-out"
+						/>
+					)}
+					{iPercent > 0 && (
+						<circle
+							cx="60"
+							cy="60"
+							r={radius}
+							fill="transparent"
+							stroke="#10b981"
+							strokeWidth="14"
+							strokeDasharray={`${iStroke} ${circumference - iStroke}`}
+							strokeDashoffset={iOffset}
+							className="transition-all duration-700 ease-in-out"
+						/>
+					)}
+					{vPercent > 0 && (
+						<circle
+							cx="60"
+							cy="60"
+							r={radius}
+							fill="transparent"
+							stroke="#a855f7"
+							strokeWidth="14"
+							strokeDasharray={`${vStroke} ${circumference - vStroke}`}
+							strokeDashoffset={vOffset}
+							className="transition-all duration-700 ease-in-out"
+						/>
+					)}
+				</svg>
+
+				<div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+					<span className="text-sm font-extrabold font-mono text-foreground leading-none">
+						{totalStr}
+					</span>
+					<span className="text-[10px] font-medium text-muted-foreground mt-1">
+						Docker Usage
+					</span>
+				</div>
+			</div>
+
+			<div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground flex-wrap">
+				<div className="flex items-center gap-1.5">
+					<span className="size-2.5 rounded-xs bg-blue-500" />
+					<span>Containers ({containersStr})</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<span className="size-2.5 rounded-xs bg-emerald-500" />
+					<span>Images ({imagesStr})</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<span className="size-2.5 rounded-xs bg-purple-500" />
+					<span>Volumes ({volumesStr})</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 				{/* 4. Docker Disk Usage */}
 				<Card className="bg-card border-border shadow-xs flex flex-col justify-between">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -394,25 +507,13 @@ export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
 							Total: <span className="font-bold text-foreground">{metrics?.dockerDiskUsage || '0 MB'}</span>
 						</span>
 					</CardHeader>
-					<CardContent className="pt-4 flex flex-col gap-4">
-						<div className="grid grid-cols-3 gap-3 text-center">
-							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
-								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Containers</span>
-								<span className="text-sm font-bold font-mono text-foreground">{metrics?.dockerDiskUsage || '0 MB'}</span>
-							</div>
-							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
-								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Images</span>
-								<span className="text-sm font-bold font-mono text-muted-foreground">0 MB</span>
-							</div>
-							<div className="bg-secondary/40 border border-border/50 rounded-lg p-3">
-								<span className="text-[11px] text-muted-foreground block mb-1 font-medium">Volumes</span>
-								<span className="text-sm font-bold font-mono text-muted-foreground">0 MB</span>
-							</div>
-						</div>
-						<div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium pt-2">
-							<span className="size-2.5 rounded-xs bg-amber-500" />
-							<span>Docker Usage</span>
-						</div>
+					<CardContent className="pt-2">
+						<DockerDiskDonutChart
+							totalStr={metrics?.dockerDiskUsage || '0 MB'}
+							containersStr={metrics?.dockerDiskUsage || '0 MB'}
+							imagesStr="0 MB"
+							volumesStr="0 MB"
+						/>
 					</CardContent>
 				</Card>
 
