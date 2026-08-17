@@ -253,13 +253,14 @@ export function GlobalMonitoringCards() {
 		};
 	}, []);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number}>>([]);
+	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; pids: number}>>([]);
 
 	useEffect(() => {
 		if (containersList.length > 0) {
-			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
+			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0, pidsSum = 0;
 			for (const c of containersList) {
 				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
+				pidsSum += parseInt(String(c.PIDs || '0'), 10) || 0;
 				const mem = String(c.MemUsage || '');
 				if (mem.includes('/')) {
 					const [u, l] = mem.split('/').map(s => s.trim());
@@ -269,7 +270,7 @@ export function GlobalMonitoringCards() {
 			}
 			const mPct = memLimitSum > 0 ? (memUsedSum / memLimitSum) * 100 : 0;
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct}]);
+			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct, pids: pidsSum}]);
 		}
 	}, [containersList]);
 
@@ -323,8 +324,8 @@ export function GlobalMonitoringCards() {
 				</span>
 			</div>
 
-			{/* Real-time Telemetry Graphs (CPU & Memory) */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+			{/* Real-time Telemetry Graphs (CPU, RAM, PIDs) */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 				<GlobalAreaChart
 					title="Global CPU Utilization Graph"
 					icon={Cpu}
@@ -342,6 +343,16 @@ export function GlobalMonitoringCards() {
 					data={history}
 					dataKey="mem"
 					unit="%"
+				/>
+				<GlobalAreaChart
+					title="Global Active Threads / PIDs Graph"
+					icon={Layers}
+					color="text-purple-500"
+					gradientId="global-pids-grad"
+					data={history}
+					dataKey="pids"
+					unit=" PIDs"
+					maxVal={Math.max(100, ...(history.map(h => h.pids || 0)))}
 				/>
 			</div>
 

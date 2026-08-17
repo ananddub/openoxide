@@ -222,13 +222,14 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 		};
 	}, [id, entityType, isLive, refetchTrigger]);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number}>>([]);
+	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; pids: number}>>([]);
 
 	useEffect(() => {
 		const parsed = parseStats(rawStats);
 		if (parsed) {
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: parsed.cpuPercent, mem: parsed.memPercent}]);
+			const pidsNum = parseInt(parsed.pids, 10) || 0;
+			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: parsed.cpuPercent, mem: parsed.memPercent, pids: pidsNum}]);
 		}
 	}, [rawStats]);
 

@@ -1,9 +1,8 @@
 import {Cpu, HardDrive, Network, Layers, Disc, Database} from 'lucide-react';
 
-
 interface MonitoringCardsProps {
 	metrics: any;
-	history?: Array<{time: string; cpu: number; mem: number}>;
+	history?: Array<{time: string; cpu: number; mem: number; pids?: number}>;
 }
 
 function MetricAreaChart({
@@ -126,8 +125,8 @@ function MetricAreaChart({
 export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
 	return (
 		<div className="flex flex-col gap-6">
-			{/* Real-time Telemetry Graphs (CPU & Memory) */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+			{/* Real-time Telemetry Graphs (CPU, Memory, PIDs) */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<MetricAreaChart
 					title="CPU Utilization Graph"
 					icon={Cpu}
@@ -145,6 +144,16 @@ export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
 					data={history}
 					dataKey="mem"
 					unit="%"
+				/>
+				<MetricAreaChart
+					title="Active PIDs & Threads Graph"
+					icon={Layers}
+					color="text-purple-500"
+					gradientId="pids-grad"
+					data={history}
+					dataKey="pids"
+					unit=" Threads"
+					maxVal={Math.max(50, ...(history.map(h => h.pids || 0)))}
 				/>
 			</div>
 
