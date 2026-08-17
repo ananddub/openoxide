@@ -141,6 +141,7 @@ function DokploySingleChart({
 							strokeLinecap="round"
 							strokeLinejoin="round"
 							className="transition-all duration-700 ease-in-out"
+						/>
 					</svg>
 				)}
 			</div>
