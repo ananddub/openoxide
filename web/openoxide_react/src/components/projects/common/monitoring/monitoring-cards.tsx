@@ -288,104 +288,6 @@ function DokployDualChart({
 			</div>
 		</div>
 	);
-}
-
-export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
-	// Dynamic Max bounds for Y-Axis domains
-	const lastPoint = history[history.length - 1];
-	const maxMemUsed = Math.max(0, ...(history.map(h => h.memUsedGB || 0)));
-	const maxMemLimit = lastPoint?.memLimitGB || 0;
-	const memLimitGB = Math.max(maxMemLimit, maxMemUsed, 0.5);
-
-	const memTicks = [
-		'0 GB',
-		(memLimitGB * 0.25).toFixed(2) + ' GB',
-		(memLimitGB * 0.5).toFixed(2) + ' GB',
-		(memLimitGB * 0.75).toFixed(2) + ' GB',
-		memLimitGB.toFixed(2) + ' GB',
-	];
-
-	const maxDiskUsed = Math.max(0, ...(history.map(h => h.diskUsedGB || 0)));
-	const maxDiskTotal = lastPoint?.diskTotalGB || 0;
-	const diskTotalGB = Math.max(maxDiskTotal, maxDiskUsed, 10);
-
-	const diskTicks = [
-		'0 GB',
-		(diskTotalGB * 0.25).toFixed(1) + ' GB',
-		(diskTotalGB * 0.5).toFixed(1) + ' GB',
-		(diskTotalGB * 0.75).toFixed(1) + ' GB',
-		diskTotalGB.toFixed(2) + ' GB',
-	];
-
-	return (
-		<div className="flex flex-col gap-6">
-			{/* Dokploy Container Monitoring Grid (2 Columns) */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-				{/* 1. CPU Usage */}
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">CPU Usage</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{metrics?.cpuPercent?.toFixed(2) || '0.00'}%</span>
-						</span>
-					</CardHeader>
-					<CardContent className="pt-2">
-						<DokploySingleChart
-							gradientId="dok-cpu-grad"
-							colorHex="#3b82f6"
-							data={history}
-							dataKey="cpu"
-							maxVal={100}
-							yTicks={['0%', '25%', '50%', '75%', '100%']}
-							legendLabel="CPU Usage"
-						/>
-					</CardContent>
-				</Card>
-
-				{/* 2. Memory Usage */}
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Memory Usage</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{metrics?.memUsage || '0 B'}</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{metrics?.memLimit || '0 B'}</span>
-						</span>
-					</CardHeader>
-					<CardContent className="pt-2">
-						<DokploySingleChart
-							gradientId="dok-mem-grad"
-							colorHex="#10b981"
-							data={history}
-							dataKey="memUsedGB"
-							maxVal={memLimitGB}
-							yTicks={memTicks}
-							legendLabel="Memory (GB)"
-						/>
-					</CardContent>
-				</Card>
-
-				{/* 3. Disk Space */}
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{metrics?.diskSpaceUsed || '0 GB'}</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{metrics?.diskSpaceTotal || '0 GB'}</span>
-						</span>
-					</CardHeader>
-					<CardContent className="pt-2">
-						<DokploySingleChart
-							gradientId="dok-disk-grad"
-							colorHex="#a855f7"
-							data={history}
-							dataKey="diskUsedGB"
-							maxVal={diskTotalGB}
-							yTicks={diskTicks}
-							legendLabel="Disk Space"
-						/>
-					</CardContent>
-				</Card>
-
 function DockerDiskDonutChart({
 	totalStr = '5.45 GB',
 	containersStr = '5.45 GB',
@@ -498,6 +400,102 @@ function DockerDiskDonutChart({
 		</div>
 	);
 }
+
+export function MonitoringCards({metrics, history = []}: MonitoringCardsProps) {
+	// Dynamic Max bounds for Y-Axis domains
+	const lastPoint = history[history.length - 1];
+	const maxMemUsed = Math.max(0, ...(history.map(h => h.memUsedGB || 0)));
+	const maxMemLimit = lastPoint?.memLimitGB || 0;
+	const memLimitGB = Math.max(maxMemLimit, maxMemUsed, 0.5);
+
+	const memTicks = [
+		'0 GB',
+		(memLimitGB * 0.25).toFixed(2) + ' GB',
+		(memLimitGB * 0.5).toFixed(2) + ' GB',
+		(memLimitGB * 0.75).toFixed(2) + ' GB',
+		memLimitGB.toFixed(2) + ' GB',
+	];
+
+	const maxDiskUsed = Math.max(0, ...(history.map(h => h.diskUsedGB || 0)));
+	const maxDiskTotal = lastPoint?.diskTotalGB || 0;
+	const diskTotalGB = Math.max(maxDiskTotal, maxDiskUsed, 10);
+
+	const diskTicks = [
+		'0 GB',
+		(diskTotalGB * 0.25).toFixed(1) + ' GB',
+		(diskTotalGB * 0.5).toFixed(1) + ' GB',
+		(diskTotalGB * 0.75).toFixed(1) + ' GB',
+		diskTotalGB.toFixed(2) + ' GB',
+	];
+
+	return (
+		<div className="flex flex-col gap-6">
+			{/* Dokploy Container Monitoring Grid (2 Columns) */}
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+				{/* 1. CPU Usage */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">CPU Usage</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">{metrics?.cpuPercent?.toFixed(2) || '0.00'}%</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<DokploySingleChart
+							gradientId="dok-cpu-grad"
+							colorHex="#3b82f6"
+							data={history}
+							dataKey="cpu"
+							maxVal={100}
+							yTicks={['0%', '25%', '50%', '75%', '100%']}
+							legendLabel="CPU Usage"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 2. Memory Usage */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Memory Usage</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">{metrics?.memUsage || '0 B'}</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{metrics?.memLimit || '0 B'}</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<DokploySingleChart
+							gradientId="dok-mem-grad"
+							colorHex="#10b981"
+							data={history}
+							dataKey="memUsedGB"
+							maxVal={memLimitGB}
+							yTicks={memTicks}
+							legendLabel="Memory (GB)"
+						/>
+					</CardContent>
+				</Card>
+
+				{/* 3. Disk Space */}
+				<Card className="bg-card border-border shadow-xs">
+					<CardHeader className="flex flex-row items-center justify-between pb-2">
+						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
+						<span className="text-xs font-mono text-muted-foreground">
+							Used: <span className="font-bold text-foreground">{metrics?.diskSpaceUsed || '0 GB'}</span> / Limit:{' '}
+							<span className="font-bold text-foreground">{metrics?.diskSpaceTotal || '0 GB'}</span>
+						</span>
+					</CardHeader>
+					<CardContent className="pt-2">
+						<DokploySingleChart
+							gradientId="dok-disk-grad"
+							colorHex="#a855f7"
+							data={history}
+							dataKey="diskUsedGB"
+							maxVal={diskTotalGB}
+							yTicks={diskTicks}
+							legendLabel="Disk Space"
+						/>
+					</CardContent>
+				</Card>
 
 				{/* 4. Docker Disk Usage */}
 				<Card className="bg-card border-border shadow-xs flex flex-col justify-between">
