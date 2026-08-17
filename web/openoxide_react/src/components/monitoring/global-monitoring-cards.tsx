@@ -593,7 +593,71 @@ export function GlobalMonitoringCards() {
 							const evt = JSON.parse(line.slice(5).trim());
 							if (evt.type === 'stats' && evt.stats) {
 								const stats = extractDockerStats(evt.stats);
-								if (stats.length > 0 && isMounted) setContainersList(stats);
+								if (stats.length > 0 && isMounted) {
+									setContainersList([...stats]);
+
+									let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
+									let blkReadSum = 0, blkWriteSum = 0, netRxSum = 0, netTxSum = 0;
+									let diskUsedSum = 0, diskTotalSum = 0;
+
+									for (const c of stats) {
+										const rawCpu = c.CPUPerc || c.cpu_percent || c.cpuPerc || c.cpu || 0;
+										cpuSum += parseFloat(String(rawCpu).replace('%', '')) || 0;
+
+										const memVal = c.MemUsage || c.mem_usage || c.memUsage || '';
+										const memStr = String(memVal);
+										if (memStr.includes('/')) {
+											const [u, l] = memStr.split('/').map(s => s.trim());
+											memUsedSum += parseBytes(u);
+											const limitBytes = parseBytes(l);
+											if (limitBytes > memLimitSum) {
+												memLimitSum = limitBytes;
+											}
+										}
+
+										const blkVal = c.BlockIO || c.block_io || c.blockIO || '';
+										const blkStr = String(blkVal);
+										if (blkStr.includes('/')) {
+											const [r, w] = blkStr.split('/').map(s => s.trim());
+											blkReadSum += parseBytes(r);
+											blkWriteSum += parseBytes(w);
+										}
+
+										const netVal = c.NetIO || c.net_io || c.netIO || '';
+										const netStr = String(netVal);
+										if (netStr.includes('/')) {
+											const [rx, tx] = netStr.split('/').map(s => s.trim());
+											netRxSum += parseBytes(rx);
+											netTxSum += parseBytes(tx);
+										}
+
+										if (c.SizeRw) diskUsedSum += parseBytes(String(c.SizeRw));
+										if (c.DiskUsed || c.disk_used) diskUsedSum += parseBytes(String(c.DiskUsed || c.disk_used));
+										if ((c.DiskTotal || c.total_disk) && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal || c.total_disk));
+									}
+
+									const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+									const finalMemLimitGB = memLimitSum > memUsedSum ? memLimitSum / (1024 ** 3) : (memUsedSum > 0 ? (memUsedSum * 1.5) / (1024 ** 3) : 1);
+									const finalDiskUsedGB = diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : 0;
+									const finalDiskTotalGB = diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1);
+
+									setHistory(prev => [
+										...prev.slice(-49),
+										{
+											time: timeStr,
+											cpu: cpuSum,
+											memUsedGB: memUsedSum / (1024 ** 3),
+											memLimitGB: finalMemLimitGB,
+											diskUsedGB: finalDiskUsedGB,
+											diskTotalGB: finalDiskTotalGB,
+											dockerDiskGB: finalDiskUsedGB,
+											blockReadMB: blkReadSum / (1024 * 1024),
+											blockWriteMB: blkWriteSum / (1024 * 1024),
+											netRxMB: netRxSum / (1024 * 1024),
+											netTxMB: netTxSum / (1024 * 1024),
+										},
+									]);
+								}
 							}
 						} catch {}
 					}
@@ -623,69 +687,6 @@ export function GlobalMonitoringCards() {
 			netTxMB: number;
 		}>
 	>([]);
-
-	useEffect(() => {
-		if (containersList.length > 0) {
-			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
-			let blkReadSum = 0, blkWriteSum = 0, netRxSum = 0, netTxSum = 0;
-			let diskUsedSum = 0, diskTotalSum = 0;
-
-			for (const c of containersList) {
-				const rawCpu = c.CPUPerc || c.cpu_percent || c.cpuPerc || c.cpu || 0;
-				cpuSum += parseFloat(String(rawCpu).replace('%', '')) || 0;
-
-				const memVal = c.MemUsage || c.mem_usage || c.memUsage || '';
-				const memStr = String(memVal);
-				if (memStr.includes('/')) {
-					const [u, l] = memStr.split('/').map(s => s.trim());
-					memUsedSum += parseBytes(u);
-					if (!memLimitSum) memLimitSum = parseBytes(l);
-				}
-
-				const blkVal = c.BlockIO || c.block_io || c.blockIO || '';
-				const blkStr = String(blkVal);
-				if (blkStr.includes('/')) {
-					const [r, w] = blkStr.split('/').map(s => s.trim());
-					blkReadSum += parseBytes(r);
-					blkWriteSum += parseBytes(w);
-				}
-
-				const netVal = c.NetIO || c.net_io || c.netIO || '';
-				const netStr = String(netVal);
-				if (netStr.includes('/')) {
-					const [rx, tx] = netStr.split('/').map(s => s.trim());
-					netRxSum += parseBytes(rx);
-					netTxSum += parseBytes(tx);
-				}
-
-				if (c.SizeRw) diskUsedSum += parseBytes(String(c.SizeRw));
-				if (c.DiskUsed || c.disk_used) diskUsedSum += parseBytes(String(c.DiskUsed || c.disk_used));
-				if ((c.DiskTotal || c.total_disk) && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal || c.total_disk));
-			}
-
-			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			const finalMemLimitGB = memLimitSum > 0 ? memLimitSum / (1024 ** 3) : (memUsedSum > 0 ? (memUsedSum * 1.5) / (1024 ** 3) : 1);
-			const finalDiskUsedGB = hostDiskSpace?.diskUsedGB || (diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : (diskUsageFormatted.totalBytes / (1024 ** 3)));
-			const finalDiskTotalGB = hostDiskSpace?.diskTotalGB || (diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1));
-
-			setHistory(prev => [
-				...prev.slice(-49),
-				{
-					time: timeStr,
-					cpu: cpuSum,
-					memUsedGB: memUsedSum / (1024 ** 3),
-					memLimitGB: finalMemLimitGB,
-					diskUsedGB: finalDiskUsedGB,
-					diskTotalGB: finalDiskTotalGB,
-					dockerDiskGB: diskUsageFormatted.totalBytes / (1024 ** 3),
-					blockReadMB: blkReadSum / (1024 * 1024),
-					blockWriteMB: blkWriteSum / (1024 * 1024),
-					netRxMB: netRxSum / (1024 * 1024),
-					netTxMB: netTxSum / (1024 * 1024),
-				},
-			]);
-		}
-	}, [containersList, hostDiskSpace, diskUsageFormatted]);
 
 	// ─── Aggregate metrics ────────────────────────────────────────────────────
 	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
