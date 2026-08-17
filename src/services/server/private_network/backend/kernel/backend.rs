@@ -29,16 +29,16 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
     async fn install(&self, plan: &WireGuardInstallPlan<'_>) -> sqlx::Result<String> {
         let local = OsCli::new(self.local);
         let remote = OsCli::new(self.remote);
-        remote
-            .package("wireguard-tools")
-            .install()
-            .run()
-            .await
-            .map_err(|error| {
-                Self::protocol(format!(
-                    "Could not install wireguard-tools on the remote server: {error}"
-                ))
-            })?;
+
+        // Auto-install wireguard-tools on local panel host if 'wg' is missing
+        if local.has_command("wg").run().await.is_err() {
+            let _ = local.package("wireguard-tools").install().run().await;
+        }
+
+        // Auto-install wireguard-tools on remote server if 'wg' is missing
+        if remote.has_command("wg").run().await.is_err() {
+            let _ = remote.package("wireguard-tools").install().run().await;
+        }
 
         OsCli::new(self.remote)
             .firewall()
