@@ -117,7 +117,7 @@ impl ApplicationService {
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(id).await?;
+        let app = self.get_by_id(id).await?;
         let dependencies = self.repo_dependencies.application(id).await?;
         if dependencies.blocks_delete() {
             return Err(sqlx::Error::Protocol(format!(
@@ -136,6 +136,41 @@ impl ApplicationService {
             .remove_for_base_application(id)
             .await
             .map_err(sqlx::Error::Protocol)?;
+
+        let app_name = app.app_name.clone();
+        let server_id = app.server_id;
+        let db_ref = self.db.clone();
+
+        tokio::spawn(async move {
+            let docker_cli = match server_id {
+                Some(sid) => {
+                    if let Ok(executor) = crate::services::application::remote::remote_executor(db_ref.as_ref(), sid).await {
+                        crate::utils::docker::DockerCli::from_remote_executor(executor)
+                    } else {
+                        crate::utils::docker::DockerCli::new_local()
+                    }
+                }
+                None => crate::utils::docker::DockerCli::new_local(),
+            };
+
+            let candidates = [
+                app_name.clone(),
+                format!("{}_app", app_name),
+                format!("{}-app", app_name),
+            ];
+
+            for candidate in &candidates {
+                let _ = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli.container(candidate).stop().run(),
+                ).await;
+                let _ = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli.container(candidate).remove().force().volumes().run(),
+                ).await;
+            }
+        });
+
         self.repo_app.delete(id).await?;
         self.cache.invalidate(&CacheKey::Application(id)).await;
         Ok(())
