@@ -348,6 +348,8 @@ function GlobalDualChart({
 			</div>
 		</div>
 	);
+}
+
 function GlobalDockerDiskDonutChart({
 	totalStr = '5.45 GB',
 	containersStr = '5.45 GB',

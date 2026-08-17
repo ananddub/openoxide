@@ -288,6 +288,8 @@ function DokployDualChart({
 			</div>
 		</div>
 	);
+}
+
 function DockerDiskDonutChart({
 	totalStr = '5.45 GB',
 	containersStr = '5.45 GB',
