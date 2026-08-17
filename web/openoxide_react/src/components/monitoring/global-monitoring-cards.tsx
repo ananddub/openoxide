@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useMemo} from 'react';
 import {Cpu, HardDrive, Database, Disc, Network, Layers} from 'lucide-react';
 import {Card, CardContent, CardHeader, CardTitle} from '#/components/ui/card';
 import {Progress} from '#/components/ui/progress';
