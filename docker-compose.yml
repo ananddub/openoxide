@@ -9,6 +9,14 @@ services:
 
     ports:
       - "4000:4000"
+      - "51820:51820/udp"
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+
+    devices:
+      - /dev/net/tun:/dev/net/tun
 
     volumes:
       # Panel database + runtime data (backups, logs, traefik config, etc.)
@@ -22,6 +30,7 @@ services:
       PORT: "4000"
       HOST: "0.0.0.0"
       DATABASE_URL: "sqlite:///app/data/db.sqlite3"
+      MALLOC_ARENA_MAX: "2"
 
       # ── Secrets — override all of these before going to production ─────────
       SECRET_KEY: "change_me_in_production"

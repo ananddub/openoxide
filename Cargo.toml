@@ -96,3 +96,4 @@ lto = "thin"           # Thin LTO — fast parallel link-time optimization
 codegen-units = 8     # 16 parallel codegen units for fast multi-core compilation
 panic = "abort"        # unwinding code hata deta hai
 strip = true           # debug symbols binary se remove karta hai
+overflow-checks = false  # overflow checks hata deta hai

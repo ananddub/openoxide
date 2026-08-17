@@ -135,6 +135,7 @@ impl DatabaseService {
             DatabaseKind::Libsql => self.repo_libsql.update(id, &input).await?,
         }
 
+        self.cache.invalidate(&CacheKey::Database(id)).await;
         self.get_by_id(kind, id).await
     }
 

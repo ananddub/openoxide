@@ -147,11 +147,11 @@ export function useProjectDetails(projectId: number) {
 			if (String(db.project_id || db.projectId || projectId) === String(projectId)) {
 				const envId = db.environment_id ?? db.environmentId;
 				if (activeEnvId === null || envId === undefined || envId === null || Number(envId) === Number(activeEnvId)) {
-					const key = `DATABASE-${db.id}`;
+					const dbKind = db.kind || db.type || db.db_kind || db.dbKind || 'postgres';
+					const key = `DATABASE-${dbKind}-${db.id}`;
 					if (!seenKeys.has(key)) {
 						seenKeys.add(key);
 						const status = db.app_status || db.status || 'STOPPED';
-						const dbKind = db.kind || db.type || 'postgres';
 						result.push({
 							id: db.id,
 							type: 'DATABASE',
@@ -178,11 +178,11 @@ export function useProjectDetails(projectId: number) {
 			const isDb = sType === 'DATABASE' || sType.includes('DB') || !!s.db_kind || !!s.dbKind;
 			const isCompose = sType === 'COMPOSE' || sType.includes('COMPOSE');
 			const normalizedType = isDb ? 'DATABASE' : isCompose ? 'COMPOSE' : 'APP';
-			const key = `${normalizedType}-${s.id}`;
+			const dbKind = isDb ? (s.db_kind || s.dbKind || 'postgres') : undefined;
+			const key = isDb ? `DATABASE-${dbKind}-${s.id}` : `${normalizedType}-${s.id}`;
 
 			if (!seenKeys.has(key)) {
 				seenKeys.add(key);
-				const dbKind = isDb ? (s.db_kind || s.dbKind || 'postgres') : undefined;
 				result.push({
 					id: s.id,
 					type: normalizedType,

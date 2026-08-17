@@ -60,14 +60,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 
 	return (
 		<>
-			<Link
-				to="/projects/$id"
-				params={{ id: String(project.id) }}
-				preload="intent"
-				className="group flex cursor-pointer flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[200px] max-w-[340px] w-full text-left"
-			>
+			<div className="group relative flex flex-col justify-between rounded-xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-md min-h-[200px] max-w-[340px] w-full text-left">
+				{/* Clickable Card Overlay */}
+				<Link
+					to="/projects/$id"
+					params={{ id: String(project.id) }}
+					preload="intent"
+					className="absolute inset-0 z-0 rounded-xl"
+					aria-label={`Open project ${project.name}`}
+				/>
+
 				{/* Top Body Section */}
-				<div className="flex flex-col gap-3.5 min-w-0">
+				<div className="relative z-10 flex flex-col gap-3.5 min-w-0 pointer-events-none">
 					{/* Card Header */}
 					<div className="flex items-start justify-between gap-2.5">
 						<div className="flex items-center gap-3 min-w-0">
@@ -85,14 +89,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						</div>
 
 						{/* Action Dropdown Menu */}
-						<div onClick={(e) => e.stopPropagation()} className="shrink-0">
+						<div className="pointer-events-auto shrink-0">
 							<DropdownMenu>
 								<DropdownMenuTrigger
 									render={
 										<Button
 											variant="ghost"
 											size="icon"
-											onClick={(e) => e.stopPropagation()}
 											className="size-7 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg focus-visible:ring-0"
 										>
 											<MoreHorizontal className="size-4" />
@@ -132,7 +135,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 
 					{/* Tag Badges List */}
 					{projectTagNames.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 pt-0.5">
+						<div className="flex flex-wrap gap-1.5 pt-0.5 pointer-events-auto">
 							{projectTagNames.map((tag) => (
 								<TagBadge key={tag} name={tag} color={getTagColor(tag)} size="sm" />
 							))}
@@ -141,7 +144,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 				</div>
 
 				{/* Bottom Stats Footer */}
-				<div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground">
+				<div className="relative z-10 mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground pointer-events-none">
 					<div className="flex items-center gap-1.5 font-mono">
 						<span className="font-bold text-foreground">{totalServices}</span>
 						<span>{totalServices === 1 ? 'service' : 'services'}</span>
@@ -151,7 +154,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
 						<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>
 					</div>
 				</div>
-			</Link>
+			</div>
 
 			{/* Edit/Update Dialog */}
 			<HandleProjectDialog

@@ -110,38 +110,50 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
 
-	// Auto-clear localStatusOverride and sync Zustand store once backend query syncs with backend state
+	// Auto-clear localStatusOverride when live/store status updates or safety timeout occurs
 	useEffect(() => {
-		if (liveDb) {
-			const fetchedStatus = ((liveDb as any).status || (liveDb as any).app_status || '').toUpperCase();
-			const dbKind = (detectedKind || currentKind || targetKind || 'postgres').toLowerCase();
-			if (fetchedStatus && (storeDb as any)?.status !== fetchedStatus) {
-				(useAppStore.getState() as any).updateServiceStatus?.(dbId, fetchedStatus, dbKind);
-			}
-			if (localStatusOverride) {
-				const overrideUpper = (localStatusOverride || '').toUpperCase();
-				if (
-					fetchedStatus === overrideUpper ||
-					(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
-					(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE')) ||
-					(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
-				) {
-					setLocalStatusOverride(null);
-				}
+		const fetchedStatus = (
+			(liveDb as any)?.status ||
+			(liveDb as any)?.app_status ||
+			(storeDb as any)?.status ||
+			(storeDb as any)?.app_status ||
+			''
+		).toUpperCase();
+
+		if (localStatusOverride && fetchedStatus) {
+			const overrideUpper = localStatusOverride.toUpperCase();
+			if (
+				fetchedStatus === overrideUpper ||
+				(overrideUpper === 'DEPLOYING' && ['BUILDING', 'QUEUED', 'PREPARING', 'DEPLOYING', 'RUNNING', 'HEALTHY', 'SUCCESS', 'DONE'].includes(fetchedStatus)) ||
+				(overrideUpper === 'STARTING' && ['RUNNING', 'HEALTHY', 'STARTING'].includes(fetchedStatus)) ||
+				(overrideUpper === 'STOPPING' && ['STOPPED', 'IDLE', 'STOPPING'].includes(fetchedStatus)) ||
+				(overrideUpper === 'CANCELLING' && ['CANCELLED', 'STOPPED', 'IDLE'].includes(fetchedStatus))
+			) {
+				setLocalStatusOverride(null);
 			}
 		}
-	}, [liveDb, localStatusOverride, dbId, detectedKind, currentKind, targetKind, (storeDb as any)?.status]);
+	}, [liveDb, storeDb, localStatusOverride]);
+
+	useEffect(() => {
+		if (localStatusOverride) {
+			const timer = setTimeout(() => setLocalStatusOverride(null), 4000);
+			return () => clearTimeout(timer);
+		}
+	}, [localStatusOverride]);
 
 	const raw = liveDb || storeDb;
 	const database = useMemo(() => {
 		if (!raw) return null;
-		const effectiveStatus = localStatusOverride || (raw as any).status || (raw as any).app_status || (storeDb as any)?.status || 'STOPPED';
+		const liveStatus = (liveDb as any)?.status || (liveDb as any)?.app_status;
+		const storeStatus = (storeDb as any)?.status || (storeDb as any)?.app_status;
+		const rawStatus = (raw as any).status || (raw as any).app_status;
+		const effectiveStatus = localStatusOverride || liveStatus || storeStatus || rawStatus || 'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
 			app_status: effectiveStatus,
 		};
-	}, [raw, storeDb, localStatusOverride]);
+	}, [raw, liveDb, storeDb, localStatusOverride]);
 
 	const statusUpper = (database?.status || database?.app_status || (database as any)?.application_status || '').toUpperCase();
 	const isDeployed = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'COMPLETED', 'UP', 'ACTIVE', 'OK'].includes(statusUpper);

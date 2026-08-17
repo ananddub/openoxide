@@ -14,38 +14,19 @@ WORKDIR /usr/src/openoxide
 
 # ── dependency pre-cache ──────────────────────────────────────────────────────
 COPY Cargo.toml Cargo.lock ./
-COPY crates/html/rt/Cargo.toml            crates/html/rt/Cargo.toml
-COPY crates/html/macro/Cargo.toml         crates/html/macro/Cargo.toml
-COPY crates/sh_macros/Cargo.toml          crates/sh_macros/Cargo.toml
-COPY crates/auto/route/Cargo.toml         crates/auto/route/Cargo.toml
-COPY crates/auto/route_macros/Cargo.toml  crates/auto/route_macros/Cargo.toml
-COPY crates/auto/socket/Cargo.toml        crates/auto/socket/Cargo.toml
-COPY crates/auto/socket_macros/Cargo.toml crates/auto/socket_macros/Cargo.toml
-COPY crates/os/Cargo.toml                 crates/os/Cargo.toml
-COPY crates/todo-test/Cargo.toml          crates/todo-test/Cargo.toml
-COPY agent/Cargo.toml                     agent/Cargo.toml
-
-RUN for manifest in \
-        crates/html/rt crates/html/macro crates/sh_macros \
-        crates/auto/route crates/auto/route_macros \
-        crates/auto/socket crates/auto/socket_macros \
-        crates/os agent ; do \
-    mkdir -p "$manifest/src" && echo "pub fn dummy() {}" > "$manifest/src/lib.rs" ; \
-    done && \
-    # todo-test: default-run = "openoxide-todo-test" maps to src/main.rs (implicit binary)
-    mkdir -p crates/todo-test/src && \
-    echo "fn main() {}" > crates/todo-test/src/main.rs && \
-    mkdir -p src && echo "fn main() {}" > src/main.rs
-
-RUN cargo fetch
-
+COPY crates/ crates/
+COPY agent/   agent/
 COPY proto/   proto/
 COPY build.rs build.rs
 COPY db/      db/
 COPY src/     src/
-COPY crates/  crates/
-COPY agent/   agent/
 COPY data/db.sqlite3 data/db.sqlite3
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo fetch
+
+RUN --mount=type=cache,target=/usr/src/openoxide/target \
+    rm -rf /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/deps/*html_rt* /usr/src/openoxide/target/release/deps/*html_rt*
 
 ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
 RUN --mount=type=cache,target=/usr/local/cargo/registry \

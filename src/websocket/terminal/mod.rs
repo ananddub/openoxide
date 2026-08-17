@@ -70,10 +70,27 @@ impl TerminalSocket {
                 if let Some(target) = container {
                     let k = key_str.to_string();
                     tokio::spawn(async move {
+                        use os::exec::IntoCommand;
+                        use sh_macros::sh;
+
                         let executor = crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
                         let os = crate::utils::os::OsCli::new(&executor);
-                        let cmd = format!("for p in /proc/[0-9]*; do if grep -q OPENOXIDE_SOCKET_ID={} $p/environ 2>/dev/null; then kill -9 ${{p#/proc/}} 2>/dev/null; fi; done", k);
-                        let _ = os.docker().containers().exec(target).run(["sh", "-c", &cmd]).await;
+
+                        let proc_script_ir = sh!(
+                            for p in ["/proc/[0-9]*"] {
+                                if grep!("-q", word!["OPENOXIDE_SOCKET_ID=", dynamic!(k)], word!["$p", "/environ"]) {
+                                    os.process_api().kill_pid("${p#/proc/}");
+                                }
+                            }
+                        );
+
+                        let bash_script = proc_script_ir
+                            .iter()
+                            .map(|step| step.to_bash())
+                            .collect::<Vec<_>>()
+                            .join("\n");
+
+                        let _ = os.docker().containers().exec(target).run(["sh", "-c", &bash_script]).await;
                     });
                 }
             }

@@ -18,7 +18,7 @@ impl LibsqlRepository {
         sqlx::query_as!(
             DatabaseRecord,
             r#"SELECT 'libsql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", external_port,
+               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
                network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
                FROM libsql_dbs WHERE id = ?"#,
@@ -73,10 +73,12 @@ impl LibsqlRepository {
         let args = serialize_json_string_vec(input.args.as_ref())?;
         let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?;
         sqlx::query!(
-            "UPDATE libsql_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), external_port = COALESCE(?, external_port), external_grpc_port = COALESCE(?, external_grpc_port), external_admin_port = COALESCE(?, external_admin_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id), network_ids = COALESCE(?, network_ids), detach_rustploy_network = COALESCE(?, detach_rustploy_network) WHERE id = ?",
+            "UPDATE libsql_dbs SET name = COALESCE(?, name), description = COALESCE(?, description), docker_image = COALESCE(?, docker_image), database_user = COALESCE(?, database_user), database_password = COALESCE(?, database_password), external_port = COALESCE(?, external_port), external_grpc_port = COALESCE(?, external_grpc_port), external_admin_port = COALESCE(?, external_admin_port), command = COALESCE(?, command), args = COALESCE(?, args), env_var = COALESCE(?, env_var), memory_reservation = COALESCE(?, memory_reservation), memory_limit = COALESCE(?, memory_limit), cpu_reservation = COALESCE(?, cpu_reservation), cpu_limit = COALESCE(?, cpu_limit), replicas = COALESCE(?, replicas), server_id = COALESCE(?, server_id), network_ids = COALESCE(?, network_ids), detach_rustploy_network = COALESCE(?, detach_rustploy_network) WHERE id = ?",
             input.name,
             input.description,
             input.docker_image,
+            input.database_user,
+            input.database_password,
             input.external_port,
             input.external_grpc_port,
             input.external_admin_port,

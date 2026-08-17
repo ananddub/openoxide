@@ -77,7 +77,7 @@ export function DatabaseDeploymentsTab({
 				if (sessionRaw) {
 					try {
 						const parsed = JSON.parse(sessionRaw);
-						accessToken = parsed.state?.accessToken || parsed.accessToken || '';
+						accessToken = parsed?.tokens?.access_token || parsed?.state?.accessToken || parsed?.accessToken || '';
 					} catch {}
 				}
 

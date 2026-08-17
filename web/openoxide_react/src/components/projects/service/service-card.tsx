@@ -283,15 +283,21 @@ export function ServiceCard({
 
 	return (
 		<>
-			<Link
-				to={routeConfig.to as any}
-				params={routeConfig.params as any}
-				search={(routeConfig as any).search}
-				preload="intent"
+			<div
 				onContextMenu={handleContextMenu}
 				className="w-full bg-card border border-border hover:border-primary/40 transition-all duration-200 rounded-xl p-4 flex flex-col justify-between gap-3.5 cursor-pointer group shadow-2xs block text-left relative overflow-hidden"
 			>
-				<div className="flex items-center justify-between gap-3">
+				{/* Clickable Card Overlay */}
+				<Link
+					to={routeConfig.to as any}
+					params={routeConfig.params as any}
+					search={(routeConfig as any).search}
+					preload="intent"
+					className="absolute inset-0 z-0 rounded-xl"
+					aria-label={`Open ${name}`}
+				/>
+
+				<div className="relative z-10 flex items-center justify-between gap-3 pointer-events-none">
 					<div className="flex items-center gap-3 min-w-0">
 						<div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 relative border border-border/40 text-foreground">
 							{getIcon()}
@@ -303,97 +309,92 @@ export function ServiceCard({
 						</div>
 					</div>
 
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<button
-									onClick={(e) => e.stopPropagation()}
-									className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
-								>
-									<MoreVertical className="size-4 text-foreground" />
-								</button>
-							}
-						/>
-						<DropdownMenuContent
-							align="end"
-							className="w-40 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<DropdownMenuItem
-								onClick={handleNavigate}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+					<div className="pointer-events-auto shrink-0">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<button
+										className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+									>
+										<MoreVertical className="size-4 text-foreground" />
+									</button>
+								}
+							/>
+							<DropdownMenuContent
+								align="end"
+								className="w-40 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
 							>
-								<Eye className="size-3.5 text-foreground" />
-								View details
-							</DropdownMenuItem>
-
-							{/* Start Option: Disabled if running, starting/deploying, or stopping */}
-							<DropdownMenuItem
-								disabled={isRunning || isStartingOrDeploying || isStopping}
-								onClick={handleStart}
-								className={cn(
-									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
-								)}
-							>
-								<Play className="size-3.5 text-foreground" />
-								Start
-							</DropdownMenuItem>
-
-							{/* Stop/Cancel Option:
-							    1. When isStopping: disabled Stop
-							    2. When isStartingOrDeploying: Cancel (active)
-							    3. When isRunning: Stop (active)
-							    4. When isStopped: Stop (disabled)
-							*/}
-							{isStartingOrDeploying ? (
 								<DropdownMenuItem
-									onClick={handleCancel}
+									onClick={handleNavigate}
 									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
 								>
-									<XCircle className="size-3.5 text-foreground" />
-									Cancel
+									<Eye className="size-3.5 text-foreground" />
+									View details
 								</DropdownMenuItem>
-							) : (
+
+								{/* Start Option: Disabled if running, starting/deploying, or stopping */}
 								<DropdownMenuItem
-									disabled={isStopped || isStopping}
-									onClick={handleStop}
+									disabled={isRunning || isStartingOrDeploying || isStopping}
+									onClick={handleStart}
 									className={cn(
 										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-										(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
+										(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
 									)}
 								>
-									<Square className="size-3.5 text-foreground" />
-									Stop
+									<Play className="size-3.5 text-foreground" />
+									Start
 								</DropdownMenuItem>
-							)}
 
-							{/* Deploy Option: Disabled while starting, deploying, or stopping */}
-							<DropdownMenuItem
-								disabled={isStartingOrDeploying || isStopping}
-								onClick={handleDeploy}
-								className={cn(
-									'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-									(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
+								{/* Stop/Cancel Option */}
+								{isStartingOrDeploying ? (
+									<DropdownMenuItem
+										onClick={handleCancel}
+										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
+									>
+										<XCircle className="size-3.5 text-foreground" />
+										Cancel
+									</DropdownMenuItem>
+								) : (
+									<DropdownMenuItem
+										disabled={isStopped || isStopping}
+										onClick={handleStop}
+										className={cn(
+											'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+											(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
+										)}
+									>
+										<Square className="size-3.5 text-foreground" />
+										Stop
+									</DropdownMenuItem>
 								)}
-							>
-								<Rocket className="size-3.5 text-foreground" />
-								Deploy
-							</DropdownMenuItem>
 
-							<DropdownMenuSeparator className="bg-border/60" />
-							<DropdownMenuItem
-								onClick={handleDelete}
-								className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10"
-							>
-								<Trash2 className="size-3.5 text-destructive" />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+								{/* Deploy Option */}
+								<DropdownMenuItem
+									disabled={isStartingOrDeploying || isStopping}
+									onClick={handleDeploy}
+									className={cn(
+										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
+										(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
+									)}
+								>
+									<Rocket className="size-3.5 text-foreground" />
+									Deploy
+								</DropdownMenuItem>
+
+								<DropdownMenuSeparator className="bg-border/60" />
+								<DropdownMenuItem
+									onClick={handleDelete}
+									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10"
+								>
+									<Trash2 className="size-3.5 text-destructive" />
+									Delete
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				</div>
 
-				<div className="flex items-center justify-between border-t border-border/40 pt-2.5">
+				<div className="relative z-10 flex items-center justify-between border-t border-border/40 pt-2.5 pointer-events-none">
 					<span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
 						<span className={cn('size-1.5 rounded-full', getStatusDotColor(status))} />
 						{status?.toLowerCase() || 'idle'}
@@ -405,7 +406,7 @@ export function ServiceCard({
 						})}
 					</span>
 				</div>
-			</Link>
+			</div>
 
 			{/* Custom Right-Click Context Menu */}
 			{contextMenu && (

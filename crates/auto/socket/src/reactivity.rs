@@ -117,7 +117,7 @@ fn endpoint_cache() -> &'static moka::future::Cache<String, serde_json::Value> {
     LIVE_ENDPOINT_CACHE.get_or_init(|| {
         moka::future::Cache::builder()
             .max_capacity(10_000)
-            .time_to_live(std::time::Duration::from_secs(600))
+            .time_to_live(std::time::Duration::from_secs(60))
             .support_invalidation_closures()
             .build()
     })

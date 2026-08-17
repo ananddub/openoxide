@@ -18,7 +18,7 @@ import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import type {DatabaseResponse} from '#/types/api-helpers';
-
+import { useAppStore } from '#/stores/app-store';
 interface DatabaseGeneralTabProps {
 	database: DatabaseResponse | null;
 	actionLoading?: string | null;
@@ -51,6 +51,8 @@ export function DatabaseGeneralTab({
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
 
+	const servers = useAppStore((state) => state.servers || []);
+
 	const dbStatusStr = database?.status || database?.app_status || '';
 	const rawDbStatus = dbStatusStr.toUpperCase();
 	const isStoppingOrCancelling = rawDbStatus === 'STOPPING' || rawDbStatus === 'CANCELLING' || propActionLoading === 'stop' || propActionLoading === 'cancel';
@@ -66,26 +68,42 @@ export function DatabaseGeneralTab({
 	const isLibsql = kind.includes('libsql');
 
 	const rawDb = database as unknown as Record<string, unknown>;
-	const dbUser = database?.database_user || (isRedis ? 'default' : 'admin');
-	const dbName = database?.database_name || database?.name || '';
+	const defaultUser = kind.includes('postgres')
+		? 'postgres'
+		: kind.includes('mysql') || kind.includes('maria') || kind.includes('mongo')
+		? 'root'
+		: isRedis
+		? 'default'
+		: 'admin';
+
+	const dbUser = String(database?.database_user || rawDb?.database_user || rawDb?.databaseUser || rawDb?.db_user || defaultUser);
+	const dbName = String(database?.database_name || rawDb?.database_name || rawDb?.databaseName || database?.name || '');
 	const rawPassword = String(
 		rawDb?.database_password ||
 		rawDb?.databasePassword ||
 		rawDb?.password ||
 		rawDb?.database_root_password ||
 		rawDb?.db_password ||
+		rawDb?.postgres_password ||
+		rawDb?.mysql_password ||
+		rawDb?.mongo_password ||
 		''
 	);
 	const currentPassword = rawPassword;
 
+	const targetServer = servers.find((s: any) => String(s.id) === String(database?.server_id));
+	const serverIp = targetServer?.ip_address || targetServer?.ip || (typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1');
+
 	const internalPort = kind.includes('mysql') || kind.includes('maria') ? 3306 : kind.includes('mongo') ? 27017 : isRedis ? 6379 : isLibsql ? 8080 : 5432;
 	const externalPort = database?.external_port || undefined;
 	const host = database?.app_name || database?.name || 'localhost';
-	const serverIp = database?.server_id ? `server-${database.server_id}` : 'localhost';
 
 	const dbNamePath = isRedis || isLibsql ? '' : `/${dbName || 'db'}`;
-	const internalConnStr = `${kind}://${dbUser}:${currentPassword}@${host}:${internalPort}${dbNamePath}`;
-	const externalConnStr = `${kind}://${dbUser}:${currentPassword}@${serverIp}:${externalPort || internalPort}${dbNamePath}`;
+	const userAuthPart = isRedis
+		? (currentPassword ? `:${currentPassword}` : '')
+		: `${dbUser}:${currentPassword}`;
+	const internalConnStr = `${kind}://${userAuthPart}@${host}:${internalPort}${dbNamePath}`;
+	const externalConnStr = `${kind}://${userAuthPart}@${serverIp}:${externalPort || internalPort}${dbNamePath}`;
 
 	// Mutations for patching password & external port
 	const patchPostgres = $api.useMutation('patch', '/postgres/{id}');
@@ -368,7 +386,7 @@ export function DatabaseGeneralTab({
 									<Input
 										readOnly
 										type={showPassword ? 'text' : 'password'}
-										value={showPassword ? (currentPassword || 'No password set') : (currentPassword || '••••••••••••')}
+										value={currentPassword || ''}
 										className="font-mono text-xs bg-muted/30 h-9"
 									/>
 									<Button

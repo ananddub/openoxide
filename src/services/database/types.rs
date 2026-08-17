@@ -74,6 +74,7 @@ pub struct DatabaseRecord {
     pub docker_image: String,
     pub database_name: Option<String>,
     pub database_user: Option<String>,
+    pub database_password: Option<String>,
     pub external_port: Option<i64>,
     pub env_var: Option<String>,
     pub memory_reservation: Option<String>,

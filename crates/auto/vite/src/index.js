@@ -17,6 +17,15 @@ function findManifest(start) {
 
 function loadManifest(root, options) {
   const cargo = options.manifestPath ? resolve(root, options.manifestPath) : findManifest(root);
+  const targetBin = resolve(dirname(cargo), "target", "debug", options.manifestBin);
+  try {
+    if (existsSync(targetBin)) {
+      const stdout = execFileSync(targetBin, [], { encoding: "utf8" });
+      return JSON.parse(stdout);
+    }
+  } catch (e) {
+    // Fallback to cargo run if direct binary execution fails
+  }
   const stdout = execFileSync(
     "cargo",
     ["run", "--quiet", "--manifest-path", cargo, "--bin", options.manifestBin],
