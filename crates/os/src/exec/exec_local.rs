@@ -27,12 +27,13 @@ impl LocalExecutor {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
+        let resolved = resolve_binary_path(program);
         let mut c = if self.non_interactive_sudo {
             let mut command = Command::new("sudo");
-            command.args(["-n", "--", program]);
+            command.args(["-n", "--", &resolved]);
             command
         } else {
-            Command::new(program)
+            Command::new(&resolved)
         };
         c.args(args);
         c
@@ -277,4 +278,31 @@ fn io_command(program: &str, source: std::io::Error) -> ExecError {
         program: program.into(),
         source,
     }
+}
+
+fn resolve_binary_path(program: &str) -> String {
+    if std::path::Path::new(program).is_absolute() {
+        return program.to_string();
+    }
+    let candidates = [
+        program.to_string(),
+        format!("/usr/bin/{program}"),
+        format!("/usr/local/bin/{program}"),
+        format!("/sbin/{program}"),
+        format!("/usr/sbin/{program}"),
+    ];
+    for candidate in &candidates {
+        if std::path::Path::new(candidate).exists() {
+            return candidate.clone();
+        }
+    }
+    if let Ok(path_var) = std::env::var("PATH") {
+        for dir in std::env::split_paths(&path_var) {
+            let full_path = dir.join(program);
+            if full_path.exists() {
+                return full_path.to_string_lossy().to_string();
+            }
+        }
+    }
+    program.to_string()
 }
