@@ -101,7 +101,7 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 	};
 }
 
-const DISABLE_METRICS = true; // Temporary disabled as requested
+const DISABLE_METRICS = false;
 
 export function useContainerMonitoring(id: number, entityType: MonitoringEntityType = 'application') {
 	// All hooks declared unconditionally at the top — never reorder these

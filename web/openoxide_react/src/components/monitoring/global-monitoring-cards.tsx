@@ -94,9 +94,9 @@ export function GlobalMonitoringCards() {
 
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);
 
-	// SSE live stream — disabled for now
+	// SSE live stream
 	useEffect(() => {
-		const DISABLE_METRICS = true;
+		const DISABLE_METRICS = false;
 		if (DISABLE_METRICS) return;
 		const token = getAccessToken();
 		let isMounted = true;
