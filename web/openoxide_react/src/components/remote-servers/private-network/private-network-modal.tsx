@@ -442,9 +442,6 @@ export function PrivateNetworkModal({
 							)}
 						</>
 					)}
-					<Button variant="outline" onClick={onClose} disabled={busy}>
-						Cancel
-					</Button>
 					<Button
 						onClick={() => save(mode === 'MANAGED_WIREGUARD')}
 						disabled={busy}>
