@@ -33,26 +33,30 @@ function formatBytes(bytes: number): string {
 
 type DockerStat = Record<string, unknown>;
 
+function isStatObject(x: any): boolean {
+	if (!x || typeof x !== 'object') return false;
+	return Boolean(
+		x.CPUPerc || x.cpu_percent || x.cpuPerc || x.cpu ||
+		x.MemUsage || x.mem_usage || x.memPerc || x.MemPerc ||
+		x.Container || x.container || x.name || x.container_name || x.ID || x.id
+	);
+}
+
 /** Extract one or more Docker stat objects from an SSE stats payload */
 function extractDockerStats(payload: unknown): DockerStat[] {
 	if (!payload) return [];
 
-	// Already a clean array of stat objects
 	if (Array.isArray(payload)) {
-		return (payload as DockerStat[]).filter(x => x.CPUPerc || x.MemUsage);
+		return (payload as DockerStat[]).filter(isStatObject);
 	}
 
-	const obj = payload as DockerStat;
-
-	// Already a clean stat object
-	if (obj.CPUPerc || obj.MemUsage) return [obj];
+	if (isStatObject(payload)) return [payload as DockerStat];
 
 	// Raw ANSI-wrapped string → strip + find JSON lines
-	const rawStr = typeof obj.raw === 'string' ? obj.raw : '';
+	const rawStr = typeof (payload as any)?.raw === 'string' ? (payload as any).raw : (typeof payload === 'string' ? payload : '');
 	if (rawStr) {
 		const stripped = stripAnsi(rawStr);
 		const results: DockerStat[] = [];
-		// Each docker stat is one JSON object per line
 		for (const chunk of stripped.split('\n')) {
 			const trimmed = chunk.trim();
 			const start = trimmed.indexOf('{');
@@ -60,7 +64,7 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 			if (start === -1 || end === -1) continue;
 			try {
 				const parsed = JSON.parse(trimmed.slice(start, end + 1)) as DockerStat;
-				if (parsed.CPUPerc || parsed.MemUsage || parsed.Container) {
+				if (isStatObject(parsed)) {
 					results.push(parsed);
 				}
 			} catch {}
@@ -627,31 +631,36 @@ export function GlobalMonitoringCards() {
 			let diskUsedSum = 0, diskTotalSum = 0;
 
 			for (const c of containersList) {
-				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
-				const mem = String(c.MemUsage || '');
-				if (mem.includes('/')) {
-					const [u, l] = mem.split('/').map(s => s.trim());
+				const rawCpu = c.CPUPerc || c.cpu_percent || c.cpuPerc || c.cpu || 0;
+				cpuSum += parseFloat(String(rawCpu).replace('%', '')) || 0;
+
+				const memVal = c.MemUsage || c.mem_usage || c.memUsage || '';
+				const memStr = String(memVal);
+				if (memStr.includes('/')) {
+					const [u, l] = memStr.split('/').map(s => s.trim());
 					memUsedSum += parseBytes(u);
 					if (!memLimitSum) memLimitSum = parseBytes(l);
 				}
 
-				const blk = String(c.BlockIO || '');
-				if (blk.includes('/')) {
-					const [r, w] = blk.split('/').map(s => s.trim());
+				const blkVal = c.BlockIO || c.block_io || c.blockIO || '';
+				const blkStr = String(blkVal);
+				if (blkStr.includes('/')) {
+					const [r, w] = blkStr.split('/').map(s => s.trim());
 					blkReadSum += parseBytes(r);
 					blkWriteSum += parseBytes(w);
 				}
 
-				const net = String(c.NetIO || '');
-				if (net.includes('/')) {
-					const [rx, tx] = net.split('/').map(s => s.trim());
+				const netVal = c.NetIO || c.net_io || c.netIO || '';
+				const netStr = String(netVal);
+				if (netStr.includes('/')) {
+					const [rx, tx] = netStr.split('/').map(s => s.trim());
 					netRxSum += parseBytes(rx);
 					netTxSum += parseBytes(tx);
 				}
 
 				if (c.SizeRw) diskUsedSum += parseBytes(String(c.SizeRw));
-				if (c.DiskUsed) diskUsedSum += parseBytes(String(c.DiskUsed));
-				if (c.DiskTotal && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal));
+				if (c.DiskUsed || c.disk_used) diskUsedSum += parseBytes(String(c.DiskUsed || c.disk_used));
+				if ((c.DiskTotal || c.total_disk) && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal || c.total_disk));
 			}
 
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
