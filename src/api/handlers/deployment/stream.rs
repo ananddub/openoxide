@@ -223,15 +223,25 @@ fn docker_stats_event(bytes: Vec<u8>) -> Event {
     let raw = String::from_utf8_lossy(&bytes);
     let clean = strip_ansi(raw.trim());
 
-    // Find the JSON object boundaries after stripping ANSI codes
-    let json_str = if let (Some(start), Some(end)) = (clean.find('{'), clean.rfind('}')) {
-        &clean[start..=end]
-    } else {
-        clean.trim()
-    };
+    let mut items = Vec::new();
+    for line in clean.lines() {
+        let trimmed = line.trim();
+        if let (Some(start), Some(end)) = (trimmed.find('{'), trimmed.rfind('}')) {
+            if start <= end {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&trimmed[start..=end]) {
+                    items.push(parsed);
+                }
+            }
+        }
+    }
 
-    let value = serde_json::from_str::<serde_json::Value>(json_str)
-        .unwrap_or_else(|_| json!({ "raw": raw }));
+    let value = if items.len() == 1 {
+        items.remove(0)
+    } else if !items.is_empty() {
+        json!(items)
+    } else {
+        json!({ "raw": raw })
+    };
 
     Event::default().event("stats").data(json_payload(json!({
         "type": "stats",

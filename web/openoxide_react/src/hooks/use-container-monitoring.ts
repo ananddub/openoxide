@@ -49,10 +49,25 @@ function stripAnsi(str: string): string {
 
 function parseStats(raw: unknown): ContainerMetrics | null {
 	if (!raw) return null;
-	let s = raw as Record<string, unknown>;
 
-	// Docker streaming mode wraps JSON in ANSI terminal codes → {raw: "\x1B[H{...}\x1B[K\n"}
-	// Strip codes and re-parse the embedded JSON
+	let target: unknown = raw;
+	if (Array.isArray(raw)) {
+		target = raw[0];
+	}
+
+	if (typeof target === 'string') {
+		const stripped = stripAnsi(target).trim();
+		const start = stripped.indexOf('{');
+		const end = stripped.lastIndexOf('}');
+		if (start !== -1 && end !== -1) {
+			try {
+				target = JSON.parse(stripped.slice(start, end + 1));
+			} catch {}
+		}
+	}
+
+	let s = (target || {}) as Record<string, unknown>;
+
 	if (typeof s.raw === 'string') {
 		const stripped = stripAnsi(s.raw).trim();
 		const start = stripped.indexOf('{');
@@ -60,9 +75,7 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 		if (start !== -1 && end !== -1) {
 			try {
 				s = JSON.parse(stripped.slice(start, end + 1));
-				console.log('[Monitoring] 🧹 Extracted JSON from raw ANSI output:', s);
 			} catch {
-				console.warn('[Monitoring] ⚠️ Could not extract JSON from raw:', stripped);
 				return null;
 			}
 		} else {
