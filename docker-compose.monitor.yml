@@ -33,7 +33,7 @@ services:
       SERVER_ID: "5"
       MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
       GRPC_PORT: "50051"
-      REFRESH_RATE: "60"
+      REFRESH_RATE: "2"
       RETENTION_DAYS: "7"
       OPENOXIDE_SERVER_URL: "http://127.0.0.1:4000"
       METRICS_TOKEN: "change_me"

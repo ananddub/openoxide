@@ -58,7 +58,7 @@ impl Config {
             database_url: env::var("MONITOR_DATABASE_URL")
                 .unwrap_or_else(|_| "sqlite://monitor.db".to_string()),
             grpc_port: parse_var("GRPC_PORT", 50051u16)?,
-            refresh_rate: parse_var("REFRESH_RATE", 60u64)?,
+            refresh_rate: parse_var("REFRESH_RATE", 2u64)?,
             retention_days: parse_var("RETENTION_DAYS", 7i64)?,
             panel_url: env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| env::var("RUSTPLOY_SERVER_URL"))
