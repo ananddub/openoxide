@@ -47,35 +47,16 @@ ARG PACK_VERSION=0.40.9
 
 # ── System packages ───────────────────────────────────────────────────────────
 RUN apk add --no-cache \
-    # TLS roots
     ca-certificates \
-    # Container operations (docker buildkit, compose, swarm)
     docker-cli \
     docker-cli-compose \
-    # Application git-source cloning + LFS
     git \
-    git-lfs \
-    # WireGuard private networking
-    wireguard-tools \
-    # ip, ss — route/interface management
-    iproute2 \
-    # Remote server SSH connections
     openssh-client \
-    # SQLite CLI (manual inspection + migration repair)
     sqlite \
-    # DNS diagnostics
-    bind-tools \
-    # Health checks, certificate downloads, rclone install
     curl \
-    # Connectivity diagnostics
-    iputils \
-    # Archive operations (backup/restore)
     tar \
     zip \
-    unzip \
-    # rclone needs these for some remote storage backends
-    fuse3 \
-    && git lfs install --system
+    unzip
 
 # ── rclone (remote storage backups: S3, B2, GCS, etc.) ───────────────────────
 RUN curl -fsSL https://rclone.org/install.sh | bash
