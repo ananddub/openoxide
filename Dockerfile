@@ -54,7 +54,6 @@ RUN apk add --no-cache \
     wireguard-tools \
     iproute2 \
     openssh-client \
-    sqlite \
     curl \
     tar \
     zip \
