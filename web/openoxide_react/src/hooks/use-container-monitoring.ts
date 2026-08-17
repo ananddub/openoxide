@@ -31,6 +31,17 @@ function buildStatsUrl(entityType: MonitoringEntityType, id: number, isLive: boo
 	}
 }
 
+function parseBytes(str?: string): number {
+	if (!str || typeof str !== 'string') return 0;
+	const val = parseFloat(str) || 0;
+	const unit = str.replace(/[0-9.]/g, '').trim().toUpperCase();
+	if (unit.startsWith('K')) return val * 1024;
+	if (unit.startsWith('M')) return val * 1024 * 1024;
+	if (unit.startsWith('G')) return val * 1024 * 1024 * 1024;
+	if (unit.startsWith('T')) return val * 1024 * 1024 * 1024 * 1024;
+	return val;
+}
+
 function stripAnsi(str: string): string {
 	// Remove all ANSI/VT100 escape sequences: ESC [ ... letter
 	return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[^[]/g, '');
@@ -222,14 +233,15 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 		};
 	}, [id, entityType, isLive, refetchTrigger]);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; pids: number}>>([]);
+	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; disk: number; net: number}>>([]);
 
 	useEffect(() => {
 		const parsed = parseStats(rawStats);
 		if (parsed) {
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			const pidsNum = parseInt(parsed.pids, 10) || 0;
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: parsed.cpuPercent, mem: parsed.memPercent, pids: pidsNum}]);
+			const netMb = (parseBytes(parsed.netRx) + parseBytes(parsed.netTx)) / (1024 * 1024);
+			const diskPct = parsed.diskSpacePercent || parsed.dockerDiskPercent || 0;
+			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: parsed.cpuPercent, mem: parsed.memPercent, disk: diskPct, net: netMb}]);
 		}
 	}, [rawStats]);
 

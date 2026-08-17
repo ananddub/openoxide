@@ -253,24 +253,37 @@ export function GlobalMonitoringCards() {
 		};
 	}, []);
 
-	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; pids: number}>>([]);
+	const [history, setHistory] = useState<Array<{time: string; cpu: number; mem: number; disk: number; net: number}>>([]);
 
 	useEffect(() => {
 		if (containersList.length > 0) {
-			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0, pidsSum = 0;
+			let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
+			let blkSum = 0, netSum = 0;
+
 			for (const c of containersList) {
 				cpuSum += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
-				pidsSum += parseInt(String(c.PIDs || '0'), 10) || 0;
 				const mem = String(c.MemUsage || '');
 				if (mem.includes('/')) {
 					const [u, l] = mem.split('/').map(s => s.trim());
 					memUsedSum += parseBytes(u);
 					if (!memLimitSum) memLimitSum = parseBytes(l);
 				}
+
+				const blk = String(c.BlockIO || '');
+				if (blk.includes('/')) {
+					const [r, w] = blk.split('/').map(s => s.trim());
+					blkSum += (parseBytes(r) + parseBytes(w)) / (1024 * 1024); // MB
+				}
+
+				const net = String(c.NetIO || '');
+				if (net.includes('/')) {
+					const [rx, tx] = net.split('/').map(s => s.trim());
+					netSum += (parseBytes(rx) + parseBytes(tx)) / (1024 * 1024); // MB
+				}
 			}
 			const mPct = memLimitSum > 0 ? (memUsedSum / memLimitSum) * 100 : 0;
 			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct, pids: pidsSum}]);
+			setHistory(prev => [...prev.slice(-29), {time: timeStr, cpu: cpuSum, mem: mPct, disk: blkSum, net: netSum}]);
 		}
 	}, [containersList]);
 
@@ -278,38 +291,6 @@ export function GlobalMonitoringCards() {
 	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
 	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
 	const activeContainersCount = Math.max(dockerContainersArray.length, runningArray.length, containersList.length);
-
-	let totalCpu = 0, totalMemUsed = 0, totalMemLimit = 0, totalPids = 0;
-	let totalBlockR = 0, totalBlockW = 0, totalNetRx = 0, totalNetTx = 0;
-
-	for (const c of containersList) {
-		totalCpu += parseFloat(String(c.CPUPerc || '0').replace('%', '')) || 0;
-
-		const mem = String(c.MemUsage || '');
-		if (mem.includes('/')) {
-			const [u, l] = mem.split('/').map(s => s.trim());
-			totalMemUsed += parseBytes(u);
-			if (!totalMemLimit) totalMemLimit = parseBytes(l);
-		}
-
-		totalPids += parseInt(String(c.PIDs || '0'), 10) || 0;
-
-		const blk = String(c.BlockIO || '');
-		if (blk.includes('/')) {
-			const [r, w] = blk.split('/').map(s => s.trim());
-			totalBlockR += parseBytes(r);
-			totalBlockW += parseBytes(w);
-		}
-
-		const net = String(c.NetIO || '');
-		if (net.includes('/')) {
-			const [rx, tx] = net.split('/').map(s => s.trim());
-			totalNetRx += parseBytes(rx);
-			totalNetTx += parseBytes(tx);
-		}
-	}
-
-	const memPercent = totalMemLimit > 0 ? (totalMemUsed / totalMemLimit) * 100 : 0;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -324,8 +305,8 @@ export function GlobalMonitoringCards() {
 				</span>
 			</div>
 
-			{/* Real-time Telemetry Graphs (CPU, RAM, PIDs) */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+			{/* Real-time Telemetry Graphs (2x2 Grid for CPU, RAM, Disk, Network) */}
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 				<GlobalAreaChart
 					title="Global CPU Utilization Graph"
 					icon={Cpu}
@@ -345,133 +326,25 @@ export function GlobalMonitoringCards() {
 					unit="%"
 				/>
 				<GlobalAreaChart
-					title="Global Active Threads / PIDs Graph"
-					icon={Layers}
+					title="Global Disk I/O Throughput Graph"
+					icon={Database}
 					color="text-purple-500"
-					gradientId="global-pids-grad"
+					gradientId="global-disk-grad"
 					data={history}
-					dataKey="pids"
-					unit=" PIDs"
-					maxVal={Math.max(100, ...(history.map(h => h.pids || 0)))}
+					dataKey="disk"
+					unit=" MB"
+					maxVal={Math.max(10, ...(history.map(h => h.disk || 0)))}
 				/>
-			</div>
-
-			{/* Cards */}
-			<div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<Cpu className="size-4 text-primary" /> CPU Usage
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-primary">{totalCpu.toFixed(1)}%</span>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<span>Active Containers</span>
-							<span>Used: {totalCpu.toFixed(1)}%</span>
-						</div>
-						<Progress value={Math.min(100, totalCpu)} className="h-2 w-full" />
-						<p className="text-[11px] text-muted-foreground">Aggregated CPU load across {activeContainersCount} containers</p>
-					</CardContent>
-				</Card>
-
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<HardDrive className="size-4 text-emerald-500" /> RAM Memory
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-emerald-500">{memPercent.toFixed(1)}%</span>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<span>Used: {formatBytes(totalMemUsed)}</span>
-							<span>Total: {formatBytes(totalMemLimit)}</span>
-						</div>
-						<Progress value={Math.min(100, memPercent)} className="h-2 w-full bg-secondary" />
-						<p className="text-[11px] text-muted-foreground">RAM memory utilization from Docker daemon</p>
-					</CardContent>
-				</Card>
-
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<Database className="size-4 text-purple-500" /> Active PIDs
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-purple-500">{totalPids} Threads</span>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<span>Total Active Threads</span>
-							<span>{totalPids} PIDs</span>
-						</div>
-						<Progress value={Math.min(100, totalPids * 0.5)} className="h-2 w-full" />
-						<p className="text-[11px] text-muted-foreground">Container active thread count</p>
-					</CardContent>
-				</Card>
-
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<Layers className="size-4 text-rose-500" /> Block I/O
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-rose-400">
-							{formatBytes(totalBlockR + totalBlockW)}
-						</span>
-					</CardHeader>
-					<CardContent className="space-y-2">
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Disk Read:</span>
-							<span className="font-bold text-emerald-400">{formatBytes(totalBlockR)}</span>
-						</div>
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Disk Write:</span>
-							<span className="font-bold text-rose-400">{formatBytes(totalBlockW)}</span>
-						</div>
-						<p className="text-[11px] text-muted-foreground pt-1">Disk read/write throughput from Docker</p>
-					</CardContent>
-				</Card>
-
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<Network className="size-4 text-blue-500" /> Network I/O
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-blue-400">
-							{formatBytes(totalNetRx + totalNetTx)}
-						</span>
-					</CardHeader>
-					<CardContent className="space-y-2">
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Input (RX):</span>
-							<span className="font-bold text-blue-400">{formatBytes(totalNetRx)}</span>
-						</div>
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Output (TX):</span>
-							<span className="font-bold text-indigo-400">{formatBytes(totalNetTx)}</span>
-						</div>
-						<p className="text-[11px] text-muted-foreground pt-1">Network traffic from Docker</p>
-					</CardContent>
-				</Card>
-
-				<Card className="bg-card border-border shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							<Disc className="size-4 text-amber-500" /> Docker Engine
-						</CardTitle>
-						<span className="text-xs font-mono font-bold text-amber-500">{activeContainersCount} Containers</span>
-					</CardHeader>
-					<CardContent className="space-y-2">
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Active Containers:</span>
-							<span className="font-bold text-foreground">{activeContainersCount}</span>
-						</div>
-						<div className="flex items-center justify-between text-xs font-mono">
-							<span className="text-muted-foreground">Engine Status:</span>
-							<span className="font-bold text-emerald-400">Online</span>
-						</div>
-						<p className="text-[11px] text-muted-foreground pt-1">Docker daemon status &amp; active containers</p>
-					</CardContent>
-				</Card>
+				<GlobalAreaChart
+					title="Global Network I/O Traffic Graph"
+					icon={Network}
+					color="text-blue-500"
+					gradientId="global-net-grad"
+					data={history}
+					dataKey="net"
+					unit=" MB"
+					maxVal={Math.max(10, ...(history.map(h => h.net || 0)))}
+				/>
 			</div>
 		</div>
 	);
