@@ -483,20 +483,47 @@ export function GlobalMonitoringCards() {
 	});
 
 	const diskUsageFormatted = useMemo(() => {
-		if (!rawDiskUsage || typeof rawDiskUsage !== 'object') {
-			return {containersStr: '0 B', imagesStr: '0 B', volumesStr: '0 B', totalStr: '0 B', totalBytes: 0};
+		if (!rawDiskUsage) {
+			return {containersStr: '0 B', imagesStr: '0 B', volumesStr: '0 B', totalStr: '0 B', totalBytes: 0, cBytes: 0, iBytes: 0, vBytes: 0};
 		}
-		const obj = rawDiskUsage as Record<string, any>;
-		const containers = Array.isArray(obj.Containers) ? obj.Containers : [];
-		const images = Array.isArray(obj.Images) ? obj.Images : [];
-		const volumes = Array.isArray(obj.Volumes) ? obj.Volumes : [];
 
-		const cBytes = containers.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
-		const iBytes = images.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
-		const vBytes = volumes.reduce((sum: number, item: any) => sum + (Number(item.Size || item.size || item.sizeBytes) || 0), 0);
-		const total = cBytes + iBytes + vBytes;
+		let items: any[] = [];
+		if (Array.isArray(rawDiskUsage)) {
+			items = rawDiskUsage;
+		} else if (typeof rawDiskUsage === 'object') {
+			const obj = rawDiskUsage as Record<string, any>;
+			if (Array.isArray(obj.Containers) || Array.isArray(obj.Images) || Array.isArray(obj.Volumes)) {
+				const cArr = Array.isArray(obj.Containers) ? obj.Containers : [];
+				const iArr = Array.isArray(obj.Images) ? obj.Images : [];
+				const vArr = Array.isArray(obj.Volumes) ? obj.Volumes : [];
+				items = [
+					...cArr.map((x: any) => ({Type: 'Containers', Size: x.Size || x.size || x.sizeBytes})),
+					...iArr.map((x: any) => ({Type: 'Images', Size: x.Size || x.size || x.sizeBytes})),
+					...vArr.map((x: any) => ({Type: 'Volumes', Size: x.Size || x.size || x.sizeBytes})),
+				];
+			} else if (Array.isArray(obj.items)) {
+				items = obj.items;
+			}
+		}
+
+		let cBytes = 0, iBytes = 0, vBytes = 0, bBytes = 0;
+
+		for (const item of items) {
+			if (!item) continue;
+			const typeStr = String(item.Type || item.type || item.name || '').toLowerCase();
+			const sizeStr = item.Size !== undefined ? item.Size : (item.size !== undefined ? item.size : item.sizeBytes);
+			const bytes = typeof sizeStr === 'number' ? sizeStr : parseBytes(String(sizeStr || 0));
+
+			if (typeStr.includes('container')) cBytes += bytes;
+			else if (typeStr.includes('image')) iBytes += bytes;
+			else if (typeStr.includes('volume')) vBytes += bytes;
+			else if (typeStr.includes('cache') || typeStr.includes('build')) bBytes += bytes;
+		}
+
+		const totalBytes = cBytes + iBytes + vBytes + bBytes;
 
 		const formatBytes = (bytes: number) => {
+			if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
 			if (bytes >= 1024 ** 3) return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
 			if (bytes >= 1024 ** 2) return `${(bytes / (1024 ** 2)).toFixed(1)} MB`;
 			if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -507,8 +534,11 @@ export function GlobalMonitoringCards() {
 			containersStr: formatBytes(cBytes),
 			imagesStr: formatBytes(iBytes),
 			volumesStr: formatBytes(vBytes),
-			totalStr: formatBytes(total),
-			totalBytes: total,
+			totalStr: formatBytes(totalBytes),
+			totalBytes,
+			cBytes,
+			iBytes,
+			vBytes,
 		};
 	}, [rawDiskUsage]);
 
