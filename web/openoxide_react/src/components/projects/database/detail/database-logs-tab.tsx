@@ -30,7 +30,8 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 					} catch {}
 				}
 
-				const streamUrl = `/api/deployments/docker/service/${appName}/logs?tail=200&timestamps=false&follow=true`;
+				const serverIdParam = database?.server_id ? `&server_id=${database.server_id}` : '';
+				const streamUrl = `/api/deployments/docker/service/${encodeURIComponent(appName)}/logs?tail=200&timestamps=false&follow=true${serverIdParam}`;
 
 				const response = await fetch(streamUrl, {
 					headers: {

@@ -382,35 +382,82 @@ impl DeploymentService {
         target: String,
         options: DockerLogOptions,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let docker = self.docker_for_server(server_id).await?;
-        let logs_subcommand = "container";
+        let effective_server_id = match server_id {
+            Some(sid) => Some(sid),
+            None => {
+                let mut found_sid: Option<i64> = None;
+                for table in &["postgres_dbs", "mysql_dbs", "redis_dbs", "mariadb_dbs", "mongo_dbs", "libsql_dbs"] {
+                    let query_str = format!("SELECT server_id FROM {} WHERE app_name = ? OR name = ? LIMIT 1", table);
+                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>(&query_str)
+                        .bind(&target)
+                        .bind(&target)
+                        .fetch_optional(self.database())
+                        .await
+                    {
+                        if row.0.is_some() {
+                            found_sid = row.0;
+                            break;
+                        }
+                    }
+                }
+                if found_sid.is_none() {
+                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>("SELECT server_id FROM applications WHERE app_name = ? OR name = ? LIMIT 1")
+                        .bind(&target)
+                        .bind(&target)
+                        .fetch_optional(self.database())
+                        .await
+                    {
+                        found_sid = row.0;
+                    }
+                }
+                if found_sid.is_none() {
+                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>("SELECT server_id FROM compose WHERE app_name = ? OR name = ? LIMIT 1")
+                        .bind(&target)
+                        .bind(&target)
+                        .fetch_optional(self.database())
+                        .await
+                    {
+                        found_sid = row.0;
+                    }
+                }
+                found_sid
+            }
+        };
+
+        let docker = self.docker_for_server(effective_server_id).await?;
         let mut resolved_target = target.clone();
-
-        // Database App Name Resolver: resolve database 'name' or 'app_name' to actual DB app_name if target is a database name
-        let resolved_name_opt: Option<(String,)> =
-            sqlx::query_as("SELECT app_name FROM databases WHERE name = ? OR app_name = ? LIMIT 1")
-                .bind(&target)
-                .bind(&target)
-                .fetch_optional(self.database())
-                .await
-                .unwrap_or(None);
-
-        let search_target = resolved_name_opt
-            .map(|r| r.0)
-            .unwrap_or_else(|| target.clone());
+        let mut is_service = false;
 
         if let Ok(containers) = docker.containers().ps().all().list().await {
-            if let Some(matched) = find_best_matching_container(&containers, &search_target) {
+            if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
-            } else if let Some(matched) =
-                find_best_matching_container(&containers, &search_target.replace('_', "-"))
-            {
-                resolved_target = matched.names.trim_start_matches('/').to_string();
+            } else {
+                let candidates = [
+                    format!("{}_db", target),
+                    format!("{}-db", target),
+                    target.clone(),
+                ];
+                for cand in &candidates {
+                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                        if !services.is_empty() {
+                            resolved_target = services[0].name.clone();
+                            is_service = true;
+                            break;
+                        }
+                    }
+                }
+                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                    is_service = true;
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                }
             }
+        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+            is_service = true;
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
         }
 
         let handle = docker.containers();
-        let mut builder = handle.logs(resolved_target).kind(logs_subcommand);
+        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
         if options.follow {
             builder = builder.follow();
         }

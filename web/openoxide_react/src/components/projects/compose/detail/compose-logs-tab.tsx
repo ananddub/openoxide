@@ -89,9 +89,10 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				}
 
 				const tailParam = lines === 'all' ? '5000' : lines;
+				const serverIdParam = compose?.server_id ? `&server_id=${compose.server_id}` : '';
 				const streamUrl = logMode === 'build'
 					? `/api/deployments/compose/${compose?.id}/logs`
-					: `/api/deployments/docker/service/${activeService}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}`;
+					: `/api/deployments/docker/service/${encodeURIComponent(activeService)}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}${serverIdParam}`;
 
 				const response = await fetch(streamUrl, {
 					headers: {

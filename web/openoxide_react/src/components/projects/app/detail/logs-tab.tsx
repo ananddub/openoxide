@@ -64,6 +64,9 @@ export function LogsTab({app}: LogsTabProps) {
 					timestamps: String(timestamps),
 					follow: String(isLive),
 				});
+				if (application?.server_id) {
+					params.append('server_id', String(application.server_id));
+				}
 
 				const response = await fetch(
 					`/api/deployments/docker/service/${encodeURIComponent(activeTarget)}/logs?${params.toString()}`,
