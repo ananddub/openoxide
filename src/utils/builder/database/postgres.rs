@@ -35,6 +35,14 @@ pub async fn build_postgres_stack(
             }
         }
         command = Some(full);
+    } else if let Some(a_str) = &db.args {
+        if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
+            if !parsed_args.is_empty() {
+                let mut full = vec!["postgres".to_string()];
+                full.extend(parsed_args);
+                command = Some(full);
+            }
+        }
     }
     let advanced: BTreeMap<String, String> =
         serde_json::from_str(&db.postgres_config).map_err(|error| ExecError::CommandFailed {

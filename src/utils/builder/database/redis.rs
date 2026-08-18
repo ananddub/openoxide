@@ -36,6 +36,39 @@ pub async fn build_redis_stack(
             }
         }
         command = Some(full);
+    } else if let Some(a_str) = &db.args {
+        if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
+            if !parsed_args.is_empty() {
+                let mut full = vec!["redis-server".to_string()];
+                if !db.database_password.trim().is_empty() {
+                    full.extend(["--requirepass".to_string(), db.database_password.clone()]);
+                }
+                full.extend(parsed_args);
+                command = Some(full);
+            } else if !db.database_password.trim().is_empty() {
+                command = Some(vec![
+                    "/bin/sh".to_string(),
+                    "-c".to_string(),
+                    format!(
+                        "redis-server --requirepass {}",
+                        shell_single_quote(&db.database_password)
+                    ),
+                ]);
+            } else {
+                command = None;
+            }
+        } else if !db.database_password.trim().is_empty() {
+            command = Some(vec![
+                "/bin/sh".to_string(),
+                "-c".to_string(),
+                format!(
+                    "redis-server --requirepass {}",
+                    shell_single_quote(&db.database_password)
+                ),
+            ]);
+        } else {
+            command = None;
+        }
     } else if !db.database_password.trim().is_empty() {
         command = Some(vec![
             "/bin/sh".to_string(),
