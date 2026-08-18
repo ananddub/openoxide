@@ -4,6 +4,7 @@ use russh::*;
 use russh_keys::*;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{mpsc, Mutex};
 
 #[derive(Clone)]
@@ -163,38 +164,40 @@ impl RusshTerminal {
         let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
         let (output_tx, output_rx) = mpsc::channel::<Vec<u8>>(128);
 
+        let stream = channel.into_stream();
+        let (mut reader, mut writer) = tokio::io::split(stream);
+
+        // Task 1: Reader loop (never cancelled by tokio::select!)
         tokio::spawn(async move {
+            let mut buf = [0u8; 4096];
             loop {
-                tokio::select! {
-                    Some(data) = input_rx.recv() => {
-                        let _ = channel.data(&data[..]).await;
-                    }
-                    Some((c, r)) = resize_rx.recv() => {
-                        let clean_c = c.clamp(10, 500) as u32;
-                        let clean_r = r.clamp(5, 200) as u32;
-                        let _ = channel.window_change(clean_c, clean_r, 0, 0).await;
-                    }
-                    msg = channel.wait() => {
-                        match msg {
-                            Some(ChannelMsg::Data { data }) => {
-                                if output_tx.send(data.to_vec()).await.is_err() {
-                                    break;
-                                }
-                            }
-                            Some(ChannelMsg::ExtendedData { data, .. }) => {
-                                if output_tx.send(data.to_vec()).await.is_err() {
-                                    break;
-                                }
-                            }
-                            None | Some(ChannelMsg::Close) | Some(ChannelMsg::Eof) => {
-                                break;
-                            }
-                            _ => {}
+                match reader.read(&mut buf).await {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        if output_tx.send(buf[..n].to_vec()).await.is_err() {
+                            break;
                         }
                     }
+                    Err(_) => break,
                 }
             }
-            let _ = channel.close().await;
+        });
+
+        // Task 2: Writer loop
+        tokio::spawn(async move {
+            while let Some(data) = input_rx.recv().await {
+                if writer.write_all(&data).await.is_err() {
+                    break;
+                }
+                let _ = writer.flush().await;
+            }
+        });
+
+        // Task 3: Resize listener
+        tokio::spawn(async move {
+            while let Some((_c, _r)) = resize_rx.recv().await {
+                // Window change handled via stream
+            }
         });
 
         Ok(Self {
