@@ -2,6 +2,7 @@ use super::{
     ExecError, ExecExitStatus, ExecOutput, ExecResult, ExecStreamEvent, SshAuth, SshHostKey,
 };
 use std::ffi::OsStr;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::{sync::mpsc, task::JoinHandle};
@@ -118,8 +119,8 @@ impl RemoteExecutor {
         self.connect_timeout
     }
 
-    pub async fn connect_session(&self) -> ExecResult<crate::ssh::RusshSession> {
-        crate::ssh::connect_russh(
+    pub async fn connect_session(&self) -> ExecResult<Arc<crate::ssh::RusshSession>> {
+        crate::ssh::get_or_connect_session(
             &self.host,
             self.port,
             &self.username,
