@@ -342,18 +342,7 @@ impl RemoteExecutor {
         stream: Option<mpsc::Sender<ExecStreamEvent>>,
         cancel: Option<&CancellationToken>,
     ) -> ExecResult<ExecOutput> {
-        let mut builder = crate::ssh::SshBuilder::new(
-            self.host.clone(),
-            self.username.clone(),
-            self.auth.clone(),
-            self.host_key.clone(),
-        )
-        .port(self.port)
-        .connect_timeout(self.connect_timeout.as_secs() as u32);
-
-        if !self.multiplexing {
-            builder = builder.disable_multiplexing();
-        }
+        let session = self.connect_session().await?;
 
         let has_pwd = self.sudo_password.as_deref().map(|p| !p.is_empty()).unwrap_or(false);
         let base_command = remote_command(program, args, self.sudo_password.is_some(), has_pwd);
@@ -363,7 +352,7 @@ impl RemoteExecutor {
                 .map(|pid_file| RemoteCancelJob::from_pid_file(pid_file.clone()))
                 .unwrap_or_else(RemoteCancelJob::new)
         });
-        let command = if let Some(job) = &cancel_job {
+        let command_to_run = if let Some(job) = &cancel_job {
             if stdin.is_empty() {
                 cancellable_remote_command(&base_command, &job.pid_file)
             } else {
@@ -373,187 +362,34 @@ impl RemoteExecutor {
             base_command
         };
 
-        let ssh_cmd = builder
-            .build_command("sh", &["-c".to_string(), command])
-            .await
-            .map_err(|e| ExecError::Ssh(e.to_string()))?;
+        let mut openssh_cmd = session.session().command("sh");
+        openssh_cmd.arg("-c").arg(&command_to_run);
 
-        let mut tokio_command = ssh_cmd.command;
-        let _agent_session = ssh_cmd.agent_session;
-        let _temp_askpass_file = ssh_cmd.temp_askpass_file;
+        let raw_output = openssh_cmd.output().await.map_err(|e| ExecError::Ssh(e.to_string()))?;
 
-        tokio_command
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
-
-        let mut child = tokio_command
-            .spawn()
-            .map_err(|e| ExecError::Ssh(e.to_string()))?;
-
-        let mut child_stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| ExecError::Ssh("Failed to open stdin".into()))?;
-        let mut child_stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| ExecError::Ssh("Failed to open stdout".into()))?;
-        let mut child_stderr = child
-            .stderr
-            .take()
-            .ok_or_else(|| ExecError::Ssh("Failed to open stderr".into()))?;
-
-        let mut input_data = Vec::new();
-        if let Some(password) = &self.sudo_password {
-            if !password.is_empty() {
-                input_data.extend_from_slice(password.as_bytes());
-                input_data.push(b'\n');
+        if let Some(tx) = &stream {
+            if !raw_output.stdout.is_empty() {
+                let _ = tx.send(ExecStreamEvent::Stdout(raw_output.stdout.clone())).await;
             }
-        }
-        input_data.extend_from_slice(stdin);
-
-        tokio::spawn(async move {
-            if !input_data.is_empty() {
-                let _ = child_stdin.write_all(&input_data).await;
-            }
-            drop(child_stdin);
-        });
-
-        let mut stdout_buf = [0u8; 4096];
-        let mut stderr_buf = [0u8; 4096];
-        let mut stdout_accum = Vec::new();
-        let mut stderr_accum = Vec::new();
-        let mut stdout_done = false;
-        let mut stderr_done = false;
-        let exit_status;
-
-        let timeout_fut = tokio::time::sleep(self.command_timeout);
-        tokio::pin!(timeout_fut);
-
-        loop {
-            tokio::select! {
-                res = child_stdout.read(&mut stdout_buf), if !stdout_done => {
-                    match res {
-                        Ok(0) => stdout_done = true,
-                        Ok(n) => {
-                            let data = &stdout_buf[..n];
-                            if let Some(tx) = &stream {
-                                if tx.send(ExecStreamEvent::Stdout(data.to_vec())).await.is_err() {
-                                    let _ = child.kill().await;
-                                    self.cancel_remote_job(cancel_job.as_ref()).await;
-                                    return Err(ExecError::StreamCancelled);
-                                }
-                            } else {
-                                stdout_accum.extend_from_slice(data);
-                                 let s = String::from_utf8_lossy(data);
-                                for line in s.lines() {
-                                    tracing::info!("{line}");
-                                }
-                            }
-                        }
-                        Err(e) => return Err(ExecError::Ssh(e.to_string())),
-                    }
-                }
-                res = child_stderr.read(&mut stderr_buf), if !stderr_done => {
-                    match res {
-                        Ok(0) => stderr_done = true,
-                        Ok(n) => {
-                            let data = &stderr_buf[..n];
-                            if let Some(tx) = &stream {
-                                if tx.send(ExecStreamEvent::Stderr(data.to_vec())).await.is_err() {
-                                    let _ = child.kill().await;
-                                    self.cancel_remote_job(cancel_job.as_ref()).await;
-                                    return Err(ExecError::StreamCancelled);
-                                }
-                            } else {
-                                stderr_accum.extend_from_slice(data);
-                                let s = String::from_utf8_lossy(data);
-                                for line in s.lines() {
-                                    tracing::info!("{line}");
-                                }
-                            }
-                        }
-                        Err(e) => return Err(ExecError::Ssh(e.to_string())),
-                    }
-                }
-                _ = &mut timeout_fut => {
-                    let _ = child.kill().await;
-                    self.cancel_remote_job(cancel_job.as_ref()).await;
-                    return Err(ExecError::Timeout {
-                        seconds: self.command_timeout.as_secs(),
-                    });
-                }
-                _ = async {
-                    if let Some(c) = cancel {
-                        c.cancelled().await
-                    } else {
-                        std::future::pending().await
-                    }
-                } => {
-                    let _ = child.kill().await;
-                    self.cancel_remote_job(cancel_job.as_ref()).await;
-                    return Err(ExecError::StreamCancelled);
-                }
-                status = child.wait() => {
-                    match status {
-                        Ok(s) => {
-                            exit_status = Some(s);
-                            break;
-                        }
-                        Err(e) => return Err(ExecError::Ssh(e.to_string())),
-                    }
-                }
+            if !raw_output.stderr.is_empty() {
+                let _ = tx.send(ExecStreamEvent::Stderr(raw_output.stderr.clone())).await;
             }
         }
 
-        // Drain any remaining output from streams
-        if !stdout_done {
-            let mut buf = Vec::new();
-            if child_stdout.read_to_end(&mut buf).await.is_ok() && !buf.is_empty() {
-                if let Some(tx) = &stream {
-                    let _ = tx.send(ExecStreamEvent::Stdout(buf)).await;
-                } else {
-                    stdout_accum.extend_from_slice(&buf);
-                    let s = String::from_utf8_lossy(&buf);
-                    for line in s.lines() {
-                        tracing::info!("{line}");
-                    }
-                }
-            }
-        }
-        if !stderr_done {
-            let mut buf = Vec::new();
-            if child_stderr.read_to_end(&mut buf).await.is_ok() && !buf.is_empty() {
-                if let Some(tx) = &stream {
-                    let _ = tx.send(ExecStreamEvent::Stderr(buf)).await;
-                } else {
-                    stderr_accum.extend_from_slice(&buf);
-                    let s = String::from_utf8_lossy(&buf);
-                    for line in s.lines() {
-                        tracing::info!("{line}");
-                    }
-                }
-            }
-        }
-
-        let status_code = exit_status
-            .and_then(|s| s.code())
-            .ok_or_else(|| ExecError::Ssh("remote command ended without an exit status".into()))?;
-
-        if status_code == 255 {
-            return Err(ExecError::Ssh(format!(
-                "SSH connection/authentication failed: {}",
-                String::from_utf8_lossy(&stderr_accum)
-            )));
-        }
-
-        let status = ExecExitStatus::Remote(status_code as u32);
+        let code = raw_output.status.code().unwrap_or(-1);
+        let status = ExecExitStatus::Remote(code as u32);
         let result = ExecOutput {
             status,
-            stdout: String::from_utf8_lossy(&stdout_accum).into_owned(),
-            stderr: String::from_utf8_lossy(&stderr_accum).into_owned(),
+            stdout: String::from_utf8_lossy(&raw_output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&raw_output.stderr).into_owned(),
         };
+
+        if code == 255 {
+            return Err(ExecError::Ssh(format!(
+                "SSH connection/authentication failed: {}",
+                String::from_utf8_lossy(&raw_output.stderr)
+            )));
+        }
 
         if !result.success() {
             return Err(ExecError::CommandFailed {
