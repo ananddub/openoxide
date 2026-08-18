@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, emit_terminal_bytes, socket_key};
 use super::types::{
-    DockerTerminalStart, SessionMap, TerminalExit, TerminalKind, TerminalSession, TerminalStarted,
+    DockerTerminalStart, SessionMap, TerminalKind, TerminalStarted,
 };
 
 pub async fn spawn_docker_terminal(
@@ -46,9 +46,22 @@ pub async fn spawn_docker_terminal(
         target_container = input.container.clone();
     }
 
-    let mut cmd = Command::new("docker");
-    cmd.args(["exec", "-i", &target_container, &shell_req])
-        .env("TERM", "xterm-256color")
+    let mut cmd = if std::path::Path::new("/usr/bin/ctr").exists() || std::path::Path::new("/usr/local/bin/ctr").exists() {
+        let mut c = Command::new("ctr");
+        let exec_id = format!("exec-{}", rand::random::<u32>());
+        c.args(["-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
+        c
+    } else if std::path::Path::new("/usr/bin/crictl").exists() || std::path::Path::new("/usr/local/bin/crictl").exists() {
+        let mut c = Command::new("crictl");
+        c.args(["exec", "-i", "-t", &target_container, &shell_req]);
+        c
+    } else {
+        let mut c = Command::new("docker");
+        c.args(["exec", "-i", &target_container, &shell_req]);
+        c
+    };
+
+    cmd.env("TERM", "xterm-256color")
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
