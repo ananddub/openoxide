@@ -613,10 +613,29 @@ impl ServerPrivateNetworkService {
         &self,
         server_id: i64,
     ) -> sqlx::Result<crate::db::models::server_private_networks::ServerPrivateNetwork> {
-        self.networks
-            .get(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        if let Some(existing) = self.networks.get(server_id).await? {
+            Ok(existing)
+        } else {
+            self.assert_server(server_id).await?;
+            let tunnel_ip = format!("10.77.{server_id}.1/24");
+            let default_network = self.networks.upsert(
+                server_id,
+                crate::db::models::server_private_networks::PrivateNetworkConnectionMode::ManagedWireguard,
+                Some(crate::db::models::server_private_networks::PrivateNetworkProvider::Wireguard),
+                None,
+                Some(&tunnel_ip),
+                None,
+                None,
+                Some(51820),
+                Some(20),
+                None,
+                "[]",
+                crate::db::models::server_private_networks::PrivateNetworkStatus::Configuring,
+                crate::db::models::server_private_networks::PrivateNetworkHealthStatus::Unknown,
+                None,
+            ).await?;
+            Ok(default_network)
+        }
     }
 
     async fn assert_unique_managed_network(
