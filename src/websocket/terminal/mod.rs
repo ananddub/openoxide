@@ -181,11 +181,8 @@ impl TerminalSocket {
                 }
             }
             TerminalSession::InMemorySsh { terminal, .. } => {
-                let term = terminal.clone();
-                let bytes = data.into_bytes();
-                tokio::task::spawn_blocking(move || {
-                    let _ = term.write(&bytes);
-                });
+                let mut term = terminal.lock().await;
+                let _ = term.write(data.as_bytes()).await;
             }
             TerminalSession::DockerSocket { writer, .. } => {
                 let mut w = writer.lock().await;
@@ -208,8 +205,9 @@ impl TerminalSocket {
                     let term = terminal.clone();
                     let cols = payload.cols.unwrap_or(80);
                     let rows = payload.rows.unwrap_or(24);
-                    tokio::task::spawn_blocking(move || {
-                        let _ = term.resize(cols, rows);
+                    tokio::spawn(async move {
+                        let mut t = term.lock().await;
+                        let _ = t.resize(cols, rows).await;
                     });
                 }
                 TerminalSession::DockerSocket { socket_path, exec_id, .. } => {

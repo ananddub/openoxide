@@ -33,17 +33,18 @@ pub async fn spawn_remote_terminal(
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
 
-    let terminal = match os::ssh::InMemorySshTerminal::connect(
-        &actual_host,
-        executor.port(),
-        executor.username(),
-        executor.auth(),
-        executor.host_key(),
-        cols,
-        rows,
-        std::time::Duration::from_secs(10),
-    ) {
-        Ok(t) => Arc::new(t),
+    let russh_session = match executor.connect_session().await {
+        Ok(s) => s,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not connect SSH: {error}"));
+            return;
+        }
+    };
+
+    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, None).await {
+        Ok(t) => Arc::new(tokio::sync::Mutex::new(t)),
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -77,13 +78,15 @@ pub async fn spawn_remote_terminal(
     let sessions_clone = sessions.clone();
     let server_host = actual_host.clone();
 
-    tokio::task::spawn_blocking(move || {
-        let mut buf = [0u8; 4096];
+    tokio::spawn(async move {
         loop {
-            match term_read.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&socket_clone, "stdout", &buf[..n]),
-                Err(_) => break,
+            let next_chunk = {
+                let mut t = term_read.lock().await;
+                t.read_next().await
+            };
+            match next_chunk {
+                Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
+                None => break,
             }
         }
 
@@ -97,10 +100,9 @@ pub async fn spawn_remote_terminal(
 
         if is_current {
             sessions_clone.remove(&key);
-            tracing::info!(host = %server_host, "in-memory remote terminal session exited");
+            tracing::info!(host = %server_host, "in-memory russh remote terminal session exited");
             let _ = socket_clone.emit("exit", &TerminalExit { code: Some(0) });
         }
-        term_read.close();
     });
 }
 
@@ -155,18 +157,18 @@ pub async fn spawn_remote_docker_terminal(
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
 
-    let terminal = match os::ssh::InMemorySshTerminal::connect_exec(
-        &actual_host,
-        executor.port(),
-        executor.username(),
-        executor.auth(),
-        executor.host_key(),
-        cols,
-        rows,
-        &docker_cmd,
-        std::time::Duration::from_secs(10),
-    ) {
-        Ok(t) => Arc::new(t),
+    let russh_session = match executor.connect_session().await {
+        Ok(s) => s,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not connect SSH: {error}"));
+            return;
+        }
+    };
+
+    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, Some(&docker_cmd)).await {
+        Ok(t) => Arc::new(tokio::sync::Mutex::new(t)),
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH container terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -201,13 +203,15 @@ pub async fn spawn_remote_docker_terminal(
     let server_host = actual_host.clone();
     let container_log = container_req.clone();
 
-    tokio::task::spawn_blocking(move || {
-        let mut buf = [0u8; 4096];
+    tokio::spawn(async move {
         loop {
-            match term_read.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&socket_clone, "stdout", &buf[..n]),
-                Err(_) => break,
+            let next_chunk = {
+                let mut t = term_read.lock().await;
+                t.read_next().await
+            };
+            match next_chunk {
+                Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
+                None => break,
             }
         }
 
@@ -224,6 +228,5 @@ pub async fn spawn_remote_docker_terminal(
             tracing::info!(container = %container_log, host = %server_host, "remote docker terminal session exited");
             let _ = socket_clone.emit("exit", &TerminalExit { code: Some(0) });
         }
-        term_read.close();
     });
 }

@@ -118,8 +118,8 @@ impl RemoteExecutor {
         self.connect_timeout
     }
 
-    pub async fn connect_session(&self) -> ExecResult<crate::ssh::OpenSshSession> {
-        crate::ssh::OpenSshSession::connect(
+    pub async fn connect_session(&self) -> ExecResult<crate::ssh::RusshSession> {
+        crate::ssh::connect_russh(
             &self.host,
             self.port,
             &self.username,
@@ -362,34 +362,24 @@ impl RemoteExecutor {
             base_command
         };
 
-        let mut openssh_cmd = session.session().command("sh");
-        openssh_cmd.arg("-c").arg(&command_to_run);
-
-        let raw_output = openssh_cmd.output().await.map_err(|e| ExecError::Ssh(e.to_string()))?;
+        let full_command = format!("sh -c {}", quote(&command_to_run));
+        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd(&session, &full_command).await?;
 
         if let Some(tx) = &stream {
-            if !raw_output.stdout.is_empty() {
-                let _ = tx.send(ExecStreamEvent::Stdout(raw_output.stdout.clone())).await;
+            if !stdout_bytes.is_empty() {
+                let _ = tx.send(ExecStreamEvent::Stdout(stdout_bytes.clone())).await;
             }
-            if !raw_output.stderr.is_empty() {
-                let _ = tx.send(ExecStreamEvent::Stderr(raw_output.stderr.clone())).await;
+            if !stderr_bytes.is_empty() {
+                let _ = tx.send(ExecStreamEvent::Stderr(stderr_bytes.clone())).await;
             }
         }
 
-        let code = raw_output.status.code().unwrap_or(-1);
-        let status = ExecExitStatus::Remote(code as u32);
+        let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {
             status,
-            stdout: String::from_utf8_lossy(&raw_output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&raw_output.stderr).into_owned(),
+            stdout: String::from_utf8_lossy(&stdout_bytes).into_owned(),
+            stderr: String::from_utf8_lossy(&stderr_bytes).into_owned(),
         };
-
-        if code == 255 {
-            return Err(ExecError::Ssh(format!(
-                "SSH connection/authentication failed: {}",
-                String::from_utf8_lossy(&raw_output.stderr)
-            )));
-        }
 
         if !result.success() {
             return Err(ExecError::CommandFailed {

@@ -211,7 +211,7 @@ pub enum TerminalSession {
         child: Arc<Mutex<Child>>,
     },
     InMemorySsh {
-        terminal: Arc<os::ssh::InMemorySshTerminal>,
+        terminal: Arc<tokio::sync::Mutex<os::ssh::RusshTerminal>>,
         session_id: SessionId,
         cancel: tokio_util::sync::CancellationToken,
     },
