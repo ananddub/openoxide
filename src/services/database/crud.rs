@@ -1,5 +1,5 @@
 use super::{
-    DatabaseKind, DatabaseRecord, DatabaseService,
+    DatabaseKind, DatabaseOperation, DatabaseRecord, DatabaseService,
     queries::{generate_app_name, random_secret, slug_value},
 };
 use crate::api::dto::database::{CreateDatabaseDto, PatchDatabaseDto};
