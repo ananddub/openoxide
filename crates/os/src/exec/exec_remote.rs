@@ -118,6 +118,18 @@ impl RemoteExecutor {
         self.connect_timeout
     }
 
+    pub async fn connect_session(&self) -> ExecResult<crate::ssh::OpenSshSession> {
+        crate::ssh::OpenSshSession::connect(
+            &self.host,
+            self.port,
+            &self.username,
+            &self.auth,
+            &self.host_key,
+            self.connect_timeout,
+        )
+        .await
+    }
+
     pub async fn open_terminal(
         &self,
         output: mpsc::Sender<ExecStreamEvent>,
