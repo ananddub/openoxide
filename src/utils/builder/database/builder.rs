@@ -344,7 +344,7 @@ impl DatabaseBuilder {
                                 || name.contains(&app_name.to_lowercase())
                         }) {
                             let container_id = &matched.id;
-                            let user_name = if creds.username.is_empty() { "openoxide".to_string() } else { creds.username };
+                            let user_name = creds.username.unwrap_or_else(|| "openoxide".to_string());
                             let escaped_pwd = creds.password.replace('\'', "''");
                             match db_kind {
                                 DatabaseKind::Postgres => {
