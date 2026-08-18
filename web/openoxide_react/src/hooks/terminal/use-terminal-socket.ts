@@ -30,7 +30,7 @@ export function useTerminalSocket({
 	const isFirstMountRef = useRef<boolean>(true);
 
 	useEffect(() => {
-		if (!isOpen) {
+		if (!isOpen || !termInstance) {
 			isFirstMountRef.current = true;
 			if (socketRef.current) {
 				if (socketRef.current.connected) {
@@ -52,13 +52,11 @@ export function useTerminalSocket({
 		isFirstMountRef.current = true;
 		setStatus('connecting');
 
-		if (termInstance) {
-			termInstance.reset();
-			if (isRemoteServer) {
-				termInstance.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
-			} else {
-				termInstance.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
-			}
+		termInstance.reset();
+		if (isRemoteServer) {
+			termInstance.writeln(`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`);
+		} else {
+			termInstance.writeln(`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`);
 		}
 
 		// Use global singleton live socket manager
