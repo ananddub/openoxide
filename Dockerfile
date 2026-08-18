@@ -12,34 +12,43 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /usr/src/openoxide
 
-# ── dependency pre-cache ──────────────────────────────────────────────────────
+# ── 1. Dependency manifest pre-cache ──────────────────────────────────────────
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
 COPY agent/   agent/
 COPY proto/   proto/
 COPY build.rs build.rs
 COPY db/      db/
-COPY src/     src/
 COPY data/db.sqlite3 data/db.sqlite3
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo fetch
-
-RUN --mount=type=cache,target=/usr/src/openoxide/target \
-    rm -rf /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/deps/*html_rt* /usr/src/openoxide/target/release/deps/*html_rt*
+# Create dummy main.rs and lib.rs to pre-compile all dependencies
+RUN mkdir -p src && \
+    echo "fn main() {}" > src/main.rs && \
+    echo "" > src/lib.rs
 
 ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
+
+# Pre-build dependencies layer (Cached by Docker unless Cargo.toml/Cargo.lock changes!)
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
+    cargo build --release --target x86_64-unknown-linux-musl -p openoxide || true
+
+# ── 2. Actual Source Build ─────────────────────────────────────────────────────
+COPY src/ src/
+
+# Touch main.rs to invalidate dummy binary and build real app (takes 5-10s!)
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/usr/src/openoxide/target \
+    touch src/main.rs src/lib.rs && \
     cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
     cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
     strip /usr/src/openoxide/openoxide-binary
 
-
 # =============================================================================
-# ===================================================================
 # Stage 2: Alpine Runtime Image
-# ===================================================================
+# =============================================================================
 FROM alpine:3.21 AS runtime
 
 ARG NIXPACKS_VERSION=1.41.0
