@@ -1,4 +1,3 @@
-use pty_process::OwnedReadPty;
 use socketioxide::extract::SocketRef;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::io::AsyncReadExt;
@@ -47,29 +46,6 @@ pub fn spawn_output_task(
                     tracing::warn!("Terminal output read error: {error}");
                     emit_error(&socket, format!("terminal read failed: {error}"));
                     return;
-                }
-            }
-        }
-    });
-}
-
-pub fn spawn_pty_reader(socket: SocketRef, mut reader: OwnedReadPty) {
-    tokio::spawn(async move {
-        let mut buffer = [0u8; 4096];
-        loop {
-            match reader.read(&mut buffer).await {
-                Ok(0) => break,
-                Ok(n) => emit_terminal_bytes(&socket, "stdout", &buffer[..n]),
-                Err(error) => {
-                    let is_pty_closed = error
-                        .raw_os_error()
-                        .map(|code| code == 5)
-                        .unwrap_or(false);
-                    if !is_pty_closed {
-                        tracing::warn!("PTY reader stream error: {error}");
-                        emit_error(&socket, format!("PTY stream read error: {error}"));
-                    }
-                    break;
                 }
             }
         }

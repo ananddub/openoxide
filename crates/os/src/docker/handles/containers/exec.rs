@@ -84,17 +84,6 @@ impl<'a> ExecBuilder<'a> {
         a.build()
     }
 
-    pub fn spawn_pty(
-        self,
-        pts: pty_process::Pts,
-        cmd: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Result<tokio::process::Child, pty_process::Error> {
-        let args = self.build_args(cmd);
-        pty_process::Command::new("docker")
-            .args(&args)
-            .spawn(pts)
-    }
-
     pub fn socket_stream(self) -> super::socat::ContainerSocketStreamBuilder<'a> {
         super::socat::ContainerSocketStreamBuilder::new(self.cli, self.id)
     }

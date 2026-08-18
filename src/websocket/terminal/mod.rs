@@ -42,19 +42,6 @@ impl TerminalSocket {
 
     async fn terminate_session_for_key(session: TerminalSession, key_str: &str) {
         match session {
-            TerminalSession::Pty { cancel, child, writer, .. } => {
-                cancel.cancel();
-                let mut w = writer.lock().await;
-                let _ = w.shutdown().await;
-                let mut c = child.lock().await;
-                if let Some(pid) = c.id() {
-                    let executor = crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
-                    let os = crate::utils::os::OsCli::new(&executor);
-                    let _ = os.process_api().kill_pid(pid.to_string()).run().await;
-                }
-                let _ = c.kill().await;
-                let _ = c.wait().await;
-            }
             TerminalSession::Local { child, stdin, .. } => {
                 let mut s = stdin.lock().await;
                 let _ = s.shutdown().await;
@@ -184,15 +171,6 @@ impl TerminalSocket {
         };
 
         match session {
-            TerminalSession::Pty { writer, .. } => {
-                let mut w = writer.lock().await;
-                if let Err(error) = w.write_all(data.as_bytes()).await {
-                    tracing::warn!("PTY write_all failed: {error}");
-                    emit_error(&socket, format!("could not write PTY input: {error}"));
-                } else {
-                    let _ = w.flush().await;
-                }
-            }
             TerminalSession::Local { stdin, .. } => {
                 let mut s = stdin.lock().await;
                 if let Err(error) = s.write_all(data.as_bytes()).await {
@@ -226,10 +204,6 @@ impl TerminalSocket {
         let key = socket_key(&socket);
         if let Some(session) = self.sessions.get(&key) {
             match session.value() {
-                TerminalSession::Pty { writer, .. } => {
-                    let w = writer.lock().await;
-                    let _ = w.resize(payload.size());
-                }
                 TerminalSession::InMemorySsh { terminal, .. } => {
                     let term = terminal.clone();
                     let cols = payload.cols.unwrap_or(80);

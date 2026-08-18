@@ -1,12 +1,23 @@
 use std::borrow::Cow;
 use dashmap::DashMap;
-use pty_process::{OwnedWritePty, Size};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::{
     process::{Child, ChildStdin},
-    sync::{Mutex, mpsc},
+    sync::Mutex,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Size {
+    pub rows: u16,
+    pub cols: u16,
+}
+
+impl Size {
+    pub fn new(rows: u16, cols: u16) -> Self {
+        Self { rows, cols }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SocketKey(pub String);
@@ -195,13 +206,6 @@ pub type SessionMap = Arc<DashMap<SocketKey, TerminalSession>>;
 
 #[derive(Debug, Clone)]
 pub enum TerminalSession {
-    Pty {
-        writer: Arc<Mutex<OwnedWritePty>>,
-        child: Arc<Mutex<Child>>,
-        session_id: SessionId,
-        cancel: tokio_util::sync::CancellationToken,
-        container: Option<String>,
-    },
     Local {
         stdin: Arc<Mutex<ChildStdin>>,
         child: Arc<Mutex<Child>>,
