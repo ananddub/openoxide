@@ -38,9 +38,6 @@ impl<'a> ServiceBuilder<'a> {
     pub fn enable(self) -> ServiceActionBuilder<'a> {
         ServiceActionBuilder::new(self.executor, "enable", self.name)
     }
-    pub fn enable_now(self) -> ServiceActionBuilder<'a> {
-        ServiceActionBuilder::new(self.executor, "enable", self.name).now()
-    }
     pub fn disable(self) -> ServiceActionBuilder<'a> {
         ServiceActionBuilder::new(self.executor, "disable", self.name)
     }
