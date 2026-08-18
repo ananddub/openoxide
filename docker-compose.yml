@@ -5,11 +5,7 @@ services:
       dockerfile: Dockerfile
     image: openoxide:latest
     container_name: openoxide
-    restart: unless-stopped
-
-    ports:
-      - "4000:4000"
-      - "51820:51820/udp"
+    network_mode: host
 
     cap_add:
       - NET_ADMIN
