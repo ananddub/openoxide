@@ -333,6 +333,41 @@ impl DatabaseBuilder {
         let service_name = format!("{}_db", app_name);
         self.wait_healthy(&service_name, cancel).await?;
 
+        // Post-deploy password sync: ensure container engine uses the exact password configured in database
+        if let Ok(mgmt) = auto_di::resolve::<crate::repository::DatabaseManagementRepository>().await {
+            if let Ok(creds) = mgmt.credentials(db_kind, db_id).await {
+                if !creds.password.is_empty() {
+                    if let Ok(containers) = self.ctx.docker.containers().ps().all().list().await {
+                        if let Some(matched) = containers.iter().find(|c| {
+                            let name = c.names.trim_start_matches('/').to_lowercase();
+                            name.starts_with(&format!("{}_db", app_name).to_lowercase())
+                                || name.contains(&app_name.to_lowercase())
+                        }) {
+                            let container_id = &matched.id;
+                            let user_name = if creds.user.is_empty() { "openoxide".to_string() } else { creds.user };
+                            let escaped_pwd = creds.password.replace('\'', "''");
+                            match db_kind {
+                                DatabaseKind::Postgres => {
+                                    let sql = format!("ALTER USER \"{}\" WITH PASSWORD '{}';", user_name, escaped_pwd);
+                                    let _ = self.ctx.docker.containers().exec(container_id).run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql]).await;
+                                    let _ = self.ctx.docker.containers().exec(container_id).run(["psql", "-U", "postgres", "-c", &sql]).await;
+                                }
+                                DatabaseKind::Mysql | DatabaseKind::Mariadb => {
+                                    let sql = format!("ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;", user_name, escaped_pwd);
+                                    let _ = self.ctx.docker.containers().exec(container_id).run(["mysql", "-u", "root", "-e", &sql]).await;
+                                }
+                                DatabaseKind::Redis => {
+                                    let _ = self.ctx.docker.containers().exec(container_id).run(["redis-cli", "CONFIG", "SET", "requirepass", &creds.password]).await;
+                                    let _ = self.ctx.docker.containers().exec(container_id).run(["redis-cli", "-a", &creds.password, "CONFIG", "REWRITE"]).await;
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         self.ctx.emit(BuilderEvent::Deployed).await;
         Ok(())
     }
