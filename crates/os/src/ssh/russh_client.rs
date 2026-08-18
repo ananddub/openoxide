@@ -127,7 +127,7 @@ impl RusshTerminal {
         rows: u16,
         command: Option<&str>,
     ) -> ExecResult<Self> {
-        let mut channel = session
+        let channel = session
             .channel_open_session()
             .await
             .map_err(|e| ExecError::Ssh(format!("Failed to open SSH channel: {e}")))?;
@@ -167,7 +167,7 @@ impl RusshTerminal {
         let stream = channel.into_stream();
         let (mut reader, mut writer) = tokio::io::split(stream);
 
-        // Task 1: Reader loop (never cancelled by tokio::select!)
+        // Task 1: Reader loop (runs continuously in background, never cancelled)
         tokio::spawn(async move {
             let mut buf = [0u8; 4096];
             loop {

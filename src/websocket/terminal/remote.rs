@@ -14,6 +14,14 @@ pub async fn spawn_remote_terminal(
     input: ServerTerminalStart,
 ) {
     let key = socket_key(&socket);
+    if let Some((_, old_session)) = sessions.remove(&key) {
+        let cancel = match old_session {
+            TerminalSession::InMemorySsh { cancel, .. } => cancel,
+            TerminalSession::DockerSocket { cancel, .. } => cancel,
+            _ => tokio_util::sync::CancellationToken::new(),
+        };
+        cancel.cancel();
+    }
 
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
@@ -110,6 +118,14 @@ pub async fn spawn_remote_docker_terminal(
     input: super::types::DockerTerminalStart,
 ) {
     let key = socket_key(&socket);
+    if let Some((_, old_session)) = sessions.remove(&key) {
+        let cancel = match old_session {
+            TerminalSession::InMemorySsh { cancel, .. } => cancel,
+            TerminalSession::DockerSocket { cancel, .. } => cancel,
+            _ => tokio_util::sync::CancellationToken::new(),
+        };
+        cancel.cancel();
+    }
 
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
