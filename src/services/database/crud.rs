@@ -186,9 +186,10 @@ impl DatabaseService {
             || input.network_ids.is_some();
 
         if needs_redeploy {
-            let operations = self.operations.clone();
             tokio::spawn(async move {
-                let _ = operations.deploy(kind, id).await;
+                if let Ok(svc) = auto_di::resolve::<DatabaseService>().await {
+                    let _ = svc.run_operation(kind, id, DatabaseOperation::Deploy).await;
+                }
             });
         }
 
