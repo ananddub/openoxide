@@ -452,11 +452,8 @@ impl ServerSetup {
                         while let Some(index) = pending_stderr.find('\n') {
                             let line = pending_stderr[..index].trim_end_matches('\r').to_owned();
                             pending_stderr.drain(..=index);
-                            if !line.is_empty() {
-                                let formatted_line = format!("[STDERR] {line}");
-                                if log_tx.send(formatted_line).await.is_err() {
-                                    return;
-                                }
+                            if !line.is_empty() && log_tx.send(line).await.is_err() {
+                                return;
                             }
                         }
                     }
@@ -468,7 +465,7 @@ impl ServerSetup {
             }
             let line_err = pending_stderr.trim_end_matches('\r').to_owned();
             if !line_err.is_empty() {
-                let _ = log_tx.send(format!("[STDERR] {line_err}")).await;
+                let _ = log_tx.send(line_err).await;
             }
         });
 

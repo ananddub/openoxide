@@ -53,7 +53,7 @@ impl<'a> IntoCommand for ServiceActionBuilder<'a> {
         let now_flag = if self.now { "--now " } else { "" };
         let base = format!("systemctl {} {}{}", self.action, now_flag, escape_arg(&self.name));
         if self.non_fatal {
-            format!("{base} || true")
+            format!("{base} 2>/dev/null || true")
         } else {
             base
         }
