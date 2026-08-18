@@ -46,6 +46,12 @@ mod dependency_tests {
     }
 }
 
+impl ServerRepository {
+    pub fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
+}
+
 #[singleton]
 impl ServerRepository {
     pub async fn migrate_dependencies(
