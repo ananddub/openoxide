@@ -1,11 +1,12 @@
-import {useState, useEffect} from 'react';
-import {Trash2, AlertTriangle, Save, RefreshCw, Cpu} from 'lucide-react';
+import {useState} from 'react';
+import {Trash2, AlertTriangle, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {DeleteDatabaseDialog} from '#/components/projects/database/delete-database-dialog';
+import {DatabaseAdvancedCustomCommand} from './database-advanced-custom-command';
+import {DatabaseAdvancedResources} from './database-advanced-resources';
 
 interface DatabaseAdvancedTabProps {
 	database: any;
@@ -23,50 +24,9 @@ export function DatabaseAdvancedTab({database, onUpdated, onAction}: DatabaseAdv
 	else if (kind.includes('redis')) endpoint = '/redis/{id}';
 	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
 
-	const patchDatabase = $api.useMutation('patch', endpoint as any);
 	const redeployDatabase = $api.useMutation('post', `${endpoint}/redeploy` as any);
-
-	const [replicas, setReplicas] = useState(String(database?.replicas || '1'));
-	const [memRes, setMemRes] = useState(database?.memory_reservation || '');
-	const [memLimit, setMemLimit] = useState(database?.memory_limit || '');
-	const [cpuRes, setCpuRes] = useState(database?.cpu_reservation || '');
-	const [cpuLimit, setCpuLimit] = useState(database?.cpu_limit || '');
-	const [volumeMount, setVolumeMount] = useState(database?.volume_mount || '');
-
-	const [saving, setSaving] = useState(false);
 	const [rebuilding, setRebuilding] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-	useEffect(() => {
-		setReplicas(String(database?.replicas || '1'));
-		setMemRes(database?.memory_reservation || '');
-		setMemLimit(database?.memory_limit || '');
-		setCpuRes(database?.cpu_reservation || '');
-		setCpuLimit(database?.cpu_limit || '');
-		setVolumeMount(database?.volume_mount || '');
-	}, [database]);
-
-	const handleSaveResources = async () => {
-		setSaving(true);
-		try {
-			await patchDatabase.mutateAsync({
-				params: {path: {id: database?.id}},
-				body: {
-					memory_reservation: memRes || undefined,
-					memory_limit: memLimit || undefined,
-					cpu_reservation: cpuRes || undefined,
-					cpu_limit: cpuLimit || undefined,
-					replicas: replicas ? parseInt(replicas) : 1,
-				},
-			});
-			toast.success('Database resources updated successfully');
-			onUpdated();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		} finally {
-			setSaving(false);
-		}
-	};
 
 	const handleRebuild = async () => {
 		setRebuilding(true);
@@ -87,57 +47,13 @@ export function DatabaseAdvancedTab({database, onUpdated, onAction}: DatabaseAdv
 
 	return (
 		<div className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
-			{/* Replicas & Resource Limits Card */}
-			<section className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
-				<div>
-					<h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
-						<Cpu className="size-4 text-primary" /> Container Replicas & Resource Limits
-					</h3>
-					<p className="text-xs text-muted-foreground mt-0.5">
-						Configure instance replicas, memory reservation/limit (e.g. <code className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[11px]">512m</code>, <code className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[11px]">2g</code>), and CPU allocation.
-					</p>
-				</div>
+			{/* 1. Custom Docker Image, Command & Engine Args (Dokploy style) */}
+			<DatabaseAdvancedCustomCommand database={database} onUpdated={onUpdated} />
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/40 pt-4">
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Replicas</label>
-						<Input type="number" min="1" max="10" value={replicas} onChange={e => setReplicas(e.target.value)} className="h-9 text-xs" />
-					</div>
+			{/* 2. Replicas & Resource Limits (Memory / CPU Limits & Reservations) */}
+			<DatabaseAdvancedResources database={database} onUpdated={onUpdated} />
 
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Volume Mount Path</label>
-						<Input placeholder="Auto-generated data volume" value={volumeMount} onChange={e => setVolumeMount(e.target.value)} className="h-9 text-xs font-mono" />
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Memory Reservation</label>
-						<Input placeholder="e.g. 256m" value={memRes} onChange={e => setMemRes(e.target.value)} className="h-9 text-xs" />
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Memory Limit</label>
-						<Input placeholder="e.g. 1g" value={memLimit} onChange={e => setMemLimit(e.target.value)} className="h-9 text-xs" />
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">CPU Reservation</label>
-						<Input placeholder="e.g. 0.2" value={cpuRes} onChange={e => setCpuRes(e.target.value)} className="h-9 text-xs" />
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">CPU Limit</label>
-						<Input placeholder="e.g. 1.0" value={cpuLimit} onChange={e => setCpuLimit(e.target.value)} className="h-9 text-xs" />
-					</div>
-				</div>
-
-				<div className="flex justify-end border-t border-border/40 pt-4">
-					<Button onClick={handleSaveResources} disabled={saving} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
-						<Save className="size-3.5" /> {saving ? 'Saving...' : 'Save Configuration'}
-					</Button>
-				</div>
-			</section>
-
-			{/* Danger Zone Card */}
+			{/* 3. Danger Zone Card */}
 			<section className="bg-card border border-destructive/30 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
 				<div className="flex items-center gap-2 text-destructive">
 					<AlertTriangle className="size-5" />
