@@ -4,6 +4,7 @@ use russh::*;
 use russh_keys::*;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::{mpsc, Mutex};
 
 #[derive(Clone)]
 pub struct RusshHandler;
@@ -107,7 +108,9 @@ pub async fn execute_russh_cmd(
 }
 
 pub struct RusshTerminal {
-    channel: Channel<client::Msg>,
+    input_tx: mpsc::Sender<Vec<u8>>,
+    resize_tx: mpsc::Sender<(u16, u16)>,
+    output_rx: Mutex<mpsc::Receiver<Vec<u8>>>,
 }
 
 impl std::fmt::Debug for RusshTerminal {
@@ -128,12 +131,15 @@ impl RusshTerminal {
             .await
             .map_err(|e| ExecError::Ssh(format!("Failed to open SSH channel: {e}")))?;
 
+        let sanitized_cols = cols.clamp(10, 500);
+        let sanitized_rows = rows.clamp(5, 200);
+
         channel
             .request_pty(
                 true,
                 "xterm-256color",
-                cols as u32,
-                rows as u32,
+                sanitized_cols as u32,
+                sanitized_rows as u32,
                 0,
                 0,
                 &[],
@@ -153,35 +159,71 @@ impl RusshTerminal {
                 .map_err(|e| ExecError::Ssh(format!("Failed to request shell: {e}")))?;
         }
 
-        Ok(Self { channel })
-    }
+        let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(128);
+        let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
+        let (output_tx, output_rx) = mpsc::channel::<Vec<u8>>(128);
 
-    pub async fn write(&mut self, data: &[u8]) -> ExecResult<()> {
-        self.channel
-            .data(data)
-            .await
-            .map_err(|e| ExecError::Ssh(format!("Failed to write to SSH channel: {e}")))
-    }
-
-    pub async fn resize(&mut self, cols: u16, rows: u16) -> ExecResult<()> {
-        self.channel
-            .window_change(cols as u32, rows as u32, 0, 0)
-            .await
-            .map_err(|e| ExecError::Ssh(format!("Failed to resize SSH window: {e}")))
-    }
-
-    pub async fn read_next(&mut self) -> Option<Vec<u8>> {
-        while let Some(msg) = self.channel.wait().await {
-            match msg {
-                ChannelMsg::Data { data } => return Some(data.to_vec()),
-                ChannelMsg::ExtendedData { data, .. } => return Some(data.to_vec()),
-                _ => {}
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    Some(data) = input_rx.recv() => {
+                        let _ = channel.data(&data[..]).await;
+                    }
+                    Some((c, r)) = resize_rx.recv() => {
+                        let clean_c = c.clamp(10, 500) as u32;
+                        let clean_r = r.clamp(5, 200) as u32;
+                        let _ = channel.window_change(clean_c, clean_r, 0, 0).await;
+                    }
+                    msg = channel.wait() => {
+                        match msg {
+                            Some(ChannelMsg::Data { data }) => {
+                                if output_tx.send(data.to_vec()).await.is_err() {
+                                    break;
+                                }
+                            }
+                            Some(ChannelMsg::ExtendedData { data, .. }) => {
+                                if output_tx.send(data.to_vec()).await.is_err() {
+                                    break;
+                                }
+                            }
+                            None | Some(ChannelMsg::Close) | Some(ChannelMsg::Eof) => {
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
             }
-        }
-        None
+            let _ = channel.close().await;
+        });
+
+        Ok(Self {
+            input_tx,
+            resize_tx,
+            output_rx: Mutex::new(output_rx),
+        })
     }
 
-    pub async fn close(mut self) {
-        let _ = self.channel.close().await;
+    pub async fn write(&self, data: &[u8]) -> ExecResult<()> {
+        self.input_tx
+            .send(data.to_vec())
+            .await
+            .map_err(|e| ExecError::Ssh(format!("Failed to write terminal input: {e}")))
+    }
+
+    pub async fn resize(&self, cols: u16, rows: u16) -> ExecResult<()> {
+        self.resize_tx
+            .send((cols, rows))
+            .await
+            .map_err(|e| ExecError::Ssh(format!("Failed to resize terminal: {e}")))
+    }
+
+    pub async fn read_next(&self) -> Option<Vec<u8>> {
+        let mut rx = self.output_rx.lock().await;
+        rx.recv().await
+    }
+
+    pub async fn close(self) {
+        // Drop input_tx to close channel
     }
 }

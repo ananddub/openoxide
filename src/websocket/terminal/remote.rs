@@ -44,7 +44,7 @@ pub async fn spawn_remote_terminal(
     };
 
     let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, None).await {
-        Ok(t) => Arc::new(tokio::sync::Mutex::new(t)),
+        Ok(t) => Arc::new(t),
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -80,11 +80,7 @@ pub async fn spawn_remote_terminal(
 
     tokio::spawn(async move {
         loop {
-            let next_chunk = {
-                let mut t = term_read.lock().await;
-                t.read_next().await
-            };
-            match next_chunk {
+            match term_read.read_next().await {
                 Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
                 None => break,
             }
@@ -168,7 +164,7 @@ pub async fn spawn_remote_docker_terminal(
     };
 
     let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, Some(&docker_cmd)).await {
-        Ok(t) => Arc::new(tokio::sync::Mutex::new(t)),
+        Ok(t) => Arc::new(t),
         Err(error) => {
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH container terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -205,11 +201,7 @@ pub async fn spawn_remote_docker_terminal(
 
     tokio::spawn(async move {
         loop {
-            let next_chunk = {
-                let mut t = term_read.lock().await;
-                t.read_next().await
-            };
-            match next_chunk {
+            match term_read.read_next().await {
                 Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
                 None => break,
             }
