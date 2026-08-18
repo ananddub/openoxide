@@ -386,9 +386,18 @@ impl DeploymentService {
             Some(sid) => Some(sid),
             None => {
                 let mut found_sid: Option<i64> = None;
-                for table in &["postgres_dbs", "mysql_dbs", "redis_dbs", "mariadb_dbs", "mongo_dbs", "libsql_dbs"] {
-                    let query_str = format!("SELECT server_id FROM {} WHERE app_name = ? OR name = ? LIMIT 1", table);
-                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>(&query_str)
+                let db_queries = [
+                    "SELECT server_id FROM postgres_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM mysql_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM redis_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM mariadb_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM mongo_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM libsql_dbs WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM applications WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM compose WHERE app_name = ? OR name = ? LIMIT 1",
+                ];
+                for q in db_queries {
+                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>(q)
                         .bind(&target)
                         .bind(&target)
                         .fetch_optional(self.database())
@@ -398,26 +407,6 @@ impl DeploymentService {
                             found_sid = row.0;
                             break;
                         }
-                    }
-                }
-                if found_sid.is_none() {
-                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>("SELECT server_id FROM applications WHERE app_name = ? OR name = ? LIMIT 1")
-                        .bind(&target)
-                        .bind(&target)
-                        .fetch_optional(self.database())
-                        .await
-                    {
-                        found_sid = row.0;
-                    }
-                }
-                if found_sid.is_none() {
-                    if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>("SELECT server_id FROM compose WHERE app_name = ? OR name = ? LIMIT 1")
-                        .bind(&target)
-                        .bind(&target)
-                        .fetch_optional(self.database())
-                        .await
-                    {
-                        found_sid = row.0;
                     }
                 }
                 found_sid
