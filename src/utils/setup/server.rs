@@ -515,12 +515,11 @@ impl ServerSetup {
             info!("Checking Docker installation");
             if !os.has_command("docker") {
                 info!("Installing Docker");
-                os.shell_installer("https://get.docker.com");
+                os.shell_installer("https://get.docker.com").shell("sh");
             }
             if os.has_command("systemctl") {
                 info!("Ensuring Docker service is enabled and running");
-                os.service("docker").enable();
-                os.service("docker").start();
+                raw!("systemctl enable docker --now 2>/dev/null || systemctl enable docker 2>/dev/null || true; systemctl start docker 2>/dev/null || true");
             }
             cmd("docker", "info");
         ));
