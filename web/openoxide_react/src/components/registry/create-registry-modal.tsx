@@ -22,6 +22,7 @@ import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
 
 import type {RegistryResponse, RemoteServerResponse} from '#/types/api-helpers';
+import {useAppStore} from '#/stores/app-store';
 
 interface CreateRegistryModalProps {
 	isOpen: boolean;
