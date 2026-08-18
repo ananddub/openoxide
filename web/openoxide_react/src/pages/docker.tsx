@@ -6,6 +6,7 @@ import { useDeploymentRunning } from 'virtual:openoxide-live';
 import { DockerHeader } from '#/components/docker/docker-header';
 import { DockerContainersTable } from '#/components/docker/docker-containers-table';
 import { DockerInspectModal, type GlobalContainerItem } from '#/components/docker/docker-inspect-modal';
+import { useAppStore } from '#/stores/app-store';
 
 export const Route = createFileRoute('/_app/docker')({
 	component: DockerPage,
