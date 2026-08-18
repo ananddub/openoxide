@@ -83,7 +83,14 @@ impl DeploymentService {
                         }
                     }
                 }
+                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                    is_service = true;
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                }
             }
+        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+            is_service = true;
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
         }
 
         let handle = docker.containers();
@@ -127,7 +134,14 @@ impl DeploymentService {
                         }
                     }
                 }
+                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                    is_service = true;
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                }
             }
+        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+            is_service = true;
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
         }
 
         let handle = docker.containers();
