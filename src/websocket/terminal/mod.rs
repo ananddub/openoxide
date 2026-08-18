@@ -27,6 +27,7 @@ pub use types::{
 #[derive(Debug)]
 pub struct TerminalSocket {
     sessions: Arc<DashMap<SocketKey, TerminalSession>>,
+    pending_starts: Arc<DashMap<SocketKey, tokio_util::sync::CancellationToken>>,
     db: Arc<SqlitePool>,
 }
 
@@ -36,6 +37,7 @@ impl TerminalSocket {
     fn new(db: Arc<SqlitePool>) -> Self {
         Self {
             sessions: Arc::new(DashMap::new()),
+            pending_starts: Arc::new(DashMap::new()),
             db,
         }
     }
@@ -97,9 +99,22 @@ impl TerminalSocket {
     async fn stop_socket_session(&self, socket: &SocketRef) {
         let key = socket_key(socket);
         let key_str = key.to_string();
+        if let Some((_, token)) = self.pending_starts.remove(&key) {
+            token.cancel();
+        }
         if let Some((_, session)) = self.sessions.remove(&key) {
             Self::terminate_session_for_key(session, &key_str).await;
         }
+    }
+
+    fn prepare_start_token(&self, socket: &SocketRef) -> tokio_util::sync::CancellationToken {
+        let key = socket_key(socket);
+        if let Some((_, token)) = self.pending_starts.remove(&key) {
+            token.cancel();
+        }
+        let token = tokio_util::sync::CancellationToken::new();
+        self.pending_starts.insert(key, token.clone());
+        token
     }
 
     fn bind_disconnect_cleanup(&self, socket: &SocketRef, key: SocketKey) {
@@ -120,10 +135,11 @@ impl TerminalSocket {
     #[on("docker:start")]
     async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
+        let start_token = self.prepare_start_token(&socket);
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
         if let Some(server_id) = input.server_id {
-            spawn_remote_docker_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
+            spawn_remote_docker_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input, start_token).await;
             return;
         }
 
@@ -133,6 +149,7 @@ impl TerminalSocket {
     #[on("server:start")]
     async fn server_start(&self, socket: SocketRef, Data(mut input): Data<ServerTerminalStart>) {
         self.stop_socket_session(&socket).await;
+        let start_token = self.prepare_start_token(&socket);
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
         if input.shell.is_none() && input.command.is_some() {
@@ -140,7 +157,7 @@ impl TerminalSocket {
         }
 
         if let Some(server_id) = input.server_id {
-            spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input).await;
+            spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input, start_token).await;
             return;
         }
 

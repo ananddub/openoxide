@@ -12,20 +12,19 @@ pub async fn spawn_remote_terminal(
     db: &sqlx::SqlitePool,
     server_id: i64,
     input: ServerTerminalStart,
+    start_token: tokio_util::sync::CancellationToken,
 ) {
     let key = socket_key(&socket);
-    if let Some((_, old_session)) = sessions.remove(&key) {
-        let cancel = match old_session {
-            TerminalSession::InMemorySsh { cancel, .. } => cancel,
-            TerminalSession::DockerSocket { cancel, .. } => cancel,
-            _ => tokio_util::sync::CancellationToken::new(),
-        };
-        cancel.cancel();
+    if start_token.is_cancelled() {
+        return;
     }
 
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_terminal");
             let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -37,6 +36,10 @@ pub async fn spawn_remote_terminal(
         }
     };
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let actual_host = executor.host().to_string();
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
@@ -44,6 +47,9 @@ pub async fn spawn_remote_terminal(
     let russh_session = match executor.connect_session().await {
         Ok(s) => s,
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
@@ -51,9 +57,16 @@ pub async fn spawn_remote_terminal(
         }
     };
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, None).await {
         Ok(t) => Arc::new(t),
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not start in-memory SSH terminal: {error}"));
@@ -61,8 +74,12 @@ pub async fn spawn_remote_terminal(
         }
     };
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let session_id = next_session_id();
-    let cancel = tokio_util::sync::CancellationToken::new();
+    let cancel = start_token.clone();
 
     sessions.insert(
         key.clone(),
@@ -125,20 +142,19 @@ pub async fn spawn_remote_docker_terminal(
     db: &sqlx::SqlitePool,
     server_id: i64,
     input: super::types::DockerTerminalStart,
+    start_token: tokio_util::sync::CancellationToken,
 ) {
     let key = socket_key(&socket);
-    if let Some((_, old_session)) = sessions.remove(&key) {
-        let cancel = match old_session {
-            TerminalSession::InMemorySsh { cancel, .. } => cancel,
-            TerminalSession::DockerSocket { cancel, .. } => cancel,
-            _ => tokio_util::sync::CancellationToken::new(),
-        };
-        cancel.cancel();
+    if start_token.is_cancelled() {
+        return;
     }
 
     let executor = match crate::services::compose::remote::remote_executor(db, server_id).await {
         Ok(executor) => executor,
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_docker_terminal");
             let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
@@ -149,6 +165,10 @@ pub async fn spawn_remote_docker_terminal(
             return;
         }
     };
+
+    if start_token.is_cancelled() {
+        return;
+    }
 
     let actual_host = executor.host().to_string();
     let shell_req = input.shell.as_deref().unwrap_or("sh").to_string();
@@ -172,6 +192,10 @@ pub async fn spawn_remote_docker_terminal(
         }
     }
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let key_str = socket_key(&socket).to_string();
     let docker_cmd = format!("docker exec -it --env OPENOXIDE_SOCKET_ID={} {} {}", key_str, target_container, shell_req);
 
@@ -181,6 +205,9 @@ pub async fn spawn_remote_docker_terminal(
     let russh_session = match executor.connect_session().await {
         Ok(s) => s,
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
@@ -188,9 +215,16 @@ pub async fn spawn_remote_docker_terminal(
         }
     };
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, Some(&docker_cmd)).await {
         Ok(t) => Arc::new(t),
         Err(error) => {
+            if start_token.is_cancelled() {
+                return;
+            }
             let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH container terminal: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not start in-memory SSH container terminal: {error}"));
@@ -198,8 +232,12 @@ pub async fn spawn_remote_docker_terminal(
         }
     };
 
+    if start_token.is_cancelled() {
+        return;
+    }
+
     let session_id = next_session_id();
-    let cancel = tokio_util::sync::CancellationToken::new();
+    let cancel = start_token.clone();
 
     sessions.insert(
         key.clone(),
