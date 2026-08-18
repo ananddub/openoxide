@@ -30,7 +30,7 @@ pub(super) fn validate(input: &UpdatePrivateNetworkDto) -> sqlx::Result<()> {
                     "managed private networks require the WIREGUARD provider".into(),
                 ));
             }
-            let cidr = input.tunnel_address.as_deref().ok_or_else(|| {
+            let _cidr = input.tunnel_address.as_deref().ok_or_else(|| {
                 sqlx::Error::Protocol("managed WireGuard requires tunnel_address".into())
             })?;
             let endpoint = input

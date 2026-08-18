@@ -391,6 +391,7 @@ impl RemoteExecutor {
         Ok(result)
     }
 
+    #[allow(dead_code)]
     async fn cancel_remote_job(&self, job: Option<&RemoteCancelJob>) {
         let Some(job) = job else {
             return;

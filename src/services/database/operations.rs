@@ -271,6 +271,7 @@ impl DatabaseService {
         }
     }
 
+    #[allow(dead_code)]
     async fn database_docker(
         &self,
         server_id: Option<i64>,
