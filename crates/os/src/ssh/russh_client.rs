@@ -2,6 +2,7 @@ use crate::exec::{ExecError, ExecResult, SshAuth, SshHostKey};
 use async_trait::async_trait;
 use russh::*;
 use russh_keys::*;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -112,12 +113,17 @@ pub struct RusshTerminal {
     input_tx: mpsc::Sender<Vec<u8>>,
     resize_tx: mpsc::Sender<(u16, u16)>,
     output_rx: Mutex<mpsc::Receiver<Vec<u8>>>,
+    last_dims: AtomicU32,
 }
 
 impl std::fmt::Debug for RusshTerminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RusshTerminal").finish()
     }
+}
+
+fn pack_dims(cols: u16, rows: u16) -> u32 {
+    ((cols as u32) << 16) | (rows as u32)
 }
 
 impl RusshTerminal {
@@ -204,6 +210,7 @@ impl RusshTerminal {
             input_tx,
             resize_tx,
             output_rx: Mutex::new(output_rx),
+            last_dims: AtomicU32::new(pack_dims(sanitized_cols, sanitized_rows)),
         })
     }
 
@@ -215,8 +222,17 @@ impl RusshTerminal {
     }
 
     pub async fn resize(&self, cols: u16, rows: u16) -> ExecResult<()> {
+        let sanitized_cols = cols.clamp(10, 500);
+        let sanitized_rows = rows.clamp(5, 200);
+        let packed = pack_dims(sanitized_cols, sanitized_rows);
+
+        // Deduplicate duplicate window resize signals to prevent bash SIGWINCH prompt redraw duplication
+        if self.last_dims.swap(packed, Ordering::Relaxed) == packed {
+            return Ok(());
+        }
+
         self.resize_tx
-            .send((cols, rows))
+            .send((sanitized_cols, sanitized_rows))
             .await
             .map_err(|e| ExecError::Ssh(format!("Failed to resize terminal: {e}")))
     }
