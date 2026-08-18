@@ -31,6 +31,7 @@ services:
       HOST: "0.0.0.0"
       DATABASE_URL: "sqlite:///app/data/db.sqlite3"
       MALLOC_ARENA_MAX: "2"
+      RUST_BACKTRACE: "1"
 
       # ── Secrets — override all of these before going to production ─────────
       SECRET_KEY: "change_me_in_production"

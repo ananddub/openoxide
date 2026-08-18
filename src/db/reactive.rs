@@ -72,21 +72,20 @@ pub fn set_pool(pool: sqlx::SqlitePool) {
 }
 
 async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
-    if let Some(pool) = DB_POOL.get()
-        && let Ok(mut connection) = pool.acquire().await
-    {
-        // A committed SQLite change is not guaranteed to be visible to another
-        // connection while the commit hook itself is still running. Acquiring
-        // the write lock ensures the originating transaction has fully exited.
-        if sqlx::query("BEGIN IMMEDIATE")
-            .execute(&mut *connection)
-            .await
-            .is_ok()
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| async {
+        if let Some(pool) = DB_POOL.get()
+            && let Ok(mut connection) = pool.acquire().await
         {
-            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            if sqlx::query("BEGIN IMMEDIATE")
+                .execute(&mut *connection)
+                .await
+                .is_ok()
+            {
+                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
+            }
         }
-    }
-    event_bus().publish(changes);
+        event_bus().publish(changes);
+    })).ok();
 }
 
 pub async fn request_scope<F, T>(future: F) -> T

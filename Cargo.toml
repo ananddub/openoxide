@@ -88,6 +88,6 @@ codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use kareg
 opt-level = "z"        # size ke liye optimize
 lto = true             # Full LTO — maximum cross-crate dead code elimination
 codegen-units = 8      # 8 parallel codegen units
-panic = "abort"        # unwinding code remove karta hai
+panic = "unwind"       # Full Rust panic backtraces enabled
 strip = true           # debug symbols remove karta hai
 overflow-checks = false
