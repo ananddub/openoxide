@@ -206,8 +206,9 @@ pub enum TerminalSession {
         stdin: Arc<Mutex<ChildStdin>>,
         child: Arc<Mutex<Child>>,
     },
-    Remote {
-        input: mpsc::Sender<Vec<u8>>,
+    InMemorySsh {
+        terminal: Arc<os::ssh::InMemorySshTerminal>,
+        session_id: SessionId,
         cancel: tokio_util::sync::CancellationToken,
     },
     DockerSocket {

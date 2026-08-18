@@ -202,10 +202,12 @@ impl TerminalSocket {
                     let _ = s.flush().await;
                 }
             }
-            TerminalSession::Remote { input: tx, .. } => {
-                if tx.send(data.into_bytes()).await.is_err() {
-                    emit_error(&socket, "remote terminal input channel is closed");
-                }
+            TerminalSession::InMemorySsh { terminal, .. } => {
+                let term = terminal.clone();
+                let bytes = data.into_bytes();
+                tokio::task::spawn_blocking(move || {
+                    let _ = term.write(&bytes);
+                });
             }
             TerminalSession::DockerSocket { writer, .. } => {
                 let mut w = writer.lock().await;
@@ -227,6 +229,14 @@ impl TerminalSocket {
                 TerminalSession::Pty { writer, .. } => {
                     let w = writer.lock().await;
                     let _ = w.resize(payload.size());
+                }
+                TerminalSession::InMemorySsh { terminal, .. } => {
+                    let term = terminal.clone();
+                    let cols = payload.cols.unwrap_or(80);
+                    let rows = payload.rows.unwrap_or(24);
+                    tokio::task::spawn_blocking(move || {
+                        let _ = term.resize(cols, rows);
+                    });
                 }
                 TerminalSession::DockerSocket { socket_path, exec_id, .. } => {
                     let path = socket_path.clone();
