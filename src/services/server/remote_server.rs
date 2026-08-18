@@ -195,6 +195,9 @@ impl RemoteServerService {
                 dependencies.schedules,
             )));
         }
+        if let Ok(private_network_service) = auto_di::resolve::<crate::services::server::ServerPrivateNetworkService>().await {
+            let _ = private_network_service.disable(id).await;
+        }
         self.repo_server.delete(id).await
     }
 

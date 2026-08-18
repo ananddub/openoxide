@@ -97,6 +97,16 @@ impl ServerPrivateNetworkService {
 
     pub async fn disable(&self, server_id: i64) -> sqlx::Result<()> {
         self.assert_server(server_id).await?;
+        let iface = interface_name(server_id);
+        let local_exec = CommandExecutor::Local(LocalExecutor::new());
+        let local_os = crate::utils::os::OsCli::new(&local_exec);
+        let _ = local_os.wireguard().quick(&iface).down().run().await;
+
+        if let Ok(executor) = crate::services::compose::remote::remote_executor(self.servers.pool(), server_id).await {
+            let remote_os = crate::utils::os::OsCli::new(&executor);
+            let _ = remote_os.wireguard().quick(&iface).down().run().await;
+        }
+
         self.networks.disable(server_id).await
     }
 
