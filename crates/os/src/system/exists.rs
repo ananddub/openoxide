@@ -20,9 +20,13 @@ impl<'a> CommandExistsBuilder<'a> {
 
     fn script(&self) -> Vec<crate::exec::script::ShellIR> {
         let binary = self.binary.as_str();
+        let check_cmd = if binary == "docker" {
+            format!("(command -v {binary} >/dev/null 2>&1 && {binary} --version >/dev/null 2>&1)")
+        } else {
+            format!("command -v {binary} >/dev/null 2>&1 || [ -x /sbin/{binary} ] || [ -x /usr/sbin/{binary} ] || [ -x /usr/bin/{binary} ] || [ -x /usr/local/bin/{binary} ]")
+        };
         vec![crate::exec::script::ShellIR::Raw(format!(
-            "export PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\"; command -v {} || [ -x /sbin/{} ] || [ -x /usr/sbin/{} ] || [ -x /usr/bin/{} ] || [ -x /usr/local/bin/{} ]",
-            binary, binary, binary, binary, binary
+            "export PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\"; {check_cmd}"
         ))]
     }
 }
