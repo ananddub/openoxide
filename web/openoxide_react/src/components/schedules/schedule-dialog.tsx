@@ -9,6 +9,7 @@ import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
 import {useOrganizationStore} from '#/stores/organization-store';
+import {useAppStore} from '#/stores/app-store';
 
 interface ScheduleDialogProps {
 	isOpen: boolean;
