@@ -46,14 +46,26 @@ pub async fn spawn_docker_terminal(
         target_container = input.container.clone();
     }
 
-    let nano = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let exec_id = format!("exec-{nano}");
+    let use_ctr = std::process::Command::new("ctr")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
 
-    let mut cmd = Command::new("ctr");
-    cmd.args(["-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
+    let mut cmd = if use_ctr {
+        let nano = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let exec_id = format!("exec-{nano}");
+        let mut c = Command::new("ctr");
+        c.args(["-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
+        c
+    } else {
+        let mut c = Command::new("docker");
+        c.args(["exec", "-i", &target_container, &shell_req]);
+        c
+    };
 
     cmd.env("TERM", "xterm-256color")
         .stdin(std::process::Stdio::piped())
