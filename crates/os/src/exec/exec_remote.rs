@@ -120,15 +120,7 @@ impl RemoteExecutor {
     }
 
     pub async fn connect_session(&self) -> ExecResult<Arc<crate::ssh::RusshSession>> {
-        crate::ssh::get_or_connect_session(
-            &self.host,
-            self.port,
-            &self.username,
-            &self.auth,
-            &self.host_key,
-            self.connect_timeout,
-        )
-        .await
+        self.connect_fresh_session().await
     }
 
     pub async fn connect_fresh_session(&self) -> ExecResult<Arc<crate::ssh::RusshSession>> {
@@ -373,13 +365,7 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
-        let (code, stdout_bytes, stderr_bytes) = match crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref()).await {
-            Ok(res) => res,
-            Err(e) => {
-                crate::ssh::evict_session(&self.host, self.port, &self.username);
-                return Err(e);
-            }
-        };
+        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref()).await?;
 
         let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {
