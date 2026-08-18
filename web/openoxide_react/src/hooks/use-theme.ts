@@ -10,10 +10,16 @@ export type UseThemeReturn = {
 
 function updateFavicon(isDark: boolean) {
 	if (typeof document === 'undefined') return;
-	const iconLink = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-	if (!iconLink) return;
+	const existingIcons = document.querySelectorAll("link[rel*='icon']");
+	existingIcons.forEach((el) => el.remove());
+
 	const color = isDark ? '%23ffffff' : '%2309090b';
-	iconLink.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='${color}' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v10'/><path d='M18.36 6.64a9 9 0 1 1-12.73 0'/></svg>`;
+	const newLink = document.createElement('link');
+	newLink.rel = 'icon';
+	newLink.type = 'image/svg+xml';
+	newLink.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='${color}' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v10'/><path d='M18.36 6.64a9 9 0 1 1-12.73 0'/></svg>`;
+
+	document.head.appendChild(newLink);
 }
 
 export function useTheme(): UseThemeReturn {
@@ -35,13 +41,27 @@ export function useTheme(): UseThemeReturn {
 			updateFavicon(isDark);
 		};
 		checkTheme();
+
 		// Observe changes to the class attribute of the html tag
 		const observer = new MutationObserver(checkTheme);
 		observer.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ['class'],
 		});
-		return () => observer.disconnect();
+
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+			const hasExplicitTheme = localStorage.getItem('theme');
+			if (!hasExplicitTheme) {
+				updateFavicon(e.matches);
+			}
+		};
+		mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+		return () => {
+			observer.disconnect();
+			mediaQuery.removeEventListener('change', handleSystemThemeChange);
+		};
 	}, []);
 
 	const setTheme = React.useCallback((next: Theme) => {
