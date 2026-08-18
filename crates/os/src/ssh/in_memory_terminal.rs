@@ -10,6 +10,12 @@ pub struct InMemorySshTerminal {
     _tcp: TcpStream,
 }
 
+impl std::fmt::Debug for InMemorySshTerminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InMemorySshTerminal").finish()
+    }
+}
+
 impl InMemorySshTerminal {
     pub fn connect(
         host: &str,

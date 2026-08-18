@@ -62,7 +62,7 @@ impl TerminalSocket {
                 let _ = c.kill().await;
                 let _ = c.wait().await;
             }
-            TerminalSession::Remote { cancel, .. } => {
+            TerminalSession::InMemorySsh { cancel, .. } => {
                 cancel.cancel();
             }
             TerminalSession::DockerSocket { cancel, container, .. } => {
