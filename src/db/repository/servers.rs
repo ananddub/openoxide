@@ -407,7 +407,10 @@ impl ServerRepository {
                 let mode = connection_mode.unwrap_or_default();
                 let status = private_status.unwrap_or_default();
 
-                if !priv_ip.trim().is_empty() && mode != "DIRECT_SSH" && status != "INACTIVE" {
+                if !priv_ip.trim().is_empty()
+                    && mode.eq_ignore_ascii_case("MANAGED_WIREGUARD")
+                    && status.eq_ignore_ascii_case("ACTIVE")
+                {
                     selected_ip = priv_ip.trim().to_string();
                 }
             }
