@@ -168,9 +168,17 @@ impl DatabaseService {
                         DatabaseKind::Mysql | DatabaseKind::Mariadb => {
                             let sql = format!("ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;", user_name, escaped_pwd);
                             let _ = docker.containers().exec(&target_container).run(["mysql", "-u", "root", "-e", &sql]).await;
+                            let _ = docker.containers().exec(&target_container).run(["mariadb", "-u", "root", "-e", &sql]).await;
                         }
                         DatabaseKind::Redis => {
+                            // Apply password in live Redis server and rewrite configuration
                             let _ = docker.containers().exec(&target_container).run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd]).await;
+                            let _ = docker.containers().exec(&target_container).run(["redis-cli", "-a", &pwd, "CONFIG", "REWRITE"]).await;
+                        }
+                        DatabaseKind::Mongo => {
+                            let script = format!("try {{ db.getSiblingDB('admin').changeUserPassword('{}', '{}'); }} catch(e) {{ db.changeUserPassword('{}', '{}'); }}", user_name, escaped_pwd, user_name, escaped_pwd);
+                            let _ = docker.containers().exec(&target_container).run(["mongosh", "--eval", &script]).await;
+                            let _ = docker.containers().exec(&target_container).run(["mongo", "--eval", &script]).await;
                         }
                         _ => {}
                     }
@@ -179,11 +187,23 @@ impl DatabaseService {
         }
 
         let needs_redeploy = input.external_port.is_some()
+            || input.external_grpc_port.is_some()
+            || input.external_admin_port.is_some()
             || input.docker_image.is_some()
+            || input.database_password.is_some()
+            || input.database_user.is_some()
+            || input.database_name.is_some()
+            || input.command.is_some()
+            || input.args.is_some()
+            || input.env_var.is_some()
             || input.memory_limit.is_some()
+            || input.memory_reservation.is_some()
             || input.cpu_limit.is_some()
+            || input.cpu_reservation.is_some()
             || input.replicas.is_some()
-            || input.network_ids.is_some();
+            || input.network_ids.is_some()
+            || input.detach_rustploy_network.is_some()
+            || input.server_id.is_some();
 
         if needs_redeploy {
             tokio::spawn(async move {
