@@ -136,7 +136,49 @@ impl DatabaseService {
         }
 
         self.cache.invalidate(&CacheKey::Database(id)).await;
-        self.get_by_id(kind, id).await
+        let record = self.get_by_id(kind, id).await?;
+
+        if let Some(new_password) = &input.database_password {
+            if !new_password.is_empty() {
+                let db_ref = self.db.clone();
+                let pwd = new_password.clone();
+                let app_name = record.app_name.clone();
+                let server_id = record.server_id;
+                let user_name = record.database_user.clone().unwrap_or_else(|| "openoxide".to_string());
+                tokio::spawn(async move {
+                    let docker = match server_id {
+                        Some(sid) => {
+                            if let Ok(executor) = crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid).await {
+                                crate::utils::docker::DockerCli::from_remote_executor(executor)
+                            } else {
+                                crate::utils::docker::DockerCli::new_local()
+                            }
+                        }
+                        None => crate::utils::docker::DockerCli::new_local(),
+                    };
+
+                    let target_container = format!("{}_db", app_name);
+                    let escaped_pwd = pwd.replace('\'', "''");
+                    match kind {
+                        DatabaseKind::Postgres => {
+                            let sql = format!("ALTER USER \"{}\" WITH PASSWORD '{}';", user_name, escaped_pwd);
+                            let _ = docker.containers().exec(&target_container).run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql]).await;
+                            let _ = docker.containers().exec(&target_container).run(["psql", "-U", "postgres", "-c", &sql]).await;
+                        }
+                        DatabaseKind::Mysql | DatabaseKind::Mariadb => {
+                            let sql = format!("ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;", user_name, escaped_pwd);
+                            let _ = docker.containers().exec(&target_container).run(["mysql", "-u", "root", "-e", &sql]).await;
+                        }
+                        DatabaseKind::Redis => {
+                            let _ = docker.containers().exec(&target_container).run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd]).await;
+                        }
+                        _ => {}
+                    }
+                });
+            }
+        }
+
+        Ok(record)
     }
 
     pub async fn delete(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<()> {

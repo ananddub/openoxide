@@ -63,14 +63,30 @@ impl DeploymentService {
     ) -> sqlx::Result<crate::utils::docker::DockerOutput> {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
+        let mut is_service = false;
 
         if let Ok(containers) = docker.containers().ps().all().list().await {
             if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
+            } else {
+                let candidates = [
+                    format!("{}_db", target),
+                    format!("{}-db", target),
+                    target.clone(),
+                ];
+                for cand in &candidates {
+                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                        if !services.is_empty() {
+                            resolved_target = services[0].name.clone();
+                            is_service = true;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
-        let mut builder = docker.container(resolved_target).logs();
+        let mut builder = docker.containers().logs(resolved_target).kind(if is_service { "service" } else { "container" });
         if options.timestamps {
             builder = builder.timestamps();
         }
@@ -90,15 +106,31 @@ impl DeploymentService {
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
+        let mut is_service = false;
 
         if let Ok(containers) = docker.containers().ps().all().list().await {
             if let Some(matched) = find_best_matching_container(&containers, &target) {
                 resolved_target = matched.names.trim_start_matches('/').to_string();
+            } else {
+                let candidates = [
+                    format!("{}_db", target),
+                    format!("{}-db", target),
+                    target.clone(),
+                ];
+                for cand in &candidates {
+                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                        if !services.is_empty() {
+                            resolved_target = services[0].name.clone();
+                            is_service = true;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
         let handle = docker.containers();
-        let mut builder = handle.logs(resolved_target).kind("container");
+        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
         if options.follow {
             builder = builder.follow();
         }
