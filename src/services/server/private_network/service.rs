@@ -648,20 +648,22 @@ impl ServerPrivateNetworkService {
             .into_iter()
             .map(|network| interface_name(network.server_id))
             .collect::<std::collections::HashSet<_>>();
-        let output = os::OsCli::new(local)
+        let output = match os::OsCli::new(local)
             .wireguard()
             .show(os::wireguard::WireGuardShowTarget::Interfaces)
             .run()
             .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        {
+            Ok(out) => out,
+            Err(_) => return Ok(()),
+        };
         for interface in orphaned_managed_interfaces(&output.stdout, &active) {
             tracing::warn!(interface, "removing orphaned managed WireGuard interface");
-            os::OsCli::new(local)
+            let _ = os::OsCli::new(local)
                 .wireguard()
                 .interface(&interface)
                 .remove()
-                .await
-                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+                .await;
         }
         Ok(())
     }
