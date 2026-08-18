@@ -46,20 +46,24 @@ pub async fn spawn_docker_terminal(
         target_container = input.container.clone();
     }
 
-    let use_ctr = std::process::Command::new("ctr")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
+    let containerd_socket = if std::path::Path::new("/run/containerd/containerd.sock").exists() {
+        Some("/run/containerd/containerd.sock")
+    } else if std::path::Path::new("/run/docker/containerd/containerd.sock").exists() {
+        Some("/run/docker/containerd/containerd.sock")
+    } else if std::path::Path::new("/var/run/docker/containerd/containerd.sock").exists() {
+        Some("/var/run/docker/containerd/containerd.sock")
+    } else {
+        None
+    };
 
-    let mut cmd = if use_ctr {
+    let mut cmd = if let Some(sock) = containerd_socket {
         let nano = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         let exec_id = format!("exec-{nano}");
         let mut c = Command::new("ctr");
-        c.args(["-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
+        c.args(["--address", sock, "-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
         c
     } else {
         let mut c = Command::new("docker");
