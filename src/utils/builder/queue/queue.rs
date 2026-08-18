@@ -63,11 +63,10 @@ impl BuilderQueue {
 
         let q = Arc::clone(self);
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_mins(30));
+            let mut interval = tokio::time::interval(Duration::from_secs(2));
             interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
             loop {
                 interval.tick().await;
-                tracing::debug!("builder queue: 30-min reconciler tick");
                 q.notify();
             }
         });
