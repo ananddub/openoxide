@@ -364,16 +364,7 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
-        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd(&session, &full_command).await?;
-
-        if let Some(tx) = &stream {
-            if !stdout_bytes.is_empty() {
-                let _ = tx.send(ExecStreamEvent::Stdout(stdout_bytes.clone())).await;
-            }
-            if !stderr_bytes.is_empty() {
-                let _ = tx.send(ExecStreamEvent::Stderr(stderr_bytes.clone())).await;
-            }
-        }
+        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd_stream(&session, &full_command, stream.as_ref()).await?;
 
         let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {

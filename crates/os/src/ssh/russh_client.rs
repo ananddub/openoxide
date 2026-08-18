@@ -76,6 +76,14 @@ pub async fn execute_russh_cmd(
     session: &RusshSession,
     command: &str,
 ) -> ExecResult<(u32, Vec<u8>, Vec<u8>)> {
+    execute_russh_cmd_stream(session, command, None).await
+}
+
+pub async fn execute_russh_cmd_stream(
+    session: &RusshSession,
+    command: &str,
+    stream: Option<&mpsc::Sender<crate::exec::ExecStreamEvent>>,
+) -> ExecResult<(u32, Vec<u8>, Vec<u8>)> {
     let mut channel = session
         .channel_open_session()
         .await
@@ -92,8 +100,18 @@ pub async fn execute_russh_cmd(
 
     while let Some(msg) = channel.wait().await {
         match msg {
-            ChannelMsg::Data { data } => stdout.extend_from_slice(&data),
-            ChannelMsg::ExtendedData { data, .. } => stderr.extend_from_slice(&data),
+            ChannelMsg::Data { data } => {
+                if let Some(tx) = stream {
+                    let _ = tx.send(crate::exec::ExecStreamEvent::Stdout(data.to_vec())).await;
+                }
+                stdout.extend_from_slice(&data);
+            }
+            ChannelMsg::ExtendedData { data, .. } => {
+                if let Some(tx) = stream {
+                    let _ = tx.send(crate::exec::ExecStreamEvent::Stderr(data.to_vec())).await;
+                }
+                stderr.extend_from_slice(&data);
+            }
             ChannelMsg::ExitStatus { exit_status } => exit_code = exit_status,
             _ => {}
         }
