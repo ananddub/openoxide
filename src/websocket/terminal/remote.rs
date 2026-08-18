@@ -44,7 +44,7 @@ pub async fn spawn_remote_terminal(
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
 
-    let russh_session = match executor.connect_session().await {
+    let russh_session = match executor.connect_fresh_session().await {
         Ok(s) => s,
         Err(error) => {
             if start_token.is_cancelled() {
@@ -209,7 +209,7 @@ pub async fn spawn_remote_docker_terminal(
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
 
-    let russh_session = match executor.connect_session().await {
+    let russh_session = match executor.connect_fresh_session().await {
         Ok(s) => s,
         Err(error) => {
             if start_token.is_cancelled() {
