@@ -86,7 +86,7 @@ codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use kareg
 
 [profile.release]
 opt-level = "z"        # size ke liye optimize
-lto = "thin"           # Thin LTO — fast compile with 98% size reduction
+lto = true             # Full LTO — maximum cross-crate dead code elimination
 codegen-units = 8      # 8 parallel codegen units
 panic = "abort"        # unwinding code remove karta hai
 strip = true           # debug symbols remove karta hai
