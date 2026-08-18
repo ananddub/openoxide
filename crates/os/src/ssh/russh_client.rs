@@ -76,12 +76,13 @@ pub async fn execute_russh_cmd(
     session: &RusshSession,
     command: &str,
 ) -> ExecResult<(u32, Vec<u8>, Vec<u8>)> {
-    execute_russh_cmd_stream(session, command, None).await
+    execute_russh_cmd_stream(session, command, &[], None).await
 }
 
 pub async fn execute_russh_cmd_stream(
     session: &RusshSession,
     command: &str,
+    stdin: &[u8],
     stream: Option<&mpsc::Sender<crate::exec::ExecStreamEvent>>,
 ) -> ExecResult<(u32, Vec<u8>, Vec<u8>)> {
     let mut channel = session
@@ -93,6 +94,14 @@ pub async fn execute_russh_cmd_stream(
         .exec(true, command)
         .await
         .map_err(|e| ExecError::Ssh(format!("Failed to exec command '{command}': {e}")))?;
+
+    if !stdin.is_empty() {
+        channel
+            .data(stdin)
+            .await
+            .map_err(|e| ExecError::Ssh(format!("Failed to write stdin to SSH channel: {e}")))?;
+    }
+    let _ = channel.eof().await;
 
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();

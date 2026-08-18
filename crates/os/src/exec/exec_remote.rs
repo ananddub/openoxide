@@ -263,15 +263,9 @@ impl RemoteExecutor {
     }
 
     pub async fn kill_pid_file(&self, pid_file: impl AsRef<str>) -> ExecResult<()> {
-        let has_pwd = self.sudo_password.as_deref().map(|p| !p.is_empty()).unwrap_or(false);
-        let command = remote_command(
-            "sh",
-            &["-c".into(), remote_cancel_script(pid_file.as_ref())],
-            self.sudo_password.is_some(),
-            has_pwd,
-        );
-        self.execute_raw_once(command, true, Duration::from_secs(8))
-            .await
+        let cancel_script = remote_cancel_script(pid_file.as_ref());
+        let _ = self.run("sh", &["-c", &cancel_script]).await;
+        Ok(())
     }
     pub async fn run<I, S>(&self, program: &str, args: I) -> ExecResult<ExecOutput>
     where
@@ -364,7 +358,7 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
-        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd_stream(&session, &full_command, stream.as_ref()).await?;
+        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref()).await?;
 
         let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {
@@ -394,76 +388,6 @@ impl RemoteExecutor {
                 pid_file = %job.pid_file,
                 "failed to kill remote cancellable SSH job"
             );
-        }
-    }
-
-    async fn execute_raw_once(
-        &self,
-        command: String,
-        send_sudo_password: bool,
-        timeout: Duration,
-    ) -> ExecResult<()> {
-        let builder = crate::ssh::SshBuilder::new(
-            self.host.clone(),
-            self.username.clone(),
-            self.auth.clone(),
-            self.host_key.clone(),
-        )
-        .port(self.port)
-        .connect_timeout(timeout.as_secs() as u32);
-
-        let ssh_cmd = builder
-            .build_command("sh", &["-c".to_string(), command])
-            .await
-            .map_err(|e| ExecError::Ssh(e.to_string()))?;
-
-        let mut tokio_command = ssh_cmd.command;
-        let _agent_session = ssh_cmd.agent_session;
-
-        tokio_command
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
-
-        let mut child = tokio_command
-            .spawn()
-            .map_err(|e| ExecError::Ssh(e.to_string()))?;
-
-        if send_sudo_password {
-            if let Some(password) = &self.sudo_password {
-                if let Some(mut child_stdin) = child.stdin.take() {
-                    let mut input = password.as_bytes().to_vec();
-                    input.push(b'\n');
-                    let _ = child_stdin.write_all(&input).await;
-                }
-            }
-        }
-
-        let res = tokio::time::timeout(timeout, child.wait()).await;
-        match res {
-            Ok(Ok(status)) => {
-                let code = status.code().unwrap_or(0);
-                if code == 255 {
-                    return Err(ExecError::Ssh(
-                        "SSH connection/authentication failed".into(),
-                    ));
-                }
-                if code == 0 {
-                    Ok(())
-                } else {
-                    Err(ExecError::CommandFailed {
-                        code: Some(code),
-                        stderr: "remote cancel command failed".into(),
-                    })
-                }
-            }
-            Ok(Err(e)) => Err(ExecError::Ssh(e.to_string())),
-            Err(_) => {
-                let _ = child.kill().await;
-                Err(ExecError::Timeout {
-                    seconds: timeout.as_secs(),
-                })
-            }
         }
     }
 }
