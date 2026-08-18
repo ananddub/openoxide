@@ -1,4 +1,4 @@
-use crate::exec::script::{IntoCommand, sh};
+use crate::exec::script::IntoCommand;
 use crate::exec::{CommandExecutor, ExecOutput, ExecResult};
 
 pub struct CommandExistsBuilder<'a> {
@@ -20,9 +20,10 @@ impl<'a> CommandExistsBuilder<'a> {
 
     fn script(&self) -> Vec<crate::exec::script::ShellIR> {
         let binary = self.binary.as_str();
-        sh!(
-            raw!(format!("export PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\"; command -v {} || [ -x /sbin/{} ] || [ -x /usr/sbin/{} ] || [ -x /usr/bin/{} ] || [ -x /usr/local/bin/{} ]", binary, binary, binary, binary, binary));
-        )
+        vec![crate::exec::script::ShellIR::Raw(format!(
+            "export PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\"; command -v {} || [ -x /sbin/{} ] || [ -x /usr/sbin/{} ] || [ -x /usr/bin/{} ] || [ -x /usr/local/bin/{} ]",
+            binary, binary, binary, binary, binary
+        ))]
     }
 }
 
