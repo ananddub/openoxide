@@ -26,7 +26,7 @@ function notifyListeners<T>(listeners: Set<Listener<T>>, value: T) {
 	});
 }
 
-function queueRefetch(key: string, entry: Entry) {
+function queueRefetch(key: string, entry: Entry, delayMs = 0) {
 	if (!entry.endpoint.refetch) return;
 	let state = refetches.get(key);
 	if (!state) {
@@ -39,6 +39,9 @@ function queueRefetch(key: string, entry: Entry) {
 
 	void (async () => {
 		try {
+			if (delayMs > 0) {
+				await new Promise((r) => setTimeout(r, delayMs));
+			}
 			while (state.pending) {
 				state.pending = false;
 				try {
@@ -50,8 +53,8 @@ function queueRefetch(key: string, entry: Entry) {
 				} catch (cause) {
 					const error = cause instanceof Error ? cause : new Error(String(cause));
 					notifyListeners(entry.errorListeners, error);
-					// Add 1000ms delay on failure to prevent tight-loop CPU freezing during server reconnect
-					await new Promise((r) => setTimeout(r, 1000));
+					// Backoff on failure to prevent tight CPU looping during backend reboot
+					await new Promise((r) => setTimeout(r, 1500));
 				}
 			}
 		} finally {
@@ -79,7 +82,7 @@ function attachSocketListeners(namespace: string) {
 			const key = `${namespace}:${message.endpoint}:${safeStringify(message.args)}`;
 			const entry = entries.get(key);
 			if (entry) {
-				queueRefetch(key, entry);
+				queueRefetch(key, entry, Math.floor(Math.random() * 80));
 			}
 		});
 

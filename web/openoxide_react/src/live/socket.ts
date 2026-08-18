@@ -18,16 +18,21 @@ function socketBaseUrl(): string {
 	return '';
 }
 
+let recoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+
 function setupGlobalRecovery() {
 	if (listenersInitialized || typeof window === 'undefined') return;
 	listenersInitialized = true;
 
 	const recoverAll = () => {
-		for (const entry of sockets.values()) {
-			if (!entry.socket.connected) {
-				entry.socket.connect();
+		if (recoveryTimeout) clearTimeout(recoveryTimeout);
+		recoveryTimeout = setTimeout(() => {
+			for (const entry of sockets.values()) {
+				if (!entry.socket.connected && !entry.socket.active) {
+					entry.socket.connect();
+				}
 			}
-		}
+		}, 300);
 	};
 
 	window.addEventListener('online', recoverAll);
