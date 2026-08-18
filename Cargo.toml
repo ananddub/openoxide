@@ -5,9 +5,6 @@ edition = "2024"
 
 [workspace]
 members = [
-    "crates/html/rt",
-    "crates/html/macro",
-    "crates/todo-test",
     "crates/auto/route_macros",
     "crates/auto/route",
     "crates/auto/socket_macros",
@@ -19,8 +16,6 @@ members = [
 
 
 [dependencies]
-html-rt    = { path = "crates/html/rt", features = ["axum"] }
-html-macro = { path = "crates/html/macro" }
 tokio = { version = "1", features = ["full"] }
 
 auto-di = "0.6.0"

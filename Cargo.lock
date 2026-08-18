@@ -1925,31 +1925,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "html-macro"
-version = "0.1.0"
-dependencies = [
- "axum 0.8.9",
- "html-rt",
- "proc-macro2",
- "quote",
- "syn 2.0.118",
- "tokio",
- "tower 0.5.3",
-]
-
-[[package]]
-name = "html-rt"
-version = "0.1.0"
-dependencies = [
- "axum 0.8.9",
- "itoa",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "http"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2860,8 +2835,6 @@ dependencies = [
  "futures",
  "getrandom 0.3.4",
  "hmac 0.12.1",
- "html-macro",
- "html-rt",
  "ipnet",
  "jsonwebtoken",
  "lettre",
@@ -2902,25 +2875,6 @@ dependencies = [
  "uuid",
  "validator",
  "zeroize",
-]
-
-[[package]]
-name = "openoxide-todo-test"
-version = "0.1.0"
-dependencies = [
- "auto-di",
- "auto_route",
- "auto_socket",
- "axum 0.8.9",
- "futures",
- "html-macro",
- "html-rt",
- "poem-openapi",
- "serde",
- "serde_json",
- "socketioxide",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
