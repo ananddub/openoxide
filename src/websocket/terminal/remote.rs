@@ -68,7 +68,11 @@ pub async fn spawn_remote_terminal(
         return;
     }
 
-    let shell_cmd = input.shell.as_deref().filter(|s| !s.is_empty());
+    // For host SSH terminals, pass None so russh requests the native interactive login shell (request_shell)
+    let shell_cmd = match input.shell.as_deref() {
+        Some("sh") | Some("bash") | Some("") | None => None,
+        Some(cmd) => Some(cmd),
+    };
     let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, shell_cmd).await {
         Ok(t) => Arc::new(t),
         Err(error) => {

@@ -181,12 +181,6 @@ impl TerminalSocket {
             TerminalInputPayload::Object { data } => data,
         };
 
-        let trimmed = data.trim();
-        if trimmed.starts_with("\x1b[") && trimmed.ends_with('R') && trimmed.contains(';') {
-            tracing::debug!("Filtered out ANSI CPR report: {:?}", trimmed);
-            return;
-        }
-
         let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
             tracing::warn!("Input received for session {key} but session is not found");
             emit_error(&socket, "terminal session is not running");
