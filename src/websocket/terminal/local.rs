@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, emit_terminal_bytes, socket_key};
 use super::types::{
-    DockerTerminalStart, SessionMap, TerminalKind, TerminalSession, TerminalStarted,
+    DockerTerminalStart, SessionMap, TerminalExit, TerminalKind, TerminalSession, TerminalStarted,
 };
 
 pub async fn spawn_docker_terminal(
@@ -46,14 +46,91 @@ pub async fn spawn_docker_terminal(
         target_container = input.container.clone();
     }
 
-    let mut cmd = Command::new("docker");
-    cmd.args(["exec", "-i", &target_container, &shell_req])
+    let key_str = socket_key(&socket).to_string();
+    let socket_stream = match docker
+        .containers()
+        .exec(&target_container)
+        .socket_stream()
+        .cmd([&shell_req])
         .env("TERM", "xterm-256color")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
+        .env("OPENOXIDE_SOCKET_ID", &key_str)
+        .size(input.cols.unwrap_or(80), input.rows.unwrap_or(24))
+        .connect()
+        .await
+    {
+        Ok(stream) => stream,
+        Err(error) => {
+            let err_msg = format!("\r\n\x1b[31m[Error] Failed to connect to docker exec socket stream for '{target_container}': {error}\x1b[0m\r\n");
+            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+            emit_error(&socket, format!("could not start docker socket stream: {error}"));
+            return;
+        }
+    };
 
-    spawn_local_terminal(socket, sessions, TerminalKind::Docker, cmd).await;
+    let _ = socket_stream
+        .resize(input.cols.unwrap_or(80), input.rows.unwrap_or(24))
+        .await;
+
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let writer_arc = Arc::new(Mutex::new(socket_stream.writer));
+    let exec_id = socket_stream.exec_id.clone();
+    let socket_path = socket_stream.socket_path.clone();
+
+    sessions.insert(
+        key.clone(),
+        TerminalSession::DockerSocket {
+            writer: writer_arc,
+            cancel: cancel.clone(),
+            container: Some(target_container.clone()),
+            exec_id: exec_id.clone(),
+            socket_path: socket_path.clone(),
+        },
+    );
+
+    let _ = socket.emit(
+        "started",
+        &TerminalStarted {
+            kind: TerminalKind::Docker,
+            host: Some(&target_container),
+        },
+    );
+
+    let mut reader = socket_stream.reader;
+    let socket_clone = socket.clone();
+    let cancel_clone = cancel.clone();
+    let sessions_clone = sessions.clone();
+    let key_clone = key.clone();
+
+    tokio::spawn(async move {
+        let mut buf = [0u8; 4096];
+        loop {
+            tokio::select! {
+                _ = cancel_clone.cancelled() => break,
+                res = tokio::io::AsyncReadExt::read(&mut reader, &mut buf) => {
+                    match res {
+                        Ok(0) => break,
+                        Ok(n) => {
+                            emit_terminal_bytes(&socket_clone, "stdout", &buf[..n]);
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }
+        }
+
+        let is_current = match sessions_clone.get(&key_clone) {
+            Some(entry) => match entry.value() {
+                TerminalSession::DockerSocket { exec_id: sid, .. } => sid == &exec_id,
+                _ => false,
+            },
+            None => false,
+        };
+
+        if is_current {
+            sessions_clone.remove(&key_clone);
+            let _ = socket_clone.emit("exit", &TerminalExit { code: Some(0) });
+        }
+    });
 }
 
 pub async fn spawn_local_terminal(

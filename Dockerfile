@@ -68,6 +68,7 @@ RUN apk add --no-cache \
     docker-cli-compose \
     containerd-ctr \
     wireguard-tools \
+    socat \
     sudo \
     curl \
     git \
