@@ -85,9 +85,9 @@ incremental = true     # sirf changed files recompile karo
 codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use karega
 
 [profile.release]
-opt-level = "z"        # size ke liye optimize (speed ke liye "3" use karo)
-lto = "thin"           # Thin LTO — fast parallel link-time optimization
-codegen-units = 8     # 16 parallel codegen units for fast multi-core compilation
-panic = "abort"        # unwinding code hata deta hai
-strip = true           # debug symbols binary se remove karta hai
-overflow-checks = false  # overflow checks hata deta hai
+opt-level = "z"        # size ke liye optimize
+lto = true             # Full LTO — maximum cross-crate dead code elimination
+codegen-units = 1      # 1 unit for maximum cross-module optimization
+panic = "abort"        # unwinding code remove karta hai
+strip = true           # debug symbols remove karta hai
+overflow-checks = false
