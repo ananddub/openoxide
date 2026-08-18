@@ -8,7 +8,7 @@ use axum::{
     extract::Request,
     http::header::CONTENT_TYPE,
     middleware::{self, Next},
-    response::{IntoResponse, Response},
+    response::Response,
 };
 use tower_http::cors::{Any, CorsLayer};
 
