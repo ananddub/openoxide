@@ -178,6 +178,20 @@ impl DatabaseService {
             }
         }
 
+        let needs_redeploy = input.external_port.is_some()
+            || input.docker_image.is_some()
+            || input.memory_limit.is_some()
+            || input.cpu_limit.is_some()
+            || input.replicas.is_some()
+            || input.network_ids.is_some();
+
+        if needs_redeploy {
+            let operations = self.operations.clone();
+            tokio::spawn(async move {
+                let _ = operations.deploy(kind, id).await;
+            });
+        }
+
         Ok(record)
     }
 
