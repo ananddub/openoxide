@@ -86,7 +86,8 @@ impl DeploymentService {
             }
         }
 
-        let mut builder = docker.containers().logs(resolved_target).kind(if is_service { "service" } else { "container" });
+        let handle = docker.containers();
+        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
         if options.timestamps {
             builder = builder.timestamps();
         }
