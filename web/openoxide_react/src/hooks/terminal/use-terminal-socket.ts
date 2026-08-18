@@ -85,10 +85,10 @@ export function useTerminalSocket({
 			emitStartSession(socket, shell);
 		};
 
-		socket.on('connect', handleConnect);
-
 		if (socket.connected) {
 			handleConnect();
+		} else {
+			socket.once('connect', handleConnect);
 		}
 
 		socket.on('started', (data: { kind?: string; host?: string }) => {
