@@ -98,6 +98,8 @@ impl InMemorySshTerminal {
             .shell()
             .map_err(|e| ExecError::Ssh(format!("Failed to request shell: {e}")))?;
 
+        session.set_blocking(false);
+
         Ok(Self {
             session,
             channel: Arc::new(Mutex::new(channel)),
@@ -106,30 +108,48 @@ impl InMemorySshTerminal {
     }
 
     pub fn read(&self, buf: &mut [u8]) -> ExecResult<usize> {
-        let mut channel = self
-            .channel
-            .lock()
-            .map_err(|_| ExecError::Ssh("Channel lock poisoned".into()))?;
-        channel
-            .read(buf)
-            .map_err(|e| ExecError::Ssh(format!("SSH terminal read error: {e}")))
+        loop {
+            let mut channel = match self.channel.lock() {
+                Ok(guard) => guard,
+                Err(_) => return Err(ExecError::Ssh("Channel lock poisoned".into())),
+            };
+            match channel.read(buf) {
+                Ok(n) => return Ok(n),
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    drop(channel);
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Err(e) => return Err(ExecError::Ssh(format!("SSH terminal read error: {e}"))),
+            }
+        }
     }
 
     pub fn write(&self, data: &[u8]) -> ExecResult<usize> {
-        let mut channel = self
-            .channel
-            .lock()
-            .map_err(|_| ExecError::Ssh("Channel lock poisoned".into()))?;
-        channel
-            .write(data)
-            .map_err(|e| ExecError::Ssh(format!("SSH terminal write error: {e}")))
+        let mut written = 0;
+        while written < data.len() {
+            let mut channel = match self.channel.lock() {
+                Ok(guard) => guard,
+                Err(_) => return Err(ExecError::Ssh("Channel lock poisoned".into())),
+            };
+            match channel.write(&data[written..]) {
+                Ok(n) => {
+                    written += n;
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    drop(channel);
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                Err(e) => return Err(ExecError::Ssh(format!("SSH terminal write error: {e}"))),
+            }
+        }
+        Ok(written)
     }
 
     pub fn resize(&self, cols: u16, rows: u16) -> ExecResult<()> {
-        let mut channel = self
-            .channel
-            .lock()
-            .map_err(|_| ExecError::Ssh("Channel lock poisoned".into()))?;
+        let mut channel = match self.channel.lock() {
+            Ok(guard) => guard,
+            Err(_) => return Err(ExecError::Ssh("Channel lock poisoned".into())),
+        };
         channel
             .request_pty_size(cols as u32, rows as u32, None, None)
             .map_err(|e| ExecError::Ssh(format!("SSH PTY resize failed: {e}")))
