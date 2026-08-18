@@ -85,12 +85,21 @@ pub async fn spawn_remote_terminal(
     let socket_clone = socket.clone();
     let sessions_clone = sessions.clone();
     let server_host = actual_host.clone();
+    let cancel_clone = cancel.clone();
 
     tokio::spawn(async move {
         loop {
-            match term_read.read_next().await {
-                Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
-                None => break,
+            tokio::select! {
+                _ = cancel_clone.cancelled() => {
+                    tracing::info!(host = %server_host, "in-memory SSH remote terminal session cancelled");
+                    break;
+                }
+                next_chunk = term_read.read_next() => {
+                    match next_chunk {
+                        Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
+                        None => break,
+                    }
+                }
             }
         }
 
@@ -214,12 +223,21 @@ pub async fn spawn_remote_docker_terminal(
     let sessions_clone = sessions.clone();
     let server_host = actual_host.clone();
     let container_log = container_req.clone();
+    let cancel_clone = cancel.clone();
 
     tokio::spawn(async move {
         loop {
-            match term_read.read_next().await {
-                Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
-                None => break,
+            tokio::select! {
+                _ = cancel_clone.cancelled() => {
+                    tracing::info!(container = %container_log, host = %server_host, "remote docker terminal session cancelled");
+                    break;
+                }
+                next_chunk = term_read.read_next() => {
+                    match next_chunk {
+                        Some(data) => emit_terminal_bytes(&socket_clone, "stdout", &data),
+                        None => break,
+                    }
+                }
             }
         }
 
