@@ -6,6 +6,9 @@ use openoxide::{
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
