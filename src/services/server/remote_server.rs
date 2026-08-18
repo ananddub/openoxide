@@ -157,7 +157,7 @@ impl RemoteServerService {
 
     pub async fn touch_test_connection(&self, id: i64) -> sqlx::Result<Server> {
         let server = self.get_by_id(id).await?;
-        let executor = crate::services::compose::remote::remote_executor(&self.pool, id)
+        let executor = crate::services::compose::remote::remote_executor(self.repo_server.pool(), id)
             .await
             .map_err(|e| sqlx::Error::Protocol(format!("Could not create SSH executor: {e}")))?;
 
