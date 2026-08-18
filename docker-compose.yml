@@ -23,8 +23,8 @@ services:
       - openoxide_data:/app/data
       # Docker socket — panel drives the local Docker daemon for deployments
       - /var/run/docker.sock:/var/run/docker.sock
-      # Containerd socket (Optional — for direct ctr containerd CLI environments)
-      # - /run/containerd/containerd.sock:/run/containerd/containerd.sock
+      # Containerd socket (for direct ctr containerd CLI)
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock
       # Host Kernel Modules (Required for WireGuard interface creation)
       - /lib/modules:/lib/modules:ro
 
