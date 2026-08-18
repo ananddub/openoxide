@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use super::helpers::{emit_error, emit_terminal_bytes, socket_key};
 use super::types::{
-    DockerTerminalStart, SessionMap, TerminalKind, TerminalStarted,
+    DockerTerminalStart, SessionMap, TerminalKind, TerminalSession, TerminalStarted,
 };
 
 pub async fn spawn_docker_terminal(
@@ -48,7 +48,11 @@ pub async fn spawn_docker_terminal(
 
     let mut cmd = if std::path::Path::new("/usr/bin/ctr").exists() || std::path::Path::new("/usr/local/bin/ctr").exists() {
         let mut c = Command::new("ctr");
-        let exec_id = format!("exec-{}", rand::random::<u32>());
+        let nano = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let exec_id = format!("exec-{nano}");
         c.args(["-n", "moby", "task", "exec", "--exec-id", &exec_id, "-t", &target_container, &shell_req]);
         c
     } else if std::path::Path::new("/usr/bin/crictl").exists() || std::path::Path::new("/usr/local/bin/crictl").exists() {
