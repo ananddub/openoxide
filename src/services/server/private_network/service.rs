@@ -100,11 +100,22 @@ impl ServerPrivateNetworkService {
         let iface = interface_name(server_id);
         let local_exec = CommandExecutor::Local(LocalExecutor::new());
         let local_os = crate::utils::os::OsCli::new(&local_exec);
-        let _ = local_os.wireguard().quick(&iface).down().run().await;
+        let _ = local_os
+            .wireguard()
+            .quick(os::wireguard::WireGuardQuickAction::Down, &iface)
+            .run()
+            .await;
 
-        if let Ok(executor) = crate::services::compose::remote::remote_executor(self.servers.pool(), server_id).await {
-            let remote_os = crate::utils::os::OsCli::new(&executor);
-            let _ = remote_os.wireguard().quick(&iface).down().run().await;
+        if let Ok(executor) =
+            crate::services::compose::remote::remote_executor(self.servers.pool(), server_id).await
+        {
+            let remote_exec = CommandExecutor::Remote(executor);
+            let remote_os = crate::utils::os::OsCli::new(&remote_exec);
+            let _ = remote_os
+                .wireguard()
+                .quick(os::wireguard::WireGuardQuickAction::Down, &iface)
+                .run()
+                .await;
         }
 
         self.networks.disable(server_id).await
