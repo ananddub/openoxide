@@ -131,6 +131,24 @@ pub async fn spawn_remote_docker_terminal(
     let shell_req = input.shell.as_deref().unwrap_or("sh").to_string();
     let container_req = input.container.clone();
 
+    let docker_cli = crate::utils::docker::DockerCli::from_remote_executor(executor.clone());
+    let mut target_container = input.container.clone();
+
+    if let Ok(containers) = docker_cli.containers().ps().all().list().await {
+        let search = input.container.to_lowercase();
+        let clean_search = search.trim_end_matches("_db").trim_end_matches("-db");
+        if let Some(matching) = containers.iter().find(|c| {
+            let n = c.names.to_lowercase();
+            n.contains(&search)
+                || n.trim_start_matches('/').starts_with(&search)
+                || n.contains(&format!("{}_", search))
+                || n.contains(&format!("{}.", search))
+                || (!clean_search.is_empty() && (n.contains(clean_search) || n.trim_start_matches('/').starts_with(clean_search)))
+        }) {
+            target_container = matching.names.trim_start_matches('/').to_string();
+        }
+    }
+
     let key_str = socket_key(&socket).to_string();
     let docker_cmd = format!("docker exec -it --env OPENOXIDE_SOCKET_ID={} {} {}", key_str, target_container, shell_req);
 
