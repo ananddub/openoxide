@@ -22,9 +22,37 @@ impl InMemorySshTerminal {
         port: u16,
         username: &str,
         auth: &SshAuth,
+        host_key: &SshHostKey,
+        cols: u16,
+        rows: u16,
+        timeout: Duration,
+    ) -> ExecResult<Self> {
+        Self::connect_internal(host, port, username, auth, host_key, cols, rows, None, timeout)
+    }
+
+    pub fn connect_exec(
+        host: &str,
+        port: u16,
+        username: &str,
+        auth: &SshAuth,
+        host_key: &SshHostKey,
+        cols: u16,
+        rows: u16,
+        command: &str,
+        timeout: Duration,
+    ) -> ExecResult<Self> {
+        Self::connect_internal(host, port, username, auth, host_key, cols, rows, Some(command), timeout)
+    }
+
+    fn connect_internal(
+        host: &str,
+        port: u16,
+        username: &str,
+        auth: &SshAuth,
         _host_key: &SshHostKey,
         cols: u16,
         rows: u16,
+        command: Option<&str>,
         timeout: Duration,
     ) -> ExecResult<Self> {
         let addr = format!("{host}:{port}");
@@ -94,9 +122,15 @@ impl InMemorySshTerminal {
             )
             .map_err(|e| ExecError::Ssh(format!("Failed to request PTY: {e}")))?;
 
-        channel
-            .shell()
-            .map_err(|e| ExecError::Ssh(format!("Failed to request shell: {e}")))?;
+        if let Some(cmd) = command {
+            channel
+                .exec(cmd)
+                .map_err(|e| ExecError::Ssh(format!("Failed to exec command on SSH PTY: {e}")))?;
+        } else {
+            channel
+                .shell()
+                .map_err(|e| ExecError::Ssh(format!("Failed to request shell: {e}")))?;
+        }
 
         session.set_blocking(false);
 
