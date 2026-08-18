@@ -26,7 +26,9 @@ RUN mkdir -p src && \
     echo "fn main() {}" > src/main.rs && \
     echo "" > src/lib.rs
 
-ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3"
+ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3" \
+    CARGO_BUILD_JOBS=8 \
+    CARGO_TARGET_DIR="/usr/src/openoxide/target"
 
 # Pre-build dependencies layer (Cached by Docker unless Cargo.toml/Cargo.lock changes!)
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
