@@ -82,6 +82,9 @@ export function useTerminalSocket({
 
 		const handleConnect = () => {
 			setStatus('connected');
+			if (termInstance) {
+				termInstance.reset();
+			}
 			emitStartSession(socket, shell);
 		};
 
