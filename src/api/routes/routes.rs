@@ -5,11 +5,9 @@ use auto_di::singleton;
 use axum::{
     Router,
     body::{Body, HttpBody, to_bytes},
-    extract::Path,
     extract::Request,
     http::header::CONTENT_TYPE,
     middleware::{self, Next},
-    response::sse::{Event, Sse},
     response::{IntoResponse, Response},
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -154,27 +152,7 @@ pub async fn router_init(sock: Arc<Socket>) -> Router<()> {
         .expect("failed to build auto-registered controller routes")
         .merge(auto_route::openapi_routes("/openapi.json", "/swagger-ui"))
         .merge(auto_route::scalar_routes("/scalar", "/openapi.json"))
-        .route(
-            "/_openoxide/html/events/{session}",
-            axum::routing::get(html_events),
-        )
         .layer(middleware::from_fn(request_duration_middleware))
         .layer(sock.layer.clone())
         .layer(cors)
-}
-
-async fn html_events(Path(session): Path<String>) -> Response {
-    let Some(receiver) = html_rt::take_session(&session) else {
-        return axum::http::StatusCode::NOT_FOUND.into_response();
-    };
-    let stream = futures::stream::unfold(receiver, |mut receiver| async move {
-        receiver.recv().await.map(|patch| {
-            let payload = serde_json::json!({"slot": patch.slot, "html": patch.html});
-            (
-                Ok::<Event, std::convert::Infallible>(Event::default().data(payload.to_string())),
-                receiver,
-            )
-        })
-    });
-    Sse::new(stream).into_response()
 }
