@@ -23,10 +23,10 @@ impl<'a> CommandExistsBuilder<'a> {
         let check_cmd = if binary == "docker" {
             format!("{binary} --version >/dev/null 2>&1")
         } else {
-            format!("({binary} --version >/dev/null 2>&1 || command -v {binary} >/dev/null 2>&1)")
+            format!("(command -v {binary} >/dev/null 2>&1 || {binary} --version >/dev/null 2>&1)")
         };
         vec![crate::exec::script::ShellIR::Raw(format!(
-            "export PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\"; {check_cmd}"
+            "PATH=\"$PATH:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:~/.nix-profile/bin\" {check_cmd}"
         ))]
     }
 }
