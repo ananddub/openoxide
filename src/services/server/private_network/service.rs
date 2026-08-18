@@ -631,8 +631,6 @@ impl ServerPrivateNetworkService {
                 None,
                 "[]",
                 crate::db::models::server_private_networks::PrivateNetworkStatus::Configuring,
-                crate::db::models::server_private_networks::PrivateNetworkHealthStatus::Unknown,
-                None,
             ).await?;
             Ok(default_network)
         }
