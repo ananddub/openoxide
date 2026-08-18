@@ -50,7 +50,14 @@ pub async fn spawn_remote_terminal(
             if start_token.is_cancelled() {
                 return;
             }
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
+            let _ = socket.emit(
+                "started",
+                &TerminalStarted {
+                    kind: TerminalKind::RemoteServer,
+                    host: Some(&actual_host),
+                },
+            );
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
             return;
@@ -208,7 +215,14 @@ pub async fn spawn_remote_docker_terminal(
             if start_token.is_cancelled() {
                 return;
             }
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session: {error}\x1b[0m\r\n");
+            let _ = socket.emit(
+                "started",
+                &TerminalStarted {
+                    kind: TerminalKind::Docker,
+                    host: Some(&actual_host),
+                },
+            );
+            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
             return;

@@ -55,15 +55,8 @@ pub async fn connect_russh(
             session.authenticate_publickey(username, Arc::new(key)).await
         }
         SshAuth::KeyPair { private_key, passphrase, .. } => {
-            let mut temp_file = tempfile::NamedTempFile::new()
-                .map_err(|e| ExecError::Ssh(format!("Failed to create temp key file: {e}")))?;
-            use std::io::Write;
-            temp_file
-                .write_all(private_key.as_bytes())
-                .map_err(|e| ExecError::Ssh(format!("Failed to write temp key file: {e}")))?;
-
-            let key = russh_keys::load_secret_key(temp_file.path(), passphrase.as_deref())
-                .map_err(|e| ExecError::Ssh(format!("Failed to load keypair: {e}")))?;
+            let key = russh_keys::decode_secret_key(private_key, passphrase.as_deref())
+                .map_err(|e| ExecError::Ssh(format!("Failed to parse private key: {e}")))?;
             session.authenticate_publickey(username, Arc::new(key)).await
         }
         SshAuth::Agent | SshAuth::AgentWithSocket(_) => {
