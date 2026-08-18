@@ -72,20 +72,18 @@ pub fn set_pool(pool: sqlx::SqlitePool) {
 }
 
 async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
-    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| async {
-        if let Some(pool) = DB_POOL.get()
-            && let Ok(mut connection) = pool.acquire().await
+    if let Some(pool) = DB_POOL.get()
+        && let Ok(mut connection) = pool.acquire().await
+    {
+        if sqlx::query("BEGIN IMMEDIATE")
+            .execute(&mut *connection)
+            .await
+            .is_ok()
         {
-            if sqlx::query("BEGIN IMMEDIATE")
-                .execute(&mut *connection)
-                .await
-                .is_ok()
-            {
-                let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
-            }
+            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
         }
-        event_bus().publish(changes);
-    })).ok();
+    }
+    event_bus().publish(changes);
 }
 
 pub async fn request_scope<F, T>(future: F) -> T
