@@ -68,7 +68,8 @@ pub async fn spawn_remote_terminal(
         return;
     }
 
-    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, None).await {
+    let shell_cmd = input.shell.as_deref().filter(|s| !s.is_empty());
+    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, shell_cmd).await {
         Ok(t) => Arc::new(t),
         Err(error) => {
             if start_token.is_cancelled() {
