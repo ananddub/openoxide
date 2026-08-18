@@ -519,7 +519,8 @@ impl ServerSetup {
             }
             if os.has_command("systemctl") {
                 info!("Ensuring Docker service is enabled and running");
-                raw!("systemctl enable docker --now 2>/dev/null || systemctl enable docker 2>/dev/null || true; systemctl start docker 2>/dev/null || true");
+                os.service("docker").enable_now().non_fatal();
+                os.service("docker").start().non_fatal();
             }
             cmd("docker", "info");
         ));
