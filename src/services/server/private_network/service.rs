@@ -751,11 +751,16 @@ fn orphaned_managed_interfaces(
 }
 
 async fn resolve_wireguard_endpoint(endpoint: &str) -> sqlx::Result<()> {
-    tokio::net::lookup_host(endpoint)
+    let target = if endpoint.contains(':') {
+        endpoint.to_string()
+    } else {
+        format!("{endpoint}:51820")
+    };
+    tokio::net::lookup_host(&target)
         .await
         .map_err(|error| {
             sqlx::Error::Protocol(format!(
-                "Remote WireGuard endpoint '{endpoint}' could not be resolved: {error}. Enter the remote server's reachable public IP or DNS name with its UDP port, for example vpn.example.com:51820"
+                "Remote WireGuard endpoint '{endpoint}' could not be resolved: {error}. Enter the remote server's reachable public IP or DNS name with its UDP port, for example 163.44.122.248:51820"
             ))
         })?
         .next()

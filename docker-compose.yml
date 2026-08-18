@@ -21,10 +21,10 @@ services:
     volumes:
       # Panel database + runtime data (backups, logs, traefik config, etc.)
       - openoxide_data:/app/data
-      # Docker socket — panel drives the local Docker daemon for deployments,
-      # container ops, Compose, Swarm and build queue.
-      # WARNING: socket access = host-root equivalent. Run on trusted infra only.
+      # Docker socket — panel drives the local Docker daemon for deployments
       - /var/run/docker.sock:/var/run/docker.sock
+      # Host Kernel Modules (Required for WireGuard interface creation)
+      - /lib/modules:/lib/modules:ro
 
     environment:
       PORT: "4000"
