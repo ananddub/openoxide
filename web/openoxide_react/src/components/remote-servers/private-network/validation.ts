@@ -25,10 +25,7 @@ export function validatePrivateNetworkForm(
 		}
 		if (form.endpoint.trim() && form.endpoint.trim().includes(':')) {
 			const endpointPort = Number(form.endpoint.trim().split(':').at(-1));
-			if (
-				Number.isInteger(endpointPort) &&
-				endpointPort !== listenPort
-			) {
+			if (Number.isInteger(endpointPort) && endpointPort !== listenPort) {
 				return 'Remote endpoint port must match the remote WireGuard UDP listen port';
 			}
 		}

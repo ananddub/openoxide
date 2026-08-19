@@ -26,15 +26,15 @@ export const Route = createFileRoute('/_app/registry')({
 
 function RegistryPage() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [editingRegistry, setEditingRegistry] = useState<RegistryResponse | null>(null);
+	const [editingRegistry, setEditingRegistry] =
+		useState<RegistryResponse | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
-	const {
-		data: rawRegistries,
-		loading: isLoading,
-	} = useRegistryList();
+	const {data: rawRegistries, loading: isLoading} = useRegistryList();
 
-	const registries = Array.isArray(rawRegistries ?? []) ? ((rawRegistries ?? []) as unknown as RegistryResponse[]) : [];
+	const registries = Array.isArray(rawRegistries ?? [])
+		? ((rawRegistries ?? []) as unknown as RegistryResponse[])
+		: [];
 	const deleteMutation = $api.useMutation('delete', '/registries/{id}');
 
 	const handleOpenAdd = () => {
@@ -60,7 +60,7 @@ function RegistryPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-3 p-4 max-w-7xl mx-auto w-full">
+		<div className="mx-auto flex w-full max-w-7xl flex-col gap-3 p-4">
 			<RegistryHeader
 				onAddRegistry={handleOpenAdd}
 				onRefresh={() => {}}
@@ -85,20 +85,24 @@ function RegistryPage() {
 				initialData={editingRegistry}
 			/>
 
-			<AlertDialog open={deletingId !== null} onOpenChange={open => !open && setDeletingId(null)}>
+			<AlertDialog
+				open={deletingId !== null}
+				onOpenChange={open => !open && setDeletingId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Container Registry</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete this container registry? This action cannot be undone.
+							Are you sure you want to delete this container registry? This
+							action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel onClick={() => setDeletingId(null)}>
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={confirmDelete}
-						>
+							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+							onClick={confirmDelete}>
 							Delete
 						</AlertDialogAction>
 					</AlertDialogFooter>

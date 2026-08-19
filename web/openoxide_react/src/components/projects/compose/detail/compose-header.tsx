@@ -1,8 +1,8 @@
-import { Link } from '@tanstack/react-router';
-import { FolderOpen, Layers2, ChevronRight, RefreshCw } from 'lucide-react';
-import { Button } from '#/components/ui/button';
-import { StatusBadge } from '#/components/shared/status-badge';
-import type { ComposeResponse } from '#/types/api-helpers';
+import {Link} from '@tanstack/react-router';
+import {FolderOpen, Layers2, ChevronRight, RefreshCw} from 'lucide-react';
+import {Button} from '#/components/ui/button';
+import {StatusBadge} from '#/components/shared/status-badge';
+import type {ComposeResponse} from '#/types/api-helpers';
 
 import {toast} from 'sonner';
 
@@ -26,55 +26,71 @@ export function ComposeHeader({
 	return (
 		<header className="border-b border-border/40">
 			{/* Breadcrumb */}
-			<div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3.5 font-semibold">
-				<Link to="/projects" className="hover:text-foreground flex items-center gap-1 transition-colors">
-					<FolderOpen className="w-3.5 h-3.5" /> Projects
+			<div className="mb-3.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+				<Link
+					to="/projects"
+					className="flex items-center gap-1 transition-colors hover:text-foreground">
+					<FolderOpen className="h-3.5 w-3.5" /> Projects
 				</Link>
-				<ChevronRight className="w-3 h-3 opacity-40" />
-				<Link 
-					to={`/projects/${id}` as any} 
-					search={(compose as any)?.environment_id ? { env: Number((compose as any).environment_id) } : undefined}
-					className="hover:text-foreground transition-colors">
+				<ChevronRight className="h-3 w-3 opacity-40" />
+				<Link
+					to={`/projects/${id}` as any}
+					search={
+						(compose as any)?.environment_id
+							? {env: Number((compose as any).environment_id)}
+							: undefined
+					}
+					className="transition-colors hover:text-foreground">
 					Project Details
 				</Link>
-				<ChevronRight className="w-3 h-3 opacity-40" />
-				<span className="text-foreground font-bold">{compose?.name || compose?.app_name}</span>
+				<ChevronRight className="h-3 w-3 opacity-40" />
+				<span className="font-bold text-foreground">
+					{compose?.name || compose?.app_name}
+				</span>
 			</div>
 
 			{/* Title row */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				<div>
-					<h1 className="text-2xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+					<h1 className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-2xl font-extrabold tracking-tight text-foreground">
 						{compose?.name || compose?.app_name}
 					</h1>
-					<p className="text-xs text-muted-foreground font-mono mt-1">{compose?.app_name || compose?.name}</p>
+					<p className="mt-1 font-mono text-xs text-muted-foreground">
+						{compose?.app_name || compose?.name}
+					</p>
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={() => { refetch(); toast.success('Compose stack refreshed'); }} className="w-8 h-8 border-border rounded-lg">
-						<RefreshCw className="w-3.5 h-3.5" />
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => {
+							refetch();
+							toast.success('Compose stack refreshed');
+						}}
+						className="h-8 w-8 rounded-lg border-border">
+						<RefreshCw className="h-3.5 w-3.5" />
 					</Button>
 					<StatusBadge status={compose?.compose_status || ''} />
-					<span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground bg-muted/20 font-semibold select-none">
-						<Layers2 className="w-3.5 h-3.5" /> Docker Compose
+					<span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground select-none">
+						<Layers2 className="h-3.5 w-3.5" /> Docker Compose
 					</span>
 				</div>
 			</div>
 
 			{/* Tabs Navigation Bar */}
-			<div className="flex overflow-x-auto mt-6 scrollbar-none gap-2 border-b border-border/40 w-full -mb-[1px]">
+			<div className="mt-6 -mb-[1px] flex w-full scrollbar-none gap-2 overflow-x-auto border-b border-border/40">
 				{tabs.map(tab => {
 					const isActive = activeTab === tab;
 					return (
 						<button
 							key={tab}
 							onClick={() => setActiveTab(tab)}
-							className={`px-4 pb-2.5 pt-2 text-xs font-bold whitespace-nowrap border-b-2 transition-all duration-150 -mb-[1px] cursor-pointer ${
+							className={`-mb-[1px] cursor-pointer border-b-2 px-4 pt-2 pb-2.5 text-xs font-bold whitespace-nowrap transition-all duration-150 ${
 								isActive
-									? 'border-foreground text-foreground font-extrabold'
-									: 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/40'
-							}`}
-						>
+									? 'border-foreground font-extrabold text-foreground'
+									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+							}`}>
 							{tab}
 						</button>
 					);

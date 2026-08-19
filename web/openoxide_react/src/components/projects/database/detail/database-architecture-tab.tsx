@@ -14,40 +14,82 @@ interface DatabaseArchitectureTabProps {
 	onRefresh?: () => void;
 }
 
-export function DatabaseArchitectureTab({database, backups: passedBackups, onRefresh}: DatabaseArchitectureTabProps) {
+export function DatabaseArchitectureTab({
+	database,
+	backups: passedBackups,
+	onRefresh,
+}: DatabaseArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const dbId = database?.id ? Number(database.id) : undefined;
 	const kind = (database?.kind || 'postgres').toLowerCase();
-	const internalPort = kind.includes('mysql') || kind.includes('maria') ? 3306 : kind.includes('mongo') ? 27017 : kind.includes('redis') ? 6379 : kind.includes('libsql') ? 8080 : 5432;
+	const internalPort =
+		kind.includes('mysql') || kind.includes('maria')
+			? 3306
+			: kind.includes('mongo')
+				? 27017
+				: kind.includes('redis')
+					? 6379
+					: kind.includes('libsql')
+						? 8080
+						: 5432;
 	const externalPort = database?.external_port || undefined;
 
 	const createBackupMutation = $api.useMutation('post', '/backups/volume');
-	const patchBackupMutation = $api.useMutation('patch', '/backups/volume/{id}');
-	const deleteBackupMutation = $api.useMutation('delete', '/backups/volume/{id}');
+	const patchBackupMutation = $api.useMutation(
+		'patch',
+		'/backups/volume/{id}',
+	);
+	const deleteBackupMutation = $api.useMutation(
+		'delete',
+		'/backups/volume/{id}',
+	);
 
-	const [activeModal, setActiveModal] = useState<'domain' | 'backup' | 'terminal' | 'logs' | null>(null);
-	const [editingBackupData, setEditingBackupData] = useState<any | null>(null);
+	const [activeModal, setActiveModal] = useState<
+		'domain' | 'backup' | 'terminal' | 'logs' | null
+	>(null);
+	const [editingBackupData, setEditingBackupData] = useState<any | null>(
+		null,
+	);
 
 	const dbBackups = useMemo(() => {
 		const list = Array.isArray(passedBackups) ? passedBackups : [];
-		return list.filter((b: any) =>
-			b.postgres_id === dbId || b.mysql_id === dbId || b.mariadb_id === dbId ||
-			b.mongo_id === dbId || b.redis_id === dbId || b.libsql_id === dbId ||
-			b.app_name === database?.app_name || b.database_id === dbId ||
-			b.database_name === database?.app_name || b.app_name === database?.name
+		return list.filter(
+			(b: any) =>
+				b.postgres_id === dbId ||
+				b.mysql_id === dbId ||
+				b.mariadb_id === dbId ||
+				b.mongo_id === dbId ||
+				b.redis_id === dbId ||
+				b.libsql_id === dbId ||
+				b.app_name === database?.app_name ||
+				b.database_id === dbId ||
+				b.database_name === database?.app_name ||
+				b.app_name === database?.name,
 		);
 	}, [passedBackups, dbId, database]);
 
-	const dbServices = useMemo(() => [{
-		name: database?.app_name || database?.name || kind || 'database',
-		image: kind || 'postgres',
-		dependsOn: [],
-		envVars: {},
-		volumes: (database as any)?.volume_name ? [(database as any).volume_name] : [`${kind}_data`],
-		ports: externalPort ? [String(externalPort)] : [String(internalPort)],
-	}], [database, kind, externalPort, internalPort]);
+	const dbServices = useMemo(
+		() => [
+			{
+				name: database?.app_name || database?.name || kind || 'database',
+				image: kind || 'postgres',
+				dependsOn: [],
+				envVars: {},
+				volumes: (database as any)?.volume_name
+					? [(database as any).volume_name]
+					: [`${kind}_data`],
+				ports: externalPort
+					? [String(externalPort)]
+					: [String(internalPort)],
+			},
+		],
+		[database, kind, externalPort, internalPort],
+	);
 
-	const servicesList = useMemo(() => [database?.app_name || database?.name || kind || 'database'], [database, kind]);
+	const servicesList = useMemo(
+		() => [database?.app_name || database?.name || kind || 'database'],
+		[database, kind],
+	);
 
 	// Handlers
 	const handleAddBackup = () => {
@@ -72,7 +114,9 @@ export function DatabaseArchitectureTab({database, backups: passedBackups, onRef
 		const backupId = backupData?.id;
 		if (!backupId) return;
 		try {
-			await deleteBackupMutation.mutateAsync({params: {path: {id: backupId}}});
+			await deleteBackupMutation.mutateAsync({
+				params: {path: {id: backupId}},
+			});
 			toast.success('Backup rule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -90,7 +134,18 @@ export function DatabaseArchitectureTab({database, backups: passedBackups, onRef
 		turnOff: boolean;
 	}) => {
 		try {
-			const dbIdKey = kind === 'mysql' ? 'mysql_id' : kind === 'mariadb' ? 'mariadb_id' : kind === 'mongo' ? 'mongo_id' : kind === 'redis' ? 'redis_id' : kind === 'libsql' ? 'libsql_id' : 'postgres_id';
+			const dbIdKey =
+				kind === 'mysql'
+					? 'mysql_id'
+					: kind === 'mariadb'
+						? 'mariadb_id'
+						: kind === 'mongo'
+							? 'mongo_id'
+							: kind === 'redis'
+								? 'redis_id'
+								: kind === 'libsql'
+									? 'libsql_id'
+									: 'postgres_id';
 			if (editingBackupData?.id) {
 				await patchBackupMutation.mutateAsync({
 					params: {path: {id: editingBackupData.id}},
@@ -111,7 +166,11 @@ export function DatabaseArchitectureTab({database, backups: passedBackups, onRef
 						volume_name: data.volumeName,
 						prefix: data.prefix || '',
 						service_type: 'database',
-						app_name: database?.app_name || database?.name || data.serviceName || 'database',
+						app_name:
+							database?.app_name ||
+							database?.name ||
+							data.serviceName ||
+							'database',
 						service_name: data.serviceName,
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
@@ -130,11 +189,15 @@ export function DatabaseArchitectureTab({database, backups: passedBackups, onRef
 	};
 
 	return (
-		<div className="flex flex-col gap-4 w-full animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
 			<div>
-				<h3 className="text-sm font-bold text-foreground">Database Topology & Connections</h3>
+				<h3 className="text-sm font-bold text-foreground">
+					Database Topology & Connections
+				</h3>
 				<p className="text-xs text-muted-foreground">
-					Interactive real-time map of database service, volume backups, and maintenance schedules. Click any node to add or edit resources.
+					Interactive real-time map of database service, volume backups,
+					and maintenance schedules. Click any node to add or edit
+					resources.
 				</p>
 			</div>
 

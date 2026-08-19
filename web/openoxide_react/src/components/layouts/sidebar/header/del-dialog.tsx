@@ -22,7 +22,11 @@ type Props = {
 
 // Confirmation dialog before deleting an organization.
 // Disabled when only one org remains to prevent leaving an empty state.
-export function DeleteOrganization({organizationId, onDelete, disabled}: Props) {
+export function DeleteOrganization({
+	organizationId,
+	onDelete,
+	disabled,
+}: Props) {
 	const [open, setOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
 	const queryClient = useQueryClient();

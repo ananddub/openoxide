@@ -1,6 +1,15 @@
 import {useAppStore} from '#/stores/app-store';
 import {useState, useEffect, useRef} from 'react';
-import {Zap, RefreshCw, Clock, XCircle, Terminal, X, Activity, Trash2} from 'lucide-react';
+import {
+	Zap,
+	RefreshCw,
+	Clock,
+	XCircle,
+	Terminal,
+	X,
+	Activity,
+	Trash2,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
@@ -24,7 +33,16 @@ interface DeploymentsTabProps {
 	onRefresh?: () => void;
 }
 
-const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
+const FINAL_STATES = [
+	'DONE',
+	'DEPLOYED',
+	'SUCCESS',
+	'FAILED',
+	'ERROR',
+	'CANCELLED',
+	'STOPPEDBYUSER',
+	'CRASHED',
+];
 
 const isBuildActive = (e: any) => {
 	if (!e) return false;
@@ -32,25 +50,50 @@ const isBuildActive = (e: any) => {
 	const s = (e.status || '').toUpperCase();
 	const st = (e.state || '').toUpperCase();
 	if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
-	const activeKeywords = ['BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING', 'GIT', 'DOCKER'];
+	const activeKeywords = [
+		'BUILDING',
+		'PREPARING',
+		'QUEUE',
+		'QUEUED',
+		'STARTING',
+		'DEPLOYING',
+		'PENDING',
+		'GIT',
+		'DOCKER',
+	];
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
-export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh}: DeploymentsTabProps) {
+export function DeploymentsTab({
+	appId,
+	deployments: passedDeployments,
+	onRefresh,
+}: DeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const logContainerRef = useRef<HTMLDivElement>(null);
-
 
 	const events = Array.isArray(passedDeployments) ? passedDeployments : [];
 	const activeDeployment = events.find(isBuildActive);
 
 	// Mutations
-	const deployMutation = $api.useMutation('post', '/applications/{id}/deploy');
-	const redeployMutation = $api.useMutation('post', '/applications/{id}/redeploy');
-	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
+	const deployMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/deploy',
+	);
+	const redeployMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/redeploy',
+	);
+	const cancelMutation = $api.useMutation(
+		'post',
+		'/deployments/{id}/cancel',
+	);
 	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
-	const clearAppMutation = $api.useMutation('delete', '/deployments/application/{id}');
+	const clearAppMutation = $api.useMutation(
+		'delete',
+		'/deployments/application/{id}',
+	);
 
 	// Realtime SSE log stream listener with JWT Authorization header
 	useEffect(() => {
@@ -70,15 +113,21 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 					} catch {}
 				}
 
-				const response = await fetch(`/api/deployments/${activeLogId}/logs`, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
+				const response = await fetch(
+					`/api/deployments/${activeLogId}/logs`,
+					{
+						headers: {
+							Authorization: accessToken ? `Bearer ${accessToken}` : '',
+						},
+						signal: controller.signal,
 					},
-					signal: controller.signal,
-				});
+				);
 
 				if (!response.ok) {
-					if (isMounted) setLiveLogs([`Failed to stream logs: ${response.statusText} (${response.status})`]);
+					if (isMounted)
+						setLiveLogs([
+							`Failed to stream logs: ${response.statusText} (${response.status})`,
+						]);
 					return;
 				}
 
@@ -97,7 +146,12 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 					for (const line of lines) {
 						const trimmed = line.trim();
-						if (!trimmed || trimmed.startsWith('event:') || trimmed.startsWith(':')) continue;
+						if (
+							!trimmed ||
+							trimmed.startsWith('event:') ||
+							trimmed.startsWith(':')
+						)
+							continue;
 
 						if (line.startsWith('data:')) {
 							try {
@@ -105,21 +159,27 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 								if (jsonStr) {
 									const data = JSON.parse(jsonStr);
 									if (data.line) {
-										if (isMounted) setLiveLogs(prev => [...prev, data.line]);
+										if (isMounted)
+											setLiveLogs(prev => [...prev, data.line]);
 									} else if (data.message) {
-										if (isMounted) setLiveLogs(prev => [...prev, data.message]);
+										if (isMounted)
+											setLiveLogs(prev => [...prev, data.message]);
 									}
 								}
 							} catch {
 								const rawContent = line.slice(5).trim();
-								if (rawContent && isMounted) setLiveLogs(prev => [...prev, rawContent]);
+								if (rawContent && isMounted)
+									setLiveLogs(prev => [...prev, rawContent]);
 							}
 						}
 					}
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {
-					setLiveLogs(prev => [...prev, `Stream error: ${err.message || 'Connection lost'}`]);
+					setLiveLogs(prev => [
+						...prev,
+						`Stream error: ${err.message || 'Connection lost'}`,
+					]);
 				}
 			}
 		};
@@ -134,7 +194,8 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 	useEffect(() => {
 		if (logContainerRef.current) {
-			logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+			logContainerRef.current.scrollTop =
+				logContainerRef.current.scrollHeight;
 		}
 	}, [liveLogs]);
 
@@ -172,7 +233,9 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 		if (!cancelingId) return;
 		setIsTriggering(true);
 		try {
-			await cancelMutation.mutateAsync({params: {path: {id: cancelingId}}});
+			await cancelMutation.mutateAsync({
+				params: {path: {id: cancelingId}},
+			});
 			toast.success('Deployment cancellation requested');
 			onRefresh?.();
 		} catch (err: any) {
@@ -185,15 +248,20 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 	const getStatusBadge = (e: any) => {
 		const s = (e.status || '').toUpperCase();
-		if (s === 'DONE' || s === 'HEALTHY' || s === 'SUCCESS' || s === 'DEPLOYED') 
+		if (
+			s === 'DONE' ||
+			s === 'HEALTHY' ||
+			s === 'SUCCESS' ||
+			s === 'DEPLOYED'
+		)
 			return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED') 
+		if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED')
 			return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
 		if (s === 'CANCELLING')
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
 		if (s === 'CANCELLED')
 			return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
-		if (isBuildActive(e)) 
+		if (isBuildActive(e))
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
 		return 'text-muted-foreground bg-muted border-border';
 	};
@@ -211,8 +279,10 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 			});
 			const data = res as any;
 			useAppStore.getState().clearDeployments({appId});
-			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			toast.success(
+				`Cleared ${data?.cleared_count || 0} deployment logs & history`,
+			);
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -230,97 +300,164 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 			});
 			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			onRefresh?.();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const isActionPending = isTriggering || deployMutation.isPending || redeployMutation.isPending || cancelMutation.isPending;
+	const isActionPending =
+		isTriggering ||
+		deployMutation.isPending ||
+		redeployMutation.isPending ||
+		cancelMutation.isPending;
 
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Action Header */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
 				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						Deployments History
 						{(activeDeployment || isActionPending) && (
-							<span className="flex items-center gap-1 text-[10px] font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full animate-pulse">
-								<Activity className="w-3 h-3 animate-spin" /> {isActionPending ? 'Triggering...' : 'Active Build'}
+							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+								<Activity className="h-3 w-3 animate-spin" />{' '}
+								{isActionPending ? 'Triggering...' : 'Active Build'}
 							</span>
 						)}
 					</h3>
-					<p className="text-xs text-muted-foreground mt-0.5">Audit log of building, deployment operations and lifecycle events</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">
+						Audit log of building, deployment operations and lifecycle
+						events
+					</p>
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" onClick={handleClearAppDeployments} disabled={isActionPending} className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-8 text-xs">
-						<Trash2 className="w-3.5 h-3.5" /> Clear History
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleClearAppDeployments}
+						disabled={isActionPending}
+						className="flex h-8 items-center gap-1.5 border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive hover:bg-destructive/20">
+						<Trash2 className="h-3.5 w-3.5" /> Clear History
 					</Button>
-					<Button variant="outline" size="sm" onClick={() => onRefresh?.()} disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
-						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onRefresh?.()}
+						disabled={isActionPending}
+						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						<RefreshCw
+							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
+						/>{' '}
+						Refresh
 					</Button>
-					<Button variant="outline" size="sm" onClick={handleRedeploy} disabled={!!activeDeployment || isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs disabled:opacity-50">
-						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Redeploy
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleRedeploy}
+						disabled={!!activeDeployment || isActionPending}
+						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
+						<RefreshCw
+							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
+						/>{' '}
+						Redeploy
 					</Button>
 					{isActionPending ? (
-						<Button disabled size="sm" className="bg-primary/80 text-primary-foreground font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing...
+						<Button
+							disabled
+							size="sm"
+							className="flex h-8 items-center gap-1.5 bg-primary/80 text-xs font-semibold text-primary-foreground">
+							<RefreshCw className="h-3.5 w-3.5 animate-spin" />{' '}
+							Processing...
 						</Button>
 					) : activeDeployment ? (
-						<Button onClick={() => activeDeployment.id && setCancelingId(activeDeployment.id)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<XCircle className="w-3.5 h-3.5" /> Cancel Build
+						<Button
+							onClick={() =>
+								activeDeployment.id && setCancelingId(activeDeployment.id)
+							}
+							size="sm"
+							variant="destructive"
+							className="flex h-8 items-center gap-1.5 text-xs font-semibold">
+							<XCircle className="h-3.5 w-3.5" /> Cancel Build
 						</Button>
 					) : (
-						<Button onClick={handleDeploy} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<Zap className="w-3.5 h-3.5" /> Deploy
+						<Button
+							onClick={handleDeploy}
+							size="sm"
+							className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+							<Zap className="h-3.5 w-3.5" /> Deploy
 						</Button>
 					)}
 				</div>
 			</section>
 
 			{/* List Section */}
-			<section className="bg-card border border-border rounded-xl overflow-hidden">
+			<section className="overflow-hidden rounded-xl border border-border bg-card">
 				{events.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-						<Zap className="w-10 h-10 opacity-30 mb-3" />
-						<p className="text-xs font-semibold">No deployments registered yet</p>
+						<Zap className="mb-3 h-10 w-10 opacity-30" />
+						<p className="text-xs font-semibold">
+							No deployments registered yet
+						</p>
 					</div>
 				) : (
 					<div className="divide-y divide-border/60">
 						{events.map((e: any) => {
 							const isActive = isBuildActive(e);
 							return (
-								<div key={e.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
-									<div className="min-w-0 flex flex-col gap-0.5">
-										<span className="text-xs font-semibold text-foreground truncate">{e.title}</span>
-										{e.description && <span className="text-[11px] text-muted-foreground truncate">{e.description}</span>}
+								<div
+									key={e.id}
+									className="flex items-center justify-between p-4 transition-colors hover:bg-muted/10">
+									<div className="flex min-w-0 flex-col gap-0.5">
+										<span className="truncate text-xs font-semibold text-foreground">
+											{e.title}
+										</span>
+										{e.description && (
+											<span className="truncate text-[11px] text-muted-foreground">
+												{e.description}
+											</span>
+										)}
 									</div>
 
-									<div className="flex items-center gap-3 shrink-0">
-										<span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${getStatusBadge(e)}`}>
+									<div className="flex shrink-0 items-center gap-3">
+										<span
+											className={`rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
 											{e.status}
 										</span>
-										<span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-											<Clock className="w-3 h-3" />
+										<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+											<Clock className="h-3 w-3" />
 											{new Date(e.created_at * 1000).toLocaleDateString()}
 										</span>
 
-										<Button size="sm" variant="outline" onClick={() => setActiveLogId(e.id)} className="h-7 text-xs border-border text-foreground hover:bg-muted px-2 rounded-lg font-semibold flex items-center gap-1">
-											<Terminal className="w-3 h-3" /> Stream Logs
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => setActiveLogId(e.id)}
+											className="flex h-7 items-center gap-1 rounded-lg border-border px-2 text-xs font-semibold text-foreground hover:bg-muted">
+											<Terminal className="h-3 w-3" /> Stream Logs
 										</Button>
 
 										{isActive && (
-											<Button size="sm" variant="ghost" onClick={() => setCancelingId(e.id)} className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1">
-												<XCircle className="w-3 h-3" /> Cancel
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={() => setCancelingId(e.id)}
+												className="flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive">
+												<XCircle className="h-3 w-3" /> Cancel
 											</Button>
 										)}
 
 										{!isActive && e.id !== undefined && (
-											<Button size="sm" variant="ghost" onClick={() => handleDeleteSingleAppDeployment(e.id)} className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-1.5 rounded-lg font-semibold flex items-center gap-1">
-												<Trash2 className="w-3.5 h-3.5" />
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={() =>
+													handleDeleteSingleAppDeployment(e.id)
+												}
+												className="flex h-7 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+												<Trash2 className="h-3.5 w-3.5" />
 											</Button>
 										)}
 									</div>
@@ -332,20 +469,24 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 			</section>
 
 			{/* Cancel Confirmation Dialog */}
-			<AlertDialog open={cancelingId !== null} onOpenChange={open => !open && setCancelingId(null)}>
+			<AlertDialog
+				open={cancelingId !== null}
+				onOpenChange={open => !open && setCancelingId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Cancel Deployment</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to cancel this deployment? This action will stop the running build process.
+							Are you sure you want to cancel this deployment? This action
+							will stop the running build process.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setCancelingId(null)}>Keep Running</AlertDialogCancel>
+						<AlertDialogCancel onClick={() => setCancelingId(null)}>
+							Keep Running
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={confirmCancel}
-						>
+							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+							onClick={confirmCancel}>
 							Yes, Cancel Deployment
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -354,18 +495,24 @@ export function DeploymentsTab({appId, deployments: passedDeployments, onRefresh
 
 			{/* Realtime Stream Logs Modal — Rich Dokploy-Grade LogViewer! */}
 			{activeLogId && (
-				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-					<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[85vh]">
-						<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+						<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
 							<div className="flex items-center gap-2">
-								<Terminal className="w-4 h-4 text-foreground" />
-								<h3 className="text-xs font-bold text-foreground">Live Deployment Build Stream #{activeLogId}</h3>
+								<Terminal className="h-4 w-4 text-foreground" />
+								<h3 className="text-xs font-bold text-foreground">
+									Live Deployment Build Stream #{activeLogId}
+								</h3>
 							</div>
-							<Button variant="ghost" size="sm" onClick={() => setActiveLogId(null)} className="h-7 w-7 p-0 rounded-lg hover:bg-muted text-muted-foreground">
-								<X className="w-4 h-4" />
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setActiveLogId(null)}
+								className="h-7 w-7 rounded-lg p-0 text-muted-foreground hover:bg-muted">
+								<X className="h-4 w-4" />
 							</Button>
 						</div>
-						<div className="p-4 overflow-y-auto">
+						<div className="overflow-y-auto p-4">
 							<DeploymentViewer
 								logs={liveLogs}
 								isLoading={liveLogs.length === 0}

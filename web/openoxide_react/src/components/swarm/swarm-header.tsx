@@ -29,33 +29,41 @@ export function SwarmHeader({
 	isSwarmActive,
 }: SwarmHeaderProps) {
 	return (
-		<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			{/* Left: Icon, Title & Description */}
 			<div className="flex items-center gap-3">
-				<div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-					<Globe2 className="w-4 h-4 text-primary" />
+				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+					<Globe2 className="h-4 w-4 text-primary" />
 				</div>
 				<div>
-					<h1 className="text-base font-semibold text-foreground leading-none">Docker Swarm</h1>
-					<p className="text-xs text-muted-foreground mt-1">
+					<h1 className="text-base leading-none font-semibold text-foreground">
+						Docker Swarm
+					</h1>
+					<p className="mt-1 text-xs text-muted-foreground">
 						Manage Swarm cluster nodes, managers, workers, and join tokens
 					</p>
 				</div>
 			</div>
 
 			{/* Right: Engine Selector + Refresh + Add Node Button */}
-			<div className="flex items-center gap-2 sm:ml-auto flex-wrap sm:flex-nowrap">
+			<div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:flex-nowrap">
 				{/* Host Engine Dropdown Select */}
-				<Select value={selectedServerId} onValueChange={val => val && onSelectServer(val)}>
+				<Select
+					value={selectedServerId}
+					onValueChange={val => val && onSelectServer(val)}>
 					<SelectTrigger size="sm" className="h-8 w-52 text-xs">
 						<div className="flex items-center gap-1.5 truncate">
-							<Server className="w-3.5 h-3.5 text-primary shrink-0" />
+							<Server className="h-3.5 w-3.5 shrink-0 text-primary" />
 							<SelectValue placeholder="Select Engine" />
 						</div>
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">All Clusters &amp; Remote Servers</SelectItem>
-						<SelectItem value="local">Local Server (Docker Engine)</SelectItem>
+						<SelectItem value="all">
+							All Clusters &amp; Remote Servers
+						</SelectItem>
+						<SelectItem value="local">
+							Local Server (Docker Engine)
+						</SelectItem>
 						{servers.map((srv: RemoteServerResponse) => (
 							<SelectItem key={srv.id} value={String(srv.id)}>
 								Server: {srv.name} ({srv.ip_address})
@@ -69,9 +77,10 @@ export function SwarmHeader({
 					size="sm"
 					onClick={onRefresh}
 					disabled={isRefreshing}
-					className="h-8 text-xs gap-1.5 cursor-pointer"
-				>
-					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+					className="h-8 cursor-pointer gap-1.5 text-xs">
+					<RefreshCw
+						className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+					/>
 					Refresh
 				</Button>
 
@@ -79,9 +88,8 @@ export function SwarmHeader({
 					<Button
 						size="sm"
 						onClick={onOpenTokens}
-						className="h-8 text-xs gap-1.5 cursor-pointer"
-					>
-						<Plus className="w-3.5 h-3.5" />
+						className="h-8 cursor-pointer gap-1.5 text-xs">
+						<Plus className="h-3.5 w-3.5" />
 						Add Node
 					</Button>
 				)}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, ArrowUpDown } from 'lucide-react';
-import { Input } from '#/components/ui/input';
+import {Search, ArrowUpDown} from 'lucide-react';
+import {Input} from '#/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -8,7 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import { TagSelector } from '#/components/shared/tag-selector';
+import {TagSelector} from '#/components/shared/tag-selector';
 
 interface ProjectDashboardFiltersProps {
 	projects: any[] | undefined;
@@ -52,20 +52,20 @@ export function ProjectDashboardFilters({
 	};
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center gap-3 w-full animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col items-center gap-3 duration-200 fade-in sm:flex-row">
 			{/* Search Input */}
 			<div className="relative w-full sm:grow">
-				<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60" />
+				<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/60" />
 				<Input
 					placeholder="Filter projects..."
 					value={searchQuery}
-					onChange={(e) => setSearchQuery(e.target.value)}
-					className="pl-9 pr-4 bg-card border-border/80 h-10 w-full text-xs shadow-2xs rounded-lg"
+					onChange={e => setSearchQuery(e.target.value)}
+					className="h-10 w-full rounded-lg border-border/80 bg-card pr-4 pl-9 text-xs shadow-2xs"
 				/>
 			</div>
 
 			{/* Dokploy TagFilter Dropdown */}
-			<div className="w-full sm:w-[150px] shrink-0">
+			<div className="w-full shrink-0 sm:w-[150px]">
 				<TagSelector
 					selectedTags={selectedTags}
 					onTagsChange={setSelectedTags}
@@ -75,19 +75,25 @@ export function ProjectDashboardFilters({
 			</div>
 
 			{/* Sort Select with ArrowUpDown Icon */}
-			<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-				<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
-					<SelectTrigger className="w-full sm:w-[185px] bg-card border-border/80 h-10 text-xs font-semibold rounded-lg shadow-2xs">
-						<div className="flex items-center gap-2 min-w-0">
-							<ArrowUpDown className="size-3.5 text-muted-foreground shrink-0" />
+			<div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+				<Select
+					value={sortBy}
+					onValueChange={val => val && setSortBy(val)}>
+					<SelectTrigger className="h-10 w-full rounded-lg border-border/80 bg-card text-xs font-semibold shadow-2xs sm:w-[185px]">
+						<div className="flex min-w-0 items-center gap-2">
+							<ArrowUpDown className="size-3.5 shrink-0 text-muted-foreground" />
 							<SelectValue>{getSortLabel(sortBy)}</SelectValue>
 						</div>
 					</SelectTrigger>
-					<SelectContent className="bg-card border-border">
+					<SelectContent className="border-border bg-card">
 						<SelectItem value="newest">Sort: Newest First</SelectItem>
 						<SelectItem value="oldest">Sort: Oldest First</SelectItem>
-						<SelectItem value="alphabetical-asc">Sort: Name (A-Z)</SelectItem>
-						<SelectItem value="alphabetical-desc">Sort: Name (Z-A)</SelectItem>
+						<SelectItem value="alphabetical-asc">
+							Sort: Name (A-Z)
+						</SelectItem>
+						<SelectItem value="alphabetical-desc">
+							Sort: Name (Z-A)
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>

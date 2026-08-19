@@ -12,13 +12,29 @@ const DEPLOY_STAGE_RE =
 const DEPLOY_STAGE_BARE_RE =
 	/^(QUEUED|PREPARING|BUILDING|DEPLOYING|HEALTH_CHECK|DEPLOYED|CANCELLED|FAILED|SOURCE_READY|ROUTING)\s*$/i;
 
-type StageGroup = 'success' | 'error' | 'building' | 'health' | 'git' | 'docker' | 'container' | 'routing' | 'default';
+type StageGroup =
+	| 'success'
+	| 'error'
+	| 'building'
+	| 'health'
+	| 'git'
+	| 'docker'
+	| 'container'
+	| 'routing'
+	| 'default';
 
 function stageGroup(tag: string): StageGroup {
 	const t = tag.toUpperCase();
-	if (/DEPLOYED|BUILD_SUCCESS|GIT_SUCCESS|ROLLBACK_SUCCESS|CLEANUP_COMPLETE/.test(t)) return 'success';
-	if (/FAILED|CANCELLED|ROLLBACK_FAILED|STOPPED_BY_USER/.test(t)) return 'error';
-	if (/BUILDING|BUILD|PREPARING|QUEUED|SOURCE_READY|RECOVER/.test(t)) return 'building';
+	if (
+		/DEPLOYED|BUILD_SUCCESS|GIT_SUCCESS|ROLLBACK_SUCCESS|CLEANUP_COMPLETE/.test(
+			t,
+		)
+	)
+		return 'success';
+	if (/FAILED|CANCELLED|ROLLBACK_FAILED|STOPPED_BY_USER/.test(t))
+		return 'error';
+	if (/BUILDING|BUILD|PREPARING|QUEUED|SOURCE_READY|RECOVER/.test(t))
+		return 'building';
 	if (/HEALTH_CHECK|WAITING_FOR_HEALTHY/.test(t)) return 'health';
 	if (/GIT/.test(t)) return 'git';
 	if (/DOCKER/.test(t)) return 'docker';
@@ -41,26 +57,29 @@ const STAGE_BADGE_CLASSES: Record<StageGroup, string> = {
 
 // Human-readable label for stage badge
 function stageLabel(tag: string): string {
-	return tag
-		.replace(/_/g, ' ')
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+	return tag.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function renderStageBadge(tag: string, key: string | number): React.ReactNode {
+function renderStageBadge(
+	tag: string,
+	key: string | number,
+): React.ReactNode {
 	const group = stageGroup(tag);
 	const cls = STAGE_BADGE_CLASSES[group];
 	return (
 		<span
 			key={key}
-			className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wide border leading-none ${cls}`}
-		>
+			className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none font-bold tracking-wide ${cls}`}>
 			{stageLabel(tag)}
 		</span>
 	);
 }
 
 // ─── Public entry point ───────────────────────────────────────────────────────
-export function renderRichLogText(text: string, searchQuery?: string): React.ReactNode {
+export function renderRichLogText(
+	text: string,
+	searchQuery?: string,
+): React.ReactNode {
 	if (!text) return null;
 
 	// URLs first (split so they don't get tokenized)
@@ -75,9 +94,8 @@ export function renderRichLogText(text: string, searchQuery?: string): React.Rea
 					href={part}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-sky-400 underline hover:text-sky-300 font-medium cursor-pointer break-all transition-colors"
-					onClick={(e) => e.stopPropagation()}
-				>
+					className="cursor-pointer font-medium break-all text-sky-400 underline transition-colors hover:text-sky-300"
+					onClick={e => e.stopPropagation()}>
 					{part}
 				</a>
 			);
@@ -91,7 +109,10 @@ export function renderRichLogText(text: string, searchQuery?: string): React.Rea
 }
 
 // ─── Search highlight ─────────────────────────────────────────────────────────
-function applySearchThenSyntax(text: string, searchQuery?: string): React.ReactNode {
+function applySearchThenSyntax(
+	text: string,
+	searchQuery?: string,
+): React.ReactNode {
 	if (!text) return null;
 
 	if (searchQuery?.trim()) {
@@ -100,7 +121,9 @@ function applySearchThenSyntax(text: string, searchQuery?: string): React.ReactN
 		const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
 		return parts.map((p, i) =>
 			p.toLowerCase() === q.toLowerCase() ? (
-				<mark key={i} className="bg-amber-400/40 text-amber-100 rounded px-0.5 font-bold underline">
+				<mark
+					key={i}
+					className="rounded bg-amber-400/40 px-0.5 font-bold text-amber-100 underline">
 					{p}
 				</mark>
 			) : (
@@ -131,7 +154,9 @@ function tokenizeLine(text: string): React.ReactNode {
 						{post && tokenizeLine(post)}
 					</>
 				);
-			} catch { /* not JSON */ }
+			} catch {
+				/* not JSON */
+			}
 		}
 	}
 
@@ -176,7 +201,8 @@ const TOKEN_RE = new RegExp(
 function httpStatusBadge(code: string) {
 	const n = Number(code);
 	if (n >= 500) return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-	if (n >= 400) return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+	if (n >= 400)
+		return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
 	if (n >= 300) return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
 	return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
 }
@@ -212,44 +238,55 @@ function runTokenRegex(text: string): React.ReactNode {
 			// ── HTTP verb ──
 			const upper = g2.toUpperCase();
 			parts.push(
-				<span key={key} className={`inline-block px-1 py-0 rounded text-[10px] font-mono font-bold border leading-5 ${METHOD_COLORS[upper] ?? 'bg-zinc-500/15 text-zinc-300 border-zinc-600/30'}`}>
+				<span
+					key={key}
+					className={`inline-block rounded border px-1 py-0 font-mono text-[10px] leading-5 font-bold ${METHOD_COLORS[upper] ?? 'border-zinc-600/30 bg-zinc-500/15 text-zinc-300'}`}>
 					{upper}
 				</span>,
 			);
 		} else if (g3) {
 			// ── HTTP status ──
 			const prefixLen = full.length - g3.length;
-			if (prefixLen > 0) parts.push(text.slice(m.index, m.index + prefixLen));
+			if (prefixLen > 0)
+				parts.push(text.slice(m.index, m.index + prefixLen));
 			parts.push(
-				<span key={key + 'sc'} className={`inline-block px-1 py-0 rounded text-[10px] font-mono font-bold border leading-5 ${httpStatusBadge(g3)}`}>
+				<span
+					key={key + 'sc'}
+					className={`inline-block rounded border px-1 py-0 font-mono text-[10px] leading-5 font-bold ${httpStatusBadge(g3)}`}>
 					{g3}
 				</span>,
 			);
 		} else if (g4) {
 			// ── IP / localhost ──
 			parts.push(
-				<span key={key} className="text-cyan-300 font-mono font-medium bg-cyan-950/25 px-0.5 rounded">
+				<span
+					key={key}
+					className="rounded bg-cyan-950/25 px-0.5 font-mono font-medium text-cyan-300">
 					{g4}
 				</span>,
 			);
 		} else if (g5) {
 			// ── UUID ──
 			parts.push(
-				<span key={key} className="text-violet-400/70 font-mono text-[11px]">
+				<span
+					key={key}
+					className="font-mono text-[11px] text-violet-400/70">
 					{g5}
 				</span>,
 			);
 		} else if (g6) {
 			// ── SHA hash ──
 			parts.push(
-				<span key={key} className="text-zinc-500 font-mono text-[10px] bg-zinc-800/50 px-0.5 rounded border border-zinc-700/40">
+				<span
+					key={key}
+					className="rounded border border-zinc-700/40 bg-zinc-800/50 px-0.5 font-mono text-[10px] text-zinc-500">
 					{g6}
 				</span>,
 			);
 		} else if (g7) {
 			// ── Quoted string ──
 			parts.push(
-				<span key={key} className="text-emerald-300/90 font-mono">
+				<span key={key} className="font-mono text-emerald-300/90">
 					{g7}
 				</span>,
 			);
@@ -259,10 +296,12 @@ function runTokenRegex(text: string): React.ReactNode {
 			const kk = g8.slice(0, eq);
 			const vv = g8.slice(eq + 1);
 			parts.push(
-				<span key={key} className="font-mono text-xs inline-flex items-baseline">
+				<span
+					key={key}
+					className="inline-flex items-baseline font-mono text-xs">
 					<span className="text-zinc-500">{kk}</span>
 					<span className="text-zinc-600">=</span>
-					<span className="text-amber-200/90 font-medium">{vv}</span>
+					<span className="font-medium text-amber-200/90">{vv}</span>
 				</span>,
 			);
 		} else {
@@ -280,7 +319,7 @@ function runTokenRegex(text: string): React.ReactNode {
 function renderPrettyJson(obj: unknown): React.ReactNode {
 	const lines = JSON.stringify(obj, null, 2).split('\n');
 	return (
-		<span className="inline-flex flex-col bg-zinc-950/70 border border-zinc-800/70 rounded px-3 py-2 my-0.5 font-mono text-xs w-full overflow-x-auto">
+		<span className="my-0.5 inline-flex w-full flex-col overflow-x-auto rounded border border-zinc-800/70 bg-zinc-950/70 px-3 py-2 font-mono text-xs">
 			{lines.map((line, i) => {
 				const km = line.match(/^(\s*)("([^"]+)")\s*:\s*(.*)/);
 				if (km) {
@@ -288,7 +327,7 @@ function renderPrettyJson(obj: unknown): React.ReactNode {
 					const val = rest.replace(/,$/, '').trim();
 					const hasComma = rest.trimEnd().endsWith(',');
 					return (
-						<div key={i} className="whitespace-pre leading-relaxed">
+						<div key={i} className="leading-relaxed whitespace-pre">
 							{indent}
 							<span className="text-purple-300">"{key}"</span>
 							<span className="text-zinc-600">: </span>
@@ -298,7 +337,9 @@ function renderPrettyJson(obj: unknown): React.ReactNode {
 					);
 				}
 				return (
-					<div key={i} className="whitespace-pre text-zinc-600 leading-relaxed">
+					<div
+						key={i}
+						className="leading-relaxed whitespace-pre text-zinc-600">
 						{line}
 					</div>
 				);
@@ -308,13 +349,18 @@ function renderPrettyJson(obj: unknown): React.ReactNode {
 }
 
 function jsonValueNode(val: string): React.ReactNode {
-	if (val.startsWith('"')) return <span className="text-emerald-300">{val}</span>;
-	if (val === 'true') return <span className="text-amber-300 font-bold">true</span>;
-	if (val === 'false') return <span className="text-amber-300 font-bold">false</span>;
-	if (val === 'null') return <span className="text-rose-400 italic">null</span>;
-	if (/^-?\d+(\.\d+)?$/.test(val)) return <span className="text-sky-300">{val}</span>;
+	if (val.startsWith('"'))
+		return <span className="text-emerald-300">{val}</span>;
+	if (val === 'true')
+		return <span className="font-bold text-amber-300">true</span>;
+	if (val === 'false')
+		return <span className="font-bold text-amber-300">false</span>;
+	if (val === 'null')
+		return <span className="text-rose-400 italic">null</span>;
+	if (/^-?\d+(\.\d+)?$/.test(val))
+		return <span className="text-sky-300">{val}</span>;
 	return <span className="text-zinc-300">{val}</span>;
 }
 
 // Export for external use
-export { DEPLOY_STAGE_BARE_RE, DEPLOY_STAGE_RE };
+export {DEPLOY_STAGE_BARE_RE, DEPLOY_STAGE_RE};

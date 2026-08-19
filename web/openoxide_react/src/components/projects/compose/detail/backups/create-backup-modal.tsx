@@ -43,8 +43,12 @@ export function CreateBackupModal({
 	onCreate,
 }: CreateBackupModalProps) {
 	const [name, setName] = useState('');
-	const [serviceName, setServiceName] = useState(defaultServiceName || servicesList[0] || 'app');
-	const [volumeName, setVolumeName] = useState(defaultVolumeName || 'data');
+	const [serviceName, setServiceName] = useState(
+		defaultServiceName || servicesList[0] || 'app',
+	);
+	const [volumeName, setVolumeName] = useState(
+		defaultVolumeName || 'data',
+	);
 	const [cronExpr, setCronExpr] = useState('0 2 * * *');
 	const [prefix, setPrefix] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
@@ -53,8 +57,15 @@ export function CreateBackupModal({
 	useEffect(() => {
 		if (editingBackup) {
 			setName(editingBackup.name || '');
-			setServiceName(editingBackup.service_name || defaultServiceName || servicesList[0] || 'app');
-			setVolumeName(editingBackup.volume_name || defaultVolumeName || 'data');
+			setServiceName(
+				editingBackup.service_name ||
+					defaultServiceName ||
+					servicesList[0] ||
+					'app',
+			);
+			setVolumeName(
+				editingBackup.volume_name || defaultVolumeName || 'data',
+			);
 			setCronExpr(editingBackup.cron_expression || '0 2 * * *');
 			setPrefix(editingBackup.backup_prefix || '');
 			setTurnOff(editingBackup.stop_container_during_backup === 1);
@@ -90,23 +101,31 @@ export function CreateBackupModal({
 	};
 
 	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in duration-150">
-				<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+			<div className="w-full max-w-2xl animate-in overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 fade-in">
+				<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
 					<div className="flex items-center gap-2">
-						<Database className="w-4 h-4 text-primary" />
+						<Database className="h-4 w-4 text-primary" />
 						<h3 className="text-sm font-bold text-foreground">
-							{editingBackup ? 'Edit Volume Backup Rule' : 'Create Compose Volume Backup'}
+							{editingBackup
+								? 'Edit Volume Backup Rule'
+								: 'Create Compose Volume Backup'}
 						</h3>
 					</div>
-					<Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-muted-foreground">
-						<X className="w-4 h-4" />
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={onClose}
+						className="h-7 w-7 text-muted-foreground">
+						<X className="h-4 w-4" />
 					</Button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+				<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
 					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Backup Rule Name *</Label>
+						<Label className="text-xs font-semibold">
+							Backup Rule Name *
+						</Label>
 						<Input
 							value={name}
 							onChange={e => setName(e.target.value)}
@@ -116,64 +135,86 @@ export function CreateBackupModal({
 					</div>
 
 					{!hideServiceAndVolumeSelect && (
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-							<div className="flex flex-col gap-1.5 w-full">
+						<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+							<div className="flex w-full flex-col gap-1.5">
 								<Label className="text-xs font-semibold">Service *</Label>
-								<Select value={serviceName} onValueChange={v => v && setServiceName(v)}>
-									<SelectTrigger className="h-9 text-xs w-full font-semibold bg-muted/20 border-border">
+								<Select
+									value={serviceName}
+									onValueChange={v => v && setServiceName(v)}>
+									<SelectTrigger className="h-9 w-full border-border bg-muted/20 text-xs font-semibold">
 										<SelectValue placeholder="Select service" />
 									</SelectTrigger>
-									<SelectContent className="bg-card border-border">
+									<SelectContent className="border-border bg-card">
 										{servicesList.map(srv => (
-											<SelectItem key={srv} value={srv} className="text-xs font-semibold">{srv}</SelectItem>
+											<SelectItem
+												key={srv}
+												value={srv}
+												className="text-xs font-semibold">
+												{srv}
+											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
 							</div>
 
-							<div className="flex flex-col gap-1.5 w-full">
-								<Label className="text-xs font-semibold">Volume Name *</Label>
+							<div className="flex w-full flex-col gap-1.5">
+								<Label className="text-xs font-semibold">
+									Volume Name *
+								</Label>
 								<Input
 									value={volumeName}
 									onChange={e => setVolumeName(e.target.value)}
 									placeholder="postgres_data"
-									className="h-9 text-xs font-mono w-full"
+									className="h-9 w-full font-mono text-xs"
 								/>
 							</div>
 						</div>
 					)}
 
 					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Cron Schedule (UTC) *</Label>
+						<Label className="text-xs font-semibold">
+							Cron Schedule (UTC) *
+						</Label>
 						<Input
 							value={cronExpr}
 							onChange={e => setCronExpr(e.target.value)}
 							placeholder="0 2 * * * (Daily at 2 AM)"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
 					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Backup File Prefix</Label>
+						<Label className="text-xs font-semibold">
+							Backup File Prefix
+						</Label>
 						<Input
 							value={prefix}
 							onChange={e => setPrefix(e.target.value)}
 							placeholder="db_backup"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
-					<div className="flex items-center justify-between border border-border/60 rounded-lg p-3 bg-muted/20">
+					<div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3">
 						<div>
-							<Label className="text-xs font-semibold">Stop Container During Backup</Label>
-							<p className="text-[11px] text-muted-foreground">Ensures zero database corruption during snapshot</p>
+							<Label className="text-xs font-semibold">
+								Stop Container During Backup
+							</Label>
+							<p className="text-[11px] text-muted-foreground">
+								Ensures zero database corruption during snapshot
+							</p>
 						</div>
 						<Switch checked={turnOff} onCheckedChange={setTurnOff} />
 					</div>
 
-					<div className="pt-2 flex items-center justify-end border-t border-border">
-						<Button type="submit" disabled={saving} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
-							{saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+					<div className="flex items-center justify-end border-t border-border pt-2">
+						<Button
+							type="submit"
+							disabled={saving}
+							className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
+							{saving ? (
+								<RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
+							) : null}
 							{editingBackup ? 'Update Backup Rule' : 'Schedule Backup'}
 						</Button>
 					</div>

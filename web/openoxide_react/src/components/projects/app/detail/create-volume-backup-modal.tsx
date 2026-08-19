@@ -1,5 +1,11 @@
 import {useState} from 'react';
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '#/components/ui/dialog';
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
@@ -15,7 +21,12 @@ interface CreateVolumeBackupModalProps {
 	onSuccess: () => void;
 }
 
-export function CreateVolumeBackupModal({open, onOpenChange, app, onSuccess}: CreateVolumeBackupModalProps) {
+export function CreateVolumeBackupModal({
+	open,
+	onOpenChange,
+	app,
+	onSuccess,
+}: CreateVolumeBackupModalProps) {
 	const [name, setName] = useState('');
 	const [volumeName, setVolumeName] = useState('');
 	const [cronExpr, setCronExpr] = useState('0 0 * * *');
@@ -91,38 +102,56 @@ export function CreateVolumeBackupModal({open, onOpenChange, app, onSuccess}: Cr
 					</div>
 
 					<div className="space-y-1.5">
-						<Label htmlFor="vol-cron" className="text-xs font-semibold">Cron Schedule *</Label>
+						<Label htmlFor="vol-cron" className="text-xs font-semibold">
+							Cron Schedule *
+						</Label>
 						<Input
 							id="vol-cron"
 							placeholder="0 0 * * *"
 							value={cronExpr}
 							onChange={e => setCronExpr(e.target.value)}
 							required
-							className="font-mono text-xs h-9"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
 					<div className="space-y-1.5">
-						<Label htmlFor="vol-prefix" className="text-xs font-semibold">S3 Prefix Path</Label>
+						<Label htmlFor="vol-prefix" className="text-xs font-semibold">
+							S3 Prefix Path
+						</Label>
 						<Input
 							id="vol-prefix"
 							placeholder="volume-backups/"
 							value={prefix}
 							onChange={e => setPrefix(e.target.value)}
-							className="font-mono text-xs h-9"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
-					<div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+					<div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
 						<div className="space-y-0.5">
-							<Label htmlFor="turn-off-switch" className="text-sm font-semibold cursor-pointer">Pause App During Snapshot</Label>
-							<p className="text-[11px] text-muted-foreground">Temporarily pause container to ensure safe consistent tar snapshot</p>
+							<Label
+								htmlFor="turn-off-switch"
+								className="cursor-pointer text-sm font-semibold">
+								Pause App During Snapshot
+							</Label>
+							<p className="text-[11px] text-muted-foreground">
+								Temporarily pause container to ensure safe consistent tar
+								snapshot
+							</p>
 						</div>
-						<Switch id="turn-off-switch" checked={turnOff} onCheckedChange={setTurnOff} />
+						<Switch
+							id="turn-off-switch"
+							checked={turnOff}
+							onCheckedChange={setTurnOff}
+						/>
 					</div>
 
 					<DialogFooter className="pt-3">
-						<Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
+						<Button
+							type="submit"
+							disabled={isSubmitting}
+							className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
 							{isSubmitting ? 'Creating...' : 'Create Backup Rule'}
 						</Button>
 					</DialogFooter>

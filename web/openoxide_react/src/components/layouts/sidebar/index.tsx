@@ -28,7 +28,7 @@ type NavMenuGroupProps = {
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 	return (
 		<SidebarGroup className="py-1">
-			<SidebarGroupLabel className="text-[11px] font-mono tracking-wider text-muted-foreground font-semibold uppercase px-2 mb-1 group-data-[collapsible=icon]:hidden">
+			<SidebarGroupLabel className="mb-1 px-2 font-mono text-[11px] font-semibold tracking-wider text-muted-foreground uppercase group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-0.5">
@@ -36,8 +36,10 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 					const isActive = (() => {
 						if (!item.to) return false;
 						if (item.to === '/') return currentPath === '/';
-						if (item.to === '/settings') return currentPath === '/settings';
-						if (item.to === '/settings/server') return currentPath === '/settings/server';
+						if (item.to === '/settings')
+							return currentPath === '/settings';
+						if (item.to === '/settings/server')
+							return currentPath === '/settings/server';
 						return currentPath.startsWith(item.to);
 					})();
 					return (
@@ -59,14 +61,17 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 								}
 								isActive={isActive}
 								tooltip={item.title}
-								className={`h-8.5 text-xs font-medium rounded-lg transition-colors px-2.5 group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:justify-center! ${
+								className={`h-8.5 rounded-lg px-2.5 text-xs font-medium transition-colors group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:px-0! ${
 									isActive
-										? 'bg-primary/15 text-primary font-semibold'
-										: 'text-foreground/90 hover:text-foreground hover:bg-accent/60'
-								}`}
-							>
-								<item.icon className={`size-4 shrink-0 ${isActive ? 'text-primary' : 'text-foreground/80'}`} />
-								<span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+										? 'bg-primary/15 font-semibold text-primary'
+										: 'text-foreground/90 hover:bg-accent/60 hover:text-foreground'
+								}`}>
+								<item.icon
+									className={`size-4 shrink-0 ${isActive ? 'text-primary' : 'text-foreground/80'}`}
+								/>
+								<span className="group-data-[collapsible=icon]:hidden">
+									{item.title}
+								</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					);
@@ -79,7 +84,7 @@ function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
 // Thin horizontal rule with consistent horizontal padding between nav groups.
 function SidebarSeparator() {
 	return (
-		<div className="px-3.5 my-1">
+		<div className="my-1 px-3.5">
 			<Separator className="bg-border/40" />
 		</div>
 	);
@@ -99,7 +104,7 @@ export function AppSidebar() {
 				</SidebarHeader>
 
 				{/* Navigation Content */}
-				<SidebarContent className="gap-1 px-1.5 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
+				<SidebarContent className="gap-1 px-1.5 py-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
 					{/* Platform Group */}
 					<NavMenuGroup
 						label="Platform"
@@ -120,7 +125,7 @@ export function AppSidebar() {
 
 					{/* Extra / Help Group */}
 					<SidebarGroup className="py-1 group-data-[collapsible=icon]:hidden">
-						<SidebarGroupLabel className="text-[11px] font-mono tracking-wider text-muted-foreground font-semibold uppercase px-2 mb-1">
+						<SidebarGroupLabel className="mb-1 px-2 font-mono text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
 							Extra
 						</SidebarGroupLabel>
 						<SidebarMenu className="gap-0.5">
@@ -135,8 +140,7 @@ export function AppSidebar() {
 											/>
 										}
 										tooltip={item.title}
-										className="h-8.5 text-xs font-medium text-foreground/90 hover:text-foreground hover:bg-accent/60 rounded-lg px-2.5 transition-colors"
-									>
+										className="h-8.5 rounded-lg px-2.5 text-xs font-medium text-foreground/90 transition-colors hover:bg-accent/60 hover:text-foreground">
 										<item.icon className="size-4 shrink-0 text-foreground/80" />
 										<span>{item.title}</span>
 									</SidebarMenuButton>

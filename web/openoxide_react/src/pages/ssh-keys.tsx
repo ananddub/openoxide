@@ -6,7 +6,7 @@ import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 import type {SshKeyResponse} from '#/types/api-helpers';
 
@@ -16,10 +16,12 @@ export const Route = createFileRoute('/_app/ssh-keys')({
 
 function SshKeysPage() {
 	const [isAddOpen, setIsAddOpen] = useState(false);
-	const [selectedKeyForView, setSelectedKeyForView] = useState<SshKeyResponse | null>(null);
-	const [selectedKeyForDelete, setSelectedKeyForDelete] = useState<SshKeyResponse | null>(null);
+	const [selectedKeyForView, setSelectedKeyForView] =
+		useState<SshKeyResponse | null>(null);
+	const [selectedKeyForDelete, setSelectedKeyForDelete] =
+		useState<SshKeyResponse | null>(null);
 
-	const storeSshKeys = useAppStore((state) => state.sshKeys);
+	const storeSshKeys = useAppStore(state => state.sshKeys);
 
 	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
 	const isLoading = false;
@@ -27,14 +29,26 @@ function SshKeysPage() {
 	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
 	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);
 
-	const handleViewKey = useCallback((key: SshKeyResponse) => setSelectedKeyForView(key), []);
-	const handleCloseView = useCallback(() => setSelectedKeyForView(null), []);
+	const handleViewKey = useCallback(
+		(key: SshKeyResponse) => setSelectedKeyForView(key),
+		[],
+	);
+	const handleCloseView = useCallback(
+		() => setSelectedKeyForView(null),
+		[],
+	);
 
-	const handleDeleteKey = useCallback((key: SshKeyResponse) => setSelectedKeyForDelete(key), []);
-	const handleCloseDelete = useCallback(() => setSelectedKeyForDelete(null), []);
+	const handleDeleteKey = useCallback(
+		(key: SshKeyResponse) => setSelectedKeyForDelete(key),
+		[],
+	);
+	const handleCloseDelete = useCallback(
+		() => setSelectedKeyForDelete(null),
+		[],
+	);
 
 	return (
-		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12">
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-12">
 			<SshKeysHeader
 				onOpenAdd={handleOpenAdd}
 				onRefresh={() => {}}

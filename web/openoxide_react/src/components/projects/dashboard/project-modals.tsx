@@ -88,13 +88,15 @@ export function ProjectModals({
 				<CreateAppDialog
 					isOpen={showCreateApp}
 					onClose={() => setShowCreateApp(false)}
-					onOpenChange={(open) => setShowCreateApp(open)}
+					onOpenChange={open => setShowCreateApp(open)}
 					environmentId={selectedEnvId}
-					onCreated={(app) => {
+					onCreated={app => {
 						setShowCreateApp(false);
 						handleRefresh();
 						if (app?.id) {
-							navigate({ to: `/projects/${projectId}/app/${app.id}` as any });
+							navigate({
+								to: `/projects/${projectId}/app/${app.id}` as any,
+							});
 						}
 					}}
 				/>
@@ -104,13 +106,15 @@ export function ProjectModals({
 				<CreateComposeDialog
 					isOpen={showCreateCompose}
 					onClose={() => setShowCreateCompose(false)}
-					onOpenChange={(open) => setShowCreateCompose(open)}
+					onOpenChange={open => setShowCreateCompose(open)}
 					environmentId={selectedEnvId}
-					onCreated={(compose) => {
+					onCreated={compose => {
 						setShowCreateCompose(false);
 						handleRefresh();
 						if (compose?.id) {
-							navigate({ to: `/projects/${projectId}/compose/${compose.id}` as any });
+							navigate({
+								to: `/projects/${projectId}/compose/${compose.id}` as any,
+							});
 						}
 					}}
 				/>
@@ -122,12 +126,18 @@ export function ProjectModals({
 					onClose={() => setShowCreateDatabase(false)}
 					environmentId={selectedEnvId}
 					servers={servers}
-					onCreated={(db) => {
+					onCreated={db => {
 						setShowCreateDatabase(false);
 						handleRefresh();
 						const rawDb = db as unknown as Record<string, unknown>;
-						const targetDbId = db?.id || (rawDb?.data as Record<string, unknown>)?.id || (rawDb?.database as Record<string, unknown>)?.id;
-						const targetKind = db?.kind || (rawDb?.data as Record<string, unknown>)?.kind || 'postgres';
+						const targetDbId =
+							db?.id ||
+							(rawDb?.data as Record<string, unknown>)?.id ||
+							(rawDb?.database as Record<string, unknown>)?.id;
+						const targetKind =
+							db?.kind ||
+							(rawDb?.data as Record<string, unknown>)?.kind ||
+							'postgres';
 						if (targetDbId) {
 							navigate({
 								to: '/projects/$id/database/$dbId',

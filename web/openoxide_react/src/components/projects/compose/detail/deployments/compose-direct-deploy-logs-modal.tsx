@@ -4,7 +4,7 @@ import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 interface ComposeDirectDeployLogsModalProps {
 	isOpen: boolean;
@@ -23,8 +23,10 @@ export function ComposeDirectDeployLogsModal({
 	const [isConnecting, setIsConnecting] = useState(true);
 
 	// Read deployments directly from Zustand RAM Store
-	const storeDeployments = useAppStore((state) => state.deployments || []);
-	const rawDeployments = storeDeployments.filter((d: any) => String(d.compose_id) === String(composeId));
+	const storeDeployments = useAppStore(state => state.deployments || []);
+	const rawDeployments = storeDeployments.filter(
+		(d: any) => String(d.compose_id) === String(composeId),
+	);
 	const isLoadingDeployments = false;
 
 	const deployments = rawDeployments ?? [];
@@ -38,7 +40,10 @@ export function ComposeDirectDeployLogsModal({
 		let controller = new AbortController();
 		setIsConnecting(true);
 
-		const initialFallback = (latestDeployment as any)?.log_content || (latestDeployment as any)?.message || latestDeployment?.description;
+		const initialFallback =
+			(latestDeployment as any)?.log_content ||
+			(latestDeployment as any)?.message ||
+			latestDeployment?.description;
 		if (initialFallback) {
 			setLiveLogs(initialFallback.split('\n'));
 		} else {
@@ -122,16 +127,16 @@ export function ComposeDirectDeployLogsModal({
 	if (!isOpen || typeof document === 'undefined') return null;
 
 	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-			<div className="bg-[#09090b] border border-border/80 rounded-2xl shadow-2xl w-full max-w-6xl h-[84vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-2xl border border-border/80 bg-[#09090b] shadow-2xl duration-150 zoom-in-95 fade-in">
 				{/* Modal Header */}
-				<div className="px-5 py-3.5 border-b border-border/60 flex items-center justify-between bg-card/30 shrink-0">
+				<div className="flex shrink-0 items-center justify-between border-b border-border/60 bg-card/30 px-5 py-3.5">
 					<div className="flex items-center gap-2.5">
-						<TerminalIcon className="w-4 h-4 text-primary" />
-						<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+						<TerminalIcon className="h-4 w-4 text-primary" />
+						<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 							Deployment Logs
 							{serviceName && (
-								<span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+								<span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-normal text-primary">
 									{serviceName}
 								</span>
 							)}
@@ -141,14 +146,13 @@ export function ComposeDirectDeployLogsModal({
 						variant="ghost"
 						size="icon"
 						onClick={onClose}
-						className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg"
-					>
-						<X className="w-4 h-4" />
+						className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted/80 hover:text-foreground">
+						<X className="h-4 w-4" />
 					</Button>
 				</div>
 
 				{/* Single Seamless Log Viewer */}
-				<div className="flex-1 p-4 overflow-y-auto bg-[#09090b] flex flex-col">
+				<div className="flex flex-1 flex-col overflow-y-auto bg-[#09090b] p-4">
 					<DeploymentViewer
 						logs={liveLogs}
 						isLoading={isLoadingDeployments || isConnecting}

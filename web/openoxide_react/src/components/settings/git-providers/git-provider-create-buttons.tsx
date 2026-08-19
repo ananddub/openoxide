@@ -1,11 +1,18 @@
-import {BitbucketIcon, GiteaIcon, GithubIcon, GitlabIcon} from '#/components/icons/data-tools-icons';
+import {
+	BitbucketIcon,
+	GiteaIcon,
+	GithubIcon,
+	GitlabIcon,
+} from '#/components/icons/data-tools-icons';
 import {type GitProviderKind} from './git-provider-types';
 
 interface GitProviderCreateButtonsProps {
 	onSelectKind: (kind: GitProviderKind) => void;
 }
 
-export function GitProviderCreateButtons({onSelectKind}: GitProviderCreateButtonsProps) {
+export function GitProviderCreateButtons({
+	onSelectKind,
+}: GitProviderCreateButtonsProps) {
 	const providerCards = [
 		{
 			kind: 'github' as GitProviderKind,
@@ -42,28 +49,27 @@ export function GitProviderCreateButtons({onSelectKind}: GitProviderCreateButton
 	];
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-			{providerCards.map((item) => (
+		<div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+			{providerCards.map(item => (
 				<button
 					key={item.kind}
 					type="button"
 					onClick={() => onSelectKind(item.kind)}
-					className={`group relative flex flex-col justify-between p-4 rounded-2xl border border-border/80 bg-card/60 hover:shadow-md transition-all duration-200 text-left cursor-pointer ${item.hoverClass}`}
-				>
-					<div className="flex items-start justify-between w-full mb-2">
-						<div className="size-9 rounded-xl bg-muted/60 border border-border/60 flex items-center justify-center group-hover:scale-105 transition-transform">
+					className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-4 text-left transition-all duration-200 hover:shadow-md ${item.hoverClass}`}>
+					<div className="mb-2 flex w-full items-start justify-between">
+						<div className="flex size-9 items-center justify-center rounded-xl border border-border/60 bg-muted/60 transition-transform group-hover:scale-105">
 							{item.icon}
 						</div>
-						<span className="text-[10px] font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/40">
+						<span className="rounded-full border border-border/40 bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
 							{item.badge}
 						</span>
 					</div>
 
 					<div>
-						<h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+						<h4 className="flex items-center gap-1.5 text-sm font-bold text-foreground transition-colors group-hover:text-primary">
 							{item.name}
 						</h4>
-						<p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+						<p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
 							{item.description}
 						</p>
 					</div>

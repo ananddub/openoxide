@@ -2,7 +2,10 @@ import React from 'react';
 import {renderRichLogText} from './log-highlighter';
 
 // ANSI escape code parser to React nodes with URL & syntax highlighting
-export function renderAnsiText(text: string, searchQuery?: string): React.ReactNode {
+export function renderAnsiText(
+	text: string,
+	searchQuery?: string,
+): React.ReactNode {
 	if (!text) return null;
 
 	const ansiRegex = /\x1B\[([0-9;]*)m/g;
@@ -26,7 +29,7 @@ export function renderAnsiText(text: string, searchQuery?: string): React.ReactN
 			elements.push(
 				<span key={lastIndex} className={currentClasses.join(' ')}>
 					{renderRichLogText(textChunk, searchQuery)}
-				</span>
+				</span>,
 			);
 		}
 
@@ -51,7 +54,9 @@ export function renderAnsiText(text: string, searchQuery?: string): React.ReactN
 					'text-cyan-400', // 36: cyan
 					'text-zinc-100', // 37: white
 				];
-				currentClasses = currentClasses.filter((c) => !c.startsWith('text-'));
+				currentClasses = currentClasses.filter(
+					c => !c.startsWith('text-'),
+				);
 				currentClasses.push(colors[code - 30] || 'text-zinc-200');
 			} else if (code >= 90 && code <= 97) {
 				const brightColors = [
@@ -64,7 +69,9 @@ export function renderAnsiText(text: string, searchQuery?: string): React.ReactN
 					'text-cyan-300', // 96: bright cyan
 					'text-white', // 97: bright white
 				];
-				currentClasses = currentClasses.filter((c) => !c.startsWith('text-'));
+				currentClasses = currentClasses.filter(
+					c => !c.startsWith('text-'),
+				);
 				currentClasses.push(brightColors[code - 90] || 'text-zinc-100');
 			}
 		}
@@ -77,7 +84,7 @@ export function renderAnsiText(text: string, searchQuery?: string): React.ReactN
 		elements.push(
 			<span key={lastIndex} className={currentClasses.join(' ')}>
 				{renderRichLogText(remaining, searchQuery)}
-			</span>
+			</span>,
 		);
 	}
 

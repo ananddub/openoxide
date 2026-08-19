@@ -13,28 +13,44 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 	const [port, setPort] = useState('3000');
 	const [limit, setLimit] = useState('3');
 
-	const isGitProvider = ['GITHUB', 'GITLAB', 'GITEA', 'BITBUCKET', 'GIT'].includes(app.source_type || '');
+	const isGitProvider = [
+		'GITHUB',
+		'GITLAB',
+		'GITEA',
+		'BITBUCKET',
+		'GIT',
+	].includes(app.source_type || '');
 
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Enable toggle */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-start justify-between">
+			<section className="flex items-start justify-between rounded-xl border border-border bg-card p-5">
 				<div>
-					<h3 className="text-sm font-bold text-foreground">Preview Deployments</h3>
-					<p className="text-xs text-muted-foreground mt-1 max-w-md">
-						Automatically deploy pull-request / merge-request branches as isolated preview environments. Requires Git provider setup.
+					<h3 className="text-sm font-bold text-foreground">
+						Preview Deployments
+					</h3>
+					<p className="mt-1 max-w-md text-xs text-muted-foreground">
+						Automatically deploy pull-request / merge-request branches as
+						isolated preview environments. Requires Git provider setup.
 					</p>
 				</div>
-				<label className="flex items-center gap-2 cursor-pointer">
-					<input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="accent-primary w-4.5 h-4.5" />
+				<label className="flex cursor-pointer items-center gap-2">
+					<input
+						type="checkbox"
+						checked={enabled}
+						onChange={e => setEnabled(e.target.checked)}
+						className="h-4.5 w-4.5 accent-primary"
+					/>
 				</label>
 			</section>
 
 			{!isGitProvider && (
-				<section className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-start gap-2.5">
-					<Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-					<p className="text-xs text-amber-500/80 leading-relaxed">
-						Preview deployments require a GitHub, GitLab, Gitea, or custom Git repository source setup. Please configure a Git provider in the General tab first.
+				<section className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+					<Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+					<p className="text-xs leading-relaxed text-amber-500/80">
+						Preview deployments require a GitHub, GitLab, Gitea, or custom
+						Git repository source setup. Please configure a Git provider in
+						the General tab first.
 					</p>
 				</section>
 			)}
@@ -42,37 +58,70 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 			{enabled && isGitProvider && (
 				<>
 					{/* Preview Config */}
-					<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-4">
-						<h3 className="text-sm font-bold text-foreground">Configuration</h3>
+					<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+						<h3 className="text-sm font-bold text-foreground">
+							Configuration
+						</h3>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
-								<span className="text-xs font-bold text-muted-foreground">Wildcard Domain</span>
-								<Input placeholder="*.preview.example.com" value={wildcard} onChange={e => setWildcard(e.target.value)} className="bg-card border-border text-xs" />
+								<span className="text-xs font-bold text-muted-foreground">
+									Wildcard Domain
+								</span>
+								<Input
+									placeholder="*.preview.example.com"
+									value={wildcard}
+									onChange={e => setWildcard(e.target.value)}
+									className="border-border bg-card text-xs"
+								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<span className="text-xs font-bold text-muted-foreground">Container Port</span>
-								<Input type="number" placeholder="3000" value={port} onChange={e => setPort(e.target.value)} className="bg-card border-border text-xs" />
+								<span className="text-xs font-bold text-muted-foreground">
+									Container Port
+								</span>
+								<Input
+									type="number"
+									placeholder="3000"
+									value={port}
+									onChange={e => setPort(e.target.value)}
+									className="border-border bg-card text-xs"
+								/>
 							</div>
 						</div>
-						<div className="flex flex-col gap-1.5 w-32">
-							<span className="text-xs font-bold text-muted-foreground">Max Active Previews</span>
-							<Input type="number" min="1" max="10" value={limit} onChange={e => setLimit(e.target.value)} className="bg-card border-border text-xs" />
+						<div className="flex w-32 flex-col gap-1.5">
+							<span className="text-xs font-bold text-muted-foreground">
+								Max Active Previews
+							</span>
+							<Input
+								type="number"
+								min="1"
+								max="10"
+								value={limit}
+								onChange={e => setLimit(e.target.value)}
+								className="border-border bg-card text-xs"
+							/>
 						</div>
 
-						<div className="flex justify-end mt-2">
-							<Button className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
+						<div className="mt-2 flex justify-end">
+							<Button className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
 								Save Configuration
 							</Button>
 						</div>
 					</section>
 
 					{/* Active previews */}
-					<section className="bg-card border border-border rounded-xl p-5">
-						<h3 className="text-sm font-bold text-foreground">Active Previews</h3>
-						<p className="text-xs text-muted-foreground mt-1 mb-6">Currently active preview environments for open pull/merge requests.</p>
+					<section className="rounded-xl border border-border bg-card p-5">
+						<h3 className="text-sm font-bold text-foreground">
+							Active Previews
+						</h3>
+						<p className="mt-1 mb-6 text-xs text-muted-foreground">
+							Currently active preview environments for open pull/merge
+							requests.
+						</p>
 						<div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
-							<Eye className="w-8 h-8 opacity-30 mb-2" />
-							<p className="text-xs font-medium">No active preview environments running</p>
+							<Eye className="mb-2 h-8 w-8 opacity-30" />
+							<p className="text-xs font-medium">
+								No active preview environments running
+							</p>
 						</div>
 					</section>
 				</>

@@ -27,7 +27,12 @@ interface HandleTagModalProps {
 	onSuccess: () => void;
 }
 
-export function HandleTagModal({tag, isOpen, onClose, onSuccess}: HandleTagModalProps) {
+export function HandleTagModal({
+	tag,
+	isOpen,
+	onClose,
+	onSuccess,
+}: HandleTagModalProps) {
 	const [name, setName] = useState('');
 	const [color, setColor] = useState('#3b82f6');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,10 +100,13 @@ export function HandleTagModal({tag, isOpen, onClose, onSuccess}: HandleTagModal
 					</DialogDescription>
 				</DialogHeader>
 
-				<form id="hook-form-tag" onSubmit={handleSubmit} className="grid w-full gap-4">
+				<form
+					id="hook-form-tag"
+					onSubmit={handleSubmit}
+					className="grid w-full gap-4">
 					{/* Name Field */}
 					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+						<label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
 							Name
 						</label>
 						<Input
@@ -112,24 +120,23 @@ export function HandleTagModal({tag, isOpen, onClose, onSuccess}: HandleTagModal
 
 					{/* Color Field */}
 					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+						<label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
 							Color (Optional)
 						</label>
 						<div className="flex items-center gap-3">
 							<label
-								className="relative flex items-center justify-center w-12 h-12 rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity"
+								className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-md border-2 transition-opacity hover:opacity-80"
 								style={{
 									backgroundColor: color || '#3b82f6',
 								}}
-								onClick={() => colorInputRef.current?.click()}
-							>
+								onClick={() => colorInputRef.current?.click()}>
 								<div className="flex items-center justify-center">
 									{!color && <Palette className="h-5 w-5 text-white" />}
 								</div>
 								<input
 									ref={colorInputRef}
 									type="color"
-									className="absolute opacity-0 pointer-events-none w-12 h-12 top-0 left-0"
+									className="pointer-events-none absolute top-0 left-0 h-12 w-12 opacity-0"
 									value={color || '#3b82f6'}
 									onChange={e => setColor(e.target.value)}
 								/>
@@ -145,7 +152,7 @@ export function HandleTagModal({tag, isOpen, onClose, onSuccess}: HandleTagModal
 										}
 									}}
 								/>
-								<p className="text-xs text-muted-foreground mt-1">
+								<p className="mt-1 text-xs text-muted-foreground">
 									Choose a color to easily identify this tag
 								</p>
 							</div>
@@ -155,14 +162,19 @@ export function HandleTagModal({tag, isOpen, onClose, onSuccess}: HandleTagModal
 					{/* Live Preview */}
 					{color && (
 						<div className="flex items-center gap-2">
-							<span className="text-sm text-muted-foreground">Preview:</span>
+							<span className="text-sm text-muted-foreground">
+								Preview:
+							</span>
 							<TagBadge name={name || 'Tag Name'} color={color} />
 						</div>
 					)}
 				</form>
 
 				<DialogFooter>
-					<Button disabled={isSubmitting} form="hook-form-tag" type="submit">
+					<Button
+						disabled={isSubmitting}
+						form="hook-form-tag"
+						type="submit">
 						{tag ? 'Update' : 'Create'}
 					</Button>
 				</DialogFooter>

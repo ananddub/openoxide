@@ -29,50 +29,82 @@ export function ProjectDetailFilters({
 	if (totalServices === 0) return null;
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center gap-3 animate-in fade-in duration-200">
+		<div className="flex animate-in flex-col items-center gap-3 duration-200 fade-in sm:flex-row">
 			{/* Search Input */}
 			<div className="relative w-full sm:grow">
-				<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60" />
+				<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/60" />
 				<Input
 					placeholder="Search services by name..."
 					value={searchQuery}
 					onChange={e => setSearchQuery(e.target.value)}
-					className="pl-9 bg-card/45 border-border/80 h-10 w-full text-xs shadow-sm"
+					className="h-10 w-full border-border/80 bg-card/45 pl-9 text-xs shadow-sm"
 				/>
 			</div>
 
-			<div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0 justify-end">
+			<div className="flex w-full shrink-0 flex-col items-center justify-end gap-3 sm:w-auto sm:flex-row">
 				{/* Type Filter */}
-				<div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-					<span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">Type:</span>
-					<Select value={typeFilter} onValueChange={val => setTypeFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 !h-10 shadow-sm text-xs font-medium">
-							<span className="text-foreground text-left">
-								{typeFilter === 'all' ? 'All Types' : typeFilter === 'app' ? 'Applications' : typeFilter === 'compose' ? 'Compose Stacks' : 'Databases'}
+				<div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+					<span className="hidden text-xs font-semibold whitespace-nowrap text-muted-foreground sm:inline">
+						Type:
+					</span>
+					<Select
+						value={typeFilter}
+						onValueChange={val => setTypeFilter(val ?? 'all')}>
+						<SelectTrigger className="!h-10 w-full border-border/80 bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
+							<span className="text-left text-foreground">
+								{typeFilter === 'all'
+									? 'All Types'
+									: typeFilter === 'app'
+										? 'Applications'
+										: typeFilter === 'compose'
+											? 'Compose Stacks'
+											: 'Databases'}
 							</span>
 						</SelectTrigger>
-						<SelectContent className="bg-card border border-border">
-							<SelectItem value="all" className="text-xs">All Types</SelectItem>
-							<SelectItem value="app" className="text-xs">Applications</SelectItem>
-							<SelectItem value="compose" className="text-xs">Compose Stacks</SelectItem>
-							<SelectItem value="database" className="text-xs">Databases</SelectItem>
+						<SelectContent className="border border-border bg-card">
+							<SelectItem value="all" className="text-xs">
+								All Types
+							</SelectItem>
+							<SelectItem value="app" className="text-xs">
+								Applications
+							</SelectItem>
+							<SelectItem value="compose" className="text-xs">
+								Compose Stacks
+							</SelectItem>
+							<SelectItem value="database" className="text-xs">
+								Databases
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
 
 				{/* Status Filter */}
-				<div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-					<span className="text-xs font-semibold text-muted-foreground whitespace-nowrap hidden sm:inline">Status:</span>
-					<Select value={statusFilter} onValueChange={val => setStatusFilter(val ?? 'all')}>
-						<SelectTrigger className="w-full sm:w-[150px] bg-card/45 border-border/80 !h-10 shadow-sm text-xs font-medium">
-							<span className="text-foreground text-left">
-								{statusFilter === 'all' ? 'All Status' : statusFilter === 'running' ? 'Running' : 'Stopped'}
+				<div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+					<span className="hidden text-xs font-semibold whitespace-nowrap text-muted-foreground sm:inline">
+						Status:
+					</span>
+					<Select
+						value={statusFilter}
+						onValueChange={val => setStatusFilter(val ?? 'all')}>
+						<SelectTrigger className="!h-10 w-full border-border/80 bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
+							<span className="text-left text-foreground">
+								{statusFilter === 'all'
+									? 'All Status'
+									: statusFilter === 'running'
+										? 'Running'
+										: 'Stopped'}
 							</span>
 						</SelectTrigger>
-						<SelectContent className="bg-card border border-border">
-							<SelectItem value="all" className="text-xs">All Status</SelectItem>
-							<SelectItem value="running" className="text-xs">Running</SelectItem>
-							<SelectItem value="stopped" className="text-xs">Stopped</SelectItem>
+						<SelectContent className="border border-border bg-card">
+							<SelectItem value="all" className="text-xs">
+								All Status
+							</SelectItem>
+							<SelectItem value="running" className="text-xs">
+								Running
+							</SelectItem>
+							<SelectItem value="stopped" className="text-xs">
+								Stopped
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>

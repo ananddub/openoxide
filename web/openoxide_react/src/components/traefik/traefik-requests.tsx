@@ -7,7 +7,10 @@ import {formatApiError} from '#/api/utils';
 import type {RemoteServerItem} from './traefik-types';
 import {RequestsHeader} from './requests/requests-header';
 import {RequestsFilterBar} from './requests/requests-filter-bar';
-import {RequestsTable, type TraefikLogEntry} from './requests/requests-table';
+import {
+	RequestsTable,
+	type TraefikLogEntry,
+} from './requests/requests-table';
 
 interface TraefikRequestsProps {
 	selectedServerId: string;
@@ -26,7 +29,9 @@ export function TraefikRequestsView({
 	const [cronInput, setCronInput] = useState('0 0 * * *');
 	const [isToggling, setIsToggling] = useState(false);
 
-	const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+	const [visibleColumns, setVisibleColumns] = useState<
+		Record<string, boolean>
+	>({
 		method: true,
 		path: true,
 		status: true,
@@ -37,7 +42,7 @@ export function TraefikRequestsView({
 	});
 
 	const toggleColumn = (colId: string) => {
-		setVisibleColumns((prev) => {
+		setVisibleColumns(prev => {
 			const count = Object.values(prev).filter(Boolean).length;
 			if (prev[colId] && count <= 1) {
 				toast.warning('At least one column must remain visible');
@@ -47,7 +52,8 @@ export function TraefikRequestsView({
 		});
 	};
 
-	const parsedServerId = selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
+	const parsedServerId =
+		selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
 
 	// Query Request Activation Status
 	const {
@@ -63,7 +69,8 @@ export function TraefikRequestsView({
 	});
 
 	const status = useMemo(() => {
-		if (!rawStatus) return {is_active: false, cron_expression: '0 0 * * *'};
+		if (!rawStatus)
+			return {is_active: false, cron_expression: '0 0 * * *'};
 		const s = rawStatus as unknown as Record<string, unknown>;
 		return {
 			is_active: Boolean(s.is_active),
@@ -91,15 +98,23 @@ export function TraefikRequestsView({
 		},
 		{
 			enabled: status.is_active,
-		}
+		},
 	);
 
 	const logsData = useMemo(() => {
-		if (!rawLogs) return {items: [] as TraefikLogEntry[], total_count: 0, page: 1, page_size: 25};
+		if (!rawLogs)
+			return {
+				items: [] as TraefikLogEntry[],
+				total_count: 0,
+				page: 1,
+				page_size: 25,
+			};
 		const l = rawLogs as unknown as Record<string, unknown>;
-		const items = Array.isArray(l.items) ? (l.items as TraefikLogEntry[]) : [];
+		const items = Array.isArray(l.items)
+			? (l.items as TraefikLogEntry[])
+			: [];
 
-		const filteredItems = items.filter((item) => {
+		const filteredItems = items.filter(item => {
 			if (statusFilter === 'all') return true;
 			const code = Number(item.status);
 			if (statusFilter === '1xx') return code >= 100 && code < 200;
@@ -118,7 +133,10 @@ export function TraefikRequestsView({
 		};
 	}, [rawLogs, statusFilter]);
 
-	const toggleMutation = $api.useMutation('post', '/traefik/requests/toggle');
+	const toggleMutation = $api.useMutation(
+		'post',
+		'/traefik/requests/toggle',
+	);
 
 	const handleToggle = async (enable: boolean) => {
 		setIsToggling(true);
@@ -132,7 +150,7 @@ export function TraefikRequestsView({
 			toast.success(
 				enable
 					? 'Requests logging activated successfully!'
-					: 'Requests logging deactivated.'
+					: 'Requests logging deactivated.',
 			);
 			refetchStatus();
 			if (enable) refetchLogs();
@@ -145,15 +163,17 @@ export function TraefikRequestsView({
 
 	if (isStatusLoading) {
 		return (
-			<div className="flex-1 p-12 flex flex-col items-center justify-center gap-3 shadow-xs h-full">
+			<div className="flex h-full flex-1 flex-col items-center justify-center gap-3 p-12 shadow-xs">
 				<RefreshCw className="size-6 animate-spin text-muted-foreground" />
-				<span className="text-xs text-muted-foreground font-medium">Checking Traefik requests status...</span>
+				<span className="text-xs font-medium text-muted-foreground">
+					Checking Traefik requests status...
+				</span>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col gap-4 flex-1 overflow-hidden h-full">
+		<div className="flex h-full flex-1 flex-col gap-4 overflow-hidden">
 			<RequestsHeader
 				isActive={status.is_active}
 				isToggling={isToggling}
@@ -165,14 +185,18 @@ export function TraefikRequestsView({
 				servers={servers}
 			/>
 
-			<div className="flex-1 flex flex-col overflow-hidden min-h-0 gap-3.5">
+			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden">
 				{!status.is_active ? (
-					<div className="mt-10 mb-auto max-w-xl mx-auto w-full py-6 flex flex-col items-center text-center gap-3.5">
-						<AlertCircle className="size-8 text-muted-foreground/60 mb-1" />
+					<div className="mx-auto mt-10 mb-auto flex w-full max-w-xl flex-col items-center gap-3.5 py-6 text-center">
+						<AlertCircle className="mb-1 size-8 text-muted-foreground/60" />
 						<div className="space-y-1">
-							<h3 className="text-sm font-bold text-foreground">Requests are not activated</h3>
-							<p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-								Activate requests to see incoming traffic statistics and monitor your application's usage. After activation, reload Traefik for changes to take effect.
+							<h3 className="text-sm font-bold text-foreground">
+								Requests are not activated
+							</h3>
+							<p className="max-w-md text-xs leading-relaxed text-muted-foreground">
+								Activate requests to see incoming traffic statistics and
+								monitor your application's usage. After activation, reload
+								Traefik for changes to take effect.
 							</p>
 						</div>
 						<Button
@@ -180,16 +204,20 @@ export function TraefikRequestsView({
 							size="sm"
 							onClick={() => handleToggle(true)}
 							disabled={isToggling}
-							className="h-9 px-5 text-xs font-semibold gap-2 cursor-pointer mt-2">
-							{isToggling ? <RefreshCw className="size-3.5 animate-spin" /> : <Zap className="size-3.5 fill-primary-foreground" />}
+							className="mt-2 h-9 cursor-pointer gap-2 px-5 text-xs font-semibold">
+							{isToggling ? (
+								<RefreshCw className="size-3.5 animate-spin" />
+							) : (
+								<Zap className="size-3.5 fill-primary-foreground" />
+							)}
 							Activate Requests
 						</Button>
 					</div>
 				) : (
-					<div className="flex-1 flex flex-col overflow-hidden min-h-0 gap-3.5">
+					<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden">
 						<RequestsFilterBar
 							searchQuery={searchQuery}
-							onSearchChange={(val) => {
+							onSearchChange={val => {
 								setSearchQuery(val);
 								setPage(1);
 							}}

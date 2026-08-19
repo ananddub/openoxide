@@ -1,5 +1,8 @@
 import type {DatabaseResponse} from '#/types/api-helpers';
-import {DatabaseDeploySettingsCard, type DatabaseActionType} from './database-deploy-settings-card';
+import {
+	DatabaseDeploySettingsCard,
+	type DatabaseActionType,
+} from './database-deploy-settings-card';
 import {DatabaseInternalCredentialsCard} from './database-internal-credentials-card';
 import {DatabaseExternalCredentialsCard} from './database-external-credentials-card';
 
@@ -18,7 +21,7 @@ export function DatabaseGeneralTab({
 	onUpdated,
 }: DatabaseGeneralTabProps) {
 	return (
-		<div className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
 			{/* Deploy & Lifecycle Control Card */}
 			<DatabaseDeploySettingsCard
 				database={database}

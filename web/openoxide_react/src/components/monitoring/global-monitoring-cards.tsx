@@ -1,6 +1,18 @@
 import {useState, useEffect, useMemo} from 'react';
-import {Cpu, HardDrive, Database, Disc, Network, Layers} from 'lucide-react';
-import {Card, CardContent, CardHeader, CardTitle} from '#/components/ui/card';
+import {
+	Cpu,
+	HardDrive,
+	Database,
+	Disc,
+	Network,
+	Layers,
+} from 'lucide-react';
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from '#/components/ui/card';
 import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
 import {useDeploymentRunning} from 'virtual:openoxide-live';
@@ -10,13 +22,18 @@ import {useAuthStore} from '#/stores/auth-store';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function stripAnsi(str: string): string {
-	return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[^[]/g, '');
+	return str
+		.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+		.replace(/\x1b[^[]/g, '');
 }
 
 function parseBytes(str?: string): number {
 	if (!str || typeof str !== 'string') return 0;
 	const val = parseFloat(str) || 0;
-	const unit = str.replace(/[0-9.]/g, '').trim().toUpperCase();
+	const unit = str
+		.replace(/[0-9.]/g, '')
+		.trim()
+		.toUpperCase();
 	if (unit.startsWith('K')) return val * 1024;
 	if (unit.startsWith('M')) return val * 1024 * 1024;
 	if (unit.startsWith('G')) return val * 1024 * 1024 * 1024;
@@ -28,7 +45,8 @@ function formatBytes(bytes: number): string {
 	if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
 	if (bytes < 1024) return `${bytes.toFixed(0)} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	if (bytes < 1024 * 1024 * 1024)
+		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -37,9 +55,20 @@ type DockerStat = Record<string, unknown>;
 function isStatObject(x: any): boolean {
 	if (!x || typeof x !== 'object') return false;
 	return Boolean(
-		x.CPUPerc || x.cpu_percent || x.cpuPerc || x.cpu ||
-		x.MemUsage || x.mem_usage || x.memPerc || x.MemPerc ||
-		x.Container || x.container || x.name || x.container_name || x.ID || x.id
+		x.CPUPerc ||
+		x.cpu_percent ||
+		x.cpuPerc ||
+		x.cpu ||
+		x.MemUsage ||
+		x.mem_usage ||
+		x.memPerc ||
+		x.MemPerc ||
+		x.Container ||
+		x.container ||
+		x.name ||
+		x.container_name ||
+		x.ID ||
+		x.id,
 	);
 }
 
@@ -54,7 +83,12 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 	if (isStatObject(payload)) return [payload as DockerStat];
 
 	// Raw ANSI-wrapped string → strip + find JSON lines
-	const rawStr = typeof (payload as any)?.raw === 'string' ? (payload as any).raw : (typeof payload === 'string' ? payload : '');
+	const rawStr =
+		typeof (payload as any)?.raw === 'string'
+			? (payload as any).raw
+			: typeof payload === 'string'
+				? payload
+				: '';
 	if (rawStr) {
 		const stripped = stripAnsi(rawStr);
 		const results: DockerStat[] = [];
@@ -64,7 +98,9 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 			const end = trimmed.lastIndexOf('}');
 			if (start === -1 || end === -1) continue;
 			try {
-				const parsed = JSON.parse(trimmed.slice(start, end + 1)) as DockerStat;
+				const parsed = JSON.parse(
+					trimmed.slice(start, end + 1),
+				) as DockerStat;
 				if (isStatObject(parsed)) {
 					results.push(parsed);
 				}
@@ -79,12 +115,17 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 function getAccessToken(): string {
 	try {
 		const storeState = useAuthStore.getState();
-		if (storeState.tokens?.access_token) return storeState.tokens.access_token;
+		if (storeState.tokens?.access_token)
+			return storeState.tokens.access_token;
 
 		const sessionRaw = localStorage.getItem('openoxide-auth-session');
 		if (sessionRaw) {
 			const session = JSON.parse(sessionRaw);
-			return session?.state?.tokens?.access_token || session?.tokens?.access_token || '';
+			return (
+				session?.state?.tokens?.access_token ||
+				session?.tokens?.access_token ||
+				''
+			);
 		}
 	} catch {}
 	return '';
@@ -142,30 +183,45 @@ function GlobalAreaChart({
 	const chartHeight = height - paddingTop - paddingBottom;
 
 	const coords = points.map((val, idx) => {
-		const x = paddingLeft + (idx / Math.max(points.length - 1, 1)) * chartWidth;
+		const x =
+			paddingLeft + (idx / Math.max(points.length - 1, 1)) * chartWidth;
 		const normalizedVal = Math.min(Math.max(val, 0), maxVal);
-		const y = height - paddingBottom - (normalizedVal / Math.max(maxVal, 0.001)) * chartHeight;
+		const y =
+			height -
+			paddingBottom -
+			(normalizedVal / Math.max(maxVal, 0.001)) * chartHeight;
 		return {x, y, val};
 	});
 
 	const linePath = getSmoothPath(coords);
-	const areaPath = coords.length > 0
-		? `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords[0].x.toFixed(1)} ${height - paddingBottom} Z`
-		: '';
+	const areaPath =
+		coords.length > 0
+			? `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords[0].x.toFixed(1)} ${height - paddingBottom} Z`
+			: '';
 
 	return (
-		<div className="flex flex-col gap-2 w-full">
-			<div className="w-full h-36 relative">
+		<div className="flex w-full flex-col gap-2">
+			<div className="relative h-36 w-full">
 				{coords.length < 2 ? (
-					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
+					<div className="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-border/60 font-mono text-xs text-muted-foreground">
 						Collecting telemetry points...
 					</div>
 				) : (
-					<svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+					<svg
+						viewBox={`0 0 ${width} ${height}`}
+						className="h-full w-full overflow-visible">
 						<defs>
 							<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-								<stop offset="5%" stopColor={colorHex} stopOpacity={0.45} />
-								<stop offset="95%" stopColor={colorHex} stopOpacity={0.05} />
+								<stop
+									offset="5%"
+									stopColor={colorHex}
+									stopOpacity={0.45}
+								/>
+								<stop
+									offset="95%"
+									stopColor={colorHex}
+									stopOpacity={0.05}
+								/>
 							</linearGradient>
 						</defs>
 
@@ -188,8 +244,7 @@ function GlobalAreaChart({
 										x={paddingLeft - 8}
 										y={y + 3}
 										textAnchor="end"
-										className="text-[10px] fill-muted-foreground font-mono"
-									>
+										className="fill-muted-foreground font-mono text-[10px]">
 										{tick}
 									</text>
 								</g>
@@ -218,8 +273,11 @@ function GlobalAreaChart({
 			</div>
 
 			{/* Dokploy Chart Legend */}
-			<div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium pt-1">
-				<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex}} />
+			<div className="flex items-center justify-center gap-2 pt-1 text-xs font-medium text-muted-foreground">
+				<span
+					className="size-2.5 rounded-xs"
+					style={{backgroundColor: colorHex}}
+				/>
 				<span>{legendLabel}</span>
 			</div>
 		</div>
@@ -262,49 +320,83 @@ function GlobalDualChart({
 	const chartHeight = height - paddingTop - paddingBottom;
 
 	const coords1 = points1.map((val, idx) => {
-		const x = paddingLeft + (idx / Math.max(points1.length - 1, 1)) * chartWidth;
-		const y = height - paddingBottom - (val / Math.max(maxVal, 0.001)) * chartHeight;
+		const x =
+			paddingLeft + (idx / Math.max(points1.length - 1, 1)) * chartWidth;
+		const y =
+			height -
+			paddingBottom -
+			(val / Math.max(maxVal, 0.001)) * chartHeight;
 		return {x, y, val};
 	});
 
 	const coords2 = points2.map((val, idx) => {
-		const x = paddingLeft + (idx / Math.max(points2.length - 1, 1)) * chartWidth;
-		const y = height - paddingBottom - (val / Math.max(maxVal, 0.001)) * chartHeight;
+		const x =
+			paddingLeft + (idx / Math.max(points2.length - 1, 1)) * chartWidth;
+		const y =
+			height -
+			paddingBottom -
+			(val / Math.max(maxVal, 0.001)) * chartHeight;
 		return {x, y, val};
 	});
 
 	const linePath1 = getSmoothPath(coords1);
-	const areaPath1 = coords1.length > 0
-		? `${linePath1} L ${coords1[coords1.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords1[0].x.toFixed(1)} ${height - paddingBottom} Z`
-		: '';
+	const areaPath1 =
+		coords1.length > 0
+			? `${linePath1} L ${coords1[coords1.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords1[0].x.toFixed(1)} ${height - paddingBottom} Z`
+			: '';
 
 	const linePath2 = getSmoothPath(coords2);
-	const areaPath2 = coords2.length > 0
-		? `${linePath2} L ${coords2[coords2.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords2[0].x.toFixed(1)} ${height - paddingBottom} Z`
-		: '';
+	const areaPath2 =
+		coords2.length > 0
+			? `${linePath2} L ${coords2[coords2.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${coords2[0].x.toFixed(1)} ${height - paddingBottom} Z`
+			: '';
 
-	const yTicks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal].map(v => {
+	const yTicks = [
+		0,
+		maxVal * 0.25,
+		maxVal * 0.5,
+		maxVal * 0.75,
+		maxVal,
+	].map(v => {
 		if (v >= 1000) return (v / 1000).toFixed(1) + 'k';
 		return Math.round(v).toString();
 	});
 
 	return (
-		<div className="flex flex-col gap-2 w-full">
-			<div className="w-full h-36 relative">
+		<div className="flex w-full flex-col gap-2">
+			<div className="relative h-36 w-full">
 				{coords1.length < 2 ? (
-					<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-mono border border-dashed border-border/60 rounded-lg">
+					<div className="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-border/60 font-mono text-xs text-muted-foreground">
 						Collecting telemetry points...
 					</div>
 				) : (
-					<svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+					<svg
+						viewBox={`0 0 ${width} ${height}`}
+						className="h-full w-full overflow-visible">
 						<defs>
 							<linearGradient id={gradientId1} x1="0" y1="0" x2="0" y2="1">
-								<stop offset="5%" stopColor={colorHex1} stopOpacity={0.4} />
-								<stop offset="95%" stopColor={colorHex1} stopOpacity={0.0} />
+								<stop
+									offset="5%"
+									stopColor={colorHex1}
+									stopOpacity={0.4}
+								/>
+								<stop
+									offset="95%"
+									stopColor={colorHex1}
+									stopOpacity={0.0}
+								/>
 							</linearGradient>
 							<linearGradient id={gradientId2} x1="0" y1="0" x2="0" y2="1">
-								<stop offset="5%" stopColor={colorHex2} stopOpacity={0.4} />
-								<stop offset="95%" stopColor={colorHex2} stopOpacity={0.0} />
+								<stop
+									offset="5%"
+									stopColor={colorHex2}
+									stopOpacity={0.4}
+								/>
+								<stop
+									offset="95%"
+									stopColor={colorHex2}
+									stopOpacity={0.0}
+								/>
 							</linearGradient>
 						</defs>
 
@@ -326,8 +418,7 @@ function GlobalDualChart({
 										x={paddingLeft - 8}
 										y={y + 3}
 										textAnchor="end"
-										className="text-[10px] fill-muted-foreground font-mono"
-									>
+										className="fill-muted-foreground font-mono text-[10px]">
 										{tick}
 									</text>
 								</g>
@@ -335,24 +426,54 @@ function GlobalDualChart({
 						})}
 
 						{/* Area 1 */}
-						<path d={areaPath1} fill={`url(#${gradientId1})`} className="transition-all duration-700 ease-in-out" />
-						<path d={linePath1} fill="none" stroke={colorHex1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-700 ease-in-out" />
+						<path
+							d={areaPath1}
+							fill={`url(#${gradientId1})`}
+							className="transition-all duration-700 ease-in-out"
+						/>
+						<path
+							d={linePath1}
+							fill="none"
+							stroke={colorHex1}
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="transition-all duration-700 ease-in-out"
+						/>
 
 						{/* Area 2 */}
-						<path d={areaPath2} fill={`url(#${gradientId2})`} className="transition-all duration-700 ease-in-out" />
-						<path d={linePath2} fill="none" stroke={colorHex2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-700 ease-in-out" />
+						<path
+							d={areaPath2}
+							fill={`url(#${gradientId2})`}
+							className="transition-all duration-700 ease-in-out"
+						/>
+						<path
+							d={linePath2}
+							fill="none"
+							stroke={colorHex2}
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="transition-all duration-700 ease-in-out"
+						/>
 					</svg>
 				)}
 			</div>
 
 			{/* Dual Legends */}
-			<div className="flex items-center justify-center gap-6 text-xs text-muted-foreground font-medium pt-1">
+			<div className="flex items-center justify-center gap-6 pt-1 text-xs font-medium text-muted-foreground">
 				<div className="flex items-center gap-2">
-					<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex1}} />
+					<span
+						className="size-2.5 rounded-xs"
+						style={{backgroundColor: colorHex1}}
+					/>
 					<span>{legendLabel1}</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className="size-2.5 rounded-xs" style={{backgroundColor: colorHex2}} />
+					<span
+						className="size-2.5 rounded-xs"
+						style={{backgroundColor: colorHex2}}
+					/>
 					<span>{legendLabel2}</span>
 				</div>
 			</div>
@@ -392,9 +513,11 @@ function GlobalDockerDiskDonutChart({
 	const vOffset = -(cStroke + iStroke);
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-3 py-1 w-full">
-			<div className="relative size-36 flex items-center justify-center">
-				<svg viewBox="0 0 120 120" className="size-full -rotate-90 overflow-visible">
+		<div className="flex w-full flex-col items-center justify-center gap-3 py-1">
+			<div className="relative flex size-36 items-center justify-center">
+				<svg
+					viewBox="0 0 120 120"
+					className="size-full -rotate-90 overflow-visible">
 					<circle
 						cx="60"
 						cy="60"
@@ -446,16 +569,16 @@ function GlobalDockerDiskDonutChart({
 				</svg>
 
 				<div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-					<span className="text-sm font-extrabold font-mono text-foreground leading-none">
+					<span className="font-mono text-sm leading-none font-extrabold text-foreground">
 						{totalStr}
 					</span>
-					<span className="text-[10px] font-medium text-muted-foreground mt-1">
+					<span className="mt-1 text-[10px] font-medium text-muted-foreground">
 						Docker Usage
 					</span>
 				</div>
 			</div>
 
-			<div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground flex-wrap">
+			<div className="flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
 				<div className="flex items-center gap-1.5">
 					<span className="size-2.5 rounded-xs bg-blue-500" />
 					<span>Containers ({containersStr})</span>
@@ -476,25 +599,50 @@ function GlobalDockerDiskDonutChart({
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalMonitoringCards() {
-	const overviewServices = useAppStore((state) => state.overviewServices || []);
-	const {data: rawDockerContainers = []} =
-		$api.useQuery('get', '/deployments/docker/containers', {params: {query: {server_id: undefined} as any}});
+	const overviewServices = useAppStore(
+		state => state.overviewServices || [],
+	);
+	const {data: rawDockerContainers = []} = $api.useQuery(
+		'get',
+		'/deployments/docker/containers',
+		{params: {query: {server_id: undefined} as any}},
+	);
 
-	const {data: rawDiskUsage} =
-		$api.useQuery('get', '/deployments/docker/disk-usage', {params: {query: {server_id: undefined} as any}});
+	const {data: rawDiskUsage} = $api.useQuery(
+		'get',
+		'/deployments/docker/disk-usage',
+		{params: {query: {server_id: undefined} as any}},
+	);
 
-	const {data: rawServerMetrics} =
-		$api.useQuery('get', '/monitoring/server/{id}', {params: {path: {id: 1} as any}});
+	const {data: rawServerMetrics} = $api.useQuery(
+		'get',
+		'/monitoring/server/{id}',
+		{params: {path: {id: 1} as any}},
+	);
 
 	const {data: rawRunning} = useDeploymentRunning({
-		status: null, state: null,
-		application_id: null, compose_id: null, database_id: null, server_id: null,
-		limit: 50n, offset: null,
+		status: null,
+		state: null,
+		application_id: null,
+		compose_id: null,
+		database_id: null,
+		server_id: null,
+		limit: 50n,
+		offset: null,
 	});
 
 	const diskUsageFormatted = useMemo(() => {
 		if (!rawDiskUsage) {
-			return {containersStr: '0 B', imagesStr: '0 B', volumesStr: '0 B', totalStr: '0 B', totalBytes: 0, cBytes: 0, iBytes: 0, vBytes: 0};
+			return {
+				containersStr: '0 B',
+				imagesStr: '0 B',
+				volumesStr: '0 B',
+				totalStr: '0 B',
+				totalBytes: 0,
+				cBytes: 0,
+				iBytes: 0,
+				vBytes: 0,
+			};
 		}
 
 		let items: any[] = [];
@@ -502,40 +650,69 @@ export function GlobalMonitoringCards() {
 			items = rawDiskUsage;
 		} else if (typeof rawDiskUsage === 'object') {
 			const obj = rawDiskUsage as Record<string, any>;
-			if (Array.isArray(obj.Containers) || Array.isArray(obj.Images) || Array.isArray(obj.Volumes)) {
+			if (
+				Array.isArray(obj.Containers) ||
+				Array.isArray(obj.Images) ||
+				Array.isArray(obj.Volumes)
+			) {
 				const cArr = Array.isArray(obj.Containers) ? obj.Containers : [];
 				const iArr = Array.isArray(obj.Images) ? obj.Images : [];
 				const vArr = Array.isArray(obj.Volumes) ? obj.Volumes : [];
 				items = [
-					...cArr.map((x: any) => ({Type: 'Containers', Size: x.Size || x.size || x.sizeBytes})),
-					...iArr.map((x: any) => ({Type: 'Images', Size: x.Size || x.size || x.sizeBytes})),
-					...vArr.map((x: any) => ({Type: 'Volumes', Size: x.Size || x.size || x.sizeBytes})),
+					...cArr.map((x: any) => ({
+						Type: 'Containers',
+						Size: x.Size || x.size || x.sizeBytes,
+					})),
+					...iArr.map((x: any) => ({
+						Type: 'Images',
+						Size: x.Size || x.size || x.sizeBytes,
+					})),
+					...vArr.map((x: any) => ({
+						Type: 'Volumes',
+						Size: x.Size || x.size || x.sizeBytes,
+					})),
 				];
 			} else if (Array.isArray(obj.items)) {
 				items = obj.items;
 			}
 		}
 
-		let cBytes = 0, iBytes = 0, vBytes = 0, bBytes = 0;
+		let cBytes = 0,
+			iBytes = 0,
+			vBytes = 0,
+			bBytes = 0;
 
 		for (const item of items) {
 			if (!item) continue;
-			const typeStr = String(item.Type || item.type || item.name || '').toLowerCase();
-			const sizeStr = item.Size !== undefined ? item.Size : (item.size !== undefined ? item.size : item.sizeBytes);
-			const bytes = typeof sizeStr === 'number' ? sizeStr : parseBytes(String(sizeStr || 0));
+			const typeStr = String(
+				item.Type || item.type || item.name || '',
+			).toLowerCase();
+			const sizeStr =
+				item.Size !== undefined
+					? item.Size
+					: item.size !== undefined
+						? item.size
+						: item.sizeBytes;
+			const bytes =
+				typeof sizeStr === 'number'
+					? sizeStr
+					: parseBytes(String(sizeStr || 0));
 
 			if (typeStr.includes('container')) cBytes += bytes;
 			else if (typeStr.includes('image')) iBytes += bytes;
 			else if (typeStr.includes('volume')) vBytes += bytes;
-			else if (typeStr.includes('cache') || typeStr.includes('build')) bBytes += bytes;
+			else if (typeStr.includes('cache') || typeStr.includes('build'))
+				bBytes += bytes;
 		}
 
 		const totalBytes = cBytes + iBytes + vBytes + bBytes;
 
 		const formatBytes = (bytes: number) => {
 			if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
-			if (bytes >= 1024 ** 3) return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
-			if (bytes >= 1024 ** 2) return `${(bytes / (1024 ** 2)).toFixed(1)} MB`;
+			if (bytes >= 1024 ** 3)
+				return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+			if (bytes >= 1024 ** 2)
+				return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 			if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
 			return `${bytes} B`;
 		};
@@ -557,8 +734,8 @@ export function GlobalMonitoringCards() {
 			const m = rawServerMetrics[rawServerMetrics.length - 1] as any;
 			if (m && m.total_disk > 0) {
 				return {
-					diskUsedGB: (m.disk_used || 0) / (1024 ** 3),
-					diskTotalGB: (m.total_disk || 0) / (1024 ** 3),
+					diskUsedGB: (m.disk_used || 0) / 1024 ** 3,
+					diskTotalGB: (m.total_disk || 0) / 1024 ** 3,
 				};
 			}
 		}
@@ -577,10 +754,13 @@ export function GlobalMonitoringCards() {
 
 		const run = async () => {
 			try {
-				const res = await fetch('/api/deployments/docker/stats?stream=true', {
-					headers: {Authorization: token ? `Bearer ${token}` : ''},
-					signal: controller.signal,
-				});
+				const res = await fetch(
+					'/api/deployments/docker/stats?stream=true',
+					{
+						headers: {Authorization: token ? `Bearer ${token}` : ''},
+						signal: controller.signal,
+					},
+				);
 				if (!res.ok || !res.body) return;
 
 				const reader = res.body.getReader();
@@ -602,15 +782,28 @@ export function GlobalMonitoringCards() {
 								if (stats.length > 0 && isMounted) {
 									setContainersList([...stats]);
 
-									let cpuSum = 0, memUsedSum = 0, memLimitSum = 0;
-									let blkReadSum = 0, blkWriteSum = 0, netRxSum = 0, netTxSum = 0;
-									let diskUsedSum = 0, diskTotalSum = 0;
+									let cpuSum = 0,
+										memUsedSum = 0,
+										memLimitSum = 0;
+									let blkReadSum = 0,
+										blkWriteSum = 0,
+										netRxSum = 0,
+										netTxSum = 0;
+									let diskUsedSum = 0,
+										diskTotalSum = 0;
 
 									for (const c of stats) {
-										const rawCpu = c.CPUPerc || c.cpu_percent || c.cpuPerc || c.cpu || 0;
-										cpuSum += parseFloat(String(rawCpu).replace('%', '')) || 0;
+										const rawCpu =
+											c.CPUPerc ||
+											c.cpu_percent ||
+											c.cpuPerc ||
+											c.cpu ||
+											0;
+										cpuSum +=
+											parseFloat(String(rawCpu).replace('%', '')) || 0;
 
-										const memVal = c.MemUsage || c.mem_usage || c.memUsage || '';
+										const memVal =
+											c.MemUsage || c.mem_usage || c.memUsage || '';
 										const memStr = String(memVal);
 										if (memStr.includes('/')) {
 											const [u, l] = memStr.split('/').map(s => s.trim());
@@ -621,7 +814,8 @@ export function GlobalMonitoringCards() {
 											}
 										}
 
-										const blkVal = c.BlockIO || c.block_io || c.blockIO || '';
+										const blkVal =
+											c.BlockIO || c.block_io || c.blockIO || '';
 										const blkStr = String(blkVal);
 										if (blkStr.includes('/')) {
 											const [r, w] = blkStr.split('/').map(s => s.trim());
@@ -632,27 +826,49 @@ export function GlobalMonitoringCards() {
 										const netVal = c.NetIO || c.net_io || c.netIO || '';
 										const netStr = String(netVal);
 										if (netStr.includes('/')) {
-											const [rx, tx] = netStr.split('/').map(s => s.trim());
+											const [rx, tx] = netStr
+												.split('/')
+												.map(s => s.trim());
 											netRxSum += parseBytes(rx);
 											netTxSum += parseBytes(tx);
 										}
 
-										if (c.SizeRw) diskUsedSum += parseBytes(String(c.SizeRw));
-										if (c.DiskUsed || c.disk_used) diskUsedSum += parseBytes(String(c.DiskUsed || c.disk_used));
-										if ((c.DiskTotal || c.total_disk) && !diskTotalSum) diskTotalSum = parseBytes(String(c.DiskTotal || c.total_disk));
+										if (c.SizeRw)
+											diskUsedSum += parseBytes(String(c.SizeRw));
+										if (c.DiskUsed || c.disk_used)
+											diskUsedSum += parseBytes(
+												String(c.DiskUsed || c.disk_used),
+											);
+										if ((c.DiskTotal || c.total_disk) && !diskTotalSum)
+											diskTotalSum = parseBytes(
+												String(c.DiskTotal || c.total_disk),
+											);
 									}
 
-									const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-									const finalMemLimitGB = memLimitSum > memUsedSum ? memLimitSum / (1024 ** 3) : (memUsedSum > 0 ? (memUsedSum * 1.5) / (1024 ** 3) : 1);
-									const finalDiskUsedGB = diskUsedSum > 0 ? diskUsedSum / (1024 ** 3) : 0;
-									const finalDiskTotalGB = diskTotalSum > 0 ? diskTotalSum / (1024 ** 3) : Math.max(finalDiskUsedGB * 1.5, 1);
+									const timeStr = new Date().toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit',
+										second: '2-digit',
+									});
+									const finalMemLimitGB =
+										memLimitSum > memUsedSum
+											? memLimitSum / 1024 ** 3
+											: memUsedSum > 0
+												? (memUsedSum * 1.5) / 1024 ** 3
+												: 1;
+									const finalDiskUsedGB =
+										diskUsedSum > 0 ? diskUsedSum / 1024 ** 3 : 0;
+									const finalDiskTotalGB =
+										diskTotalSum > 0
+											? diskTotalSum / 1024 ** 3
+											: Math.max(finalDiskUsedGB * 1.5, 1);
 
 									setHistory(prev => [
 										...prev.slice(-49),
 										{
 											time: timeStr,
 											cpu: cpuSum,
-											memUsedGB: memUsedSum / (1024 ** 3),
+											memUsedGB: memUsedSum / 1024 ** 3,
 											memLimitGB: finalMemLimitGB,
 											diskUsedGB: finalDiskUsedGB,
 											diskTotalGB: finalDiskTotalGB,
@@ -695,9 +911,15 @@ export function GlobalMonitoringCards() {
 	>([]);
 
 	// ─── Aggregate metrics ────────────────────────────────────────────────────
-	const dockerContainersArray = Array.isArray(rawDockerContainers) ? rawDockerContainers : [];
+	const dockerContainersArray = Array.isArray(rawDockerContainers)
+		? rawDockerContainers
+		: [];
 	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
-	const activeContainersCount = Math.max(dockerContainersArray.length, runningArray.length, containersList.length);
+	const activeContainersCount = Math.max(
+		dockerContainersArray.length,
+		runningArray.length,
+		containersList.length,
+	);
 
 	const last = history[history.length - 1];
 	const latestCpu = last?.cpu || 0;
@@ -705,8 +927,14 @@ export function GlobalMonitoringCards() {
 	const rawMemLimit = last?.memLimitGB || 1;
 	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.1);
 
-	const latestDiskUsed = hostDiskSpace?.diskUsedGB || last?.diskUsedGB || (diskUsageFormatted.totalBytes / (1024 ** 3));
-	const latestDiskTotal = hostDiskSpace?.diskTotalGB || last?.diskTotalGB || Math.max(latestDiskUsed * 1.5, 1);
+	const latestDiskUsed =
+		hostDiskSpace?.diskUsedGB ||
+		last?.diskUsedGB ||
+		diskUsageFormatted.totalBytes / 1024 ** 3;
+	const latestDiskTotal =
+		hostDiskSpace?.diskTotalGB ||
+		last?.diskTotalGB ||
+		Math.max(latestDiskUsed * 1.5, 1);
 
 	const latestBlockR = last?.blockReadMB || 0;
 	const latestBlockW = last?.blockWriteMB || 0;
@@ -721,9 +949,9 @@ export function GlobalMonitoringCards() {
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Header bar */}
-			<div className="flex items-center justify-between bg-card border border-border rounded-xl p-4 shadow-xs">
+			<div className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-xs">
 				<div className="flex items-center gap-2.5">
-					<div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+					<div className="size-2.5 animate-pulse rounded-full bg-emerald-500" />
 					<span className="text-xs font-semibold text-foreground">
 						Docker Telemetry Engine
 					</span>
@@ -731,17 +959,24 @@ export function GlobalMonitoringCards() {
 						— {activeContainersCount} Active System Containers
 					</span>
 				</div>
-				<span className="text-xs text-muted-foreground font-mono">Realtime Monitoring</span>
+				<span className="font-mono text-xs text-muted-foreground">
+					Realtime Monitoring
+				</span>
 			</div>
 
 			{/* Dokploy 6-Card Monitoring Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 				{/* 1. CPU Usage */}
-				<Card className="bg-card border-border shadow-xs">
+				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">CPU Usage</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{latestCpu.toFixed(2)}%</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							CPU Usage
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							Used:{' '}
+							<span className="font-bold text-foreground">
+								{latestCpu.toFixed(2)}%
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -758,12 +993,20 @@ export function GlobalMonitoringCards() {
 				</Card>
 
 				{/* 2. Memory Usage */}
-				<Card className="bg-card border-border shadow-xs">
+				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Memory Usage</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{formatGB(latestMemUsed)}</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{formatGB(latestMemLimit)}</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							Memory Usage
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							Used:{' '}
+							<span className="font-bold text-foreground">
+								{formatGB(latestMemUsed)}
+							</span>{' '}
+							/ Limit:{' '}
+							<span className="font-bold text-foreground">
+								{formatGB(latestMemLimit)}
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -786,12 +1029,20 @@ export function GlobalMonitoringCards() {
 				</Card>
 
 				{/* 3. Disk Space */}
-				<Card className="bg-card border-border shadow-xs">
+				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Disk Space</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Used: <span className="font-bold text-foreground">{formatGB(latestDiskUsed)}</span> / Limit:{' '}
-							<span className="font-bold text-foreground">{formatGB(latestDiskTotal)}</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							Disk Space
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							Used:{' '}
+							<span className="font-bold text-foreground">
+								{formatGB(latestDiskUsed)}
+							</span>{' '}
+							/ Limit:{' '}
+							<span className="font-bold text-foreground">
+								{formatGB(latestDiskTotal)}
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -814,11 +1065,16 @@ export function GlobalMonitoringCards() {
 				</Card>
 
 				{/* 4. Docker Disk Usage */}
-				<Card className="bg-card border-border shadow-xs flex flex-col justify-between">
+				<Card className="flex flex-col justify-between border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Docker Disk Usage</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Total: <span className="font-bold text-foreground">{diskUsageFormatted.totalStr}</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							Docker Disk Usage
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							Total:{' '}
+							<span className="font-bold text-foreground">
+								{diskUsageFormatted.totalStr}
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -832,12 +1088,20 @@ export function GlobalMonitoringCards() {
 				</Card>
 
 				{/* 5. Block I/O */}
-				<Card className="bg-card border-border shadow-xs">
+				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Block I/O</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							Read: <span className="font-bold text-emerald-500">{latestBlockR.toFixed(2)} MB</span> / Write:{' '}
-							<span className="font-bold text-rose-500">{latestBlockW.toFixed(2)} MB</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							Block I/O
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							Read:{' '}
+							<span className="font-bold text-emerald-500">
+								{latestBlockR.toFixed(2)} MB
+							</span>{' '}
+							/ Write:{' '}
+							<span className="font-bold text-rose-500">
+								{latestBlockW.toFixed(2)} MB
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">
@@ -856,12 +1120,20 @@ export function GlobalMonitoringCards() {
 				</Card>
 
 				{/* 6. Network I/O */}
-				<Card className="bg-card border-border shadow-xs">
+				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">Network I/O</CardTitle>
-						<span className="text-xs font-mono text-muted-foreground">
-							In: <span className="font-bold text-blue-500">{latestNetRx.toFixed(2)} MB</span> / Out:{' '}
-							<span className="font-bold text-indigo-500">{latestNetTx.toFixed(2)} MB</span>
+						<CardTitle className="text-sm font-bold text-foreground">
+							Network I/O
+						</CardTitle>
+						<span className="font-mono text-xs text-muted-foreground">
+							In:{' '}
+							<span className="font-bold text-blue-500">
+								{latestNetRx.toFixed(2)} MB
+							</span>{' '}
+							/ Out:{' '}
+							<span className="font-bold text-indigo-500">
+								{latestNetTx.toFixed(2)} MB
+							</span>
 						</span>
 					</CardHeader>
 					<CardContent className="pt-2">

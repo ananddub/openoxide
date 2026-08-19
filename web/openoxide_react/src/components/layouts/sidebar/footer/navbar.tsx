@@ -15,7 +15,7 @@ import {
 import {useAuthStore} from '#/stores/auth-store';
 import {useNavigate} from '@tanstack/react-router';
 import {isSolidColorAvatar} from '#/lib/avatar-utils';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -39,10 +39,13 @@ export function UserNav({isCollapsed}: Props) {
 	const navigate = useNavigate();
 	const {theme, toggleTheme} = useTheme();
 
-	const profile = useAppStore((state) => state.profile);
+	const profile = useAppStore(state => state.profile);
 
 	const displayEmail = profile?.email || user?.email || '';
-	const displayName = profile?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+	const displayName =
+		profile?.name ||
+		`${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
+		'User';
 	const displayFirstName = displayName.split(' ')[0] || '';
 	const displayLastName = displayName.split(' ').slice(1).join(' ') || '';
 
@@ -62,19 +65,26 @@ export function UserNav({isCollapsed}: Props) {
 				render={
 					<SidebarMenuButton
 						size="lg"
-						className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:mx-auto!"
+						className="cursor-pointer group-data-[collapsible=icon]:mx-auto! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 					/>
 				}>
-				{profile?.avatar && (profile.avatar.startsWith('data:') || profile.avatar.startsWith('http://') || profile.avatar.startsWith('https://')) ? (
-					<img src={profile.avatar} alt="Avatar" className="size-8 rounded-full object-cover shrink-0 select-none group-data-[collapsible=icon]:mx-auto" />
+				{profile?.avatar &&
+				(profile.avatar.startsWith('data:') ||
+					profile.avatar.startsWith('http://') ||
+					profile.avatar.startsWith('https://')) ? (
+					<img
+						src={profile.avatar}
+						alt="Avatar"
+						className="size-8 shrink-0 rounded-full object-cover select-none group-data-[collapsible=icon]:mx-auto"
+					/>
 				) : isSolidColorAvatar(profile?.avatar) ? (
 					<div
-						className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white select-none group-data-[collapsible=icon]:mx-auto shadow-2xs"
+						className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-2xs select-none group-data-[collapsible=icon]:mx-auto"
 						style={{backgroundColor: profile?.avatar}}>
 						{getInitials()}
 					</div>
 				) : (
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-bold text-primary select-none group-data-[collapsible=icon]:mx-auto shadow-2xs">
+					<div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-bold text-primary shadow-2xs select-none group-data-[collapsible=icon]:mx-auto">
 						{getInitials()}
 					</div>
 				)}

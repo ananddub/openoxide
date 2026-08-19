@@ -1,4 +1,9 @@
-import {AlertCircle, AlertTriangle, CheckCircle2, Info} from 'lucide-react';
+import {
+	AlertCircle,
+	AlertTriangle,
+	CheckCircle2,
+	Info,
+} from 'lucide-react';
 import {cn} from '#/api/utils';
 
 interface Props extends React.ComponentPropsWithoutRef<'div'> {
@@ -8,7 +13,8 @@ interface Props extends React.ComponentPropsWithoutRef<'div'> {
 
 const iconMap = {
 	info: {
-		className: 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
+		className:
+			'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
 		icon: Info,
 	},
 	success: {
@@ -39,16 +45,15 @@ export function AlertBlock({
 		<div
 			{...props}
 			className={cn(
-				'flex items-start flex-row gap-4 rounded-lg p-2',
+				'flex flex-row items-start gap-4 rounded-lg p-2',
 				iconClassName,
 				className,
-			)}
-		>
-			<div className="shrink-0 mt-0.5">
+			)}>
+			<div className="mt-0.5 shrink-0">
 				{icon || <Icon className="text-current" />}
 			</div>
-			<div className="flex-1 min-w-0">
-				<span className="text-sm text-current wrap-break-word overflow-wrap-anywhere whitespace-pre-wrap">
+			<div className="min-w-0 flex-1">
+				<span className="overflow-wrap-anywhere text-sm wrap-break-word whitespace-pre-wrap text-current">
 					{children}
 				</span>
 			</div>

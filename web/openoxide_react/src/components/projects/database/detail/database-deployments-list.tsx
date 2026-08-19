@@ -20,43 +20,55 @@ export function DatabaseDeploymentsList({
 }: DatabaseDeploymentsListProps) {
 	if (events.length === 0) {
 		return (
-			<section className="bg-card border border-border rounded-xl overflow-hidden">
+			<section className="overflow-hidden rounded-xl border border-border bg-card">
 				<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-					<Zap className="w-10 h-10 opacity-30 mb-3" />
-					<p className="text-xs font-semibold">No database deployment history recorded yet</p>
+					<Zap className="mb-3 h-10 w-10 opacity-30" />
+					<p className="text-xs font-semibold">
+						No database deployment history recorded yet
+					</p>
 				</div>
 			</section>
 		);
 	}
 
 	return (
-		<section className="bg-card border border-border rounded-xl overflow-hidden">
+		<section className="overflow-hidden rounded-xl border border-border bg-card">
 			<div className="divide-y divide-border/60">
 				{events.map((e: any) => {
 					const isActive = isBuildActive(e);
 					return (
-						<div key={e.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
-							<div className="min-w-0 flex flex-col gap-0.5">
-								<span className="text-xs font-semibold text-foreground truncate">{e.title || `Database Deployment #${e.id}`}</span>
-								{e.description && <span className="text-[11px] text-muted-foreground truncate">{e.description}</span>}
+						<div
+							key={e.id}
+							className="flex items-center justify-between p-4 transition-colors hover:bg-muted/10">
+							<div className="flex min-w-0 flex-col gap-0.5">
+								<span className="truncate text-xs font-semibold text-foreground">
+									{e.title || `Database Deployment #${e.id}`}
+								</span>
+								{e.description && (
+									<span className="truncate text-[11px] text-muted-foreground">
+										{e.description}
+									</span>
+								)}
 							</div>
 
-							<div className="flex items-center gap-3 shrink-0">
-								<span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${getStatusBadge(e)}`}>
+							<div className="flex shrink-0 items-center gap-3">
+								<span
+									className={`rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
 									{e.status || 'DEPLOYED'}
 								</span>
-								<span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-									<Clock className="w-3 h-3" />
-									{e.created_at ? new Date(e.created_at * 1000).toLocaleDateString() : 'Just now'}
+								<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+									<Clock className="h-3 w-3" />
+									{e.created_at
+										? new Date(e.created_at * 1000).toLocaleDateString()
+										: 'Just now'}
 								</span>
 
 								<Button
 									size="sm"
 									variant="outline"
 									onClick={() => onOpenLogs(e.id)}
-									className="h-7 text-xs border-border text-foreground hover:bg-muted px-2 rounded-lg font-semibold flex items-center gap-1"
-								>
-									<Terminal className="w-3 h-3" /> Stream Logs
+									className="flex h-7 items-center gap-1 rounded-lg border-border px-2 text-xs font-semibold text-foreground hover:bg-muted">
+									<Terminal className="h-3 w-3" /> Stream Logs
 								</Button>
 
 								{isActive && (
@@ -64,9 +76,8 @@ export function DatabaseDeploymentsList({
 										size="sm"
 										variant="ghost"
 										onClick={() => onCancel(e.id)}
-										className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-2 rounded-lg font-semibold flex items-center gap-1"
-									>
-										<XCircle className="w-3 h-3" /> Cancel
+										className="flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive">
+										<XCircle className="h-3 w-3" /> Cancel
 									</Button>
 								)}
 
@@ -75,9 +86,8 @@ export function DatabaseDeploymentsList({
 										size="sm"
 										variant="ghost"
 										onClick={() => onDelete(e.id)}
-										className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 px-1.5 rounded-lg font-semibold flex items-center gap-1"
-									>
-										<Trash2 className="w-3.5 h-3.5" />
+										className="flex h-7 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+										<Trash2 className="h-3.5 w-3.5" />
 									</Button>
 								)}
 							</div>

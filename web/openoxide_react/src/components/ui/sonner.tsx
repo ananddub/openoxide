@@ -10,9 +10,15 @@ import {Toaster as Sonner, toast, type ToasterProps} from 'sonner';
 
 import {useTheme} from '#/hooks/use-theme';
 
-export function showToastOnReload(message: string, type: 'success' | 'error' | 'info' = 'success') {
+export function showToastOnReload(
+	message: string,
+	type: 'success' | 'error' | 'info' = 'success',
+) {
 	try {
-		sessionStorage.setItem('pending_toast', JSON.stringify({message, type}));
+		sessionStorage.setItem(
+			'pending_toast',
+			JSON.stringify({message, type}),
+		);
 	} catch (e) {}
 }
 
@@ -40,7 +46,9 @@ const Toaster = ({...props}: ToasterProps) => {
 	// Right-click listener to immediately dismiss toast on right click
 	React.useEffect(() => {
 		const handleContextMenu = (e: MouseEvent) => {
-			const toastEl = (e.target as HTMLElement)?.closest('[data-sonner-toast]');
+			const toastEl = (e.target as HTMLElement)?.closest(
+				'[data-sonner-toast]',
+			);
 			if (toastEl) {
 				e.preventDefault();
 				const toastId = toastEl.getAttribute('data-id');
@@ -52,7 +60,8 @@ const Toaster = ({...props}: ToasterProps) => {
 			}
 		};
 		window.addEventListener('contextmenu', handleContextMenu, true);
-		return () => window.removeEventListener('contextmenu', handleContextMenu, true);
+		return () =>
+			window.removeEventListener('contextmenu', handleContextMenu, true);
 	}, []);
 
 	return (
@@ -61,11 +70,17 @@ const Toaster = ({...props}: ToasterProps) => {
 			className="toaster group"
 			richColors
 			icons={{
-				success: <CircleCheckIcon className="size-4 text-emerald-400 shrink-0" />,
-				info: <InfoIcon className="size-4 text-sky-400 shrink-0" />,
-				warning: <TriangleAlertIcon className="size-4 text-amber-400 shrink-0" />,
-				error: <OctagonXIcon className="size-4 text-rose-400 shrink-0" />,
-				loading: <Loader2Icon className="size-4 animate-spin text-primary shrink-0" />,
+				success: (
+					<CircleCheckIcon className="size-4 shrink-0 text-emerald-400" />
+				),
+				info: <InfoIcon className="size-4 shrink-0 text-sky-400" />,
+				warning: (
+					<TriangleAlertIcon className="size-4 shrink-0 text-amber-400" />
+				),
+				error: <OctagonXIcon className="size-4 shrink-0 text-rose-400" />,
+				loading: (
+					<Loader2Icon className="size-4 shrink-0 animate-spin text-primary" />
+				),
 			}}
 			toastOptions={{
 				style: {
@@ -75,14 +90,20 @@ const Toaster = ({...props}: ToasterProps) => {
 					padding: '12px 14px',
 				},
 				classNames: {
-					toast: 'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg cursor-pointer select-none',
-					success: '!bg-[#06291a] !text-[#ecfdf5] !border-[#10b981]/60 !shadow-[0_4px_20px_rgba(16,185,129,0.25)]',
-					error: '!bg-[#2b090e] !text-[#fff1f2] !border-[#ef4444]/60 !shadow-[0_4px_20px_rgba(239,68,68,0.25)]',
-					warning: '!bg-[#261a07] !text-[#fffbeb] !border-[#f59e0b]/60 !shadow-[0_4px_20px_rgba(245,158,11,0.25)]',
+					toast:
+						'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg cursor-pointer select-none',
+					success:
+						'!bg-[#06291a] !text-[#ecfdf5] !border-[#10b981]/60 !shadow-[0_4px_20px_rgba(16,185,129,0.25)]',
+					error:
+						'!bg-[#2b090e] !text-[#fff1f2] !border-[#ef4444]/60 !shadow-[0_4px_20px_rgba(239,68,68,0.25)]',
+					warning:
+						'!bg-[#261a07] !text-[#fffbeb] !border-[#f59e0b]/60 !shadow-[0_4px_20px_rgba(245,158,11,0.25)]',
 					info: '!bg-[#081a2e] !text-[#f0f9ff] !border-[#0ea5e9]/60 !shadow-[0_4px_20px_rgba(14,165,233,0.25)]',
 					description: 'group-[.toast]:text-muted-foreground',
-					actionButton: 'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-					cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+					actionButton:
+						'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+					cancelButton:
+						'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
 				},
 			}}
 			{...props}

@@ -2,7 +2,10 @@ import {useMemo, useState, useEffect} from 'react';
 import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
-import {ComposeVisualizer, type ComposeService} from '#/components/projects/compose/visualizer/compose-visualizer';
+import {
+	ComposeVisualizer,
+	type ComposeService,
+} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {ComposeDomainModal} from './domains/compose-domain-modal';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {CreateBackupModal} from './backups/create-backup-modal';
@@ -12,33 +15,53 @@ import {TerminalModal} from '#/components/projects/common/terminal-modal';
 
 function buildRawGitUrl(compose: any): string | null {
 	if (!compose) return null;
-	const repo = compose.repository || compose.custom_git_url || compose.gitlab_repository || compose.gitea_repository || compose.bitbucket_repository;
+	const repo =
+		compose.repository ||
+		compose.custom_git_url ||
+		compose.gitlab_repository ||
+		compose.gitea_repository ||
+		compose.bitbucket_repository;
 	if (!repo || typeof repo !== 'string') return null;
 
 	let cleanRepo = repo.trim().replace(/\.git$/, '');
-	const branch = compose.branch || compose.custom_git_branch || compose.gitlab_branch || compose.gitea_branch || compose.bitbucket_branch || 'main';
-	const rawPath = (compose.compose_path || 'docker-compose.yml').replace(/^\.\//, '');
+	const branch =
+		compose.branch ||
+		compose.custom_git_branch ||
+		compose.gitlab_branch ||
+		compose.gitea_branch ||
+		compose.bitbucket_branch ||
+		'main';
+	const rawPath = (compose.compose_path || 'docker-compose.yml').replace(
+		/^\.\//,
+		'',
+	);
 
 	if (cleanRepo.includes('github.com')) {
 		let pathPart = cleanRepo;
-		if (pathPart.startsWith('https://github.com/')) pathPart = pathPart.replace('https://github.com/', '');
-		else if (pathPart.startsWith('http://github.com/')) pathPart = pathPart.replace('http://github.com/', '');
-		else if (pathPart.startsWith('github.com/')) pathPart = pathPart.replace('github.com/', '');
+		if (pathPart.startsWith('https://github.com/'))
+			pathPart = pathPart.replace('https://github.com/', '');
+		else if (pathPart.startsWith('http://github.com/'))
+			pathPart = pathPart.replace('http://github.com/', '');
+		else if (pathPart.startsWith('github.com/'))
+			pathPart = pathPart.replace('github.com/', '');
 		const parts = pathPart.split('/').filter(Boolean);
 		if (parts.length >= 2) {
 			return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${branch}/${rawPath}`;
 		}
 	} else if (cleanRepo.includes('gitlab.com')) {
 		let pathPart = cleanRepo;
-		if (pathPart.startsWith('https://gitlab.com/')) pathPart = pathPart.replace('https://gitlab.com/', '');
-		else if (pathPart.startsWith('gitlab.com/')) pathPart = pathPart.replace('gitlab.com/', '');
+		if (pathPart.startsWith('https://gitlab.com/'))
+			pathPart = pathPart.replace('https://gitlab.com/', '');
+		else if (pathPart.startsWith('gitlab.com/'))
+			pathPart = pathPart.replace('gitlab.com/', '');
 		const parts = pathPart.split('/').filter(Boolean);
 		if (parts.length >= 2) {
 			return `https://gitlab.com/${parts[0]}/${parts[1]}/-/raw/${branch}/${rawPath}`;
 		}
 	} else if (cleanRepo.includes('bitbucket.org')) {
 		let pathPart = cleanRepo;
-		if (pathPart.startsWith('https://bitbucket.org/')) pathPart = pathPart.replace('https://bitbucket.org/', '');
+		if (pathPart.startsWith('https://bitbucket.org/'))
+			pathPart = pathPart.replace('https://bitbucket.org/', '');
 		const parts = pathPart.split('/').filter(Boolean);
 		if (parts.length >= 2) {
 			return `https://bitbucket.org/${parts[0]}/${parts[1]}/raw/${branch}/${rawPath}`;
@@ -67,8 +90,17 @@ export function ComposeArchitectureTab({
 	const composeId = compose?.id;
 
 	// Modals State
-	const [activeModal, setActiveModal] = useState<'domain' | 'schedule' | 'backup' | 'terminal' | 'logs' | 'deployLogs' | null>(null);
-	const [selectedService, setSelectedService] = useState<ComposeService | null>(null);
+	const [activeModal, setActiveModal] = useState<
+		| 'domain'
+		| 'schedule'
+		| 'backup'
+		| 'terminal'
+		| 'logs'
+		| 'deployLogs'
+		| null
+	>(null);
+	const [selectedService, setSelectedService] =
+		useState<ComposeService | null>(null);
 	const [fetchedComposeFile, setFetchedComposeFile] = useState<string>('');
 
 	// Fetch raw docker-compose.yml directly over HTTPS from GitHub/GitLab if DB compose_file is empty
@@ -81,8 +113,8 @@ export function ComposeArchitectureTab({
 		if (rawUrl) {
 			let isMounted = true;
 			fetch(rawUrl)
-				.then((res) => (res.ok ? res.text() : ''))
-				.then((text) => {
+				.then(res => (res.ok ? res.text() : ''))
+				.then(text => {
 					if (isMounted && text && text.trim()) {
 						setFetchedComposeFile(text);
 					}
@@ -103,26 +135,54 @@ export function ComposeArchitectureTab({
 	const deleteDomainMutation = $api.useMutation('delete', '/domains/{id}');
 
 	const createScheduleMutation = $api.useMutation('post', '/schedules');
-	const patchScheduleMutation = $api.useMutation('patch', '/schedules/{id}');
-	const deleteScheduleMutation = $api.useMutation('delete', '/schedules/{id}');
+	const patchScheduleMutation = $api.useMutation(
+		'patch',
+		'/schedules/{id}',
+	);
+	const deleteScheduleMutation = $api.useMutation(
+		'delete',
+		'/schedules/{id}',
+	);
 
 	const createBackupMutation = $api.useMutation('post', '/backups/volume');
-	const patchBackupMutation = $api.useMutation('patch', '/backups/volume/{id}');
-	const deleteBackupMutation = $api.useMutation('delete', '/backups/volume/{id}');
+	const patchBackupMutation = $api.useMutation(
+		'patch',
+		'/backups/volume/{id}',
+	);
+	const deleteBackupMutation = $api.useMutation(
+		'delete',
+		'/backups/volume/{id}',
+	);
 
-	const [editingDomainData, setEditingDomainData] = useState<any | null>(null);
-	const [editingScheduleData, setEditingScheduleData] = useState<any | null>(null);
-	const [editingBackupData, setEditingBackupData] = useState<any | null>(null);
+	const [editingDomainData, setEditingDomainData] = useState<any | null>(
+		null,
+	);
+	const [editingScheduleData, setEditingScheduleData] = useState<
+		any | null
+	>(null);
+	const [editingBackupData, setEditingBackupData] = useState<any | null>(
+		null,
+	);
 
-	console.log('[ComposeArchitectureTab] active editing state:', {editingDomainData, editingScheduleData, editingBackupData});
+	console.log('[ComposeArchitectureTab] active editing state:', {
+		editingDomainData,
+		editingScheduleData,
+		editingBackupData,
+	});
 
 	const composeBackups = useMemo(() => {
 		const list = Array.isArray(passedBackups) ? passedBackups : [];
-		return list.filter((b: any) => b.compose_id === composeId || b.app_name === compose?.app_name);
+		return list.filter(
+			(b: any) =>
+				b.compose_id === composeId || b.app_name === compose?.app_name,
+		);
 	}, [passedBackups, composeId, compose]);
 
 	const isGit = compose?.source_type && compose?.source_type !== 'RAW';
-	const gitBuildPath = compose?.build_path || compose?.custom_git_build_path || 'docker-compose.yml';
+	const gitBuildPath =
+		compose?.build_path ||
+		compose?.custom_git_build_path ||
+		'docker-compose.yml';
 
 	const servicesList = useMemo(() => {
 		if (selectedService) return [selectedService.name];
@@ -131,58 +191,85 @@ export function ComposeArchitectureTab({
 
 	// Handlers for Context Menu Options
 	const handleAddDomain = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleAddDomain FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleAddDomain FOR SERVICE:',
+			service,
+		);
 		setEditingDomainData(null);
 		setSelectedService(service);
 		setActiveModal('domain');
 	};
 
 	const handleEditDomain = (domainData: any) => {
-		console.log('[ComposeArchitectureTab] handleEditDomain FOR DOMAIN:', domainData);
+		console.log(
+			'[ComposeArchitectureTab] handleEditDomain FOR DOMAIN:',
+			domainData,
+		);
 		setEditingDomainData(domainData);
 		setActiveModal('domain');
 	};
 
 	const handleAddSchedule = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleAddSchedule FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleAddSchedule FOR SERVICE:',
+			service,
+		);
 		setEditingScheduleData(null);
 		setSelectedService(service);
 		setActiveModal('schedule');
 	};
 
 	const handleEditSchedule = (scheduleData: any) => {
-		console.log('[ComposeArchitectureTab] handleEditSchedule FOR SCHEDULE:', scheduleData);
+		console.log(
+			'[ComposeArchitectureTab] handleEditSchedule FOR SCHEDULE:',
+			scheduleData,
+		);
 		setEditingScheduleData(scheduleData);
 		setActiveModal('schedule');
 	};
 
 	const handleAddBackup = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleAddBackup FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleAddBackup FOR SERVICE:',
+			service,
+		);
 		setEditingBackupData(null);
 		setSelectedService(service);
 		setActiveModal('backup');
 	};
 
 	const handleEditBackup = (backupData: any) => {
-		console.log('[ComposeArchitectureTab] handleEditBackup FOR BACKUP:', backupData);
+		console.log(
+			'[ComposeArchitectureTab] handleEditBackup FOR BACKUP:',
+			backupData,
+		);
 		setEditingBackupData(backupData);
 		setActiveModal('backup');
 	};
 
 	const handleOpenTerminal = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleOpenTerminal FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleOpenTerminal FOR SERVICE:',
+			service,
+		);
 		setSelectedService(service);
 		setActiveModal('terminal');
 	};
 
 	const handleViewLogs = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleViewLogs FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleViewLogs FOR SERVICE:',
+			service,
+		);
 		setSelectedService(service);
 		setActiveModal('logs');
 	};
 
 	const handleViewDeployLogs = (service: ComposeService) => {
-		console.log('[ComposeArchitectureTab] handleViewDeployLogs FOR SERVICE:', service);
+		console.log(
+			'[ComposeArchitectureTab] handleViewDeployLogs FOR SERVICE:',
+			service,
+		);
 		setSelectedService(service);
 		setActiveModal('deployLogs');
 	};
@@ -192,7 +279,9 @@ export function ComposeArchitectureTab({
 		const domainId = domainData?.id;
 		if (!domainId) return;
 		try {
-			await deleteDomainMutation.mutateAsync({params: {path: {id: domainId}}});
+			await deleteDomainMutation.mutateAsync({
+				params: {path: {id: domainId}},
+			});
 			toast.success('Domain removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -205,7 +294,9 @@ export function ComposeArchitectureTab({
 		const scheduleId = scheduleData?.id;
 		if (!scheduleId) return;
 		try {
-			await deleteScheduleMutation.mutateAsync({params: {path: {id: scheduleId}}});
+			await deleteScheduleMutation.mutateAsync({
+				params: {path: {id: scheduleId}},
+			});
 			toast.success('Schedule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -218,7 +309,9 @@ export function ComposeArchitectureTab({
 		const backupId = backupData?.id;
 		if (!backupId) return;
 		try {
-			await deleteBackupMutation.mutateAsync({params: {path: {id: backupId}}});
+			await deleteBackupMutation.mutateAsync({
+				params: {path: {id: backupId}},
+			});
 			toast.success('Backup rule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -337,7 +430,11 @@ export function ComposeArchitectureTab({
 						volume_name: data.volumeName,
 						prefix: data.prefix || '',
 						service_type: 'compose',
-						app_name: compose?.app_name || compose?.name || data.serviceName || 'app',
+						app_name:
+							compose?.app_name ||
+							compose?.name ||
+							data.serviceName ||
+							'app',
 						service_name: data.serviceName,
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
@@ -354,21 +451,27 @@ export function ComposeArchitectureTab({
 		}
 	};
 
-	const terminalAppData = useMemo(() => ({
-		...compose,
-		name: `${compose?.name || 'compose'}:${selectedService?.name || 'app'}`,
-		compose_id: composeId,
-		app_name: compose?.app_name,
-		service_name: selectedService?.name,
-	}), [compose, composeId, selectedService]);
+	const terminalAppData = useMemo(
+		() => ({
+			...compose,
+			name: `${compose?.name || 'compose'}:${selectedService?.name || 'app'}`,
+			compose_id: composeId,
+			app_name: compose?.app_name,
+			service_name: selectedService?.name,
+		}),
+		[compose, composeId, selectedService],
+	);
 
 	return (
-		<div className="flex flex-col gap-4 w-full animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
 			<div className="flex items-center justify-between">
 				<div>
-					<h3 className="text-sm font-bold text-foreground">Architecture Topology & Interactive Graph</h3>
+					<h3 className="text-sm font-bold text-foreground">
+						Architecture Topology & Interactive Graph
+					</h3>
 					<p className="text-xs text-muted-foreground">
-						Click any node for context options (Attach domain, schedule, backup, open terminal, view logs, or delete items).
+						Click any node for context options (Attach domain, schedule,
+						backup, open terminal, view logs, or delete items).
 					</p>
 				</div>
 			</div>

@@ -1,5 +1,12 @@
 import {useState, useEffect} from 'react';
-import {Zap, RefreshCw, Terminal, X, XCircle, Activity} from 'lucide-react';
+import {
+	Zap,
+	RefreshCw,
+	Terminal,
+	X,
+	XCircle,
+	Activity,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
@@ -7,7 +14,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
 import {
 	AlertDialog,
@@ -26,7 +33,16 @@ interface ComposeDeploymentsTabProps {
 	isLoading?: boolean;
 }
 
-const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
+const FINAL_STATES = [
+	'DONE',
+	'DEPLOYED',
+	'SUCCESS',
+	'FAILED',
+	'ERROR',
+	'CANCELLED',
+	'STOPPEDBYUSER',
+	'CRASHED',
+];
 
 const isBuildActive = (e: any) => {
 	if (!e) return false;
@@ -34,19 +50,37 @@ const isBuildActive = (e: any) => {
 	const s = (e.status || '').toUpperCase();
 	const st = (e.state || '').toUpperCase();
 	if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
-	const activeKeywords = ['RUNNING', 'BUILDING', 'PREPARING', 'QUEUE', 'QUEUED', 'STARTING', 'DEPLOYING', 'PENDING', 'GIT', 'DOCKER'];
+	const activeKeywords = [
+		'RUNNING',
+		'BUILDING',
+		'PREPARING',
+		'QUEUE',
+		'QUEUED',
+		'STARTING',
+		'DEPLOYING',
+		'PENDING',
+		'GIT',
+		'DOCKER',
+	];
 	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
 };
 
-export function ComposeDeploymentsTab({composeId, deployments: passedDeployments, isLoading: passedIsLoading}: ComposeDeploymentsTabProps) {
+export function ComposeDeploymentsTab({
+	composeId,
+	deployments: passedDeployments,
+	isLoading: passedIsLoading,
+}: ComposeDeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
 
 	// Read deployments directly from Zustand RAM Store
-	const storeDeployments = useAppStore((state) => state.deployments || []);
-	const rawDeployments = storeDeployments.filter((d: any) => String(d.compose_id) === String(composeId));
-	const deployments = rawDeployments.length > 0 ? rawDeployments : (passedDeployments ?? []);
+	const storeDeployments = useAppStore(state => state.deployments || []);
+	const rawDeployments = storeDeployments.filter(
+		(d: any) => String(d.compose_id) === String(composeId),
+	);
+	const deployments =
+		rawDeployments.length > 0 ? rawDeployments : (passedDeployments ?? []);
 	const isLoading = false;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
@@ -54,11 +88,26 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	// Initial state for activeLogId is null so modal never opens automatically on tab load
 
 	// Mutations
-	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy') as any;
-	const redeployMutation = $api.useMutation('post', '/compose/{id}/redeploy') as any;
-	const cancelMutation = $api.useMutation('post', '/compose/{id}/cancel') as any;
-	const deleteMutation = $api.useMutation('delete', '/deployments/{id}') as any;
-	const clearComposeMutation = $api.useMutation('delete', '/deployments/compose/{id}') as any;
+	const deployMutation = $api.useMutation(
+		'post',
+		'/compose/{id}/deploy',
+	) as any;
+	const redeployMutation = $api.useMutation(
+		'post',
+		'/compose/{id}/redeploy',
+	) as any;
+	const cancelMutation = $api.useMutation(
+		'post',
+		'/compose/{id}/cancel',
+	) as any;
+	const deleteMutation = $api.useMutation(
+		'delete',
+		'/deployments/{id}',
+	) as any;
+	const clearComposeMutation = $api.useMutation(
+		'delete',
+		'/deployments/compose/{id}',
+	) as any;
 
 	const handleDeploy = async () => {
 		setIsTriggering(true);
@@ -75,7 +124,9 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	const handleRedeploy = async () => {
 		setIsTriggering(true);
 		try {
-			await redeployMutation.mutateAsync({params: {path: {id: composeId}}});
+			await redeployMutation.mutateAsync({
+				params: {path: {id: composeId}},
+			});
 			toast.success('Compose redeploy triggered successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -89,7 +140,9 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 	const handleCancel = async () => {
 		setIsTriggering(true);
 		try {
-			await (cancelMutation as any).mutateAsync({params: {path: {id: composeId}}});
+			await (cancelMutation as any).mutateAsync({
+				params: {path: {id: composeId}},
+			});
 			toast.success('Deployment cancellation requested');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -106,7 +159,10 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 		let isMounted = true;
 		let controller = new AbortController();
 
-		const initialFallback = (selectedEvent as any)?.log_content || (selectedEvent as any)?.message || selectedEvent?.description;
+		const initialFallback =
+			(selectedEvent as any)?.log_content ||
+			(selectedEvent as any)?.message ||
+			selectedEvent?.description;
 		if (initialFallback) {
 			setLiveLogs(initialFallback.split('\n'));
 		} else {
@@ -124,12 +180,15 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 					} catch {}
 				}
 
-				const response = await fetch(`/api/deployments/${activeLogId}/logs`, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
+				const response = await fetch(
+					`/api/deployments/${activeLogId}/logs`,
+					{
+						headers: {
+							Authorization: accessToken ? `Bearer ${accessToken}` : '',
+						},
+						signal: controller.signal,
 					},
-					signal: controller.signal,
-				});
+				);
 
 				if (!response.ok) {
 					if (isMounted && initialFallback) {
@@ -195,8 +254,10 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			});
 			const data = res as any;
 			useAppStore.getState().clearDeployments({composeId});
-			toast.success(`Cleared ${data?.cleared_count || 0} compose deployment logs & history`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			toast.success(
+				`Cleared ${data?.cleared_count || 0} compose deployment logs & history`,
+			);
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -213,51 +274,90 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			});
 			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	const isActionPending = isTriggering || deployMutation.isPending || redeployMutation.isPending || cancelMutation.isPending;
+	const isActionPending =
+		isTriggering ||
+		deployMutation.isPending ||
+		redeployMutation.isPending ||
+		cancelMutation.isPending;
 
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Action Header Card */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
+			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
 				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						Deployments History
 						{(activeDeployment || isActionPending) && (
-							<span className="flex items-center gap-1 text-[10px] font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full animate-pulse">
-								<Activity className="w-3 h-3 animate-spin" /> {isActionPending ? 'Triggering...' : 'Active Build'}
+							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+								<Activity className="h-3 w-3 animate-spin" />{' '}
+								{isActionPending ? 'Triggering...' : 'Active Build'}
 							</span>
 						)}
 					</h3>
-					<p className="text-xs text-muted-foreground mt-0.5">Audit log of building, deployment operations and lifecycle events</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">
+						Audit log of building, deployment operations and lifecycle
+						events
+					</p>
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" onClick={handleClearComposeDeployments} disabled={isActionPending} className="border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/20 font-semibold flex items-center gap-1.5 h-8 text-xs">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleClearComposeDeployments}
+						disabled={isActionPending}
+						className="flex h-8 items-center gap-1.5 border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive hover:bg-destructive/20">
 						Clear History
 					</Button>
-					<Button variant="outline" size="sm" disabled={isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs">
-						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Refresh
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={isActionPending}
+						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						<RefreshCw
+							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
+						/>{' '}
+						Refresh
 					</Button>
-					<Button variant="outline" size="sm" onClick={handleRedeploy} disabled={!!activeDeployment || isActionPending} className="border-border text-foreground hover:bg-muted font-semibold flex items-center gap-1.5 h-8 text-xs disabled:opacity-50">
-						<RefreshCw className={`w-3.5 h-3.5 ${isActionPending ? 'animate-spin' : ''}`} /> Redeploy
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleRedeploy}
+						disabled={!!activeDeployment || isActionPending}
+						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
+						<RefreshCw
+							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
+						/>{' '}
+						Redeploy
 					</Button>
 					{isActionPending ? (
-						<Button disabled size="sm" className="bg-primary/80 text-primary-foreground font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing...
+						<Button
+							disabled
+							size="sm"
+							className="flex h-8 items-center gap-1.5 bg-primary/80 text-xs font-semibold text-primary-foreground">
+							<RefreshCw className="h-3.5 w-3.5 animate-spin" />{' '}
+							Processing...
 						</Button>
 					) : activeDeployment ? (
-						<Button onClick={() => setIsConfirmCancelOpen(true)} size="sm" variant="destructive" className="font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<XCircle className="w-3.5 h-3.5" /> Cancel Build
+						<Button
+							onClick={() => setIsConfirmCancelOpen(true)}
+							size="sm"
+							variant="destructive"
+							className="flex h-8 items-center gap-1.5 text-xs font-semibold">
+							<XCircle className="h-3.5 w-3.5" /> Cancel Build
 						</Button>
 					) : (
-						<Button onClick={handleDeploy} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 h-8 text-xs">
-							<Zap className="w-3.5 h-3.5" /> Deploy
+						<Button
+							onClick={handleDeploy}
+							size="sm"
+							className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+							<Zap className="h-3.5 w-3.5" /> Deploy
 						</Button>
 					)}
 				</div>
@@ -273,20 +373,25 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 			/>
 
 			{/* Cancel Confirmation Dialog */}
-			<AlertDialog open={isConfirmCancelOpen} onOpenChange={setIsConfirmCancelOpen}>
+			<AlertDialog
+				open={isConfirmCancelOpen}
+				onOpenChange={setIsConfirmCancelOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Cancel Compose Deployment</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to cancel this compose deployment? This action will stop the running build process.
+							Are you sure you want to cancel this compose deployment? This
+							action will stop the running build process.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setIsConfirmCancelOpen(false)}>No, Keep Running</AlertDialogCancel>
+						<AlertDialogCancel
+							onClick={() => setIsConfirmCancelOpen(false)}>
+							No, Keep Running
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={handleCancel}
-						>
+							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+							onClick={handleCancel}>
 							Yes, Cancel Deployment
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -295,18 +400,24 @@ export function ComposeDeploymentsTab({composeId, deployments: passedDeployments
 
 			{/* Realtime Stream Logs Modal */}
 			{activeLogId && (
-				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-					<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[85vh]">
-						<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+						<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
 							<div className="flex items-center gap-2">
-								<Terminal className="w-4 h-4 text-foreground" />
-								<h3 className="text-xs font-bold text-foreground">Live Deployment Build Stream #{activeLogId}</h3>
+								<Terminal className="h-4 w-4 text-foreground" />
+								<h3 className="text-xs font-bold text-foreground">
+									Live Deployment Build Stream #{activeLogId}
+								</h3>
 							</div>
-							<Button variant="ghost" size="sm" onClick={() => setActiveLogId(null)} className="h-7 w-7 p-0 rounded-lg hover:bg-muted text-muted-foreground">
-								<X className="w-4 h-4" />
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setActiveLogId(null)}
+								className="h-7 w-7 rounded-lg p-0 text-muted-foreground hover:bg-muted">
+								<X className="h-4 w-4" />
 							</Button>
 						</div>
-						<div className="p-4 overflow-y-auto">
+						<div className="overflow-y-auto p-4">
 							<DeploymentViewer
 								logs={liveLogs}
 								isLoading={liveLogs.length === 0}

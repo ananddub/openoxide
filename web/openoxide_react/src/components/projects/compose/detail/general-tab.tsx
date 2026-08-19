@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
@@ -9,43 +9,105 @@ import {TerminalModal} from '#/components/projects/common/terminal-modal';
 
 interface GeneralTabProps {
 	compose: any;
-	onAction: (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel') => Promise<void>;
+	onAction: (
+		action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel',
+	) => Promise<void>;
 	onUpdated: () => void;
 }
 
 export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
-	const [provider, setProvider] = useState<string>(compose?.source_type || 'GITHUB');
-	const [composeFile, setComposeFile] = useState<string>(compose?.compose_file || '');
+	const [provider, setProvider] = useState<string>(
+		compose?.source_type || 'GITHUB',
+	);
+	const [composeFile, setComposeFile] = useState<string>(
+		compose?.compose_file || '',
+	);
 	const [command, setCommand] = useState<string>(compose?.command || '');
 	const [showTerminal, setShowTerminal] = useState(false);
-	
-	const [repoOwner, setRepoOwner] = useState<string>(compose?.owner || compose?.gitlab_owner || compose?.gitea_owner || compose?.bitbucket_owner || '');
-	const [repoName, setRepoName] = useState<string>(compose?.repository || compose?.gitlab_repository || compose?.gitea_repository || compose?.bitbucket_repository || '');
-	const [gitUrl, setGitUrl] = useState<string>(compose?.custom_git_url || compose?.repository || '');
-	const [gitBranch, setGitBranch] = useState<string>(compose?.branch || compose?.custom_git_branch || 'main');
-	const [gitBuildPath, setGitBuildPath] = useState<string>(compose?.build_path || compose?.custom_git_build_path || 'docker-compose.yml');
-	const [gitSshKeyId, setGitSshKeyId] = useState<number | undefined>(compose?.custom_git_ssh_key_id || undefined);
+
+	const [repoOwner, setRepoOwner] = useState<string>(
+		compose?.owner ||
+			compose?.gitlab_owner ||
+			compose?.gitea_owner ||
+			compose?.bitbucket_owner ||
+			'',
+	);
+	const [repoName, setRepoName] = useState<string>(
+		compose?.repository ||
+			compose?.gitlab_repository ||
+			compose?.gitea_repository ||
+			compose?.bitbucket_repository ||
+			'',
+	);
+	const [gitUrl, setGitUrl] = useState<string>(
+		compose?.custom_git_url || compose?.repository || '',
+	);
+	const [gitBranch, setGitBranch] = useState<string>(
+		compose?.branch || compose?.custom_git_branch || 'main',
+	);
+	const [gitBuildPath, setGitBuildPath] = useState<string>(
+		compose?.build_path ||
+			compose?.custom_git_build_path ||
+			'docker-compose.yml',
+	);
+	const [gitSshKeyId, setGitSshKeyId] = useState<number | undefined>(
+		compose?.custom_git_ssh_key_id || undefined,
+	);
 	const [savingSource, setSavingSource] = useState(false);
 
-	const sshKeys = useAppStore((state) => state.sshKeys || []);
+	const sshKeys = useAppStore(state => state.sshKeys || []);
 
-	const patchRawMutation = $api.useMutation('patch', '/compose/{id}/source/raw');
-	const patchGithubMutation = $api.useMutation('patch', '/compose/{id}/source/github');
-	const patchGitlabMutation = $api.useMutation('patch', '/compose/{id}/source/gitlab');
-	const patchGiteaMutation = $api.useMutation('patch', '/compose/{id}/source/gitea');
-	const patchBitbucketMutation = $api.useMutation('patch', '/compose/{id}/source/bitbucket');
-	const patchGitMutation = $api.useMutation('patch', '/compose/{id}/source/git');
+	const patchRawMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/raw',
+	);
+	const patchGithubMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/github',
+	);
+	const patchGitlabMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/gitlab',
+	);
+	const patchGiteaMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/gitea',
+	);
+	const patchBitbucketMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/bitbucket',
+	);
+	const patchGitMutation = $api.useMutation(
+		'patch',
+		'/compose/{id}/source/git',
+	);
 
 	useEffect(() => {
 		if (compose) {
 			setProvider(compose.source_type || 'GITHUB');
 			setComposeFile(compose.compose_file || '');
 			setCommand(compose.command || '');
-			setRepoOwner(compose.owner || compose.gitlab_owner || compose.gitea_owner || compose.bitbucket_owner || '');
-			setRepoName(compose.repository || compose.gitlab_repository || compose.gitea_repository || compose.bitbucket_repository || '');
+			setRepoOwner(
+				compose.owner ||
+					compose.gitlab_owner ||
+					compose.gitea_owner ||
+					compose.bitbucket_owner ||
+					'',
+			);
+			setRepoName(
+				compose.repository ||
+					compose.gitlab_repository ||
+					compose.gitea_repository ||
+					compose.bitbucket_repository ||
+					'',
+			);
 			setGitUrl(compose.custom_git_url || compose.repository || '');
 			setGitBranch(compose.branch || compose.custom_git_branch || 'main');
-			setGitBuildPath(compose.build_path || compose.custom_git_build_path || 'docker-compose.yml');
+			setGitBuildPath(
+				compose.build_path ||
+					compose.custom_git_build_path ||
+					'docker-compose.yml',
+			);
 			setGitSshKeyId(compose.custom_git_ssh_key_id || undefined);
 		}
 	}, [compose]);
@@ -58,13 +120,23 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 			fetch(rawUrl)
 				.then(res => (res.ok ? res.text() : null))
 				.then(text => {
-					if (text && (text.includes('services:') || text.includes('version:'))) {
+					if (
+						text &&
+						(text.includes('services:') || text.includes('version:'))
+					) {
 						setComposeFile(text);
 					}
 				})
 				.catch(() => {});
 		}
-	}, [provider, repoOwner, repoName, gitBranch, gitBuildPath, composeFile]);
+	}, [
+		provider,
+		repoOwner,
+		repoName,
+		gitBranch,
+		gitBuildPath,
+		composeFile,
+	]);
 
 	const handleSaveSource = async () => {
 		setSavingSource(true);

@@ -97,7 +97,9 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 			setIsOpen(false);
 			onSuccess?.();
 		} catch (err: any) {
-			const msg = formatApiError(err) || (tagId ? 'Error updating tag' : 'Error creating tag');
+			const msg =
+				formatApiError(err) ||
+				(tagId ? 'Error updating tag' : 'Error creating tag');
 			setErrorMessage(msg);
 			toast.error(tagId ? 'Error updating tag' : 'Error creating tag');
 		} finally {
@@ -110,18 +112,23 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 			<DialogTrigger
 				render={
 					tagId ? (
-						<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 text-muted-foreground hover:text-foreground">
 							<PenBoxIcon className="h-4 w-4" />
 						</Button>
 					) : (
-						<Button size="sm" className="h-9 font-semibold text-xs gap-1.5 px-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs">
+						<Button
+							size="sm"
+							className="h-9 gap-1.5 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90">
 							<PlusIcon className="h-3.5 w-3.5" />
 							Create Tag
 						</Button>
 					)
 				}
 			/>
-			<DialogContent className="sm:max-w-md bg-card border border-border/80 rounded-2xl p-6 shadow-2xl">
+			<DialogContent className="rounded-2xl border border-border/80 bg-card p-6 shadow-2xl sm:max-w-md">
 				<DialogHeader className="space-y-1">
 					<DialogTitle className="text-base font-bold text-foreground">
 						{tagId ? 'Update' : 'Create'} Tag
@@ -132,16 +139,19 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 							: 'Create a new tag to organize your projects'}
 					</DialogDescription>
 				</DialogHeader>
-				{errorMessage && <AlertBlock type="error">{errorMessage}</AlertBlock>}
+				{errorMessage && (
+					<AlertBlock type="error">{errorMessage}</AlertBlock>
+				)}
 
 				<form
 					id="hook-form-tag"
 					onSubmit={onSubmit}
-					className="flex flex-col gap-4 py-1"
-				>
+					className="flex flex-col gap-4 py-1">
 					{/* Name Field */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-semibold text-foreground">Name</label>
+						<label className="text-xs font-semibold text-foreground">
+							Name
+						</label>
 						<Input
 							placeholder="e.g., Production, Client, Internal"
 							value={name}
@@ -154,22 +164,23 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 
 					{/* Color Field */}
 					<div className="flex flex-col gap-2">
-						<label className="text-xs font-semibold text-foreground">Color (Optional)</label>
+						<label className="text-xs font-semibold text-foreground">
+							Color (Optional)
+						</label>
 						<div className="flex items-center gap-3">
 							<label
-								className="relative flex items-center justify-center size-9 rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity shrink-0 shadow-2xs"
+								className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border shadow-2xs transition-opacity hover:opacity-80"
 								style={{
 									backgroundColor: color || '#3b82f6',
 								}}
-								onClick={() => colorInputRef.current?.click()}
-							>
+								onClick={() => colorInputRef.current?.click()}>
 								<div className="flex items-center justify-center">
 									{!color && <Palette className="h-4 w-4 text-white" />}
 								</div>
 								<input
 									ref={colorInputRef}
 									type="color"
-									className="absolute opacity-0 pointer-events-none size-9 top-0 left-0"
+									className="pointer-events-none absolute top-0 left-0 size-9 opacity-0"
 									value={color || '#3b82f6'}
 									onChange={e => setColor(e.target.value)}
 								/>
@@ -184,51 +195,54 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 											setColor(value);
 										}
 									}}
-									className="h-9 text-xs font-mono"
+									className="h-9 font-mono text-xs"
 								/>
 							</div>
 						</div>
 
 						{/* Quick Preset Colors */}
-						<div className="flex items-center gap-1.5 pt-1 flex-wrap">
+						<div className="flex flex-wrap items-center gap-1.5 pt-1">
 							{PRESET_COLORS.map(c => (
 								<button
 									key={c}
 									type="button"
 									onClick={() => setColor(c)}
-									className={`size-6 rounded-full border border-black/10 transition-transform flex items-center justify-center ${
-										color === c ? 'scale-110 ring-2 ring-primary ring-offset-1' : 'hover:scale-105 opacity-80 hover:opacity-100'
+									className={`flex size-6 items-center justify-center rounded-full border border-black/10 transition-transform ${
+										color === c
+											? 'scale-110 ring-2 ring-primary ring-offset-1'
+											: 'opacity-80 hover:scale-105 hover:opacity-100'
 									}`}
-									style={{backgroundColor: c}}
-								>
-									{color === c && <Check className="w-3 h-3 text-white drop-shadow-xs" />}
+									style={{backgroundColor: c}}>
+									{color === c && (
+										<Check className="h-3 w-3 text-white drop-shadow-xs" />
+									)}
 								</button>
 							))}
 						</div>
 					</div>
 
 					{/* Live Preview */}
-					<div className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/20 mt-1">
-						<span className="text-xs font-medium text-muted-foreground">Preview Badge:</span>
+					<div className="mt-1 flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3">
+						<span className="text-xs font-medium text-muted-foreground">
+							Preview Badge:
+						</span>
 						<TagBadge name={name.trim() || 'Tag Name'} color={color} />
 					</div>
 				</form>
 
-				<DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
+				<DialogFooter className="gap-2 border-t border-border/60 pt-2 sm:gap-0">
 					<Button
 						type="button"
 						variant="outline"
 						onClick={() => setIsOpen(false)}
-						className="h-9 text-xs font-semibold"
-					>
+						className="h-9 text-xs font-semibold">
 						Cancel
 					</Button>
 					<Button
 						disabled={isSubmitting}
 						form="hook-form-tag"
 						type="submit"
-						className="h-9 text-xs font-bold px-5 bg-primary text-primary-foreground hover:bg-primary/90"
-					>
+						className="h-9 bg-primary px-5 text-xs font-bold text-primary-foreground hover:bg-primary/90">
 						{isSubmitting ? 'Saving...' : tagId ? 'Update' : 'Create'}
 					</Button>
 				</DialogFooter>

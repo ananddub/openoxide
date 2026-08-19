@@ -1,6 +1,11 @@
-import { Search, Filter } from 'lucide-react';
-import { Input } from '#/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '#/components/ui/select';
+import {Search, Filter} from 'lucide-react';
+import {Input} from '#/components/ui/input';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+} from '#/components/ui/select';
 
 interface DockerStatusFilterProps {
 	searchQuery: string;
@@ -33,34 +38,55 @@ export function DockerStatusFilter({
 	};
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+		<div className="flex shrink-0 flex-col items-center justify-between gap-3 sm:flex-row">
 			{/* Search Input */}
-			<div className="relative max-w-sm w-full">
-				<Search className="size-3.5 text-muted-foreground absolute left-3 top-3" />
+			<div className="relative w-full max-w-sm">
+				<Search className="absolute top-3 left-3 size-3.5 text-muted-foreground" />
 				<Input
 					value={searchQuery}
-					onChange={(e) => onSearchChange(e.target.value)}
+					onChange={e => onSearchChange(e.target.value)}
 					placeholder="Search containers by name, id, image..."
-					className="h-9 text-xs font-mono pl-9 bg-card border-border/60 shadow-2xs"
+					className="h-9 border-border/60 bg-card pl-9 font-mono text-xs shadow-2xs"
 				/>
 			</div>
 
 			{/* Status Filter Dropdown */}
-			<div className="flex items-center gap-2 w-full sm:w-auto">
-				<Select value={statusFilter} onValueChange={(v) => v && onStatusFilterChange(v as 'all' | 'running' | 'stopped')}>
-					<SelectTrigger className="w-[180px] h-9 text-xs font-medium bg-card border-border/60 gap-2 shrink-0 shadow-2xs">
-						<Filter className="size-3.5 text-muted-foreground shrink-0" />
-						<span className="truncate">{getDisplayLabel(statusFilter)}</span>
+			<div className="flex w-full items-center gap-2 sm:w-auto">
+				<Select
+					value={statusFilter}
+					onValueChange={v =>
+						v && onStatusFilterChange(v as 'all' | 'running' | 'stopped')
+					}>
+					<SelectTrigger className="h-9 w-[180px] shrink-0 gap-2 border-border/60 bg-card text-xs font-medium shadow-2xs">
+						<Filter className="size-3.5 shrink-0 text-muted-foreground" />
+						<span className="truncate">
+							{getDisplayLabel(statusFilter)}
+						</span>
 					</SelectTrigger>
-					<SelectContent className="bg-card border-border text-xs w-[200px] p-1 shadow-md">
-						<SelectItem value="all" className="text-xs font-medium cursor-pointer">
-							All Status <span className="text-[10px] text-muted-foreground font-mono">({totalCount})</span>
+					<SelectContent className="w-[200px] border-border bg-card p-1 text-xs shadow-md">
+						<SelectItem
+							value="all"
+							className="cursor-pointer text-xs font-medium">
+							All Status{' '}
+							<span className="font-mono text-[10px] text-muted-foreground">
+								({totalCount})
+							</span>
 						</SelectItem>
-						<SelectItem value="running" className="text-xs font-medium cursor-pointer text-emerald-500">
-							Running Only <span className="text-[10px] text-emerald-500/80 font-mono">({runningCount})</span>
+						<SelectItem
+							value="running"
+							className="cursor-pointer text-xs font-medium text-emerald-500">
+							Running Only{' '}
+							<span className="font-mono text-[10px] text-emerald-500/80">
+								({runningCount})
+							</span>
 						</SelectItem>
-						<SelectItem value="stopped" className="text-xs font-medium cursor-pointer text-rose-500">
-							Stopped / Exited <span className="text-[10px] text-rose-500/80 font-mono">({stoppedCount})</span>
+						<SelectItem
+							value="stopped"
+							className="cursor-pointer text-xs font-medium text-rose-500">
+							Stopped / Exited{' '}
+							<span className="font-mono text-[10px] text-rose-500/80">
+								({stoppedCount})
+							</span>
 						</SelectItem>
 					</SelectContent>
 				</Select>

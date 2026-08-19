@@ -23,10 +23,13 @@ export function DeleteKeyModal({
 	onClose,
 	onSuccess,
 }: DeleteKeyModalProps) {
-	const {deleting, handleDelete} = useDeleteSshKey(Number(sshKey?.id || 0), () => {
-		onSuccess();
-		onClose();
-	});
+	const {deleting, handleDelete} = useDeleteSshKey(
+		Number(sshKey?.id || 0),
+		() => {
+			onSuccess();
+			onClose();
+		},
+	);
 
 	if (!sshKey) return null;
 
@@ -35,18 +38,22 @@ export function DeleteKeyModal({
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-destructive">
-						<AlertTriangle className="w-5 h-5" />
+						<AlertTriangle className="h-5 w-5" />
 						Delete SSH Key
 					</DialogTitle>
 					<DialogDescription>
-						Are you sure you want to delete the SSH key <strong className="text-foreground">{sshKey.name}</strong>?
+						Are you sure you want to delete the SSH key{' '}
+						<strong className="text-foreground">{sshKey.name}</strong>?
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-3 py-2">
-					<div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-muted-foreground space-y-1">
+					<div className="space-y-1 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-muted-foreground">
 						<p className="font-semibold text-destructive">Warning</p>
-						<p>Any remote servers or deployments relying on this SSH key will lose automated deployment access until updated.</p>
+						<p>
+							Any remote servers or deployments relying on this SSH key
+							will lose automated deployment access until updated.
+						</p>
 					</div>
 
 					<div className="flex justify-end pt-2">
@@ -55,9 +62,12 @@ export function DeleteKeyModal({
 							variant="destructive"
 							onClick={handleDelete}
 							disabled={deleting}
-							className="w-full sm:w-auto h-9 px-6 font-bold text-xs"
-						>
-							{deleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+							className="h-9 w-full px-6 text-xs font-bold sm:w-auto">
+							{deleting ? (
+								<RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Trash2 className="mr-1 h-3.5 w-3.5" />
+							)}
 							{deleting ? 'Deleting...' : 'Delete Key'}
 						</Button>
 					</div>

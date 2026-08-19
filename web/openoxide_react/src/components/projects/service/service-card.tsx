@@ -1,10 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Box, Layers2, Database as DbIcon, Play, Square, Rocket, Trash2, Eye, MoreVertical, XCircle } from 'lucide-react';
-import { useNavigate, Link } from '@tanstack/react-router';
-import { cn } from '#/api/utils';
-import { $api } from '#/api/query';
-import { toast } from 'sonner';
-import { formatApiError } from '#/api/utils';
+import React, {useState, useEffect, useMemo} from 'react';
+import {
+	Box,
+	Layers2,
+	Database as DbIcon,
+	Play,
+	Square,
+	Rocket,
+	Trash2,
+	Eye,
+	MoreVertical,
+	XCircle,
+} from 'lucide-react';
+import {useNavigate, Link} from '@tanstack/react-router';
+import {cn} from '#/api/utils';
+import {$api} from '#/api/query';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 import {
 	PostgresqlIcon,
 	MysqlIcon,
@@ -20,7 +31,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
-import { DeleteServiceDialog } from './delete-service-dialog';
+import {DeleteServiceDialog} from './delete-service-dialog';
 
 interface ServiceCardProps {
 	projectId: number;
@@ -46,26 +57,29 @@ export function ServiceCard({
 	onDeleted,
 }: ServiceCardProps) {
 	const navigate = useNavigate();
-	const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+	const [contextMenu, setContextMenu] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 	const routeConfig = useMemo(() => {
 		if (type === 'APP') {
 			return {
 				to: '/projects/$id/app/$appId' as const,
-				params: { id: String(projectId), appId: String(id) },
+				params: {id: String(projectId), appId: String(id)},
 			};
 		}
 		if (type === 'COMPOSE') {
 			return {
 				to: '/projects/$id/compose/$composeId' as const,
-				params: { id: String(projectId), composeId: String(id) },
+				params: {id: String(projectId), composeId: String(id)},
 			};
 		}
 		return {
 			to: '/projects/$id/database/$dbId' as const,
-			params: { id: String(projectId), dbId: String(id) },
-			search: { kind: dbKind || 'postgres' },
+			params: {id: String(projectId), dbId: String(id)},
+			search: {kind: dbKind || 'postgres'},
 		};
 	}, [type, projectId, id, dbKind]);
 
@@ -85,9 +99,7 @@ export function ServiceCard({
 	// Status Flags
 	const s = status?.toLowerCase() || '';
 
-	const isStopping =
-		s.includes('stopping') ||
-		s.includes('cancelling');
+	const isStopping = s.includes('stopping') || s.includes('cancelling');
 
 	const isStartingOrDeploying =
 		!isStopping &&
@@ -132,11 +144,26 @@ export function ServiceCard({
 	};
 
 	const dbKindPath = getDbKindPath();
-	const dbStart = $api.useMutation('post', `/${dbKindPath}/{id}/start` as any);
-	const dbStop = $api.useMutation('post', `/${dbKindPath}/{id}/stop` as any);
-	const dbDeploy = $api.useMutation('post', `/${dbKindPath}/{id}/deploy` as any);
-	const dbCancel = $api.useMutation('post', `/${dbKindPath}/{id}/cancel` as any);
-	const dbDelete = $api.useMutation('delete', `/${dbKindPath}/{id}` as any);
+	const dbStart = $api.useMutation(
+		'post',
+		`/${dbKindPath}/{id}/start` as any,
+	);
+	const dbStop = $api.useMutation(
+		'post',
+		`/${dbKindPath}/{id}/stop` as any,
+	);
+	const dbDeploy = $api.useMutation(
+		'post',
+		`/${dbKindPath}/{id}/deploy` as any,
+	);
+	const dbCancel = $api.useMutation(
+		'post',
+		`/${dbKindPath}/{id}/cancel` as any,
+	);
+	const dbDelete = $api.useMutation(
+		'delete',
+		`/${dbKindPath}/{id}` as any,
+	);
 
 	const getStatusDotColor = (status: string) => {
 		if (isStopping) {
@@ -145,7 +172,12 @@ export function ServiceCard({
 		if (isRunning) {
 			return 'bg-emerald-500';
 		}
-		if (s.includes('error') || s.includes('fail') || s.includes('unhealthy') || s.includes('crash')) {
+		if (
+			s.includes('error') ||
+			s.includes('fail') ||
+			s.includes('unhealthy') ||
+			s.includes('crash')
+		) {
 			return 'bg-rose-500';
 		}
 		if (isStartingOrDeploying) {
@@ -162,26 +194,38 @@ export function ServiceCard({
 			return <Layers2 className="size-4 text-foreground" />;
 		}
 		const kind = (dbKind || '').toLowerCase();
-		if (kind.includes('postgres')) return <PostgresqlIcon className="size-5 shrink-0" />;
-		if (kind.includes('mysql')) return <MysqlIcon className="size-5 shrink-0" />;
-		if (kind.includes('mariadb')) return <MariadbIcon className="size-5 shrink-0" />;
-		if (kind.includes('mongo')) return <MongodbIcon className="size-5 shrink-0" />;
-		if (kind.includes('redis')) return <RedisIcon className="size-5 shrink-0" />;
-		if (kind.includes('libsql')) return <LibsqlIcon className="size-5 shrink-0" />;
+		if (kind.includes('postgres'))
+			return <PostgresqlIcon className="size-5 shrink-0" />;
+		if (kind.includes('mysql'))
+			return <MysqlIcon className="size-5 shrink-0" />;
+		if (kind.includes('mariadb'))
+			return <MariadbIcon className="size-5 shrink-0" />;
+		if (kind.includes('mongo'))
+			return <MongodbIcon className="size-5 shrink-0" />;
+		if (kind.includes('redis'))
+			return <RedisIcon className="size-5 shrink-0" />;
+		if (kind.includes('libsql'))
+			return <LibsqlIcon className="size-5 shrink-0" />;
 
 		return <DbIcon className="size-4 text-foreground" />;
 	};
 
 	const handleNavigate = () => {
 		if (type === 'APP') {
-			navigate({ to: '/projects/$id/app/$appId', params: { id: String(projectId), appId: String(id) } });
+			navigate({
+				to: '/projects/$id/app/$appId',
+				params: {id: String(projectId), appId: String(id)},
+			});
 		} else if (type === 'COMPOSE') {
-			navigate({ to: '/projects/$id/compose/$composeId', params: { id: String(projectId), composeId: String(id) } });
+			navigate({
+				to: '/projects/$id/compose/$composeId',
+				params: {id: String(projectId), composeId: String(id)},
+			});
 		} else {
 			navigate({
 				to: '/projects/$id/database/$dbId',
-				params: { id: String(projectId), dbId: String(id) },
-				search: { kind: dbKind || 'postgres' } as any,
+				params: {id: String(projectId), dbId: String(id)},
+				search: {kind: dbKind || 'postgres'} as any,
 			});
 		}
 	};
@@ -189,7 +233,7 @@ export function ServiceCard({
 	const handleContextMenu = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
-		setContextMenu({ x: e.clientX, y: e.clientY });
+		setContextMenu({x: e.clientX, y: e.clientY});
 	};
 
 	const handleStart = async (e?: React.MouseEvent) => {
@@ -198,11 +242,11 @@ export function ServiceCard({
 		if (isRunning || isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appStart.mutateAsync({ params: { path: { id } } });
+				await appStart.mutateAsync({params: {path: {id}}});
 			} else if (type === 'COMPOSE') {
-				await composeStart.mutateAsync({ params: { path: { id } } });
+				await composeStart.mutateAsync({params: {path: {id}}});
 			} else {
-				await dbStart.mutateAsync({ params: { path: { id } } });
+				await dbStart.mutateAsync({params: {path: {id}}});
 			}
 			toast.success(`Starting ${name}...`);
 		} catch (err) {
@@ -216,11 +260,11 @@ export function ServiceCard({
 		if (isStopped || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appStop.mutateAsync({ params: { path: { id } } });
+				await appStop.mutateAsync({params: {path: {id}}});
 			} else if (type === 'COMPOSE') {
-				await composeStop.mutateAsync({ params: { path: { id } } });
+				await composeStop.mutateAsync({params: {path: {id}}});
 			} else {
-				await dbStop.mutateAsync({ params: { path: { id } } });
+				await dbStop.mutateAsync({params: {path: {id}}});
 			}
 			toast.success(`Stopping ${name}...`);
 		} catch (err) {
@@ -234,11 +278,11 @@ export function ServiceCard({
 		if (isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appCancel.mutateAsync({ params: { path: { id } } });
+				await appCancel.mutateAsync({params: {path: {id}}});
 			} else if (type === 'COMPOSE') {
-				await composeCancel.mutateAsync({ params: { path: { id } } });
+				await composeCancel.mutateAsync({params: {path: {id}}});
 			} else {
-				await dbCancel.mutateAsync({ params: { path: { id } } });
+				await dbCancel.mutateAsync({params: {path: {id}}});
 			}
 			toast.success(`Cancelling ${name}...`);
 		} catch (err) {
@@ -252,11 +296,11 @@ export function ServiceCard({
 		if (isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appDeploy.mutateAsync({ params: { path: { id } } });
+				await appDeploy.mutateAsync({params: {path: {id}}});
 			} else if (type === 'COMPOSE') {
-				await composeDeploy.mutateAsync({ params: { path: { id } } });
+				await composeDeploy.mutateAsync({params: {path: {id}}});
 			} else {
-				await dbDeploy.mutateAsync({ params: { path: { id } } });
+				await dbDeploy.mutateAsync({params: {path: {id}}});
 			}
 			toast.success(`Deploying ${name}...`);
 		} catch (err) {
@@ -273,11 +317,11 @@ export function ServiceCard({
 	const confirmDeleteService = async () => {
 		try {
 			if (type === 'APP') {
-				await appDelete.mutateAsync({ params: { path: { id } } });
+				await appDelete.mutateAsync({params: {path: {id}}});
 			} else if (type === 'COMPOSE') {
-				await composeDelete.mutateAsync({ params: { path: { id } } });
+				await composeDelete.mutateAsync({params: {path: {id}}});
 			} else {
-				await dbDelete.mutateAsync({ params: { path: { id } } });
+				await dbDelete.mutateAsync({params: {path: {id}}});
 			}
 			toast.success(`Deleted ${name}`);
 			onDeleted?.();
@@ -291,8 +335,7 @@ export function ServiceCard({
 		<>
 			<div
 				onContextMenu={handleContextMenu}
-				className="w-full bg-card border border-border hover:border-primary/40 transition-all duration-200 rounded-xl p-4 flex flex-col justify-between gap-3.5 cursor-pointer group shadow-2xs block text-left relative overflow-hidden"
-			>
+				className="group relative block flex w-full cursor-pointer flex-col justify-between gap-3.5 overflow-hidden rounded-xl border border-border bg-card p-4 text-left shadow-2xs transition-all duration-200 hover:border-primary/40">
 				{/* Clickable Card Overlay */}
 				<Link
 					to={routeConfig.to as any}
@@ -303,15 +346,24 @@ export function ServiceCard({
 					aria-label={`Open ${name}`}
 				/>
 
-				<div className="relative z-10 flex items-center justify-between gap-3 pointer-events-none">
-					<div className="flex items-center gap-3 min-w-0">
-						<div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 relative border border-border/40 text-foreground">
+				<div className="pointer-events-none relative z-10 flex items-center justify-between gap-3">
+					<div className="flex min-w-0 items-center gap-3">
+						<div className="relative flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/40 text-foreground">
 							{getIcon()}
-							<span className={cn('absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-card', getStatusDotColor(status))} />
+							<span
+								className={cn(
+									'absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-card',
+									getStatusDotColor(status),
+								)}
+							/>
 						</div>
 						<div className="min-w-0">
-							<p className="font-bold text-xs text-foreground truncate group-hover:text-primary transition-colors leading-snug">{name}</p>
-							<p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">{subtitle}</p>
+							<p className="truncate text-xs leading-snug font-bold text-foreground transition-colors group-hover:text-primary">
+								{name}
+							</p>
+							<p className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+								{subtitle}
+							</p>
 						</div>
 					</div>
 
@@ -319,34 +371,32 @@ export function ServiceCard({
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
-									<button
-										className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md shrink-0 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-									>
+									<button className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted/80 hover:text-foreground focus:outline-none">
 										<MoreVertical className="size-4 text-foreground" />
 									</button>
 								}
 							/>
 							<DropdownMenuContent
 								align="end"
-								className="w-40 border border-border bg-popover/95 backdrop-blur-md shadow-lg"
-							>
+								className="w-40 border border-border bg-popover/95 shadow-lg backdrop-blur-md">
 								<DropdownMenuItem
 									onClick={handleNavigate}
-									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
-								>
+									className="flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground">
 									<Eye className="size-3.5 text-foreground" />
 									View details
 								</DropdownMenuItem>
 
 								{/* Start Option: Disabled if running, starting/deploying, or stopping */}
 								<DropdownMenuItem
-									disabled={isRunning || isStartingOrDeploying || isStopping}
+									disabled={
+										isRunning || isStartingOrDeploying || isStopping
+									}
 									onClick={handleStart}
 									className={cn(
-										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-										(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
-									)}
-								>
+										'flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground',
+										(isRunning || isStartingOrDeploying || isStopping) &&
+											'cursor-not-allowed opacity-40',
+									)}>
 									<Play className="size-3.5 text-foreground" />
 									Start
 								</DropdownMenuItem>
@@ -355,8 +405,7 @@ export function ServiceCard({
 								{isStartingOrDeploying ? (
 									<DropdownMenuItem
 										onClick={handleCancel}
-										className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground"
-									>
+										className="flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground">
 										<XCircle className="size-3.5 text-foreground" />
 										Cancel
 									</DropdownMenuItem>
@@ -365,10 +414,10 @@ export function ServiceCard({
 										disabled={isStopped || isStopping}
 										onClick={handleStop}
 										className={cn(
-											'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-											(isStopped || isStopping) && 'opacity-40 cursor-not-allowed'
-										)}
-									>
+											'flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground',
+											(isStopped || isStopping) &&
+												'cursor-not-allowed opacity-40',
+										)}>
 										<Square className="size-3.5 text-foreground" />
 										Stop
 									</DropdownMenuItem>
@@ -379,10 +428,10 @@ export function ServiceCard({
 									disabled={isStartingOrDeploying || isStopping}
 									onClick={handleDeploy}
 									className={cn(
-										'flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-foreground',
-										(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed'
-									)}
-								>
+										'flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground',
+										(isStartingOrDeploying || isStopping) &&
+											'cursor-not-allowed opacity-40',
+									)}>
 									<Rocket className="size-3.5 text-foreground" />
 									Deploy
 								</DropdownMenuItem>
@@ -390,8 +439,7 @@ export function ServiceCard({
 								<DropdownMenuSeparator className="bg-border/60" />
 								<DropdownMenuItem
 									onClick={handleDelete}
-									className="flex items-center gap-2 cursor-pointer text-xs font-medium py-1.5 text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10"
-								>
+									className="flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive">
 									<Trash2 className="size-3.5 text-destructive" />
 									Delete
 								</DropdownMenuItem>
@@ -400,12 +448,17 @@ export function ServiceCard({
 					</div>
 				</div>
 
-				<div className="relative z-10 flex items-center justify-between border-t border-border/40 pt-2.5 pointer-events-none">
-					<span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-						<span className={cn('size-1.5 rounded-full', getStatusDotColor(status))} />
+				<div className="pointer-events-none relative z-10 flex items-center justify-between border-t border-border/40 pt-2.5">
+					<span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+						<span
+							className={cn(
+								'size-1.5 rounded-full',
+								getStatusDotColor(status),
+							)}
+						/>
 						{status?.toLowerCase() || 'idle'}
 					</span>
-					<span className="text-[10px] text-muted-foreground/70 font-mono">
+					<span className="font-mono text-[10px] text-muted-foreground/70">
 						{new Date(createdAt * 1000).toLocaleDateString(undefined, {
 							day: '2-digit',
 							month: 'short',
@@ -417,14 +470,12 @@ export function ServiceCard({
 			{/* Custom Right-Click Context Menu */}
 			{contextMenu && (
 				<div
-					style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-					className="fixed z-50 w-44 rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-xl p-1 animate-in fade-in duration-100 text-foreground"
-					onClick={(e) => e.stopPropagation()}
-				>
+					style={{top: `${contextMenu.y}px`, left: `${contextMenu.x}px`}}
+					className="fixed z-50 w-44 animate-in rounded-lg border border-border bg-popover/95 p-1 text-foreground shadow-xl backdrop-blur-md duration-100 fade-in"
+					onClick={e => e.stopPropagation()}>
 					<button
 						onClick={handleNavigate}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
-					>
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted">
 						<Eye className="size-3.5 text-foreground" />
 						View details
 					</button>
@@ -434,10 +485,10 @@ export function ServiceCard({
 						disabled={isRunning || isStartingOrDeploying || isStopping}
 						onClick={handleStart}
 						className={cn(
-							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							(isRunning || isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
-						)}
-					>
+							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted',
+							(isRunning || isStartingOrDeploying || isStopping) &&
+								'cursor-not-allowed opacity-40 hover:bg-transparent',
+						)}>
 						<Play className="size-3.5 text-foreground" />
 						Start
 					</button>
@@ -446,8 +497,7 @@ export function ServiceCard({
 					{isStartingOrDeploying ? (
 						<button
 							onClick={handleCancel}
-							className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
-						>
+							className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted">
 							<XCircle className="size-3.5 text-foreground" />
 							Cancel
 						</button>
@@ -456,10 +506,10 @@ export function ServiceCard({
 							disabled={isStopped || isStopping}
 							onClick={handleStop}
 							className={cn(
-								'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-								(isStopped || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
-							)}
-						>
+								'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted',
+								(isStopped || isStopping) &&
+									'cursor-not-allowed opacity-40 hover:bg-transparent',
+							)}>
 							<Square className="size-3.5 text-foreground" />
 							Stop
 						</button>
@@ -470,10 +520,10 @@ export function ServiceCard({
 						disabled={isStartingOrDeploying || isStopping}
 						onClick={handleDeploy}
 						className={cn(
-							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left',
-							(isStartingOrDeploying || isStopping) && 'opacity-40 cursor-not-allowed hover:bg-transparent'
-						)}
-					>
+							'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted',
+							(isStartingOrDeploying || isStopping) &&
+								'cursor-not-allowed opacity-40 hover:bg-transparent',
+						)}>
 						<Rocket className="size-3.5 text-foreground" />
 						Deploy
 					</button>
@@ -481,8 +531,7 @@ export function ServiceCard({
 					<div className="my-1 h-px bg-border/60" />
 					<button
 						onClick={handleDelete}
-						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors text-left"
-					>
+						className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-destructive transition-colors hover:bg-destructive/10">
 						<Trash2 className="size-3.5 text-destructive" />
 						Delete
 					</button>
@@ -493,7 +542,7 @@ export function ServiceCard({
 				isOpen={isDeleteDialogOpen}
 				onClose={() => setIsDeleteDialogOpen(false)}
 				serviceName={name}
-				serviceType={type === 'DATABASE' ? (dbKind || 'Database') : type}
+				serviceType={type === 'DATABASE' ? dbKind || 'Database' : type}
 				onConfirm={confirmDeleteService}
 			/>
 		</>

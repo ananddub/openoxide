@@ -11,7 +11,7 @@ export type UseThemeReturn = {
 function updateFavicon(isDark: boolean) {
 	if (typeof document === 'undefined') return;
 	const existingIcons = document.querySelectorAll("link[rel*='icon']");
-	existingIcons.forEach((el) => el.remove());
+	existingIcons.forEach(el => el.remove());
 
 	const color = isDark ? '%23ffffff' : '%2309090b';
 	const newLink = document.createElement('link');

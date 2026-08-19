@@ -5,10 +5,13 @@ import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
-import {buildRawGitUrl, getComposeServiceNames} from '#/utils/compose-services';
+import {
+	buildRawGitUrl,
+	getComposeServiceNames,
+} from '#/utils/compose-services';
 
 interface ComposeBackupsTabProps {
 	compose: any;
@@ -16,7 +19,11 @@ interface ComposeBackupsTabProps {
 	isLoading?: boolean;
 }
 
-export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: passedIsLoading}: ComposeBackupsTabProps) {
+export function ComposeBackupsTab({
+	compose,
+	backups: passedBackups,
+	isLoading: passedIsLoading,
+}: ComposeBackupsTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
@@ -29,8 +36,8 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		if (rawUrl) {
 			let isMounted = true;
 			fetch(rawUrl)
-				.then((res) => (res.ok ? res.text() : ''))
-				.then((text) => {
+				.then(res => (res.ok ? res.text() : ''))
+				.then(text => {
 					if (isMounted && text && text.trim()) {
 						setFetchedYaml(text);
 					}
@@ -47,13 +54,15 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 	}, [compose, fetchedYaml]);
 
 	// Read volume backups directly from Zustand RAM Store
-	const storeBackups = useAppStore((state) => state.backups || []);
+	const storeBackups = useAppStore(state => state.backups || []);
 
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
 		if (passedBackups && passedBackups.length > 0) return passedBackups;
 		return storeBackups.filter(
-			(b: any) => Number(b.compose_id) === Number(compose?.id) || b.app_name === compose?.app_name
+			(b: any) =>
+				Number(b.compose_id) === Number(compose?.id) ||
+				b.app_name === compose?.app_name,
 		);
 	}, [passedBackups, storeBackups, compose]);
 	const isLoading = false;
@@ -61,8 +70,14 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 	// Mutations
 	const createMutation = $api.useMutation('post', '/backups/volume');
 	const runMutation = $api.useMutation('post', '/backups/volume/{id}/run');
-	const restoreMutation = $api.useMutation('post', '/backups/volume/{id}/restore');
-	const deleteMutation = $api.useMutation('delete', '/backups/volume/{id}');
+	const restoreMutation = $api.useMutation(
+		'post',
+		'/backups/volume/{id}/restore',
+	);
+	const deleteMutation = $api.useMutation(
+		'delete',
+		'/backups/volume/{id}',
+	);
 
 	const handleCreate = async (data: {
 		name: string;
@@ -89,7 +104,6 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 				} as any,
 			});
 			toast.success('Compose volume backup rule created successfully');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -99,7 +113,6 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume snapshot triggered successfully');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -107,9 +120,11 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 
 	const handleRestore = async (id: number) => {
 		try {
-			await restoreMutation.mutateAsync({params: {path: {id}}, body: {backup_file: ''}});
+			await restoreMutation.mutateAsync({
+				params: {path: {id}},
+				body: {backup_file: ''},
+			});
 			toast.success('Volume snapshot restore initiated');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -119,7 +134,6 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Volume backup rule deleted');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -128,19 +142,25 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Top Header Card */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4 shadow-sm">
+			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
 				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Database className="w-4 h-4 text-primary" /> Volume Backups
+					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+						<Database className="h-4 w-4 text-primary" /> Volume Backups
 					</h3>
-					<p className="text-xs text-muted-foreground mt-1">Configure volume backup rules to stream S3 snapshots of your compose container data</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Configure volume backup rules to stream S3 snapshots of your
+						compose container data
+					</p>
 				</div>
 				<div className="flex items-center gap-3">
-					<Badge variant="outline" className="text-xs font-mono px-3 py-1">
+					<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
 						Active Rules: {composeBackups.length}
 					</Badge>
-					<Button onClick={() => setIsCreateOpen(true)} size="sm" className="h-8 text-xs font-semibold flex items-center gap-1.5">
-						<Plus className="w-4 h-4" /> Create Backup Rule
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						size="sm"
+						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
+						<Plus className="h-4 w-4" /> Create Backup Rule
 					</Button>
 				</div>
 			</section>
@@ -159,9 +179,15 @@ export function ComposeBackupsTab({compose, backups: passedBackups, isLoading: p
 				isOpen={isCreateOpen}
 				onClose={() => setIsCreateOpen(false)}
 				servicesList={servicesList}
-				defaultServiceName={compose?.name || compose?.app_name || 'database'}
-				defaultVolumeName={compose?.volume_name || `${compose?.kind || 'db'}_data`}
-				hideServiceAndVolumeSelect={!!compose?.kind || servicesList.length <= 1}
+				defaultServiceName={
+					compose?.name || compose?.app_name || 'database'
+				}
+				defaultVolumeName={
+					compose?.volume_name || `${compose?.kind || 'db'}_data`
+				}
+				hideServiceAndVolumeSelect={
+					!!compose?.kind || servicesList.length <= 1
+				}
 				onCreate={handleCreate}
 			/>
 		</div>

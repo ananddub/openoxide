@@ -28,12 +28,15 @@ export function TraefikEditor({
 
 	if (!selectedFilePath) {
 		return (
-			<div className="flex-1 p-12 flex flex-col items-center justify-center text-center gap-3 h-full min-h-[400px]">
-				<FileCode className="size-8 text-muted-foreground/60 mb-1" />
+			<div className="flex h-full min-h-[400px] flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
+				<FileCode className="mb-1 size-8 text-muted-foreground/60" />
 				<div className="space-y-1">
-					<h3 className="text-sm font-bold text-foreground">Select a file to edit</h3>
-					<p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
-						Choose a dynamic YAML configuration file from the sidebar to inspect or edit.
+					<h3 className="text-sm font-bold text-foreground">
+						Select a file to edit
+					</h3>
+					<p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+						Choose a dynamic YAML configuration file from the sidebar to
+						inspect or edit.
 					</p>
 				</div>
 			</div>
@@ -43,23 +46,25 @@ export function TraefikEditor({
 	const fullPathDisplay = `/etc/openoxide/traefik/${selectedFilePath}`;
 
 	return (
-		<div className="flex-1 flex flex-col overflow-hidden h-full min-h-[450px] bg-[#1e1e1e]">
+		<div className="flex h-full min-h-[450px] flex-1 flex-col overflow-hidden bg-[#1e1e1e]">
 			{/* Clean Toolbar Header */}
-			<div className="flex items-center justify-between px-3.5 py-2 border-b border-border/50 bg-muted/20 shrink-0">
+			<div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-3.5 py-2">
 				<div className="flex items-center gap-2.5 truncate">
-					<FileCode className="size-4 text-primary shrink-0" />
-					<span className="text-xs font-mono font-semibold text-foreground/90 truncate" title={fullPathDisplay}>
+					<FileCode className="size-4 shrink-0 text-primary" />
+					<span
+						className="truncate font-mono text-xs font-semibold text-foreground/90"
+						title={fullPathDisplay}>
 						{fullPathDisplay}
 					</span>
 					{isReadOnly && (
-						<span className="text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
+						<span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
 							Read-Only
 						</span>
 					)}
 				</div>
 
-				<div className="flex items-center gap-2.5 shrink-0">
-					<span className="text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1">
+				<div className="flex shrink-0 items-center gap-2.5">
+					<span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/80">
 						<Sparkles className="size-3 text-amber-400" /> YAML
 					</span>
 					{!isReadOnly && (
@@ -67,14 +72,15 @@ export function TraefikEditor({
 							variant="outline"
 							size="sm"
 							onClick={() => setIsLocked(!isLocked)}
-							className="h-7 px-2.5 text-xs font-medium gap-1.5 border-border/60 cursor-pointer shadow-2xs">
+							className="h-7 cursor-pointer gap-1.5 border-border/60 px-2.5 text-xs font-medium shadow-2xs">
 							{isLocked ? (
 								<>
 									<Lock className="size-3 text-amber-500" /> Unlock
 								</>
 							) : (
 								<>
-									<LockOpen className="size-3 text-emerald-500" /> Lock Editing
+									<LockOpen className="size-3 text-emerald-500" /> Lock
+									Editing
 								</>
 							)}
 						</Button>
@@ -83,9 +89,9 @@ export function TraefikEditor({
 			</div>
 
 			{/* Full Height Monaco Code Editor */}
-			<div className="relative flex-1 bg-[#1e1e1e] overflow-hidden min-h-[350px]">
+			<div className="relative min-h-[350px] flex-1 overflow-hidden bg-[#1e1e1e]">
 				{isLoading && (
-					<div className="absolute inset-0 z-10 bg-[#1e1e1e]/80 flex items-center justify-center text-xs text-slate-300 font-mono gap-2">
+					<div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-[#1e1e1e]/80 font-mono text-xs text-slate-300">
 						Loading file content...
 					</div>
 				)}
@@ -95,13 +101,14 @@ export function TraefikEditor({
 					language="yaml"
 					theme="vs-dark"
 					value={content}
-					onChange={(val) => onChangeContent(val || '')}
+					onChange={val => onChangeContent(val || '')}
 					options={{
 						readOnly: effectiveReadOnly,
 						minimap: {enabled: true},
 						scrollBeyondLastLine: false,
 						fontSize: 13,
-						fontFamily: "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
+						fontFamily:
+							"JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
 						lineNumbers: 'on',
 						renderLineHighlight: 'none',
 						selectionHighlight: false,

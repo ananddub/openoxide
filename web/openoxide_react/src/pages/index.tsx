@@ -10,15 +10,16 @@ export const Route = createFileRoute('/_app/')({
 });
 
 function Home() {
-	const {firstName, stats, deployStats, recentDeployments, isLoading} = useHomeStats();
+	const {firstName, stats, deployStats, recentDeployments, isLoading} =
+		useHomeStats();
 
 	return (
-		<div className="p-4 flex flex-col gap-6 max-w-7xl mx-auto w-full animate-in fade-in duration-200">
+		<div className="mx-auto flex w-full max-w-7xl animate-in flex-col gap-6 p-4 duration-200 fade-in">
 			{/* Header: Welcome back & Go to projects */}
 			<HomeHeader firstName={firstName} />
 
 			{/* 4 Stat Cards: Projects, Services, Deploys / 7d, Status */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<StatCard
 					label="Projects"
 					value={String(stats.projects)}
@@ -65,6 +66,3 @@ function Home() {
 		</div>
 	);
 }
-
-
-

@@ -16,7 +16,10 @@ interface GithubManifestDialogProps {
 	onClose: () => void;
 }
 
-export function GithubManifestDialog({isOpen, onClose}: GithubManifestDialogProps) {
+export function GithubManifestDialog({
+	isOpen,
+	onClose,
+}: GithubManifestDialogProps) {
 	const [githubUrl, setGithubUrl] = useState('https://github.com');
 	const [orgName, setOrgName] = useState('');
 
@@ -31,7 +34,9 @@ export function GithubManifestDialog({isOpen, onClose}: GithubManifestDialogProp
 			url: `${githubCallbackBaseUrl}/public/webhooks/github`,
 		},
 		redirect_url: `${githubCallbackBaseUrl}/git-providers/github/manifest/callback`,
-		callback_urls: [`${githubCallbackBaseUrl}/git-providers/github/manifest/callback`],
+		callback_urls: [
+			`${githubCallbackBaseUrl}/git-providers/github/manifest/callback`,
+		],
 		public: false,
 		request_oauth_on_install: true,
 		default_permissions: {
@@ -49,38 +54,44 @@ export function GithubManifestDialog({isOpen, onClose}: GithubManifestDialogProp
 		: `${cleanBase}/settings/apps/new`;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2.5 text-base font-bold">
-						<div className="size-8 rounded-lg bg-zinc-800 flex items-center justify-center text-white">
+						<div className="flex size-8 items-center justify-center rounded-lg bg-zinc-800 text-white">
 							<GithubIcon className="size-4" />
 						</div>
 						Create GitHub App
 					</DialogTitle>
 					<DialogDescription className="text-xs">
-						GitHub will automatically configure the App manifest, permissions, and webhook callback in OpenOxide.
+						GitHub will automatically configure the App manifest,
+						permissions, and webhook callback in OpenOxide.
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4 pt-2">
 					<div className="space-y-1.5">
-						<label className="text-xs font-semibold text-muted-foreground">GitHub Base URL</label>
+						<label className="text-xs font-semibold text-muted-foreground">
+							GitHub Base URL
+						</label>
 						<Input
 							value={githubUrl}
-							onChange={(e) => setGithubUrl(e.target.value)}
+							onChange={e => setGithubUrl(e.target.value)}
 							placeholder="https://github.com"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
 					<div className="space-y-1.5">
 						<label className="text-xs font-semibold text-muted-foreground">
-							GitHub Organization <span className="text-[11px] font-normal text-muted-foreground/80">(Optional)</span>
+							GitHub Organization{' '}
+							<span className="text-[11px] font-normal text-muted-foreground/80">
+								(Optional)
+							</span>
 						</label>
 						<Input
 							value={orgName}
-							onChange={(e) => setOrgName(e.target.value)}
+							onChange={e => setOrgName(e.target.value)}
 							placeholder="e.g. my-company-org"
 							className="h-9 text-xs"
 						/>
@@ -88,7 +99,9 @@ export function GithubManifestDialog({isOpen, onClose}: GithubManifestDialogProp
 
 					<form action={targetAction} method="post" className="pt-2">
 						<input type="hidden" name="manifest" value={manifest} />
-						<Button type="submit" className="w-full h-9 bg-primary text-primary-foreground font-semibold text-xs gap-2 rounded-lg cursor-pointer">
+						<Button
+							type="submit"
+							className="h-9 w-full cursor-pointer gap-2 rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
 							<GithubIcon className="size-4" /> Continue on GitHub
 						</Button>
 					</form>

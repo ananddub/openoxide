@@ -44,8 +44,7 @@ export const DialogAction = ({
 					<AlertDialogAction
 						disabled={disabled}
 						onClick={onClick}
-						variant={type ?? 'destructive'}
-					>
+						variant={type ?? 'destructive'}>
 						Confirm
 					</AlertDialogAction>
 				</AlertDialogFooter>

@@ -5,14 +5,24 @@ import {BuildSettingsCard} from './general-tab/build-settings-card';
 interface GeneralTabProps {
 	app: any;
 	onUpdated: () => void;
-	handleAction: (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel') => Promise<void>;
+	handleAction: (
+		action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'cancel',
+	) => Promise<void>;
 }
 
-export function GeneralTab({app, onUpdated, handleAction}: GeneralTabProps) {
+export function GeneralTab({
+	app,
+	onUpdated,
+	handleAction,
+}: GeneralTabProps) {
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Deploy Controls */}
-			<DeploySettingsCard app={app} handleAction={handleAction} onUpdated={onUpdated} />
+			<DeploySettingsCard
+				app={app}
+				handleAction={handleAction}
+				onUpdated={onUpdated}
+			/>
 
 			{/* Source Settings */}
 			<SourceSettingsCard app={app} onUpdated={onUpdated} />

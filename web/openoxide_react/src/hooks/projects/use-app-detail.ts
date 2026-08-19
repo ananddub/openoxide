@@ -3,20 +3,32 @@ import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import { useAppStore, selectApplicationById } from '#/stores/app-store';
+import {useAppStore, selectApplicationById} from '#/stores/app-store';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
-	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+	const [localStatusOverride, setLocalStatusOverride] = useState<
+		string | null
+	>(null);
 
 	// 100% Pure Centralized Zustand Store Resolution
-	const rawApp = useAppStore((state) => selectApplicationById(state, appId));
+	const rawApp = useAppStore(state => selectApplicationById(state, appId));
 
-	const app = rawApp ? {
-		...rawApp,
-		status: localStatusOverride || (rawApp as any).app_status || (rawApp as any).status || 'STOPPED',
-		app_status: localStatusOverride || (rawApp as any).app_status || (rawApp as any).status || 'STOPPED',
-	} : null;
+	const app = rawApp
+		? {
+				...rawApp,
+				status:
+					localStatusOverride ||
+					(rawApp as any).app_status ||
+					(rawApp as any).status ||
+					'STOPPED',
+				app_status:
+					localStatusOverride ||
+					(rawApp as any).app_status ||
+					(rawApp as any).status ||
+					'STOPPED',
+			}
+		: null;
 
 	const appStatus = (rawApp as any)?.app_status || (rawApp as any)?.status;
 
@@ -27,9 +39,16 @@ export function useAppDetail(appId: number) {
 			const overrideUpper = localStatusOverride.toUpperCase();
 			if (
 				fetchedStatus === overrideUpper ||
-				(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
-				(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
-				(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+				(overrideUpper === 'STARTING' &&
+					(fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+				(overrideUpper === 'STOPPING' &&
+					(fetchedStatus === 'STOPPED' ||
+						fetchedStatus === 'IDLE' ||
+						fetchedStatus === 'CANCELLED')) ||
+				(overrideUpper === 'CANCELLING' &&
+					(fetchedStatus === 'CANCELLED' ||
+						fetchedStatus === 'STOPPED' ||
+						fetchedStatus === 'IDLE'))
 			) {
 				setLocalStatusOverride(null);
 			}
@@ -37,26 +56,38 @@ export function useAppDetail(appId: number) {
 	}, [appStatus, localStatusOverride]);
 
 	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
-	const storeDomains = useAppStore((state) => state.domains);
-	const storeSchedules = useAppStore((state) => state.schedules);
-	const storeBackups = useAppStore((state) => state.backups);
-	const storeDeployments = useAppStore((state) => state.deployments);
+	const storeDomains = useAppStore(state => state.domains);
+	const storeSchedules = useAppStore(state => state.schedules);
+	const storeBackups = useAppStore(state => state.backups);
+	const storeDeployments = useAppStore(state => state.deployments);
 
-	const domains = useMemo(() =>
-		(storeDomains || []).filter((d: any) => Number(d.application_id) === Number(appId)),
-		[storeDomains, appId]
+	const domains = useMemo(
+		() =>
+			(storeDomains || []).filter(
+				(d: any) => Number(d.application_id) === Number(appId),
+			),
+		[storeDomains, appId],
 	);
-	const schedules = useMemo(() =>
-		(storeSchedules || []).filter((s: any) => Number(s.application_id) === Number(appId)),
-		[storeSchedules, appId]
+	const schedules = useMemo(
+		() =>
+			(storeSchedules || []).filter(
+				(s: any) => Number(s.application_id) === Number(appId),
+			),
+		[storeSchedules, appId],
 	);
-	const backups = useMemo(() =>
-		(storeBackups || []).filter((b: any) => Number(b.application_id) === Number(appId)),
-		[storeBackups, appId]
+	const backups = useMemo(
+		() =>
+			(storeBackups || []).filter(
+				(b: any) => Number(b.application_id) === Number(appId),
+			),
+		[storeBackups, appId],
 	);
-	const deployments = useMemo(() =>
-		(storeDeployments || []).filter((d: any) => Number(d.application_id) === Number(appId)),
-		[storeDeployments, appId]
+	const deployments = useMemo(
+		() =>
+			(storeDeployments || []).filter(
+				(d: any) => Number(d.application_id) === Number(appId),
+			),
+		[storeDeployments, appId],
 	);
 
 	// Central Live Container Monitoring Stream
@@ -67,23 +98,54 @@ export function useAppDetail(appId: number) {
 		monitoring.triggerRefresh();
 	};
 
-	const deployMutation = $api.useMutation('post', '/applications/{id}/deploy');
-	const reloadMutation = $api.useMutation('post', '/applications/{id}/reload');
-	const rebuildMutation = $api.useMutation('post', '/applications/{id}/rebuild');
-	const startMutation = $api.useMutation('post', '/applications/{id}/start');
+	const deployMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/deploy',
+	);
+	const reloadMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/reload',
+	);
+	const rebuildMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/rebuild',
+	);
+	const startMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/start',
+	);
 	const stopMutation = $api.useMutation('post', '/applications/{id}/stop');
-	const cancelMutation = $api.useMutation('post', '/applications/{id}/cancel');
+	const cancelMutation = $api.useMutation(
+		'post',
+		'/applications/{id}/cancel',
+	);
 	const patchMutation = $api.useMutation('patch', '/applications/{id}');
 
-	const handleAction = async (action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel') => {
+	const handleAction = async (
+		action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel',
+	) => {
 		const currentSt = (app?.app_status || app?.status || '').toUpperCase();
-		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
-		const intermediateStatus = (action === 'stop' || action === 'cancel')
-			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
-			: action === 'start' ? 'STARTING'
-			: 'DEPLOYING';
+		const isCurrentlyBuilding = [
+			'QUEUED',
+			'BUILDING',
+			'STARTING',
+			'PREPARING',
+			'PENDING',
+			'DEPLOYING',
+		].includes(currentSt);
+		const intermediateStatus =
+			action === 'stop' || action === 'cancel'
+				? isCurrentlyBuilding
+					? 'CANCELLING'
+					: 'STOPPING'
+				: action === 'start'
+					? 'STARTING'
+					: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(appId, intermediateStatus);
+		(useAppStore.getState() as any).updateServiceStatus?.(
+			appId,
+			intermediateStatus,
+		);
 
 		try {
 			if (action === 'deploy') {

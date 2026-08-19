@@ -5,10 +5,13 @@ import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
-import {buildRawGitUrl, getComposeServiceNames} from '#/utils/compose-services';
+import {
+	buildRawGitUrl,
+	getComposeServiceNames,
+} from '#/utils/compose-services';
 
 interface ComposeSchedulesTabProps {
 	compose: any;
@@ -16,7 +19,11 @@ interface ComposeSchedulesTabProps {
 	isLoading?: boolean;
 }
 
-export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoading: passedIsLoading}: ComposeSchedulesTabProps) {
+export function ComposeSchedulesTab({
+	compose,
+	schedules: passedSchedules,
+	isLoading: passedIsLoading,
+}: ComposeSchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
@@ -29,8 +36,8 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 		if (rawUrl) {
 			let isMounted = true;
 			fetch(rawUrl)
-				.then((res) => (res.ok ? res.text() : ''))
-				.then((text) => {
+				.then(res => (res.ok ? res.text() : ''))
+				.then(text => {
 					if (isMounted && text && text.trim()) {
 						setFetchedYaml(text);
 					}
@@ -48,12 +55,15 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 
 	// Read schedules directly from Zustand RAM Store
 	const composeId = compose?.id;
-	const storeSchedules = useAppStore((state) => state.schedules || []);
+	const storeSchedules = useAppStore(state => state.schedules || []);
 
 	// Safe array normalization
 	const composeSchedules = useMemo(() => {
-		if (passedSchedules && passedSchedules.length > 0) return passedSchedules;
-		return storeSchedules.filter((s: any) => Number(s.compose_id) === Number(composeId));
+		if (passedSchedules && passedSchedules.length > 0)
+			return passedSchedules;
+		return storeSchedules.filter(
+			(s: any) => Number(s.compose_id) === Number(composeId),
+		);
 	}, [passedSchedules, storeSchedules, composeId]);
 	const isLoading = false;
 
@@ -81,7 +91,6 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 				} as any,
 			});
 			toast.success('Compose schedule task created successfully');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -91,7 +100,6 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 		try {
 			await runMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task executed');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -101,7 +109,6 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 		try {
 			await deleteMutation.mutateAsync({params: {path: {id}}});
 			toast.success('Schedule task deleted');
-
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -110,19 +117,25 @@ export function ComposeSchedulesTab({compose, schedules: passedSchedules, isLoad
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Top Header Card */}
-			<section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4 shadow-sm">
+			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
 				<div>
-					<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Calendar className="w-4 h-4 text-primary" /> Scheduled Tasks
+					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+						<Calendar className="h-4 w-4 text-primary" /> Scheduled Tasks
 					</h3>
-					<p className="text-xs text-muted-foreground mt-1">Configure scheduled tasks to execute recurring commands inside your compose service container</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Configure scheduled tasks to execute recurring commands inside
+						your compose service container
+					</p>
 				</div>
 				<div className="flex items-center gap-3">
-					<Badge variant="outline" className="text-xs font-mono px-3 py-1">
+					<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
 						Active Tasks: {composeSchedules.length}
 					</Badge>
-					<Button onClick={() => setIsCreateOpen(true)} size="sm" className="h-8 text-xs font-semibold flex items-center gap-1.5">
-						<Plus className="w-4 h-4" /> Create Schedule
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						size="sm"
+						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
+						<Plus className="h-4 w-4" /> Create Schedule
 					</Button>
 				</div>
 			</section>

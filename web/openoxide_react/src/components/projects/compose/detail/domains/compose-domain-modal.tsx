@@ -45,8 +45,12 @@ export function ComposeDomainModal({
 	useEffect(() => {
 		if (editingDomain) {
 			setDomain(editingDomain.host || editingDomain.domain || '');
-			setServiceName(editingDomain.service_name || servicesList[0] || 'app');
-			setContainerPort(String(editingDomain.port ?? editingDomain.container_port ?? 3000));
+			setServiceName(
+				editingDomain.service_name || servicesList[0] || 'app',
+			);
+			setContainerPort(
+				String(editingDomain.port ?? editingDomain.container_port ?? 3000),
+			);
 			setHttps(editingDomain.https !== false);
 			setPath(editingDomain.path || '/');
 		} else {
@@ -83,49 +87,68 @@ export function ComposeDomainModal({
 	};
 
 	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-			<div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in duration-150">
-				<div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+			<div className="w-full max-w-2xl animate-in overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 fade-in">
+				<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
 					<div className="flex items-center gap-2">
-						<Globe className="w-4 h-4 text-primary" />
+						<Globe className="h-4 w-4 text-primary" />
 						<h3 className="text-sm font-bold text-foreground">
-							{editingDomain ? 'Edit Compose Domain Route' : 'Add Compose Domain Route'}
+							{editingDomain
+								? 'Edit Compose Domain Route'
+								: 'Add Compose Domain Route'}
 						</h3>
 					</div>
-					<Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-muted-foreground">
-						<X className="w-4 h-4" />
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={onClose}
+						className="h-7 w-7 text-muted-foreground">
+						<X className="h-4 w-4" />
 					</Button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+				<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
 					<div className="flex flex-col gap-1.5">
 						<Label className="text-xs font-semibold">Domain Name *</Label>
 						<Input
 							value={domain}
 							onChange={e => setDomain(e.target.value)}
 							placeholder="api.yourdomain.com"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
-					<div className="flex flex-col gap-1.5 w-full">
+					<div className="flex w-full flex-col gap-1.5">
 						<div className="flex items-center justify-between">
-							<Label className="text-xs font-semibold">Target Compose Service *</Label>
+							<Label className="text-xs font-semibold">
+								Target Compose Service *
+							</Label>
 						</div>
 						<div className="flex gap-2">
 							<Input
 								value={serviceName}
 								onChange={e => setServiceName(e.target.value)}
 								placeholder="app"
-								className="h-9 text-xs font-mono flex-1"
+								className="h-9 flex-1 font-mono text-xs"
 							/>
-							<Select value={servicesList.includes(serviceName) ? serviceName : ''} onValueChange={val => val && setServiceName(val)}>
-								<SelectTrigger className="h-9 text-xs w-[130px]">
+							<Select
+								value={
+									servicesList.includes(serviceName) ? serviceName : ''
+								}
+								onValueChange={val => val && setServiceName(val)}>
+								<SelectTrigger className="h-9 w-[130px] text-xs">
 									<SelectValue placeholder="Presets" />
 								</SelectTrigger>
 								<SelectContent>
-									{Array.from(new Set([...servicesList, serviceName].filter(Boolean))).map((srv) => (
-										<SelectItem key={srv} value={srv} className="text-xs font-mono">
+									{Array.from(
+										new Set(
+											[...servicesList, serviceName].filter(Boolean),
+										),
+									).map(srv => (
+										<SelectItem
+											key={srv}
+											value={srv}
+											className="font-mono text-xs">
 											{srv}
 										</SelectItem>
 									))}
@@ -134,14 +157,16 @@ export function ComposeDomainModal({
 						</div>
 					</div>
 
-					<div className="flex flex-col gap-1.5 w-full">
-						<Label className="text-xs font-semibold">Container Port *</Label>
+					<div className="flex w-full flex-col gap-1.5">
+						<Label className="text-xs font-semibold">
+							Container Port *
+						</Label>
 						<Input
 							type="number"
 							value={containerPort}
 							onChange={e => setContainerPort(e.target.value)}
 							placeholder="3000"
-							className="h-9 text-xs font-mono w-full"
+							className="h-9 w-full font-mono text-xs"
 						/>
 					</div>
 
@@ -151,21 +176,30 @@ export function ComposeDomainModal({
 							value={path}
 							onChange={e => setPath(e.target.value)}
 							placeholder="/"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 
-					<div className="flex items-center justify-between border border-border/60 rounded-lg p-3 bg-muted/20">
+					<div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3">
 						<div>
-							<Label className="text-xs font-semibold">Enable Automatic HTTPS / SSL</Label>
-							<p className="text-[11px] text-muted-foreground">Issue Let's Encrypt SSL certificate via Traefik</p>
+							<Label className="text-xs font-semibold">
+								Enable Automatic HTTPS / SSL
+							</Label>
+							<p className="text-[11px] text-muted-foreground">
+								Issue Let's Encrypt SSL certificate via Traefik
+							</p>
 						</div>
 						<Switch checked={https} onCheckedChange={setHttps} />
 					</div>
 
-					<div className="pt-2 flex items-center justify-end border-t border-border">
-						<Button type="submit" disabled={saving} className="w-full sm:w-auto h-9 px-6 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
-							{saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+					<div className="flex items-center justify-end border-t border-border pt-2">
+						<Button
+							type="submit"
+							disabled={saving}
+							className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
+							{saving ? (
+								<RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
+							) : null}
 							{editingDomain ? 'Update Domain' : 'Add Domain'}
 						</Button>
 					</div>

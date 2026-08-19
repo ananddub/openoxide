@@ -19,21 +19,25 @@ export function DeploymentErrorDialog({
 	onClose,
 }: DeploymentErrorDialogProps) {
 	return (
-		<Dialog open={!!errorDetailDeployment} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-xl bg-card border-border">
+		<Dialog
+			open={!!errorDetailDeployment}
+			onOpenChange={open => !open && onClose()}>
+			<DialogContent className="border-border bg-card sm:max-w-xl">
 				<DialogHeader className="border-b border-border/30 pb-3">
-					<DialogTitle className="text-md font-bold text-rose-500 flex items-center gap-2">
+					<DialogTitle className="text-md flex items-center gap-2 font-bold text-rose-500">
 						<AlertCircle className="size-5" />
 						Deployment Failure Details
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Error trace registered for deployment #{errorDetailDeployment?.id} ({errorDetailDeployment?.title})
+						Error trace registered for deployment #
+						{errorDetailDeployment?.id} ({errorDetailDeployment?.title})
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="my-4">
-					<div className="bg-rose-500/5 border border-rose-500/20 text-rose-200 rounded-lg p-4 font-mono text-xs max-h-96 overflow-y-auto whitespace-pre-wrap select-text leading-relaxed">
-						{errorDetailDeployment?.error_message || 'No failure trace registered.'}
+					<div className="max-h-96 overflow-y-auto rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-rose-200 select-text">
+						{errorDetailDeployment?.error_message ||
+							'No failure trace registered.'}
 					</div>
 				</div>
 
@@ -41,7 +45,7 @@ export function DeploymentErrorDialog({
 					<Button
 						variant="outline"
 						onClick={onClose}
-						className="border-border hover:bg-muted font-semibold text-xs">
+						className="border-border text-xs font-semibold hover:bg-muted">
 						Dismiss
 					</Button>
 				</div>

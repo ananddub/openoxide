@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { Search, Loader2 } from 'lucide-react';
-import { Input } from '#/components/ui/input';
-import { Button } from '#/components/ui/button';
+import {useState, useMemo} from 'react';
+import {Search, Loader2} from 'lucide-react';
+import {Input} from '#/components/ui/input';
+import {Button} from '#/components/ui/button';
 import {
 	Select,
 	SelectTrigger,
@@ -9,12 +9,12 @@ import {
 	SelectContent,
 	SelectItem,
 } from '#/components/ui/select';
-import { useOrganizationStore } from '#/stores/organization-store';
-import { useAppStore } from '#/stores/app-store';
-import { $api } from '#/api/query';
-import { client } from '#/api/client';
-import { toast } from 'sonner';
-import { formatApiError } from '#/api/utils';
+import {useOrganizationStore} from '#/stores/organization-store';
+import {useAppStore} from '#/stores/app-store';
+import {$api} from '#/api/query';
+import {client} from '#/api/client';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 import {
 	OverviewServicesTable,
 	type OverviewServiceItem,
@@ -40,12 +40,12 @@ export function OverviewServicesTab() {
 	const [pageSize, setPageSize] = useState(50);
 	const [pageIndex, setPageIndex] = useState(0);
 
-	const { activeOrg } = useOrganizationStore();
+	const {activeOrg} = useOrganizationStore();
 	const orgId = activeOrg?.id || 1;
 
 	// Read directly from Realtime Zustand RAM Store (ZERO extra subscriptions!)
-	const storeServices = useAppStore((state) => state.overviewServices || []);
-	const projectsToUse = useAppStore((state) => state.projects || []);
+	const storeServices = useAppStore(state => state.overviewServices || []);
+	const projectsToUse = useAppStore(state => state.projects || []);
 	const rawServices = storeServices;
 	const isLiveLoading = false;
 
@@ -83,14 +83,15 @@ export function OverviewServicesTab() {
 
 	// Filter and sort services
 	const filteredServices = useMemo(() => {
-		let list = allServices.filter((s) => {
+		let list = allServices.filter(s => {
 			const matchesSearch =
 				!searchQuery ||
 				s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				s.projectName.toLowerCase().includes(searchQuery.toLowerCase());
 
 			const matchesProject =
-				selectedProjectId === 'all' || String(s.projectId) === String(selectedProjectId);
+				selectedProjectId === 'all' ||
+				String(s.projectId) === String(selectedProjectId);
 
 			const matchesType =
 				selectedType === 'all' ||
@@ -100,21 +101,38 @@ export function OverviewServicesTab() {
 				(s.dbKind && s.dbKind === selectedType);
 
 			const matchesStatus =
-				selectedStatus === 'all' || s.status.toLowerCase().includes(selectedStatus.toLowerCase());
+				selectedStatus === 'all' ||
+				s.status.toLowerCase().includes(selectedStatus.toLowerCase());
 
-			return matchesSearch && matchesProject && matchesType && matchesStatus;
+			return (
+				matchesSearch && matchesProject && matchesType && matchesStatus
+			);
 		});
 
-		if (sortBy === 'newest') list.sort((a, b) => b.createdAt - a.createdAt);
-		else if (sortBy === 'oldest') list.sort((a, b) => a.createdAt - b.createdAt);
-		else if (sortBy === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name));
-		else if (sortBy === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name));
+		if (sortBy === 'newest')
+			list.sort((a, b) => b.createdAt - a.createdAt);
+		else if (sortBy === 'oldest')
+			list.sort((a, b) => a.createdAt - b.createdAt);
+		else if (sortBy === 'name-asc')
+			list.sort((a, b) => a.name.localeCompare(b.name));
+		else if (sortBy === 'name-desc')
+			list.sort((a, b) => b.name.localeCompare(a.name));
 
 		return list;
-	}, [allServices, searchQuery, selectedProjectId, selectedType, selectedStatus, sortBy]);
+	}, [
+		allServices,
+		searchQuery,
+		selectedProjectId,
+		selectedType,
+		selectedStatus,
+		sortBy,
+	]);
 
 	// Pagination
-	const pageCount = Math.max(1, Math.ceil(filteredServices.length / pageSize));
+	const pageCount = Math.max(
+		1,
+		Math.ceil(filteredServices.length / pageSize),
+	);
 	const currentPageIndex = Math.min(pageIndex, pageCount - 1);
 	const pagedServices = useMemo(() => {
 		const start = currentPageIndex * pageSize;
@@ -125,12 +143,14 @@ export function OverviewServicesTab() {
 	const handleDeploy = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appDeploy.mutateAsync({ params: { path: { id: svc.id } } });
+				await appDeploy.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.type === 'COMPOSE') {
-				await composeDeploy.mutateAsync({ params: { path: { id: svc.id } } });
+				await composeDeploy.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.dbKind) {
 				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/deploy` as any, { params: { path: { id: svc.id } } });
+				await client.POST(`/${k}/{id}/deploy` as any, {
+					params: {path: {id: svc.id}},
+				});
 			}
 			toast.success(`Queued deployment for ${svc.name}`);
 		} catch (err) {
@@ -141,12 +161,14 @@ export function OverviewServicesTab() {
 	const handleStart = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appStart.mutateAsync({ params: { path: { id: svc.id } } });
+				await appStart.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.type === 'COMPOSE') {
-				await composeStart.mutateAsync({ params: { path: { id: svc.id } } });
+				await composeStart.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.dbKind) {
 				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/start` as any, { params: { path: { id: svc.id } } });
+				await client.POST(`/${k}/{id}/start` as any, {
+					params: {path: {id: svc.id}},
+				});
 			}
 			toast.success(`Starting ${svc.name}...`);
 		} catch (err) {
@@ -157,12 +179,14 @@ export function OverviewServicesTab() {
 	const handleStop = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appStop.mutateAsync({ params: { path: { id: svc.id } } });
+				await appStop.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.type === 'COMPOSE') {
-				await composeStop.mutateAsync({ params: { path: { id: svc.id } } });
+				await composeStop.mutateAsync({params: {path: {id: svc.id}}});
 			} else if (svc.dbKind) {
 				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/stop` as any, { params: { path: { id: svc.id } } });
+				await client.POST(`/${k}/{id}/stop` as any, {
+					params: {path: {id: svc.id}},
+				});
 			}
 			toast.info(`Stopping ${svc.name}...`);
 		} catch (err) {
@@ -173,7 +197,9 @@ export function OverviewServicesTab() {
 	// Helper for selected project name label
 	const selectedProjectLabel = useMemo(() => {
 		if (selectedProjectId === 'all') return 'Project: All Projects';
-		const found = projectsToUse.find((p: any) => String(p.id) === String(selectedProjectId));
+		const found = projectsToUse.find(
+			(p: any) => String(p.id) === String(selectedProjectId),
+		);
 		return `Project: ${found?.name || 'Selected'}`;
 	}, [selectedProjectId, projectsToUse]);
 
@@ -201,7 +227,7 @@ export function OverviewServicesTab() {
 	}, [sortBy]);
 
 	return (
-		<div className="flex flex-col gap-5 w-full">
+		<div className="flex w-full flex-col gap-5">
 			{/* Top Header & Filter Toolbar */}
 			<div className="flex flex-wrap items-center justify-between gap-4">
 				<h3 className="text-lg font-bold tracking-tight text-foreground">
@@ -217,15 +243,19 @@ export function OverviewServicesTab() {
 						<Input
 							placeholder="Filter services..."
 							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pr-9 w-[190px] h-9 text-xs"
+							onChange={e => setSearchQuery(e.target.value)}
+							className="h-9 w-[190px] pr-9 text-xs"
 						/>
-						<Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+						<Search className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
 					</div>
 
 					{/* Project Filter Select */}
-					<Select value={selectedProjectId} onValueChange={(val) => val && setSelectedProjectId(val)}>
-						<SelectTrigger size="sm" className="w-[160px] text-xs font-semibold h-9">
+					<Select
+						value={selectedProjectId}
+						onValueChange={val => val && setSelectedProjectId(val)}>
+						<SelectTrigger
+							size="sm"
+							className="h-9 w-[160px] text-xs font-semibold">
 							<SelectValue>{selectedProjectLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
@@ -239,8 +269,12 @@ export function OverviewServicesTab() {
 					</Select>
 
 					{/* Type Filter Select */}
-					<Select value={selectedType} onValueChange={(val) => val && setSelectedType(val)}>
-						<SelectTrigger size="sm" className="w-[150px] text-xs font-semibold h-9">
+					<Select
+						value={selectedType}
+						onValueChange={val => val && setSelectedType(val)}>
+						<SelectTrigger
+							size="sm"
+							className="h-9 w-[150px] text-xs font-semibold">
 							<SelectValue>{selectedTypeLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
@@ -257,8 +291,12 @@ export function OverviewServicesTab() {
 					</Select>
 
 					{/* Status Filter Select */}
-					<Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
-						<SelectTrigger size="sm" className="w-[150px] text-xs font-semibold h-9">
+					<Select
+						value={selectedStatus}
+						onValueChange={val => val && setSelectedStatus(val)}>
+						<SelectTrigger
+							size="sm"
+							className="h-9 w-[150px] text-xs font-semibold">
 							<SelectValue>{selectedStatusLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
@@ -271,8 +309,12 @@ export function OverviewServicesTab() {
 					</Select>
 
 					{/* Sort By Select */}
-					<Select value={sortBy} onValueChange={(val) => val && setSortBy(val)}>
-						<SelectTrigger size="sm" className="w-[160px] text-xs font-semibold h-9">
+					<Select
+						value={sortBy}
+						onValueChange={val => val && setSortBy(val)}>
+						<SelectTrigger
+							size="sm"
+							className="h-9 w-[160px] text-xs font-semibold">
 							<SelectValue>{selectedSortLabel}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
@@ -287,7 +329,7 @@ export function OverviewServicesTab() {
 
 			{/* Loading State */}
 			{isLoading && (
-				<div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+				<div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
 					<Loader2 className="size-4 animate-spin text-primary" />
 					Loading services...
 				</div>
@@ -295,7 +337,7 @@ export function OverviewServicesTab() {
 
 			{/* Empty Filter State */}
 			{!isLoading && filteredServices.length === 0 && (
-				<div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
+				<div className="flex flex-col items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
 					<span>No services match the current filters.</span>
 				</div>
 			)}
@@ -311,9 +353,11 @@ export function OverviewServicesTab() {
 					/>
 
 					{/* Pagination Controls */}
-					<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 text-xs text-muted-foreground border-t border-border/40">
+					<div className="flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-3 text-xs text-muted-foreground sm:flex-row">
 						<span>
-							{filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} total
+							{filteredServices.length}{' '}
+							{filteredServices.length === 1 ? 'service' : 'services'}{' '}
+							total
 						</span>
 
 						<div className="flex items-center gap-4">
@@ -321,14 +365,15 @@ export function OverviewServicesTab() {
 								<span className="whitespace-nowrap">Rows per page</span>
 								<Select
 									value={String(pageSize)}
-									onValueChange={(val) => {
+									onValueChange={val => {
 										if (val) {
 											setPageSize(Number(val));
 											setPageIndex(0);
 										}
-									}}
-								>
-									<SelectTrigger size="sm" className="w-[75px] h-8 text-xs font-semibold">
+									}}>
+									<SelectTrigger
+										size="sm"
+										className="h-8 w-[75px] text-xs font-semibold">
 										<SelectValue placeholder="50" />
 									</SelectTrigger>
 									<SelectContent>
@@ -340,7 +385,7 @@ export function OverviewServicesTab() {
 								</Select>
 							</div>
 
-							<span className="whitespace-nowrap font-mono">
+							<span className="font-mono whitespace-nowrap">
 								Page {currentPageIndex + 1} of {pageCount}
 							</span>
 
@@ -348,19 +393,23 @@ export function OverviewServicesTab() {
 								<Button
 									variant="outline"
 									size="sm"
-									onClick={() => setPageIndex(Math.max(0, currentPageIndex - 1))}
+									onClick={() =>
+										setPageIndex(Math.max(0, currentPageIndex - 1))
+									}
 									disabled={currentPageIndex === 0}
-									className="h-8 text-xs font-semibold px-3"
-								>
+									className="h-8 px-3 text-xs font-semibold">
 									Previous
 								</Button>
 								<Button
 									variant="outline"
 									size="sm"
-									onClick={() => setPageIndex(Math.min(pageCount - 1, currentPageIndex + 1))}
+									onClick={() =>
+										setPageIndex(
+											Math.min(pageCount - 1, currentPageIndex + 1),
+										)
+									}
 									disabled={currentPageIndex + 1 >= pageCount}
-									className="h-8 text-xs font-semibold px-3"
-								>
+									className="h-8 px-3 text-xs font-semibold">
 									Next
 								</Button>
 							</div>

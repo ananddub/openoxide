@@ -4,18 +4,18 @@ const TAG_COLORS = [
 	'hsl(200, 80%, 50%)', // Vibrant Sky Blue
 	'hsl(150, 80%, 45%)', // Vibrant Mint
 	'hsl(300, 75%, 55%)', // Vibrant Purple
-	'hsl(25, 85%, 55%)',  // Vibrant Peach
+	'hsl(25, 85%, 55%)', // Vibrant Peach
 	'hsl(270, 80%, 55%)', // Vibrant Lavender
 	'hsl(340, 80%, 55%)', // Vibrant Rose
 	'hsl(170, 80%, 45%)', // Vibrant Aqua
-	'hsl(50, 85%, 45%)',  // Vibrant Yellow
+	'hsl(50, 85%, 45%)', // Vibrant Yellow
 	'hsl(235, 80%, 60%)', // Vibrant Periwinkle
-	'hsl(10, 80%, 55%)',  // Vibrant Coral
+	'hsl(10, 80%, 55%)', // Vibrant Coral
 	'hsl(180, 80%, 45%)', // Vibrant Turquoise
 	'hsl(320, 80%, 55%)', // Vibrant Orchid
-	'hsl(90, 80%, 45%)',  // Vibrant Lime
+	'hsl(90, 80%, 45%)', // Vibrant Lime
 	'hsl(260, 80%, 60%)', // Vibrant Amethyst
-	'hsl(30, 85%, 55%)',  // Vibrant Orange
+	'hsl(30, 85%, 55%)', // Vibrant Orange
 ] as const;
 
 function hashCode(str: string): number {
@@ -35,10 +35,9 @@ export const ContainerTag = React.memo(({name}: {name: string}) => {
 
 	return (
 		<span
-			className="inline-flex items-center justify-center w-28 sm:w-36 px-2 py-[0.15rem] rounded-xs text-[11px] font-mono font-semibold text-white truncate shrink-0 select-none shadow-xs text-center"
+			className="inline-flex w-28 shrink-0 items-center justify-center truncate rounded-xs px-2 py-[0.15rem] text-center font-mono text-[11px] font-semibold text-white shadow-xs select-none sm:w-36"
 			style={{backgroundColor: color}}
-			title={`Container: ${name}`}
-		>
+			title={`Container: ${name}`}>
 			{name}
 		</span>
 	);

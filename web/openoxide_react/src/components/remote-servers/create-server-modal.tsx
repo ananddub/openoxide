@@ -11,9 +11,18 @@ import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Server, RefreshCw, CheckCircle2, XCircle, Plug} from 'lucide-react';
+import {
+	Server,
+	RefreshCw,
+	CheckCircle2,
+	XCircle,
+	Plug,
+} from 'lucide-react';
 
-import type {RemoteServerResponse, SshKeyResponse} from '#/types/api-helpers';
+import type {
+	RemoteServerResponse,
+	SshKeyResponse,
+} from '#/types/api-helpers';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -38,11 +47,16 @@ export function CreateServerModal({
 	const [description, setDescription] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [testingConn, setTestingConn] = useState(false);
-	const [testResult, setTestResult] = useState<'idle' | 'success' | 'failed'>('idle');
+	const [testResult, setTestResult] = useState<
+		'idle' | 'success' | 'failed'
+	>('idle');
 
 	const createMutation = $api.useMutation('post', '/remote-servers');
 	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
-	const testDirectMutation = $api.useMutation('post', '/servers/test-direct-connection' as any);
+	const testDirectMutation = $api.useMutation(
+		'post',
+		'/servers/test-direct-connection' as any,
+	);
 
 	useEffect(() => {
 		setTestResult('idle');
@@ -51,21 +65,27 @@ export function CreateServerModal({
 			setIpAddress(editingServer.ip_address || '');
 			setPort(String(editingServer.port || 22));
 			setUsername(editingServer.username || 'root');
-			setSshKeyId(editingServer.ssh_key_id ? String(editingServer.ssh_key_id) : '');
+			setSshKeyId(
+				editingServer.ssh_key_id ? String(editingServer.ssh_key_id) : '',
+			);
 			setDescription(editingServer.description || '');
 		} else {
 			setName('');
 			setIpAddress('');
 			setPort('22');
 			setUsername('root');
-			setSshKeyId(sshKeys && sshKeys.length > 0 ? String(sshKeys[0].id) : '');
+			setSshKeyId(
+				sshKeys && sshKeys.length > 0 ? String(sshKeys[0].id) : '',
+			);
 			setDescription('');
 		}
 	}, [editingServer, isOpen, sshKeys]);
 
 	const handleTestConnection = async () => {
 		if (!ipAddress || !username) {
-			toast.error('IP Address and Username are required to test connection');
+			toast.error(
+				'IP Address and Username are required to test connection',
+			);
 			return;
 		}
 		setTestingConn(true);
@@ -128,20 +148,21 @@ export function CreateServerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-2xl md:max-w-3xl w-full bg-card border-border p-6 shadow-2xl rounded-2xl">
-				<DialogHeader className="pb-4 border-b border-border/50">
-					<DialogTitle className="text-base font-bold text-foreground flex items-center gap-2.5">
-						<div className="p-2 rounded-xl bg-primary/10 text-primary">
-							<Server className="w-5 h-5" />
+			<DialogContent className="w-full rounded-2xl border-border bg-card p-6 shadow-2xl sm:max-w-2xl md:max-w-3xl">
+				<DialogHeader className="border-b border-border/50 pb-4">
+					<DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
+						<div className="rounded-xl bg-primary/10 p-2 text-primary">
+							<Server className="h-5 w-5" />
 						</div>
 						{editingServer ? 'Edit Remote Server' : 'Add Remote Server'}
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Configure host IP address, SSH port, and credentials for remote deployment node
+						Configure host IP address, SSH port, and credentials for remote
+						deployment node
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+				<form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-4">
 					<ServerFormFields
 						name={name}
 						setName={setName}
@@ -158,7 +179,7 @@ export function CreateServerModal({
 						sshKeys={sshKeys}
 					/>
 
-					<div className="flex items-center justify-between pt-4 border-t border-border/50 mt-1">
+					<div className="mt-1 flex items-center justify-between border-t border-border/50 pt-4">
 						{/* Clean Icon-Only Test Connection Button */}
 						<Button
 							type="button"
@@ -177,25 +198,31 @@ export function CreateServerModal({
 							}
 							className={`h-9 w-9 rounded-lg transition-all ${
 								testResult === 'success'
-									? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+									? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
 									: testResult === 'failed'
-										? 'border-rose-500/50 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
+										? 'border-rose-500/50 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
 										: 'border-border/80 hover:bg-muted/80'
-							}`}
-						>
+							}`}>
 							{testingConn ? (
-								<RefreshCw className="w-4 h-4 animate-spin text-primary" />
+								<RefreshCw className="h-4 w-4 animate-spin text-primary" />
 							) : testResult === 'success' ? (
-								<CheckCircle2 className="w-4 h-4 text-emerald-500" />
+								<CheckCircle2 className="h-4 w-4 text-emerald-500" />
 							) : testResult === 'failed' ? (
-								<XCircle className="w-4 h-4 text-rose-500" />
+								<XCircle className="h-4 w-4 text-rose-500" />
 							) : (
-								<Plug className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+								<Plug className="h-4 w-4 text-muted-foreground hover:text-foreground" />
 							)}
 						</Button>
 
-						<Button type="submit" disabled={submitting || testingConn} className="h-9 text-xs font-semibold px-6 shadow-md">
-							{submitting ? 'Saving...' : editingServer ? 'Save Changes' : 'Add Server'}
+						<Button
+							type="submit"
+							disabled={submitting || testingConn}
+							className="h-9 px-6 text-xs font-semibold shadow-md">
+							{submitting
+								? 'Saving...'
+								: editingServer
+									? 'Save Changes'
+									: 'Add Server'}
 						</Button>
 					</div>
 				</form>

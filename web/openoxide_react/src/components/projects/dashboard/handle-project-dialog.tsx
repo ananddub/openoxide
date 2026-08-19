@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Loader2 } from 'lucide-react';
-import { Button } from '#/components/ui/button';
+import {Loader2} from 'lucide-react';
+import {Button} from '#/components/ui/button';
 import {
 	Dialog,
 	DialogContent,
@@ -8,15 +8,15 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
-import { Input } from '#/components/ui/input';
-import { Label } from '#/components/ui/label';
-import { Textarea } from '#/components/ui/textarea';
-import { TagSelector } from '#/components/shared/tag-selector';
-import { $api } from '#/api/query';
-import { toast } from 'sonner';
-import { formatApiError } from '#/api/utils';
-import { getTagsFromDescription } from '#/hooks/projects/use-projects-list';
-import type { components } from '#/types/api.d.ts';
+import {Input} from '#/components/ui/input';
+import {Label} from '#/components/ui/label';
+import {Textarea} from '#/components/ui/textarea';
+import {TagSelector} from '#/components/shared/tag-selector';
+import {$api} from '#/api/query';
+import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
+import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
+import type {components} from '#/types/api.d.ts';
 
 type Project = components['schemas']['ProjectResponseDto'];
 
@@ -50,7 +50,9 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 			if (project) {
 				setName(project.name || '');
 				// Extract clean description (excluding hashtag block)
-				const cleanDesc = (project.description || '').replace(/#[\w-]+/g, '').trim();
+				const cleanDesc = (project.description || '')
+					.replace(/#[\w-]+/g, '')
+					.trim();
 				setDescription(cleanDesc);
 
 				// Extract existing tags
@@ -76,14 +78,16 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 		// Format description with hashtags block
 		let finalDescription = description.trim();
 		if (selectedTags.length > 0) {
-			const hashtagsString = selectedTags.map((t) => `#${t}`).join(' ');
-			finalDescription = finalDescription ? `${finalDescription}\n\n${hashtagsString}` : hashtagsString;
+			const hashtagsString = selectedTags.map(t => `#${t}`).join(' ');
+			finalDescription = finalDescription
+				? `${finalDescription}\n\n${hashtagsString}`
+				: hashtagsString;
 		}
 
 		try {
 			if (isEditing && project) {
 				await updateMutation.mutateAsync({
-					params: { path: { id: project.id } },
+					params: {path: {id: project.id}},
 					body: {
 						name: name.trim(),
 						description: finalDescription || undefined,
@@ -110,7 +114,14 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 			onOpenChange(false);
 			onSuccess?.();
 		} catch (err: any) {
-			toast.error(formatApiError(err, isEditing ? 'Failed to update project' : 'Failed to create project'));
+			toast.error(
+				formatApiError(
+					err,
+					isEditing
+						? 'Failed to update project'
+						: 'Failed to create project',
+				),
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -118,12 +129,12 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg bg-card border-border shadow-xl">
+			<DialogContent className="border-border bg-card shadow-xl sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-bold text-foreground">
 						{isEditing ? 'Update project' : 'Add a project'}
 					</DialogTitle>
-					<DialogDescription className="text-muted-foreground text-xs">
+					<DialogDescription className="text-xs text-muted-foreground">
 						The home of something big!
 					</DialogDescription>
 				</DialogHeader>
@@ -131,32 +142,36 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
 					{/* Name */}
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="name" className="text-xs font-semibold text-foreground">
+						<Label
+							htmlFor="name"
+							className="text-xs font-semibold text-foreground">
 							Name
 						</Label>
 						<Input
 							id="name"
 							placeholder="Vandelay Industries"
 							value={name}
-							onChange={(e) => setName(e.target.value)}
+							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="bg-card border-border text-xs h-9"
+							className="h-9 border-border bg-card text-xs"
 						/>
 					</div>
 
 					{/* Description Textarea (Shadcn UI Textarea with Dokploy exact min-h-[96px] styling) */}
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="description" className="text-xs font-semibold text-foreground">
+						<Label
+							htmlFor="description"
+							className="text-xs font-semibold text-foreground">
 							Description
 						</Label>
 						<Textarea
 							id="description"
 							placeholder="Description about your project..."
 							value={description}
-							onChange={(e) => setDescription(e.target.value)}
+							onChange={e => setDescription(e.target.value)}
 							disabled={isSubmitting}
-							className="min-h-[96px] text-xs bg-card border-border placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+							className="min-h-[96px] border-border bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 					</div>
 
@@ -174,12 +189,11 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 					</div>
 
 					{/* Dialog Footer */}
-					<div className="flex items-center justify-end pt-3 border-t border-border/40 mt-4">
+					<div className="mt-4 flex items-center justify-end border-t border-border/40 pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting || !name.trim()}
-							className="text-xs font-bold px-4 h-9 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
-						>
+							className="h-9 cursor-pointer gap-2 bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90">
 							{isSubmitting ? (
 								<>
 									<Loader2 className="size-4 animate-spin" />

@@ -51,7 +51,7 @@ export function cleanLogLine(line: string): string {
 	}
 
 	const tracingMatch = cleaned.match(
-		/.*(?:INFO|ERROR|WARN|DEBUG|TRACE)\s+openoxide::[^\:]+:\s*command\s+output[^\n]*?line=(.*)/i
+		/.*(?:INFO|ERROR|WARN|DEBUG|TRACE)\s+openoxide::[^\:]+:\s*command\s+output[^\n]*?line=(.*)/i,
 	);
 	if (tracingMatch && tracingMatch[1] !== undefined) {
 		cleaned = tracingMatch[1].trim();
@@ -67,7 +67,11 @@ export function cleanLogLine(line: string): string {
 	return cleaned;
 }
 
-export function parseLogEntry(raw: string, index: number, stage?: string): ParsedLogEntry {
+export function parseLogEntry(
+	raw: string,
+	index: number,
+	stage?: string,
+): ParsedLogEntry {
 	let clean = cleanLogLine(raw);
 	let isJson = false;
 	let jsonObject: Record<string, unknown> | undefined;
@@ -86,7 +90,12 @@ export function parseLogEntry(raw: string, index: number, stage?: string): Parse
 				isJson = true;
 
 				// Extract container or service name from JSON fields
-				const jsonContainer = jsonObject.container || jsonObject.service || jsonObject.app || jsonObject.container_name || jsonObject.name;
+				const jsonContainer =
+					jsonObject.container ||
+					jsonObject.service ||
+					jsonObject.app ||
+					jsonObject.container_name ||
+					jsonObject.name;
 				if (typeof jsonContainer === 'string' && jsonContainer.trim()) {
 					containerName = jsonContainer.trim();
 				}
@@ -109,13 +118,23 @@ export function parseLogEntry(raw: string, index: number, stage?: string): Parse
 				}
 
 				// Extract timestamp from JSON fields
-				const jsonTime = jsonObject.time || jsonObject.timestamp || jsonObject.date || jsonObject.datetime;
+				const jsonTime =
+					jsonObject.time ||
+					jsonObject.timestamp ||
+					jsonObject.date ||
+					jsonObject.datetime;
 				if (typeof jsonTime === 'string' && jsonTime.trim()) {
 					timestamp = jsonTime.replace(/^\[|\]$/g, '');
 				}
 
 				// Extract clean log line message text
-				const jsonMessage = jsonObject.line || jsonObject.log || jsonObject.message || jsonObject.msg || jsonObject.text || jsonObject.content;
+				const jsonMessage =
+					jsonObject.line ||
+					jsonObject.log ||
+					jsonObject.message ||
+					jsonObject.msg ||
+					jsonObject.text ||
+					jsonObject.content;
 				if (typeof jsonMessage === 'string' && jsonMessage.trim()) {
 					clean = jsonMessage;
 				}
@@ -138,7 +157,7 @@ export function parseLogEntry(raw: string, index: number, stage?: string): Parse
 
 		// Extract timestamp e.g. [2026-07-29T19:50:00Z] or 2026-07-29T19:50:00.123Z
 		const tsMatch = clean.match(
-			/^(\[\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?\]|\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s*(.*)/i
+			/^(\[\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?\]|\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s*(.*)/i,
 		);
 		if (tsMatch) {
 			timestamp = tsMatch[1].replace(/^\[|\]$/g, '');
@@ -146,7 +165,8 @@ export function parseLogEntry(raw: string, index: number, stage?: string): Parse
 		}
 
 		// Extract container/service name tag e.g. [container:web] or [service:db] or container=app-1
-		const containerMatch = clean.match(/^\[(?:container|service|app):\s*([^\]]+)\]\s*(.*)/i) ||
+		const containerMatch =
+			clean.match(/^\[(?:container|service|app):\s*([^\]]+)\]\s*(.*)/i) ||
 			clean.match(/^(?:container|service)=([a-zA-Z0-9_\-]+)\s*(.*)/i);
 		if (containerMatch) {
 			containerName = containerMatch[1];

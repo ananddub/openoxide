@@ -8,26 +8,40 @@ export type LiveResult<T> = {
 };
 
 const safeStringify = (val: unknown) =>
-	JSON.stringify(val, (_key, value) => (typeof value === 'bigint' ? value.toString() : value));
+	JSON.stringify(val, (_key, value) =>
+		typeof value === 'bigint' ? value.toString() : value,
+	);
 
 export function useLive<TArgs extends readonly unknown[], TData>(
 	createEndpoint: (...args: TArgs) => LiveEndpoint<TArgs, TData>,
 	...args: TArgs
 ): LiveResult<TData> {
 	const argsKey = safeStringify(args);
-	const endpoint = useMemo(() => createEndpoint(...args), [createEndpoint, argsKey]);
-	const [result, setResult] = useState<LiveResult<TData>>({data: undefined, loading: true, error: undefined});
+	const endpoint = useMemo(
+		() => createEndpoint(...args),
+		[createEndpoint, argsKey],
+	);
+	const [result, setResult] = useState<LiveResult<TData>>({
+		data: undefined,
+		loading: true,
+		error: undefined,
+	});
 
 	useEffect(() => {
 		setResult({data: undefined, loading: true, error: undefined});
 		try {
 			return subscribeLive(
 				endpoint,
-				(data) => setResult({data, loading: false, error: undefined}),
-				(error) => setResult((current) => ({...current, loading: false, error})),
+				data => setResult({data, loading: false, error: undefined}),
+				error =>
+					setResult(current => ({...current, loading: false, error})),
 			);
 		} catch (error) {
-			setResult({data: undefined, loading: false, error: error instanceof Error ? error : new Error(String(error))});
+			setResult({
+				data: undefined,
+				loading: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+			});
 		}
 	}, [endpoint]);
 
@@ -37,6 +51,9 @@ export function useLive<TArgs extends readonly unknown[], TData>(
 export function createLiveHook<TArgs extends readonly unknown[], TData>(
 	endpoint: Omit<LiveEndpoint<TArgs, TData>, 'args'>,
 ) {
-	const createEndpoint = (...args: TArgs): LiveEndpoint<TArgs, TData> => ({...endpoint, args});
+	const createEndpoint = (...args: TArgs): LiveEndpoint<TArgs, TData> => ({
+		...endpoint,
+		args,
+	});
 	return (...args: TArgs) => useLive(createEndpoint, ...args);
 }

@@ -7,9 +7,17 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {toast} from 'sonner';
-import {Copy, Check, Eye, EyeOff, Key, Terminal, Download} from 'lucide-react';
+import {
+	Copy,
+	Check,
+	Eye,
+	EyeOff,
+	Key,
+	Terminal,
+	Download,
+} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
 import {downloadKeyFile} from '#/utils/ssh-key-utils';
 
@@ -30,8 +38,10 @@ export function ViewKeyModal({
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	// Read full SSH Key details directly from Zustand RAM Store
-	const storeSshKeys = useAppStore((state) => state.sshKeys || []);
-	const fullKeyDetails = storeSshKeys.find((k: any) => String(k.id) === String(sshKey?.id));
+	const storeSshKeys = useAppStore(state => state.sshKeys || []);
+	const fullKeyDetails = storeSshKeys.find(
+		(k: any) => String(k.id) === String(sshKey?.id),
+	);
 	const activeKey = fullKeyDetails || sshKey;
 
 	const handleCopyPub = () => {
@@ -75,23 +85,26 @@ export function ViewKeyModal({
 
 		return (
 			<span>
-				<span className="text-amber-400 font-bold">{keyType}</span>{' '}
+				<span className="font-bold text-amber-400">{keyType}</span>{' '}
 				<span className="text-emerald-300">{keyBody}</span>
-				{keyComment && <span className="text-sky-400 font-semibold"> {keyComment}</span>}
+				{keyComment && (
+					<span className="font-semibold text-sky-400"> {keyComment}</span>
+				)}
 			</span>
 		);
 	};
 
 	if (!activeKey) return null;
 
-	const formattedFileName = activeKey.name.trim().toLowerCase().replace(/\s+/g, '_') || 'id_rsa';
+	const formattedFileName =
+		activeKey.name.trim().toLowerCase().replace(/\s+/g, '_') || 'id_rsa';
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto bg-card border-border p-6 shadow-xl rounded-xl min-w-0">
-				<DialogHeader className="pb-3 border-b border-border/50">
-					<DialogTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-						<Key className="w-4 h-4 text-primary shrink-0" />
+			<DialogContent className="max-h-[90vh] w-full min-w-0 overflow-y-auto rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-lg">
+				<DialogHeader className="border-b border-border/50 pb-3">
+					<DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
+						<Key className="h-4 w-4 shrink-0 text-primary" />
 						<span>{activeKey.name}</span>
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
@@ -103,13 +116,23 @@ export function ViewKeyModal({
 					{/* Public Key Block */}
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between">
-							<label className="text-xs font-semibold text-foreground">Public Key</label>
-							<Button variant="ghost" size="sm" onClick={handleCopyPub} className="h-7 text-xs gap-1.5 px-2">
-								{copiedPublic ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+							<label className="text-xs font-semibold text-foreground">
+								Public Key
+							</label>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleCopyPub}
+								className="h-7 gap-1.5 px-2 text-xs">
+								{copiedPublic ? (
+									<Check className="h-3.5 w-3.5 text-emerald-500" />
+								) : (
+									<Copy className="h-3.5 w-3.5" />
+								)}
 								{copiedPublic ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<div className="max-h-28 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-zinc-100">
+						<div className="max-h-28 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all text-zinc-100">
 							{renderHighlightedPublicKey(activeKey.public_key || '')}
 						</div>
 					</div>
@@ -117,20 +140,33 @@ export function ViewKeyModal({
 					{/* Private Key Block */}
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between">
-							<label className="text-xs font-semibold text-foreground">Private Key</label>
+							<label className="text-xs font-semibold text-foreground">
+								Private Key
+							</label>
 							<div className="flex items-center gap-1.5">
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={() => setShowPrivate(!showPrivate)}
-									className="h-7 text-xs gap-1.5 px-2"
-								>
-									{showPrivate ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+									className="h-7 gap-1.5 px-2 text-xs">
+									{showPrivate ? (
+										<EyeOff className="h-3.5 w-3.5" />
+									) : (
+										<Eye className="h-3.5 w-3.5" />
+									)}
 									{showPrivate ? 'Hide' : 'Reveal'}
 								</Button>
 								{showPrivate && (
-									<Button variant="ghost" size="sm" onClick={handleCopyPriv} className="h-7 text-xs gap-1.5 px-2">
-										{copiedPrivate ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleCopyPriv}
+										className="h-7 gap-1.5 px-2 text-xs">
+										{copiedPrivate ? (
+											<Check className="h-3.5 w-3.5 text-emerald-500" />
+										) : (
+											<Copy className="h-3.5 w-3.5" />
+										)}
 										{copiedPrivate ? 'Copied' : 'Copy'}
 									</Button>
 								)}
@@ -138,11 +174,12 @@ export function ViewKeyModal({
 						</div>
 
 						{showPrivate ? (
-							<div className="max-h-36 text-xs font-mono bg-zinc-950/90 border border-zinc-800 rounded-md p-3 break-all overflow-y-auto leading-relaxed text-emerald-400 whitespace-pre-wrap">
-								{activeKey.private_key || 'No private key stored for this SSH key.'}
+							<div className="max-h-36 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-400">
+								{activeKey.private_key ||
+									'No private key stored for this SSH key.'}
 							</div>
 						) : (
-							<div className="h-10 bg-zinc-950/60 border border-zinc-800 rounded-md flex items-center px-3 text-xs text-zinc-500 italic font-mono">
+							<div className="flex h-10 items-center rounded-md border border-zinc-800 bg-zinc-950/60 px-3 font-mono text-xs text-zinc-500 italic">
 								•••••••••••••••••••••••• (Hidden for security)
 							</div>
 						)}
@@ -150,34 +187,67 @@ export function ViewKeyModal({
 
 					{/* Server Authorization Command Block (Highlighted Shell Code) */}
 					{setupCommand && (
-						<div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
+						<div className="flex flex-col gap-1.5 border-t border-border/40 pt-2">
 							<div className="flex items-center justify-between">
-								<label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-									<Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
+								<label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+									<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
 									<span>Authorize Key on Remote Server</span>
 								</label>
-								<Button variant="outline" size="sm" onClick={handleCopyCommand} className="h-7 text-xs font-medium gap-1.5 px-2.5">
-									{copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleCopyCommand}
+									className="h-7 gap-1.5 px-2.5 text-xs font-medium">
+									{copiedCmd ? (
+										<Check className="h-3.5 w-3.5 text-emerald-500" />
+									) : (
+										<Copy className="h-3.5 w-3.5" />
+									)}
 									{copiedCmd ? 'Copied' : 'Copy Command'}
 								</Button>
 							</div>
-							<div className="p-3 bg-zinc-950/90 border border-zinc-800 rounded-md text-[11px] font-mono break-all select-all leading-relaxed max-h-24 overflow-y-auto text-zinc-200">
-								<span className="text-emerald-400 font-bold">mkdir</span> <span className="text-amber-400">-p</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">echo</span> <span className="text-sky-300">"{activeKey.public_key?.trim()}"</span> <span className="text-amber-400">&gt;&gt;</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">700</span> <span className="text-cyan-300">~/.ssh</span> <span className="text-zinc-500">&amp;&amp;</span> <span className="text-emerald-400 font-bold">chmod</span> <span className="text-amber-400">600</span> <span className="text-cyan-300">~/.ssh/authorized_keys</span>
+							<div className="max-h-24 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
+								<span className="font-bold text-emerald-400">mkdir</span>{' '}
+								<span className="text-amber-400">-p</span>{' '}
+								<span className="text-cyan-300">~/.ssh</span>{' '}
+								<span className="text-zinc-500">&amp;&amp;</span>{' '}
+								<span className="font-bold text-emerald-400">echo</span>{' '}
+								<span className="text-sky-300">
+									"{activeKey.public_key?.trim()}"
+								</span>{' '}
+								<span className="text-amber-400">&gt;&gt;</span>{' '}
+								<span className="text-cyan-300">
+									~/.ssh/authorized_keys
+								</span>{' '}
+								<span className="text-zinc-500">&amp;&amp;</span>{' '}
+								<span className="font-bold text-emerald-400">chmod</span>{' '}
+								<span className="text-amber-400">700</span>{' '}
+								<span className="text-cyan-300">~/.ssh</span>{' '}
+								<span className="text-zinc-500">&amp;&amp;</span>{' '}
+								<span className="font-bold text-emerald-400">chmod</span>{' '}
+								<span className="text-amber-400">600</span>{' '}
+								<span className="text-cyan-300">
+									~/.ssh/authorized_keys
+								</span>
 							</div>
 						</div>
 					)}
 
 					{/* Bottom Footer Download Row */}
-					<div className="flex items-center gap-2 pt-3 border-t border-border/50">
+					<div className="flex items-center gap-2 border-t border-border/50 pt-3">
 						{activeKey.public_key && (
 							<Button
 								type="button"
 								variant="outline"
 								size="sm"
-								onClick={() => downloadKeyFile(`${formattedFileName}.pub`, activeKey.public_key || '')}
-								className="h-8 text-xs font-medium gap-1.5 border-border"
-							>
-								<Download className="w-3.5 h-3.5" />
+								onClick={() =>
+									downloadKeyFile(
+										`${formattedFileName}.pub`,
+										activeKey.public_key || '',
+									)
+								}
+								className="h-8 gap-1.5 border-border text-xs font-medium">
+								<Download className="h-3.5 w-3.5" />
 								Download Pub
 							</Button>
 						)}
@@ -186,10 +256,14 @@ export function ViewKeyModal({
 								type="button"
 								variant="outline"
 								size="sm"
-								onClick={() => downloadKeyFile(`${formattedFileName}.pem`, activeKey.private_key || '')}
-								className="h-8 text-xs font-medium gap-1.5 border-border"
-							>
-								<Download className="w-3.5 h-3.5 text-amber-500" />
+								onClick={() =>
+									downloadKeyFile(
+										`${formattedFileName}.pem`,
+										activeKey.private_key || '',
+									)
+								}
+								className="h-8 gap-1.5 border-border text-xs font-medium">
+								<Download className="h-3.5 w-3.5 text-amber-500" />
 								Download Private
 							</Button>
 						)}

@@ -23,10 +23,13 @@ export function DeleteServerModal({
 	onClose,
 	onSuccess,
 }: DeleteServerModalProps) {
-	const {deleting, handleDelete} = useDeleteServer(Number(server?.id || 0), () => {
-		onSuccess();
-		onClose();
-	});
+	const {deleting, handleDelete} = useDeleteServer(
+		Number(server?.id || 0),
+		() => {
+			onSuccess();
+			onClose();
+		},
+	);
 
 	if (!server) return null;
 
@@ -35,18 +38,24 @@ export function DeleteServerModal({
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-destructive">
-						<AlertTriangle className="w-5 h-5" />
+						<AlertTriangle className="h-5 w-5" />
 						Delete Remote Server
 					</DialogTitle>
 					<DialogDescription>
-						Are you sure you want to delete the remote server <strong className="text-foreground">{server.name}</strong> ({server.ip_address})?
+						Are you sure you want to delete the remote server{' '}
+						<strong className="text-foreground">{server.name}</strong> (
+						{server.ip_address})?
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-3 py-2">
-					<div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-muted-foreground space-y-1">
+					<div className="space-y-1 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-muted-foreground">
 						<p className="font-semibold text-destructive">Warning</p>
-						<p>Any applications, compose stacks, or databases deployed on this remote server will lose automated management until reassigned.</p>
+						<p>
+							Any applications, compose stacks, or databases deployed on
+							this remote server will lose automated management until
+							reassigned.
+						</p>
 					</div>
 
 					<div className="flex justify-end pt-2">
@@ -55,16 +64,15 @@ export function DeleteServerModal({
 							variant="destructive"
 							onClick={handleDelete}
 							disabled={deleting}
-							className="w-full sm:w-auto h-9 px-6 font-bold text-xs gap-1.5"
-						>
+							className="h-9 w-full gap-1.5 px-6 text-xs font-bold sm:w-auto">
 							{deleting ? (
 								<>
-									<RefreshCw className="w-3.5 h-3.5 animate-spin" />
+									<RefreshCw className="h-3.5 w-3.5 animate-spin" />
 									Deleting...
 								</>
 							) : (
 								<>
-									<Trash2 className="w-3.5 h-3.5" />
+									<Trash2 className="h-3.5 w-3.5" />
 									Delete Server
 								</>
 							)}

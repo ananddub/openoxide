@@ -32,10 +32,14 @@ export function useLogViewer({
 	const [isAutoScroll, setIsAutoScroll] = useState(isLive);
 	const [isWrapLines, setIsWrapLines] = useState(true);
 	const [isCompact, setIsCompact] = useState(false);
-	const [selectedDetailEntry, setSelectedDetailEntry] = useState<ParsedLogEntry | null>(null);
+	const [selectedDetailEntry, setSelectedDetailEntry] =
+		useState<ParsedLogEntry | null>(null);
 
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const safeLogs = useMemo(() => (Array.isArray(logs) ? logs : []), [logs]);
+	const safeLogs = useMemo(
+		() => (Array.isArray(logs) ? logs : []),
+		[logs],
+	);
 
 	// Parse raw logs into rich entries
 	const parsedEntries = useMemo(() => {
@@ -57,7 +61,7 @@ export function useLogViewer({
 
 	// Filter entries based on search query, level, and stream
 	const filteredEntries = useMemo(() => {
-		return parsedEntries.filter((entry) => {
+		return parsedEntries.filter(entry => {
 			if (showFilter && searchQuery.trim()) {
 				const query = searchQuery.toLowerCase();
 				const matchesText =
@@ -77,7 +81,13 @@ export function useLogViewer({
 
 			return true;
 		});
-	}, [parsedEntries, searchQuery, selectedLevel, selectedStream, showFilter]);
+	}, [
+		parsedEntries,
+		searchQuery,
+		selectedLevel,
+		selectedStream,
+		showFilter,
+	]);
 
 	// Auto-scroll effect
 	useEffect(() => {

@@ -11,10 +11,23 @@ interface DatabaseAdvancedCustomCommandProps {
 	onUpdated: () => void;
 }
 
-export function DatabaseAdvancedCustomCommand({database, onUpdated}: DatabaseAdvancedCustomCommandProps) {
-	const kind = (database?.kind || database?.database_kind || 'postgres').toLowerCase();
+export function DatabaseAdvancedCustomCommand({
+	database,
+	onUpdated,
+}: DatabaseAdvancedCustomCommandProps) {
+	const kind = (
+		database?.kind ||
+		database?.database_kind ||
+		'postgres'
+	).toLowerCase();
 
-	let endpoint: '/postgres/{id}' | '/mysql/{id}' | '/mariadb/{id}' | '/mongo/{id}' | '/redis/{id}' | '/libsql/{id}' = '/postgres/{id}';
+	let endpoint:
+		| '/postgres/{id}'
+		| '/mysql/{id}'
+		| '/mariadb/{id}'
+		| '/mongo/{id}'
+		| '/redis/{id}'
+		| '/libsql/{id}' = '/postgres/{id}';
 	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
 	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
 	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
@@ -23,9 +36,13 @@ export function DatabaseAdvancedCustomCommand({database, onUpdated}: DatabaseAdv
 
 	const patchDatabase = $api.useMutation('patch', endpoint as any);
 
-	const [dockerImage, setDockerImage] = useState(database?.docker_image || '');
+	const [dockerImage, setDockerImage] = useState(
+		database?.docker_image || '',
+	);
 	const [command, setCommand] = useState(database?.command || '');
-	const [argsList, setArgsList] = useState<string[]>(Array.isArray(database?.args) ? database.args : []);
+	const [argsList, setArgsList] = useState<string[]>(
+		Array.isArray(database?.args) ? database.args : [],
+	);
 	const [envVar, setEnvVar] = useState(database?.env_var || '');
 	const [saving, setSaving] = useState(false);
 
@@ -75,39 +92,69 @@ export function DatabaseAdvancedCustomCommand({database, onUpdated}: DatabaseAdv
 	};
 
 	return (
-		<section className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
+		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
 			<div>
-				<h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
-					<Terminal className="size-4 text-primary" /> Docker Image, Command & Arguments
+				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
+					<Terminal className="size-4 text-primary" /> Docker Image,
+					Command & Arguments
 				</h3>
-				<p className="text-xs text-muted-foreground mt-0.5">
-					Configure custom Docker image tags, startup command overrides, and extra engine arguments (e.g. <code className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[11px]">-c max_connections=200</code>).
+				<p className="mt-0.5 text-xs text-muted-foreground">
+					Configure custom Docker image tags, startup command overrides,
+					and extra engine arguments (e.g.{' '}
+					<code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px]">
+						-c max_connections=200
+					</code>
+					).
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/40 pt-4">
+			<div className="grid grid-cols-1 gap-4 border-t border-border/40 pt-4 md:grid-cols-2">
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Docker Image Tag</label>
-					<Input placeholder="e.g. postgres:16-alpine" value={dockerImage} onChange={e => setDockerImage(e.target.value)} className="h-9 text-xs font-mono" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Docker Image Tag
+					</label>
+					<Input
+						placeholder="e.g. postgres:16-alpine"
+						value={dockerImage}
+						onChange={e => setDockerImage(e.target.value)}
+						className="h-9 font-mono text-xs"
+					/>
 				</div>
 
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Entrypoint Command</label>
-					<Input placeholder="e.g. docker-entrypoint.sh" value={command} onChange={e => setCommand(e.target.value)} className="h-9 text-xs font-mono" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Entrypoint Command
+					</label>
+					<Input
+						placeholder="e.g. docker-entrypoint.sh"
+						value={command}
+						onChange={e => setCommand(e.target.value)}
+						className="h-9 font-mono text-xs"
+					/>
 				</div>
 			</div>
 
 			{/* Extra Command Arguments List */}
 			<div className="flex flex-col gap-2.5">
 				<div className="flex items-center justify-between">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Command Arguments (Args)</label>
-					<Button type="button" variant="outline" size="sm" onClick={handleAddArg} className="h-7 px-2.5 text-[11px] flex items-center gap-1">
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Command Arguments (Args)
+					</label>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={handleAddArg}
+						className="flex h-7 items-center gap-1 px-2.5 text-[11px]">
 						<Plus className="size-3" /> Add Argument
 					</Button>
 				</div>
 
 				{argsList.length === 0 ? (
-					<p className="text-xs text-muted-foreground italic bg-muted/20 p-3 rounded-lg border border-border/40">No custom arguments configured. Default container parameters will be used.</p>
+					<p className="rounded-lg border border-border/40 bg-muted/20 p-3 text-xs text-muted-foreground italic">
+						No custom arguments configured. Default container parameters
+						will be used.
+					</p>
 				) : (
 					<div className="flex flex-col gap-2">
 						{argsList.map((arg, idx) => (
@@ -116,9 +163,14 @@ export function DatabaseAdvancedCustomCommand({database, onUpdated}: DatabaseAdv
 									placeholder="e.g. -c shared_buffers=256MB"
 									value={arg}
 									onChange={e => handleUpdateArg(idx, e.target.value)}
-									className="h-8 text-xs font-mono"
+									className="h-8 font-mono text-xs"
 								/>
-								<Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveArg(idx)} className="size-8 text-destructive hover:bg-destructive/10">
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									onClick={() => handleRemoveArg(idx)}
+									className="size-8 text-destructive hover:bg-destructive/10">
 									<Trash2 className="size-3.5" />
 								</Button>
 							</div>
@@ -128,8 +180,12 @@ export function DatabaseAdvancedCustomCommand({database, onUpdated}: DatabaseAdv
 			</div>
 
 			<div className="flex justify-end border-t border-border/40 pt-4">
-				<Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
-					<Save className="size-3.5" /> {saving ? 'Saving...' : 'Save Custom Command'}
+				<Button
+					onClick={handleSave}
+					disabled={saving}
+					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
+					<Save className="size-3.5" />{' '}
+					{saving ? 'Saving...' : 'Save Custom Command'}
 				</Button>
 			</div>
 		</section>

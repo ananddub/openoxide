@@ -1,14 +1,15 @@
 if (typeof BigInt !== 'undefined' && !(BigInt.prototype as any).toJSON) {
 	(BigInt.prototype as any).toJSON = function () {
 		return typeof this === 'bigint'
-			? this <= BigInt(Number.MAX_SAFE_INTEGER) && this >= BigInt(Number.MIN_SAFE_INTEGER)
+			? this <= BigInt(Number.MAX_SAFE_INTEGER) &&
+				this >= BigInt(Number.MIN_SAFE_INTEGER)
 				? Number(this)
 				: this.toString()
 			: this;
 	};
 }
 
-import { StrictMode } from 'react';
+import {StrictMode} from 'react';
 import ReactDOM from 'react-dom/client';
 import {routeTree} from './routeTree.gen';
 import {NotFound} from './components/not-found';
@@ -34,6 +35,6 @@ if (rootElement && !rootElement.innerHTML) {
 	root.render(
 		<StrictMode>
 			<RouterProvider router={router} />
-		</StrictMode>
+		</StrictMode>,
 	);
 }

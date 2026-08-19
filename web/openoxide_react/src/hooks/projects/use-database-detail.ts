@@ -14,15 +14,17 @@ import {
 	useBackupListVolumeBackups,
 } from 'virtual:openoxide-live';
 
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
-	const [actionLoading, setActionLoading] = useState<'deploy' | 'reload' | 'start' | 'stop' | null>(null);
+	const [actionLoading, setActionLoading] = useState<
+		'deploy' | 'reload' | 'start' | 'stop' | null
+	>(null);
 
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
-	const databases = useAppStore((state) => state.databases);
-	const overviewServices = useAppStore((state) => state.overviewServices);
+	const databases = useAppStore(state => state.databases);
+	const overviewServices = useAppStore(state => state.overviewServices);
 
 	const storeDb = useMemo(() => {
 		const targetK = (targetKind || '').toLowerCase();
@@ -40,12 +42,20 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		const service = overviewServices.find((s: any) => {
 			if (String(s.id) !== String(dbId)) return false;
 			if (!targetK) return true;
-			const sk = String(s.kind || s.db_kind || s.dbKind || s.type || '').toLowerCase();
+			const sk = String(
+				s.kind || s.db_kind || s.dbKind || s.type || '',
+			).toLowerCase();
 			return sk.includes(targetK) || targetK.includes(sk);
 		});
 
 		if (service) {
-			const resolvedKind = service.db_kind || service.dbKind || (service.kind && service.kind !== 'database' ? service.kind : undefined) || targetKind;
+			const resolvedKind =
+				service.db_kind ||
+				service.dbKind ||
+				(service.kind && service.kind !== 'database'
+					? service.kind
+					: undefined) ||
+				targetKind;
 			return {
 				id: service.id,
 				name: service.name,
@@ -61,8 +71,10 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		// 3. Do not fall back to an ID match of a different kind if targetKind is specified
 		if (targetK) return undefined;
 
-		return databases.find((d) => String(d.id) === String(dbId)) ||
-			overviewServices.find((s) => String(s.id) === String(dbId));
+		return (
+			databases.find(d => String(d.id) === String(dbId)) ||
+			overviewServices.find(s => String(s.id) === String(dbId))
+		);
 	}, [databases, overviewServices, dbId, targetKind]);
 
 	const activeKind = (
@@ -78,7 +90,14 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const isMariadb = activeKind.includes('mariadb');
 	const isMongo = activeKind.includes('mongo');
 	const isLibsql = activeKind.includes('libsql');
-	const isPostgres = activeKind.includes('postgres') || (!isRedis && !isMysql && !isMariadb && !isMongo && !isLibsql && activeKind === 'postgres');
+	const isPostgres =
+		activeKind.includes('postgres') ||
+		(!isRedis &&
+			!isMysql &&
+			!isMariadb &&
+			!isMongo &&
+			!isLibsql &&
+			activeKind === 'postgres');
 
 	// Target query selection with 0n ID guard for inactive queries to save CPU & network
 	const postgresQ = usePostgresGet(isPostgres ? BigInt(dbId) : 0n);
@@ -89,26 +108,40 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const libsqlQ = useLibsqlGet(isLibsql ? BigInt(dbId) : 0n);
 
 	// Select active query result matching targetKind strictly
-	const liveDb = (isRedis ? redisQ.data : null) ||
+	const liveDb =
+		(isRedis ? redisQ.data : null) ||
 		(isPostgres ? postgresQ.data : null) ||
 		(isMysql ? mysqlQ.data : null) ||
 		(isMariadb ? mariadbQ.data : null) ||
 		(isMongo ? mongoQ.data : null) ||
 		(isLibsql ? libsqlQ.data : null);
 
-	const detectedKind = targetKind || (
-		redisQ.data ? 'redis'
-		: postgresQ.data ? 'postgres'
-		: mysqlQ.data ? 'mysql'
-		: mariadbQ.data ? 'mariadb'
-		: mongoQ.data ? 'mongo'
-		: libsqlQ.data ? 'libsql'
-		: null
-	);
+	const detectedKind =
+		targetKind ||
+		(redisQ.data
+			? 'redis'
+			: postgresQ.data
+				? 'postgres'
+				: mysqlQ.data
+					? 'mysql'
+					: mariadbQ.data
+						? 'mariadb'
+						: mongoQ.data
+							? 'mongo'
+							: libsqlQ.data
+								? 'libsql'
+								: null);
 
-	const currentKind = (storeDb?.kind || detectedKind || targetKind || 'postgres').toLowerCase();
+	const currentKind = (
+		storeDb?.kind ||
+		detectedKind ||
+		targetKind ||
+		'postgres'
+	).toLowerCase();
 
-	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+	const [localStatusOverride, setLocalStatusOverride] = useState<
+		string | null
+	>(null);
 
 	// Auto-clear localStatusOverride when live/store status updates or safety timeout occurs
 	useEffect(() => {
@@ -124,10 +157,23 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			const overrideUpper = localStatusOverride.toUpperCase();
 			if (
 				fetchedStatus === overrideUpper ||
-				(overrideUpper === 'DEPLOYING' && ['BUILDING', 'QUEUED', 'PREPARING', 'DEPLOYING', 'RUNNING', 'HEALTHY', 'SUCCESS', 'DONE'].includes(fetchedStatus)) ||
-				(overrideUpper === 'STARTING' && ['RUNNING', 'HEALTHY', 'STARTING'].includes(fetchedStatus)) ||
-				(overrideUpper === 'STOPPING' && ['STOPPED', 'IDLE', 'STOPPING'].includes(fetchedStatus)) ||
-				(overrideUpper === 'CANCELLING' && ['CANCELLED', 'STOPPED', 'IDLE'].includes(fetchedStatus))
+				(overrideUpper === 'DEPLOYING' &&
+					[
+						'BUILDING',
+						'QUEUED',
+						'PREPARING',
+						'DEPLOYING',
+						'RUNNING',
+						'HEALTHY',
+						'SUCCESS',
+						'DONE',
+					].includes(fetchedStatus)) ||
+				(overrideUpper === 'STARTING' &&
+					['RUNNING', 'HEALTHY', 'STARTING'].includes(fetchedStatus)) ||
+				(overrideUpper === 'STOPPING' &&
+					['STOPPED', 'IDLE', 'STOPPING'].includes(fetchedStatus)) ||
+				(overrideUpper === 'CANCELLING' &&
+					['CANCELLED', 'STOPPED', 'IDLE'].includes(fetchedStatus))
 			) {
 				setLocalStatusOverride(null);
 			}
@@ -144,10 +190,17 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const raw = liveDb || storeDb;
 	const database = useMemo(() => {
 		if (!raw) return null;
-		const liveStatus = (liveDb as any)?.status || (liveDb as any)?.app_status;
-		const storeStatus = (storeDb as any)?.status || (storeDb as any)?.app_status;
+		const liveStatus =
+			(liveDb as any)?.status || (liveDb as any)?.app_status;
+		const storeStatus =
+			(storeDb as any)?.status || (storeDb as any)?.app_status;
 		const rawStatus = (raw as any).status || (raw as any).app_status;
-		const effectiveStatus = localStatusOverride || liveStatus || storeStatus || rawStatus || 'STOPPED';
+		const effectiveStatus =
+			localStatusOverride ||
+			liveStatus ||
+			storeStatus ||
+			rawStatus ||
+			'STOPPED';
 		return {
 			...raw,
 			status: effectiveStatus,
@@ -155,26 +208,50 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		};
 	}, [raw, liveDb, storeDb, localStatusOverride]);
 
-	const statusUpper = (database?.status || database?.app_status || (database as any)?.application_status || '').toUpperCase();
-	const isDeployed = ['RUNNING', 'DONE', 'HEALTHY', 'SUCCESS', 'COMPLETED', 'UP', 'ACTIVE', 'OK'].includes(statusUpper);
+	const statusUpper = (
+		database?.status ||
+		database?.app_status ||
+		(database as any)?.application_status ||
+		''
+	).toUpperCase();
+	const isDeployed = [
+		'RUNNING',
+		'DONE',
+		'HEALTHY',
+		'SUCCESS',
+		'COMPLETED',
+		'UP',
+		'ACTIVE',
+		'OK',
+	].includes(statusUpper);
 
 	// Schedules
-	const {data: rawSchedules, loading: isLoadingSchedules} = useScheduleListByDatabase(BigInt(dbId));
-	const schedules = useMemo(() => (Array.isArray(rawSchedules) ? rawSchedules : []), [rawSchedules]);
+	const {data: rawSchedules, loading: isLoadingSchedules} =
+		useScheduleListByDatabase(BigInt(dbId));
+	const schedules = useMemo(
+		() => (Array.isArray(rawSchedules) ? rawSchedules : []),
+		[rawSchedules],
+	);
 
 	// Backups — filter locally by database_id
-	const {data: rawBackupsAll, loading: isLoadingBackups} = useBackupListVolumeBackups();
+	const {data: rawBackupsAll, loading: isLoadingBackups} =
+		useBackupListVolumeBackups();
 	const backups = useMemo(() => {
 		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
 		return all.filter((b: any) => b.database_id === dbId);
 	}, [rawBackupsAll, dbId]);
 
 	// Live Container Monitoring Stream
-	const monitoring = useContainerMonitoring(dbId, currentKind || 'postgres');
+	const monitoring = useContainerMonitoring(
+		dbId,
+		currentKind || 'postgres',
+	);
 
-	const allDeployments = useAppStore((state) => state.deployments || []);
+	const allDeployments = useAppStore(state => state.deployments || []);
 	const dbDeployments = useMemo(() => {
-		return allDeployments.filter((d: any) => String(d.database_id) === String(dbId));
+		return allDeployments.filter(
+			(d: any) => String(d.database_id) === String(dbId),
+		);
 	}, [allDeployments, dbId]);
 
 	const refetchAll = () => {
@@ -187,24 +264,45 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		monitoring.triggerRefresh();
 	};
 
-	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel') => {
+	const handleAction = async (
+		action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel',
+	) => {
 		setActionLoading(action as any);
-		const currentSt = (database?.app_status || database?.status || '').toUpperCase();
-		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
-		const intermediateStatus = (action === 'stop' || action === 'cancel')
-			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
-			: action === 'start' ? 'STARTING'
-			: 'DEPLOYING';
+		const currentSt = (
+			database?.app_status ||
+			database?.status ||
+			''
+		).toUpperCase();
+		const isCurrentlyBuilding = [
+			'QUEUED',
+			'BUILDING',
+			'STARTING',
+			'PREPARING',
+			'PENDING',
+			'DEPLOYING',
+		].includes(currentSt);
+		const intermediateStatus =
+			action === 'stop' || action === 'cancel'
+				? isCurrentlyBuilding
+					? 'CANCELLING'
+					: 'STOPPING'
+				: action === 'start'
+					? 'STARTING'
+					: 'DEPLOYING';
 
 		const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(dbId, intermediateStatus, kind);
+		(useAppStore.getState() as any).updateServiceStatus?.(
+			dbId,
+			intermediateStatus,
+			kind,
+		);
 
 		try {
 			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 			const endpoint = `/${kind}/{id}/${action}` as any;
 			const res = await client.POST(endpoint, {
-				params: { path: { id: dbId } },
+				params: {path: {id: dbId}},
 			} as any);
 
 			const resObj = res as Record<string, unknown>;
@@ -229,7 +327,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 			const endpoint = `/${kind}/{id}` as any;
 			const res = await client.PATCH(endpoint, {
-				params: { path: { id: dbId } },
+				params: {path: {id: dbId}},
 				body: patchData,
 			} as any);
 

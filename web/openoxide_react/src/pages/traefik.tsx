@@ -2,7 +2,7 @@ import {useState, useEffect, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 
 import {TraefikHeader} from '#/components/traefik/traefik-header';
@@ -22,17 +22,21 @@ export const Route = createFileRoute('/_app/traefik')({
 });
 
 function TraefikPage() {
-	const [selectedServerId, setSelectedServerId] = useState<string>('local');
-	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+	const [selectedServerId, setSelectedServerId] =
+		useState<string>('local');
+	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(
+		null,
+	);
 	const [originalContent, setOriginalContent] = useState<string>('');
 	const [editedContent, setEditedContent] = useState<string>('');
 	const [isDiffOpen, setIsDiffOpen] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const parsedServerId = selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
+	const parsedServerId =
+		selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
 
 	// Read Remote Servers list from Zustand RAM store
-	const rawServers = useAppStore((state) => state.servers);
+	const rawServers = useAppStore(state => state.servers);
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {
@@ -69,7 +73,9 @@ function TraefikPage() {
 				size: Number(f.size || 0),
 				is_readonly: Boolean(f.is_readonly),
 				modified_at: Number(f.modified_at || 0),
-				children: Array.isArray(f.children) ? f.children.map(parseNode) : [],
+				children: Array.isArray(f.children)
+					? f.children.map(parseNode)
+					: [],
 			};
 		};
 		const list = Array.isArray(rawFileTree) ? rawFileTree : [];
@@ -120,7 +126,7 @@ function TraefikPage() {
 		},
 		{
 			enabled: Boolean(selectedFilePath),
-		}
+		},
 	);
 
 	useEffect(() => {
@@ -158,14 +164,17 @@ function TraefikPage() {
 	}, [rawHealth]);
 
 	const activeFileObj = useMemo(() => {
-		return files.find((f) => f.relative_path === selectedFilePath);
+		return files.find(f => f.relative_path === selectedFilePath);
 	}, [files, selectedFilePath]);
 
 	const isReadOnly = Boolean(activeFileObj?.is_readonly);
 	const isDirty = originalContent !== editedContent;
 
 	// Mutation for Writing File Content
-	const writeFileMutation = $api.useMutation('put', '/traefik/files/content');
+	const writeFileMutation = $api.useMutation(
+		'put',
+		'/traefik/files/content',
+	);
 
 	const handleSave = async () => {
 		if (!selectedFilePath || isReadOnly) return;
@@ -196,11 +205,11 @@ function TraefikPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-3 w-full h-[calc(100vh-7rem)] p-4 animate-in fade-in duration-200">
+		<div className="flex h-[calc(100vh-7rem)] w-full animate-in flex-col gap-3 p-4 duration-200 fade-in">
 			{/* Minimal Header */}
 			<TraefikHeader
 				selectedServerId={selectedServerId}
-				onSelectServer={(id) => {
+				onSelectServer={id => {
 					setSelectedServerId(id);
 					setSelectedFilePath(null);
 				}}
@@ -216,11 +225,11 @@ function TraefikPage() {
 			/>
 
 			{/* Main Body: File Tree + Editor */}
-			<div className="flex flex-col lg:flex-row gap-3 flex-1 overflow-hidden min-h-0">
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row">
 				<TraefikFileTree
 					files={fileTree}
 					selectedFile={selectedFilePath}
-					onSelectFile={(path) => {
+					onSelectFile={path => {
 						setSelectedFilePath(path);
 						refetchContent();
 					}}
@@ -232,7 +241,7 @@ function TraefikPage() {
 				<TraefikEditor
 					selectedFilePath={selectedFilePath}
 					content={editedContent}
-					onChangeContent={(val) => setEditedContent(val)}
+					onChangeContent={val => setEditedContent(val)}
 					isReadOnly={isReadOnly}
 					isLoading={isContentLoading}
 				/>

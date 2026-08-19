@@ -48,7 +48,7 @@ export function LogViewer({
 	} = useLogViewer({logs, isLive, showFilter, isDeployment: false});
 
 	return (
-		<div className="flex flex-col gap-2 w-full font-mono">
+		<div className="flex w-full flex-col gap-2 font-mono">
 			{/* Dozzle-Style Toolbar */}
 			<LogViewerToolbar
 				totalLines={parsedEntries.length}
@@ -73,20 +73,22 @@ export function LogViewer({
 			{/* Terminal Window Container using Shadcn UI bg-card & border-border */}
 			<div
 				ref={scrollRef}
-				className={`bg-card text-card-foreground border border-border rounded-xl p-3 text-xs ${heightClass} overflow-y-auto shadow-sm flex flex-col gap-0.5 w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full`}
+				className={`rounded-xl border border-border bg-card p-3 text-xs text-card-foreground ${heightClass} flex w-full flex-col gap-0.5 overflow-y-auto shadow-sm [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30`}
 				style={{
 					fontFamily: `'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, monospace`,
-				}}
-			>
+				}}>
 				{isLoading && parsedEntries.length === 0 ? (
-					<div className="flex items-center justify-center h-full text-muted-foreground gap-2 font-sans">
-						<RefreshCw className="w-4 h-4 animate-spin text-primary" /> {loadingText}
+					<div className="flex h-full items-center justify-center gap-2 font-sans text-muted-foreground">
+						<RefreshCw className="h-4 w-4 animate-spin text-primary" />{' '}
+						{loadingText}
 					</div>
 				) : filteredEntries.length === 0 ? (
-					<div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-1 font-sans">
-						<Terminal className="w-6 h-6 opacity-30" />
+					<div className="flex h-full flex-col items-center justify-center gap-1 font-sans text-muted-foreground">
+						<Terminal className="h-6 w-6 opacity-30" />
 						<p className="text-xs">
-							{searchQuery || selectedLevel !== 'ALL' || selectedStream !== 'ALL'
+							{searchQuery ||
+							selectedLevel !== 'ALL' ||
+							selectedStream !== 'ALL'
 								? 'No log lines match current filters'
 								: emptyText}
 						</p>
@@ -107,7 +109,10 @@ export function LogViewer({
 			</div>
 
 			{/* JSON/Detail Modal */}
-			<LogDetailModal entry={selectedDetailEntry} onClose={() => setSelectedDetailEntry(null)} />
+			<LogDetailModal
+				entry={selectedDetailEntry}
+				onClose={() => setSelectedDetailEntry(null)}
+			/>
 		</div>
 	);
 }

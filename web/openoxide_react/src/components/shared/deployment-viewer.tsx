@@ -50,7 +50,7 @@ export function DeploymentViewer({
 	} = useLogViewer({logs, isLive, showFilter: true, isDeployment});
 
 	return (
-		<div className="flex flex-col gap-2 w-full font-mono flex-1 min-h-0">
+		<div className="flex min-h-0 w-full flex-1 flex-col gap-2 font-mono">
 			{/* Dozzle-Style Toolbar */}
 			<LogViewerToolbar
 				totalLines={parsedEntries.length}
@@ -77,22 +77,24 @@ export function DeploymentViewer({
 				ref={scrollRef}
 				className={`${
 					borderless
-						? 'bg-transparent text-foreground p-1 border-0 shadow-none'
-						: 'bg-card text-card-foreground border border-border rounded-xl p-3 shadow-sm'
-				} text-xs ${heightClass} flex-1 overflow-y-auto flex flex-col gap-0.5 w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full`}
+						? 'border-0 bg-transparent p-1 text-foreground shadow-none'
+						: 'rounded-xl border border-border bg-card p-3 text-card-foreground shadow-sm'
+				} text-xs ${heightClass} flex w-full flex-1 flex-col gap-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30`}
 				style={{
 					fontFamily: `'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, monospace`,
-				}}
-			>
+				}}>
 				{isLoading && parsedEntries.length === 0 ? (
-					<div className="flex items-center justify-center h-full text-muted-foreground gap-2 font-sans">
-						<RefreshCw className="w-4 h-4 animate-spin text-primary" /> {loadingText}
+					<div className="flex h-full items-center justify-center gap-2 font-sans text-muted-foreground">
+						<RefreshCw className="h-4 w-4 animate-spin text-primary" />{' '}
+						{loadingText}
 					</div>
 				) : filteredEntries.length === 0 ? (
-					<div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-1 font-sans">
-						<Terminal className="w-6 h-6 opacity-30" />
+					<div className="flex h-full flex-col items-center justify-center gap-1 font-sans text-muted-foreground">
+						<Terminal className="h-6 w-6 opacity-30" />
 						<p className="text-xs">
-							{searchQuery || selectedLevel !== 'ALL' || selectedStream !== 'ALL'
+							{searchQuery ||
+							selectedLevel !== 'ALL' ||
+							selectedStream !== 'ALL'
 								? 'No deployment log lines match current filters'
 								: emptyText}
 						</p>
@@ -113,7 +115,10 @@ export function DeploymentViewer({
 			</div>
 
 			{/* JSON/Detail Modal */}
-			<LogDetailModal entry={selectedDetailEntry} onClose={() => setSelectedDetailEntry(null)} />
+			<LogDetailModal
+				entry={selectedDetailEntry}
+				onClose={() => setSelectedDetailEntry(null)}
+			/>
 		</div>
 	);
 }

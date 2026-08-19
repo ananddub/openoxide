@@ -62,9 +62,7 @@ export function AddOrganization({
 	React.useEffect(() => {
 		if (open) {
 			if (isEdit) {
-				const org = orgList.find(
-					o => String(o.id) === organizationId,
-				);
+				const org = orgList.find(o => String(o.id) === organizationId);
 				reset({
 					name: org ? org.name : '',
 					logo: org ? org.logo || '' : '',
@@ -92,7 +90,9 @@ export function AddOrganization({
 				});
 
 				toast.success('Organization updated successfully');
-				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+				queryClient.invalidateQueries({
+					queryKey: ['get', '/organizations'],
+				});
 				onOpenChange(false);
 			} else {
 				await createMutation.mutateAsync({
@@ -103,7 +103,9 @@ export function AddOrganization({
 				});
 
 				toast.success('Organization created successfully');
-				queryClient.invalidateQueries({queryKey: ['get', '/organizations']});
+				queryClient.invalidateQueries({
+					queryKey: ['get', '/organizations'],
+				});
 				onOpenChange(false);
 			}
 		} catch (err: unknown) {
@@ -149,7 +151,7 @@ export function AddOrganization({
 						/>
 						<FieldError>{errors.logo?.message}</FieldError>
 					</Field>
-					<div className="flex justify-end mt-2">
+					<div className="mt-2 flex justify-end">
 						<Button
 							type="submit"
 							disabled={isPending}

@@ -11,7 +11,7 @@ import {
 import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleCardProps {
@@ -46,13 +46,20 @@ export function ScheduleCard({
 		for (const item of projectsList) {
 			const proj = item as Record<string, unknown>;
 			if (Array.isArray(proj.applications)) {
-				const found = (proj.applications as Record<string, unknown>[]).find(a => (a.id || a.application_id) === s.application_id);
+				const found = (
+					proj.applications as Record<string, unknown>[]
+				).find(a => (a.id || a.application_id) === s.application_id);
 				if (found) return found;
 			}
 			if (Array.isArray(proj.environments)) {
-				for (const envObj of proj.environments as Record<string, unknown>[]) {
+				for (const envObj of proj.environments as Record<
+					string,
+					unknown
+				>[]) {
 					if (Array.isArray(envObj.applications)) {
-						const found = (envObj.applications as Record<string, unknown>[]).find(a => (a.id || a.application_id) === s.application_id);
+						const found = (
+							envObj.applications as Record<string, unknown>[]
+						).find(a => (a.id || a.application_id) === s.application_id);
 						if (found) return found;
 					}
 				}
@@ -61,32 +68,39 @@ export function ScheduleCard({
 		return null;
 	}, [s.application_id, projectsList]);
 
-	const appName = linkedApp?.name || linkedApp?.app_name || (s.application_id ? `App #${s.application_id}` : null);
-	const serverName = linkedServer?.name || (s.server_id ? `Server #${s.server_id}` : null);
+	const appName =
+		linkedApp?.name ||
+		linkedApp?.app_name ||
+		(s.application_id ? `App #${s.application_id}` : null);
+	const serverName =
+		linkedServer?.name || (s.server_id ? `Server #${s.server_id}` : null);
 
 	return (
-		<div className={cn(
-			'bg-card border border-border hover:border-border/80 rounded-xl p-4 flex flex-col justify-between gap-3.5 transition-all shadow-2xs',
-			!isEnabled && 'opacity-70'
-		)}>
+		<div
+			className={cn(
+				'flex flex-col justify-between gap-3.5 rounded-xl border border-border bg-card p-4 shadow-2xs transition-all hover:border-border/80',
+				!isEnabled && 'opacity-70',
+			)}>
 			{/* Header: Status Dot + Title + Actions */}
 			<div className="flex items-center justify-between gap-2">
-				<div className="flex items-center gap-2 min-w-0">
+				<div className="flex min-w-0 items-center gap-2">
 					<span
 						className={cn(
-							'size-2 rounded-full shrink-0',
-							isEnabled ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+							'size-2 shrink-0 rounded-full',
+							isEnabled ? 'bg-emerald-500' : 'bg-muted-foreground/40',
 						)}
 					/>
-					<h3 className="text-sm font-bold text-foreground truncate" title={s.name}>
+					<h3
+						className="truncate text-sm font-bold text-foreground"
+						title={s.name}>
 						{s.name}
 					</h3>
-					<span className="text-xs font-mono text-muted-foreground/60 shrink-0">
+					<span className="shrink-0 font-mono text-xs text-muted-foreground/60">
 						#{s.id}
 					</span>
 				</div>
 
-				<div className="flex items-center gap-0.5 shrink-0">
+				<div className="flex shrink-0 items-center gap-0.5">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -109,7 +123,7 @@ export function ScheduleCard({
 						size="icon"
 						onClick={() => onDelete(s.id!)}
 						title="Delete"
-						className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+						className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
 						<Trash2 className="h-3.5 w-3.5" />
 					</Button>
 				</div>
@@ -117,21 +131,29 @@ export function ScheduleCard({
 
 			{/* Description if present */}
 			{s.description && (
-				<p className="text-xs text-muted-foreground line-clamp-1 -mt-1 font-medium">
+				<p className="-mt-1 line-clamp-1 text-xs font-medium text-muted-foreground">
 					{s.description}
 				</p>
 			)}
 
 			{/* Command & Target Box */}
-			<div className="flex items-center justify-between gap-2 bg-muted/30 dark:bg-muted/20 border border-border/40 rounded-lg p-2.5 text-xs font-mono">
-				<div className="flex items-center gap-2 min-w-0">
-					<Terminal className="h-3.5 w-3.5 text-primary shrink-0" />
-					<code className="truncate text-foreground font-semibold">{s.command}</code>
+			<div className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/30 p-2.5 font-mono text-xs dark:bg-muted/20">
+				<div className="flex min-w-0 items-center gap-2">
+					<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
+					<code className="truncate font-semibold text-foreground">
+						{s.command}
+					</code>
 				</div>
 				{(serverName || appName) && (
-					<span className="text-xs font-sans text-muted-foreground bg-muted/40 border border-border/40 px-2 py-0.5 rounded shrink-0 flex items-center gap-1">
-						{serverName ? <Server className="h-3 w-3 text-muted-foreground" /> : <Cpu className="h-3 w-3 text-muted-foreground" />}
-						<span className="truncate max-w-[110px]">{serverName || appName}</span>
+					<span className="flex shrink-0 items-center gap-1 rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-sans text-xs text-muted-foreground">
+						{serverName ? (
+							<Server className="h-3 w-3 text-muted-foreground" />
+						) : (
+							<Cpu className="h-3 w-3 text-muted-foreground" />
+						)}
+						<span className="max-w-[110px] truncate">
+							{serverName || appName}
+						</span>
 					</span>
 				)}
 			</div>
@@ -139,10 +161,10 @@ export function ScheduleCard({
 			{/* Footer */}
 			<div className="flex items-center justify-between pt-0.5">
 				<div className="flex items-center gap-2">
-					<span className="text-xs font-mono text-muted-foreground bg-muted/40 border border-border/40 px-2 py-0.5 rounded font-medium">
+					<span className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
 						{s.cron_expression}
 					</span>
-					<span className="text-[10px] text-muted-foreground/60 uppercase font-mono font-bold">
+					<span className="font-mono text-[10px] font-bold text-muted-foreground/60 uppercase">
 						{s.shell_type || 'bash'}
 					</span>
 				</div>
@@ -151,15 +173,15 @@ export function ScheduleCard({
 					variant="outline"
 					size="sm"
 					onClick={() => onToggle(s)}
-					className="h-6 text-xs font-semibold px-2.5 border-border/40 bg-muted/20 dark:bg-muted/15">
+					className="h-6 border-border/40 bg-muted/20 px-2.5 text-xs font-semibold dark:bg-muted/15">
 					{isEnabled ? (
 						<>
-							<Pause className="h-3 w-3 mr-1 text-muted-foreground" />
+							<Pause className="mr-1 h-3 w-3 text-muted-foreground" />
 							Pause
 						</>
 					) : (
 						<>
-							<Play className="h-3 w-3 mr-1 text-muted-foreground" />
+							<Play className="mr-1 h-3 w-3 text-muted-foreground" />
 							Resume
 						</>
 					)}

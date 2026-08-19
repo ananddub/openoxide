@@ -9,15 +9,17 @@ export const Route = createFileRoute('/_app/monitoring')({
 
 function MonitoringPage() {
 	return (
-		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
 			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
+			<div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center">
 				<div>
-					<h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
-						<Activity className="size-6 text-primary" /> System & Docker Monitoring
+					<h1 className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-foreground">
+						<Activity className="size-6 text-primary" /> System & Docker
+						Monitoring
 					</h1>
-					<p className="text-xs text-muted-foreground mt-1">
-						Real-time telemetry overview for CPU, Memory, Disk Space, Docker Disk Usage, Block I/O, and Network I/O.
+					<p className="mt-1 text-xs text-muted-foreground">
+						Real-time telemetry overview for CPU, Memory, Disk Space,
+						Docker Disk Usage, Block I/O, and Network I/O.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -25,7 +27,7 @@ function MonitoringPage() {
 						variant="outline"
 						size="sm"
 						onClick={() => window.location.reload()}
-						className="h-8 text-xs font-semibold flex items-center gap-1.5 rounded-lg border-border">
+						className="flex h-8 items-center gap-1.5 rounded-lg border-border text-xs font-semibold">
 						<RefreshCw className="size-3.5" /> Refresh Telemetry
 					</Button>
 				</div>

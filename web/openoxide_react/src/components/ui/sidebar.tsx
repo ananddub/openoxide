@@ -404,7 +404,7 @@ function SidebarGroup({className, ...props}: React.ComponentProps<'div'>) {
 			data-slot="sidebar-group"
 			data-sidebar="group"
 			className={cn(
-				'relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:w-full',
+				'relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:p-0',
 				className,
 			)}
 			{...props}
@@ -468,7 +468,10 @@ function SidebarGroupContent({
 		<div
 			data-slot="sidebar-group-content"
 			data-sidebar="group-content"
-			className={cn('w-full text-sm group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center', className)}
+			className={cn(
+				'w-full text-sm group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center',
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -479,7 +482,10 @@ function SidebarMenu({className, ...props}: React.ComponentProps<'ul'>) {
 		<ul
 			data-slot="sidebar-menu"
 			data-sidebar="menu"
-			className={cn('flex w-full min-w-0 flex-col gap-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:w-full', className)}
+			className={cn(
+				'flex w-full min-w-0 flex-col gap-0 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:items-center',
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -493,7 +499,10 @@ function SidebarMenuItem({
 		<li
 			data-slot="sidebar-menu-item"
 			data-sidebar="menu-item"
-			className={cn('group/menu-item relative group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full', className)}
+			className={cn(
+				'group/menu-item relative group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center',
+				className,
+			)}
 			{...props}
 		/>
 	);

@@ -1,28 +1,42 @@
 import {useEffect, useMemo, useState, useCallback, useRef} from 'react';
 import {
-	ReactFlow, ReactFlowProvider, Controls, Background, BackgroundVariant,
-	useNodesState, useEdgesState, useReactFlow,
-	type Node, type Edge, type NodeTypes,
+	ReactFlow,
+	ReactFlowProvider,
+	Controls,
+	Background,
+	BackgroundVariant,
+	useNodesState,
+	useEdgesState,
+	useReactFlow,
+	type Node,
+	type Edge,
+	type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {load as yamlLoad} from 'js-yaml';
 import dagre from '@dagrejs/dagre';
 import {ComposeServiceNode} from './compose-service-node';
 import {ComposeEdge} from './compose-edge';
-import {ComposeBackupNode, type VolumeBackupData} from './compose-backup-node';
+import {
+	ComposeBackupNode,
+	type VolumeBackupData,
+} from './compose-backup-node';
 import {ComposeCronNode, type CronJobData} from './compose-cron-node';
-import {ComposeDomainNode, type ComposeDomainData} from './compose-domain-node';
+import {
+	ComposeDomainNode,
+	type ComposeDomainData,
+} from './compose-domain-node';
 import {CanvasContextMenu} from './canvas-context-menu';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ComposeService extends Record<string, unknown> {
-	name:      string;
-	image:     string;
+	name: string;
+	image: string;
 	dependsOn: string[];
-	envVars:   Record<string, string>;
-	volumes:   string[];
-	ports:     string[];
+	envVars: Record<string, string>;
+	volumes: string[];
+	ports: string[];
 }
 
 // ─── YAML parser ─────────────────────────────────────────────────────────────
@@ -32,7 +46,10 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 	try {
 		let cleanYaml = yaml.trim();
 		if (cleanYaml.startsWith('```')) {
-			cleanYaml = cleanYaml.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+			cleanYaml = cleanYaml
+				.replace(/^```[a-zA-Z]*\n?/, '')
+				.replace(/\n?```$/, '')
+				.trim();
 		}
 		if (cleanYaml.includes('\\n') && !cleanYaml.includes('\n')) {
 			cleanYaml = cleanYaml.replace(/\\n/g, '\n');
@@ -42,20 +59,49 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 		try {
 			doc = yamlLoad(cleanYaml);
 		} catch (e) {
-			try { doc = JSON.parse(cleanYaml); } catch {}
+			try {
+				doc = JSON.parse(cleanYaml);
+			} catch {}
 		}
 
 		if (!doc) return [];
 		if (typeof doc === 'string') {
-			try { doc = JSON.parse(doc); } catch { try { doc = yamlLoad(doc); } catch {} }
+			try {
+				doc = JSON.parse(doc);
+			} catch {
+				try {
+					doc = yamlLoad(doc);
+				} catch {}
+			}
 		}
 
 		let svcs = doc?.services;
-		if (!svcs && typeof doc === 'object' && doc !== null && !Array.isArray(doc)) {
+		if (
+			!svcs &&
+			typeof doc === 'object' &&
+			doc !== null &&
+			!Array.isArray(doc)
+		) {
 			const possibleSvcs: Record<string, any> = {};
 			Object.entries(doc).forEach(([k, v]: [string, any]) => {
-				if (k !== 'version' && k !== 'volumes' && k !== 'networks' && k !== 'configs' && k !== 'secrets' && typeof v === 'object' && v !== null && !Array.isArray(v)) {
-					if (v.image || v.build || v.ports || v.environment || v.depends_on || v.volumes) {
+				if (
+					k !== 'version' &&
+					k !== 'volumes' &&
+					k !== 'networks' &&
+					k !== 'configs' &&
+					k !== 'secrets' &&
+					typeof v === 'object' &&
+					v !== null &&
+					!Array.isArray(v)
+				) {
+					if (
+						v.image ||
+						v.build ||
+						v.ports ||
+						v.environment ||
+						v.depends_on ||
+						v.volumes
+					) {
 						possibleSvcs[k] = v;
 					}
 				}
@@ -65,23 +111,28 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 			}
 		}
 
-		if (typeof svcs !== 'object' || svcs === null || Array.isArray(svcs)) return [];
+		if (typeof svcs !== 'object' || svcs === null || Array.isArray(svcs))
+			return [];
 
 		return Object.entries(svcs).map(([name, s]: [string, any]) => {
 			let dependsOn: string[] = [];
 			if (Array.isArray(s?.depends_on))
 				dependsOn = s.depends_on.map(String);
-			else if (s?.depends_on && typeof s.depends_on === 'object' && s.depends_on !== null)
+			else if (
+				s?.depends_on &&
+				typeof s.depends_on === 'object' &&
+				s.depends_on !== null
+			)
 				dependsOn = Object.keys(s.depends_on);
 
-			const envRaw  = s?.environment ?? s?.env ?? {};
+			const envRaw = s?.environment ?? s?.env ?? {};
 			const envVars: Record<string, string> = {};
 			if (Array.isArray(envRaw)) {
 				envRaw.forEach((line: any) => {
-					const str  = String(line);
-					const idx  = str.indexOf('=');
+					const str = String(line);
+					const idx = str.indexOf('=');
 					if (idx >= 0) envVars[str.slice(0, idx)] = str.slice(idx + 1);
-					else          envVars[str] = '';
+					else envVars[str] = '';
 				});
 			} else if (envRaw && typeof envRaw === 'object' && envRaw !== null) {
 				Object.entries(envRaw).forEach(([k, v]) => {
@@ -89,24 +140,35 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 				});
 			}
 
-			const volumes = (Array.isArray(s?.volumes) ? s.volumes : []).map((v: any) => {
-				const str = typeof v === 'string' ? v : v?.source ?? String(v);
-				const parts = str.split(':');
-				return parts.length > 1 ? parts[1] : parts[0];
-			});
+			const volumes = (Array.isArray(s?.volumes) ? s.volumes : []).map(
+				(v: any) => {
+					const str = typeof v === 'string' ? v : (v?.source ?? String(v));
+					const parts = str.split(':');
+					return parts.length > 1 ? parts[1] : parts[0];
+				},
+			);
 
-			const ports = (Array.isArray(s?.ports) ? s.ports : []).map((p: any) =>
-				typeof p === 'object' ? `${p.target ?? p.published}` : String(p),
+			const ports = (Array.isArray(s?.ports) ? s.ports : []).map(
+				(p: any) =>
+					typeof p === 'object' ? `${p.target ?? p.published}` : String(p),
 			);
 
 			let imageStr = s?.image ?? '';
 			if (!imageStr && s?.build) {
 				if (typeof s.build === 'string') imageStr = `build: ${s.build}`;
-				else if (typeof s.build === 'object' && s.build?.context) imageStr = `build: ${s.build.context}`;
+				else if (typeof s.build === 'object' && s.build?.context)
+					imageStr = `build: ${s.build.context}`;
 				else imageStr = 'build';
 			}
 
-			return {name, image: imageStr || 'container', dependsOn, envVars, volumes, ports};
+			return {
+				name,
+				image: imageStr || 'container',
+				dependsOn,
+				envVars,
+				volumes,
+				ports,
+			};
 		});
 	} catch (e) {
 		console.warn('[ComposeVisualizer] YAML parse error:', e);
@@ -116,7 +178,11 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 
 // ─── Dagre Automatic Layout ───────────────────────────────────────────────────
 
-function getDagreLayout(rawNodes: Node[], rawEdges: Edge[], direction = 'LR'): {nodes: Node[]; edges: Edge[]} {
+function getDagreLayout(
+	rawNodes: Node[],
+	rawEdges: Edge[],
+	direction = 'LR',
+): {nodes: Node[]; edges: Edge[]} {
 	if (rawNodes.length === 0) return {nodes: [], edges: []};
 
 	const g = new dagre.graphlib.Graph();
@@ -174,10 +240,10 @@ function buildGraph(
 	const rawNodes: Node[] = [];
 	const rawEdges: Edge[] = [];
 
-	const safeServices  = Array.isArray(services)  ? services  : [];
-	const safeBackups   = Array.isArray(backups)   ? backups   : [];
+	const safeServices = Array.isArray(services) ? services : [];
+	const safeBackups = Array.isArray(backups) ? backups : [];
 	const safeSchedules = Array.isArray(schedules) ? schedules : [];
-	const safeDomains   = Array.isArray(domains)   ? domains   : [];
+	const safeDomains = Array.isArray(domains) ? domains : [];
 
 	const serviceNames = new Set(safeServices.map(s => s.name));
 	const edgeKeys = new Set<string>();
@@ -228,10 +294,14 @@ function buildGraph(
 			position: {x: 0, y: 0},
 		});
 
-		const rawTarget = d.service || (d as any).service_name || (d as any).app_name;
-		const targetSvc = (rawTarget && serviceNames.has(rawTarget))
-			? rawTarget
-			: (safeServices.length > 0 ? safeServices[0]?.name : undefined);
+		const rawTarget =
+			d.service || (d as any).service_name || (d as any).app_name;
+		const targetSvc =
+			rawTarget && serviceNames.has(rawTarget)
+				? rawTarget
+				: safeServices.length > 0
+					? safeServices[0]?.name
+					: undefined;
 
 		if (targetSvc && serviceNames.has(targetSvc)) {
 			addEdge({
@@ -257,10 +327,14 @@ function buildGraph(
 				position: {x: 0, y: 0},
 			});
 
-			const rawTarget = b.service || (b as any).service_name || (b as any).app_name;
-			const targetSvc = (rawTarget && serviceNames.has(rawTarget))
-				? rawTarget
-				: (safeServices.length > 0 ? safeServices[0]?.name : undefined);
+			const rawTarget =
+				b.service || (b as any).service_name || (b as any).app_name;
+			const targetSvc =
+				rawTarget && serviceNames.has(rawTarget)
+					? rawTarget
+					: safeServices.length > 0
+						? safeServices[0]?.name
+						: undefined;
 
 			if (targetSvc && serviceNames.has(targetSvc)) {
 				addEdge({
@@ -269,7 +343,11 @@ function buildGraph(
 					target: bId,
 					type: 'composeEdge',
 					animated: true,
-					style: {stroke: '#38bdf8', strokeWidth: 2, strokeDasharray: '5,5'},
+					style: {
+						stroke: '#38bdf8',
+						strokeWidth: 2,
+						strokeDasharray: '5,5',
+					},
 				});
 			}
 		});
@@ -287,10 +365,14 @@ function buildGraph(
 				position: {x: 0, y: 0},
 			});
 
-			const rawTarget = c.target || (c as any).service_name || (c as any).app_name;
-			const targetSvc = (rawTarget && serviceNames.has(rawTarget))
-				? rawTarget
-				: (safeServices.length > 0 ? safeServices[0]?.name : undefined);
+			const rawTarget =
+				c.target || (c as any).service_name || (c as any).app_name;
+			const targetSvc =
+				rawTarget && serviceNames.has(rawTarget)
+					? rawTarget
+					: safeServices.length > 0
+						? safeServices[0]?.name
+						: undefined;
 
 			if (targetSvc && serviceNames.has(targetSvc)) {
 				addEdge({
@@ -312,9 +394,9 @@ function buildGraph(
 
 const nodeTypes: NodeTypes = {
 	composeService: ComposeServiceNode as any,
-	composeBackup:  ComposeBackupNode as any,
-	composeCron:    ComposeCronNode as any,
-	composeDomain:  ComposeDomainNode as any,
+	composeBackup: ComposeBackupNode as any,
+	composeCron: ComposeCronNode as any,
+	composeDomain: ComposeDomainNode as any,
 };
 
 const edgeTypes = {
@@ -366,7 +448,7 @@ function CanvasInner({
 }: CanvasInnerProps) {
 	const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
 	const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-	const { fitView } = useReactFlow();
+	const {fitView} = useReactFlow();
 	const hasFittedViewRef = useRef(false);
 	const [contextMenu, setContextMenu] = useState<{
 		x: number;
@@ -383,7 +465,13 @@ function CanvasInner({
 			onOpenTerminal,
 			onViewLogs,
 		};
-		const {nodes: n, edges: e} = buildGraph(services, backups, schedules, domains, actionHandlers);
+		const {nodes: n, edges: e} = buildGraph(
+			services,
+			backups,
+			schedules,
+			domains,
+			actionHandlers,
+		);
 		setNodes(n);
 		setEdges(e);
 
@@ -391,28 +479,45 @@ function CanvasInner({
 			hasFittedViewRef.current = true;
 			const t = setTimeout(() => {
 				try {
-					fitView({ padding: 0.4, minZoom: 0.3, maxZoom: 1.2 });
+					fitView({padding: 0.4, minZoom: 0.3, maxZoom: 1.2});
 				} catch {}
 			}, 100);
 			return () => clearTimeout(t);
 		}
-	}, [services, backups, schedules, domains, onAddDomain, onAddSchedule, onAddBackup, onOpenTerminal, onViewLogs, setNodes, setEdges, fitView]);
+	}, [
+		services,
+		backups,
+		schedules,
+		domains,
+		onAddDomain,
+		onAddSchedule,
+		onAddBackup,
+		onOpenTerminal,
+		onViewLogs,
+		setNodes,
+		setEdges,
+		fitView,
+	]);
 
-	const handleOpenMenu = useCallback((event: React.MouseEvent, node: Node) => {
-		event.preventDefault();
-		let targetType: 'service' | 'domain' | 'schedule' | 'backup' = 'service';
-		if (node.type === 'composeDomain') targetType = 'domain';
-		else if (node.type === 'composeCron') targetType = 'schedule';
-		else if (node.type === 'composeBackup') targetType = 'backup';
-		else if (node.type === 'composeService') targetType = 'service';
+	const handleOpenMenu = useCallback(
+		(event: React.MouseEvent, node: Node) => {
+			event.preventDefault();
+			let targetType: 'service' | 'domain' | 'schedule' | 'backup' =
+				'service';
+			if (node.type === 'composeDomain') targetType = 'domain';
+			else if (node.type === 'composeCron') targetType = 'schedule';
+			else if (node.type === 'composeBackup') targetType = 'backup';
+			else if (node.type === 'composeService') targetType = 'service';
 
-		setContextMenu({
-			x: event.clientX,
-			y: event.clientY,
-			targetType,
-			targetData: node.data,
-		});
-	}, []);
+			setContextMenu({
+				x: event.clientX,
+				y: event.clientY,
+				targetType,
+				targetData: node.data,
+			});
+		},
+		[],
+	);
 
 	return (
 		<div style={{width: '100%', height: '100%', position: 'relative'}}>
@@ -432,11 +537,11 @@ function CanvasInner({
 				minZoom={0.2}
 				maxZoom={2}
 				proOptions={{hideAttribution: true}}
-				style={{background: '#0d1117'}}
-			>
+				style={{background: '#0d1117'}}>
 				<Background
 					variant={BackgroundVariant.Lines}
-					gap={40} lineWidth={0.4}
+					gap={40}
+					lineWidth={0.4}
 					color="#21262d"
 					style={{background: '#0d1117'}}
 				/>
@@ -452,43 +557,115 @@ function CanvasInner({
 
 				{/* Legend Badge */}
 				{(services || []).length > 0 && (
-					<div style={{
-						position: 'absolute', top: 12, left: 16, zIndex: 5,
-						display: 'flex', alignItems: 'center', gap: 12,
-						padding: '6px 12px', borderRadius: 8,
-						background: 'rgba(22,27,34,0.85)', backdropFilter: 'blur(8px)',
-						border: '1px solid rgba(255,255,255,0.08)', fontSize: 10.5, color: '#8b949e',
-					}}>
+					<div
+						style={{
+							position: 'absolute',
+							top: 12,
+							left: 16,
+							zIndex: 5,
+							display: 'flex',
+							alignItems: 'center',
+							gap: 12,
+							padding: '6px 12px',
+							borderRadius: 8,
+							background: 'rgba(22,27,34,0.85)',
+							backdropFilter: 'blur(8px)',
+							border: '1px solid rgba(255,255,255,0.08)',
+							fontSize: 10.5,
+							color: '#8b949e',
+						}}>
 						<div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-							<span style={{width: 8, height: 8, borderRadius: 2, background: '#30363d'}} /> Service (Click for Actions)
+							<span
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 2,
+									background: '#30363d',
+								}}
+							/>{' '}
+							Service (Click for Actions)
 						</div>
 						<div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-							<span style={{width: 8, height: 8, borderRadius: 2, background: '#10b981'}} /> Domain (Click to Delete)
+							<span
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 2,
+									background: '#10b981',
+								}}
+							/>{' '}
+							Domain (Click to Delete)
 						</div>
 						<div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-							<span style={{width: 8, height: 8, borderRadius: 2, background: '#38bdf8'}} /> Volume Backup (Click to Delete)
+							<span
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 2,
+									background: '#38bdf8',
+								}}
+							/>{' '}
+							Volume Backup (Click to Delete)
 						</div>
 						<div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-							<span style={{width: 8, height: 8, borderRadius: 2, background: '#c084fc'}} /> CronJob (Click to Delete)
+							<span
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 2,
+									background: '#c084fc',
+								}}
+							/>{' '}
+							CronJob (Click to Delete)
 						</div>
 					</div>
 				)}
 
 				{/* Empty state overlay */}
 				{(services || []).length === 0 && (
-					<div style={{
-						position: 'absolute', inset: 0, zIndex: 5,
-						display: 'flex', flexDirection: 'column',
-						alignItems: 'center', justifyContent: 'center', gap: 8,
-						pointerEvents: 'none', padding: 24, textAlign: 'center',
-					}}>
-						<svg viewBox="0 0 24 24" style={{width: 32, height: 32, opacity: 0.25, fill: '#e6edf3'}}>
-							<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+					<div
+						style={{
+							position: 'absolute',
+							inset: 0,
+							zIndex: 5,
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							gap: 8,
+							pointerEvents: 'none',
+							padding: 24,
+							textAlign: 'center',
+						}}>
+						<svg
+							viewBox="0 0 24 24"
+							style={{
+								width: 32,
+								height: 32,
+								opacity: 0.25,
+								fill: '#e6edf3',
+							}}>
+							<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
 						</svg>
-						<p style={{color: '#e6edf3', fontSize: 13, fontWeight: 600, margin: 0}}>
-							{isGitSource ? `Configured File: ${gitBuildPath || 'docker-compose.yml'}` : 'No services found'}
+						<p
+							style={{
+								color: '#e6edf3',
+								fontSize: 13,
+								fontWeight: 600,
+								margin: 0,
+							}}>
+							{isGitSource
+								? `Configured File: ${gitBuildPath || 'docker-compose.yml'}`
+								: 'No services found'}
 						</p>
-						<p style={{color: '#8b949e', fontSize: 11.5, maxWidth: 360, margin: 0, lineHeight: 1.5}}>
+						<p
+							style={{
+								color: '#8b949e',
+								fontSize: 11.5,
+								maxWidth: 360,
+								margin: 0,
+								lineHeight: 1.5,
+							}}>
 							{isGitSource
 								? 'Deploy/Build the project to fetch this file from Git and auto-wire your service dependency graph.'
 								: 'Save a valid docker-compose.yml to visualize the dependency graph'}
@@ -576,24 +753,30 @@ export function ComposeVisualizer({
 		if (parsed.length > 0) return parsed;
 
 		if (stackName && stackName.trim()) {
-			return [{
-				name: stackName.trim(),
-				image: 'docker-compose stack',
-				dependsOn: [],
-				envVars: {},
-				volumes: [],
-				ports: [],
-			}];
+			return [
+				{
+					name: stackName.trim(),
+					image: 'docker-compose stack',
+					dependsOn: [],
+					envVars: {},
+					volumes: [],
+					ports: [],
+				},
+			];
 		}
 		return [];
 	}, [composeFile, customServices, stackName]);
 
 	return (
-		<div style={{
-			height: 'calc(100vh - 320px)', minHeight: 410, borderRadius: 14, overflow: 'hidden',
-			border: '1px solid rgba(255,255,255,0.08)',
-			background: '#0d1117',
-		}}>
+		<div
+			style={{
+				height: 'calc(100vh - 320px)',
+				minHeight: 410,
+				borderRadius: 14,
+				overflow: 'hidden',
+				border: '1px solid rgba(255,255,255,0.08)',
+				background: '#0d1117',
+			}}>
 			<ReactFlowProvider>
 				<CanvasInner
 					services={services}

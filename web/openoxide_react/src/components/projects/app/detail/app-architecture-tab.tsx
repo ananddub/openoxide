@@ -18,7 +18,13 @@ interface AppArchitectureTabProps {
 	onRefresh?: () => void;
 }
 
-export function AppArchitectureTab({app, domains: passedDomains, schedules: passedSchedules, backups: passedBackups, onRefresh}: AppArchitectureTabProps) {
+export function AppArchitectureTab({
+	app,
+	domains: passedDomains,
+	schedules: passedSchedules,
+	backups: passedBackups,
+	onRefresh,
+}: AppArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const appId = app?.id;
 
@@ -27,39 +33,77 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 	const deleteDomainMutation = $api.useMutation('delete', '/domains/{id}');
 
 	const createScheduleMutation = $api.useMutation('post', '/schedules');
-	const patchScheduleMutation = $api.useMutation('patch', '/schedules/{id}');
-	const deleteScheduleMutation = $api.useMutation('delete', '/schedules/{id}');
+	const patchScheduleMutation = $api.useMutation(
+		'patch',
+		'/schedules/{id}',
+	);
+	const deleteScheduleMutation = $api.useMutation(
+		'delete',
+		'/schedules/{id}',
+	);
 
 	const createBackupMutation = $api.useMutation('post', '/backups/volume');
-	const patchBackupMutation = $api.useMutation('patch', '/backups/volume/{id}');
-	const deleteBackupMutation = $api.useMutation('delete', '/backups/volume/{id}');
+	const patchBackupMutation = $api.useMutation(
+		'patch',
+		'/backups/volume/{id}',
+	);
+	const deleteBackupMutation = $api.useMutation(
+		'delete',
+		'/backups/volume/{id}',
+	);
 
-	const [activeModal, setActiveModal] = useState<'domain' | 'schedule' | 'backup' | 'terminal' | 'logs' | 'deployLogs' | null>(null);
-	const [editingDomainData, setEditingDomainData] = useState<any | null>(null);
-	const [editingScheduleData, setEditingScheduleData] = useState<any | null>(null);
-	const [editingBackupData, setEditingBackupData] = useState<any | null>(null);
+	const [activeModal, setActiveModal] = useState<
+		| 'domain'
+		| 'schedule'
+		| 'backup'
+		| 'terminal'
+		| 'logs'
+		| 'deployLogs'
+		| null
+	>(null);
+	const [editingDomainData, setEditingDomainData] = useState<any | null>(
+		null,
+	);
+	const [editingScheduleData, setEditingScheduleData] = useState<
+		any | null
+	>(null);
+	const [editingBackupData, setEditingBackupData] = useState<any | null>(
+		null,
+	);
 
-	const appService = useMemo(() => [{
-		name: app?.name || app?.app_name || 'app',
-		image: app?.repository || app?.dockerfile || app?.build_type || 'app',
-		dependsOn: [],
-		envVars: {},
-		volumes: app?.port ? [`port:${app.port}`] : [],
-		ports: app?.port ? [String(app.port)] : [],
-	}], [app]);
+	const appService = useMemo(
+		() => [
+			{
+				name: app?.name || app?.app_name || 'app',
+				image:
+					app?.repository || app?.dockerfile || app?.build_type || 'app',
+				dependsOn: [],
+				envVars: {},
+				volumes: app?.port ? [`port:${app.port}`] : [],
+				ports: app?.port ? [String(app.port)] : [],
+			},
+		],
+		[app],
+	);
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 
 	const appBackups = useMemo(() => {
 		const list = Array.isArray(passedBackups) ? passedBackups : [];
-		return list.filter((b: any) => b.application_id === appId || b.app_name === app?.app_name);
+		return list.filter(
+			(b: any) =>
+				b.application_id === appId || b.app_name === app?.app_name,
+		);
 	}, [passedBackups, appId, app]);
 
 	const appSchedules = useMemo(() => {
 		return Array.isArray(passedSchedules) ? passedSchedules : [];
 	}, [passedSchedules]);
 
-	const servicesList = useMemo(() => [app?.name || app?.app_name || 'app'], [app]);
+	const servicesList = useMemo(
+		() => [app?.name || app?.app_name || 'app'],
+		[app],
+	);
 
 	// Context Menu Handlers
 	const handleAddDomain = () => {
@@ -108,7 +152,9 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 		const domainId = domainData?.id;
 		if (!domainId) return;
 		try {
-			await deleteDomainMutation.mutateAsync({params: {path: {id: domainId}}});
+			await deleteDomainMutation.mutateAsync({
+				params: {path: {id: domainId}},
+			});
 			toast.success('Domain removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -121,7 +167,9 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 		const scheduleId = scheduleData?.id;
 		if (!scheduleId) return;
 		try {
-			await deleteScheduleMutation.mutateAsync({params: {path: {id: scheduleId}}});
+			await deleteScheduleMutation.mutateAsync({
+				params: {path: {id: scheduleId}},
+			});
 			toast.success('Schedule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -134,7 +182,9 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 		const backupId = backupData?.id;
 		if (!backupId) return;
 		try {
-			await deleteBackupMutation.mutateAsync({params: {path: {id: backupId}}});
+			await deleteBackupMutation.mutateAsync({
+				params: {path: {id: backupId}},
+			});
 			toast.success('Backup rule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -256,7 +306,8 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 						volume_name: data.volumeName,
 						prefix: data.prefix || '',
 						service_type: 'standalone',
-						app_name: app?.app_name || app?.name || data.serviceName || 'app',
+						app_name:
+							app?.app_name || app?.name || data.serviceName || 'app',
 						service_name: data.serviceName,
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
@@ -265,7 +316,9 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 				});
 				toast.success('Volume backup created successfully');
 			}
-			queryClient.invalidateQueries({queryKey: ['get', '/backups/volume']});
+			queryClient.invalidateQueries({
+				queryKey: ['get', '/backups/volume'],
+			});
 			setActiveModal(null);
 			setEditingBackupData(null);
 		} catch (e: any) {
@@ -274,11 +327,14 @@ export function AppArchitectureTab({app, domains: passedDomains, schedules: pass
 	};
 
 	return (
-		<div className="flex flex-col gap-4 w-full animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
 			<div>
-				<h3 className="text-sm font-bold text-foreground">Application Topology & Connections</h3>
+				<h3 className="text-sm font-bold text-foreground">
+					Application Topology & Connections
+				</h3>
 				<p className="text-xs text-muted-foreground">
-					Interactive real-time map of application service, domains, volume backups, and cron jobs. Click any node to add or edit resources.
+					Interactive real-time map of application service, domains, volume
+					backups, and cron jobs. Click any node to add or edit resources.
 				</p>
 			</div>
 

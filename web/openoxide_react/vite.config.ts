@@ -45,7 +45,7 @@ const config = defineConfig({
 	],
 	server: {
 		// host: '0.0.0.0',
-		host:"localhost",
+		host: 'localhost',
 		port: 3001,
 		strictPort: false,
 		allowedHosts: true,

@@ -3,41 +3,44 @@ import {HelpCircle, Server, ShieldCheck, Cpu} from 'lucide-react';
 
 export function RemoteServersGuide() {
 	return (
-		<Card className="bg-card/60 border border-primary/20 rounded-2xl p-5 shadow-sm mt-4">
-			<CardContent className="p-0 flex flex-col gap-4">
+		<Card className="mt-4 rounded-2xl border border-primary/20 bg-card/60 p-5 shadow-sm">
+			<CardContent className="flex flex-col gap-4 p-0">
 				<div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
-					<HelpCircle className="w-5 h-5 text-primary shrink-0" />
+					<HelpCircle className="h-5 w-5 shrink-0 text-primary" />
 					<span>How Remote Servers Work in OpenOxide</span>
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-					<div className="flex flex-col gap-1.5 p-3.5 bg-muted/30 border border-border/40 rounded-xl">
+				<div className="grid grid-cols-1 gap-4 text-xs md:grid-cols-3">
+					<div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-3.5">
 						<div className="flex items-center gap-2 font-semibold text-foreground">
-							<Server className="w-4 h-4 text-primary shrink-0" />
+							<Server className="h-4 w-4 shrink-0 text-primary" />
 							<span>1. Connect Remote Node</span>
 						</div>
-						<p className="text-muted-foreground leading-relaxed">
-							Add external VPS/Linux host IP, SSH port, and select an SSH Key credential.
+						<p className="leading-relaxed text-muted-foreground">
+							Add external VPS/Linux host IP, SSH port, and select an SSH
+							Key credential.
 						</p>
 					</div>
 
-					<div className="flex flex-col gap-1.5 p-3.5 bg-muted/30 border border-border/40 rounded-xl">
+					<div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-3.5">
 						<div className="flex items-center gap-2 font-semibold text-foreground">
-							<ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+							<ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
 							<span>2. Test & Audit Connection</span>
 						</div>
-						<p className="text-muted-foreground leading-relaxed">
-							Click "Setup & Audit" to run automated SSH checks, audit system RAM, CPU cores, and OS.
+						<p className="leading-relaxed text-muted-foreground">
+							Click "Setup & Audit" to run automated SSH checks, audit
+							system RAM, CPU cores, and OS.
 						</p>
 					</div>
 
-					<div className="flex flex-col gap-1.5 p-3.5 bg-muted/30 border border-border/40 rounded-xl">
+					<div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-3.5">
 						<div className="flex items-center gap-2 font-semibold text-foreground">
-							<Cpu className="w-4 h-4 text-primary shrink-0" />
+							<Cpu className="h-4 w-4 shrink-0 text-primary" />
 							<span>3. Deploy Remote Clusters</span>
 						</div>
-						<p className="text-muted-foreground leading-relaxed">
-							Deploy applications, Docker Compose stacks, and databases directly onto your remote server node.
+						<p className="leading-relaxed text-muted-foreground">
+							Deploy applications, Docker Compose stacks, and databases
+							directly onto your remote server node.
 						</p>
 					</div>
 				</div>

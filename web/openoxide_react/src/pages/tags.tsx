@@ -1,6 +1,13 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {Plus, Search, Trash2, Pencil, RefreshCw, Tag as TagIcon} from 'lucide-react';
+import {
+	Plus,
+	Search,
+	Trash2,
+	Pencil,
+	RefreshCw,
+	Tag as TagIcon,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -23,7 +30,7 @@ import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 export const Route = createFileRoute('/_app/tags')({
 	component: MinimalTagsPage,
@@ -57,10 +64,12 @@ function MinimalTagsPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const storeTags = useAppStore((state) => state.tags);
+	const storeTags = useAppStore(state => state.tags);
 
 	const tagsList: TagItem[] = useMemo(() => {
-		return Array.isArray(storeTags) ? (storeTags as unknown as TagItem[]) : [];
+		return Array.isArray(storeTags)
+			? (storeTags as unknown as TagItem[])
+			: [];
 	}, [storeTags]);
 
 	const isLoading = false;
@@ -119,7 +128,9 @@ function MinimalTagsPage() {
 		if (!deleteTarget) return;
 		setIsDeleting(true);
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id: deleteTarget.id}}});
+			await deleteMutation.mutateAsync({
+				params: {path: {id: deleteTarget.id}},
+			});
 			toast.success('Tag removed');
 			setDeleteTarget(null);
 		} catch (err: any) {
@@ -130,28 +141,28 @@ function MinimalTagsPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-5 p-6 max-w-4xl mx-auto w-full pb-16 animate-in fade-in duration-150">
+		<div className="mx-auto flex w-full max-w-4xl animate-in flex-col gap-5 p-6 pb-16 duration-150 fade-in">
 			{/* Minimal Page Header */}
-			<div className="flex items-center justify-between gap-4 pb-2 border-b border-border/40">
+			<div className="flex items-center justify-between gap-4 border-b border-border/40 pb-2">
 				<div>
-					<h1 className="text-base font-semibold text-foreground tracking-tight flex items-center gap-2">
-						<TagIcon className="w-4 h-4 text-muted-foreground" />
+					<h1 className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+						<TagIcon className="h-4 w-4 text-muted-foreground" />
 						<span>Tags</span>
-						<span className="text-xs text-muted-foreground font-normal font-mono">({tagsList.length})</span>
+						<span className="font-mono text-xs font-normal text-muted-foreground">
+							({tagsList.length})
+						</span>
 					</h1>
-					<p className="text-xs text-muted-foreground mt-0.5">
+					<p className="mt-0.5 text-xs text-muted-foreground">
 						Color-coded labels for organizing projects and resources
 					</p>
 				</div>
 
 				<div className="flex items-center gap-2">
-
 					<Button
 						size="sm"
 						onClick={handleOpenCreate}
-						className="h-8 text-xs font-medium px-3 bg-primary text-primary-foreground hover:bg-primary/90"
-					>
-						<Plus className="w-3.5 h-3.5 mr-1" />
+						className="h-8 bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+						<Plus className="mr-1 h-3.5 w-3.5" />
 						New Tag
 					</Button>
 				</div>
@@ -160,71 +171,74 @@ function MinimalTagsPage() {
 			{/* Minimal Search Row */}
 			{tagsList.length > 0 && (
 				<div className="relative max-w-xs">
-					<Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+					<Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
 					<Input
 						placeholder="Filter tags..."
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
-						className="pl-8 h-8 text-xs bg-muted/20 border-border/40 focus:bg-background"
+						className="h-8 border-border/40 bg-muted/20 pl-8 text-xs focus:bg-background"
 					/>
 				</div>
 			)}
 
 			{/* Minimal List Container */}
 			{isLoading ? (
-				<div className="flex items-center justify-center min-h-[180px] text-muted-foreground text-xs">
-					<RefreshCw className="w-3.5 h-3.5 animate-spin mr-2" />
+				<div className="flex min-h-[180px] items-center justify-center text-xs text-muted-foreground">
+					<RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
 					Loading...
 				</div>
 			) : filteredTags.length === 0 ? (
-				<div className="border border-dashed border-border/50 rounded-xl p-8 text-center flex flex-col items-center justify-center gap-2 bg-muted/10">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/50 bg-muted/10 p-8 text-center">
 					<span className="text-xs text-muted-foreground">
-						{searchQuery ? `No tags match "${searchQuery}"` : 'No tags created yet'}
+						{searchQuery
+							? `No tags match "${searchQuery}"`
+							: 'No tags created yet'}
 					</span>
 					{!searchQuery && (
-						<Button size="sm" variant="outline" onClick={handleOpenCreate} className="h-7 text-xs mt-1">
-							<Plus className="w-3 h-3 mr-1" /> Create Tag
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={handleOpenCreate}
+							className="mt-1 h-7 text-xs">
+							<Plus className="mr-1 h-3 w-3" /> Create Tag
 						</Button>
 					)}
 				</div>
 			) : (
-				<div className="border border-border/50 rounded-xl overflow-hidden divide-y divide-border/40 bg-card/50">
+				<div className="divide-y divide-border/40 overflow-hidden rounded-xl border border-border/50 bg-card/50">
 					{filteredTags.map(tag => (
 						<div
 							key={tag.id}
-							className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/30 transition-colors group"
-						>
-							<div className="flex items-center gap-3 min-w-0">
+							className="group flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-muted/30">
+							<div className="flex min-w-0 items-center gap-3">
 								<span
-									className="size-2.5 rounded-full shrink-0"
+									className="size-2.5 shrink-0 rounded-full"
 									style={{backgroundColor: tag.color || '#3b82f6'}}
 								/>
-								<span className="text-xs font-medium text-foreground truncate">
+								<span className="truncate text-xs font-medium text-foreground">
 									{tag.name}
 								</span>
-								<span className="text-[11px] font-mono text-muted-foreground/50">
+								<span className="font-mono text-[11px] text-muted-foreground/50">
 									{tag.color}
 								</span>
 							</div>
 
 							<div className="flex items-center gap-2">
 								<TagBadge name={tag.name} color={tag.color} />
-								<div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+								<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
 									<Button
 										variant="ghost"
 										size="icon"
 										onClick={() => handleOpenEdit(tag)}
-										className="h-7 w-7 text-muted-foreground hover:text-foreground"
-									>
-										<Pencil className="w-3.5 h-3.5" />
+										className="h-7 w-7 text-muted-foreground hover:text-foreground">
+										<Pencil className="h-3.5 w-3.5" />
 									</Button>
 									<Button
 										variant="ghost"
 										size="icon"
 										onClick={() => setDeleteTarget(tag)}
-										className="h-7 w-7 text-muted-foreground hover:text-destructive"
-									>
-										<Trash2 className="w-3.5 h-3.5" />
+										className="h-7 w-7 text-muted-foreground hover:text-destructive">
+										<Trash2 className="h-3.5 w-3.5" />
 									</Button>
 								</div>
 							</div>
@@ -234,72 +248,87 @@ function MinimalTagsPage() {
 			)}
 
 			{/* Minimal Create/Edit Modal */}
-			<Dialog open={isCreateOpen} onOpenChange={open => !open && setIsCreateOpen(false)}>
-				<DialogContent className="sm:max-w-sm rounded-xl p-5 border-border/60">
-					<DialogHeader className="pb-1 border-b border-border/40">
+			<Dialog
+				open={isCreateOpen}
+				onOpenChange={open => !open && setIsCreateOpen(false)}>
+				<DialogContent className="rounded-xl border-border/60 p-5 sm:max-w-sm">
+					<DialogHeader className="border-b border-border/40 pb-1">
 						<DialogTitle className="text-sm font-semibold">
 							{editingTag ? 'Edit Tag' : 'New Tag'}
 						</DialogTitle>
 					</DialogHeader>
 
-					<form onSubmit={handleSaveTag} className="flex flex-col gap-3.5 pt-2">
+					<form
+						onSubmit={handleSaveTag}
+						className="flex flex-col gap-3.5 pt-2">
 						<div className="flex flex-col gap-1">
-							<label className="text-[11px] font-medium text-muted-foreground">Name</label>
+							<label className="text-[11px] font-medium text-muted-foreground">
+								Name
+							</label>
 							<Input
 								placeholder="Tag name"
 								value={tagName}
 								onChange={e => setTagName(e.target.value)}
-								className="h-8 text-xs bg-muted/20 border-border/50"
+								className="h-8 border-border/50 bg-muted/20 text-xs"
 								autoFocus
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[11px] font-medium text-muted-foreground">Color</label>
-							<div className="flex items-center gap-1.5 flex-wrap">
+							<label className="text-[11px] font-medium text-muted-foreground">
+								Color
+							</label>
+							<div className="flex flex-wrap items-center gap-1.5">
 								{PRESET_COLORS.map(c => (
 									<button
 										key={c}
 										type="button"
 										onClick={() => setTagColor(c)}
 										className={`size-5 rounded-full transition-transform ${
-											tagColor === c ? 'scale-125 ring-2 ring-primary/60 ring-offset-1' : 'opacity-75 hover:opacity-100'
+											tagColor === c
+												? 'scale-125 ring-2 ring-primary/60 ring-offset-1'
+												: 'opacity-75 hover:opacity-100'
 										}`}
 										style={{backgroundColor: c}}
 									/>
 								))}
 							</div>
-							<div className="flex items-center gap-2 mt-1">
-								<span className="text-[11px] text-muted-foreground font-mono">Hex:</span>
+							<div className="mt-1 flex items-center gap-2">
+								<span className="font-mono text-[11px] text-muted-foreground">
+									Hex:
+								</span>
 								<Input
 									type="text"
 									value={tagColor}
 									onChange={e => setTagColor(e.target.value)}
-									className="w-24 h-7 text-[11px] font-mono bg-muted/20 border-border/50"
+									className="h-7 w-24 border-border/50 bg-muted/20 font-mono text-[11px]"
 								/>
 							</div>
 						</div>
 
 						{/* Minimal Preview */}
-						<div className="flex items-center justify-between pt-2 border-t border-border/40">
-							<span className="text-[11px] text-muted-foreground">Preview:</span>
-							<TagBadge name={tagName.trim() || 'Preview'} color={tagColor} />
+						<div className="flex items-center justify-between border-t border-border/40 pt-2">
+							<span className="text-[11px] text-muted-foreground">
+								Preview:
+							</span>
+							<TagBadge
+								name={tagName.trim() || 'Preview'}
+								color={tagColor}
+							/>
 						</div>
 
-						<div className="flex items-center justify-end gap-2 pt-3 border-t border-border/40">
+						<div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3">
 							<Button
 								type="button"
 								variant="ghost"
 								onClick={() => setIsCreateOpen(false)}
-								className="h-8 text-xs"
-							>
+								className="h-8 text-xs">
 								Cancel
 							</Button>
 							<Button
 								type="submit"
 								disabled={isSubmitting}
-								className="h-8 text-xs font-medium px-4"
-							>
+								className="h-8 px-4 text-xs font-medium">
 								{isSubmitting ? 'Saving...' : 'Save'}
 							</Button>
 						</div>
@@ -308,21 +337,28 @@ function MinimalTagsPage() {
 			</Dialog>
 
 			{/* Minimal Delete Alert */}
-			<AlertDialog open={deleteTarget !== null} onOpenChange={open => !open && setDeleteTarget(null)}>
-				<AlertDialogContent className="sm:max-w-sm rounded-xl p-5 border-border/60">
+			<AlertDialog
+				open={deleteTarget !== null}
+				onOpenChange={open => !open && setDeleteTarget(null)}>
+				<AlertDialogContent className="rounded-xl border-border/60 p-5 sm:max-w-sm">
 					<AlertDialogHeader>
-						<AlertDialogTitle className="text-sm font-semibold">Delete Tag</AlertDialogTitle>
+						<AlertDialogTitle className="text-sm font-semibold">
+							Delete Tag
+						</AlertDialogTitle>
 						<AlertDialogDescription className="text-xs">
 							Remove tag "{deleteTarget?.name}"?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter className="pt-2">
-						<AlertDialogCancel disabled={isDeleting} className="h-8 text-xs">Cancel</AlertDialogCancel>
+						<AlertDialogCancel
+							disabled={isDeleting}
+							className="h-8 text-xs">
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={confirmDeleteTag}
 							disabled={isDeleting}
-							className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
+							className="text-destructive-foreground h-8 bg-destructive text-xs hover:bg-destructive/90">
 							{isDeleting ? 'Deleting...' : 'Delete'}
 						</AlertDialogAction>
 					</AlertDialogFooter>

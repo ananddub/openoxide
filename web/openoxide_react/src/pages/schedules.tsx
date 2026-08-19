@@ -41,7 +41,7 @@ function SchedulesPage() {
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
 	return (
-		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
 			{/* Header */}
 			<SchedulesHeader
 				onOpenCreate={handleOpenCreate}
@@ -74,25 +74,29 @@ function SchedulesPage() {
 			/>
 
 			{/* Delete Confirmation Alert Dialog */}
-			<AlertDialog open={deletingId !== null} onOpenChange={open => !open && setDeletingId(null)}>
+			<AlertDialog
+				open={deletingId !== null}
+				onOpenChange={open => !open && setDeletingId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Automated Schedule</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete this schedule? This action will stop all future automated cron executions.
+							Are you sure you want to delete this schedule? This action
+							will stop all future automated cron executions.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel onClick={() => setDeletingId(null)}>
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+							className="text-destructive-foreground cursor-pointer bg-destructive hover:bg-destructive/90"
 							onClick={async () => {
 								if (deletingId) {
 									await handleDelete(deletingId);
 									setDeletingId(null);
 								}
-							}}
-						>
+							}}>
 							Delete Schedule
 						</AlertDialogAction>
 					</AlertDialogFooter>

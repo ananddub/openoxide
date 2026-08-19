@@ -5,7 +5,12 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '#/components/ui/tabs';
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from '#/components/ui/tabs';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {
@@ -47,38 +52,40 @@ export function ServiceInspectorDrawer({
 	const isDb = node.type === 'database';
 	const isCompose = node.type === 'compose';
 	const isRunning =
-		node.status?.toLowerCase() === 'running' || node.status?.toLowerCase() === 'active';
+		node.status?.toLowerCase() === 'running' ||
+		node.status?.toLowerCase() === 'active';
 
 	return (
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent
 				side="right"
-				className="w-[450px] sm:w-[540px] bg-card border-l border-border p-0 flex flex-col font-sans"
-			>
+				className="flex w-[450px] flex-col border-l border-border bg-card p-0 font-sans sm:w-[540px]">
 				{/* Drawer Header */}
-				<SheetHeader className="p-5 border-b border-border/60 bg-muted/20 flex flex-col gap-2">
+				<SheetHeader className="flex flex-col gap-2 border-b border-border/60 bg-muted/20 p-5">
 					<div className="flex items-center justify-between gap-3">
-						<div className="flex items-center gap-3 min-w-0">
-							<div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+						<div className="flex min-w-0 items-center gap-3">
+							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
 								{isDb ? (
-									<Database className="w-4.5 h-4.5 text-emerald-400" />
+									<Database className="h-4.5 w-4.5 text-emerald-400" />
 								) : isCompose ? (
-									<Box className="w-4.5 h-4.5 text-violet-400" />
+									<Box className="h-4.5 w-4.5 text-violet-400" />
 								) : (
-									<Box className="w-4.5 h-4.5 text-blue-400" />
+									<Box className="h-4.5 w-4.5 text-blue-400" />
 								)}
 							</div>
 							<div className="min-w-0 flex-1">
-								<SheetTitle className="text-base font-bold text-foreground truncate">
+								<SheetTitle className="truncate text-base font-bold text-foreground">
 									{node.name}
 								</SheetTitle>
-								<div className="flex items-center gap-2 mt-0.5">
-									<Badge variant="outline" className="text-[10px] uppercase font-mono py-0">
+								<div className="mt-0.5 flex items-center gap-2">
+									<Badge
+										variant="outline"
+										className="py-0 font-mono text-[10px] uppercase">
 										{node.dbType || node.type}
 									</Badge>
-									<span className="flex items-center gap-1 text-[11px] text-muted-foreground font-mono">
+									<span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
 										<span
-											className={`w-2 h-2 rounded-full ${
+											className={`h-2 w-2 rounded-full ${
 												isRunning ? 'bg-emerald-500' : 'bg-amber-500'
 											}`}
 										/>
@@ -89,31 +96,28 @@ export function ServiceInspectorDrawer({
 						</div>
 
 						{/* Quick Actions */}
-						<div className="flex items-center gap-1.5 shrink-0">
+						<div className="flex shrink-0 items-center gap-1.5">
 							{isRunning ? (
 								<Button
 									variant="outline"
 									size="sm"
-									className="h-8 text-xs gap-1 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 cursor-pointer"
-								>
-									<Square className="w-3.5 h-3.5 fill-current" /> Stop
+									className="h-8 cursor-pointer gap-1 border-amber-500/30 text-xs text-amber-400 hover:bg-amber-500/10">
+									<Square className="h-3.5 w-3.5 fill-current" /> Stop
 								</Button>
 							) : (
 								<Button
 									variant="outline"
 									size="sm"
-									className="h-8 text-xs gap-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
-								>
-									<Play className="w-3.5 h-3.5 fill-current" /> Start
+									className="h-8 cursor-pointer gap-1 border-emerald-500/30 text-xs text-emerald-400 hover:bg-emerald-500/10">
+									<Play className="h-3.5 w-3.5 fill-current" /> Start
 								</Button>
 							)}
 
 							<Button
 								variant="outline"
 								size="sm"
-								className="h-8 text-xs gap-1.5 cursor-pointer"
-							>
-								<RotateCw className="w-3.5 h-3.5" /> Restart
+								className="h-8 cursor-pointer gap-1.5 text-xs">
+								<RotateCw className="h-3.5 w-3.5" /> Restart
 							</Button>
 						</div>
 					</div>
@@ -123,27 +127,23 @@ export function ServiceInspectorDrawer({
 				<Tabs
 					value={activeTab}
 					onValueChange={setActiveTab}
-					className="flex-1 flex flex-col min-h-0"
-				>
-					<div className="px-5 border-b border-border/60 bg-muted/10">
-						<TabsList className="bg-transparent gap-4 p-0 h-10">
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="border-b border-border/60 bg-muted/10 px-5">
+						<TabsList className="h-10 gap-4 bg-transparent p-0">
 							<TabsTrigger
 								value="overview"
-								className="text-xs font-semibold px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none"
-							>
-								<Activity className="w-3.5 h-3.5 mr-1.5" /> Overview
+								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								<Activity className="mr-1.5 h-3.5 w-3.5" /> Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="config"
-								className="text-xs font-semibold px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none"
-							>
-								<Sliders className="w-3.5 h-3.5 mr-1.5" /> Config
+								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								<Sliders className="mr-1.5 h-3.5 w-3.5" /> Config
 							</TabsTrigger>
 							<TabsTrigger
 								value="logs"
-								className="text-xs font-semibold px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none"
-							>
-								<Terminal className="w-3.5 h-3.5 mr-1.5" /> Live Logs
+								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								<Terminal className="mr-1.5 h-3.5 w-3.5" /> Live Logs
 							</TabsTrigger>
 						</TabsList>
 					</div>
@@ -151,46 +151,55 @@ export function ServiceInspectorDrawer({
 					{/* Overview Tab */}
 					<TabsContent
 						value="overview"
-						className="p-5 flex flex-col gap-4 overflow-y-auto m-0 flex-1"
-					>
+						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
 						<div className="grid grid-cols-2 gap-3">
-							<div className="p-3 bg-muted/20 border border-border/40 rounded-xl">
-								<span className="text-xs text-muted-foreground flex items-center gap-1">
-									<Cpu className="w-3.5 h-3.5 text-sky-400" /> CPU Usage
+							<div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+								<span className="flex items-center gap-1 text-xs text-muted-foreground">
+									<Cpu className="h-3.5 w-3.5 text-sky-400" /> CPU Usage
 								</span>
-								<p className="text-base font-bold font-mono text-foreground mt-1">
+								<p className="mt-1 font-mono text-base font-bold text-foreground">
 									0.15%
 								</p>
 							</div>
-							<div className="p-3 bg-muted/20 border border-border/40 rounded-xl">
-								<span className="text-xs text-muted-foreground flex items-center gap-1">
-									<HardDrive className="w-3.5 h-3.5 text-violet-400" /> Memory Usage
+							<div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+								<span className="flex items-center gap-1 text-xs text-muted-foreground">
+									<HardDrive className="h-3.5 w-3.5 text-violet-400" />{' '}
+									Memory Usage
 								</span>
-								<p className="text-base font-bold font-mono text-foreground mt-1">
+								<p className="mt-1 font-mono text-base font-bold text-foreground">
 									142 MB / 512 MB
 								</p>
 							</div>
 						</div>
 
-						<div className="p-4 bg-muted/20 border border-border/40 rounded-xl flex flex-col gap-2.5 text-xs font-mono">
-							<div className="flex justify-between items-center">
-								<span className="text-muted-foreground font-sans">Service ID:</span>
-								<span className="text-foreground font-bold">#{node.id}</span>
+						<div className="flex flex-col gap-2.5 rounded-xl border border-border/40 bg-muted/20 p-4 font-mono text-xs">
+							<div className="flex items-center justify-between">
+								<span className="font-sans text-muted-foreground">
+									Service ID:
+								</span>
+								<span className="font-bold text-foreground">
+									#{node.id}
+								</span>
 							</div>
-							<div className="flex justify-between items-center">
-								<span className="text-muted-foreground font-sans">Internal Hostname:</span>
-								<span className="text-foreground font-bold">{node.name}</span>
+							<div className="flex items-center justify-between">
+								<span className="font-sans text-muted-foreground">
+									Internal Hostname:
+								</span>
+								<span className="font-bold text-foreground">
+									{node.name}
+								</span>
 							</div>
 							{node.url && (
-								<div className="flex justify-between items-center">
-									<span className="text-muted-foreground font-sans">Public Endpoint:</span>
+								<div className="flex items-center justify-between">
+									<span className="font-sans text-muted-foreground">
+										Public Endpoint:
+									</span>
 									<a
 										href={node.url}
 										target="_blank"
 										rel="noreferrer"
-										className="text-primary hover:underline flex items-center gap-1"
-									>
-										{node.url} <ExternalLink className="w-3 h-3" />
+										className="flex items-center gap-1 text-primary hover:underline">
+										{node.url} <ExternalLink className="h-3 w-3" />
 									</a>
 								</div>
 							)}
@@ -200,24 +209,30 @@ export function ServiceInspectorDrawer({
 					{/* Config Tab */}
 					<TabsContent
 						value="config"
-						className="p-5 flex flex-col gap-4 overflow-y-auto m-0 flex-1"
-					>
-						<div className="p-4 bg-muted/20 border border-border/40 rounded-xl flex flex-col gap-3">
-							<h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+						<div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-muted/20 p-4">
+							<h4 className="text-xs font-bold tracking-wider text-foreground uppercase">
 								Service Configurations
 							</h4>
 							<p className="text-xs text-muted-foreground">
-								Configure environment variables, resource limits, and replica scaling directly from this panel.
+								Configure environment variables, resource limits, and
+								replica scaling directly from this panel.
 							</p>
 
-							<div className="flex flex-col gap-2 mt-2">
-								<div className="flex justify-between items-center p-2.5 bg-background border border-border/60 rounded-lg text-xs font-mono">
+							<div className="mt-2 flex flex-col gap-2">
+								<div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 font-mono text-xs">
 									<span className="text-muted-foreground">Replicas:</span>
-									<span className="text-foreground font-bold">1 Instance</span>
+									<span className="font-bold text-foreground">
+										1 Instance
+									</span>
 								</div>
-								<div className="flex justify-between items-center p-2.5 bg-background border border-border/60 rounded-lg text-xs font-mono">
-									<span className="text-muted-foreground">Network Mode:</span>
-									<span className="text-emerald-400 font-bold">OpenOxide Overlay</span>
+								<div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 font-mono text-xs">
+									<span className="text-muted-foreground">
+										Network Mode:
+									</span>
+									<span className="font-bold text-emerald-400">
+										OpenOxide Overlay
+									</span>
 								</div>
 							</div>
 						</div>
@@ -226,10 +241,10 @@ export function ServiceInspectorDrawer({
 					{/* Logs Tab */}
 					<TabsContent
 						value="logs"
-						className="p-4 flex flex-col gap-2 overflow-y-auto m-0 flex-1 bg-black/90 font-mono text-xs text-emerald-400"
-					>
-						<p className="text-muted-foreground text-[11px]">
-							[LOGS] Streaming live stdout/stderr logs from Docker engine...
+						className="m-0 flex flex-1 flex-col gap-2 overflow-y-auto bg-black/90 p-4 font-mono text-xs text-emerald-400">
+						<p className="text-[11px] text-muted-foreground">
+							[LOGS] Streaming live stdout/stderr logs from Docker
+							engine...
 						</p>
 						<div className="space-y-1">
 							<p className="text-emerald-400">

@@ -59,9 +59,14 @@ export function ChangeRoleModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form id="change-role-form" onSubmit={handleSubmit} className="grid w-full gap-4 py-2">
+				<form
+					id="change-role-form"
+					onSubmit={handleSubmit}
+					className="grid w-full gap-4 py-2">
 					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium leading-none">Role</label>
+						<label className="text-sm leading-none font-medium">
+							Role
+						</label>
 						<Select value={role} onValueChange={v => v && setRole(v)}>
 							<SelectTrigger>
 								<SelectValue />
@@ -78,7 +83,10 @@ export function ChangeRoleModal({
 					<Button variant="outline" onClick={onClose}>
 						Cancel
 					</Button>
-					<Button disabled={isSubmitting} form="change-role-form" type="submit">
+					<Button
+						disabled={isSubmitting}
+						form="change-role-form"
+						type="submit">
 						Save Role
 					</Button>
 				</DialogFooter>

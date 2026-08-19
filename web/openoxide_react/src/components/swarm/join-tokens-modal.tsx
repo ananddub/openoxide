@@ -14,8 +14,21 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {Badge} from '#/components/ui/badge';
-import {Tabs, TabsList, TabsTrigger, TabsContent} from '#/components/ui/tabs';
-import {Copy, Check, LogOut, RefreshCw, ShieldCheck, Zap, CheckCircle2} from 'lucide-react';
+import {
+	Tabs,
+	TabsList,
+	TabsTrigger,
+	TabsContent,
+} from '#/components/ui/tabs';
+import {
+	Copy,
+	Check,
+	LogOut,
+	RefreshCw,
+	ShieldCheck,
+	Zap,
+	CheckCircle2,
+} from 'lucide-react';
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {toast} from 'sonner';
@@ -31,11 +44,22 @@ interface JoinTokensModalProps {
 	servers?: RemoteServerResponse[];
 	nodes?: TaggedSwarmNode[];
 	onLeaveRemoteSwarm?: (serverId: number) => Promise<void>;
-	onJoinServer?: (serverId: number, role: 'worker' | 'manager') => Promise<void>;
+	onJoinServer?: (
+		serverId: number,
+		role: 'worker' | 'manager',
+	) => Promise<void>;
 	onClose: () => void;
 }
 
-function CommandBlock({label, command, isLoading}: {label: string; command: string; isLoading: boolean}) {
+function CommandBlock({
+	label,
+	command,
+	isLoading,
+}: {
+	label: string;
+	command: string;
+	isLoading: boolean;
+}) {
 	const [copied, setCopied] = useState(false);
 	const disabled = isLoading || !command;
 
@@ -43,27 +67,34 @@ function CommandBlock({label, command, isLoading}: {label: string; command: stri
 		if (!command) return;
 		navigator.clipboard.writeText(command);
 		setCopied(true);
-		toast.success(`${label} join script copied — paste it on the target server.`);
+		toast.success(
+			`${label} join script copied — paste it on the target server.`,
+		);
 		setTimeout(() => setCopied(false), 2000);
 	};
 
 	return (
-		<div className="rounded-lg border border-border/60 bg-muted/20 p-2.5 space-y-1.5 min-w-0 w-full">
+		<div className="w-full min-w-0 space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-semibold text-foreground">{label}</span>
+				<span className="text-xs font-semibold text-foreground">
+					{label}
+				</span>
 				<Button
 					type="button"
 					variant="ghost"
 					size="xs"
 					disabled={disabled}
 					onClick={handleCopy}
-					className="h-6 text-[11px] gap-1 font-semibold text-primary hover:text-primary p-1"
-				>
-					{copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+					className="h-6 gap-1 p-1 text-[11px] font-semibold text-primary hover:text-primary">
+					{copied ? (
+						<Check className="h-3 w-3 text-emerald-500" />
+					) : (
+						<Copy className="h-3 w-3" />
+					)}
 					{copied ? 'Copied' : 'Copy'}
 				</Button>
 			</div>
-			<div className="p-2.5 rounded bg-zinc-950 font-mono text-[11px] break-all select-all border border-zinc-800/80 max-h-24 overflow-y-auto leading-relaxed min-w-0 w-full text-zinc-200">
+			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded border border-zinc-800/80 bg-zinc-950 p-2.5 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
 				{isLoading ? (
 					<span className="text-zinc-500">Loading token…</span>
 				) : command ? (
@@ -86,12 +117,15 @@ export function JoinTokensModal({
 	onJoinServer,
 	onClose,
 }: JoinTokensModalProps) {
-	const [selectedRemoteServerId, setSelectedRemoteServerId] = useState<string>('');
+	const [selectedRemoteServerId, setSelectedRemoteServerId] =
+		useState<string>('');
 	const [role, setRole] = useState<'worker' | 'manager'>('worker');
 	const [isLeaving, setIsLeaving] = useState(false);
 	const [isJoining, setIsJoining] = useState(false);
 
-	const selectedRemoteServer = servers.find(s => String(s.id) === selectedRemoteServerId);
+	const selectedRemoteServer = servers.find(
+		s => String(s.id) === selectedRemoteServerId,
+	);
 
 	// `_serverId` on `nodes` only records which query happened to discover a
 	// node, not which registered server it actually is — useless for "is
@@ -112,7 +146,8 @@ export function JoinTokensModal({
 
 	const isCheckingStatus = selectedIdentityQuery.isLoading;
 	const isSelectedConnected = !!(
-		selectedIdentityQuery.data?.node_id && nodes.some(n => n.id === selectedIdentityQuery.data?.node_id)
+		selectedIdentityQuery.data?.node_id &&
+		nodes.some(n => n.id === selectedIdentityQuery.data?.node_id)
 	);
 
 	const handleDisconnect = async () => {
@@ -148,8 +183,8 @@ export function JoinTokensModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg w-full bg-card border-border p-6 shadow-xl rounded-xl max-h-[85vh] overflow-y-auto">
-				<DialogHeader className="pb-3 border-b border-border/40">
+			<DialogContent className="max-h-[85vh] w-full overflow-y-auto rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-lg">
+				<DialogHeader className="border-b border-border/40 pb-3">
 					<DialogTitle className="text-base font-bold text-foreground">
 						Add Node to Swarm Cluster
 					</DialogTitle>
@@ -160,7 +195,9 @@ export function JoinTokensModal({
 
 				<Tabs defaultValue="registered" className="w-full pt-1">
 					<TabsList className="w-full">
-						<TabsTrigger value="registered" className="text-xs font-semibold">
+						<TabsTrigger
+							value="registered"
+							className="text-xs font-semibold">
 							Registered Servers
 						</TabsTrigger>
 						<TabsTrigger value="manual" className="text-xs font-semibold">
@@ -169,19 +206,30 @@ export function JoinTokensModal({
 					</TabsList>
 
 					{/* ── Registered servers: automated 1-click join ── */}
-					<TabsContent value="registered" className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
+					<TabsContent
+						value="registered"
+						className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
 						{servers.length === 0 ? (
-							<p className="text-xs text-muted-foreground py-6 text-center">
-								No registered remote servers yet. Add one first, or use the Manual tab for external machines.
+							<p className="py-6 text-center text-xs text-muted-foreground">
+								No registered remote servers yet. Add one first, or use the
+								Manual tab for external machines.
 							</p>
 						) : (
 							<>
 								<div className="flex flex-col gap-1.5">
-									<label className="text-xs font-semibold text-foreground">Server</label>
-									<Select value={selectedRemoteServerId} onValueChange={val => val && setSelectedRemoteServerId(val)}>
-										<SelectTrigger className="h-9 text-xs bg-background border-border w-full">
+									<label className="text-xs font-semibold text-foreground">
+										Server
+									</label>
+									<Select
+										value={selectedRemoteServerId}
+										onValueChange={val =>
+											val && setSelectedRemoteServerId(val)
+										}>
+										<SelectTrigger className="h-9 w-full border-border bg-background text-xs">
 											<SelectValue placeholder="Select a server…">
-												{selectedRemoteServer ? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})` : 'Select a server…'}
+												{selectedRemoteServer
+													? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})`
+													: 'Select a server…'}
 											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
@@ -195,19 +243,29 @@ export function JoinTokensModal({
 								</div>
 
 								{selectedRemoteServer && (
-									<div className="flex flex-col gap-3 p-3 bg-muted/20 border border-border/50 rounded-lg">
+									<div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
 										<div className="flex items-center gap-2">
-											<span className="text-[11px] font-semibold text-muted-foreground">Status</span>
+											<span className="text-[11px] font-semibold text-muted-foreground">
+												Status
+											</span>
 											{isCheckingStatus ? (
-												<Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 text-muted-foreground">
-													<RefreshCw className="w-3 h-3 animate-spin" /> Checking…
+												<Badge
+													variant="outline"
+													className="gap-1 px-1.5 py-0 text-[10px] text-muted-foreground">
+													<RefreshCw className="h-3 w-3 animate-spin" />{' '}
+													Checking…
 												</Badge>
 											) : isSelectedConnected ? (
-												<Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0">
-													<CheckCircle2 className="w-3 h-3 text-emerald-500" /> Already in this cluster
+												<Badge
+													variant="secondary"
+													className="gap-1 px-1.5 py-0 text-[10px]">
+													<CheckCircle2 className="h-3 w-3 text-emerald-500" />{' '}
+													Already in this cluster
 												</Badge>
 											) : (
-												<Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 text-muted-foreground">
+												<Badge
+													variant="outline"
+													className="gap-1 px-1.5 py-0 text-[10px] text-muted-foreground">
 													Not in this cluster
 												</Badge>
 											)}
@@ -219,22 +277,39 @@ export function JoinTokensModal({
 												size="sm"
 												disabled={isLeaving}
 												onClick={handleDisconnect}
-												className="h-8 text-xs font-semibold text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive gap-1.5 self-start"
-											>
-												{isLeaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
-												{isLeaving ? 'Disconnecting…' : 'Disconnect from Cluster'}
+												className="h-8 gap-1.5 self-start border-destructive/40 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive">
+												{isLeaving ? (
+													<RefreshCw className="h-3.5 w-3.5 animate-spin" />
+												) : (
+													<LogOut className="h-3.5 w-3.5" />
+												)}
+												{isLeaving
+													? 'Disconnecting…'
+													: 'Disconnect from Cluster'}
 											</Button>
 										) : (
 											<div className="flex items-end gap-2">
-												<div className="flex flex-col gap-1.5 w-32">
-													<label className="text-[11px] font-semibold text-foreground">Role</label>
-													<Select value={role} onValueChange={v => setRole(v as 'worker' | 'manager')}>
-														<SelectTrigger size="sm" className="h-8 text-xs bg-background border-border w-full">
+												<div className="flex w-32 flex-col gap-1.5">
+													<label className="text-[11px] font-semibold text-foreground">
+														Role
+													</label>
+													<Select
+														value={role}
+														onValueChange={v =>
+															setRole(v as 'worker' | 'manager')
+														}>
+														<SelectTrigger
+															size="sm"
+															className="h-8 w-full border-border bg-background text-xs">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															<SelectItem value="worker">Worker</SelectItem>
-															<SelectItem value="manager">Manager</SelectItem>
+															<SelectItem value="worker">
+																Worker
+															</SelectItem>
+															<SelectItem value="manager">
+																Manager
+															</SelectItem>
 														</SelectContent>
 													</Select>
 												</div>
@@ -242,9 +317,12 @@ export function JoinTokensModal({
 													size="sm"
 													disabled={isJoining}
 													onClick={handleJoin}
-													className="h-8 text-xs font-semibold gap-1.5 flex-1"
-												>
-													{isJoining ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+													className="h-8 flex-1 gap-1.5 text-xs font-semibold">
+													{isJoining ? (
+														<RefreshCw className="h-3.5 w-3.5 animate-spin" />
+													) : (
+														<Zap className="h-3.5 w-3.5" />
+													)}
 													{isJoining ? 'Joining…' : 'Join Cluster'}
 												</Button>
 											</div>
@@ -256,15 +334,27 @@ export function JoinTokensModal({
 					</TabsContent>
 
 					{/* ── Manual scripts, for machines not managed by OpenOxide ── */}
-					<TabsContent value="manual" className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
+					<TabsContent
+						value="manual"
+						className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
 						<p className="text-[11px] text-muted-foreground">
-							Paste one of these on an external machine over SSH to join it into this cluster.
+							Paste one of these on an external machine over SSH to join it
+							into this cluster.
 						</p>
-						<CommandBlock label="Worker join script" command={workerCmd} isLoading={isLoading} />
-						<CommandBlock label="Manager join script" command={managerCmd} isLoading={isLoading} />
-						<p className="text-[10px] text-muted-foreground flex items-center gap-1">
-							<ShieldCheck className="w-3 h-3 shrink-0" />
-							Managers get full cluster control — only share this script with trusted machines.
+						<CommandBlock
+							label="Worker join script"
+							command={workerCmd}
+							isLoading={isLoading}
+						/>
+						<CommandBlock
+							label="Manager join script"
+							command={managerCmd}
+							isLoading={isLoading}
+						/>
+						<p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+							<ShieldCheck className="h-3 w-3 shrink-0" />
+							Managers get full cluster control — only share this script
+							with trusted machines.
 						</p>
 					</TabsContent>
 				</Tabs>

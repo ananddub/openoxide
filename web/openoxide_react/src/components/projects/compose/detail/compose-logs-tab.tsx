@@ -35,7 +35,18 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 				const srv = match[2];
 				if (
 					srv &&
-					!['version', 'services', 'volumes', 'networks', 'configs', 'secrets', 'environment', 'ports', 'build', 'image'].includes(srv.toLowerCase())
+					![
+						'version',
+						'services',
+						'volumes',
+						'networks',
+						'configs',
+						'secrets',
+						'environment',
+						'ports',
+						'build',
+						'image',
+					].includes(srv.toLowerCase())
 				) {
 					if (!services.includes(srv)) {
 						services.push(srv);
@@ -49,7 +60,9 @@ const extractServicesFromYaml = (yamlStr?: string): string[] => {
 };
 
 export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
-	const [logMode, setLogMode] = useState<'container' | 'build'>('container');
+	const [logMode, setLogMode] = useState<'container' | 'build'>(
+		'container',
+	);
 	const [selectedContainer, setSelectedContainer] = useState('');
 	const [lines, setLines] = useState('500');
 	const [timestamps, setTimestamps] = useState(false);
@@ -67,7 +80,8 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		return ['app'];
 	}, [availableServices]);
 
-	const activeService = selectedContainer.trim() || servicesList[0] || 'app';
+	const activeService =
+		selectedContainer.trim() || servicesList[0] || 'app';
 
 	// Connect to backend Server-Sent Events (SSE) log stream
 	useEffect(() => {
@@ -89,10 +103,13 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				}
 
 				const tailParam = lines === 'all' ? '5000' : lines;
-				const serverIdParam = compose?.server_id ? `&server_id=${compose.server_id}` : '';
-				const streamUrl = logMode === 'build'
-					? `/api/deployments/compose/${compose?.id}/logs`
-					: `/api/deployments/docker/service/${encodeURIComponent(activeService)}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}${serverIdParam}`;
+				const serverIdParam = compose?.server_id
+					? `&server_id=${compose.server_id}`
+					: '';
+				const streamUrl =
+					logMode === 'build'
+						? `/api/deployments/compose/${compose?.id}/logs`
+						: `/api/deployments/docker/service/${encodeURIComponent(activeService)}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}${serverIdParam}`;
 
 				const response = await fetch(streamUrl, {
 					headers: {
@@ -141,7 +158,11 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 								const data = JSON.parse(jsonStr);
 
 								if (data && typeof data === 'object') {
-									if (isMounted) setStreamedLogs(prev => [...prev, JSON.stringify(data)]);
+									if (isMounted)
+										setStreamedLogs(prev => [
+											...prev,
+											JSON.stringify(data),
+										]);
 								} else if (data && isMounted) {
 									setStreamedLogs(prev => [...prev, String(data)]);
 								}
@@ -169,7 +190,15 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 			isMounted = false;
 			controller.abort();
 		};
-	}, [compose?.id, activeService, logMode, lines, timestamps, isLive, refetchTrigger]);
+	}, [
+		compose?.id,
+		activeService,
+		logMode,
+		lines,
+		timestamps,
+		isLive,
+		refetchTrigger,
+	]);
 
 	const handleDownload = () => {
 		const blob = new Blob([streamedLogs.join('\n')], {type: 'text/plain'});
@@ -206,8 +235,16 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				isLoading={isLoading}
 				isLive={isLive}
 				isDeployment={logMode === 'build'}
-				loadingText={logMode === 'build' ? "Connecting to build log stream..." : `Connecting to '${activeService}' log stream...`}
-				emptyText={logMode === 'build' ? "No deployment build logs found for this compose stack." : `No runtime log output received for compose service '${activeService}'.`}
+				loadingText={
+					logMode === 'build'
+						? 'Connecting to build log stream...'
+						: `Connecting to '${activeService}' log stream...`
+				}
+				emptyText={
+					logMode === 'build'
+						? 'No deployment build logs found for this compose stack.'
+						: `No runtime log output received for compose service '${activeService}'.`
+				}
 				onDownload={handleDownload}
 				onReload={() => setRefetchTrigger(prev => prev + 1)}
 			/>

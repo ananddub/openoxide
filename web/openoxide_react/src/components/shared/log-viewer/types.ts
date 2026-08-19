@@ -1,4 +1,10 @@
-export type LogLevel = 'ALL' | 'ERROR' | 'WARN' | 'SUCCESS' | 'DEBUG' | 'INFO';
+export type LogLevel =
+	| 'ALL'
+	| 'ERROR'
+	| 'WARN'
+	| 'SUCCESS'
+	| 'DEBUG'
+	| 'INFO';
 export type StreamType = 'ALL' | 'STDOUT' | 'STDERR';
 
 export interface ParsedLogEntry {

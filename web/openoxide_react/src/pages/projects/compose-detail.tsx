@@ -18,8 +18,9 @@ import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-ba
 import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
 import {ComposeAdvancedTab} from '#/components/projects/compose/detail/compose-advanced-tab';
 
-
-export const Route = createFileRoute('/_app/projects/$id/compose/$composeId')({
+export const Route = createFileRoute(
+	'/_app/projects/$id/compose/$composeId',
+)({
 	component: ComposeDetailPage,
 });
 
@@ -67,7 +68,7 @@ function ComposeDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center min-h-[400px] w-full text-muted-foreground text-xs font-semibold">
+			<div className="flex min-h-[400px] w-full items-center justify-center text-xs font-semibold text-muted-foreground">
 				Loading Compose stack details...
 			</div>
 		);
@@ -75,18 +76,24 @@ function ComposeDetailPage() {
 
 	if (!compose) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-3 text-center">
-				<p className="text-sm font-bold text-foreground">Compose stack not found</p>
-				<p className="text-xs text-muted-foreground">The requested compose stack could not be loaded or was removed.</p>
+			<div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3 text-center">
+				<p className="text-sm font-bold text-foreground">
+					Compose stack not found
+				</p>
+				<p className="text-xs text-muted-foreground">
+					The requested compose stack could not be loaded or was removed.
+				</p>
 				<Link to="/projects/$id" params={{id: String(id)}}>
-					<Button variant="outline" className="text-xs h-8">Return to Project</Button>
+					<Button variant="outline" className="h-8 text-xs">
+						Return to Project
+					</Button>
 				</Link>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
 			<ComposeHeader
 				id={id}
 				compose={compose}
@@ -99,7 +106,11 @@ function ComposeDetailPage() {
 			{/* Tab Views */}
 			<div className="w-full">
 				{activeTab === 'General' && (
-					<ComposeGeneralTab compose={compose} onAction={handleAction} onUpdated={refetchAll} />
+					<ComposeGeneralTab
+						compose={compose}
+						onAction={handleAction}
+						onUpdated={refetchAll}
+					/>
 				)}
 				{activeTab === 'Architecture' && (
 					<ComposeArchitectureTab
@@ -118,10 +129,17 @@ function ComposeDetailPage() {
 					<ComposeContainersTab compose={compose} onUpdated={refetchAll} />
 				)}
 				{activeTab === 'Domains' && (
-					<ComposeDomainsTab composeId={parsedComposeId} compose={compose} domains={domains} />
+					<ComposeDomainsTab
+						composeId={parsedComposeId}
+						compose={compose}
+						domains={domains}
+					/>
 				)}
 				{activeTab === 'Deployments' && (
-					<ComposeDeploymentsTab composeId={parsedComposeId} deployments={deployments} />
+					<ComposeDeploymentsTab
+						composeId={parsedComposeId}
+						deployments={deployments}
+					/>
 				)}
 				{activeTab === 'Schedules' && (
 					<ComposeSchedulesTab compose={compose} schedules={schedules} />
@@ -129,11 +147,14 @@ function ComposeDetailPage() {
 				{activeTab === 'Backups' && (
 					<ComposeBackupsTab compose={compose} backups={backups} />
 				)}
-				{activeTab === 'Logs' && (
-					<ComposeLogsTab compose={compose} />
-				)}
+				{activeTab === 'Logs' && <ComposeLogsTab compose={compose} />}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={compose} appId={parsedComposeId} entityType="compose" monitoring={monitoring} />
+					<MonitoringTab
+						app={compose}
+						appId={parsedComposeId}
+						entityType="compose"
+						monitoring={monitoring}
+					/>
 				)}
 				{activeTab === 'Advanced' && (
 					<ComposeAdvancedTab compose={compose} />

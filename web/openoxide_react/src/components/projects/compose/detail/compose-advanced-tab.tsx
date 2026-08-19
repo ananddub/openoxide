@@ -6,14 +6,17 @@ interface ComposeAdvancedTabProps {
 
 export function ComposeAdvancedTab({compose}: ComposeAdvancedTabProps) {
 	return (
-		<div className="bg-card border border-border rounded-xl p-8 flex flex-col items-center justify-center text-center gap-3 min-h-[300px] shadow-sm">
-			<div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground border border-border/50">
-				<Settings2 className="w-6 h-6 opacity-60" />
+		<div className="flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-8 text-center shadow-sm">
+			<div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 bg-secondary text-muted-foreground">
+				<Settings2 className="h-6 w-6 opacity-60" />
 			</div>
 			<div>
-				<h3 className="text-sm font-bold text-foreground">Advanced Settings</h3>
-				<p className="text-xs text-muted-foreground mt-1 max-w-sm">
-					No advanced configurations currently set for compose stack '{compose?.app_name || compose?.name || 'project'}'.
+				<h3 className="text-sm font-bold text-foreground">
+					Advanced Settings
+				</h3>
+				<p className="mt-1 max-w-sm text-xs text-muted-foreground">
+					No advanced configurations currently set for compose stack '
+					{compose?.app_name || compose?.name || 'project'}'.
 				</p>
 			</div>
 		</div>

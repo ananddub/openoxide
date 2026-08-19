@@ -11,7 +11,16 @@ import {useAppStore} from '#/stores/app-store';
 export type Deployment = components['schemas']['DeploymentResponseDto'];
 export type SortKey = 'created_at' | 'title' | 'status';
 
-const FINAL_STATES = ['DONE', 'DEPLOYED', 'SUCCESS', 'FAILED', 'ERROR', 'CANCELLED', 'STOPPEDBYUSER', 'CRASHED'];
+const FINAL_STATES = [
+	'DONE',
+	'DEPLOYED',
+	'SUCCESS',
+	'FAILED',
+	'ERROR',
+	'CANCELLED',
+	'STOPPEDBYUSER',
+	'CRASHED',
+];
 
 export function useDeployments() {
 	const queryClient = useQueryClient();
@@ -25,19 +34,29 @@ export function useDeployments() {
 	const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('desc');
 
 	// Logs Dialog state
-	const [selectedDeployment, setSelectedDeployment] = React.useState<Deployment | null>(null);
-	
+	const [selectedDeployment, setSelectedDeployment] =
+		React.useState<Deployment | null>(null);
+
 	// Delegate logs streaming state to the dedicated hook
-	const {logs, isLogsLoading, copied, handleCopyLogs} = useDeploymentLogs(selectedDeployment);
+	const {logs, isLogsLoading, copied, handleCopyLogs} =
+		useDeploymentLogs(selectedDeployment);
 
 	// Error Dialog state
-	const [errorDetailDeployment, setErrorDetailDeployment] = React.useState<Deployment | null>(null);
+	const [errorDetailDeployment, setErrorDetailDeployment] =
+		React.useState<Deployment | null>(null);
 
-	const cancelMutation = $api.useMutation('post', '/deployments/{id}/cancel');
+	const cancelMutation = $api.useMutation(
+		'post',
+		'/deployments/{id}/cancel',
+	);
 	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
 	const clearAllMutation = $api.useMutation('delete', '/deployments');
 
-	const { data: apiDeployments, isLoading: isApiLoading, refetch } = $api.useQuery('get', '/deployments', {
+	const {
+		data: apiDeployments,
+		isLoading: isApiLoading,
+		refetch,
+	} = $api.useQuery('get', '/deployments', {
 		params: {
 			query: {
 				limit: 200,
@@ -46,7 +65,7 @@ export function useDeployments() {
 		},
 	});
 
-	const storeDeployments = useAppStore((state) => state.deployments);
+	const storeDeployments = useAppStore(state => state.deployments);
 
 	const deployments = React.useMemo(() => {
 		if (Array.isArray(storeDeployments) && storeDeployments.length > 0) {
@@ -58,7 +77,8 @@ export function useDeployments() {
 		return [];
 	}, [storeDeployments, apiDeployments]);
 
-	const isLoading = isApiLoading && (!deployments || deployments.length === 0);
+	const isLoading =
+		isApiLoading && (!deployments || deployments.length === 0);
 
 	const activeQueue = React.useMemo(() => {
 		if (!deployments) return [];
@@ -72,7 +92,9 @@ export function useDeployments() {
 		setRefreshing(true);
 		try {
 			await refetch();
-			await queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			await queryClient.invalidateQueries({
+				queryKey: ['get', '/deployments'],
+			});
 			toast.success('Deployments refreshed');
 		} finally {
 			setRefreshing(false);
@@ -89,7 +111,7 @@ export function useDeployments() {
 				},
 			});
 			toast.success('Deployment cancellation requested');
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -107,7 +129,7 @@ export function useDeployments() {
 			});
 			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -117,12 +139,14 @@ export function useDeployments() {
 	const handleClearAllDeployments = async () => {
 		try {
 			const res = await clearAllMutation.mutateAsync({
-				params: { query: {} },
+				params: {query: {}},
 			});
 			const data = res as any;
 			useAppStore.getState().clearDeployments();
-			toast.success(`Cleared ${data?.cleared_count || 0} deployment logs & history`);
-			queryClient.invalidateQueries({ queryKey: ['get', '/deployments'] });
+			toast.success(
+				`Cleared ${data?.cleared_count || 0} deployment logs & history`,
+			);
+			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			refetch();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -144,15 +168,20 @@ export function useDeployments() {
 			const status = d.status.toUpperCase();
 			const matchesStatus =
 				statusFilter === 'all' ||
-				(statusFilter === 'running' && (status === 'RUNNING' || status === 'CANCELLING')) ||
+				(statusFilter === 'running' &&
+					(status === 'RUNNING' || status === 'CANCELLING')) ||
 				(statusFilter === 'queued' && status === 'QUEUED') ||
 				(statusFilter === 'done' && status === 'DONE') ||
 				(statusFilter === 'error' && status === 'ERROR') ||
-				(statusFilter === 'cancelled' && (status === 'CANCELLED' || status === 'CANCELLING'));
+				(statusFilter === 'cancelled' &&
+					(status === 'CANCELLED' || status === 'CANCELLING'));
 
-			const hasApp = d.application_id !== null && d.application_id !== undefined;
-			const hasCompose = d.compose_id !== null && d.compose_id !== undefined;
-			const hasDatabase = d.database_id !== null && d.database_id !== undefined;
+			const hasApp =
+				d.application_id !== null && d.application_id !== undefined;
+			const hasCompose =
+				d.compose_id !== null && d.compose_id !== undefined;
+			const hasDatabase =
+				d.database_id !== null && d.database_id !== undefined;
 
 			const matchesType =
 				typeFilter === 'all' ||
@@ -171,14 +200,25 @@ export function useDeployments() {
 					: Number(a.created_at || 0) - Number(b.created_at || 0);
 			}
 			if (sortBy === 'title') {
-				return sortDir === 'desc' ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title);
+				return sortDir === 'desc'
+					? b.title.localeCompare(a.title)
+					: a.title.localeCompare(b.title);
 			}
 			if (sortBy === 'status') {
-				return sortDir === 'desc' ? b.status.localeCompare(a.status) : a.status.localeCompare(b.status);
+				return sortDir === 'desc'
+					? b.status.localeCompare(a.status)
+					: a.status.localeCompare(b.status);
 			}
 			return 0;
 		});
-	}, [deployments, searchQuery, statusFilter, typeFilter, sortBy, sortDir]);
+	}, [
+		deployments,
+		searchQuery,
+		statusFilter,
+		typeFilter,
+		sortBy,
+		sortDir,
+	]);
 
 	const clearFilters = () => {
 		setSearchQuery('');

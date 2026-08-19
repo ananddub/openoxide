@@ -54,7 +54,7 @@ function AppDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center min-h-[400px] w-full text-muted-foreground text-xs font-semibold">
+			<div className="flex min-h-[400px] w-full items-center justify-center text-xs font-semibold text-muted-foreground">
 				Loading Application details...
 			</div>
 		);
@@ -62,18 +62,24 @@ function AppDetailPage() {
 
 	if (!app) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-3 text-center">
-				<p className="text-sm font-bold text-foreground">Application not found</p>
-				<p className="text-xs text-muted-foreground">The requested application could not be loaded or was removed.</p>
+			<div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3 text-center">
+				<p className="text-sm font-bold text-foreground">
+					Application not found
+				</p>
+				<p className="text-xs text-muted-foreground">
+					The requested application could not be loaded or was removed.
+				</p>
 				<Link to="/projects/$id" params={{id: String(id)}}>
-					<Button variant="outline" className="text-xs h-8">Return to Project</Button>
+					<Button variant="outline" className="h-8 text-xs">
+						Return to Project
+					</Button>
 				</Link>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col gap-6 w-full pb-10 animate-in fade-in duration-200">
+		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
 			<AppHeader
 				id={id}
 				app={app}
@@ -86,10 +92,20 @@ function AppDetailPage() {
 			{/* Tab Views */}
 			<div className="w-full">
 				{activeTab === 'General' && (
-					<GeneralTab app={app} handleAction={handleAction} onUpdated={refetchAll} />
+					<GeneralTab
+						app={app}
+						handleAction={handleAction}
+						onUpdated={refetchAll}
+					/>
 				)}
 				{activeTab === 'Architecture' && (
-					<AppArchitectureTab app={app} domains={domains} schedules={schedules} backups={backups} onRefresh={refetchAll} />
+					<AppArchitectureTab
+						app={app}
+						domains={domains}
+						schedules={schedules}
+						backups={backups}
+						onRefresh={refetchAll}
+					/>
 				)}
 				{activeTab === 'Environment' && (
 					<EnvironmentTab app={app} handleUpdate={handleUpdate} />
@@ -98,22 +114,37 @@ function AppDetailPage() {
 					<DomainsTab app={app} domains={domains} onRefresh={refetchAll} />
 				)}
 				{activeTab === 'Deployments' && (
-					<DeploymentsTab appId={parsedAppId} deployments={deployments} onRefresh={refetchAll} />
+					<DeploymentsTab
+						appId={parsedAppId}
+						deployments={deployments}
+						onRefresh={refetchAll}
+					/>
 				)}
 				{activeTab === 'Preview Deployments' && (
 					<PreviewDeploymentsTab app={app} />
 				)}
 				{activeTab === 'Schedules' && (
-					<SchedulesTab app={app} schedules={schedules} onRefresh={refetchAll} />
+					<SchedulesTab
+						app={app}
+						schedules={schedules}
+						onRefresh={refetchAll}
+					/>
 				)}
 				{activeTab === 'Volume Backups' && (
-					<VolumeBackupsTab app={app} backups={backups} onRefresh={refetchAll} />
+					<VolumeBackupsTab
+						app={app}
+						backups={backups}
+						onRefresh={refetchAll}
+					/>
 				)}
-				{activeTab === 'Logs' && (
-					<LogsTab app={app} />
-				)}
+				{activeTab === 'Logs' && <LogsTab app={app} />}
 				{activeTab === 'Monitoring' && (
-					<MonitoringTab app={app} appId={parsedAppId} entityType="application" monitoring={monitoring} />
+					<MonitoringTab
+						app={app}
+						appId={parsedAppId}
+						entityType="application"
+						monitoring={monitoring}
+					/>
 				)}
 				{activeTab === 'Advanced' && (
 					<AdvancedTab app={app} onUpdated={refetchAll} />

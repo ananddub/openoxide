@@ -64,14 +64,18 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfilePage() {
-	const storeProfile = useAppStore((state) => state.profile);
-	const authUser = useAuthStore((state) => state.user);
+	const storeProfile = useAppStore(state => state.profile);
+	const authUser = useAuthStore(state => state.user);
 	const isLoading = false;
 
 	useEffect(() => {
 		const initialEmail = storeProfile?.email || authUser?.email || '';
-		const initialFirstName = storeProfile?.name?.split(' ')[0] || authUser?.firstName || '';
-		const initialLastName = storeProfile?.name?.split(' ').slice(1).join(' ') || authUser?.lastName || '';
+		const initialFirstName =
+			storeProfile?.name?.split(' ')[0] || authUser?.firstName || '';
+		const initialLastName =
+			storeProfile?.name?.split(' ').slice(1).join(' ') ||
+			authUser?.lastName ||
+			'';
 		const initialAvatar = storeProfile?.avatar || '';
 
 		setEmail(initialEmail);
@@ -79,7 +83,10 @@ export function ProfilePage() {
 		setLastName(initialLastName);
 		setAvatarValue(initialAvatar);
 	}, [storeProfile, authUser]);
-	const {data: twoFactorStatus} = $api.useQuery('get', '/auth/2fa/status' as any);
+	const {data: twoFactorStatus} = $api.useQuery(
+		'get',
+		'/auth/2fa/status' as any,
+	);
 
 	// Real API Tokens Query
 	const {
@@ -111,7 +118,10 @@ export function ProfilePage() {
 		},
 	});
 
-	const createApiTokenMutation = $api.useMutation('post', '/auth/api-tokens' as any);
+	const createApiTokenMutation = $api.useMutation(
+		'post',
+		'/auth/api-tokens' as any,
+	);
 	const revokeApiTokenMutation = $api.useMutation(
 		'delete',
 		'/auth/api-tokens/{id}' as any,
@@ -120,7 +130,9 @@ export function ProfilePage() {
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [email, setEmail] = useState('');
-	const [avatarValue, setAvatarValue] = useState<string>(PRESET_AVATARS[0]);
+	const [avatarValue, setAvatarValue] = useState<string>(
+		PRESET_AVATARS[0],
+	);
 
 	const colorInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,13 +141,17 @@ export function ProfilePage() {
 	const [isCreateKeyOpen, setIsCreateKeyOpen] = useState(false);
 	const [keyName, setKeyName] = useState('');
 	const [keyConfirmPassword, setKeyConfirmPassword] = useState('');
-	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
-	const [copiedKeyId, setCopiedKeyId] = useState<string | number | null>(null);
+	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(
+		null,
+	);
+	const [copiedKeyId, setCopiedKeyId] = useState<string | number | null>(
+		null,
+	);
 	const [isCreatingKey, setIsCreatingKey] = useState(false);
 
-
-
-	const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleImageFileUpload = (
+		e: React.ChangeEvent<HTMLInputElement>,
+	) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
@@ -224,57 +240,65 @@ export function ProfilePage() {
 		setTimeout(() => setCopiedKeyId(null), 2000);
 	};
 
-	const userInitials = getAvatarInitials(`${firstName} ${lastName}`.trim() || email);
+	const userInitials = getAvatarInitials(
+		`${firstName} ${lastName}`.trim() || email,
+	);
 
 	return (
-		<div className="w-full max-w-5xl mx-auto flex flex-col gap-6 pb-12 animate-in fade-in duration-150">
+		<div className="mx-auto flex w-full max-w-5xl animate-in flex-col gap-6 pb-12 duration-150 fade-in">
 			{/* Account Card */}
-			<Card className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden">
-				<CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-4">
+			<Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs">
+				<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4">
 					<div>
-						<CardTitle className="text-xl flex flex-row items-center gap-2 font-bold">
+						<CardTitle className="flex flex-row items-center gap-2 text-xl font-bold">
 							<User className="size-5 text-muted-foreground" />
 							<span>Account</span>
 						</CardTitle>
-						<CardDescription className="text-xs text-muted-foreground mt-0.5">
+						<CardDescription className="mt-0.5 text-xs text-muted-foreground">
 							Manage your avatar and view profile details.
 						</CardDescription>
 					</div>
 				</CardHeader>
 
-				<CardContent className="space-y-6 pt-4 border-t border-border/60">
+				<CardContent className="space-y-6 border-t border-border/60 pt-4">
 					{isLoading ? (
-						<div className="flex flex-row gap-2 items-center justify-center text-sm text-muted-foreground min-h-[25vh]">
-							<Loader2 className="animate-spin size-4 text-primary" />
+						<div className="flex min-h-[25vh] flex-row items-center justify-center gap-2 text-sm text-muted-foreground">
+							<Loader2 className="size-4 animate-spin text-primary" />
 							<span>Loading account profile...</span>
 						</div>
 					) : (
-						<form onSubmit={handleSubmitProfile} className="flex flex-col gap-6">
+						<form
+							onSubmit={handleSubmitProfile}
+							className="flex flex-col gap-6">
 							{/* Editable Account Information Grid */}
-							<div className="flex flex-col gap-3 p-4 bg-muted/20 border border-border/60 rounded-xl">
+							<div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
 								<div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
 									<User className="size-3.5 text-primary" />
 									<span>Account Information</span>
 								</div>
 
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<div className="flex flex-col gap-1.5">
-										<label className="text-[11px] font-semibold text-muted-foreground">First Name</label>
+										<label className="text-[11px] font-semibold text-muted-foreground">
+											First Name
+										</label>
 										<Input
 											placeholder="First Name"
 											value={firstName}
 											onChange={e => setFirstName(e.target.value)}
-											className="h-9 text-xs bg-muted/30 border-border/70"
+											className="h-9 border-border/70 bg-muted/30 text-xs"
 										/>
 									</div>
 
 									<div className="flex flex-col gap-1.5">
-										<label className="text-[11px] font-semibold text-muted-foreground">Last Name</label>
+										<label className="text-[11px] font-semibold text-muted-foreground">
+											Last Name
+										</label>
 										<Input
 											placeholder="Last Name"
 											value={lastName}
 											onChange={e => setLastName(e.target.value)}
-											className="h-9 text-xs bg-muted/30 border-border/70"
+											className="h-9 border-border/70 bg-muted/30 text-xs"
 										/>
 									</div>
 								</div>
@@ -282,28 +306,36 @@ export function ProfilePage() {
 
 							{/* Dokploy 1:1 Avatar Selection */}
 							<div className="flex flex-col gap-2 pt-2">
-								<label className="text-xs font-semibold text-foreground">Avatar Selection</label>
+								<label className="text-xs font-semibold text-foreground">
+									Avatar Selection
+								</label>
 
 								<div className="flex flex-row flex-wrap items-center gap-3">
 									{/* Default Initials Avatar */}
 									<div
 										onClick={() => setAvatarValue('')}
-										className={`h-12 w-12 rounded-full border flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${
-											!avatarValue ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border hover:border-primary'
-										}`}
-									>
+										className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border text-xs font-bold transition-all ${
+											!avatarValue
+												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
+												: 'border-border hover:border-primary'
+										}`}>
 										{userInitials}
 									</div>
 
 									{/* Custom Uploaded Avatar */}
 									<div
 										onClick={() => fileInputRef.current?.click()}
-										className={`h-12 w-12 rounded-full border border-dashed hover:border-primary transition-all flex items-center justify-center bg-muted/40 cursor-pointer overflow-hidden relative ${
-											(avatarValue || '').startsWith('data:') ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background' : 'border-border'
-										}`}
-									>
+										className={`relative flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed bg-muted/40 transition-all hover:border-primary ${
+											(avatarValue || '').startsWith('data:')
+												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
+												: 'border-border'
+										}`}>
 										{(avatarValue || '').startsWith('data:') ? (
-											<img src={avatarValue} alt="Custom avatar" className="h-full w-full object-cover rounded-full" />
+											<img
+												src={avatarValue}
+												alt="Custom avatar"
+												className="h-full w-full rounded-full object-cover"
+											/>
 										) : (
 											<Upload className="h-4 w-4 text-muted-foreground" />
 										)}
@@ -319,20 +351,29 @@ export function ProfilePage() {
 									{/* Color Picker Avatar */}
 									<div
 										onClick={() => colorInputRef.current?.click()}
-										className={`h-12 w-12 rounded-full border hover:border-primary transition-all flex items-center justify-center cursor-pointer overflow-hidden relative ${
-											isSolidColorAvatar(avatarValue) ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary' : 'border-border'
+										className={`relative flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-all hover:border-primary ${
+											isSolidColorAvatar(avatarValue)
+												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
+												: 'border-border'
 										}`}
 										style={{
-											backgroundColor: isSolidColorAvatar(avatarValue) ? avatarValue : undefined,
-										}}
-									>
-										{!isSolidColorAvatar(avatarValue) && <Palette className="h-4 w-4 text-muted-foreground" />}
+											backgroundColor: isSolidColorAvatar(avatarValue)
+												? avatarValue
+												: undefined,
+										}}>
+										{!isSolidColorAvatar(avatarValue) && (
+											<Palette className="h-4 w-4 text-muted-foreground" />
+										)}
 									</div>
 									<input
 										ref={colorInputRef}
 										type="color"
-										className="absolute opacity-0 pointer-events-none w-12 h-12"
-										value={isSolidColorAvatar(avatarValue) ? avatarValue : '#3b82f6'}
+										className="pointer-events-none absolute h-12 w-12 opacity-0"
+										value={
+											isSolidColorAvatar(avatarValue)
+												? avatarValue
+												: '#3b82f6'
+										}
 										onChange={e => setAvatarValue(e.target.value)}
 									/>
 
@@ -341,23 +382,29 @@ export function ProfilePage() {
 										<div
 											key={idx}
 											onClick={() => setAvatarValue(imgUrl)}
-											className={`h-12 w-12 rounded-full border overflow-hidden cursor-pointer transition-all hover:scale-105 ${
-												avatarValue === imgUrl ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary' : 'border-border hover:border-primary'
-											}`}
-										>
-											<img src={imgUrl} alt={`Preset avatar ${idx}`} className="h-full w-full object-cover rounded-full" />
+											className={`h-12 w-12 cursor-pointer overflow-hidden rounded-full border transition-all hover:scale-105 ${
+												avatarValue === imgUrl
+													? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
+													: 'border-border hover:border-primary'
+											}`}>
+											<img
+												src={imgUrl}
+												alt={`Preset avatar ${idx}`}
+												className="h-full w-full rounded-full object-cover"
+											/>
 										</div>
 									))}
 								</div>
 							</div>
 
-							<div className="flex justify-end pt-2 border-t border-border/40">
+							<div className="flex justify-end border-t border-border/40 pt-2">
 								<Button
 									type="submit"
 									disabled={updateUserMutation.isPending}
-									className="h-9 text-xs font-bold px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-								>
-									{updateUserMutation.isPending ? 'Saving...' : 'Save Profile Changes'}
+									className="h-9 cursor-pointer bg-primary px-5 text-xs font-bold text-primary-foreground hover:bg-primary/90">
+									{updateUserMutation.isPending
+										? 'Saving...'
+										: 'Save Profile Changes'}
 								</Button>
 							</div>
 						</form>

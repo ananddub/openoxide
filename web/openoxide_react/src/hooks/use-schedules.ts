@@ -6,7 +6,7 @@ import {useOrganizationStore} from '#/stores/organization-store';
 import type {components} from '#/types/api';
 import {useScheduleListByOrganization} from 'virtual:openoxide-live';
 
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 export type Schedule = components['schemas']['ScheduleResponseDto'];
 
@@ -14,21 +14,24 @@ export function useSchedules() {
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-	const [editingSchedule, setEditingSchedule] = React.useState<Schedule | null>(null);
+	const [editingSchedule, setEditingSchedule] =
+		React.useState<Schedule | null>(null);
 
-	const storeSchedules = useAppStore((state) => state.schedules);
+	const storeSchedules = useAppStore(state => state.schedules);
 
 	// Fetch schedules — live hook returns undefined which falls back to Zustand store
-	const {data: rawSchedules, loading: isQueryLoading} = useScheduleListByOrganization(BigInt(activeOrg?.id ?? 1));
+	const {data: rawSchedules, loading: isQueryLoading} =
+		useScheduleListByOrganization(BigInt(activeOrg?.id ?? 1));
 
-	const schedules = (rawSchedules && Array.isArray(rawSchedules) && rawSchedules.length > 0)
-		? rawSchedules
-		: (storeSchedules || []);
+	const schedules =
+		rawSchedules && Array.isArray(rawSchedules) && rawSchedules.length > 0
+			? rawSchedules
+			: storeSchedules || [];
 
 	const loading = schedules.length === 0 && isQueryLoading;
 
 	// Remote servers list from Zustand RAM store
-	const servers = useAppStore((state) => state.servers || []);
+	const servers = useAppStore(state => state.servers || []);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -64,7 +67,9 @@ export function useSchedules() {
 					enabled: schedule.enabled ? 0 : 1,
 				},
 			});
-			toast.success(`Schedule ${schedule.enabled ? 'paused' : 'resumed'} successfully`);
+			toast.success(
+				`Schedule ${schedule.enabled ? 'paused' : 'resumed'} successfully`,
+			);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -80,7 +85,9 @@ export function useSchedules() {
 					},
 				},
 			});
-			toast.success(res?.message || 'Manual run completed successfully', {id: `run-${id}`});
+			toast.success(res?.message || 'Manual run completed successfully', {
+				id: `run-${id}`,
+			});
 		} catch (err: unknown) {
 			toast.error(formatApiError(err), {id: `run-${id}`});
 		}

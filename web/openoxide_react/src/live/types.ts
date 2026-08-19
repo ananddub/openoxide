@@ -1,4 +1,4 @@
-import type { Socket } from 'socket.io-client';
+import type {Socket} from 'socket.io-client';
 
 export type LiveEndpoint<TArgs extends readonly unknown[], TData> = {
 	namespace: string;
@@ -20,10 +20,10 @@ export type Entry = {
 	version: number;
 };
 
-export type SocketEntry = { socket: Socket; ready: boolean };
+export type SocketEntry = {socket: Socket; ready: boolean};
 
-export type RefetchState = { running: boolean; pending: boolean };
+export type RefetchState = {running: boolean; pending: boolean};
 
-export type LiveUpdate = { endpoint: string; args: unknown; data: unknown };
+export type LiveUpdate = {endpoint: string; args: unknown; data: unknown};
 
-export type LiveInvalidation = { endpoint: string; args: unknown };
+export type LiveInvalidation = {endpoint: string; args: unknown};

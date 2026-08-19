@@ -11,10 +11,23 @@ interface DatabaseAdvancedResourcesProps {
 	onUpdated: () => void;
 }
 
-export function DatabaseAdvancedResources({database, onUpdated}: DatabaseAdvancedResourcesProps) {
-	const kind = (database?.kind || database?.database_kind || 'postgres').toLowerCase();
+export function DatabaseAdvancedResources({
+	database,
+	onUpdated,
+}: DatabaseAdvancedResourcesProps) {
+	const kind = (
+		database?.kind ||
+		database?.database_kind ||
+		'postgres'
+	).toLowerCase();
 
-	let endpoint: '/postgres/{id}' | '/mysql/{id}' | '/mariadb/{id}' | '/mongo/{id}' | '/redis/{id}' | '/libsql/{id}' = '/postgres/{id}';
+	let endpoint:
+		| '/postgres/{id}'
+		| '/mysql/{id}'
+		| '/mariadb/{id}'
+		| '/mongo/{id}'
+		| '/redis/{id}'
+		| '/libsql/{id}' = '/postgres/{id}';
 	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
 	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
 	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
@@ -23,7 +36,9 @@ export function DatabaseAdvancedResources({database, onUpdated}: DatabaseAdvance
 
 	const patchDatabase = $api.useMutation('patch', endpoint as any);
 
-	const [replicas, setReplicas] = useState(String(database?.replicas || '1'));
+	const [replicas, setReplicas] = useState(
+		String(database?.replicas || '1'),
+	);
 	const [memRes, setMemRes] = useState(database?.memory_reservation || '');
 	const [memLimit, setMemLimit] = useState(database?.memory_limit || '');
 	const [cpuRes, setCpuRes] = useState(database?.cpu_reservation || '');
@@ -61,46 +76,96 @@ export function DatabaseAdvancedResources({database, onUpdated}: DatabaseAdvance
 	};
 
 	return (
-		<section className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
+		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
 			<div>
-				<h3 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
-					<Cpu className="size-4 text-primary" /> Container Replicas & Resource Limits
+				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
+					<Cpu className="size-4 text-primary" /> Container Replicas &
+					Resource Limits
 				</h3>
-				<p className="text-xs text-muted-foreground mt-0.5">
-					Configure instance replicas, memory reservation/limit (e.g. <code className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[11px]">512m</code>, <code className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[11px]">2g</code>), and CPU allocation.
+				<p className="mt-0.5 text-xs text-muted-foreground">
+					Configure instance replicas, memory reservation/limit (e.g.{' '}
+					<code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px]">
+						512m
+					</code>
+					,{' '}
+					<code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px]">
+						2g
+					</code>
+					), and CPU allocation.
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/40 pt-4">
+			<div className="grid grid-cols-1 gap-4 border-t border-border/40 pt-4 md:grid-cols-2">
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Replicas</label>
-					<Input type="number" min="1" max="10" value={replicas} onChange={e => setReplicas(e.target.value)} className="h-9 text-xs" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Replicas
+					</label>
+					<Input
+						type="number"
+						min="1"
+						max="10"
+						value={replicas}
+						onChange={e => setReplicas(e.target.value)}
+						className="h-9 text-xs"
+					/>
 				</div>
 
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Memory Reservation</label>
-					<Input placeholder="e.g. 256m" value={memRes} onChange={e => setMemRes(e.target.value)} className="h-9 text-xs" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Memory Reservation
+					</label>
+					<Input
+						placeholder="e.g. 256m"
+						value={memRes}
+						onChange={e => setMemRes(e.target.value)}
+						className="h-9 text-xs"
+					/>
 				</div>
 
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Memory Limit</label>
-					<Input placeholder="e.g. 1g" value={memLimit} onChange={e => setMemLimit(e.target.value)} className="h-9 text-xs" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Memory Limit
+					</label>
+					<Input
+						placeholder="e.g. 1g"
+						value={memLimit}
+						onChange={e => setMemLimit(e.target.value)}
+						className="h-9 text-xs"
+					/>
 				</div>
 
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">CPU Reservation</label>
-					<Input placeholder="e.g. 0.2" value={cpuRes} onChange={e => setCpuRes(e.target.value)} className="h-9 text-xs" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						CPU Reservation
+					</label>
+					<Input
+						placeholder="e.g. 0.2"
+						value={cpuRes}
+						onChange={e => setCpuRes(e.target.value)}
+						className="h-9 text-xs"
+					/>
 				</div>
 
 				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">CPU Limit</label>
-					<Input placeholder="e.g. 1.0" value={cpuLimit} onChange={e => setCpuLimit(e.target.value)} className="h-9 text-xs" />
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						CPU Limit
+					</label>
+					<Input
+						placeholder="e.g. 1.0"
+						value={cpuLimit}
+						onChange={e => setCpuLimit(e.target.value)}
+						className="h-9 text-xs"
+					/>
 				</div>
 			</div>
 
 			<div className="flex justify-end border-t border-border/40 pt-4">
-				<Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
-					<Save className="size-3.5" /> {saving ? 'Saving...' : 'Save Resources'}
+				<Button
+					onClick={handleSave}
+					disabled={saving}
+					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
+					<Save className="size-3.5" />{' '}
+					{saving ? 'Saving...' : 'Save Resources'}
 				</Button>
 			</div>
 		</section>

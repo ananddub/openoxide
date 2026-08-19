@@ -13,7 +13,10 @@ interface LogActionsMenuProps {
 	onShowDetails: (entry: ParsedLogEntry) => void;
 }
 
-export function LogActionsMenu({entry, onShowDetails}: LogActionsMenuProps) {
+export function LogActionsMenu({
+	entry,
+	onShowDetails,
+}: LogActionsMenuProps) {
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = () => {
@@ -34,24 +37,31 @@ export function LogActionsMenu({entry, onShowDetails}: LogActionsMenuProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				title="Log Line Actions"
-				className="opacity-0 group-hover/entry:opacity-100 transition-opacity p-0.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 shrink-0 inline-flex items-center cursor-pointer"
-			>
-				<MoreVertical className="w-3.5 h-3.5" />
+				className="inline-flex shrink-0 cursor-pointer items-center rounded p-0.5 text-zinc-400 opacity-0 transition-opacity group-hover/entry:opacity-100 hover:bg-zinc-800 hover:text-zinc-100">
+				<MoreVertical className="h-3.5 w-3.5" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-44 bg-card border-border font-mono text-xs">
-				<DropdownMenuItem onClick={handleCopy} className="cursor-pointer gap-2">
-					<Copy className="w-3.5 h-3.5 text-muted-foreground" />
+			<DropdownMenuContent
+				align="start"
+				className="w-44 border-border bg-card font-mono text-xs">
+				<DropdownMenuItem
+					onClick={handleCopy}
+					className="cursor-pointer gap-2">
+					<Copy className="h-3.5 w-3.5 text-muted-foreground" />
 					<span>{copied ? 'Copied!' : 'Copy log message'}</span>
 				</DropdownMenuItem>
 
-				<DropdownMenuItem onClick={handleCopyPermalink} className="cursor-pointer gap-2">
-					<Link className="w-3.5 h-3.5 text-muted-foreground" />
+				<DropdownMenuItem
+					onClick={handleCopyPermalink}
+					className="cursor-pointer gap-2">
+					<Link className="h-3.5 w-3.5 text-muted-foreground" />
 					<span>Copy permalink</span>
 				</DropdownMenuItem>
 
 				{(entry.isJson || entry.clean.length > 80) && (
-					<DropdownMenuItem onClick={() => onShowDetails(entry)} className="cursor-pointer gap-2">
-						<Code className="w-3.5 h-3.5 text-muted-foreground" />
+					<DropdownMenuItem
+						onClick={() => onShowDetails(entry)}
+						className="cursor-pointer gap-2">
+						<Code className="h-3.5 w-3.5 text-muted-foreground" />
 						<span>Show details</span>
 					</DropdownMenuItem>
 				)}

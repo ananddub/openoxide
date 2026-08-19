@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const LogDate = React.memo(({ timestamp }: { timestamp: string }) => {
+export const LogDate = React.memo(({timestamp}: {timestamp: string}) => {
 	if (!timestamp) return null;
 
 	let timePart = '';
@@ -24,10 +24,12 @@ export const LogDate = React.memo(({ timestamp }: { timestamp: string }) => {
 	}
 
 	return (
-		<div className="bg-muted/80 border border-border/80 text-[11px] font-mono rounded-xs px-2 py-[0.12rem] shrink-0 select-none inline-flex items-baseline gap-0">
-			<span className="text-sky-400 font-medium tracking-tight">{timePart}</span>
+		<div className="inline-flex shrink-0 items-baseline gap-0 rounded-xs border border-border/80 bg-muted/80 px-2 py-[0.12rem] font-mono text-[11px] select-none">
+			<span className="font-medium tracking-tight text-sky-400">
+				{timePart}
+			</span>
 			{msPart && (
-				<span className="text-sky-600/60 text-[9px]">.{msPart}</span>
+				<span className="text-[9px] text-sky-600/60">.{msPart}</span>
 			)}
 		</div>
 	);

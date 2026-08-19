@@ -2,7 +2,13 @@ import {Save, Code2} from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	GithubIcon,
 	GitlabIcon,
@@ -59,24 +65,50 @@ export function ComposeSourceCard({
 	onSave,
 }: ComposeSourceCardProps) {
 	const PROVIDERS = [
-		{id: 'GITHUB', label: 'GitHub', icon: <GithubIcon className="w-4 h-4" />},
-		{id: 'GITLAB', label: 'GitLab', icon: <GitlabIcon className="w-4.5 h-4.5" />},
-		{id: 'GITEA', label: 'Gitea', icon: <GiteaIcon className="w-4.5 h-4.5" />},
-		{id: 'BITBUCKET', label: 'Bitbucket', icon: <BitbucketIcon className="w-4 h-4" />},
-		{id: 'GIT', label: 'Git', icon: <GitIcon className="w-4.5 h-4.5" />},
-		{id: 'RAW', label: 'Raw YML', icon: <Code2 className="w-4 h-4 text-primary" />},
+		{
+			id: 'GITHUB',
+			label: 'GitHub',
+			icon: <GithubIcon className="h-4 w-4" />,
+		},
+		{
+			id: 'GITLAB',
+			label: 'GitLab',
+			icon: <GitlabIcon className="h-4.5 w-4.5" />,
+		},
+		{
+			id: 'GITEA',
+			label: 'Gitea',
+			icon: <GiteaIcon className="h-4.5 w-4.5" />,
+		},
+		{
+			id: 'BITBUCKET',
+			label: 'Bitbucket',
+			icon: <BitbucketIcon className="h-4 w-4" />,
+		},
+		{id: 'GIT', label: 'Git', icon: <GitIcon className="h-4.5 w-4.5" />},
+		{
+			id: 'RAW',
+			label: 'Raw YML',
+			icon: <Code2 className="h-4 w-4 text-primary" />,
+		},
 	] as const;
 
 	return (
-		<section className="bg-card border border-border rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 shadow-sm">
 			<div className="flex items-center justify-between border-b border-border/40 pb-4">
-				<h3 className="text-sm font-bold text-foreground">Compose Source & Provider Configuration</h3>
-				<Button size="sm" onClick={onSave} disabled={savingSource} className="h-8 text-xs font-semibold flex items-center gap-1.5">
-					<Save className="w-3.5 h-3.5" /> Save Source Settings
+				<h3 className="text-sm font-bold text-foreground">
+					Compose Source & Provider Configuration
+				</h3>
+				<Button
+					size="sm"
+					onClick={onSave}
+					disabled={savingSource}
+					className="flex h-8 items-center gap-1.5 text-xs font-semibold">
+					<Save className="h-3.5 w-3.5" /> Save Source Settings
 				</Button>
 			</div>
 
-			<div className="flex flex-wrap border-b border-border/60 gap-1 pb-1 relative w-full -mb-[1px]">
+			<div className="relative -mb-[1px] flex w-full flex-wrap gap-1 border-b border-border/60 pb-1">
 				{PROVIDERS.map(p => {
 					const isActive = provider === p.id;
 					return (
@@ -84,12 +116,11 @@ export function ComposeSourceCard({
 							key={p.id}
 							type="button"
 							onClick={() => setProvider(p.id)}
-							className={`text-xs font-bold px-3.5 pb-2 pt-2 transition-all flex items-center gap-1.5 cursor-pointer border-b-2 -mb-[1px] ${
-								isActive 
-									? 'border-foreground text-foreground font-bold' 
-									: 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/40'
-							}`}
-						>
+							className={`-mb-[1px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 pt-2 pb-2 text-xs font-bold transition-all ${
+								isActive
+									? 'border-foreground font-bold text-foreground'
+									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+							}`}>
 							{p.icon}
 							{p.label}
 						</button>
@@ -99,7 +130,7 @@ export function ComposeSourceCard({
 
 			{provider === 'RAW' ? (
 				<div className="flex flex-col gap-3">
-					<div className="border border-border/80 rounded-xl overflow-hidden shadow-inner bg-zinc-950">
+					<div className="overflow-hidden rounded-xl border border-border/80 bg-zinc-950 shadow-inner">
 						<Editor
 							height="360px"
 							defaultLanguage="yaml"
@@ -115,41 +146,62 @@ export function ComposeSourceCard({
 						/>
 					</div>
 					<div className="flex flex-col gap-1">
-						<label className="text-xs font-semibold text-foreground">Compose Command Override (Optional)</label>
+						<label className="text-xs font-semibold text-foreground">
+							Compose Command Override (Optional)
+						</label>
 						<Input
 							value={command}
 							onChange={e => setCommand(e.target.value)}
 							placeholder="docker compose up -d --build"
-							className="h-9 text-xs font-mono"
+							className="h-9 font-mono text-xs"
 						/>
 					</div>
 				</div>
 			) : provider === 'GIT' ? (
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+				<div className="grid grid-cols-1 items-end gap-4 md:grid-cols-3">
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Repository URL *</label>
-						<Input value={gitUrl} onChange={e => setGitUrl(e.target.value)} placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Repository URL *
+						</label>
+						<Input
+							value={gitUrl}
+							onChange={e => setGitUrl(e.target.value)}
+							placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 
 					<div className="flex flex-col gap-1.5 md:col-span-1">
-						<label className="text-xs font-semibold text-foreground">SSH Key (Optional for private repos)</label>
+						<label className="text-xs font-semibold text-foreground">
+							SSH Key (Optional for private repos)
+						</label>
 						{(() => {
-							const selectedKey = sshKeys?.find((k: any) => Number(k.id) === Number(gitSshKeyId));
-							const selectedName = gitSshKeyId ? (selectedKey?.name || `SSH Key #${gitSshKeyId}`) : 'None (Public Repo)';
+							const selectedKey = sshKeys?.find(
+								(k: any) => Number(k.id) === Number(gitSshKeyId),
+							);
+							const selectedName = gitSshKeyId
+								? selectedKey?.name || `SSH Key #${gitSshKeyId}`
+								: 'None (Public Repo)';
 							return (
 								<Select
 									value={gitSshKeyId ? String(gitSshKeyId) : 'none'}
-									onValueChange={v => setGitSshKeyId(v === 'none' ? undefined : Number(v))}
-								>
-									<SelectTrigger className="w-full h-9 text-xs font-sans bg-card border-border">
+									onValueChange={v =>
+										setGitSshKeyId(v === 'none' ? undefined : Number(v))
+									}>
+									<SelectTrigger className="h-9 w-full border-border bg-card font-sans text-xs">
 										<SelectValue placeholder="No SSH Key Selected">
 											{selectedName}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="none" className="text-xs font-sans">None (Public Repo)</SelectItem>
+										<SelectItem value="none" className="font-sans text-xs">
+											None (Public Repo)
+										</SelectItem>
 										{sshKeys?.map((key: any) => (
-											<SelectItem key={key.id} value={String(key.id)} className="text-xs font-sans">
+											<SelectItem
+												key={key.id}
+												value={String(key.id)}
+												className="font-sans text-xs">
 												{key.name}
 											</SelectItem>
 										))}
@@ -160,44 +212,89 @@ export function ComposeSourceCard({
 					</div>
 
 					<div className="flex flex-col gap-1.5 md:col-span-1">
-						<label className="text-xs font-semibold text-foreground">Git Branch *</label>
-						<Input value={gitBranch} onChange={e => setGitBranch(e.target.value)} placeholder="main" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Git Branch *
+						</label>
+						<Input
+							value={gitBranch}
+							onChange={e => setGitBranch(e.target.value)}
+							placeholder="main"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Compose File Path *</label>
-						<Input value={gitBuildPath} onChange={e => setGitBuildPath(e.target.value)} placeholder="docker-compose.yml" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Compose File Path *
+						</label>
+						<Input
+							value={gitBuildPath}
+							onChange={e => setGitBuildPath(e.target.value)}
+							placeholder="docker-compose.yml"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+				<div className="grid grid-cols-1 items-end gap-4 md:grid-cols-4">
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Owner / Username *</label>
-						<Input value={repoOwner} onChange={e => setRepoOwner(e.target.value)} placeholder="e.g. ananddub" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Owner / Username *
+						</label>
+						<Input
+							value={repoOwner}
+							onChange={e => setRepoOwner(e.target.value)}
+							placeholder="e.g. ananddub"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Repository Name *</label>
-						<Input value={repoName} onChange={e => setRepoName(e.target.value)} placeholder="e.g. sample-node-project" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Repository Name *
+						</label>
+						<Input
+							value={repoName}
+							onChange={e => setRepoName(e.target.value)}
+							placeholder="e.g. sample-node-project"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Git Branch *</label>
-						<Input value={gitBranch} onChange={e => setGitBranch(e.target.value)} placeholder="main" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Git Branch *
+						</label>
+						<Input
+							value={gitBranch}
+							onChange={e => setGitBranch(e.target.value)}
+							placeholder="main"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 					<div className="flex flex-col gap-1.5 md:col-span-2">
-						<label className="text-xs font-semibold text-foreground">Compose File Path *</label>
-						<Input value={gitBuildPath} onChange={e => setGitBuildPath(e.target.value)} placeholder="docker-compose.yml" className="h-9 text-xs font-mono" />
+						<label className="text-xs font-semibold text-foreground">
+							Compose File Path *
+						</label>
+						<Input
+							value={gitBuildPath}
+							onChange={e => setGitBuildPath(e.target.value)}
+							placeholder="docker-compose.yml"
+							className="h-9 font-mono text-xs"
+						/>
 					</div>
 
 					{/* Collapsible / Optional YAML Code editor for previewing graph */}
-					<div className="md:col-span-4 flex flex-col gap-2 pt-2 border-t border-border/40">
+					<div className="flex flex-col gap-2 border-t border-border/40 pt-2 md:col-span-4">
 						<details className="group">
-							<summary className="text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 select-none py-1">
+							<summary className="flex cursor-pointer items-center gap-1.5 py-1 text-xs font-semibold text-muted-foreground select-none hover:text-foreground">
 								<Code2 className="size-3.5 text-primary" />
-								<span>Compose YAML Content (Paste code here to preview Dependency Graph without building)</span>
+								<span>
+									Compose YAML Content (Paste code here to preview
+									Dependency Graph without building)
+								</span>
 							</summary>
-							<div className="pt-3 flex flex-col gap-2">
-								<div className="border border-border/80 rounded-xl overflow-hidden shadow-inner bg-zinc-950">
+							<div className="flex flex-col gap-2 pt-3">
+								<div className="overflow-hidden rounded-xl border border-border/80 bg-zinc-950 shadow-inner">
 									<Editor
 										height="240px"
 										defaultLanguage="yaml"
@@ -213,7 +310,8 @@ export function ComposeSourceCard({
 									/>
 								</div>
 								<p className="text-[11px] text-muted-foreground italic">
-									Pasting your docker-compose.yml content here instantly renders the service graph below.
+									Pasting your docker-compose.yml content here instantly
+									renders the service graph below.
 								</p>
 							</div>
 						</details>

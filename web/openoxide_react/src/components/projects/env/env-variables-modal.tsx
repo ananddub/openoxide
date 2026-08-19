@@ -35,16 +35,20 @@ export function EnvVariablesModal({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const patchProjectMutation = $api.useMutation('patch', '/projects/{id}');
-	const patchEnvironmentMutation = $api.useMutation('patch', '/environments/{id}');
+	const patchEnvironmentMutation = $api.useMutation(
+		'patch',
+		'/environments/{id}',
+	);
 
 	useEffect(() => {
 		setProjectEnv(project.env_var || '');
 		setEnvVars(environment?.env_var || '');
 	}, [project, environment, isOpen]);
 
-	const isModified = mode === 'PROJECT'
-		? projectEnv !== (project.env_var || '')
-		: envVars !== (environment?.env_var || '');
+	const isModified =
+		mode === 'PROJECT'
+			? projectEnv !== (project.env_var || '')
+			: envVars !== (environment?.env_var || '');
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -61,7 +65,9 @@ export function EnvVariablesModal({
 					params: {path: {id: environment.id}},
 					body: {env_var: envVars},
 				});
-				toast.success(`Environment variables updated for ${environment.name}`);
+				toast.success(
+					`Environment variables updated for ${environment.name}`,
+				);
 			}
 			onUpdated();
 			onClose();
@@ -72,21 +78,24 @@ export function EnvVariablesModal({
 		}
 	};
 
-	const title = mode === 'PROJECT'
-		? 'Project Environment Variables'
-		: `${environment?.name || 'Environment'} Variables`;
+	const title =
+		mode === 'PROJECT'
+			? 'Project Environment Variables'
+			: `${environment?.name || 'Environment'} Variables`;
 
-	const description = mode === 'PROJECT'
-		? 'Configure global variables accessible by all environments inside this project.'
-		: `Configure variables specific to the ${environment?.name || 'selected'} environment.`;
+	const description =
+		mode === 'PROJECT'
+			? 'Configure global variables accessible by all environments inside this project.'
+			: `Configure variables specific to the ${environment?.name || 'selected'} environment.`;
 
-	const filename = mode === 'PROJECT'
-		? 'project.env'
-		: `${environment?.name?.toLowerCase() || 'env'}.env`;
+	const filename =
+		mode === 'PROJECT'
+			? 'project.env'
+			: `${environment?.name?.toLowerCase() || 'env'}.env`;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-xl bg-card border border-border shadow-2xl p-6 flex flex-col gap-5 rounded-2xl">
+			<DialogContent className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-xl">
 				<DialogHeader className="space-y-1.5">
 					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
 						{title}
@@ -97,16 +106,19 @@ export function EnvVariablesModal({
 				</DialogHeader>
 
 				{/* Info syntax tip */}
-				<div className="flex items-start gap-2.5 bg-muted/40 border border-border/55 rounded-lg p-3">
-					<Info className="size-4 text-primary shrink-0 mt-0.5" />
-					<div className="text-xs text-muted-foreground leading-relaxed">
+				<div className="flex items-start gap-2.5 rounded-lg border border-border/55 bg-muted/40 p-3">
+					<Info className="mt-0.5 size-4 shrink-0 text-primary" />
+					<div className="text-xs leading-relaxed text-muted-foreground">
 						{mode === 'PROJECT' ? (
-							<span>Define global key-value environment variables. One variable definition per line.</span>
+							<span>
+								Define global key-value environment variables. One variable
+								definition per line.
+							</span>
 						) : (
 							<span>
 								Reference project-level variables using:
-								<code className="font-mono text-foreground font-semibold bg-muted/80 border border-border px-1 py-0.5 rounded ml-1.5">
-									{"DB_URL={{ project.DB_URL }}"}
+								<code className="ml-1.5 rounded border border-border bg-muted/80 px-1 py-0.5 font-mono font-semibold text-foreground">
+									{'DB_URL={{ project.DB_URL }}'}
 								</code>
 							</span>
 						)}
@@ -116,18 +128,18 @@ export function EnvVariablesModal({
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-2">
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">
+							<span className="font-mono text-xs font-bold tracking-wider text-muted-foreground uppercase">
 								{filename}
 							</span>
 							{isModified && (
-								<span className="text-[10px] font-semibold text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/20">
+								<span className="rounded border border-amber-500/20 bg-amber-500/5 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
 									Unsaved Changes
 								</span>
 							)}
 						</div>
 
 						{/* Monaco Code Editor */}
-						<div className="rounded-xl border border-border overflow-hidden bg-[#1e1e1e] p-1 shadow-inner">
+						<div className="overflow-hidden rounded-xl border border-border bg-[#1e1e1e] p-1 shadow-inner">
 							<Editor
 								height="320px"
 								language="ini"
@@ -155,11 +167,11 @@ export function EnvVariablesModal({
 					</div>
 
 					{/* Modal Actions */}
-					<div className="flex justify-end pt-3 border-t border-border/30">
+					<div className="flex justify-end border-t border-border/30 pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-4 font-semibold flex items-center gap-1.5 shadow-lg shadow-primary/10">
+							className="flex h-9 items-center gap-1.5 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/10 hover:bg-primary/95">
 							<Save className="size-3.5" />
 							{isSubmitting ? 'Saving...' : 'Save Configuration'}
 						</Button>

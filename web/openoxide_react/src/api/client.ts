@@ -157,7 +157,10 @@ export const client = createFetchClient<paths>({
 
 client.use(authMiddleware);
 
-export async function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(
+	path: string,
+	options: RequestInit = {},
+): Promise<Response> {
 	const baseUrl = getApiBaseUrl();
 	const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 	let token = '';
@@ -177,6 +180,8 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
 	}
 
 	const cleanPath = path.startsWith('/api') ? path.slice(4) : path;
-	const url = cleanPath.startsWith('http') ? cleanPath : `${baseUrl}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
+	const url = cleanPath.startsWith('http')
+		? cleanPath
+		: `${baseUrl}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
 	return fetch(url, {...options, headers});
 }

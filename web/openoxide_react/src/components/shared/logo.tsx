@@ -6,10 +6,7 @@ interface Props {
 	logoUrl?: string;
 }
 
-export const Logo = ({
-	className = 'size-8',
-	logoUrl,
-}: Props) => {
+export const Logo = ({className = 'size-8', logoUrl}: Props) => {
 	if (logoUrl && logoUrl !== '/gokploy.png') {
 		return (
 			<img
@@ -20,6 +17,8 @@ export const Logo = ({
 		);
 	}
 	return (
-		<Power className={cn('text-primary stroke-[2.5] shrink-0', className)} />
+		<Power
+			className={cn('shrink-0 stroke-[2.5] text-primary', className)}
+		/>
 	);
 };

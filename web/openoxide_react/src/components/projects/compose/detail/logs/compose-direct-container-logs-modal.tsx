@@ -86,11 +86,16 @@ export function ComposeDirectContainerLogsModal({
 								const jsonStr = line.slice(5).trim();
 								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
 								const data = JSON.parse(jsonStr);
-								const text = data.line !== undefined ? data.line : (data.message || jsonStr);
-								if (text && isMounted) setStreamedLogs(prev => [...prev, text]);
+								const text =
+									data.line !== undefined
+										? data.line
+										: data.message || jsonStr;
+								if (text && isMounted)
+									setStreamedLogs(prev => [...prev, text]);
 							} catch {
 								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted) setStreamedLogs(prev => [...prev, raw]);
+								if (raw && !raw.includes('keep-alive') && isMounted)
+									setStreamedLogs(prev => [...prev, raw]);
 							}
 						} else if (line.trim() && isMounted) {
 							setStreamedLogs(prev => [...prev, line]);
@@ -115,15 +120,15 @@ export function ComposeDirectContainerLogsModal({
 	if (!isOpen || typeof document === 'undefined') return null;
 
 	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-			<div className="bg-[#09090b] border border-border/80 rounded-2xl shadow-2xl w-full max-w-6xl h-[84vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-2xl border border-border/80 bg-[#09090b] shadow-2xl duration-150 zoom-in-95 fade-in">
 				{/* Modal Header */}
-				<div className="px-5 py-3.5 border-b border-border/60 flex items-center justify-between bg-card/30 shrink-0">
+				<div className="flex shrink-0 items-center justify-between border-b border-border/60 bg-card/30 px-5 py-3.5">
 					<div className="flex items-center gap-2.5">
-						<TerminalIcon className="w-4 h-4 text-primary" />
-						<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+						<TerminalIcon className="h-4 w-4 text-primary" />
+						<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 							Container Logs
-							<span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+							<span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-normal text-primary">
 								{activeService}
 							</span>
 						</h3>
@@ -132,14 +137,13 @@ export function ComposeDirectContainerLogsModal({
 						variant="ghost"
 						size="icon"
 						onClick={onClose}
-						className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg"
-					>
-						<X className="w-4 h-4" />
+						className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted/80 hover:text-foreground">
+						<X className="h-4 w-4" />
 					</Button>
 				</div>
 
 				{/* Single Seamless Log Viewer */}
-				<div className="flex-1 p-4 overflow-y-auto bg-[#09090b] flex flex-col">
+				<div className="flex flex-1 flex-col overflow-y-auto bg-[#09090b] p-4">
 					<DeploymentViewer
 						logs={streamedLogs}
 						isLoading={isLoading}

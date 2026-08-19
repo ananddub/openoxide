@@ -24,7 +24,9 @@ export function extractLogLines(rawData: unknown): string[] {
 				const parsed = JSON.parse(content);
 				return extractLogLines(parsed);
 			} catch {
-				return content.split('\n').filter(l => l.trim() && !l.includes('keep-alive'));
+				return content
+					.split('\n')
+					.filter(l => l.trim() && !l.includes('keep-alive'));
 			}
 		}
 		return rawData.split('\n');
@@ -33,12 +35,21 @@ export function extractLogLines(rawData: unknown): string[] {
 	if (typeof rawData === 'object' && rawData !== null) {
 		const obj = rawData as Record<string, unknown>;
 		if (obj.type === 'keep-alive' || obj.event === 'keep-alive') return [];
-		const candidate = obj.line ?? obj.message ?? obj.data ?? obj.log ?? obj.text ?? obj.content ?? obj.output;
+		const candidate =
+			obj.line ??
+			obj.message ??
+			obj.data ??
+			obj.log ??
+			obj.text ??
+			obj.content ??
+			obj.output;
 		if (candidate !== undefined && candidate !== null) {
 			if (typeof candidate === 'object') {
 				return [JSON.stringify(candidate)];
 			}
-			return String(candidate).split('\n').filter(l => l.trim() && !l.includes('keep-alive'));
+			return String(candidate)
+				.split('\n')
+				.filter(l => l.trim() && !l.includes('keep-alive'));
 		}
 		return [JSON.stringify(rawData)];
 	}
@@ -68,7 +79,9 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 		setLogs('');
 		setIsLogsLoading(true);
 
-		const depWithLogs = selectedDeployment as Deployment & {log_content?: string};
+		const depWithLogs = selectedDeployment as Deployment & {
+			log_content?: string;
+		};
 
 		// If deployment has stored log_content, initialize with it immediately
 		if (depWithLogs.log_content) {
@@ -121,7 +134,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 						if (buffer.trim()) {
 							const finalLines = extractLogLines(buffer);
 							if (finalLines.length > 0 && isMounted) {
-								setLogs(prev => prev ? `${prev}\n${finalLines.join('\n')}` : finalLines.join('\n'));
+								setLogs(prev =>
+									prev
+										? `${prev}\n${finalLines.join('\n')}`
+										: finalLines.join('\n'),
+								);
 							}
 						}
 						break;
@@ -134,7 +151,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 					for (const rawLine of rawLines) {
 						const extracted = extractLogLines(rawLine);
 						if (extracted.length > 0 && isMounted) {
-							setLogs(prev => prev ? `${prev}\n${extracted.join('\n')}` : extracted.join('\n'));
+							setLogs(prev =>
+								prev
+									? `${prev}\n${extracted.join('\n')}`
+									: extracted.join('\n'),
+							);
 						}
 					}
 				}

@@ -111,7 +111,7 @@ export function UpdateServerButton({isCollapsed}: Props) {
 					<DialogFooter className="mt-2 flex justify-end">
 						<Button
 							variant="default"
-							className="w-full sm:w-auto h-9 px-6 cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-xs shadow-md"
+							className="h-9 w-full cursor-pointer bg-emerald-500 px-6 text-xs font-bold text-white shadow-md hover:bg-emerald-600 sm:w-auto"
 							disabled={isUpdating}
 							onClick={handleUpdate}>
 							{isUpdating ? 'Updating...' : 'Begin Update'}

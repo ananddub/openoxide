@@ -40,7 +40,8 @@ export function NotificationBell({isCollapsed, isMobile}: Props) {
 			id: 'notif-1',
 			type: 'error',
 			title: 'Deployment Failed',
-			description: "Project 'openoxide-api' build failed on commit #8fa23.",
+			description:
+				"Project 'openoxide-api' build failed on commit #8fa23.",
 			time: '5m ago',
 			read: false,
 		},

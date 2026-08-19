@@ -268,7 +268,11 @@ export function PrivateNetworkModal({
 					{mode === 'MANAGED_WIREGUARD' && (
 						<>
 							<div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-								OpenOxide installs WireGuard on the remote server using its configured IP ({server.ip_address}) and the UDP listen port below. No STUN server discovery or complex mesh VPN is used. Ensure the UDP port is allowed in your server's firewall.
+								OpenOxide installs WireGuard on the remote server using its
+								configured IP ({server.ip_address}) and the UDP listen port
+								below. No STUN server discovery or complex mesh VPN is
+								used. Ensure the UDP port is allowed in your server's
+								firewall.
 							</div>
 							<div className="grid gap-3 sm:grid-cols-2">
 								<Field label="Remote server UDP listen port">

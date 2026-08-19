@@ -15,7 +15,10 @@ export function formatApiError(error: unknown): string {
 		if (error.includes('UNIQUE constraint failed: organization.name')) {
 			return 'An organization with this name already exists.';
 		}
-		if (error.toLowerCase().includes('invalid json') || error.toLowerCase().includes('unexpected end')) {
+		if (
+			error.toLowerCase().includes('invalid json') ||
+			error.toLowerCase().includes('unexpected end')
+		) {
 			return 'Server returned an invalid or empty response.';
 		}
 		return error;
@@ -24,15 +27,23 @@ export function formatApiError(error: unknown): string {
 		const errObj = error as Record<string, unknown>;
 		if (typeof errObj.error === 'string') {
 			if (typeof errObj.details === 'object' && errObj.details !== null) {
-				const details = Object.entries(errObj.details as Record<string, string[]>)
-					.map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
+				const details = Object.entries(
+					errObj.details as Record<string, string[]>,
+				)
+					.map(
+						([field, errs]) =>
+							`${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`,
+					)
 					.join('; ');
 				return `${errObj.error} (${details})`;
 			}
 			return errObj.error;
 		}
 		if (typeof errObj.message === 'string') {
-			if (errObj.message.toLowerCase().includes('invalid json') || errObj.message.toLowerCase().includes('unexpected end')) {
+			if (
+				errObj.message.toLowerCase().includes('invalid json') ||
+				errObj.message.toLowerCase().includes('unexpected end')
+			) {
 				return 'Server returned an invalid or empty response.';
 			}
 			return errObj.message;

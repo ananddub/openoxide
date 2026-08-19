@@ -1,9 +1,26 @@
 import {useState} from 'react';
-import {Import, Pencil, RefreshCw, Trash2, Users, CheckCircle2, AlertCircle, Link2} from 'lucide-react';
-import {BitbucketIcon, GiteaIcon, GithubIcon, GitlabIcon} from '#/components/icons/data-tools-icons';
+import {
+	Import,
+	Pencil,
+	RefreshCw,
+	Trash2,
+	Users,
+	CheckCircle2,
+	AlertCircle,
+	Link2,
+} from 'lucide-react';
+import {
+	BitbucketIcon,
+	GiteaIcon,
+	GithubIcon,
+	GitlabIcon,
+} from '#/components/icons/data-tools-icons';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
-import {type GitProviderKind, GIT_PROVIDER_LABELS} from './git-provider-types';
+import {
+	type GitProviderKind,
+	GIT_PROVIDER_LABELS,
+} from './git-provider-types';
 
 interface GitProviderCardProps {
 	provider: any;
@@ -48,35 +65,40 @@ export function GitProviderCard({
 	};
 
 	return (
-		<div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-border/80 bg-card hover:border-primary/40 hover:shadow-xs transition-all gap-4">
-			<div className="flex items-center gap-3.5 min-w-0">
-				<div className="size-11 rounded-xl bg-muted/50 border border-border/60 flex items-center justify-center shrink-0">
+		<div className="flex flex-col justify-between gap-4 rounded-2xl border border-border/80 bg-card p-4 transition-all hover:border-primary/40 hover:shadow-xs sm:flex-row sm:items-center">
+			<div className="flex min-w-0 items-center gap-3.5">
+				<div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
 					{renderIcon(kind)}
 				</div>
 
-				<div className="min-w-0 flex flex-col gap-1">
-					<div className="flex items-center gap-2 flex-wrap">
-						<span className="text-sm font-bold text-foreground truncate">{provider.name}</span>
+				<div className="flex min-w-0 flex-col gap-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="truncate text-sm font-bold text-foreground">
+							{provider.name}
+						</span>
 						<Badge variant="outline" className="text-[10px] font-semibold">
 							{GIT_PROVIDER_LABELS[kind] || kind}
 						</Badge>
 						{provider.configured ? (
-							<span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+							<span className="flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
 								<CheckCircle2 className="size-3" /> Connected
 							</span>
 						) : (
-							<span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full animate-pulse">
+							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
 								<AlertCircle className="size-3" /> Action Required
 							</span>
 						)}
 						{provider.shared && (
-							<Badge variant="secondary" className="text-[10px] gap-1 py-0.5">
-								<Users className="size-3 text-muted-foreground" /> Shared Org
+							<Badge
+								variant="secondary"
+								className="gap-1 py-0.5 text-[10px]">
+								<Users className="size-3 text-muted-foreground" /> Shared
+								Org
 							</Badge>
 						)}
 					</div>
 
-					<div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+					<div className="flex items-center gap-2 truncate text-xs text-muted-foreground">
 						<Link2 className="size-3 shrink-0 opacity-70" />
 						<span className="truncate">
 							{provider.config?.url ||
@@ -88,14 +110,13 @@ export function GitProviderCard({
 				</div>
 			</div>
 
-			<div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+			<div className="flex shrink-0 items-center gap-1.5 self-end sm:self-center">
 				{!provider.configured && (
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={() => onAuthorize(provider.id)}
-						className="h-8 text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10 gap-1 rounded-lg"
-					>
+						className="h-8 gap-1 rounded-lg border-primary/40 text-xs font-semibold text-primary hover:bg-primary/10">
 						<Import className="size-3.5" /> Authorize
 					</Button>
 				)}
@@ -105,9 +126,10 @@ export function GitProviderCard({
 					size="sm"
 					onClick={handleTestClick}
 					disabled={testing}
-					className="h-8 text-xs font-medium border-border/80 hover:bg-muted text-foreground gap-1.5 rounded-lg"
-				>
-					<RefreshCw className={`size-3.5 ${testing ? 'animate-spin' : ''}`} />
+					className="h-8 gap-1.5 rounded-lg border-border/80 text-xs font-medium text-foreground hover:bg-muted">
+					<RefreshCw
+						className={`size-3.5 ${testing ? 'animate-spin' : ''}`}
+					/>
 					{testing ? 'Testing...' : 'Test'}
 				</Button>
 
@@ -115,8 +137,7 @@ export function GitProviderCard({
 					variant="ghost"
 					size="icon"
 					onClick={() => onEdit(provider)}
-					className="size-8 text-muted-foreground hover:text-foreground rounded-lg"
-				>
+					className="size-8 rounded-lg text-muted-foreground hover:text-foreground">
 					<Pencil className="size-3.5" />
 				</Button>
 
@@ -124,8 +145,7 @@ export function GitProviderCard({
 					variant="ghost"
 					size="icon"
 					onClick={() => onDelete(provider.id)}
-					className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-				>
+					className="size-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
 					<Trash2 className="size-3.5" />
 				</Button>
 			</div>

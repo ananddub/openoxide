@@ -12,7 +12,10 @@ import {
 export function useGitProviders() {
 	const list = $api.useQuery('get', '/git-providers' as any, {} as any);
 	const create = $api.useMutation('post', '/git-providers/{kind}' as any);
-	const update = $api.useMutation('put', '/git-providers/{id}/{kind}' as any);
+	const update = $api.useMutation(
+		'put',
+		'/git-providers/{id}/{kind}' as any,
+	);
 	const remove = $api.useMutation('delete', '/git-providers/{id}' as any);
 	const test = $api.useMutation('post', '/git-providers/{id}/test' as any);
 
@@ -21,12 +24,14 @@ export function useGitProviders() {
 	const [editing, setEditing] = useState<any>(null);
 	const [kind, setKind] = useState<GitProviderKind>('github');
 	const [busy, setBusy] = useState(false);
-	const [form, setForm] = useState<GitProviderFormState>(INITIAL_GIT_PROVIDER_FORM);
+	const [form, setForm] = useState<GitProviderFormState>(
+		INITIAL_GIT_PROVIDER_FORM,
+	);
 
 	const providers = (list.data?.data || list.data || []) as any[];
 
 	const setField = (key: string, value: string) => {
-		setForm((prev) => ({...prev, [key]: value}));
+		setForm(prev => ({...prev, [key]: value}));
 	};
 
 	const openCreate = (providerKind: GitProviderKind = 'github') => {
@@ -38,7 +43,10 @@ export function useGitProviders() {
 		}
 		setForm({
 			...INITIAL_GIT_PROVIDER_FORM,
-			url: providerKind === 'gitlab' ? 'https://gitlab.com' : 'https://gitea.com',
+			url:
+				providerKind === 'gitlab'
+					? 'https://gitlab.com'
+					: 'https://gitea.com',
 			redirect_uri: `${window.location.origin}/api/git-providers/${providerKind}/oauth/callback`,
 		});
 		setOpen(true);
@@ -106,9 +114,12 @@ export function useGitProviders() {
 	};
 
 	const authHeaders = () => {
-		const session = JSON.parse(localStorage.getItem('openoxide-auth-session') || '{}');
+		const session = JSON.parse(
+			localStorage.getItem('openoxide-auth-session') || '{}',
+		);
 		const headers: Record<string, string> = {};
-		if (session?.tokens?.access_token) headers.Authorization = `Bearer ${session.tokens.access_token}`;
+		if (session?.tokens?.access_token)
+			headers.Authorization = `Bearer ${session.tokens.access_token}`;
 		const org = localStorage.getItem('openoxide-active-organization-id');
 		if (org) headers['X-Organization-Id'] = org;
 		return headers;
@@ -116,12 +127,17 @@ export function useGitProviders() {
 
 	const handleAuthorize = async (id: number) => {
 		try {
-			const response = await fetch(`${getApiBaseUrl()}/git-providers/${id}/authorize`, {
-				headers: authHeaders(),
-			});
-			if (!response.ok) throw new Error('Authorization could not be started');
+			const response = await fetch(
+				`${getApiBaseUrl()}/git-providers/${id}/authorize`,
+				{
+					headers: authHeaders(),
+				},
+			);
+			if (!response.ok)
+				throw new Error('Authorization could not be started');
 			const data = await response.json();
-			if (!data.url) throw new Error('Provider returned no authorization URL');
+			if (!data.url)
+				throw new Error('Provider returned no authorization URL');
 			window.open(data.url, '_blank', 'noopener,noreferrer');
 		} catch {
 			toast.error('Could not start authorization');
@@ -154,15 +170,28 @@ export function useGitProviders() {
 		try {
 			let result: any;
 			if (editing) {
-				result = await update.mutateAsync({params: {path: {id: editing.id, kind}}, body: buildPayload()} as any);
+				result = await update.mutateAsync({
+					params: {path: {id: editing.id, kind}},
+					body: buildPayload(),
+				} as any);
 			} else {
-				result = await create.mutateAsync({params: {path: {kind}}, body: buildPayload()} as any);
+				result = await create.mutateAsync({
+					params: {path: {kind}},
+					body: buildPayload(),
+				} as any);
 			}
-			toast.success(editing ? 'Git provider updated' : 'Git provider created');
+			toast.success(
+				editing ? 'Git provider updated' : 'Git provider created',
+			);
 			setOpen(false);
 			await list.refetch();
-			const providerId = editing?.id || result?.data?.provider?.id || result?.provider?.id;
-			if (!editing && providerId && (kind === 'gitlab' || kind === 'gitea')) {
+			const providerId =
+				editing?.id || result?.data?.provider?.id || result?.provider?.id;
+			if (
+				!editing &&
+				providerId &&
+				(kind === 'gitlab' || kind === 'gitea')
+			) {
 				await handleAuthorize(providerId);
 			}
 		} catch (e) {

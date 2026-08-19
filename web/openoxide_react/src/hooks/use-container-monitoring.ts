@@ -20,7 +20,11 @@ export interface ContainerMetrics {
 	pids: string;
 }
 
-function buildStatsUrl(entityType: MonitoringEntityType, id: number, isLive: boolean): string {
+function buildStatsUrl(
+	entityType: MonitoringEntityType,
+	id: number,
+	isLive: boolean,
+): string {
 	switch (entityType) {
 		case 'database':
 			return `/api/deployments/database/${id}/stats?stream=${isLive}`;
@@ -35,7 +39,10 @@ function buildStatsUrl(entityType: MonitoringEntityType, id: number, isLive: boo
 function parseBytes(str?: string): number {
 	if (!str || typeof str !== 'string') return 0;
 	const val = parseFloat(str) || 0;
-	const unit = str.replace(/[0-9.]/g, '').trim().toUpperCase();
+	const unit = str
+		.replace(/[0-9.]/g, '')
+		.trim()
+		.toUpperCase();
 	if (unit.startsWith('K')) return val * 1024;
 	if (unit.startsWith('M')) return val * 1024 * 1024;
 	if (unit.startsWith('G')) return val * 1024 * 1024 * 1024;
@@ -45,7 +52,9 @@ function parseBytes(str?: string): number {
 
 function stripAnsi(str: string): string {
 	// Remove all ANSI/VT100 escape sequences: ESC [ ... letter
-	return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[^[]/g, '');
+	return str
+		.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+		.replace(/\x1b[^[]/g, '');
 }
 
 function parseStats(raw: unknown): ContainerMetrics | null {
@@ -84,8 +93,12 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 		}
 	}
 
-	const cpuPercent = parseFloat(String(s.CPUPerc || s.cpu_percent || '0').replace('%', ''));
-	const memPercent = parseFloat(String(s.MemPerc || s.memory_percent || '0').replace('%', ''));
+	const cpuPercent = parseFloat(
+		String(s.CPUPerc || s.cpu_percent || '0').replace('%', ''),
+	);
+	const memPercent = parseFloat(
+		String(s.MemPerc || s.memory_percent || '0').replace('%', ''),
+	);
 
 	const memUsageStr = String(s.MemUsage || s.mem_usage || '');
 	const [memUsage, memLimit] = memUsageStr.includes('/')
@@ -102,11 +115,22 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 		? blockIOStr.split('/').map(v => v.trim())
 		: [blockIOStr || '0 B', '0 B'];
 
-	const dockerDiskUsage = String(s.SizeRw || s.docker_disk_usage || s.size_rw || '0 MB');
-	const dockerDiskPercent = parseFloat(String(s.DockerDiskPerc || s.docker_disk_percent || '0').replace('%', ''));
+	const dockerDiskUsage = String(
+		s.SizeRw || s.docker_disk_usage || s.size_rw || '0 MB',
+	);
+	const dockerDiskPercent = parseFloat(
+		String(s.DockerDiskPerc || s.docker_disk_percent || '0').replace(
+			'%',
+			'',
+		),
+	);
 	const diskSpaceUsed = String(s.DiskUsed || s.disk_space_used || '0 GB');
-	const diskSpaceTotal = String(s.DiskTotal || s.disk_space_total || '0 GB');
-	const diskSpacePercent = parseFloat(String(s.DiskPerc || s.disk_space_percent || '0').replace('%', ''));
+	const diskSpaceTotal = String(
+		s.DiskTotal || s.disk_space_total || '0 GB',
+	);
+	const diskSpacePercent = parseFloat(
+		String(s.DiskPerc || s.disk_space_percent || '0').replace('%', ''),
+	);
 
 	return {
 		cpuPercent: isNaN(cpuPercent) ? 0 : cpuPercent,
@@ -128,7 +152,10 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 
 const DISABLE_METRICS = false;
 
-export function useContainerMonitoring(id: number, entityType: MonitoringEntityType = 'application') {
+export function useContainerMonitoring(
+	id: number,
+	entityType: MonitoringEntityType = 'application',
+) {
 	// All hooks declared unconditionally at the top — never reorder these
 	const [isLive, setIsLive] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
@@ -155,13 +182,19 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 
 		const startStream = async () => {
 			try {
-				let accessToken = useAuthStore.getState().tokens?.access_token || '';
+				let accessToken =
+					useAuthStore.getState().tokens?.access_token || '';
 				if (!accessToken) {
-					const sessionRaw = localStorage.getItem('openoxide-auth-session');
+					const sessionRaw = localStorage.getItem(
+						'openoxide-auth-session',
+					);
 					if (sessionRaw) {
 						try {
 							const session = JSON.parse(sessionRaw);
-							accessToken = session?.state?.tokens?.access_token || session?.tokens?.access_token || '';
+							accessToken =
+								session?.state?.tokens?.access_token ||
+								session?.tokens?.access_token ||
+								'';
 						} catch {}
 					}
 				}
@@ -175,10 +208,14 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 					signal: controller.signal,
 				});
 
-				console.log(`[Monitoring] 📡 Response status: ${response.status} ${response.statusText}`);
+				console.log(
+					`[Monitoring] 📡 Response status: ${response.status} ${response.statusText}`,
+				);
 
 				if (!response.ok) {
-					console.warn(`[Monitoring] ❌ Bad response: ${response.status} for ${url}`);
+					console.warn(
+						`[Monitoring] ❌ Bad response: ${response.status} for ${url}`,
+					);
 					if (isMounted) {
 						setIsLoading(false);
 						setHasError(true);
@@ -197,7 +234,9 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 					return;
 				}
 
-				console.log(`[Monitoring] ✅ Stream opened for ${entityType} id=${id}`);
+				console.log(
+					`[Monitoring] ✅ Stream opened for ${entityType} id=${id}`,
+				);
 				if (isMounted) setIsLoading(false);
 
 				let buffer = '';
@@ -211,20 +250,36 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 
 					for (const line of lines) {
 						const trimmed = line.trim();
-						if (!trimmed || trimmed.startsWith('event:') || trimmed.startsWith(':')) continue;
+						if (
+							!trimmed ||
+							trimmed.startsWith('event:') ||
+							trimmed.startsWith(':')
+						)
+							continue;
 
 						if (line.startsWith('data:')) {
 							const jsonStr = line.slice(5).trim();
 							if (jsonStr) {
 								try {
 									const data = JSON.parse(jsonStr);
-									console.log(`[Monitoring] 📦 SSE event:`, data.type, data);
+									console.log(
+										`[Monitoring] 📦 SSE event:`,
+										data.type,
+										data,
+									);
 									if (data.type === 'stats' && data.stats && isMounted) {
-										console.log(`[Monitoring] 📊 Stats received:`, data.stats);
+										console.log(
+											`[Monitoring] 📊 Stats received:`,
+											data.stats,
+										);
 										setRawStats(data.stats);
 									}
 								} catch (e) {
-									console.warn(`[Monitoring] ⚠️ JSON parse fail:`, jsonStr, e);
+									console.warn(
+										`[Monitoring] ⚠️ JSON parse fail:`,
+										jsonStr,
+										e,
+									);
 								}
 							}
 						}
@@ -268,12 +323,16 @@ export function useContainerMonitoring(id: number, entityType: MonitoringEntityT
 	useEffect(() => {
 		const parsed = parseStats(rawStats);
 		if (parsed) {
-			const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-			const memUsedGB = parseBytes(parsed.memUsage) / (1024 ** 3);
-			const memLimitGB = parseBytes(parsed.memLimit) / (1024 ** 3);
-			const diskUsedGB = parseBytes(parsed.diskSpaceUsed) / (1024 ** 3);
-			const diskTotalGB = parseBytes(parsed.diskSpaceTotal) / (1024 ** 3);
-			const dockerDiskGB = parseBytes(parsed.dockerDiskUsage) / (1024 ** 3);
+			const timeStr = new Date().toLocaleTimeString([], {
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			});
+			const memUsedGB = parseBytes(parsed.memUsage) / 1024 ** 3;
+			const memLimitGB = parseBytes(parsed.memLimit) / 1024 ** 3;
+			const diskUsedGB = parseBytes(parsed.diskSpaceUsed) / 1024 ** 3;
+			const diskTotalGB = parseBytes(parsed.diskSpaceTotal) / 1024 ** 3;
+			const dockerDiskGB = parseBytes(parsed.dockerDiskUsage) / 1024 ** 3;
 			const blockReadMB = parseBytes(parsed.blockRead) / (1024 * 1024);
 			const blockWriteMB = parseBytes(parsed.blockWrite) / (1024 * 1024);
 			const netRxMB = parseBytes(parsed.netRx) / (1024 * 1024);

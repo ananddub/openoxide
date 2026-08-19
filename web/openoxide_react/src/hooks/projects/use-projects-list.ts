@@ -10,7 +10,9 @@ import {formatApiError} from '#/api/utils';
 export const getTagsFromDescription = (description?: string): string[] => {
 	if (!description) return [];
 	const matches = description.match(/#[\w-]+/g);
-	return matches ? matches.map(m => m.replace(/^#/, '').toLowerCase()) : [];
+	return matches
+		? matches.map(m => m.replace(/^#/, '').toLowerCase())
+		: [];
 };
 
 export function useProjectsList() {
@@ -27,15 +29,14 @@ export function useProjectsList() {
 	const orgId = activeOrg?.id || 1;
 
 	// Zustand Realtime Store Read & Mutators
-	const storeProjects = useAppStore((state) => state.projects);
-	const setProjectsStore = useAppStore((state) => state.setProjects);
-	const addProjectStore = useAppStore((state) => state.addProject);
-	const deleteProjectStore = useAppStore((state) => state.deleteProject);
+	const storeProjects = useAppStore(state => state.projects);
+	const setProjectsStore = useAppStore(state => state.setProjects);
+	const addProjectStore = useAppStore(state => state.addProject);
+	const deleteProjectStore = useAppStore(state => state.deleteProject);
 
 	// Fetch Projects for the active organization (live — auto-updates via WebSocket)
-	const {data: liveProjects, loading: isLoadingProjects} = useProjectListByOrganization(
-		BigInt(orgId),
-	);
+	const {data: liveProjects, loading: isLoadingProjects} =
+		useProjectListByOrganization(BigInt(orgId));
 
 	// Keep Zustand store in sync with live WebSocket updates
 	React.useEffect(() => {
@@ -45,21 +46,27 @@ export function useProjectsList() {
 	}, [liveProjects, setProjectsStore]);
 
 	// Always prefer live WebSocket data if available, fallback to Zustand RAM store
-	const rawProjectsList = liveProjects !== undefined ? liveProjects : storeProjects;
+	const rawProjectsList =
+		liveProjects !== undefined ? liveProjects : storeProjects;
 	const projects = Array.isArray(rawProjectsList) ? rawProjectsList : [];
 
 	// Create Project Mutation
 	const createProjectMutation = $api.useMutation('post', '/projects');
 
 	// Delete Project Mutation
-	const deleteProjectMutation = $api.useMutation('delete', '/projects/{id}');
+	const deleteProjectMutation = $api.useMutation(
+		'delete',
+		'/projects/{id}',
+	);
 
 	// Extract all unique tags present across all projects
 	const allTags = React.useMemo(() => {
 		if (!projects) return [];
 		const tagsSet = new Set<string>();
 		projects.forEach(p => {
-			getTagsFromDescription(p.description || '').forEach(t => tagsSet.add(t));
+			getTagsFromDescription(p.description || '').forEach(t =>
+				tagsSet.add(t),
+			);
 		});
 		return Array.from(tagsSet);
 	}, [projects]);
@@ -72,9 +79,13 @@ export function useProjectsList() {
 		let result = projects.filter(project => {
 			const matchesSearch =
 				project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				(project.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+				(project.description || '')
+					.toLowerCase()
+					.includes(searchQuery.toLowerCase());
 
-			const projectTags = getTagsFromDescription(project.description || '');
+			const projectTags = getTagsFromDescription(
+				project.description || '',
+			);
 			const matchesTags =
 				selectedTags.length === 0 ||
 				selectedTags.every(t => projectTags.includes(t.toLowerCase()));
@@ -84,17 +95,21 @@ export function useProjectsList() {
 
 		// 2. Sort projects
 		return [...result].sort((a, b) => {
-			if (sortBy === 'newest') return Number(b.created_at || 0) - Number(a.created_at || 0);
-			if (sortBy === 'oldest') return Number(a.created_at || 0) - Number(b.created_at || 0);
-			if (sortBy === 'alphabetical-asc') return a.name.localeCompare(b.name);
-			if (sortBy === 'alphabetical-desc') return b.name.localeCompare(a.name);
+			if (sortBy === 'newest')
+				return Number(b.created_at || 0) - Number(a.created_at || 0);
+			if (sortBy === 'oldest')
+				return Number(a.created_at || 0) - Number(b.created_at || 0);
+			if (sortBy === 'alphabetical-asc')
+				return a.name.localeCompare(b.name);
+			if (sortBy === 'alphabetical-desc')
+				return b.name.localeCompare(a.name);
 			return 0;
 		});
 	}, [projects, searchQuery, sortBy, selectedTags]);
 
 	const handleTagClick = (tag: string) => {
 		setSelectedTags(prev =>
-			prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+			prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag],
 		);
 	};
 

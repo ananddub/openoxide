@@ -19,7 +19,12 @@ interface CreateEnvDialogProps {
 	onCreated: (env: any) => void;
 }
 
-export function CreateEnvDialog({isOpen, onClose, projectId, onCreated}: CreateEnvDialogProps) {
+export function CreateEnvDialog({
+	isOpen,
+	onClose,
+	projectId,
+	onCreated,
+}: CreateEnvDialogProps) {
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,17 +58,22 @@ export function CreateEnvDialog({isOpen, onClose, projectId, onCreated}: CreateE
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-md bg-card border-border">
+			<DialogContent className="border-border bg-card sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="text-base font-bold">Create Environment</DialogTitle>
+					<DialogTitle className="text-base font-bold">
+						Create Environment
+					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
-						Add a new deployment target environment (e.g. Staging, Production).
+						Add a new deployment target environment (e.g. Staging,
+						Production).
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 mt-2">
+				<form onSubmit={handleSubmit} className="mt-2 space-y-4">
 					<div className="space-y-1">
-						<label className="text-xs font-semibold text-foreground">Name *</label>
+						<label className="text-xs font-semibold text-foreground">
+							Name *
+						</label>
 						<Input
 							placeholder="e.g. Production"
 							value={name}
@@ -74,7 +84,9 @@ export function CreateEnvDialog({isOpen, onClose, projectId, onCreated}: CreateE
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs font-semibold text-foreground">Description</label>
+						<label className="text-xs font-semibold text-foreground">
+							Description
+						</label>
 						<Input
 							placeholder="Brief details"
 							value={description}
@@ -83,11 +95,11 @@ export function CreateEnvDialog({isOpen, onClose, projectId, onCreated}: CreateE
 						/>
 					</div>
 
-					<div className="flex justify-end pt-3 border-t border-border/20">
+					<div className="flex justify-end border-t border-border/20 pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs h-9 px-6 font-semibold shadow-xs w-full sm:w-auto">
+							className="h-9 w-full bg-primary px-6 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/95 sm:w-auto">
 							{isSubmitting ? 'Creating...' : 'Create'}
 						</Button>
 					</div>

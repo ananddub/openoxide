@@ -37,7 +37,7 @@ export const globalServerConnStore = new ServerConnectionStore();
 
 export function useServerConnectionStatus(serverId: number) {
 	const [status, setStatusState] = useState<ConnectionStatus>(() =>
-		globalServerConnStore.getStatus(serverId)
+		globalServerConnStore.getStatus(serverId),
 	);
 
 	useEffect(() => {

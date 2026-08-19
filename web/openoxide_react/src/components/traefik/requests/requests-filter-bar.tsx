@@ -2,7 +2,13 @@ import {Search, Filter, Columns3, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Badge} from '#/components/ui/badge';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -52,29 +58,35 @@ export function RequestsFilterBar({
 	isLoading,
 	onRefresh,
 }: RequestsFilterBarProps) {
-	const visibleCount = Object.values(visibleColumns).filter(Boolean).length;
+	const visibleCount =
+		Object.values(visibleColumns).filter(Boolean).length;
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-			<div className="flex items-center gap-2.5 w-full sm:w-auto flex-1 max-w-lg">
+		<div className="flex shrink-0 flex-col items-center justify-between gap-3 sm:flex-row">
+			<div className="flex w-full max-w-lg flex-1 items-center gap-2.5 sm:w-auto">
 				<div className="relative flex-1">
-					<Search className="size-3.5 text-muted-foreground absolute left-3 top-3" />
+					<Search className="absolute top-3 left-3 size-3.5 text-muted-foreground" />
 					<Input
 						value={searchQuery}
-						onChange={(e) => onSearchChange(e.target.value)}
+						onChange={e => onSearchChange(e.target.value)}
 						placeholder="Filter path, method..."
-						className="h-9 text-xs font-mono pl-9 bg-card border-border/60 shadow-2xs"
+						className="h-9 border-border/60 bg-card pl-9 font-mono text-xs shadow-2xs"
 					/>
 				</div>
 
-				<Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v || 'all')}>
-					<SelectTrigger className="w-[185px] h-9 text-xs font-medium bg-card border-border/60 gap-2 shrink-0 shadow-2xs">
-						<Filter className="size-3.5 text-muted-foreground shrink-0" />
+				<Select
+					value={statusFilter}
+					onValueChange={v => onStatusFilterChange(v || 'all')}>
+					<SelectTrigger className="h-9 w-[185px] shrink-0 gap-2 border-border/60 bg-card text-xs font-medium shadow-2xs">
+						<Filter className="size-3.5 shrink-0 text-muted-foreground" />
 						<SelectValue placeholder="Status Filter" />
 					</SelectTrigger>
-					<SelectContent className="bg-card border-border text-xs w-[210px] p-1.5 shadow-md">
-						{STATUS_PRIORITIES.map((opt) => (
-							<SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
+					<SelectContent className="w-[210px] border-border bg-card p-1.5 text-xs shadow-md">
+						{STATUS_PRIORITIES.map(opt => (
+							<SelectItem
+								key={opt.value}
+								value={opt.value}
+								className="cursor-pointer text-xs font-medium">
 								{opt.label}
 							</SelectItem>
 						))}
@@ -82,26 +94,32 @@ export function RequestsFilterBar({
 				</Select>
 			</div>
 
-			<div className="flex items-center gap-2 shrink-0">
+			<div className="flex shrink-0 items-center gap-2">
 				<DropdownMenu>
-					<DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 h-9 px-3 text-xs font-medium border border-border/60 bg-card hover:bg-accent rounded-md cursor-pointer transition-colors shadow-2xs">
-						<Columns3 className="size-3.5 text-muted-foreground" /> Columns ({visibleCount})
+					<DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 text-xs font-medium shadow-2xs transition-colors hover:bg-accent">
+						<Columns3 className="size-3.5 text-muted-foreground" /> Columns
+						({visibleCount})
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="bg-card border-border w-[190px] text-xs p-1.5 shadow-md">
-						{ALL_COLUMNS.map((col) => (
+					<DropdownMenuContent
+						align="end"
+						className="w-[190px] border-border bg-card p-1.5 text-xs shadow-md">
+						{ALL_COLUMNS.map(col => (
 							<DropdownMenuCheckboxItem
 								key={col.id}
 								checked={Boolean(visibleColumns[col.id])}
 								onCheckedChange={() => onToggleColumn(col.id)}
-								className="text-xs font-medium cursor-pointer py-1 px-2 rounded-sm">
+								className="cursor-pointer rounded-sm px-2 py-1 text-xs font-medium">
 								{col.label}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				<Badge variant="secondary" className="h-9 text-xs font-mono px-3.5 border border-border/40 font-semibold">
-					Total: <strong className="ml-1 text-foreground">{totalCount}</strong>
+				<Badge
+					variant="secondary"
+					className="h-9 border border-border/40 px-3.5 font-mono text-xs font-semibold">
+					Total:{' '}
+					<strong className="ml-1 text-foreground">{totalCount}</strong>
 				</Badge>
 
 				<Button
@@ -109,8 +127,11 @@ export function RequestsFilterBar({
 					size="sm"
 					onClick={onRefresh}
 					disabled={isLoading}
-					className="h-9 px-3 text-xs font-medium border-border/60 gap-2 cursor-pointer shadow-2xs">
-					<RefreshCw className={`size-3.5 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} /> Refresh
+					className="h-9 cursor-pointer gap-2 border-border/60 px-3 text-xs font-medium shadow-2xs">
+					<RefreshCw
+						className={`size-3.5 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`}
+					/>{' '}
+					Refresh
 				</Button>
 			</div>
 		</div>

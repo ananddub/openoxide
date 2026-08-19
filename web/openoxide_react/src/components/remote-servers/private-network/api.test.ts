@@ -144,14 +144,12 @@ describe('private network browser API flow', () => {
 			health_status: 'UNKNOWN',
 			health_error: null,
 		};
-		const fetchMock = vi
-			.fn()
-			.mockResolvedValue(
-				new Response(JSON.stringify(response), {
-					status: 200,
-					headers: {'Content-Type': 'application/json'},
-				}),
-			);
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(JSON.stringify(response), {
+				status: 200,
+				headers: {'Content-Type': 'application/json'},
+			}),
+		);
 		vi.stubGlobal('fetch', fetchMock);
 
 		await expect(privateNetworkApi.reSetup(13)).resolves.toMatchObject({

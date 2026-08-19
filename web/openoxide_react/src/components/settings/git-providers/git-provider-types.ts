@@ -63,6 +63,9 @@ export function getGithubCallbackBaseUrl(): string {
 		return configured.replace(/\/$/, '');
 	}
 	if (typeof window === 'undefined') return 'http://127.0.0.1:4000';
-	const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+	const host =
+		window.location.hostname === 'localhost'
+			? '127.0.0.1'
+			: window.location.hostname;
 	return `${window.location.protocol}//${host}:4000`;
 }

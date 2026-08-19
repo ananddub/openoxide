@@ -9,7 +9,13 @@ import {
 	DialogTitle,
 	DialogFooter,
 } from '#/components/ui/dialog';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {$api} from '#/api/query';
 import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
@@ -39,7 +45,7 @@ export function CreateComposeDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = $api.useMutation('post', '/compose');
-	const serversList = useAppStore((state) => state.servers || []);
+	const serversList = useAppStore(state => state.servers || []);
 
 	const handleClose = () => {
 		onClose?.();
@@ -82,7 +88,7 @@ export function CreateComposeDialog({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+		<Dialog open={isOpen} onOpenChange={open => !open && handleClose()}>
 			<DialogContent className="sm:max-w-[440px]">
 				<form onSubmit={handleSubmit}>
 					<DialogHeader>
@@ -91,47 +97,66 @@ export function CreateComposeDialog({
 
 					<div className="flex flex-col gap-4 py-4">
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-semibold text-foreground">Stack Name</label>
+							<label className="text-xs font-semibold text-foreground">
+								Stack Name
+							</label>
 							<Input
 								placeholder="my-compose-stack"
 								value={name}
-								onChange={(e) => setName(e.target.value)}
+								onChange={e => setName(e.target.value)}
 								autoFocus
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-semibold text-foreground">Compose Type</label>
+							<label className="text-xs font-semibold text-foreground">
+								Compose Type
+							</label>
 							<Select value={composeType} onValueChange={setComposeType}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select type" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="DOCKER-COMPOSE">Docker Compose (YAML)</SelectItem>
-									<SelectItem value="DOCKER-STACK">Docker Swarm Stack</SelectItem>
+									<SelectItem value="DOCKER-COMPOSE">
+										Docker Compose (YAML)
+									</SelectItem>
+									<SelectItem value="DOCKER-STACK">
+										Docker Swarm Stack
+									</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-semibold text-foreground">Target Server</label>
+							<label className="text-xs font-semibold text-foreground">
+								Target Server
+							</label>
 							<Select value={serverId} onValueChange={setServerId}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select server">
 										{(() => {
-											if (serverId === 'local') return 'Localhost (Default)';
-											const found = serversList.find((s: any) => String(s.id) === String(serverId));
-											return found ? `${found.name} (${found.ip_address || found.ip || ''})` : serverId;
+											if (serverId === 'local')
+												return 'Localhost (Default)';
+											const found = serversList.find(
+												(s: any) => String(s.id) === String(serverId),
+											);
+											return found
+												? `${found.name} (${found.ip_address || found.ip || ''})`
+												: serverId;
 										})()}
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="local">Localhost (Default)</SelectItem>
+									<SelectItem value="local">
+										Localhost (Default)
+									</SelectItem>
 									{serversList.map((srv: any) => (
 										<SelectItem key={srv.id} value={String(srv.id)}>
 											<div className="flex items-center gap-2">
 												<Server className="size-3.5 text-muted-foreground" />
-												<span>{srv.name} ({srv.ip_address || srv.ip || ''})</span>
+												<span>
+													{srv.name} ({srv.ip_address || srv.ip || ''})
+												</span>
 											</div>
 										</SelectItem>
 									))}
@@ -140,11 +165,13 @@ export function CreateComposeDialog({
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-semibold text-foreground">Description (Optional)</label>
+							<label className="text-xs font-semibold text-foreground">
+								Description (Optional)
+							</label>
 							<Textarea
 								placeholder="Brief description of this compose stack..."
 								value={description}
-								onChange={(e) => setDescription(e.target.value)}
+								onChange={e => setDescription(e.target.value)}
 								rows={2}
 							/>
 						</div>
@@ -155,8 +182,7 @@ export function CreateComposeDialog({
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={isSubmitting}
-						>
+							disabled={isSubmitting}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={!name.trim() || isSubmitting}>

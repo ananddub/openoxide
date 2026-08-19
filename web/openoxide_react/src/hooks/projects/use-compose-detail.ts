@@ -8,22 +8,37 @@ import {
 	useScheduleListByCompose,
 } from 'virtual:openoxide-live';
 
-import { useAppStore, selectComposeById } from '#/stores/app-store';
+import {useAppStore, selectComposeById} from '#/stores/app-store';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
-	const [localStatusOverride, setLocalStatusOverride] = useState<string | null>(null);
+	const [localStatusOverride, setLocalStatusOverride] = useState<
+		string | null
+	>(null);
 
 	// 100% Pure Centralized Zustand Store Resolution
-	const rawCompose = useAppStore((state) => selectComposeById(state, composeId));
+	const rawCompose = useAppStore(state =>
+		selectComposeById(state, composeId),
+	);
 
-	const compose = rawCompose ? {
-		...rawCompose,
-		status: localStatusOverride || (rawCompose as any).compose_status || (rawCompose as any).status || 'STOPPED',
-		compose_status: localStatusOverride || (rawCompose as any).compose_status || (rawCompose as any).status || 'STOPPED',
-	} : null;
+	const compose = rawCompose
+		? {
+				...rawCompose,
+				status:
+					localStatusOverride ||
+					(rawCompose as any).compose_status ||
+					(rawCompose as any).status ||
+					'STOPPED',
+				compose_status:
+					localStatusOverride ||
+					(rawCompose as any).compose_status ||
+					(rawCompose as any).status ||
+					'STOPPED',
+			}
+		: null;
 
-	const composeStatus = (rawCompose as any)?.compose_status || (rawCompose as any)?.status;
+	const composeStatus =
+		(rawCompose as any)?.compose_status || (rawCompose as any)?.status;
 
 	// Auto-clear localStatusOverride when Zustand status updates (using primitive string to prevent infinite loop)
 	useEffect(() => {
@@ -32,9 +47,16 @@ export function useComposeDetail(composeId: number) {
 			const overrideUpper = localStatusOverride.toUpperCase();
 			if (
 				fetchedStatus === overrideUpper ||
-				(overrideUpper === 'STARTING' && (fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
-				(overrideUpper === 'STOPPING' && (fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE' || fetchedStatus === 'CANCELLED')) ||
-				(overrideUpper === 'CANCELLING' && (fetchedStatus === 'CANCELLED' || fetchedStatus === 'STOPPED' || fetchedStatus === 'IDLE'))
+				(overrideUpper === 'STARTING' &&
+					(fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
+				(overrideUpper === 'STOPPING' &&
+					(fetchedStatus === 'STOPPED' ||
+						fetchedStatus === 'IDLE' ||
+						fetchedStatus === 'CANCELLED')) ||
+				(overrideUpper === 'CANCELLING' &&
+					(fetchedStatus === 'CANCELLED' ||
+						fetchedStatus === 'STOPPED' ||
+						fetchedStatus === 'IDLE'))
 			) {
 				setLocalStatusOverride(null);
 			}
@@ -42,26 +64,38 @@ export function useComposeDetail(composeId: number) {
 	}, [composeStatus, localStatusOverride]);
 
 	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
-	const storeDomains = useAppStore((state) => state.domains);
-	const storeSchedules = useAppStore((state) => state.schedules);
-	const storeBackups = useAppStore((state) => state.backups);
-	const storeDeployments = useAppStore((state) => state.deployments);
+	const storeDomains = useAppStore(state => state.domains);
+	const storeSchedules = useAppStore(state => state.schedules);
+	const storeBackups = useAppStore(state => state.backups);
+	const storeDeployments = useAppStore(state => state.deployments);
 
-	const domains = useMemo(() =>
-		(storeDomains || []).filter((d: any) => Number(d.compose_id) === Number(composeId)),
-		[storeDomains, composeId]
+	const domains = useMemo(
+		() =>
+			(storeDomains || []).filter(
+				(d: any) => Number(d.compose_id) === Number(composeId),
+			),
+		[storeDomains, composeId],
 	);
-	const schedules = useMemo(() =>
-		(storeSchedules || []).filter((s: any) => Number(s.compose_id) === Number(composeId)),
-		[storeSchedules, composeId]
+	const schedules = useMemo(
+		() =>
+			(storeSchedules || []).filter(
+				(s: any) => Number(s.compose_id) === Number(composeId),
+			),
+		[storeSchedules, composeId],
 	);
-	const backups = useMemo(() =>
-		(storeBackups || []).filter((b: any) => Number(b.compose_id) === Number(composeId)),
-		[storeBackups, composeId]
+	const backups = useMemo(
+		() =>
+			(storeBackups || []).filter(
+				(b: any) => Number(b.compose_id) === Number(composeId),
+			),
+		[storeBackups, composeId],
 	);
-	const deployments = useMemo(() =>
-		(storeDeployments || []).filter((d: any) => Number(d.compose_id) === Number(composeId)),
-		[storeDeployments, composeId]
+	const deployments = useMemo(
+		() =>
+			(storeDeployments || []).filter(
+				(d: any) => Number(d.compose_id) === Number(composeId),
+			),
+		[storeDeployments, composeId],
 	);
 	const isLoadingDomains = false;
 	const isLoadingSchedules = false;
@@ -83,22 +117,47 @@ export function useComposeDetail(composeId: number) {
 	const cancelMutation = $api.useMutation('post', '/composes/{id}/cancel');
 	const patchMutation = $api.useMutation('patch', '/composes/{id}');
 
-	const handleAction = async (action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel') => {
-		const currentSt = (compose?.compose_status || compose?.status || '').toUpperCase();
-		const isCurrentlyBuilding = ['QUEUED', 'BUILDING', 'STARTING', 'PREPARING', 'PENDING', 'DEPLOYING'].includes(currentSt);
-		const intermediateStatus = (action === 'stop' || action === 'cancel')
-			? (isCurrentlyBuilding ? 'CANCELLING' : 'STOPPING')
-			: action === 'start' ? 'STARTING'
-			: 'DEPLOYING';
+	const handleAction = async (
+		action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel',
+	) => {
+		const currentSt = (
+			compose?.compose_status ||
+			compose?.status ||
+			''
+		).toUpperCase();
+		const isCurrentlyBuilding = [
+			'QUEUED',
+			'BUILDING',
+			'STARTING',
+			'PREPARING',
+			'PENDING',
+			'DEPLOYING',
+		].includes(currentSt);
+		const intermediateStatus =
+			action === 'stop' || action === 'cancel'
+				? isCurrentlyBuilding
+					? 'CANCELLING'
+					: 'STOPPING'
+				: action === 'start'
+					? 'STARTING'
+					: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(composeId, intermediateStatus, 'compose');
+		(useAppStore.getState() as any).updateServiceStatus?.(
+			composeId,
+			intermediateStatus,
+			'compose',
+		);
 
 		try {
 			if (action === 'deploy') {
-				await deployMutation.mutateAsync({params: {path: {id: composeId}}});
+				await deployMutation.mutateAsync({
+					params: {path: {id: composeId}},
+				});
 				toast.success('Compose stack deployment triggered');
 			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({params: {path: {id: composeId}}});
+				await reloadMutation.mutateAsync({
+					params: {path: {id: composeId}},
+				});
 				toast.success('Compose stack reloaded');
 			} else if (action === 'start') {
 				await startMutation.mutateAsync({params: {path: {id: composeId}}});
@@ -107,7 +166,9 @@ export function useComposeDetail(composeId: number) {
 				await stopMutation.mutateAsync({params: {path: {id: composeId}}});
 				toast.success('Compose stack stopped');
 			} else if (action === 'cancel') {
-				await cancelMutation.mutateAsync({params: {path: {id: composeId}}});
+				await cancelMutation.mutateAsync({
+					params: {path: {id: composeId}},
+				});
 				toast.success('Compose stack cancellation requested');
 			}
 			refetchAll();

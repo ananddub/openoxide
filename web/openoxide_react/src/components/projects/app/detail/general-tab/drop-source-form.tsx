@@ -13,12 +13,17 @@ interface DropSourceFormProps {
 }
 
 export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
-	const [dropBuildPath, setDropBuildPath] = useState(app.drop_build_path || '/');
+	const [dropBuildPath, setDropBuildPath] = useState(
+		app.drop_build_path || '/',
+	);
 	const [selectedZip, setSelectedZip] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [saving, setSaving] = useState(false);
 
-	const patchDrop = $api.useMutation('patch', '/applications/{id}/source/drop');
+	const patchDrop = $api.useMutation(
+		'patch',
+		'/applications/{id}/source/drop',
+	);
 
 	const handleFileSelect = (files: FileList | null) => {
 		if (files && files[0]) {
@@ -39,14 +44,23 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				form.append('file', selectedZip, selectedZip.name);
 				form.append('drop_build_path', dropBuildPath || '/');
 				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				const accessToken = sessionRaw ? JSON.parse(sessionRaw)?.tokens?.access_token : undefined;
-				const response = await fetch(`${getApiBaseUrl()}/applications/${app.id}/source/upload`, {
-					method: 'POST',
-					headers: accessToken ? {Authorization: `Bearer ${accessToken}`} : undefined,
-					body: form,
-				});
+				const accessToken = sessionRaw
+					? JSON.parse(sessionRaw)?.tokens?.access_token
+					: undefined;
+				const response = await fetch(
+					`${getApiBaseUrl()}/applications/${app.id}/source/upload`,
+					{
+						method: 'POST',
+						headers: accessToken
+							? {Authorization: `Bearer ${accessToken}`}
+							: undefined,
+						body: form,
+					},
+				);
 				if (!response.ok) {
-					throw new Error((await response.text()) || 'Source upload failed');
+					throw new Error(
+						(await response.text()) || 'Source upload failed',
+					);
 				}
 			} else {
 				await patchDrop.mutateAsync({
@@ -68,17 +82,21 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col gap-1.5">
-				<span className="text-xs font-bold text-foreground">Build Path</span>
+				<span className="text-xs font-bold text-foreground">
+					Build Path
+				</span>
 				<Input
 					placeholder="e.g. /"
 					value={dropBuildPath}
 					onChange={e => setDropBuildPath(e.target.value)}
-					className="bg-card border-border text-xs h-9"
+					className="h-9 border-border bg-card text-xs"
 				/>
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<span className="text-xs font-bold text-foreground font-semibold">Upload Source Code Archive</span>
+				<span className="text-xs font-bold font-semibold text-foreground">
+					Upload Source Code Archive
+				</span>
 				<div
 					onDragOver={e => {
 						e.preventDefault();
@@ -93,47 +111,59 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 						setIsDragging(false);
 						handleFileSelect(e.dataTransfer.files);
 					}}
-					className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
-						isDragging ? 'border-primary bg-primary/5' : 'border-border/80 hover:bg-muted/20'
+					className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
+						isDragging
+							? 'border-primary bg-primary/5'
+							: 'border-border/80 hover:bg-muted/20'
 					}`}
 					onClick={() => {
 						const input = document.createElement('input');
 						input.type = 'file';
-					input.accept = '.zip';
+						input.accept = '.zip';
 						input.onchange = e => {
 							const target = e.target as HTMLInputElement;
 							handleFileSelect(target.files);
 						};
 						input.click();
-					}}
-				>
-					<UploadCloud className="w-8 h-8 text-muted-foreground mb-2" />
-					<p className="text-xs font-semibold text-foreground">Drop files or click here to upload .zip archive</p>
-					<p className="text-[10px] text-muted-foreground mt-0.5">Supports sanitized .zip archives up to 100 MiB</p>
+					}}>
+					<UploadCloud className="mb-2 h-8 w-8 text-muted-foreground" />
+					<p className="text-xs font-semibold text-foreground">
+						Drop files or click here to upload .zip archive
+					</p>
+					<p className="mt-0.5 text-[10px] text-muted-foreground">
+						Supports sanitized .zip archives up to 100 MiB
+					</p>
 				</div>
 
 				{selectedZip && (
-					<div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20 mt-1">
-						<div className="flex items-center gap-2 min-w-0">
-							<span className="text-xs font-mono font-medium text-foreground truncate">{selectedZip.name}</span>
-							<span className="text-[10px] text-muted-foreground">({(selectedZip.size / (1024 * 1024)).toFixed(2)} MB)</span>
+					<div className="mt-1 flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+						<div className="flex min-w-0 items-center gap-2">
+							<span className="truncate font-mono text-xs font-medium text-foreground">
+								{selectedZip.name}
+							</span>
+							<span className="text-[10px] text-muted-foreground">
+								({(selectedZip.size / (1024 * 1024)).toFixed(2)} MB)
+							</span>
 						</div>
 						<Button
 							type="button"
 							variant="ghost"
 							size="sm"
 							onClick={() => setSelectedZip(null)}
-							className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-						>
-							<Trash2 className="w-4 h-4" />
+							className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+							<Trash2 className="h-4 w-4" />
 						</Button>
 					</div>
 				)}
 			</div>
 
-			<div className="flex justify-end mt-2">
-				<Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center gap-1.5 h-9 rounded-lg text-xs">
-					<Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Source'}
+			<div className="mt-2 flex justify-end">
+				<Button
+					onClick={handleSave}
+					disabled={saving}
+					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
+					<Save className="h-3.5 w-3.5" />{' '}
+					{saving ? 'Saving...' : 'Save Source'}
 				</Button>
 			</div>
 		</div>

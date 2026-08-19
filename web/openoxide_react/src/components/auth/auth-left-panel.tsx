@@ -24,9 +24,9 @@ export const AuthLeftPanel = () => (
 			</div>
 			{/* 3. Small description */}
 			<p className="text-sm leading-relaxed text-muted-foreground">
-				OpenOxide is the self-hosted developer platform that puts you in full
-				control. Build, deploy, and manage your applications and Docker
-				containers on your own servers.
+				OpenOxide is the self-hosted developer platform that puts you in
+				full control. Build, deploy, and manage your applications and
+				Docker containers on your own servers.
 			</p>
 			<p className="text-sm text-muted-foreground/80 italic">
 				"The Open Source alternative to Netlify, Vercel, Heroku."

@@ -30,7 +30,9 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 					} catch {}
 				}
 
-				const serverIdParam = database?.server_id ? `&server_id=${database.server_id}` : '';
+				const serverIdParam = database?.server_id
+					? `&server_id=${database.server_id}`
+					: '';
 				const streamUrl = `/api/deployments/docker/service/${encodeURIComponent(appName)}/logs?tail=200&timestamps=false&follow=true${serverIdParam}`;
 
 				const response = await fetch(streamUrl, {
@@ -78,11 +80,16 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 								const jsonStr = line.slice(5).trim();
 								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
 								const data = JSON.parse(jsonStr);
-								const text = data.line !== undefined ? data.line : (data.message || jsonStr);
-								if (text && isMounted) setStreamedLogs(prev => [...prev, text]);
+								const text =
+									data.line !== undefined
+										? data.line
+										: data.message || jsonStr;
+								if (text && isMounted)
+									setStreamedLogs(prev => [...prev, text]);
 							} catch {
 								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted) setStreamedLogs(prev => [...prev, raw]);
+								if (raw && !raw.includes('keep-alive') && isMounted)
+									setStreamedLogs(prev => [...prev, raw]);
 							}
 						} else if (line.trim() && isMounted) {
 							setStreamedLogs(prev => [...prev, line]);

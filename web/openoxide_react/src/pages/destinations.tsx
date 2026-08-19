@@ -7,7 +7,7 @@ import {DestinationsHeader} from '#/components/destinations/destinations-header'
 import {DestinationsList} from '#/components/destinations/destinations-list';
 import {CreateDestinationModal} from '#/components/destinations/create-destination-modal';
 
-import { useAppStore } from '#/stores/app-store';
+import {useAppStore} from '#/stores/app-store';
 
 import type {DestinationResponse} from '#/types/api-helpers';
 
@@ -17,11 +17,13 @@ export const Route = createFileRoute('/_app/destinations')({
 
 function DestinationsPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingDestination, setEditingDestination] = useState<DestinationResponse | null>(null);
+	const [editingDestination, setEditingDestination] =
+		useState<DestinationResponse | null>(null);
 
-	const storeDestinations = useAppStore((state) => state.destinations);
+	const storeDestinations = useAppStore(state => state.destinations);
 
-	const destinations = (storeDestinations ?? []) as unknown as DestinationResponse[];
+	const destinations = (storeDestinations ??
+		[]) as unknown as DestinationResponse[];
 	const isLoading = false;
 
 	// Mutations
@@ -39,11 +41,17 @@ function DestinationsPage() {
 
 	const handleTest = async (id: string | number) => {
 		try {
-			await testMutation.mutateAsync({params: {path: {id: String(id)}}, parseAs: 'text'} as any);
+			await testMutation.mutateAsync({
+				params: {path: {id: String(id)}},
+				parseAs: 'text',
+			} as any);
 			toast.success('S3 Storage Destination connection test passed!');
 		} catch (err: unknown) {
 			const msg = String((err as any)?.message || err || '');
-			if (msg.toLowerCase().includes('json') || msg.toLowerCase().includes('unexpected end')) {
+			if (
+				msg.toLowerCase().includes('json') ||
+				msg.toLowerCase().includes('unexpected end')
+			) {
 				toast.success('S3 Storage Destination connection test passed!');
 				return;
 			}
@@ -62,7 +70,7 @@ function DestinationsPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12">
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-12">
 			{/* Header Component (< 200 lines) */}
 			<DestinationsHeader
 				totalCount={destinations.length}

@@ -11,7 +11,11 @@ import {SwarmInfoCard} from '#/components/swarm/swarm-info-card';
 import {SwarmNodesList} from '#/components/swarm/swarm-nodes-list';
 import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
 import {JoinTokensModal} from '#/components/swarm/join-tokens-modal';
-import type {RemoteServerResponse, SwarmInfo, SwarmTokens} from '#/types/api-helpers';
+import type {
+	RemoteServerResponse,
+	SwarmInfo,
+	SwarmTokens,
+} from '#/types/api-helpers';
 
 export const Route = createFileRoute('/_app/swarm')({
 	component: SwarmPage,
@@ -28,7 +32,11 @@ interface ServerSwarmResult {
 // server's contribution so a single broken one can't block the rest.
 const PER_SERVER_TIMEOUT_MS = 4000;
 
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+function withTimeout<T>(
+	promise: Promise<T>,
+	ms: number,
+	fallback: T,
+): Promise<T> {
 	return new Promise<T>(resolve => {
 		const timer = setTimeout(() => resolve(fallback), ms);
 		promise.then(
@@ -50,11 +58,17 @@ interface SwarmOverview {
 	activeServerId: number | undefined;
 }
 
-async function fetchServerSwarm(serverId: number | undefined, serverLabel: string): Promise<ServerSwarmResult> {
+async function fetchServerSwarm(
+	serverId: number | undefined,
+	serverLabel: string,
+): Promise<ServerSwarmResult> {
 	const body = {server_id: serverId};
 	try {
 		const {data: info} = await client.POST('/swarm/info', {body});
-		if (!info || String(info.local_node_state || '').toLowerCase() !== 'active') {
+		if (
+			!info ||
+			String(info.local_node_state || '').toLowerCase() !== 'active'
+		) {
 			return {info: null, nodes: []};
 		}
 		// Worker nodes are "active" too but Docker refuses `node ls`/`join-token`
@@ -81,14 +95,22 @@ function SwarmPage() {
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
 	const queryClient = useQueryClient();
 
-	const serversData = useAppStore((state) => state.servers);
-	const servers = Array.isArray(serversData) ? (serversData as unknown as RemoteServerResponse[]) : [];
+	const serversData = useAppStore(state => state.servers);
+	const servers = Array.isArray(serversData)
+		? (serversData as unknown as RemoteServerResponse[])
+		: [];
 	const serverIdsKey = servers.map(s => s.id).join(',');
 
 	const promoteMutation = $api.useMutation('post', '/swarm/nodes/promote');
 	const demoteMutation = $api.useMutation('post', '/swarm/nodes/demote');
-	const availabilityMutation = $api.useMutation('post', '/swarm/nodes/availability');
-	const removeNodeMutation = $api.useMutation('post', '/swarm/nodes/remove');
+	const availabilityMutation = $api.useMutation(
+		'post',
+		'/swarm/nodes/availability',
+	);
+	const removeNodeMutation = $api.useMutation(
+		'post',
+		'/swarm/nodes/remove',
+	);
 	const leaveMutation = $api.useMutation('post', '/swarm/leave');
 	const joinMutation = $api.useMutation('post', '/swarm/join');
 
@@ -105,14 +127,23 @@ function SwarmPage() {
 				];
 				const results = await Promise.all(
 					targets.map(t =>
-						withTimeout(fetchServerSwarm(t.id, t.label), PER_SERVER_TIMEOUT_MS, {info: null, nodes: []}),
+						withTimeout(
+							fetchServerSwarm(t.id, t.label),
+							PER_SERVER_TIMEOUT_MS,
+							{info: null, nodes: []},
+						),
 					),
 				);
 				// Prefer an actual manager as the cluster reference — only managers
 				// can issue join tokens or list nodes, so picking a worker here would
 				// make every later action fail the same way `/swarm/nodes` just did.
-				const managerIdx = results.findIndex(r => r.info?.control_available);
-				const activeIdx = managerIdx >= 0 ? managerIdx : results.findIndex(r => r.info !== null);
+				const managerIdx = results.findIndex(
+					r => r.info?.control_available,
+				);
+				const activeIdx =
+					managerIdx >= 0
+						? managerIdx
+						: results.findIndex(r => r.info !== null);
 
 				const allNodesMap = new Map<string, TaggedSwarmNode>();
 				for (const r of results) {
@@ -122,19 +153,31 @@ function SwarmPage() {
 				}
 
 				return {
-					info: activeIdx >= 0 ? results[activeIdx].info : (results[0]?.info ?? null),
+					info:
+						activeIdx >= 0
+							? results[activeIdx].info
+							: (results[0]?.info ?? null),
 					nodes: Array.from(allNodesMap.values()),
-					activeServerId: activeIdx >= 0 ? targets[activeIdx].id : undefined,
+					activeServerId:
+						activeIdx >= 0 ? targets[activeIdx].id : undefined,
 				};
 			}
 
-			const sId = selectedServerId === 'local' ? undefined : parseInt(selectedServerId, 10);
+			const sId =
+				selectedServerId === 'local'
+					? undefined
+					: parseInt(selectedServerId, 10);
 			const sName =
 				selectedServerId === 'local'
 					? 'Local Server'
-					: servers.find(s => String(s.id) === selectedServerId)?.name || 'Server';
+					: servers.find(s => String(s.id) === selectedServerId)?.name ||
+						'Server';
 			const res = await fetchServerSwarm(sId, sName);
-			return {info: res.info, nodes: res.nodes, activeServerId: res.info ? sId : undefined};
+			return {
+				info: res.info,
+				nodes: res.nodes,
+				activeServerId: res.info ? sId : undefined,
+			};
 		},
 		staleTime: 15_000,
 		refetchOnWindowFocus: false,
@@ -152,7 +195,9 @@ function SwarmPage() {
 	const tokensQuery = useQuery({
 		queryKey: ['swarm-tokens', activeServerId],
 		queryFn: async (): Promise<SwarmTokens | null> => {
-			const {data} = await client.POST('/swarm/tokens', {body: {server_id: activeServerId}});
+			const {data} = await client.POST('/swarm/tokens', {
+				body: {server_id: activeServerId},
+			});
 			return data ?? null;
 		},
 		enabled: isTokensOpen && !!info?.control_available,
@@ -165,7 +210,9 @@ function SwarmPage() {
 		queryClient.invalidateQueries({queryKey: ['swarm-node-identity']});
 	};
 
-	const getServerIdNumber = (node?: TaggedSwarmNode): number | undefined => {
+	const getServerIdNumber = (
+		node?: TaggedSwarmNode,
+	): number | undefined => {
 		if (node && node._serverId !== undefined) return node._serverId;
 		if (selectedServerId === 'all') return activeServerId;
 		if (selectedServerId === 'local') return undefined;
@@ -194,17 +241,27 @@ function SwarmPage() {
 		} catch (err: unknown) {
 			const rawErr = formatApiError(err);
 			if (rawErr.toLowerCase().includes('last manager')) {
-				toast.error('Promote another node to Manager first — a swarm always needs at least one.');
+				toast.error(
+					'Promote another node to Manager first — a swarm always needs at least one.',
+				);
 			} else {
 				toast.error(rawErr);
 			}
 		}
 	};
 
-	const handleSetAvailability = async (nodeId: string, availability: string, node?: TaggedSwarmNode) => {
+	const handleSetAvailability = async (
+		nodeId: string,
+		availability: string,
+		node?: TaggedSwarmNode,
+	) => {
 		try {
 			await availabilityMutation.mutateAsync({
-				body: {server_id: getServerIdNumber(node), node_id: nodeId, availability},
+				body: {
+					server_id: getServerIdNumber(node),
+					node_id: nodeId,
+					availability,
+				},
 			});
 			toast.success(`Node availability set to ${availability}`);
 			refreshAll();
@@ -213,7 +270,10 @@ function SwarmPage() {
 		}
 	};
 
-	const handleRemoveNode = async (nodeId: string, node?: TaggedSwarmNode) => {
+	const handleRemoveNode = async (
+		nodeId: string,
+		node?: TaggedSwarmNode,
+	) => {
 		try {
 			await removeNodeMutation.mutateAsync({
 				body: {server_id: getServerIdNumber(node), node_id: nodeId},
@@ -237,7 +297,9 @@ function SwarmPage() {
 		}
 	};
 
-	const isSwarmActive = nodes.length > 0 || String(info?.local_node_state || '').toLowerCase() === 'active';
+	const isSwarmActive =
+		nodes.length > 0 ||
+		String(info?.local_node_state || '').toLowerCase() === 'active';
 
 	const handleLeaveRemoteSwarm = async (serverId: number) => {
 		try {
@@ -247,10 +309,13 @@ function SwarmPage() {
 			toast.success('Force disconnected Swarm on target server');
 			refreshAll();
 		} catch (err: unknown) {
-			const srvName = servers.find(s => s.id === serverId)?.name || 'target server';
+			const srvName =
+				servers.find(s => s.id === serverId)?.name || 'target server';
 			const rawErr = formatApiError(err);
 			if (rawErr.toLowerCase().includes('not part of a swarm')) {
-				toast.success(`Server "${srvName}" is not in any Swarm and is ready to join!`);
+				toast.success(
+					`Server "${srvName}" is not in any Swarm and is ready to join!`,
+				);
 				refreshAll();
 				return;
 			}
@@ -258,22 +323,33 @@ function SwarmPage() {
 		}
 	};
 
-	const handleJoinServer = async (serverId: number, role: 'worker' | 'manager') => {
+	const handleJoinServer = async (
+		serverId: number,
+		role: 'worker' | 'manager',
+	) => {
 		try {
 			await joinMutation.mutateAsync({
-				body: {target_server_id: serverId, manager_server_id: activeServerId, role},
+				body: {
+					target_server_id: serverId,
+					manager_server_id: activeServerId,
+					role,
+				},
 			});
-			const srvName = servers.find(s => s.id === serverId)?.name || 'Server';
-			toast.success(`"${srvName}" joined the cluster as ${role === 'manager' ? 'a Manager' : 'a Worker'}!`);
+			const srvName =
+				servers.find(s => s.id === serverId)?.name || 'Server';
+			toast.success(
+				`"${srvName}" joined the cluster as ${role === 'manager' ? 'a Manager' : 'a Worker'}!`,
+			);
 			refreshAll();
 		} catch (err: unknown) {
-			const srvName = servers.find(s => s.id === serverId)?.name || 'target server';
+			const srvName =
+				servers.find(s => s.id === serverId)?.name || 'target server';
 			toast.error(`Failed to join "${srvName}": ${formatApiError(err)}`);
 		}
 	};
 
 	return (
-		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
 			<SwarmHeader
 				servers={servers}
 				selectedServerId={selectedServerId}

@@ -4,17 +4,25 @@ import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
-export function useCreateSshKey(onClose: () => void, onSuccess?: () => void) {
+export function useCreateSshKey(
+	onClose: () => void,
+	onSuccess?: () => void,
+) {
 	const queryClient = useQueryClient();
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [privateKey, setPrivateKey] = useState('');
 	const [publicKey, setPublicKey] = useState('');
 	const [submitting, setSubmitting] = useState(false);
-	const [generatingType, setGeneratingType] = useState<'ed25519' | 'rsa' | null>(null);
+	const [generatingType, setGeneratingType] = useState<
+		'ed25519' | 'rsa' | null
+	>(null);
 
 	const createMutation = $api.useMutation('post', '/ssh-keys');
-	const generatePairMutation = $api.useMutation('post', '/ssh-keys/generate-pair');
+	const generatePairMutation = $api.useMutation(
+		'post',
+		'/ssh-keys/generate-pair',
+	);
 
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGeneratingType(type);
@@ -24,7 +32,9 @@ export function useCreateSshKey(onClose: () => void, onSuccess?: () => void) {
 			});
 			setPublicKey(res.public_key || '');
 			setPrivateKey(res.private_key || '');
-			toast.success(`Generated ${type.toUpperCase()} key pair! Fill in details and click Save.`);
+			toast.success(
+				`Generated ${type.toUpperCase()} key pair! Fill in details and click Save.`,
+			);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {

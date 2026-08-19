@@ -29,22 +29,25 @@ export const NotFound = () => {
 						<div className="flex items-center gap-2">
 							<SidebarTrigger className="-ml-1" />
 							<Separator orientation="vertical" className="mx-2 h-4" />
-							<span className="text-xs font-bold text-foreground">404 - Page Not Found</span>
+							<span className="text-xs font-bold text-foreground">
+								404 - Page Not Found
+							</span>
 						</div>
 					</header>
-					<main className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-						<div className="size-14 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive shadow-sm border border-destructive/20 mb-3">
+					<main className="flex flex-1 animate-in flex-col items-center justify-center p-6 text-center duration-200 fade-in">
+						<div className="mb-3 flex size-14 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive shadow-sm">
 							<AlertCircle className="size-7" />
 						</div>
-						<h2 className="text-lg font-bold tracking-tight text-foreground mb-1">
+						<h2 className="mb-1 text-lg font-bold tracking-tight text-foreground">
 							Page Not Found
 						</h2>
-						<p className="text-xs text-muted-foreground max-w-sm mb-4">
-							The page or resource you are looking for does not exist or has been moved.
+						<p className="mb-4 max-w-sm text-xs text-muted-foreground">
+							The page or resource you are looking for does not exist or
+							has been moved.
 						</p>
 						<Link
 							to="/"
-							className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
+							className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90">
 							Return to Overview
 						</Link>
 					</main>
