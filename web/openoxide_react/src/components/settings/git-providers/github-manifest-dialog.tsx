@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {GithubIcon} from '#/components/icons/data-tools-icons';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -49,37 +50,46 @@ export function GithubManifestDialog({isOpen, onClose}: GithubManifestDialogProp
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent>
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Create GitHub App</DialogTitle>
-					<DialogDescription>
-						GitHub will automatically configure the App manifest and save it in OpenOxide.
+					<DialogTitle className="flex items-center gap-2.5 text-base font-bold">
+						<div className="size-8 rounded-lg bg-zinc-800 flex items-center justify-center text-white">
+							<GithubIcon className="size-4" />
+						</div>
+						Create GitHub App
+					</DialogTitle>
+					<DialogDescription className="text-xs">
+						GitHub will automatically configure the App manifest, permissions, and webhook callback in OpenOxide.
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="grid gap-3 pt-2">
-					<div className="space-y-1">
-						<label className="text-xs font-medium">GitHub Base URL</label>
+				<div className="flex flex-col gap-4 pt-2">
+					<div className="space-y-1.5">
+						<label className="text-xs font-semibold text-muted-foreground">GitHub Base URL</label>
 						<Input
 							value={githubUrl}
 							onChange={(e) => setGithubUrl(e.target.value)}
 							placeholder="https://github.com"
+							className="h-9 text-xs font-mono"
 						/>
 					</div>
 
-					<div className="space-y-1">
-						<label className="text-xs font-medium">GitHub Organization (Optional)</label>
+					<div className="space-y-1.5">
+						<label className="text-xs font-semibold text-muted-foreground">
+							GitHub Organization <span className="text-[11px] font-normal text-muted-foreground/80">(Optional)</span>
+						</label>
 						<Input
 							value={orgName}
 							onChange={(e) => setOrgName(e.target.value)}
-							placeholder="Leave empty for personal account"
+							placeholder="e.g. my-company-org"
+							className="h-9 text-xs"
 						/>
 					</div>
 
 					<form action={targetAction} method="post" className="pt-2">
 						<input type="hidden" name="manifest" value={manifest} />
-						<Button type="submit" className="w-full">
-							Continue on GitHub
+						<Button type="submit" className="w-full h-9 bg-primary text-primary-foreground font-semibold text-xs gap-2 rounded-lg cursor-pointer">
+							<GithubIcon className="size-4" /> Continue on GitHub
 						</Button>
 					</form>
 				</div>

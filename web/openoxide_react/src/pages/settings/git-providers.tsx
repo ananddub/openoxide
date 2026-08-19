@@ -1,16 +1,8 @@
 import {createFileRoute} from '@tanstack/react-router';
-import {useState} from 'react';
-import {GitBranch} from 'lucide-react';
-import {$api} from '#/api/query';
-import {getApiBaseUrl} from '#/api/client';
-import {formatApiError} from '#/api/utils';
-import {Card} from '#/components/ui/card';
-import {toast} from 'sonner';
-import {
-	type GitProviderKind,
-	type GitProviderFormState,
-	INITIAL_GIT_PROVIDER_FORM,
-} from '#/components/settings/git-providers/git-provider-types';
+import {useState, useMemo} from 'react';
+import {GitBranch, Search, ShieldCheck} from 'lucide-react';
+import {Input} from '#/components/ui/input';
+import {useGitProviders} from '#/components/settings/git-providers/use-git-providers';
 import {GitProviderCreateButtons} from '#/components/settings/git-providers/git-provider-create-buttons';
 import {GitProviderCard} from '#/components/settings/git-providers/git-provider-card';
 import {GithubManifestDialog} from '#/components/settings/git-providers/github-manifest-dialog';
@@ -21,206 +13,113 @@ export const Route = createFileRoute('/_app/settings/git-providers')({
 });
 
 function GitProvidersPage() {
-	const list = $api.useQuery('get', '/git-providers' as any, {} as any);
-	const create = $api.useMutation('post', '/git-providers/{kind}' as any);
-	const update = $api.useMutation('put', '/git-providers/{id}/{kind}' as any);
-	const remove = $api.useMutation('delete', '/git-providers/{id}' as any);
-	const test = $api.useMutation('post', '/git-providers/{id}/test' as any);
+	const {
+		providers,
+		open,
+		manifestOpen,
+		editing,
+		kind,
+		busy,
+		form,
+		setOpen,
+		setManifestOpen,
+		setField,
+		openCreate,
+		openEdit,
+		handleAuthorize,
+		handleTest,
+		handleDelete,
+		save,
+	} = useGitProviders();
 
-	const [open, setOpen] = useState(false);
-	const [manifestOpen, setManifestOpen] = useState(false);
-	const [editing, setEditing] = useState<any>(null);
-	const [kind, setKind] = useState<GitProviderKind>('github');
-	const [busy, setBusy] = useState(false);
-	const [form, setForm] = useState<GitProviderFormState>(INITIAL_GIT_PROVIDER_FORM);
+	const [search, setSearch] = useState('');
 
-	const providers = (list.data?.data || list.data || []) as any[];
-
-	const setField = (key: string, value: string) => {
-		setForm((prev) => ({...prev, [key]: value}));
-	};
-
-	const openCreate = (providerKind: GitProviderKind = 'github') => {
-		setEditing(null);
-		setKind(providerKind);
-		if (providerKind === 'github') {
-			setManifestOpen(true);
-			return;
-		}
-		setForm({
-			...INITIAL_GIT_PROVIDER_FORM,
-			url: providerKind === 'gitlab' ? 'https://gitlab.com' : 'https://gitea.com',
-			redirect_uri: `${window.location.origin}/api/git-providers/${providerKind}/oauth/callback`,
-		});
-		setOpen(true);
-	};
-
-	const openEdit = (provider: any) => {
-		setEditing(provider);
-		setKind(provider.provider_type as GitProviderKind);
-		setForm({
-			...INITIAL_GIT_PROVIDER_FORM,
-			name: provider.name,
-			shared: String(provider.shared),
-			...provider.config,
-		});
-		setOpen(true);
-	};
-
-	const buildPayload = () => {
-		const base = {name: form.name.trim(), shared: form.shared === 'true'};
-		if (kind === 'github') {
-			return {
-				provider: base,
-				app_name: form.app_name || undefined,
-				app_id: form.app_id ? Number(form.app_id) : undefined,
-				client_id: form.client_id || undefined,
-				client_secret: form.client_secret || undefined,
-				installation_id: form.installation_id || undefined,
-				private_key: form.private_key || undefined,
-			};
-		}
-		if (kind === 'gitlab') {
-			return {
-				provider: base,
-				url: form.url,
-				internal_url: form.internal_url || undefined,
-				application_id: form.application_id || undefined,
-				redirect_uri: form.redirect_uri || undefined,
-				secret: form.secret || undefined,
-				access_token: form.access_token || undefined,
-				refresh_token: form.refresh_token || undefined,
-				group_name: form.group_name || undefined,
-			};
-		}
-		if (kind === 'gitea') {
-			return {
-				provider: base,
-				url: form.url,
-				internal_url: form.internal_url || undefined,
-				redirect_uri: form.redirect_uri || undefined,
-				client_id: form.client_id || undefined,
-				client_secret: form.client_secret || undefined,
-				access_token: form.access_token || undefined,
-				refresh_token: form.refresh_token || undefined,
-				scopes: form.scopes || undefined,
-			};
-		}
-		return {
-			provider: base,
-			username: form.username || undefined,
-			email: form.email || undefined,
-			app_password: form.app_password || undefined,
-			api_token: form.api_token || undefined,
-			workspace: form.workspace || undefined,
-		};
-	};
-
-	const authHeaders = () => {
-		const session = JSON.parse(localStorage.getItem('openoxide-auth-session') || '{}');
-		const headers: Record<string, string> = {};
-		if (session?.tokens?.access_token) headers.Authorization = `Bearer ${session.tokens.access_token}`;
-		const org = localStorage.getItem('openoxide-active-organization-id');
-		if (org) headers['X-Organization-Id'] = org;
-		return headers;
-	};
-
-	const handleAuthorize = async (id: number) => {
-		try {
-			const response = await fetch(`${getApiBaseUrl()}/git-providers/${id}/authorize`, {
-				headers: authHeaders(),
-			});
-			if (!response.ok) throw new Error('Authorization could not be started');
-			const data = await response.json();
-			if (!data.url) throw new Error('Provider returned no authorization URL');
-			window.open(data.url, '_blank', 'noopener,noreferrer');
-		} catch {
-			toast.error('Could not start authorization');
-		}
-	};
-
-	const handleTest = async (id: number) => {
-		try {
-			await test.mutateAsync({params: {path: {id}}} as any);
-			toast.success('Connection successful');
-		} catch (e) {
-			toast.error(formatApiError(e, 'Connection failed'));
-		}
-	};
-
-	const handleDelete = async (id: number) => {
-		if (!confirm('Delete this Git provider?')) return;
-		try {
-			await remove.mutateAsync({params: {path: {id}}} as any);
-			toast.success('Git provider deleted');
-			await list.refetch();
-		} catch (e) {
-			toast.error(formatApiError(e, 'Failed to delete Git provider'));
-		}
-	};
-
-	const save = async () => {
-		if (!form.name.trim()) return toast.error('Provider name is required');
-		setBusy(true);
-		try {
-			let result: any;
-			if (editing) {
-				result = await update.mutateAsync({params: {path: {id: editing.id, kind}}, body: buildPayload()} as any);
-			} else {
-				result = await create.mutateAsync({params: {path: {kind}}, body: buildPayload()} as any);
-			}
-			toast.success(editing ? 'Git provider updated' : 'Git provider created');
-			setOpen(false);
-			await list.refetch();
-			const providerId = editing?.id || result?.data?.provider?.id || result?.provider?.id;
-			if (!editing && providerId && (kind === 'gitlab' || kind === 'gitea')) {
-				await handleAuthorize(providerId);
-			}
-		} catch (e) {
-			toast.error(formatApiError(e, 'Failed to save Git provider'));
-		} finally {
-			setBusy(false);
-		}
-	};
+	const filteredProviders = useMemo(() => {
+		if (!search.trim()) return providers;
+		const q = search.toLowerCase();
+		return providers.filter(
+			(p) =>
+				p.name?.toLowerCase().includes(q) ||
+				p.provider_type?.toLowerCase().includes(q) ||
+				p.config?.url?.toLowerCase().includes(q)
+		);
+	}, [providers, search]);
 
 	return (
-		<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-			<Card className="p-2.5">
-				<div className="rounded-xl bg-background shadow-sm">
-					<div className="p-6">
-						<h1 className="flex items-center gap-2 text-xl font-bold">
-							<GitBranch className="size-5 text-muted-foreground" /> Git Providers
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Connect your Git provider for repository authentication.
+		<div className="mx-auto flex max-w-5xl flex-col gap-6 p-6 animate-in fade-in duration-200">
+			{/* Header Banner */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+				<div>
+					<h1 className="flex items-center gap-2.5 text-2xl font-bold text-foreground tracking-tight">
+						<div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+							<GitBranch className="size-5" />
+						</div>
+						Git Providers
+					</h1>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Connect your Git accounts (GitHub, GitLab, Bitbucket, Gitea) for automated repository deployments & webhooks.
+					</p>
+				</div>
+
+				<div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/40 border border-border/60 px-3 py-1.5 rounded-xl self-start sm:self-center">
+					<ShieldCheck className="size-4 text-emerald-500" />
+					<span>{providers.length} {providers.length === 1 ? 'Provider' : 'Providers'} Configured</span>
+				</div>
+			</div>
+
+			{/* Interactive Provider Connect Cards */}
+			<section>
+				<h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+					Connect New Provider
+				</h3>
+				<GitProviderCreateButtons onSelectKind={openCreate} />
+			</section>
+
+			{/* Existing Providers List */}
+			<section className="flex flex-col gap-3">
+				<div className="flex items-center justify-between gap-3 flex-wrap">
+					<h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+						Configured Git Providers
+					</h3>
+
+					{providers.length > 0 && (
+						<div className="relative w-full sm:w-64">
+							<Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								placeholder="Search providers..."
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								className="h-8 pl-8 text-xs bg-muted/20 border-border/80"
+							/>
+						</div>
+					)}
+				</div>
+
+				{filteredProviders.length === 0 ? (
+					<div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-border/80 bg-muted/5">
+						<GitBranch className="size-10 text-muted-foreground/30 mb-2.5" />
+						<p className="text-sm font-semibold text-foreground">No Git Providers found</p>
+						<p className="text-xs text-muted-foreground mt-1 max-w-sm">
+							{search.trim() ? 'No providers matched your search query.' : 'Click on one of the provider cards above to connect your first Git repository account.'}
 						</p>
 					</div>
-
-					<div className="border-t p-6">
-						<GitProviderCreateButtons onSelectKind={openCreate} />
-
-						<div className="space-y-3">
-							{providers.length === 0 && (
-								<div className="py-12 text-center text-sm text-muted-foreground">
-									No Git Providers configured
-								</div>
-							)}
-
-							{providers.map((provider) => (
-								<GitProviderCard
-									key={provider.id}
-									provider={provider}
-									onAuthorize={handleAuthorize}
-									onTest={handleTest}
-									onEdit={openEdit}
-									onDelete={handleDelete}
-								/>
-							))}
-						</div>
+				) : (
+					<div className="flex flex-col gap-3">
+						{filteredProviders.map((provider) => (
+							<GitProviderCard
+								key={provider.id}
+								provider={provider}
+								onAuthorize={handleAuthorize}
+								onTest={handleTest}
+								onEdit={openEdit}
+								onDelete={handleDelete}
+							/>
+						))}
 					</div>
-				</div>
-			</Card>
+				)}
+			</section>
 
+			{/* Dialogs */}
 			<GithubManifestDialog isOpen={manifestOpen} onClose={() => setManifestOpen(false)} />
 
 			<GitProviderEditDialog
