@@ -75,7 +75,13 @@ impl DeploymentService {
                     target.clone(),
                 ];
                 for cand in &candidates {
-                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                    if let Ok(services) = docker
+                        .services()
+                        .list()
+                        .filter(crate::utils::docker::query::ServiceFilter::name(cand))
+                        .run_json()
+                        .await
+                    {
                         if !services.is_empty() {
                             resolved_target = services[0].name.clone();
                             is_service = true;
@@ -83,18 +89,42 @@ impl DeploymentService {
                         }
                     }
                 }
-                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                if !is_service
+                    && (target.contains("postgres")
+                        || target.contains("mysql")
+                        || target.contains("redis")
+                        || target.contains("mariadb")
+                        || target.contains("mongo")
+                        || target.contains("libsql"))
+                {
                     is_service = true;
-                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                        target.clone()
+                    } else {
+                        format!("{}_db", target)
+                    };
                 }
             }
-        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+        } else if target.contains("postgres")
+            || target.contains("mysql")
+            || target.contains("redis")
+            || target.contains("mariadb")
+            || target.contains("mongo")
+            || target.contains("libsql")
+        {
             is_service = true;
-            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                target.clone()
+            } else {
+                format!("{}_db", target)
+            };
         }
 
         let handle = docker.containers();
-        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
+        let mut builder =
+            handle
+                .logs(resolved_target)
+                .kind(if is_service { "service" } else { "container" });
         if options.timestamps {
             builder = builder.timestamps();
         }
@@ -126,7 +156,13 @@ impl DeploymentService {
                     target.clone(),
                 ];
                 for cand in &candidates {
-                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                    if let Ok(services) = docker
+                        .services()
+                        .list()
+                        .filter(crate::utils::docker::query::ServiceFilter::name(cand))
+                        .run_json()
+                        .await
+                    {
                         if !services.is_empty() {
                             resolved_target = services[0].name.clone();
                             is_service = true;
@@ -134,18 +170,42 @@ impl DeploymentService {
                         }
                     }
                 }
-                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                if !is_service
+                    && (target.contains("postgres")
+                        || target.contains("mysql")
+                        || target.contains("redis")
+                        || target.contains("mariadb")
+                        || target.contains("mongo")
+                        || target.contains("libsql"))
+                {
                     is_service = true;
-                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                        target.clone()
+                    } else {
+                        format!("{}_db", target)
+                    };
                 }
             }
-        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+        } else if target.contains("postgres")
+            || target.contains("mysql")
+            || target.contains("redis")
+            || target.contains("mariadb")
+            || target.contains("mongo")
+            || target.contains("libsql")
+        {
             is_service = true;
-            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                target.clone()
+            } else {
+                format!("{}_db", target)
+            };
         }
 
         let handle = docker.containers();
-        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
+        let mut builder =
+            handle
+                .logs(resolved_target)
+                .kind(if is_service { "service" } else { "container" });
         if options.follow {
             builder = builder.follow();
         }
@@ -427,7 +487,13 @@ impl DeploymentService {
                     target.clone(),
                 ];
                 for cand in &candidates {
-                    if let Ok(services) = docker.services().list().filter(crate::utils::docker::query::ServiceFilter::name(cand)).run_json().await {
+                    if let Ok(services) = docker
+                        .services()
+                        .list()
+                        .filter(crate::utils::docker::query::ServiceFilter::name(cand))
+                        .run_json()
+                        .await
+                    {
                         if !services.is_empty() {
                             resolved_target = services[0].name.clone();
                             is_service = true;
@@ -435,18 +501,42 @@ impl DeploymentService {
                         }
                     }
                 }
-                if !is_service && (target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql")) {
+                if !is_service
+                    && (target.contains("postgres")
+                        || target.contains("mysql")
+                        || target.contains("redis")
+                        || target.contains("mariadb")
+                        || target.contains("mongo")
+                        || target.contains("libsql"))
+                {
                     is_service = true;
-                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+                    resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                        target.clone()
+                    } else {
+                        format!("{}_db", target)
+                    };
                 }
             }
-        } else if target.contains("postgres") || target.contains("mysql") || target.contains("redis") || target.contains("mariadb") || target.contains("mongo") || target.contains("libsql") {
+        } else if target.contains("postgres")
+            || target.contains("mysql")
+            || target.contains("redis")
+            || target.contains("mariadb")
+            || target.contains("mongo")
+            || target.contains("libsql")
+        {
             is_service = true;
-            resolved_target = if target.ends_with("_db") || target.ends_with("-db") { target.clone() } else { format!("{}_db", target) };
+            resolved_target = if target.ends_with("_db") || target.ends_with("-db") {
+                target.clone()
+            } else {
+                format!("{}_db", target)
+            };
         }
 
         let handle = docker.containers();
-        let mut builder = handle.logs(resolved_target).kind(if is_service { "service" } else { "container" });
+        let mut builder =
+            handle
+                .logs(resolved_target)
+                .kind(if is_service { "service" } else { "container" });
         if options.follow {
             builder = builder.follow();
         }

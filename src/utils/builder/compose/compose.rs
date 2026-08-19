@@ -197,10 +197,14 @@ impl ComposeBuilder {
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
         if !output.stdout.is_empty() {
-            self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+            self.ctx
+                .emit(BuilderEvent::Message(output.stdout.clone()))
+                .await;
         }
         if !output.stderr.is_empty() {
-            self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+            self.ctx
+                .emit(BuilderEvent::Message(output.stderr.clone()))
+                .await;
         }
         Ok(())
     }
@@ -269,10 +273,14 @@ impl ComposeBuilder {
                 e
             })?;
         if !output.stdout.is_empty() {
-            self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+            self.ctx
+                .emit(BuilderEvent::Message(output.stdout.clone()))
+                .await;
         }
         if !output.stderr.is_empty() {
-            self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+            self.ctx
+                .emit(BuilderEvent::Message(output.stderr.clone()))
+                .await;
         }
         Ok(())
     }

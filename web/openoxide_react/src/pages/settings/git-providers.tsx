@@ -1,60 +1,52 @@
-import {createFileRoute} from '@tanstack/react-router';
-import {GitBranch, GitFork} from 'lucide-react';
-import {GithubIcon} from '#/components/icons/data-tools-icons';
-import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { ExternalLink, GitBranch, Import, Pencil, RefreshCw, Trash2, Users, Webhook } from 'lucide-react';
+import { BitbucketIcon, GiteaIcon, GithubIcon, GitlabIcon } from '#/components/icons/data-tools-icons';
+import { $api } from '#/api/query';
+import { getApiBaseUrl } from '#/api/client';
+import { formatApiError } from '#/api/utils';
+import { Badge } from '#/components/ui/badge';
+import { Button } from '#/components/ui/button';
+import { Card } from '#/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog';
+import { Input } from '#/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select';
+import { Textarea } from '#/components/ui/textarea';
+import { toast } from 'sonner';
 
-export const Route = createFileRoute('/_app/settings/git-providers')({
-	component: GitProvidersPage,
-});
+export const Route = createFileRoute('/_app/settings/git-providers')({ component: GitProvidersPage });
+type Kind = 'github' | 'gitlab' | 'gitea' | 'bitbucket';
+const labels: Record<Kind, string> = { github: 'GitHub App', gitlab: 'GitLab', gitea: 'Gitea', bitbucket: 'Bitbucket' };
+
+function getGithubCallbackBaseUrl() {
+  const configured = import.meta.env.VITE_API_URL;
+  if (configured && /^https?:\/\//i.test(configured)) return configured.replace(/\/$/, '');
+  if (typeof window === 'undefined') return 'http://127.0.0.1:4000';
+  const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+  return `${window.location.protocol}//${host}:4000`;
+}
 
 function GitProvidersPage() {
-	return (
-		<div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full animate-in fade-in duration-200">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold text-foreground tracking-tight">Git Providers</h1>
-				<p className="text-xs text-muted-foreground">
-					Connect GitHub, GitLab, and Bitbucket for automatic deployments and push webhooks
-				</p>
-			</div>
-
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div className="p-5 border rounded-xl bg-card flex flex-col justify-between gap-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							<div className="size-10 rounded-xl bg-muted/60 flex items-center justify-center">
-								<GithubIcon className="size-6 text-foreground" />
-							</div>
-							<div>
-								<h3 className="text-sm font-bold text-foreground">GitHub App</h3>
-								<p className="text-[10px] text-muted-foreground">Repository & Webhook Integration</p>
-							</div>
-						</div>
-						<Badge variant="outline" className="text-[10px]">CONNECTED</Badge>
-					</div>
-					<Button variant="outline" size="sm" className="w-full text-xs h-8">
-						Configure Repositories
-					</Button>
-				</div>
-
-				<div className="p-5 border rounded-xl bg-card flex flex-col justify-between gap-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							<div className="size-10 rounded-xl bg-muted/60 flex items-center justify-center">
-								<GitBranch className="size-6 text-foreground" />
-							</div>
-							<div>
-								<h3 className="text-sm font-bold text-foreground">GitLab</h3>
-								<p className="text-[10px] text-muted-foreground">Self-Hosted or SaaS GitLab</p>
-							</div>
-						</div>
-						<Badge variant="secondary" className="text-[10px]">AVAILABLE</Badge>
-					</div>
-					<Button variant="secondary" size="sm" className="w-full text-xs h-8">
-						Connect GitLab
-					</Button>
-				</div>
-			</div>
-		</div>
-	);
+  const list = $api.useQuery('get', '/git-providers' as any, {} as any);
+  const create = $api.useMutation('post', '/git-providers/{kind}' as any);
+  const update = $api.useMutation('put', '/git-providers/{id}/{kind}' as any);
+  const remove = $api.useMutation('delete', '/git-providers/{id}' as any);
+  const test = $api.useMutation('post', '/git-providers/{id}/test' as any);
+  const rotate = $api.useMutation('post', '/git-providers/{id}/webhook-secret/rotate' as any);
+  const [open, setOpen] = useState(false); const [manifestOpen, setManifestOpen] = useState(false); const [githubUrl, setGithubUrl] = useState('https://github.com'); const [editing, setEditing] = useState<any>(null); const [kind, setKind] = useState<Kind>('github'); const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({ name: '', url: '', internal_url: '', app_name: '', app_id: '', client_id: '', client_secret: '', installation_id: '', private_key: '', application_id: '', redirect_uri: '', secret: '', access_token: '', refresh_token: '', group_name: '', scopes: '', username: '', email: '', app_password: '', api_token: '', workspace: '', shared: 'true' });
+  const providers = (list.data?.data || list.data || []) as any[];
+  const set = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  const openCreate = (providerKind: Kind = 'github') => { setEditing(null); setKind(providerKind); if (providerKind === 'github') { setManifestOpen(true); return; } setForm({ ...form, name: '', url: providerKind === 'gitlab' ? 'https://gitlab.com' : 'https://gitea.com', internal_url: '', redirect_uri: `${window.location.origin}/api/git-providers/${providerKind}/oauth/callback`, shared: 'true' }); setOpen(true); };
+  const openEdit = (provider: any) => { setEditing(provider); setKind(provider.provider_type as Kind); setForm({ ...form, name: provider.name, shared: String(provider.shared), ...(provider.config || {}) }); setOpen(true); };
+  const payload = () => { const base = { name: form.name.trim(), shared: form.shared === 'true' }; if (kind === 'github') return { provider: base, app_name: form.app_name || undefined, app_id: form.app_id ? Number(form.app_id) : undefined, client_id: form.client_id || undefined, client_secret: form.client_secret || undefined, installation_id: form.installation_id || undefined, private_key: form.private_key || undefined }; if (kind === 'gitlab') return { provider: base, url: form.url, internal_url: form.internal_url || undefined, application_id: form.application_id || undefined, redirect_uri: form.redirect_uri || undefined, secret: form.secret || undefined, access_token: form.access_token || undefined, refresh_token: form.refresh_token || undefined, group_name: form.group_name || undefined }; if (kind === 'gitea') return { provider: base, url: form.url, internal_url: form.internal_url || undefined, redirect_uri: form.redirect_uri || undefined, client_id: form.client_id || undefined, client_secret: form.client_secret || undefined, access_token: form.access_token || undefined, refresh_token: form.refresh_token || undefined, scopes: form.scopes || undefined }; return { provider: base, username: form.username || undefined, email: form.email || undefined, app_password: form.app_password || undefined, api_token: form.api_token || undefined, workspace: form.workspace || undefined }; };
+  const save = async () => { if (!form.name.trim()) return toast.error('Provider name is required'); setBusy(true); try { let result: any; if (editing) result = await update.mutateAsync({ params: { path: { id: editing.id, kind } }, body: payload() } as any); else result = await create.mutateAsync({ params: { path: { kind } }, body: payload() } as any); toast.success(editing ? 'Git provider updated' : 'Git provider created'); setOpen(false); await list.refetch(); const providerId = editing?.id || result?.data?.provider?.id || result?.provider?.id; if (!editing && providerId && (kind === 'gitlab' || kind === 'gitea')) await authorizeProvider(providerId); } catch (e) { toast.error(formatApiError(e, 'Failed to save Git provider')); } finally { setBusy(false); } };
+  const authHeaders = () => { const session = JSON.parse(localStorage.getItem('openoxide-auth-session') || '{}'); const headers: Record<string, string> = {}; if (session?.tokens?.access_token) headers.Authorization = `Bearer ${session.tokens.access_token}`; const org = localStorage.getItem('openoxide-active-organization-id'); if (org) headers['X-Organization-Id'] = org; return headers; };
+  const authorizeProvider = async (id: number) => { const response = await fetch(`${getApiBaseUrl()}/git-providers/${id}/authorize`, { headers: authHeaders() }); if (!response.ok) throw new Error('Authorization could not be started'); const data = await response.json(); if (!data.url) throw new Error('Provider returned no authorization URL'); window.open(data.url, '_blank', 'noopener,noreferrer'); };
+  const field = (key: string, label: string, secret = false, placeholder = '') => <div className="space-y-1"><label className="text-xs font-medium">{label}</label><Input type={secret ? 'password' : 'text'} value={form[key] || ''} placeholder={placeholder} onChange={e => set(key, e.target.value)} /></div>;
+  const githubCallbackBaseUrl = getGithubCallbackBaseUrl();
+  const manifest = JSON.stringify({ name: `OpenOxide-${new Date().toISOString().slice(0, 10)}`, url: window.location.origin, redirect_url: `${githubCallbackBaseUrl}/git-providers/github/manifest/callback`, callback_urls: [`${githubCallbackBaseUrl}/git-providers/github/manifest/callback`], public: false, request_oauth_on_install: true, default_permissions: { contents: 'read', metadata: 'read', emails: 'read', pull_requests: 'write' }, default_events: ['push', 'pull_request'] });
+  const providerButtons = [{ kind: 'github' as Kind, icon: <GithubIcon className="size-4" />, className: 'hover:border-zinc-500' }, { kind: 'gitlab' as Kind, icon: <GitlabIcon className="size-4" />, className: 'hover:border-orange-500' }, { kind: 'bitbucket' as Kind, icon: <BitbucketIcon className="size-4" />, className: 'bg-blue-700 text-white hover:bg-blue-600' }, { kind: 'gitea' as Kind, icon: <GiteaIcon className="size-4" />, className: 'hover:border-green-500' }];
+  const providerIcon = (type: Kind) => type === 'github' ? <GithubIcon className="size-5" /> : type === 'gitlab' ? <GitlabIcon className="size-5" /> : type === 'bitbucket' ? <BitbucketIcon className="size-5" /> : <GiteaIcon className="size-5" />;
+  return <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6"><Card className="p-2.5"><div className="rounded-xl bg-background shadow-sm"><div className="p-6"><h1 className="flex items-center gap-2 text-xl font-bold"><GitBranch className="size-5 text-muted-foreground" /> Git Providers</h1><p className="mt-1 text-sm text-muted-foreground">Connect your Git provider for repository authentication.</p></div><div className="border-t p-6"><div className="mb-6 flex flex-wrap gap-3">{providerButtons.map(button => <Button key={button.kind} variant="secondary" className={`flex-1 justify-center gap-2 ${button.className}`} onClick={() => openCreate(button.kind)}>{button.icon}{labels[button.kind]}</Button>)}</div><div className="space-y-3">{providers.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground">No Git Providers configured</div>}{providers.map(provider => <Card key={provider.id} className="flex items-center justify-between p-4"><div className="flex items-center gap-3">{providerIcon(provider.provider_type as Kind)}<div><div className="flex items-center gap-2"><span className="font-semibold">{provider.name}</span><Badge variant="outline">{labels[provider.provider_type as Kind] || provider.provider_type}</Badge><Badge variant={provider.configured ? 'secondary' : 'destructive'}>{provider.configured ? 'Configured' : 'Action Required'}</Badge>{provider.shared && <Badge variant="secondary"><Users className="mr-1 size-3" /> Shared</Badge>}</div><p className="text-xs text-muted-foreground">{provider.config?.url || (provider.config?.app_name ? 'GitHub App' : 'Credentials configured')}</p></div></div><div className="flex gap-1">{!provider.configured && <Button variant="ghost" size="icon" title="Authorize provider" onClick={async () => { try { const result = await fetch(`${getApiBaseUrl()}/git-providers/${provider.id}/authorize`, { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem('openoxide-auth-session') || '{}')?.tokens?.access_token || ''}` } }); const data = await result.json(); if (data.url) window.open(data.url, '_blank'); } catch { toast.error('Could not start authorization'); } }}><Import className="size-4 text-primary" /></Button>}<Button variant="ghost" size="icon" title="Test connection" onClick={async () => { try { await test.mutateAsync({ params: { path: { id: provider.id } } } as any); toast.success('Connection successful'); } catch (e) { toast.error(formatApiError(e, 'Connection failed')); } }}><RefreshCw className="size-4" /></Button><Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(provider)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" title="Delete" onClick={async () => { if (!confirm('Delete this Git provider?')) return; try { await remove.mutateAsync({ params: { path: { id: provider.id } } } as any); toast.success('Git provider deleted'); await list.refetch(); } catch (e) { toast.error(formatApiError(e, 'Failed to delete Git provider')); } }}><Trash2 className="size-4 text-destructive" /></Button></div></Card>)}</div></div></div></Card><Dialog open={manifestOpen} onOpenChange={setManifestOpen}><DialogContent><DialogHeader><DialogTitle>Create GitHub App</DialogTitle><DialogDescription>GitHub will create the App and return here to save it in Rustploy.</DialogDescription></DialogHeader><div className="grid gap-3"><Input value={githubUrl} onChange={e => setGithubUrl(e.target.value)} placeholder="https://github.com" /><form action={`${githubUrl.replace(/\/$/, '')}/settings/apps/new`} method="post"><input type="hidden" name="manifest" value={manifest} /><Button type="submit" className="w-full">Create GitHub App</Button></form></div></DialogContent></Dialog><Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle className="flex items-center gap-2">{providerIcon(kind)} {editing ? 'Edit' : 'Add'} {labels[kind]}</DialogTitle><DialogDescription>{kind === 'github' ? 'Create and install a GitHub App.' : kind === 'gitlab' ? 'Create an OAuth application in GitLab, then authorize it.' : kind === 'gitea' ? 'Create an OAuth2 application in Gitea, then authorize it.' : 'Use a Bitbucket API token for repository access.'}</DialogDescription></DialogHeader><div className="mb-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">{kind === 'github' ? <>Use GitHub App creation, then install the app for the required account.</> : kind === 'gitlab' ? <>Create an application at <a className="text-primary underline" href={`${form.url || 'https://gitlab.com'}/-/profile/applications`} target="_blank" rel="noreferrer">GitLab Applications <ExternalLink className="inline size-3" /></a>. Redirect URI: <code>{form.redirect_uri}</code>. Scopes: <code>api read_user read_repository</code>.</> : kind === 'gitea' ? <>Create an OAuth2 application at <a className="text-primary underline" href={`${form.url || 'https://gitea.com'}/user/settings/applications`} target="_blank" rel="noreferrer">Gitea Applications <ExternalLink className="inline size-3" /></a>. Redirect URI: <code>{form.redirect_uri}</code>.</> : <>Bitbucket App Passwords are deprecated for new providers. Create an API token at <a className="text-primary underline" href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" rel="noreferrer">Bitbucket settings <ExternalLink className="inline size-3" /></a>.</>}</div><div className="grid gap-3">{field('name', 'Provider name', false, 'my-personal-account')}{kind === 'github' && <>{field('app_name', 'App name')}{field('app_id', 'App ID')}{field('installation_id', 'Installation ID')}{field('client_id', 'Client ID')}{field('client_secret', 'Client secret', true)}{field('private_key', 'Private key', true)}</>}{(kind === 'gitlab' || kind === 'gitea') && <><div className="grid grid-cols-2 gap-3">{field('url', 'Public URL', false, kind === 'gitlab' ? 'https://gitlab.com' : 'https://gitea.com')}{field('internal_url', 'Internal URL')}</div>{field('redirect_uri', 'Redirect URI')}{kind === 'gitlab' ? <>{field('application_id', 'Application ID')}{field('secret', 'Application Secret', true)}{field('group_name', 'Group name')}</> : <>{field('client_id', 'Client ID')}{field('client_secret', 'Client Secret', true)}</>}</>}{kind === 'bitbucket' && <><div className="grid grid-cols-2 gap-3">{field('username', 'Username')}{field('email', 'Email')}</div>{field('api_token', 'API token', true)}{field('workspace', 'Workspace name')}{field('app_password', 'App password (legacy)', true)}</>}<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.shared === 'true'} onChange={e => set('shared', String(e.target.checked))} /> Share with organization</label><div className="flex justify-between border-t pt-4"><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save} disabled={busy}>{busy && <RefreshCw className="mr-1.5 size-4 animate-spin" />}{editing ? 'Save changes' : kind === 'github' ? 'Create provider' : 'Save and authorize'}</Button></div></div></DialogContent></Dialog></div>;
 }

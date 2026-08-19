@@ -368,31 +368,39 @@ impl PermissionGroupService {
             u.id.ok_or_else(|| PermissionGroupError::Invalid("user has no id".into()))?
         } else {
             let password_raw = body.password.unwrap_or_else(|| "ChangeMe123!".to_string());
-            let password_hash = crate::services::auth::hash_password(password_raw).await
+            let password_hash = crate::services::auth::hash_password(password_raw)
+                .await
                 .map_err(|_| PermissionGroupError::Invalid("failed to hash password".into()))?;
-            self.user_repository.create(&crate::db::models::users::User {
-                id: None,
-                email: Some(email.clone()),
-                first_name: None,
-                last_name: None,
-                avatar: String::new(),
-                password: password_hash,
-                role: Some("member".into()),
-                group_id: 1,
-                about_me: None,
-                is_email_verify: Some(1),
-                email_verify_at: Some(chrono::Utc::now().timestamp()),
-                two_factor_enable: Some(0),
-                is_registered: 1,
-                added_by: None,
-                created_at: chrono::Utc::now().timestamp(),
-                updated_at: chrono::Utc::now().timestamp(),
-            }).await?
+            self.user_repository
+                .create(&crate::db::models::users::User {
+                    id: None,
+                    email: Some(email.clone()),
+                    first_name: None,
+                    last_name: None,
+                    avatar: String::new(),
+                    password: password_hash,
+                    role: Some("member".into()),
+                    group_id: 1,
+                    about_me: None,
+                    is_email_verify: Some(1),
+                    email_verify_at: Some(chrono::Utc::now().timestamp()),
+                    two_factor_enable: Some(0),
+                    is_registered: 1,
+                    added_by: None,
+                    created_at: chrono::Utc::now().timestamp(),
+                    updated_at: chrono::Utc::now().timestamp(),
+                })
+                .await?
         };
 
-        let existing_role = self.member_repository.role(user_id, organization_id).await?;
+        let existing_role = self
+            .member_repository
+            .role(user_id, organization_id)
+            .await?;
         if existing_role.is_some() {
-            return Err(PermissionGroupError::Invalid("user is already a member of this organization".into()));
+            return Err(PermissionGroupError::Invalid(
+                "user is already a member of this organization".into(),
+            ));
         }
 
         self.member_repository

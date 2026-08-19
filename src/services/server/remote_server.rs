@@ -157,21 +157,31 @@ impl RemoteServerService {
 
     pub async fn touch_test_connection(&self, id: i64) -> sqlx::Result<Server> {
         let server = self.get_by_id(id).await?;
-        let executor = crate::services::compose::remote::remote_executor(self.repo_server.pool(), id)
-            .await
-            .map_err(|e| sqlx::Error::Protocol(format!("Could not create SSH executor: {e}")))?;
+        let executor =
+            crate::services::compose::remote::remote_executor(self.repo_server.pool(), id)
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Protocol(format!("Could not create SSH executor: {e}"))
+                })?;
 
-        let session = executor
-            .connect_session()
-            .await
-            .map_err(|e| sqlx::Error::Protocol(format!("SSH connection test failed for {}: {e}", server.ip_address)))?;
+        let session = executor.connect_session().await.map_err(|e| {
+            sqlx::Error::Protocol(format!(
+                "SSH connection test failed for {}: {e}",
+                server.ip_address
+            ))
+        })?;
 
-        let (exit_code, _, stderr) = os::ssh::execute_russh_cmd(&session, "echo 'SSH_OK'").await
-            .map_err(|e| sqlx::Error::Protocol(format!("SSH test command execution failed: {e}")))?;
+        let (exit_code, _, stderr) = os::ssh::execute_russh_cmd(&session, "echo 'SSH_OK'")
+            .await
+            .map_err(|e| {
+                sqlx::Error::Protocol(format!("SSH test command execution failed: {e}"))
+            })?;
 
         if exit_code != 0 {
             let err_str = String::from_utf8_lossy(&stderr);
-            return Err(sqlx::Error::Protocol(format!("SSH test command failed with exit code {exit_code}: {err_str}")));
+            return Err(sqlx::Error::Protocol(format!(
+                "SSH test command failed with exit code {exit_code}: {err_str}"
+            )));
         }
 
         if let Some(ssh_key_id) = server.ssh_key_id {
@@ -195,7 +205,9 @@ impl RemoteServerService {
                 dependencies.schedules,
             )));
         }
-        if let Ok(private_network_service) = auto_di::resolve::<crate::services::server::ServerPrivateNetworkService>().await {
+        if let Ok(private_network_service) =
+            auto_di::resolve::<crate::services::server::ServerPrivateNetworkService>().await
+        {
             let _ = private_network_service.disable(id).await;
         }
         self.repo_server.delete(id).await

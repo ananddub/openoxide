@@ -1,13 +1,24 @@
 use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultProviderType, VaultSecretListDto, VaultTestResultDto,
+    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto, VaultProviderDto,
+    VaultProviderType,
 };
 use crate::db::models::vault_providers::VaultProvider;
 use crate::db::repository::VaultProviderRepository;
 use auto_di::singleton;
 use reqwest::Client;
-use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
+
+mod azure;
+mod config;
+mod dispatch;
+mod doppler;
+mod hashicorp;
+mod infisical;
+mod providers;
+mod resolution;
+mod scaleway;
+use config::{encode_path, field as config_field};
 
 pub const VAULT_MASK_TOKEN: &str = "••••••••";
 
@@ -42,7 +53,10 @@ impl VaultService {
         &self,
         organization_id: i64,
     ) -> Result<Vec<VaultProviderDto>, VaultServiceError> {
-        let providers = self.repository.list_by_organization(organization_id).await?;
+        let providers = self
+            .repository
+            .list_by_organization(organization_id)
+            .await?;
         Ok(providers.into_iter().map(Self::into_dto).collect())
     }
 
@@ -66,6 +80,7 @@ impl VaultService {
         body: CreateVaultProviderDto,
     ) -> Result<VaultProviderDto, VaultServiceError> {
         let now = chrono::Utc::now().timestamp();
+        let config_json = Self::merge_assignments(body.config_json, &body.assignments);
         let provider = VaultProvider {
             id: None,
             name: body.name,
@@ -73,7 +88,7 @@ impl VaultService {
             api_url: body.api_url.trim_end_matches('/').to_string(),
             auth_token: body.auth_token,
             namespace: body.namespace,
-            config_json: body.config_json,
+            config_json,
             organization_id,
             created_at: now,
             updated_at: now,
@@ -116,7 +131,11 @@ impl VaultService {
             existing.namespace = Some(namespace);
         }
         if let Some(config_json) = body.config_json {
-            existing.config_json = Some(config_json);
+            let assignments = Self::read_assignments(existing.config_json.as_deref());
+            existing.config_json = Self::merge_assignments(Some(config_json), &assignments);
+        }
+        if let Some(assignments) = body.assignments {
+            existing.config_json = Self::merge_assignments(existing.config_json, &assignments);
         }
         existing.updated_at = chrono::Utc::now().timestamp();
 
@@ -132,354 +151,89 @@ impl VaultService {
         Ok(self.repository.delete(id, organization_id).await?)
     }
 
-    pub async fn test_connection(
+    pub async fn get_assignments(
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<VaultTestResultDto, VaultServiceError> {
+    ) -> Result<Vec<VaultProviderAssignmentDto>, VaultServiceError> {
         let provider = self
             .repository
             .get_by_id(id)
             .await?
             .filter(|p| p.organization_id == organization_id)
             .ok_or(VaultServiceError::NotFound)?;
-
-        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
-
-        match p_type {
-            VaultProviderType::Hashicorp => self.test_hashicorp_credentials(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
-            VaultProviderType::Infisical => self.test_infisical_credentials(&provider.api_url, &provider.auth_token).await,
-            VaultProviderType::Doppler => self.test_doppler_credentials(&provider.auth_token).await,
-            VaultProviderType::Aws => self.test_aws_credentials(&provider.auth_token).await,
-            VaultProviderType::Scaleway => self.test_scaleway_credentials(&provider.api_url, &provider.auth_token).await,
-            VaultProviderType::Azure => self.test_azure_credentials(&provider.auth_token).await,
-        }
+        Ok(Self::read_assignments(provider.config_json.as_deref()))
     }
 
-    pub async fn test_credentials(
-        &self,
-        provider_type: VaultProviderType,
-        api_url: &str,
-        auth_token: &str,
-        namespace: Option<String>,
-    ) -> Result<VaultTestResultDto, VaultServiceError> {
-        let clean_url = api_url.trim_end_matches('/');
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        match provider_type {
-            VaultProviderType::Hashicorp => self.test_hashicorp_credentials(clean_url, clean_token, namespace.as_deref()).await,
-            VaultProviderType::Infisical => self.test_infisical_credentials(clean_url, clean_token).await,
-            VaultProviderType::Doppler => self.test_doppler_credentials(clean_token).await,
-            VaultProviderType::Aws => self.test_aws_credentials(clean_token).await,
-            VaultProviderType::Scaleway => self.test_scaleway_credentials(clean_url, clean_token).await,
-            VaultProviderType::Azure => self.test_azure_credentials(clean_token).await,
-        }
-    }
-
-    pub async fn list_secret_names(
+    pub async fn set_assignments(
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<VaultSecretListDto, VaultServiceError> {
-        let provider = self
+        assignments: Vec<VaultProviderAssignmentDto>,
+    ) -> Result<Vec<VaultProviderAssignmentDto>, VaultServiceError> {
+        let mut provider = self
             .repository
             .get_by_id(id)
             .await?
             .filter(|p| p.organization_id == organization_id)
             .ok_or(VaultServiceError::NotFound)?;
-
-        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
-
-        match p_type {
-            VaultProviderType::Hashicorp => self.list_hashicorp_secrets(&provider.api_url, &provider.auth_token, provider.namespace.as_deref()).await,
-            VaultProviderType::Doppler => self.list_doppler_secrets(&provider.auth_token).await,
-            _ => Ok(VaultSecretListDto {
-                secrets: vec!["DATABASE_URL".into(), "SECRET_KEY".into(), "API_KEY".into()],
-            }),
-        }
-    }
-
-    /// Resolves all Vault references like `${{vault.provider_name.ref_path}}` in raw_env text during build/deployment phase.
-    pub async fn resolve_vault_references(
-        &self,
-        raw_env: &str,
-        organization_id: i64,
-    ) -> Result<String, VaultServiceError> {
-        if !raw_env.contains("${{vault.") {
-            return Ok(raw_env.to_string());
-        }
-
-        let providers = self.repository.list_by_organization(organization_id).await?;
-        let mut provider_map: HashMap<String, VaultProvider> = HashMap::new();
-        for p in providers {
-            provider_map.insert(p.name.clone(), p);
-        }
-
-        let mut resolved = raw_env.to_string();
-        let prefix = "${{vault.";
-        let suffix = "}}";
-
-        while let Some(start_idx) = resolved.find(prefix) {
-            let rest = &resolved[start_idx + prefix.len()..];
-            if let Some(end_idx) = rest.find(suffix) {
-                let full_ref = &resolved[start_idx..start_idx + prefix.len() + end_idx + suffix.len()];
-                let inner = &rest[..end_idx];
-
-                if let Some(dot_idx) = inner.find('.') {
-                    let provider_name = &inner[..dot_idx];
-                    let ref_path = &inner[dot_idx + 1..];
-
-                    if let Some(provider) = provider_map.get(provider_name) {
-                        let p_type: VaultProviderType = provider.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
-
-                        let val = match p_type {
-                            VaultProviderType::Doppler => self.fetch_doppler_secret(&provider.auth_token, ref_path).await?,
-                            VaultProviderType::Hashicorp => self.fetch_hashicorp_secret(&provider.api_url, &provider.auth_token, provider.namespace.as_deref(), ref_path).await?,
-                            _ => String::new(),
-                        };
-                        resolved = resolved.replace(full_ref, &val);
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(resolved)
-    }
-
-    async fn fetch_doppler_secret(&self, auth_token: &str, secret_name: &str) -> Result<String, VaultServiceError> {
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-        let url = format!("https://api.doppler.com/v3/configs/config/secret?name={}", secret_name);
-        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
-        if res.status().is_success() {
-            if let Ok(json) = res.json::<serde_json::Value>().await {
-                if let Some(val) = json["value"]["computed"].as_str().or_else(|| json["value"]["raw"].as_str()) {
-                    return Ok(val.to_string());
-                }
-            }
-        }
-        Ok(String::new())
-    }
-
-    async fn fetch_hashicorp_secret(&self, api_url: &str, auth_token: &str, namespace: Option<&str>, path_and_key: &str) -> Result<String, VaultServiceError> {
-        let clean_url = api_url.trim_end_matches('/');
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-        
-        let parts: Vec<&str> = path_and_key.split(':').collect();
-        let (path, field) = if parts.len() == 2 {
-            (parts[0], parts[1])
-        } else {
-            (path_and_key, "value")
-        };
-
-        let url = format!("{}/v1/secret/data/{}", clean_url, path);
-        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
-        }
-
-        if let Ok(res) = req.send().await {
-            if let Ok(json) = res.json::<serde_json::Value>().await {
-                if let Some(val) = json["data"]["data"][field].as_str() {
-                    return Ok(val.to_string());
-                }
-            }
-        }
-        Ok(String::new())
-    }
-
-    async fn test_hashicorp_credentials(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultTestResultDto, VaultServiceError> {
-        let clean_url = api_url.trim_end_matches('/');
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        if clean_token.is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "HashiCorp Vault token is required".into(),
-            });
-        }
-
-        let url = format!("{}/v1/auth/token/lookup-self", clean_url);
-        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
-        }
-        let res = req.send().await?;
-        if res.status().is_success() {
-            Ok(VaultTestResultDto {
-                success: true,
-                message: "HashiCorp Vault: token validated successfully!".into(),
-            })
-        } else {
-            Ok(VaultTestResultDto {
-                success: false,
-                message: format!("HashiCorp Vault: token validation failed (status {})", res.status()),
-            })
-        }
-    }
-
-    async fn list_hashicorp_secrets(&self, api_url: &str, auth_token: &str, namespace: Option<&str>) -> Result<VaultSecretListDto, VaultServiceError> {
-        let clean_url = api_url.trim_end_matches('/');
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        let url = format!("{}/v1/secret/metadata?list=true", clean_url);
-        let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
-        }
-        if let Ok(res) = req.send().await {
-            if let Ok(json) = res.json::<serde_json::Value>().await {
-                if let Some(keys) = json["data"]["keys"].as_array() {
-                    let secrets = keys.iter().filter_map(|k| k.as_str().map(|s| s.to_string())).collect();
-                    return Ok(VaultSecretListDto { secrets });
-                }
-            }
-        }
-        Ok(VaultSecretListDto { secrets: vec![] })
-    }
-
-    async fn test_infisical_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        let clean_url = if api_url.trim().is_empty() { "https://app.infisical.com" } else { api_url.trim_end_matches('/') };
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        if clean_token.is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "Infisical Access Token is required".into(),
-            });
-        }
-
-        let url = format!("{}/api/v1/status", clean_url);
-        let res = self.client.get(&url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
-        if res.status().is_success() {
-            Ok(VaultTestResultDto {
-                success: true,
-                message: "Infisical: connection verified successfully!".into(),
-            })
-        } else {
-            Ok(VaultTestResultDto {
-                success: false,
-                message: format!("Infisical: authentication failed (status {})", res.status()),
-            })
-        }
-    }
-
-    async fn test_doppler_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        if clean_token.is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "Doppler Service Token is required".into(),
-            });
-        }
-
-        let url = "https://api.doppler.com/v3/me";
-        let res = self.client.get(url).header("Authorization", format!("Bearer {}", clean_token)).send().await?;
-        if res.status().is_success() {
-            Ok(VaultTestResultDto {
-                success: true,
-                message: "Doppler: Service Token authenticated successfully!".into(),
-            })
-        } else {
-            Ok(VaultTestResultDto {
-                success: false,
-                message: format!("Doppler: token verification failed (status {})", res.status()),
-            })
-        }
-    }
-
-    async fn list_doppler_secrets(&self, auth_token: &str) -> Result<VaultSecretListDto, VaultServiceError> {
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-        let url = "https://api.doppler.com/v3/configs/config/secrets";
-        if let Ok(res) = self.client.get(url).header("Authorization", format!("Bearer {}", clean_token)).send().await {
-            if let Ok(json) = res.json::<serde_json::Value>().await {
-                if let Some(secrets_obj) = json["secrets"].as_object() {
-                    let secrets = secrets_obj.keys().cloned().collect();
-                    return Ok(VaultSecretListDto { secrets });
-                }
-            }
-        }
-        Ok(VaultSecretListDto { secrets: vec![] })
-    }
-
-    async fn test_aws_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        if auth_token.trim().is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "AWS Secret Access Key is required".into(),
-            });
-        }
-        Ok(VaultTestResultDto {
-            success: true,
-            message: "AWS Secrets Manager: credentials format validated!".into(),
-        })
-    }
-
-    async fn test_scaleway_credentials(&self, api_url: &str, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        let clean_url = if api_url.trim().is_empty() { "https://api.scaleway.com" } else { api_url.trim_end_matches('/') };
-        let clean_token = auth_token.trim().trim_matches('"').trim_matches('\'');
-
-        if clean_token.is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "Scaleway Secret Key is required".into(),
-            });
-        }
-
-        let url = format!("{}/secret-manager/v1beta1/regions/fr-par/secrets", clean_url);
-        let res = self.client.get(&url).header("X-Auth-Token", clean_token).send().await?;
-        if res.status().is_success() || res.status().as_u16() == 404 {
-            Ok(VaultTestResultDto {
-                success: true,
-                message: "Scaleway Secret Manager: Secret Key authenticated successfully!".into(),
-            })
-        } else {
-            Ok(VaultTestResultDto {
-                success: false,
-                message: format!("Scaleway: authentication failed (status {})", res.status()),
-            })
-        }
-    }
-
-    async fn test_azure_credentials(&self, auth_token: &str) -> Result<VaultTestResultDto, VaultServiceError> {
-        if auth_token.trim().is_empty() {
-            return Ok(VaultTestResultDto {
-                success: false,
-                message: "Azure Client Secret is required".into(),
-            });
-        }
-        Ok(VaultTestResultDto {
-            success: true,
-            message: "Azure Key Vault: credentials format validated!".into(),
-        })
+        provider.config_json = Self::merge_assignments(provider.config_json, &assignments);
+        provider.updated_at = chrono::Utc::now().timestamp();
+        self.repository.update(id, &provider).await?;
+        Ok(assignments)
     }
 
     fn into_dto(p: VaultProvider) -> VaultProviderDto {
-        let p_type: VaultProviderType = p.provider_type.parse().unwrap_or(VaultProviderType::Hashicorp);
+        let assignments = Self::read_assignments(p.config_json.as_deref());
+        let p_type: VaultProviderType = p
+            .provider_type
+            .parse()
+            .unwrap_or(VaultProviderType::Hashicorp);
 
         VaultProviderDto {
             id: p.id.unwrap_or_default(),
             name: p.name,
             provider_type: p_type,
             api_url: p.api_url,
-            auth_token: if p.auth_token.is_empty() { String::new() } else { VAULT_MASK_TOKEN.to_string() },
+            auth_token: if p.auth_token.is_empty() {
+                String::new()
+            } else {
+                VAULT_MASK_TOKEN.to_string()
+            },
             namespace: p.namespace,
             config_json: p.config_json,
             organization_id: p.organization_id,
             created_at: p.created_at,
             updated_at: p.updated_at,
+            assignments,
+        }
+    }
+
+    fn read_assignments(raw: Option<&str>) -> Vec<VaultProviderAssignmentDto> {
+        raw.and_then(|value| serde_json::from_str::<serde_json::Value>(value).ok())
+            .and_then(|value| serde_json::from_value(value["_assignments"].clone()).ok())
+            .unwrap_or_default()
+    }
+
+    fn merge_assignments(
+        raw: Option<String>,
+        assignments: &[VaultProviderAssignmentDto],
+    ) -> Option<String> {
+        let mut value = raw
+            .as_deref()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(text).ok())
+            .unwrap_or_else(|| serde_json::json!({}));
+        if let Some(object) = value.as_object_mut() {
+            object.insert(
+                "_assignments".into(),
+                serde_json::to_value(assignments).unwrap_or_else(|_| serde_json::json!([])),
+            );
+            Some(value.to_string())
+        } else {
+            Some(
+                serde_json::json!({ "_provider_config": value, "_assignments": assignments })
+                    .to_string(),
+            )
         }
     }
 }

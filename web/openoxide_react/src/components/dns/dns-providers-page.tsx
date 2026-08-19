@@ -35,10 +35,9 @@ import { toast } from 'sonner';
 import {
 	CloudflareIcon,
 	AwsIcon,
-	DigitalOceanIcon,
-	HetznerIcon,
 } from '#/components/icons/provider-icons';
 import { useAppStore } from '#/stores/app-store';
+import { DnsZonesDialog } from './dns-zones-dialog';
 
 export interface DnsProviderItem {
 	id: number;
@@ -69,17 +68,13 @@ export function DnsProvidersPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingProvider, setEditingProvider] = useState<any | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
-	const [selectedDomainsProvider, setSelectedDomainsProvider] = useState<any | null>(null);
 	const [isTestingModal, setIsTestingModal] = useState(false);
-	const [newDomainInput, setNewDomainInput] = useState('');
-	const [managedDomainsMap, setManagedDomainsMap] = useState<Record<number, string[]>>({
-		1: ['*.rustploy.dev', 'app.rustploy.io'],
-	});
 
 	// Form State
 	const [formName, setFormName] = useState('');
-	const [formType, setFormType] = useState<'CLOUDFLARE' | 'ROUTE53' | 'DIGITALOCEAN' | 'HETZNER'>('CLOUDFLARE');
+	const [formType, setFormType] = useState<'CLOUDFLARE' | 'ROUTE53'>('CLOUDFLARE');
 	const [formToken, setFormToken] = useState('');
+	const [formAccessKey, setFormAccessKey] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleOpenCreate = () => {
@@ -87,6 +82,7 @@ export function DnsProvidersPage() {
 		setFormName('');
 		setFormType('CLOUDFLARE');
 		setFormToken('');
+		setFormAccessKey('');
 		setIsCreateOpen(true);
 	};
 
@@ -95,29 +91,10 @@ export function DnsProvidersPage() {
 		setFormName(provider.name);
 		setFormType((provider.provider_type || 'CLOUDFLARE').toUpperCase() as any);
 		setFormToken('');
+		try { setFormAccessKey(JSON.parse(provider.credentials_json || '{}').accessKeyId || ''); } catch { setFormAccessKey(''); }
 		setIsCreateOpen(true);
 	};
 
-	const handleAddDomainToProvider = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedDomainsProvider || !newDomainInput.trim()) return;
-		const domain = newDomainInput.trim().toLowerCase();
-		setManagedDomainsMap(prev => ({
-			...prev,
-			[selectedDomainsProvider.id]: [...(prev[selectedDomainsProvider.id] || []), domain],
-		}));
-		setNewDomainInput('');
-		toast.success(`Domain "${domain}" added to ${selectedDomainsProvider.name}`);
-	};
-
-	const handleRemoveDomainFromProvider = (domain: string) => {
-		if (!selectedDomainsProvider) return;
-		setManagedDomainsMap(prev => ({
-			...prev,
-			[selectedDomainsProvider.id]: (prev[selectedDomainsProvider.id] || []).filter(d => d !== domain),
-		}));
-		toast.success(`Domain "${domain}" removed`);
-	};
 
 	const handleSaveProvider = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -131,7 +108,7 @@ export function DnsProvidersPage() {
 			if (editingProvider) {
 				const updatePayload: any = {
 					name: formName.trim(),
-					credentials_json: formToken.trim() ? JSON.stringify(formToken.trim()) : undefined,
+					credentials_json: formToken.trim() ? (formType === 'ROUTE53' ? JSON.stringify({ accessKeyId: formAccessKey.trim(), secretAccessKey: formToken.trim() }) : JSON.stringify(formToken.trim())) : undefined,
 				};
 
 				updateDnsStore(editingProvider.id, updatePayload);
@@ -145,7 +122,7 @@ export function DnsProvidersPage() {
 				const createPayload: any = {
 					name: formName.trim(),
 					provider_type: formType,
-					credentials_json: JSON.stringify(formToken.trim()),
+					credentials_json: formType === 'ROUTE53' ? JSON.stringify({ accessKeyId: formAccessKey.trim(), secretAccessKey: formToken.trim() }) : JSON.stringify(formToken.trim()),
 				};
 
 				const res: any = await createMutation.mutateAsync({
@@ -159,7 +136,6 @@ export function DnsProvidersPage() {
 				toast.success(`DNS Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
-			await refetch();
 			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to save DNS provider'));
@@ -178,7 +154,6 @@ export function DnsProvidersPage() {
 			});
 			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
-			await refetch();
 			queryClient.invalidateQueries({ queryKey: ['get', '/dns-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
@@ -211,7 +186,7 @@ export function DnsProvidersPage() {
 					body: {
 						name: formName.trim() || 'Test',
 						provider_type: formType,
-						credentials_json: JSON.stringify(formToken.trim()),
+						credentials_json: formType === 'ROUTE53' ? JSON.stringify({ accessKeyId: formAccessKey.trim(), secretAccessKey: formToken.trim() }) : JSON.stringify(formToken.trim()),
 					},
 				});
 				const result = res.data || res;
@@ -232,12 +207,6 @@ export function DnsProvidersPage() {
 		switch (type.toUpperCase()) {
 			case 'CLOUDFLARE':
 				return <CloudflareIcon className={className} />;
-			case 'ROUTE53':
-				return <AwsIcon className={className} />;
-			case 'DIGITALOCEAN':
-				return <DigitalOceanIcon className={className} />;
-			case 'HETZNER':
-				return <HetznerIcon className={className} />;
 			default:
 				return <Globe className={`${className} text-primary`} />;
 		}
@@ -247,12 +216,6 @@ export function DnsProvidersPage() {
 		switch (type.toUpperCase()) {
 			case 'CLOUDFLARE':
 				return 'Cloudflare DNS';
-			case 'ROUTE53':
-				return 'AWS Route53';
-			case 'DIGITALOCEAN':
-				return 'DigitalOcean DNS';
-			case 'HETZNER':
-				return 'Hetzner DNS';
 			default:
 				return type;
 		}
@@ -268,7 +231,7 @@ export function DnsProvidersPage() {
 						DNS Providers & Wildcard SSL
 					</h1>
 					<p className="text-xs text-muted-foreground">
-						Connect DNS providers (Cloudflare, Route53, DigitalOcean) for automated Let's Encrypt DNS-01 SSL challenge & Wildcard domains (`*.yourdomain.com`).
+						Connect Cloudflare DNS for automated Let's Encrypt DNS-01 SSL challenges and wildcard domains.
 					</p>
 				</div>
 				<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 shrink-0">
@@ -297,7 +260,6 @@ export function DnsProvidersPage() {
 			) : (
 				<div className="flex flex-col gap-3">
 					{providers.map(provider => {
-						const domainCount = (managedDomainsMap[provider.id] || []).length;
 						return (
 							<Card
 								key={provider.id}
@@ -317,7 +279,7 @@ export function DnsProvidersPage() {
 												Wildcard Ready
 											</span>
 											<Badge variant="secondary" className="text-[10px] font-medium bg-secondary text-secondary-foreground">
-												{domainCount === 0 ? 'No domains linked' : `${domainCount} domain${domainCount === 1 ? '' : 's'} managed`}
+														Zones and records available via View Domains
 											</Badge>
 											<span className="text-[11px] text-muted-foreground">
 												• Added {new Date(provider.created_at * 1000).toLocaleDateString()}
@@ -327,15 +289,7 @@ export function DnsProvidersPage() {
 								</div>
 
 								<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={() => setSelectedDomainsProvider(provider)}
-										className="h-8 text-xs font-semibold gap-1.5 px-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-									>
-										<Globe className="size-3.5 text-primary" />
-										View Domains
-									</Button>
+									<DnsZonesDialog provider={provider} />
 									<div className="flex items-center gap-1">
 										<Button
 											variant="ghost"
@@ -409,28 +363,12 @@ export function DnsProvidersPage() {
 											Cloudflare DNS
 										</div>
 									</SelectItem>
-									<SelectItem value="ROUTE53">
-										<div className="flex items-center gap-2">
-											<AwsIcon className="size-4 shrink-0 text-orange-500" />
-											AWS Route53
-										</div>
-									</SelectItem>
-									<SelectItem value="DIGITALOCEAN">
-										<div className="flex items-center gap-2">
-											<DigitalOceanIcon className="size-4 shrink-0 text-blue-500" />
-											DigitalOcean DNS
-										</div>
-									</SelectItem>
-									<SelectItem value="HETZNER">
-										<div className="flex items-center gap-2">
-											<HetznerIcon className="size-4 shrink-0 text-rose-500" />
-											Hetzner DNS
-										</div>
-									</SelectItem>
+									<SelectItem value="ROUTE53"><div className="flex items-center gap-2"><AwsIcon className="size-4 shrink-0" />Amazon Route53</div></SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
+						{formType === 'ROUTE53' && <div className="space-y-1"><label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">AWS Access Key ID</label><Input value={formAccessKey} onChange={e => setFormAccessKey(e.target.value)} className="h-10 text-xs font-mono bg-muted/20" /></div>}
 						<div className="space-y-1">
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
 								API Token / Secret Key
@@ -486,134 +424,6 @@ export function DnsProvidersPage() {
 				</DialogContent>
 			</Dialog>
 
-			{/* View & Manage Domains & DNS Records Modal */}
-			<Dialog open={!!selectedDomainsProvider} onOpenChange={open => !open && setSelectedDomainsProvider(null)}>
-				<DialogContent className="sm:max-w-2xl bg-card border border-border shadow-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto space-y-5">
-					<DialogHeader className="space-y-1">
-						<DialogTitle className="text-base font-bold text-foreground flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<Globe className="size-5 text-primary" />
-								<span>{selectedDomainsProvider?.name} — Zone & Domain Management</span>
-							</div>
-							<Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 gap-1 text-[10px] font-mono">
-								<ShieldCheck className="size-3" /> API Verified & Authorized
-							</Badge>
-						</DialogTitle>
-						<DialogDescription className="text-xs text-muted-foreground">
-							Verified API Connection with full Zone:DNS Edit permissions for Let's Encrypt DNS-01 & Wildcard SSL certificates.
-						</DialogDescription>
-					</DialogHeader>
-
-					{/* Provider API Status Card */}
-					<div className="p-3.5 rounded-xl bg-muted/20 border border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-						<div className="space-y-1">
-							<div className="font-semibold text-foreground flex items-center gap-1.5">
-								<CheckCircle2 className="size-4 text-emerald-500" />
-								<span>API Token Status: Active & Authenticated</span>
-							</div>
-							<div className="text-[11px] font-mono text-muted-foreground">
-								Permissions: <span className="text-emerald-400">Zone:Read</span>, <span className="text-emerald-400">DNS:Edit</span> • Rate Limit: Normal (1200 req/min)
-							</div>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleTestModalConnection}
-							disabled={isTestingModal}
-							className="h-8 text-xs font-semibold gap-1.5 shrink-0 bg-background hover:bg-muted"
-						>
-							{isTestingModal ? <RefreshCw className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5 text-primary" />}
-							Re-verify Access
-						</Button>
-					</div>
-
-					{/* Add Domain / Subdomain Mapping */}
-					<div className="space-y-2">
-						<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-							Map New Domain or Wildcard Subdomain
-						</label>
-						<form onSubmit={handleAddDomainToProvider} className="flex items-center gap-2">
-							<Input
-								placeholder="e.g. *.yourdomain.com, app.domain.io, or api.prod.dev"
-								value={newDomainInput}
-								onChange={e => setNewDomainInput(e.target.value)}
-								className="h-9 text-xs font-mono bg-muted/20 flex-1"
-							/>
-							<Button type="submit" size="sm" className="h-9 text-xs font-semibold px-4 gap-1.5 shrink-0">
-								<Plus className="size-3.5" /> Authorize Domain
-							</Button>
-						</form>
-					</div>
-
-					{/* Managed Domains List */}
-					<div className="space-y-2 pt-2 border-t border-border/40">
-						<div className="flex items-center justify-between">
-							<div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Verified Domain Mappings & SSL Status
-							</div>
-							<span className="text-[11px] text-muted-foreground font-mono">
-								{(selectedDomainsProvider && (managedDomainsMap[selectedDomainsProvider.id] || []).length) || 0} Domains Active
-							</span>
-						</div>
-
-						{selectedDomainsProvider && (managedDomainsMap[selectedDomainsProvider.id] || []).length === 0 ? (
-							<div className="p-8 text-center border border-dashed border-border/70 rounded-xl bg-muted/10 space-y-1">
-								<Globe className="size-6 text-muted-foreground mx-auto" />
-								<p className="text-xs font-semibold text-foreground">No Domains Linked Yet</p>
-								<p className="text-[11px] text-muted-foreground">
-									Add a domain or wildcard domain above to authorize automated Let's Encrypt DNS-01 SSL issuance.
-								</p>
-							</div>
-						) : (
-							<div className="space-y-2">
-								{selectedDomainsProvider &&
-									(managedDomainsMap[selectedDomainsProvider.id] || []).map(domain => (
-										<div
-											key={domain}
-											className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-card border border-border/60 hover:border-border transition-colors gap-3 text-xs"
-										>
-											<div className="flex items-center gap-3 min-w-0">
-												<ShieldCheck className="size-4.5 text-emerald-500 shrink-0" />
-												<div className="flex flex-col gap-0.5 min-w-0">
-													<div className="flex items-center gap-2">
-														<span className="font-mono font-bold text-foreground truncate">{domain}</span>
-														<Badge variant="outline" className="text-[10px] font-mono text-emerald-500 border-emerald-500/30 bg-emerald-500/10 shrink-0">
-															Verified & Active
-														</Badge>
-													</div>
-													<span className="text-[11px] text-muted-foreground">
-														Challenge: DNS-01 TXT (`_acme-challenge.${domain.replace('*.', '')}`) • SSL: Auto-Renewing
-													</span>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => toast.success(`DNS TXT propagation verified for ${domain}`)}
-													className="h-7 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
-												>
-													Check Propagation
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => handleRemoveDomainFromProvider(domain)}
-													className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-												>
-													<Trash2 className="size-3.5" />
-												</Button>
-											</div>
-										</div>
-									))}
-							</div>
-						)}
-					</div>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }
-
-

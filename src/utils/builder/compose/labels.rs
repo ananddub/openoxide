@@ -112,7 +112,8 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
 
     for service_network in &spec.service_networks {
         let service_name = &service_network.service_name;
-        let service = if let Some(s) = services.get_mut(Value::String(service_name.clone().into())) {
+        let service = if let Some(s) = services.get_mut(Value::String(service_name.clone().into()))
+        {
             s
         } else if services.len() == 1 {
             services.values_mut().next().unwrap()

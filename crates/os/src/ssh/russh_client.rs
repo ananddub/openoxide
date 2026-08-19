@@ -2,11 +2,11 @@ use crate::exec::{ExecError, ExecResult, SshAuth, SshHostKey};
 use async_trait::async_trait;
 use russh::*;
 use russh_keys::*;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 
 #[derive(Clone)]
 pub struct RusshHandler;
@@ -37,36 +37,50 @@ pub async fn connect_russh(
     let handler = RusshHandler;
     let addr = format!("{host}:{port}");
 
-    let mut session = tokio::time::timeout(
-        connect_timeout,
-        client::connect(config, &addr, handler),
-    )
-    .await
-    .map_err(|_| ExecError::Timeout { seconds: connect_timeout.as_secs() })?
-    .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
+    let mut session =
+        tokio::time::timeout(connect_timeout, client::connect(config, &addr, handler))
+            .await
+            .map_err(|_| ExecError::Timeout {
+                seconds: connect_timeout.as_secs(),
+            })?
+            .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
 
     let authed = match auth {
-        SshAuth::Password(password) => {
-            session.authenticate_password(username, password).await
-        }
+        SshAuth::Password(password) => session.authenticate_password(username, password).await,
         SshAuth::KeyFile(path) => {
             let key = russh_keys::load_secret_key(path, None)
                 .map_err(|e| ExecError::Ssh(format!("Failed to load keyfile {path:?}: {e}")))?;
-            session.authenticate_publickey(username, Arc::new(key)).await
+            session
+                .authenticate_publickey(username, Arc::new(key))
+                .await
         }
-        SshAuth::KeyPair { private_key, passphrase, .. } => {
+        SshAuth::KeyPair {
+            private_key,
+            passphrase,
+            ..
+        } => {
             let key = russh_keys::decode_secret_key(private_key, passphrase.as_deref())
                 .map_err(|e| ExecError::Ssh(format!("Failed to parse private key: {e}")))?;
-            session.authenticate_publickey(username, Arc::new(key)).await
+            session
+                .authenticate_publickey(username, Arc::new(key))
+                .await
         }
         SshAuth::Agent | SshAuth::AgentWithSocket(_) => {
-            return Err(ExecError::Ssh("SSH agent auth is not supported in russh".into()));
+            return Err(ExecError::Ssh(
+                "SSH agent auth is not supported in russh".into(),
+            ));
         }
     }
-    .map_err(|e| ExecError::Ssh(format!("SSH authentication failed for user {username}: {e}")))?;
+    .map_err(|e| {
+        ExecError::Ssh(format!(
+            "SSH authentication failed for user {username}: {e}"
+        ))
+    })?;
 
     if !authed {
-        return Err(ExecError::Ssh(format!("SSH authentication denied for user {username}")));
+        return Err(ExecError::Ssh(format!(
+            "SSH authentication denied for user {username}"
+        )));
     }
 
     Ok(session)
@@ -111,13 +125,17 @@ pub async fn execute_russh_cmd_stream(
         match msg {
             ChannelMsg::Data { data } => {
                 if let Some(tx) = stream {
-                    let _ = tx.send(crate::exec::ExecStreamEvent::Stdout(data.to_vec())).await;
+                    let _ = tx
+                        .send(crate::exec::ExecStreamEvent::Stdout(data.to_vec()))
+                        .await;
                 }
                 stdout.extend_from_slice(&data);
             }
             ChannelMsg::ExtendedData { data, .. } => {
                 if let Some(tx) = stream {
-                    let _ = tx.send(crate::exec::ExecStreamEvent::Stderr(data.to_vec())).await;
+                    let _ = tx
+                        .send(crate::exec::ExecStreamEvent::Stderr(data.to_vec()))
+                        .await;
                 }
                 stderr.extend_from_slice(&data);
             }

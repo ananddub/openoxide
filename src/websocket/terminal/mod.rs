@@ -54,7 +54,9 @@ impl TerminalSocket {
             TerminalSession::InMemorySsh { cancel, .. } => {
                 cancel.cancel();
             }
-            TerminalSession::DockerSocket { cancel, container, .. } => {
+            TerminalSession::DockerSocket {
+                cancel, container, ..
+            } => {
                 cancel.cancel();
                 if let Some(target) = container {
                     let k = key_str.to_string();
@@ -62,16 +64,20 @@ impl TerminalSocket {
                         use os::exec::IntoCommand;
                         use sh_macros::sh;
 
-                        let executor = crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
+                        let executor = crate::utils::exec::CommandExecutor::Local(
+                            crate::utils::exec::LocalExecutor::new(),
+                        );
                         let os = crate::utils::os::OsCli::new(&executor);
 
-                        let proc_script_ir = sh!(
-                            for p in ["/proc/[0-9]*"] {
-                                if grep!("-q", word!["OPENOXIDE_SOCKET_ID=", dynamic!(k)], word!["$p", "/environ"]) {
-                                    os.process_api().kill_pid("${p#/proc/}");
-                                }
+                        let proc_script_ir = sh!(for p in ["/proc/[0-9]*"] {
+                            if grep!(
+                                "-q",
+                                word!["OPENOXIDE_SOCKET_ID=", dynamic!(k)],
+                                word!["$p", "/environ"]
+                            ) {
+                                os.process_api().kill_pid("${p#/proc/}");
                             }
-                        );
+                        });
 
                         let bash_script = proc_script_ir
                             .iter()
@@ -79,15 +85,22 @@ impl TerminalSocket {
                             .collect::<Vec<_>>()
                             .join("\n");
 
-                        let _ = os.docker().containers().exec(target).run(["sh", "-c", &bash_script]).await;
+                        let _ = os
+                            .docker()
+                            .containers()
+                            .exec(target)
+                            .run(["sh", "-c", &bash_script])
+                            .await;
                     });
                 }
             }
         }
 
-        let executor = crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
+        let executor =
+            crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
         let os = crate::utils::os::OsCli::new(&executor);
-        let _ = os.process_api()
+        let _ = os
+            .process_api()
             .pkill()
             .sigkill()
             .full_match(true)
@@ -139,7 +152,15 @@ impl TerminalSocket {
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
         if let Some(server_id) = input.server_id {
-            spawn_remote_docker_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input, start_token).await;
+            spawn_remote_docker_terminal(
+                socket,
+                &self.sessions,
+                self.db.as_ref(),
+                server_id,
+                input,
+                start_token,
+            )
+            .await;
             return;
         }
 
@@ -157,7 +178,15 @@ impl TerminalSocket {
         }
 
         if let Some(server_id) = input.server_id {
-            spawn_remote_terminal(socket, &self.sessions, self.db.as_ref(), server_id, input, start_token).await;
+            spawn_remote_terminal(
+                socket,
+                &self.sessions,
+                self.db.as_ref(),
+                server_id,
+                input,
+                start_token,
+            )
+            .await;
             return;
         }
 
@@ -207,7 +236,10 @@ impl TerminalSocket {
                 let mut w = writer.lock().await;
                 if let Err(error) = w.write_all(data.as_bytes()).await {
                     tracing::warn!("DockerSocket write_all failed: {error}");
-                    emit_error(&socket, format!("could not write docker socket input: {error}"));
+                    emit_error(
+                        &socket,
+                        format!("could not write docker socket input: {error}"),
+                    );
                 } else {
                     let _ = w.flush().await;
                 }
@@ -228,7 +260,11 @@ impl TerminalSocket {
                         let _ = term.resize(cols, rows).await;
                     });
                 }
-                TerminalSession::DockerSocket { socket_path, exec_id, .. } => {
+                TerminalSession::DockerSocket {
+                    socket_path,
+                    exec_id,
+                    ..
+                } => {
                     let path = socket_path.clone();
                     let eid = exec_id.clone();
                     let cols = payload.cols.unwrap_or(80);

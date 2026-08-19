@@ -113,8 +113,16 @@ impl<'a> GitProviderBuilder<'a> {
                     Ok(GitProvider::Custom { url: parsed_repo })
                 } else {
                     Ok(GitProvider::Github {
-                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
-                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
+                        owner: if parsed_owner.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_owner
+                        },
+                        repo: if parsed_repo.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_repo
+                        },
                     })
                 }
             }
@@ -126,8 +134,16 @@ impl<'a> GitProviderBuilder<'a> {
                     Ok(GitProvider::Custom { url: parsed_repo })
                 } else {
                     Ok(GitProvider::Gitlab {
-                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
-                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
+                        owner: if parsed_owner.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_owner
+                        },
+                        repo: if parsed_repo.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_repo
+                        },
                     })
                 }
             }
@@ -139,8 +155,16 @@ impl<'a> GitProviderBuilder<'a> {
                     Ok(GitProvider::Custom { url: parsed_repo })
                 } else {
                     Ok(GitProvider::Bitbucket {
-                        owner: if parsed_owner.is_empty() { "unknown".into() } else { parsed_owner },
-                        repo: if parsed_repo.is_empty() { "unknown".into() } else { parsed_repo },
+                        owner: if parsed_owner.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_owner
+                        },
+                        repo: if parsed_repo.is_empty() {
+                            "unknown".into()
+                        } else {
+                            parsed_repo
+                        },
                     })
                 }
             }

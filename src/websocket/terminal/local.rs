@@ -18,7 +18,10 @@ pub async fn spawn_docker_terminal(
     if input.server_id.is_some() {
         let msg = "\r\n\x1b[31m[Error] Remote docker terminal should be opened with server:start\x1b[0m\r\n";
         emit_terminal_bytes(&socket, "stdout", msg.as_bytes());
-        emit_error(&socket, "remote docker terminal should be opened with server:start");
+        emit_error(
+            &socket,
+            "remote docker terminal should be opened with server:start",
+        );
         return;
     }
 
@@ -60,9 +63,14 @@ pub async fn spawn_docker_terminal(
     {
         Ok(stream) => stream,
         Err(error) => {
-            let err_msg = format!("\r\n\x1b[31m[Error] Failed to connect to docker exec socket stream for '{target_container}': {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Failed to connect to docker exec socket stream for '{target_container}': {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
-            emit_error(&socket, format!("could not start docker socket stream: {error}"));
+            emit_error(
+                &socket,
+                format!("could not start docker socket stream: {error}"),
+            );
             return;
         }
     };
@@ -144,7 +152,8 @@ pub async fn spawn_local_terminal(
     let mut child = match command.spawn() {
         Ok(child) => child,
         Err(error) => {
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not start local process: {error}\x1b[0m\r\n");
+            let err_msg =
+                format!("\r\n\x1b[31m[Error] Could not start local process: {error}\x1b[0m\r\n");
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not start terminal: {error}"));
             return;

@@ -1423,7 +1423,9 @@ impl ScheduleService {
 fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();
     if expression.is_empty() {
-        return Err(sqlx::Error::Protocol("cron expression cannot be empty".into()));
+        return Err(sqlx::Error::Protocol(
+            "cron expression cannot be empty".into(),
+        ));
     }
 
     let fields_count = expression.split_whitespace().count();

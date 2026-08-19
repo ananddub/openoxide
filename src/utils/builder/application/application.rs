@@ -103,10 +103,14 @@ impl ApplicationBuilder {
         match pipeline.execute_cancelled(&self.ctx.executor, cancel).await {
             Ok(output) => {
                 if !output.stdout.is_empty() {
-                    self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+                    self.ctx
+                        .emit(BuilderEvent::Message(output.stdout.clone()))
+                        .await;
                 }
                 if !output.stderr.is_empty() {
-                    self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+                    self.ctx
+                        .emit(BuilderEvent::Message(output.stderr.clone()))
+                        .await;
                 }
             }
             Err(error) => {

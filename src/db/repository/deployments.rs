@@ -922,7 +922,10 @@ impl DeploymentRepository {
         Ok(rows.rows_affected() > 0)
     }
 
-    pub async fn request_cancel_database_deployment(&self, database_id: i64) -> Result<(), sqlx::Error> {
+    pub async fn request_cancel_database_deployment(
+        &self,
+        database_id: i64,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_state_at = strftime('%s', 'now') WHERE database_id = ? AND status IN ('RUNNING', 'BUILDING', 'QUEUED')"#,
             database_id

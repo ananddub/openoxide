@@ -32,7 +32,10 @@ impl DnsProviderRepository {
         .await
     }
 
-    pub async fn list_by_organization(&self, organization_id: i64) -> Result<Vec<DnsProvider>, sqlx::Error> {
+    pub async fn list_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<DnsProvider>, sqlx::Error> {
         sqlx::query_as!(
             DnsProvider,
             r#"SELECT id AS "id?: i64", name AS "name: String", provider_type AS "provider_type: String", credentials_json AS "credentials_json: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM dns_providers WHERE organization_id = ? ORDER BY created_at DESC"#,
@@ -59,12 +62,13 @@ impl DnsProviderRepository {
 
     pub async fn update(&self, id: i64, item: &DnsProvider) -> Result<(), sqlx::Error> {
         sqlx::query!(
-            r#"UPDATE dns_providers SET name = ?, provider_type = ?, credentials_json = ?, updated_at = ? WHERE id = ?"#,
+            r#"UPDATE dns_providers SET name = ?, provider_type = ?, credentials_json = ?, updated_at = ? WHERE id = ? AND organization_id = ?"#,
             &item.name,
             &item.provider_type,
             &item.credentials_json,
             item.updated_at,
-            id
+            id,
+            item.organization_id
         )
         .execute(self.pool.as_ref())
         .await?;

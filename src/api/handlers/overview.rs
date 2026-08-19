@@ -4,9 +4,7 @@ use auto_route::controller;
 use axum::{Json, extract::Path, http::StatusCode};
 
 use crate::{
-    api::dto::overview::{
-        OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto,
-    },
+    api::dto::overview::{OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto},
     core::middleware::permission::{CanRead, Project, RequirePermission},
     services::overview::OverviewService,
 };

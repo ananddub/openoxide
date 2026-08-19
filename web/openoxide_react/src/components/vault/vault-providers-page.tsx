@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
+import { Textarea } from '#/components/ui/textarea';
+import { useProjectsList } from '#/hooks/projects/use-projects-list';
 import { Badge } from '#/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '#/components/ui/card';
 import {
@@ -35,11 +37,7 @@ import {
 import { toast } from 'sonner';
 import {
 	HashicorpVaultIcon,
-	InfisicalIcon,
-	AwsIcon,
 	DopplerIcon,
-	AzureIcon,
-	ScalewayIcon,
 } from '#/components/icons/provider-icons';
 import { useAppStore } from '#/stores/app-store';
 
@@ -51,6 +49,7 @@ export interface VaultProviderItem {
 	organization_id: number;
 	created_at: number;
 	updated_at: number;
+	assignments?: Array<{ project_id: number; environment_ids: number[] }>;
 }
 
 export function VaultProvidersPage() {
@@ -78,12 +77,21 @@ export function VaultProvidersPage() {
 	// Form State
 	const [formName, setFormName] = useState('');
 	const [formType, setFormType] = useState<
-		'HASHICORP' | 'INFISICAL' | 'AWS' | 'DOPPLER' | 'AZURE' | 'SCALEWAY'
+		'HASHICORP' | 'INFISICAL' | 'DOPPLER' | 'AWS' | 'SCALEWAY' | 'AZURE'
 	>('HASHICORP');
 	const [formUrl, setFormUrl] = useState('');
 	const [formMount, setFormMount] = useState('secret');
 	const [formToken, setFormToken] = useState('');
 	const [formNamespace, setFormNamespace] = useState('');
+	const [formConfigJson, setFormConfigJson] = useState('');
+	const [formFields, setFormFields] = useState<Record<string, string>>({});
+	const [formAssignments, setFormAssignments] = useState('[]');
+	const [assignmentProject, setAssignmentProject] = useState('');
+	const { projects } = useProjectsList();
+	const environmentsQuery = $api.useQuery('get', '/environments/project/{project_id}' as any, {
+		params: { path: { project_id: Number(assignmentProject) || 0 } },
+		enabled: !!assignmentProject,
+	} as any);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleOpenCreate = () => {
@@ -94,6 +102,9 @@ export function VaultProvidersPage() {
 		setFormMount('secret');
 		setFormToken('');
 		setFormNamespace('');
+		setFormConfigJson('');
+		setFormFields({});
+		setFormAssignments('[]');
 		setIsCreateOpen(true);
 	};
 
@@ -105,29 +116,70 @@ export function VaultProvidersPage() {
 		setFormToken('');
 		setFormNamespace(provider.namespace || '');
 		setFormMount('secret');
+		setFormConfigJson(provider.config_json || '');
+		try { setFormFields(JSON.parse(provider.config_json || '{}')); } catch { setFormFields({}); }
+		setFormAssignments(JSON.stringify(provider.assignments || [], null, 2));
 		setIsCreateOpen(true);
+	};
+
+	const field = (name: string) => formFields[name] || '';
+	const setField = (name: string, value: string) => setFormFields(prev => ({ ...prev, [name]: value }));
+	const providerConfig = () => {
+		if (formType === 'HASHICORP') return { mount: formMount.trim() || 'secret' };
+		if (formType === 'DOPPLER') return { project: field('project') || undefined, config: field('config') || undefined };
+		if (formType === 'INFISICAL') return { siteUrl: field('siteUrl') || 'https://app.infisical.com', clientId: field('clientId'), clientSecret: field('clientSecret'), projectId: field('projectId'), environmentSlug: field('environmentSlug'), secretPath: field('secretPath') || '/' };
+		if (formType === 'AWS') return { region: field('region'), accessKeyId: field('accessKeyId'), secretAccessKey: field('secretAccessKey'), endpoint: field('endpoint') || undefined };
+		if (formType === 'AZURE') return { vaultUri: field('vaultUri'), tenantId: field('tenantId'), clientId: field('clientId'), clientSecret: field('clientSecret') };
+		return { region: field('region') || 'fr-par', projectId: field('projectId'), secretKey: field('secretKey'), apiUrl: field('apiUrl') || 'https://api.scaleway.com' };
+	};
+	const parsedAssignments = () => {
+		try {
+			const value = JSON.parse(formAssignments);
+			if (!Array.isArray(value)) throw new Error();
+			return value;
+		} catch {
+			throw new Error('Assignments must be a JSON array, for example [{"project_id":1,"environment_ids":[2]}]');
+		}
+	};
+	const assignmentRows = (() => { try { const value = JSON.parse(formAssignments); return Array.isArray(value) ? value : []; } catch { return []; } })();
+	const toggleAssignment = (projectId: number, environmentId?: number) => {
+		const rows = assignmentRows.map((row: any) => ({ project_id: Number(row.project_id), environment_ids: (row.environment_ids || []).map(Number) }));
+		let row = rows.find((item: any) => item.project_id === projectId);
+		if (!row) { row = { project_id: projectId, environment_ids: [] }; rows.push(row); }
+		if (environmentId) {
+			row.environment_ids = row.environment_ids.includes(environmentId) ? row.environment_ids.filter((id: number) => id !== environmentId) : [...row.environment_ids, environmentId];
+		}
+		setFormAssignments(JSON.stringify(rows));
+	};
+	const renderProviderFields = () => {
+		const definitions: Record<string, Array<[string, string, string]>> = {
+			INFISICAL: [['siteUrl', 'Site URL', 'https://app.infisical.com'], ['clientId', 'Client ID', 'Universal Auth client ID'], ['clientSecret', 'Client Secret', 'Universal Auth client secret'], ['projectId', 'Project ID', 'Infisical project ID'], ['environmentSlug', 'Environment', 'prod'], ['secretPath', 'Secret Path', '/']],
+			AWS: [['region', 'Region', 'us-east-1'], ['accessKeyId', 'Access Key ID', 'AKIA...'], ['secretAccessKey', 'Secret Access Key', 'Secret access key'], ['endpoint', 'Endpoint (optional)', 'https://...']],
+			DOPPLER: [['project', 'Project (optional)', 'Doppler project'], ['config', 'Config (optional)', 'Doppler config']],
+			AZURE: [['vaultUri', 'Vault URI', 'https://my-vault.vault.azure.net'], ['tenantId', 'Tenant ID', 'Azure tenant ID'], ['clientId', 'Client ID', 'Application client ID'], ['clientSecret', 'Client Secret', 'Application client secret']],
+			SCALEWAY: [['region', 'Region', 'fr-par'], ['projectId', 'Project ID', 'Scaleway project ID'], ['secretKey', 'Secret Key', 'Scaleway secret key'], ['apiUrl', 'API URL (optional)', 'https://api.scaleway.com']],
+		};
+		return (definitions[formType] || []).map(([name, label, placeholder]) => <div key={name} className="space-y-1"><label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{label}</label><Input type={name.toLowerCase().includes('secret') || name === 'secretKey' ? 'password' : 'text'} placeholder={placeholder} value={field(name)} onChange={e => setField(name, e.target.value)} className="h-10 text-xs font-mono bg-muted/20" /></div>);
 	};
 
 	const handleSaveProvider = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formName.trim() || (!editingProvider && !formToken.trim())) {
+		if (!formName.trim() || (!editingProvider && ['HASHICORP', 'DOPPLER'].includes(formType) && !formToken.trim())) {
 			toast.error('Please fill in all required fields');
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
+			const assignments = parsedAssignments();
 			if (editingProvider) {
 				const updatePayload: any = {
 					name: formName.trim(),
 					api_url: formUrl.trim() || undefined,
 					...(formToken.trim() ? { auth_token: formToken.trim() } : {}),
 					namespace: formNamespace.trim() || undefined,
-					config_json: JSON.stringify({
-						mount: formMount.trim() || 'secret',
-						url: formUrl.trim(),
-						namespace: formNamespace.trim(),
-					}),
+					config_json: JSON.stringify(providerConfig()),
+					assignments,
 				};
 
 				// Optimistic Zustand update
@@ -141,11 +193,9 @@ export function VaultProvidersPage() {
 			} else {
 				const defaultApiUrl =
 					formUrl.trim() ||
-					(formType === 'INFISICAL'
-						? 'https://app.infisical.com'
-						: formType === 'DOPPLER'
-						? 'https://api.doppler.com'
-						: 'http://localhost:8200');
+						(formType === 'DOPPLER'
+							? 'https://api.doppler.com'
+							: 'http://localhost:8200');
 
 				const createPayload: any = {
 					name: formName.trim(),
@@ -153,11 +203,8 @@ export function VaultProvidersPage() {
 					api_url: defaultApiUrl,
 					auth_token: formToken.trim(),
 					namespace: formNamespace.trim() || undefined,
-					config_json: JSON.stringify({
-						mount: formMount.trim() || 'secret',
-						url: defaultApiUrl,
-						namespace: formNamespace.trim(),
-					}),
+					config_json: JSON.stringify(providerConfig()),
+					assignments,
 				};
 
 				const res: any = await createMutation.mutateAsync({
@@ -172,7 +219,6 @@ export function VaultProvidersPage() {
 				toast.success(`Vault Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
-			await refetch();
 			queryClient.invalidateQueries({ queryKey: ['get', '/vault-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to save vault provider'));
@@ -184,7 +230,7 @@ export function VaultProvidersPage() {
 	const testConnectionMutation = $api.useMutation('post', '/vault-providers/test-connection' as any);
 
 	const handleTestModalConnection = async () => {
-		if (!editingProvider && !formToken.trim()) {
+		if (!editingProvider && ['HASHICORP', 'DOPPLER'].includes(formType) && !formToken.trim()) {
 			toast.error('Please enter a Token / Access Key to test connection');
 			return;
 		}
@@ -208,8 +254,9 @@ export function VaultProvidersPage() {
 						name: formName.trim() || 'Test',
 						provider_type: formType,
 						api_url: formUrl.trim(),
-						auth_token: formToken.trim(),
-						namespace: formNamespace.trim() || undefined,
+											auth_token: formToken.trim(),
+										namespace: formNamespace.trim() || undefined,
+						config_json: JSON.stringify(providerConfig()),
 					},
 				});
 				const result = res.data || res;
@@ -236,7 +283,6 @@ export function VaultProvidersPage() {
 			});
 			toast.success(`Vault Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
-			await refetch();
 			queryClient.invalidateQueries({ queryKey: ['get', '/vault-providers'] });
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete vault provider'));
@@ -255,29 +301,21 @@ export function VaultProvidersPage() {
 		switch (type.toUpperCase()) {
 			case 'HASHICORP':
 				return <HashicorpVaultIcon className={`${className} text-amber-500`} />;
-			case 'INFISICAL':
-				return <InfisicalIcon className={`${className} text-emerald-500`} />;
 			case 'DOPPLER':
 				return <DopplerIcon className={`${className} text-purple-500`} />;
-			case 'AWS':
-				return <AwsIcon className={`${className} text-amber-600`} />;
-			case 'AZURE':
-				return <AzureIcon className={`${className} text-sky-500`} />;
-			case 'SCALEWAY':
-				return <ScalewayIcon className={`${className} text-purple-600`} />;
 			default:
 				return <KeyRound className={`${className} text-primary`} />;
 		}
 	};
 
 	const getProviderLabel = (type: string) => {
-		switch (type.toUpperCase()) {
+			switch (type.toUpperCase()) {
 			case 'HASHICORP':
 				return 'HashiCorp Vault';
-			case 'INFISICAL':
-				return 'Infisical';
 			case 'DOPPLER':
 				return 'Doppler';
+			case 'INFISICAL':
+				return 'Infisical';
 			case 'AWS':
 				return 'AWS Secrets Manager';
 			case 'AZURE':
@@ -299,7 +337,7 @@ export function VaultProvidersPage() {
 						Vault Providers
 					</h1>
 					<p className="text-xs text-muted-foreground">
-						Connect HashiCorp Vault, Infisical, Doppler, or AWS Secrets Manager. Reference secret values dynamically during build and deployment.
+						Connect HashiCorp Vault or Doppler and resolve secret references during build and deployment.
 					</p>
 				</div>
 				<Button onClick={handleOpenCreate} size="sm" className="h-9 px-4 text-xs font-semibold gap-1.5 shrink-0">
@@ -342,6 +380,10 @@ export function VaultProvidersPage() {
 											<Badge variant="outline" className="text-[10px] font-mono shrink-0">
 												{getProviderLabel(provider.provider_type)}
 											</Badge>
+										</div>
+										<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+											<Badge variant={provider.assignments?.length ? 'secondary' : 'destructive'}>{provider.assignments?.length || 0} project assignments</Badge>
+											<span>{provider.assignments?.length ? 'Scoped access' : 'Available to all projects'}</span>
 										</div>
 										<div className="flex flex-wrap items-center gap-2 text-xs">
 											<span className="font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded border border-border/40 text-[11px]">
@@ -436,41 +478,18 @@ export function VaultProvidersPage() {
 											HashiCorp Vault / OpenBao
 										</div>
 									</SelectItem>
-									<SelectItem value="INFISICAL">
-										<div className="flex items-center gap-2">
-											<InfisicalIcon className="size-4 shrink-0 text-emerald-500" />
-											Infisical
-										</div>
-									</SelectItem>
 									<SelectItem value="DOPPLER">
 										<div className="flex items-center gap-2">
 											<DopplerIcon className="size-4 shrink-0 text-purple-500" />
 											Doppler
 										</div>
 									</SelectItem>
-									<SelectItem value="AWS">
-										<div className="flex items-center gap-2">
-											<AwsIcon className="size-4 shrink-0 text-amber-600" />
-											AWS Secrets Manager
-										</div>
-									</SelectItem>
-									<SelectItem value="AZURE">
-										<div className="flex items-center gap-2">
-											<AzureIcon className="size-4 shrink-0 text-sky-500" />
-											Azure Key Vault
-										</div>
-									</SelectItem>
-									<SelectItem value="SCALEWAY">
-										<div className="flex items-center gap-2">
-											<ScalewayIcon className="size-4 shrink-0 text-purple-600" />
-											Scaleway Secret Manager
-										</div>
-									</SelectItem>
+					{(['INFISICAL','AWS','AZURE','SCALEWAY'] as const).map(type => <SelectItem key={type} value={type}>{getProviderLabel(type)}</SelectItem>)}
 								</SelectContent>
 							</Select>
 						</div>
 
-						<div className="space-y-1">
+						{formType === 'HASHICORP' && <div className="space-y-1">
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
 								Vault URL
 							</label>
@@ -480,11 +499,11 @@ export function VaultProvidersPage() {
 								onChange={e => setFormUrl(e.target.value)}
 								className="h-10 text-xs bg-muted/20"
 							/>
-						</div>
+						</div>}
 
 						<div className="space-y-1">
 							<label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-								Token / Access Key
+								{formType === 'DOPPLER' ? 'Service Token' : formType === 'HASHICORP' ? 'Vault Token' : 'Authentication Secret'}
 							</label>
 							<Input
 								type="password"
@@ -526,6 +545,18 @@ export function VaultProvidersPage() {
 								</div>
 							</>
 						)}
+						{formType !== 'HASHICORP' && <div className="grid gap-3">{renderProviderFields()}</div>}
+
+						<div className="space-y-2 rounded-lg border border-border/50 bg-muted/10 p-3">
+							<div className="flex items-center justify-between"><label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Project Assignments</label><Badge variant="outline">{assignmentRows.length} selected</Badge></div>
+							<Select value={assignmentProject} onValueChange={value => { setAssignmentProject(value); toggleAssignment(Number(value)); }}>
+								<SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Assign to a project" /></SelectTrigger>
+								<SelectContent>{(projects as any[]).map(project => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent>
+							</Select>
+							{assignmentProject && <div className="space-y-1"><p className="text-[11px] text-muted-foreground">Select environments (empty means every environment in this project).</p>{environmentsQuery.isLoading ? <p className="text-xs text-muted-foreground">Loading environments...</p> : ((environmentsQuery.data?.data || environmentsQuery.data || []) as any[]).map(environment => { const row = assignmentRows.find((item: any) => Number(item.project_id) === Number(assignmentProject)); const checked = !!row?.environment_ids?.map(Number).includes(Number(environment.id)); return <label key={environment.id} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={checked} onChange={() => toggleAssignment(Number(assignmentProject), Number(environment.id))} />{environment.name}</label>; })}</div>}
+							{assignmentRows.length > 0 && <div className="flex flex-wrap gap-1">{assignmentRows.map((row: any) => <Badge key={row.project_id} variant="secondary">Project {row.project_id}{row.environment_ids?.length ? ` (${row.environment_ids.length} env)` : ' (all envs)'}</Badge>)}</div>}
+							<p className="text-[11px] text-muted-foreground">No assignments means this provider is available to all projects.</p>
+						</div>
 
 						{/* Dokploy Exact Footer Layout: Left Test Connection & Right Save/Update */}
 						<div className="flex w-full items-center justify-between gap-2 pt-4 border-t border-border/40 mt-4">

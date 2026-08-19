@@ -30,11 +30,7 @@ impl DomainController {
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
     ) -> Result<Json<Vec<DomainResponseDto>>, ApiError> {
-        let items = self
-            .service
-            .list_all()
-            .await
-            .map_err(map_sqlx_error)?;
+        let items = self.service.list_all().await.map_err(map_sqlx_error)?;
 
         Ok(Json(
             items.into_iter().map(DomainResponseDto::from).collect(),

@@ -228,7 +228,8 @@ fn docker_stats_event(bytes: Vec<u8>) -> Event {
         let trimmed = line.trim();
         if let (Some(start), Some(end)) = (trimmed.find('{'), trimmed.rfind('}')) {
             if start <= end {
-                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&trimmed[start..=end]) {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&trimmed[start..=end])
+                {
                     items.push(parsed);
                 }
             }

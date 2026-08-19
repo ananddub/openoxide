@@ -415,7 +415,13 @@ impl ServerRepository {
                 }
             }
 
-            return Ok(Some((selected_ip, port_i64, username, private_key, public_key)));
+            return Ok(Some((
+                selected_ip,
+                port_i64,
+                username,
+                private_key,
+                public_key,
+            )));
         }
 
         Ok(None)

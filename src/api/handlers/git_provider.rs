@@ -4,6 +4,7 @@ use axum::{
     Json,
     extract::{Path, Query},
     http::StatusCode,
+    response::Redirect,
 };
 use std::sync::Arc;
 
@@ -11,8 +12,8 @@ use crate::{
     api::dto::git_provider::{
         CollaboratorPermissionQueryDto, CreateBitbucketProviderDto, CreateGiteaProviderDto,
         CreateGithubProviderDto, CreateGitlabProviderDto, CreatedGitProviderResponseDto,
-        GitProviderResponseDto, OAuthCallbackDto, RepositoryReferenceQueryDto,
-        WebhookRepositoryDto, WebhookSecretResponseDto,
+        GitProviderResponseDto, GithubManifestCallbackDto, OAuthCallbackDto,
+        RepositoryReferenceQueryDto, WebhookRepositoryDto, WebhookSecretResponseDto,
     },
     core::middleware::{permission::RequirePermission, validator::ValidatedJson},
     services::git_provider::{
@@ -346,6 +347,19 @@ impl GitProviderController {
             .await
             .map(Into::into)
             .map(Json)
+            .map_err(provider_error)
+    }
+
+    #[get("/github/manifest/callback")]
+    async fn github_manifest_callback(
+        &self,
+        RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
+        Query(query): Query<GithubManifestCallbackDto>,
+    ) -> Result<Redirect, ApiError> {
+        self.service
+            .create_github_from_manifest(&query.code, query.installation_id.as_deref())
+            .await
+            .map(|_| Redirect::to("/settings/git-providers?github=connected"))
             .map_err(provider_error)
     }
 

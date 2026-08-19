@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use socketioxide::extract::SocketRef;
+use std::sync::Arc;
 
 use super::helpers::{emit_error, emit_terminal_bytes, next_session_id, socket_key};
 use super::types::{
@@ -26,7 +26,9 @@ pub async fn spawn_remote_terminal(
                 return;
             }
             tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_terminal");
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(
                 &socket,
@@ -57,7 +59,9 @@ pub async fn spawn_remote_terminal(
                     host: Some(&actual_host),
                 },
             );
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
             return;
@@ -73,18 +77,24 @@ pub async fn spawn_remote_terminal(
         Some("sh") | Some("bash") | Some("") | None => None,
         Some(cmd) => Some(cmd),
     };
-    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, shell_cmd).await {
-        Ok(t) => Arc::new(t),
-        Err(error) => {
-            if start_token.is_cancelled() {
+    let terminal =
+        match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, shell_cmd).await {
+            Ok(t) => Arc::new(t),
+            Err(error) => {
+                if start_token.is_cancelled() {
+                    return;
+                }
+                let err_msg = format!(
+                    "\r\n\x1b[31m[Error] Could not open in-memory SSH terminal: {error}\x1b[0m\r\n"
+                );
+                emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
+                emit_error(
+                    &socket,
+                    format!("could not start in-memory SSH terminal: {error}"),
+                );
                 return;
             }
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH terminal: {error}\x1b[0m\r\n");
-            emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
-            emit_error(&socket, format!("could not start in-memory SSH terminal: {error}"));
-            return;
-        }
-    };
+        };
 
     if start_token.is_cancelled() {
         return;
@@ -134,7 +144,9 @@ pub async fn spawn_remote_terminal(
 
         let is_current = match sessions_clone.get(&key) {
             Some(entry) => match entry.value() {
-                TerminalSession::InMemorySsh { session_id: sid, .. } => *sid == session_id,
+                TerminalSession::InMemorySsh {
+                    session_id: sid, ..
+                } => *sid == session_id,
                 _ => false,
             },
             None => false,
@@ -168,7 +180,9 @@ pub async fn spawn_remote_docker_terminal(
                 return;
             }
             tracing::error!(server_id, %error, "remote_executor failed in spawn_remote_docker_terminal");
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Could not create remote SSH executor: {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(
                 &socket,
@@ -198,7 +212,9 @@ pub async fn spawn_remote_docker_terminal(
                 || n.trim_start_matches('/').starts_with(&search)
                 || n.contains(&format!("{}_", search))
                 || n.contains(&format!("{}.", search))
-                || (!clean_search.is_empty() && (n.contains(clean_search) || n.trim_start_matches('/').starts_with(clean_search)))
+                || (!clean_search.is_empty()
+                    && (n.contains(clean_search)
+                        || n.trim_start_matches('/').starts_with(clean_search)))
         }) {
             target_container = matching.names.trim_start_matches('/').to_string();
         }
@@ -209,7 +225,10 @@ pub async fn spawn_remote_docker_terminal(
     }
 
     let key_str = socket_key(&socket).to_string();
-    let docker_cmd = format!("docker exec -it --env OPENOXIDE_SOCKET_ID={} {} {}", key_str, target_container, shell_req);
+    let docker_cmd = format!(
+        "docker exec -it --env OPENOXIDE_SOCKET_ID={} {} {}",
+        key_str, target_container, shell_req
+    );
 
     let cols = input.cols.unwrap_or(80);
     let rows = input.rows.unwrap_or(24);
@@ -227,7 +246,9 @@ pub async fn spawn_remote_docker_terminal(
                     host: Some(&actual_host),
                 },
             );
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Could not connect SSH session to {actual_host}: {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(&socket, format!("could not connect SSH: {error}"));
             return;
@@ -238,15 +259,27 @@ pub async fn spawn_remote_docker_terminal(
         return;
     }
 
-    let terminal = match os::ssh::RusshTerminal::connect(&russh_session, cols, rows, Some(&docker_cmd)).await {
+    let terminal = match os::ssh::RusshTerminal::connect(
+        &russh_session,
+        cols,
+        rows,
+        Some(&docker_cmd),
+    )
+    .await
+    {
         Ok(t) => Arc::new(t),
         Err(error) => {
             if start_token.is_cancelled() {
                 return;
             }
-            let err_msg = format!("\r\n\x1b[31m[Error] Could not open in-memory SSH container terminal: {error}\x1b[0m\r\n");
+            let err_msg = format!(
+                "\r\n\x1b[31m[Error] Could not open in-memory SSH container terminal: {error}\x1b[0m\r\n"
+            );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
-            emit_error(&socket, format!("could not start in-memory SSH container terminal: {error}"));
+            emit_error(
+                &socket,
+                format!("could not start in-memory SSH container terminal: {error}"),
+            );
             return;
         }
     };
@@ -300,7 +333,9 @@ pub async fn spawn_remote_docker_terminal(
 
         let is_current = match sessions_clone.get(&key) {
             Some(entry) => match entry.value() {
-                TerminalSession::InMemorySsh { session_id: sid, .. } => *sid == session_id,
+                TerminalSession::InMemorySsh {
+                    session_id: sid, ..
+                } => *sid == session_id,
                 _ => false,
             },
             None => false,

@@ -316,10 +316,14 @@ impl DatabaseBuilder {
         match result {
             Ok(output) => {
                 if !output.stdout.is_empty() {
-                    self.ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+                    self.ctx
+                        .emit(BuilderEvent::Message(output.stdout.clone()))
+                        .await;
                 }
                 if !output.stderr.is_empty() {
-                    self.ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+                    self.ctx
+                        .emit(BuilderEvent::Message(output.stderr.clone()))
+                        .await;
                 }
             }
             Err(error) => {
@@ -334,7 +338,9 @@ impl DatabaseBuilder {
         self.wait_healthy(&service_name, cancel).await?;
 
         // Post-deploy password sync: ensure container engine uses the exact password configured in database
-        if let Ok(mgmt) = auto_di::resolve::<crate::repository::DatabaseManagementRepository>().await {
+        if let Ok(mgmt) =
+            auto_di::resolve::<crate::repository::DatabaseManagementRepository>().await
+        {
             if let Ok(creds) = mgmt.credentials(db_kind, db_id).await {
                 if !creds.password.is_empty() {
                     if let Ok(containers) = self.ctx.docker.containers().ps().all().list().await {
@@ -344,21 +350,72 @@ impl DatabaseBuilder {
                                 || name.contains(&app_name.to_lowercase())
                         }) {
                             let container_id = &matched.id;
-                            let user_name = creds.username.unwrap_or_else(|| "openoxide".to_string());
+                            let user_name =
+                                creds.username.unwrap_or_else(|| "openoxide".to_string());
                             let escaped_pwd = creds.password.replace('\'', "''");
                             match db_kind {
                                 DatabaseKind::Postgres => {
-                                    let sql = format!("ALTER USER \"{}\" WITH PASSWORD '{}';", user_name, escaped_pwd);
-                                    let _ = self.ctx.docker.containers().exec(container_id).run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql]).await;
-                                    let _ = self.ctx.docker.containers().exec(container_id).run(["psql", "-U", "postgres", "-c", &sql]).await;
+                                    let sql = format!(
+                                        "ALTER USER \"{}\" WITH PASSWORD '{}';",
+                                        user_name, escaped_pwd
+                                    );
+                                    let _ = self
+                                        .ctx
+                                        .docker
+                                        .containers()
+                                        .exec(container_id)
+                                        .run([
+                                            "psql", "-U", &user_name, "-d", "postgres", "-c", &sql,
+                                        ])
+                                        .await;
+                                    let _ = self
+                                        .ctx
+                                        .docker
+                                        .containers()
+                                        .exec(container_id)
+                                        .run(["psql", "-U", "postgres", "-c", &sql])
+                                        .await;
                                 }
                                 DatabaseKind::Mysql | DatabaseKind::Mariadb => {
-                                    let sql = format!("ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;", user_name, escaped_pwd);
-                                    let _ = self.ctx.docker.containers().exec(container_id).run(["mysql", "-u", "root", "-e", &sql]).await;
+                                    let sql = format!(
+                                        "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
+                                        user_name, escaped_pwd
+                                    );
+                                    let _ = self
+                                        .ctx
+                                        .docker
+                                        .containers()
+                                        .exec(container_id)
+                                        .run(["mysql", "-u", "root", "-e", &sql])
+                                        .await;
                                 }
                                 DatabaseKind::Redis => {
-                                    let _ = self.ctx.docker.containers().exec(container_id).run(["redis-cli", "CONFIG", "SET", "requirepass", &creds.password]).await;
-                                    let _ = self.ctx.docker.containers().exec(container_id).run(["redis-cli", "-a", &creds.password, "CONFIG", "REWRITE"]).await;
+                                    let _ = self
+                                        .ctx
+                                        .docker
+                                        .containers()
+                                        .exec(container_id)
+                                        .run([
+                                            "redis-cli",
+                                            "CONFIG",
+                                            "SET",
+                                            "requirepass",
+                                            &creds.password,
+                                        ])
+                                        .await;
+                                    let _ = self
+                                        .ctx
+                                        .docker
+                                        .containers()
+                                        .exec(container_id)
+                                        .run([
+                                            "redis-cli",
+                                            "-a",
+                                            &creds.password,
+                                            "CONFIG",
+                                            "REWRITE",
+                                        ])
+                                        .await;
                                 }
                                 _ => {}
                             }

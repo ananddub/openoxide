@@ -117,18 +117,22 @@ impl ComposeService {
 
     pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
-        let current_status = ComposeStatus::from_str(&compose.compose_status).unwrap_or(ComposeStatus::Idle);
+        let current_status =
+            ComposeStatus::from_str(&compose.compose_status).unwrap_or(ComposeStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
-            (ComposeStatus::Cancelling.as_str(), ComposeStatus::Cancelled.as_str())
+            (
+                ComposeStatus::Cancelling.as_str(),
+                ComposeStatus::Cancelled.as_str(),
+            )
         } else {
-            (ComposeStatus::Stopping.as_str(), ComposeStatus::Stopped.as_str())
+            (
+                ComposeStatus::Stopping.as_str(),
+                ComposeStatus::Stopped.as_str(),
+            )
         };
 
-        let _ = self
-            .repo_compose
-            .update_status(id, intermediate)
-            .await;
+        let _ = self.repo_compose.update_status(id, intermediate).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Compose(id))
             .await;
@@ -155,7 +159,9 @@ impl ComposeService {
             }
 
             let _ = repo_compose.update_status(id, final_st).await;
-            cache.invalidate(&crate::core::cache::CacheKey::Compose(id)).await;
+            cache
+                .invalidate(&crate::core::cache::CacheKey::Compose(id))
+                .await;
         });
 
         Ok(true)
@@ -198,8 +204,12 @@ async fn scale_down_compose(
                     .run_json(),
             )
             .await
-            .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
-            {
+            .unwrap_or(Err(
+                crate::utils::docker::error::DockerError::CommandFailed {
+                    code: None,
+                    stderr: "timeout".into(),
+                },
+            )) {
                 for service in services {
                     if service.replicas != "0/0" {
                         let _ = tokio::time::timeout(

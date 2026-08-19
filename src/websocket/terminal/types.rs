@@ -1,6 +1,6 @@
-use std::borrow::Cow;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::sync::Arc;
 use tokio::{
     process::{Child, ChildStdin},
@@ -47,7 +47,11 @@ impl SanitizedShell {
                     .filter(|c| c.is_alphanumeric() || *c == '/' || *c == '-' || *c == '_')
                     .collect();
                 if clean.is_empty() {
-                    if default_shell == "bash" { Self::Bash } else { Self::Sh }
+                    if default_shell == "bash" {
+                        Self::Bash
+                    } else {
+                        Self::Sh
+                    }
                 } else {
                     Self::Custom(clean)
                 }
@@ -156,9 +160,7 @@ impl ServerTerminalStart {
 #[serde(untagged)]
 pub enum TerminalInputPayload {
     Direct(String),
-    Object {
-        data: String,
-    },
+    Object { data: String },
 }
 
 #[derive(Debug, Deserialize)]

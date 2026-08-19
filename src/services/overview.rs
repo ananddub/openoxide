@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use auto_di::singleton;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
 use crate::api::dto::overview::{
     OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto,
@@ -367,7 +367,11 @@ impl OverviewService {
                 id: b.id,
                 name: b.name,
                 backup_type: "DATABASE".into(),
-                status: if b.enabled != 0 { "ENABLED".into() } else { "DISABLED".into() },
+                status: if b.enabled != 0 {
+                    "ENABLED".into()
+                } else {
+                    "DISABLED".into()
+                },
                 destination: format!("Destination #{}", b.destination_id),
                 created_at: b.created_at,
             });
@@ -394,7 +398,11 @@ impl OverviewService {
                 id: b.id,
                 name: b.name,
                 backup_type: "VOLUME".into(),
-                status: if b.enabled != 0 { "ENABLED".into() } else { "DISABLED".into() },
+                status: if b.enabled != 0 {
+                    "ENABLED".into()
+                } else {
+                    "DISABLED".into()
+                },
                 destination: format!("Destination #{}", b.destination_id),
                 created_at: b.created_at,
             });

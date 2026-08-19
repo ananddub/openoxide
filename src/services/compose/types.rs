@@ -28,10 +28,7 @@ string_enum! {
 
 impl ComposeStatus {
     pub fn is_building(self) -> bool {
-        matches!(
-            self,
-            Self::Queued | Self::Starting | Self::Cancelling
-        )
+        matches!(self, Self::Queued | Self::Starting | Self::Cancelling)
     }
 }
 

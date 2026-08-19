@@ -346,7 +346,11 @@ impl RemoteExecutor {
     ) -> ExecResult<ExecOutput> {
         let session = self.connect_session().await?;
 
-        let has_pwd = self.sudo_password.as_deref().map(|p| !p.is_empty()).unwrap_or(false);
+        let has_pwd = self
+            .sudo_password
+            .as_deref()
+            .map(|p| !p.is_empty())
+            .unwrap_or(false);
         let base_command = remote_command(program, args, self.sudo_password.is_some(), has_pwd);
         let cancel_job = cancel.map(|_| {
             self.job_pid_file
@@ -365,7 +369,9 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
-        let (code, stdout_bytes, stderr_bytes) = crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref()).await?;
+        let (code, stdout_bytes, stderr_bytes) =
+            crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref())
+                .await?;
 
         let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {
@@ -442,12 +448,7 @@ fn remote_command(program: &str, args: &[String], sudo: bool, has_password: bool
                 program.into(),
             ]
         } else {
-            vec![
-                "sudo".into(),
-                "-n".into(),
-                "--".into(),
-                program.into(),
-            ]
+            vec!["sudo".into(), "-n".into(), "--".into(), program.into()]
         }
     } else {
         vec![program.into()]

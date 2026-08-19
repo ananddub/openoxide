@@ -1,11 +1,63 @@
 use crate::{
-    services::git_provider::GitProviderView,
+    services::git_provider::{CreateProvider, GitProviderView, ProviderCredentials},
     utils::provider::oauth::{AuthorizationInfo, OAuthConfig},
 };
 
 use super::GitProviderService;
 
 impl GitProviderService {
+    pub async fn create_github_from_manifest(
+        &self,
+        code: &str,
+        installation_id: Option<&str>,
+    ) -> Result<GitProviderView, String> {
+        if code.trim().is_empty() {
+            return Err("GitHub manifest code is required".into());
+        }
+        let response = reqwest::Client::new()
+            .post(format!(
+                "https://api.github.com/app-manifests/{code}/conversions"
+            ))
+            .header(reqwest::header::USER_AGENT, "rustploy")
+            .send()
+            .await
+            .map_err(|e| format!("GitHub App conversion failed: {e}"))?;
+        let status = response.status();
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| format!("Invalid GitHub App conversion response: {e}"))?;
+        if !status.is_success() {
+            return Err(format!(
+                "GitHub App conversion failed (status {status}): {}",
+                body["message"].as_str().unwrap_or("unknown error")
+            ));
+        }
+        let app_name = body["name"]
+            .as_str()
+            .filter(|v| !v.trim().is_empty())
+            .ok_or("GitHub conversion response did not include app name")?;
+        let created = self
+            .create(CreateProvider {
+                name: app_name.to_string(),
+                shared: true,
+                credentials: ProviderCredentials::Github {
+                    app_name: Some(app_name.to_string()),
+                    app_id: body["id"].as_i64(),
+                    client_id: body["client_id"].as_str().map(str::to_string),
+                    client_secret: body["client_secret"].as_str().map(str::to_string),
+                    installation_id: installation_id.map(str::to_string),
+                    private_key: body["pem"].as_str().map(str::to_string),
+                },
+            })
+            .await
+            .map_err(|e| format!("Failed to save GitHub provider: {e}"))?;
+        if created.0.configured || installation_id.is_none() {
+            return Ok(created.0);
+        }
+        self.get(created.0.id).await.map_err(|e| e.to_string())
+    }
+
     pub async fn authorization(&self, id: i64) -> Result<AuthorizationInfo, String> {
         use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;

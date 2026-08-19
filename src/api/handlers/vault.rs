@@ -1,5 +1,6 @@
 use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderDto, VaultSecretListDto, VaultTestResultDto,
+    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto, VaultProviderDto,
+    VaultSecretListDto, VaultTestResultDto,
 };
 use crate::core::middleware::permission::{
     CanCreate, CanDelete, CanRead, CanUpdate, PermissionOrganization, RequirePermission, Server,
@@ -7,11 +8,7 @@ use crate::core::middleware::permission::{
 use crate::core::middleware::validator::ValidatedJson;
 use crate::services::vault::{VaultService, VaultServiceError};
 use auto_route::controller;
-use axum::{
-    Extension, Json,
-    extract::Path,
-    http::StatusCode,
-};
+use axum::{Extension, Json, extract::Path, http::StatusCode};
 use std::sync::Arc;
 
 type ApiError = (StatusCode, String);
@@ -119,7 +116,13 @@ impl VaultController {
         ValidatedJson(body): ValidatedJson<CreateVaultProviderDto>,
     ) -> Result<Json<VaultTestResultDto>, ApiError> {
         self.service
-            .test_credentials(body.provider_type, &body.api_url, &body.auth_token, body.namespace)
+            .test_credentials(
+                body.provider_type,
+                &body.api_url,
+                &body.auth_token,
+                body.namespace,
+                body.config_json.as_deref(),
+            )
             .await
             .map(Json)
             .map_err(map_vault_error)
@@ -138,13 +141,48 @@ impl VaultController {
             .map(Json)
             .map_err(map_vault_error)
     }
+
+    #[get("/{id}/assignments")]
+    async fn get_assignments(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanRead>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Vec<VaultProviderAssignmentDto>>, ApiError> {
+        self.service
+            .get_assignments(id, organization_id)
+            .await
+            .map(Json)
+            .map_err(map_vault_error)
+    }
+
+    #[put("/{id}/assignments")]
+    async fn set_assignments(
+        &self,
+        RequirePermission(_, _): RequirePermission<Server, CanUpdate>,
+        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
+        Path(id): Path<i64>,
+        Json(assignments): Json<Vec<VaultProviderAssignmentDto>>,
+    ) -> Result<Json<Vec<VaultProviderAssignmentDto>>, ApiError> {
+        self.service
+            .set_assignments(id, organization_id, assignments)
+            .await
+            .map(Json)
+            .map_err(map_vault_error)
+    }
 }
 
 fn map_vault_error(error: VaultServiceError) -> ApiError {
     match error {
         VaultServiceError::NotFound => (StatusCode::NOT_FOUND, "Vault provider not found".into()),
-        VaultServiceError::Database(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)),
-        VaultServiceError::Http(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("HTTP error: {}", e)),
+        VaultServiceError::Database(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Database error: {}", e),
+        ),
+        VaultServiceError::Http(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("HTTP error: {}", e),
+        ),
         VaultServiceError::ProviderError(msg) => (StatusCode::BAD_REQUEST, msg),
     }
 }

@@ -89,8 +89,9 @@ impl ApplicationService {
 
     pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
-        let current_status = crate::services::application::types::ApplicationStatus::from_str(&app_user.app_status)
-            .unwrap_or(crate::services::application::types::ApplicationStatus::Idle);
+        let current_status =
+            crate::services::application::types::ApplicationStatus::from_str(&app_user.app_status)
+                .unwrap_or(crate::services::application::types::ApplicationStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
             (
@@ -163,8 +164,12 @@ impl ApplicationService {
                     docker_cli.services().list().run_json(),
                 )
                 .await
-                .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
-                {
+                .unwrap_or(Err(
+                    crate::utils::docker::error::DockerError::CommandFailed {
+                        code: None,
+                        stderr: "timeout".into(),
+                    },
+                )) {
                     let app_n_low = app_n.to_lowercase();
                     let user_n_low = user_n.to_lowercase();
                     for s in services {
@@ -190,7 +195,9 @@ impl ApplicationService {
             }
 
             let _ = repo_app.update_status(id, final_st).await;
-            cache.invalidate(&crate::core::cache::CacheKey::Application(id)).await;
+            cache
+                .invalidate(&crate::core::cache::CacheKey::Application(id))
+                .await;
         });
 
         Ok(true)

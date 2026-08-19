@@ -31,6 +31,13 @@ pub struct VaultProviderDto {
     pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
+    pub assignments: Vec<VaultProviderAssignmentDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Object, ts_rs::TS)]
+pub struct VaultProviderAssignmentDto {
+    pub project_id: i64,
+    pub environment_ids: Vec<i64>,
 }
 
 #[derive(Debug, Deserialize, Validate, Object)]
@@ -42,6 +49,8 @@ pub struct CreateVaultProviderDto {
     pub auth_token: String,
     pub namespace: Option<String>,
     pub config_json: Option<String>,
+    #[serde(default)]
+    pub assignments: Vec<VaultProviderAssignmentDto>,
 }
 
 #[derive(Debug, Deserialize, Validate, Object)]
@@ -51,6 +60,7 @@ pub struct UpdateVaultProviderDto {
     pub auth_token: Option<String>,
     pub namespace: Option<String>,
     pub config_json: Option<String>,
+    pub assignments: Option<Vec<VaultProviderAssignmentDto>>,
 }
 
 #[derive(Debug, Serialize, Object, ts_rs::TS)]

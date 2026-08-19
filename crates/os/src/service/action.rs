@@ -41,7 +41,13 @@ impl<'a> ServiceActionBuilder<'a> {
 
         let res = self.executor.run("systemctl", &args).await;
         if self.non_fatal {
-            res.or_else(|_| Ok(ExecOutput { status: crate::exec::ExecExitStatus::Remote(0), stdout: String::new(), stderr: String::new() }))
+            res.or_else(|_| {
+                Ok(ExecOutput {
+                    status: crate::exec::ExecExitStatus::Remote(0),
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
+            })
         } else {
             res
         }
@@ -51,7 +57,12 @@ impl<'a> ServiceActionBuilder<'a> {
 impl<'a> IntoCommand for ServiceActionBuilder<'a> {
     fn build_str(&self) -> String {
         let now_flag = if self.now { "--now " } else { "" };
-        let base = format!("systemctl {} {}{}", self.action, now_flag, escape_arg(&self.name));
+        let base = format!(
+            "systemctl {} {}{}",
+            self.action,
+            now_flag,
+            escape_arg(&self.name)
+        );
         if self.non_fatal {
             format!("{base} 2>/dev/null || true")
         } else {

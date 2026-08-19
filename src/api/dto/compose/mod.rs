@@ -156,11 +156,26 @@ pub fn detect_compose_file_content(record: &ComposeRecord) -> String {
 
     let clean_path = record.compose_path.trim_start_matches("./");
     let candidates = [
-        format!(".runtime/rustploy/compose/{}/source/docker-compose.yml", record.app_name),
-        format!(".runtime/rustploy/compose/{}/source/docker-compose.yaml", record.app_name),
-        format!(".runtime/rustploy/compose/{}/source/compose.yml", record.app_name),
-        format!(".runtime/rustploy/compose/{}/source/compose.yaml", record.app_name),
-        format!(".runtime/rustploy/compose/{}/source/{}", record.app_name, clean_path),
+        format!(
+            ".runtime/rustploy/compose/{}/source/docker-compose.yml",
+            record.app_name
+        ),
+        format!(
+            ".runtime/rustploy/compose/{}/source/docker-compose.yaml",
+            record.app_name
+        ),
+        format!(
+            ".runtime/rustploy/compose/{}/source/compose.yml",
+            record.app_name
+        ),
+        format!(
+            ".runtime/rustploy/compose/{}/source/compose.yaml",
+            record.app_name
+        ),
+        format!(
+            ".runtime/rustploy/compose/{}/source/{}",
+            record.app_name, clean_path
+        ),
     ];
 
     for path in &candidates {

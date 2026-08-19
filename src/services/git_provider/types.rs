@@ -61,4 +61,27 @@ pub struct GitProviderView {
     pub webhook_configured: bool,
     pub created_at: i64,
     pub updated_at: i64,
+    pub config: GitProviderConfigView,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct GitProviderConfigView {
+    pub url: Option<String>,
+    pub internal_url: Option<String>,
+    pub app_name: Option<String>,
+    pub app_id: Option<i64>,
+    pub client_id: Option<String>,
+    pub installation_id: Option<String>,
+    pub application_id: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub group_name: Option<String>,
+    pub scopes: Option<String>,
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub workspace: Option<String>,
+    pub has_client_secret: bool,
+    pub has_private_key: bool,
+    pub has_access_token: bool,
+    pub has_app_password: bool,
+    pub has_api_token: bool,
 }

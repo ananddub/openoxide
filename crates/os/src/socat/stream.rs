@@ -1,5 +1,5 @@
-use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::UnixStream;
+use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
 
 pub struct SocatStream {
     pub reader: OwnedReadHalf,

@@ -90,7 +90,11 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
     }
 
     pub async fn connect(self) -> std::io::Result<ContainerSocketExecStream> {
-        let env_strings: Vec<String> = self.envs.into_iter().map(|(k, v)| format!("{}={}", k, v)).collect();
+        let env_strings: Vec<String> = self
+            .envs
+            .into_iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
 
         let mut payload = serde_json::json!({
             "AttachStdin": self.attach_stdin,
@@ -122,7 +126,12 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
             .split("\"Id\":\"")
             .nth(1)
             .and_then(|s| s.split('"').next())
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to parse exec Id from Docker response: {}", res1)))?
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Failed to parse exec Id from Docker response: {}", res1),
+                )
+            })?
             .to_string();
 
         // Step 2: Start & Upgrade Socket Connection via SocatRequestBuilder
@@ -160,7 +169,12 @@ impl ContainerSocketExecStream {
     }
 }
 
-pub async fn resize_container_exec(socket_path: &str, exec_id: &str, width: u16, height: u16) -> std::io::Result<()> {
+pub async fn resize_container_exec(
+    socket_path: &str,
+    exec_id: &str,
+    width: u16,
+    height: u16,
+) -> std::io::Result<()> {
     let path = format!("/exec/{}/resize", exec_id);
     let payload = serde_json::json!({
         "Height": height,

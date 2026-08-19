@@ -1,5 +1,6 @@
 use crate::api::dto::dns::{
-    CreateDnsProviderDto, DnsProviderDto, DnsRecordDto, DnsTestResultDto, DnsZoneDto, UpdateDnsProviderDto, UpsertDnsRecordDto,
+    CreateDnsProviderDto, DnsProviderDto, DnsRecordDto, DnsTestResultDto, DnsZoneDto,
+    UpdateDnsProviderDto, UpsertDnsRecordDto,
 };
 use crate::core::middleware::permission::{
     CanCreate, CanDelete, CanRead, CanUpdate, PermissionOrganization, RequirePermission, Server,
@@ -7,11 +8,7 @@ use crate::core::middleware::permission::{
 use crate::core::middleware::validator::ValidatedJson;
 use crate::services::dns::{DnsService, DnsServiceError};
 use auto_route::controller;
-use axum::{
-    Extension, Json,
-    extract::Path,
-    http::StatusCode,
-};
+use axum::{Extension, Json, extract::Path, http::StatusCode};
 use std::sync::Arc;
 
 type ApiError = (StatusCode, String);
@@ -186,8 +183,14 @@ impl DnsController {
 fn map_dns_error(error: DnsServiceError) -> ApiError {
     match error {
         DnsServiceError::NotFound => (StatusCode::NOT_FOUND, "DNS provider not found".into()),
-        DnsServiceError::Database(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e)),
-        DnsServiceError::Http(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("HTTP error: {}", e)),
+        DnsServiceError::Database(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Database error: {}", e),
+        ),
+        DnsServiceError::Http(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("HTTP error: {}", e),
+        ),
         DnsServiceError::ProviderError(msg) => (StatusCode::BAD_REQUEST, msg),
     }
 }

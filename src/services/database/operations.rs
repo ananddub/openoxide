@@ -123,9 +123,13 @@ impl DatabaseService {
 
     pub async fn cancel_operation(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<bool> {
         let db_record = self.get_by_id(kind, id).await.ok();
-        let current_st_str = db_record.as_ref().map(|d| d.app_status.as_str()).unwrap_or("IDLE");
-        let current_status = crate::services::database::types::DatabaseRuntimeStatus::from_str(current_st_str)
-            .unwrap_or(crate::services::database::types::DatabaseRuntimeStatus::Idle);
+        let current_st_str = db_record
+            .as_ref()
+            .map(|d| d.app_status.as_str())
+            .unwrap_or("IDLE");
+        let current_status =
+            crate::services::database::types::DatabaseRuntimeStatus::from_str(current_st_str)
+                .unwrap_or(crate::services::database::types::DatabaseRuntimeStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
             (
@@ -172,7 +176,10 @@ impl DatabaseService {
         }
 
         let _ = self.repo_deploy.cancel_queued_for_database(id).await;
-        let _ = self.repo_deploy.request_cancel_database_deployment(id).await;
+        let _ = self
+            .repo_deploy
+            .request_cancel_database_deployment(id)
+            .await;
 
         let app_name = db_record.as_ref().map(|d| d.app_name.clone());
         let server_id = db_record.as_ref().and_then(|d| d.server_id);
@@ -190,7 +197,10 @@ impl DatabaseService {
             if let Some(ref app_name) = app_name {
                 let docker_cli = match server_id {
                     Some(sid) => {
-                        if let Ok(executor) = crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid).await {
+                        if let Ok(executor) =
+                            crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid)
+                                .await
+                        {
                             crate::utils::docker::DockerCli::from_remote_executor(executor)
                         } else {
                             crate::utils::docker::DockerCli::new_local()
@@ -210,12 +220,19 @@ impl DatabaseService {
                     docker_cli
                         .services()
                         .list()
-                        .filter(crate::utils::docker::query::ServiceFilter::name(format!("{}_", app_name)))
+                        .filter(crate::utils::docker::query::ServiceFilter::name(format!(
+                            "{}_",
+                            app_name
+                        )))
                         .run_json(),
                 )
                 .await
-                .unwrap_or(Err(crate::utils::docker::error::DockerError::CommandFailed { code: None, stderr: "timeout".into() }))
-                {
+                .unwrap_or(Err(
+                    crate::utils::docker::error::DockerError::CommandFailed {
+                        code: None,
+                        stderr: "timeout".into(),
+                    },
+                )) {
                     for s in services {
                         if &s.replicas != "0/0" {
                             let _ = tokio::time::timeout(
@@ -242,14 +259,28 @@ impl DatabaseService {
             }
 
             match kind {
-                DatabaseKind::Postgres => { let _ = repo_postgres.update_status(id, final_st).await; }
-                DatabaseKind::Mysql => { let _ = repo_mysql.update_status(id, final_st).await; }
-                DatabaseKind::Mariadb => { let _ = repo_mariadb.update_status(id, final_st).await; }
-                DatabaseKind::Mongo => { let _ = repo_mongo.update_status(id, final_st).await; }
-                DatabaseKind::Redis => { let _ = repo_redis.update_status(id, final_st).await; }
-                DatabaseKind::Libsql => { let _ = repo_libsql.update_status(id, final_st).await; }
+                DatabaseKind::Postgres => {
+                    let _ = repo_postgres.update_status(id, final_st).await;
+                }
+                DatabaseKind::Mysql => {
+                    let _ = repo_mysql.update_status(id, final_st).await;
+                }
+                DatabaseKind::Mariadb => {
+                    let _ = repo_mariadb.update_status(id, final_st).await;
+                }
+                DatabaseKind::Mongo => {
+                    let _ = repo_mongo.update_status(id, final_st).await;
+                }
+                DatabaseKind::Redis => {
+                    let _ = repo_redis.update_status(id, final_st).await;
+                }
+                DatabaseKind::Libsql => {
+                    let _ = repo_libsql.update_status(id, final_st).await;
+                }
             }
-            cache.invalidate(&crate::core::cache::CacheKey::Database(id)).await;
+            cache
+                .invalidate(&crate::core::cache::CacheKey::Database(id))
+                .await;
         });
 
         Ok(true)

@@ -77,8 +77,10 @@ impl SocatRequestBuilder {
 
     pub fn json<T: serde::Serialize>(mut self, value: &T) -> Self {
         if let Ok(json_bytes) = serde_json::to_vec(value) {
-            self.headers.insert("Content-Type".to_string(), "application/json".to_string());
-            self.headers.insert("Content-Length".to_string(), json_bytes.len().to_string());
+            self.headers
+                .insert("Content-Type".to_string(), "application/json".to_string());
+            self.headers
+                .insert("Content-Length".to_string(), json_bytes.len().to_string());
             self.body = json_bytes;
         }
         self
@@ -86,7 +88,8 @@ impl SocatRequestBuilder {
 
     pub fn body(mut self, body: impl Into<Vec<u8>>) -> Self {
         let b = body.into();
-        self.headers.insert("Content-Length".to_string(), b.len().to_string());
+        self.headers
+            .insert("Content-Length".to_string(), b.len().to_string());
         self.body = b;
         self
     }
@@ -133,8 +136,10 @@ impl SocatRequestBuilder {
     }
 
     pub async fn upgrade_on(mut self, stream: &mut UnixStream) -> std::io::Result<String> {
-        self.headers.insert("Connection".to_string(), "Upgrade".to_string());
-        self.headers.insert("Upgrade".to_string(), "tcp".to_string());
+        self.headers
+            .insert("Connection".to_string(), "Upgrade".to_string());
+        self.headers
+            .insert("Upgrade".to_string(), "tcp".to_string());
 
         let req_bytes = self.build_http_bytes();
         stream.write_all(&req_bytes).await?;

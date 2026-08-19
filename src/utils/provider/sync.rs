@@ -84,7 +84,11 @@ impl<'a> ProviderSyncBuilder<'a> {
             let default_exec = CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
             let exec_ref = self.executor.as_ref().unwrap_or(&default_exec);
             let os = crate::utils::os::OsCli::new(exec_ref);
-            else_branch = else_branch.cmd(os.dir(parent.to_string_lossy().as_ref()).create().parents(true));
+            else_branch = else_branch.cmd(
+                os.dir(parent.to_string_lossy().as_ref())
+                    .create()
+                    .parents(true),
+            );
         }
 
         let clone_git = GitCli::new_local();

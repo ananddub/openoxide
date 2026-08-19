@@ -144,11 +144,19 @@ impl DatabaseService {
                 let pwd = new_password.clone();
                 let app_name = record.app_name.clone();
                 let server_id = record.server_id;
-                let user_name = record.database_user.clone().unwrap_or_else(|| "openoxide".to_string());
+                let user_name = record
+                    .database_user
+                    .clone()
+                    .unwrap_or_else(|| "openoxide".to_string());
                 tokio::spawn(async move {
                     let docker = match server_id {
                         Some(sid) => {
-                            if let Ok(executor) = crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid).await {
+                            if let Ok(executor) = crate::services::compose::remote::remote_executor(
+                                db_ref.as_ref(),
+                                sid,
+                            )
+                            .await
+                            {
                                 crate::utils::docker::DockerCli::from_remote_executor(executor)
                             } else {
                                 crate::utils::docker::DockerCli::new_local()
@@ -157,7 +165,13 @@ impl DatabaseService {
                         None => crate::utils::docker::DockerCli::new_local(),
                     };
 
-                    let containers = docker.containers().ps().all().list().await.unwrap_or_default();
+                    let containers = docker
+                        .containers()
+                        .ps()
+                        .all()
+                        .list()
+                        .await
+                        .unwrap_or_default();
                     let target_id = containers
                         .iter()
                         .find(|c| {
@@ -171,24 +185,65 @@ impl DatabaseService {
                     let escaped_pwd = pwd.replace('\'', "''");
                     match kind {
                         DatabaseKind::Postgres => {
-                            let sql = format!("ALTER USER \"{}\" WITH PASSWORD '{}';", user_name, escaped_pwd);
-                            let _ = docker.containers().exec(&target_id).run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql]).await;
-                            let _ = docker.containers().exec(&target_id).run(["psql", "-U", "postgres", "-c", &sql]).await;
+                            let sql = format!(
+                                "ALTER USER \"{}\" WITH PASSWORD '{}';",
+                                user_name, escaped_pwd
+                            );
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql])
+                                .await;
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["psql", "-U", "postgres", "-c", &sql])
+                                .await;
                         }
                         DatabaseKind::Mysql | DatabaseKind::Mariadb => {
-                            let sql = format!("ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;", user_name, escaped_pwd);
-                            let _ = docker.containers().exec(&target_id).run(["mysql", "-u", "root", "-e", &sql]).await;
-                            let _ = docker.containers().exec(&target_id).run(["mariadb", "-u", "root", "-e", &sql]).await;
+                            let sql = format!(
+                                "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
+                                user_name, escaped_pwd
+                            );
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["mysql", "-u", "root", "-e", &sql])
+                                .await;
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["mariadb", "-u", "root", "-e", &sql])
+                                .await;
                         }
                         DatabaseKind::Redis => {
                             // Apply password in live Redis server and rewrite configuration
-                            let _ = docker.containers().exec(&target_id).run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd]).await;
-                            let _ = docker.containers().exec(&target_id).run(["redis-cli", "-a", &pwd, "CONFIG", "REWRITE"]).await;
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd])
+                                .await;
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["redis-cli", "-a", &pwd, "CONFIG", "REWRITE"])
+                                .await;
                         }
                         DatabaseKind::Mongo => {
-                            let script = format!("try {{ db.getSiblingDB('admin').changeUserPassword('{}', '{}'); }} catch(e) {{ db.changeUserPassword('{}', '{}'); }}", user_name, escaped_pwd, user_name, escaped_pwd);
-                            let _ = docker.containers().exec(&target_id).run(["mongosh", "--eval", &script]).await;
-                            let _ = docker.containers().exec(&target_id).run(["mongo", "--eval", &script]).await;
+                            let script = format!(
+                                "try {{ db.getSiblingDB('admin').changeUserPassword('{}', '{}'); }} catch(e) {{ db.changeUserPassword('{}', '{}'); }}",
+                                user_name, escaped_pwd, user_name, escaped_pwd
+                            );
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["mongosh", "--eval", &script])
+                                .await;
+                            let _ = docker
+                                .containers()
+                                .exec(&target_id)
+                                .run(["mongo", "--eval", &script])
+                                .await;
                         }
                         _ => {}
                     }

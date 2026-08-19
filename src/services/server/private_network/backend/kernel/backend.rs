@@ -32,17 +32,27 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
 
         // Auto-install wireguard-tools on local panel host if 'wg' is missing
         if local.has_command("wg").run().await.is_err() {
-            let _ = local.package("wireguard-tools").install().update(true).run().await;
+            let _ = local
+                .package("wireguard-tools")
+                .install()
+                .update(true)
+                .run()
+                .await;
         }
 
         // Auto-install wireguard-tools on remote server if 'wg' is missing
         if remote.has_command("wg").run().await.is_err() {
-            let _ = remote.package("wireguard-tools").install().update(true).run().await;
+            let _ = remote
+                .package("wireguard-tools")
+                .install()
+                .update(true)
+                .run()
+                .await;
         }
 
         if remote.has_command("wg").run().await.is_err() {
             return Err(Self::protocol(
-                "wireguard-tools (wg) is not installed on the remote server. Please run 'apt-get update && apt-get install -y wireguard-tools' on your target server and retry."
+                "wireguard-tools (wg) is not installed on the remote server. Please run 'apt-get update && apt-get install -y wireguard-tools' on your target server and retry.",
             ));
         }
 

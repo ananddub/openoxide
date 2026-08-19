@@ -144,7 +144,10 @@ impl ApplicationService {
         tokio::spawn(async move {
             let docker_cli = match server_id {
                 Some(sid) => {
-                    if let Ok(executor) = crate::services::application::remote::remote_executor(db_ref.as_ref(), sid).await {
+                    if let Ok(executor) =
+                        crate::services::application::remote::remote_executor(db_ref.as_ref(), sid)
+                            .await
+                    {
                         crate::utils::docker::DockerCli::from_remote_executor(executor)
                     } else {
                         crate::utils::docker::DockerCli::new_local()
@@ -163,11 +166,18 @@ impl ApplicationService {
                 let _ = tokio::time::timeout(
                     std::time::Duration::from_secs(4),
                     docker_cli.container(candidate).stop().run(),
-                ).await;
+                )
+                .await;
                 let _ = tokio::time::timeout(
                     std::time::Duration::from_secs(4),
-                    docker_cli.container(candidate).remove().force().volumes().run(),
-                ).await;
+                    docker_cli
+                        .container(candidate)
+                        .remove()
+                        .force()
+                        .volumes()
+                        .run(),
+                )
+                .await;
             }
         });
 

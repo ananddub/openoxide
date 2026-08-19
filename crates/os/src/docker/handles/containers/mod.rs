@@ -5,7 +5,6 @@ pub mod socat;
 pub use copy::ContainerCopyBuilder;
 pub use create::ContainerCreate;
 pub use exec::ExecBuilder;
-pub use socat::{ContainerSocketExecStream, ContainerSocketStreamBuilder, resize_container_exec};
 pub use lifecycle::{
     ContainerKillBuilder, ContainerPauseBuilder, ContainerPortBuilder, ContainerRemoveBuilder,
     ContainerRenameBuilder, ContainerRestartBuilder, ContainerRmBuilder, ContainerStartBuilder,
@@ -16,6 +15,7 @@ pub use logs::LogsBuilder;
 pub use prune::ContainerPrune;
 pub use query::{ContainerQuery, RestartPolicy};
 pub use resource::ContainerResource;
+pub use socat::{ContainerSocketExecStream, ContainerSocketStreamBuilder, resize_container_exec};
 pub use stats::StatsBuilder;
 
 pub struct ContainerHandle<'a>(pub(crate) &'a DockerCli);
