@@ -22,6 +22,12 @@ export function GithubManifestDialog({
 }: GithubManifestDialogProps) {
 	const [githubUrl, setGithubUrl] = useState('https://github.com');
 	const [orgName, setOrgName] = useState('');
+	const [hookUrl, setHookUrl] = useState(() => {
+		const configured = import.meta.env.VITE_PUBLIC_API_URL;
+		return configured
+			? `${configured.replace(/\/$/, '')}/public/webhooks/github`
+			: '';
+	});
 
 	const githubCallbackBaseUrl = getGithubCallbackBaseUrl();
 	const randomSuffix = Math.random().toString(36).slice(2, 6);
@@ -31,7 +37,7 @@ export function GithubManifestDialog({
 		name: appName,
 		url: window.location.origin,
 		hook_attributes: {
-			url: `${githubCallbackBaseUrl}/public/webhooks/github`,
+			url: hookUrl.trim(),
 		},
 		redirect_url: `${githubCallbackBaseUrl}/git-providers/github/manifest/callback`,
 		callback_urls: [
@@ -52,6 +58,10 @@ export function GithubManifestDialog({
 	const targetAction = orgName.trim()
 		? `${cleanBase}/organizations/${orgName.trim()}/settings/apps/new`
 		: `${cleanBase}/settings/apps/new`;
+	const hookIsValid =
+		/^https:\/\/(?!localhost(?:[:/]|$)|127\.0\.0\.1(?:[:/]|$)|0\.0\.0\.0(?:[:/]|$))(?!10\.)(?!192\.168\.)(?!172\.(?:1[6-9]|2\d|3[0-1])\.)(?!100\.(?:6[4-9]|[7-9]\d|1\d\d)\.)(?:[^/]+)\/.+/i.test(
+			hookUrl.trim(),
+		);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -84,6 +94,22 @@ export function GithubManifestDialog({
 
 					<div className="space-y-1.5">
 						<label className="text-xs font-semibold text-muted-foreground">
+							Public Webhook URL
+						</label>
+						<Input
+							value={hookUrl}
+							onChange={e => setHookUrl(e.target.value)}
+							placeholder="https://your-public-domain.example.com/public/webhooks/github"
+							className="h-9 font-mono text-xs"
+						/>
+						<p className="text-[11px] text-muted-foreground">
+							GitHub must reach this URL over public HTTPS. Localhost and
+							private IPs are rejected.
+						</p>
+					</div>
+
+					<div className="space-y-1.5">
+						<label className="text-xs font-semibold text-muted-foreground">
 							GitHub Organization{' '}
 							<span className="text-[11px] font-normal text-muted-foreground/80">
 								(Optional)
@@ -101,6 +127,7 @@ export function GithubManifestDialog({
 						<input type="hidden" name="manifest" value={manifest} />
 						<Button
 							type="submit"
+							disabled={!hookIsValid}
 							className="h-9 w-full cursor-pointer gap-2 rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
 							<GithubIcon className="size-4" /> Continue on GitHub
 						</Button>

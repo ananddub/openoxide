@@ -36,4 +36,3 @@ This file contains rules and guidelines that the coding assistant must follow wh
 - **Strict 200-Line Limit**: If any component, hook, or file exceeds 200 lines, it **must** be refactored and split into smaller sub-components, custom hooks, or helper modules.
 - **Recursive Splitting**: Even if a file has already been split, if any of the sub-components or files grow beyond 200 lines, they must be split further.
 - **Keep Code Clean**: Never allow massive, monolithic files with mixed state, query logic, and complex rendering.
-
