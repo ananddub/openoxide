@@ -10,7 +10,7 @@ export async function aiRequest(path: string, init?: RequestInit) {
 		credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json',
-			...(init?.headers || {}),
+			...init?.headers,
 		},
 		...init,
 	});
