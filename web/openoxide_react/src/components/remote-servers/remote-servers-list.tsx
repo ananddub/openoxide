@@ -87,8 +87,7 @@ export function RemoteServersList({
 			const matchName =
 				s.name.toLowerCase().includes(search.toLowerCase()) ||
 				s.ip_address?.toLowerCase().includes(search.toLowerCase());
-			const connSt = globalServerConnStore.getStatus(s.id);
-			const isConnected = connSt === 'success';
+			const isConnected = (s.server_status || 'INACTIVE').toUpperCase() === 'ACTIVE';
 			const matchStatus =
 				statusFilter === 'All' ||
 				(statusFilter === 'Connected' && isConnected) ||
@@ -213,14 +212,14 @@ export function RemoteServersList({
 					{filtered.map(item => {
 						const connStatus = globalServerConnStore.getStatus(item.id);
 						const isTesting = connStatus === 'testing';
-						const isServerActive =
-							(item.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+						const serverStatus = (item.server_status || 'INACTIVE').toUpperCase();
+						const isServerActive = serverStatus === 'ACTIVE';
 
 						const dotCls = isTesting
 							? 'bg-amber-400 animate-pulse'
-							: connStatus === 'success'
+							: isServerActive
 								? 'bg-emerald-500'
-								: connStatus === 'failed'
+								: serverStatus === 'INACTIVE'
 									? 'bg-rose-500'
 									: 'bg-zinc-500/60';
 
@@ -244,6 +243,7 @@ export function RemoteServersList({
 										<Server className="h-4 w-4 text-foreground/70" />
 									</div>
 									<span
+									title={`Server ${serverStatus.toLowerCase()}`}
 										className={`absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${dotCls}`}
 									/>
 								</div>

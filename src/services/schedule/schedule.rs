@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use os::string_enum;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -510,6 +511,26 @@ impl ScheduleService {
                 "schedule skipped by concurrency policy".into(),
             ));
         }
+        // A cron callback can already be queued when a schedule is deleted or
+        // disabled. Re-read after acquiring the execution lock so that callback
+        // cannot execute a stale schedule snapshot.
+        let schedule = match self.get_by_id(id).await {
+            Ok(schedule) if schedule.enabled != 0 => schedule,
+            Ok(_) | Err(sqlx::Error::RowNotFound) => {
+                if concurrency != ConcurrencyPolicy::Allow {
+                    let _ = self.repo_runtime.release(id, &owner).await;
+                }
+                return Err(sqlx::Error::Protocol(
+                    "schedule was deleted or disabled".into(),
+                ));
+            }
+            Err(error) => {
+                if concurrency != ConcurrencyPolicy::Allow {
+                    let _ = self.repo_runtime.release(id, &owner).await;
+                }
+                return Err(error);
+            }
+        };
         self.repo_runtime.mark_scheduled(id, scheduled_at).await?;
 
         let mut final_result = None;
@@ -1295,6 +1316,14 @@ impl ScheduleService {
 
         let runner =
             crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
+        // Re-read immediately before starting the external backup command. A
+        // deleted/disabled job may have had a callback already queued.
+        let current = self.repo_backup.get_by_id(id).await?;
+        if current.as_ref().is_none_or(|item| item.enabled == 0) {
+            return Err(sqlx::Error::Protocol(
+                "backup was deleted or disabled".into(),
+            ));
+        }
 
         let ext = dumper.file_extension();
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
@@ -1382,6 +1411,15 @@ impl ScheduleService {
             &volume_backup,
             &destination,
         );
+        let current = self.repo_volume_backup.get_by_id(id).await?;
+        if current
+            .as_ref()
+            .is_none_or(|item| item.enabled == 0 || !volume_backup_has_valid_resource(item))
+        {
+            return Err(sqlx::Error::Protocol(
+                "volume backup was deleted, disabled, or has no valid resource".into(),
+            ));
+        }
 
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
         let object_key = format!(
@@ -1420,7 +1458,7 @@ impl ScheduleService {
     }
 }
 
-fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
+pub(crate) fn validate_backup_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();
     if expression.is_empty() {
         return Err(sqlx::Error::Protocol(
@@ -1450,6 +1488,10 @@ fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
         .parse()
         .map(|_| ())
         .map_err(|error| sqlx::Error::Protocol(format!("invalid cron expression: {error}")))
+}
+
+fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
+    validate_backup_cron_expression(value)
 }
 
 fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {
@@ -1630,27 +1672,130 @@ fn generate_schedule_app_name(name: &str) -> String {
 }
 
 fn parse_database_type(value: &str) -> Option<BackupsDatabaseTypeEnum> {
-    match value.to_ascii_uppercase().as_str() {
-        "POSTGRES" | "POSTGRESQL" => Some(BackupsDatabaseTypeEnum::Postgres),
-        "MYSQL" => Some(BackupsDatabaseTypeEnum::Mysql),
-        "MARIADB" => Some(BackupsDatabaseTypeEnum::Mariadb),
-        "MONGO" | "MONGODB" => Some(BackupsDatabaseTypeEnum::Mongo),
-        "REDIS" => Some(BackupsDatabaseTypeEnum::Redis),
-        "LIBSQL" => Some(BackupsDatabaseTypeEnum::Libsql),
-        _ => None,
+    match DatabaseBackupTypeInput::from_str(value)? {
+        DatabaseBackupTypeInput::Postgres | DatabaseBackupTypeInput::Postgresql => {
+            Some(BackupsDatabaseTypeEnum::Postgres)
+        }
+        DatabaseBackupTypeInput::Mysql => Some(BackupsDatabaseTypeEnum::Mysql),
+        DatabaseBackupTypeInput::Mariadb => Some(BackupsDatabaseTypeEnum::Mariadb),
+        DatabaseBackupTypeInput::Mongo | DatabaseBackupTypeInput::Mongodb => {
+            Some(BackupsDatabaseTypeEnum::Mongo)
+        }
+        DatabaseBackupTypeInput::Redis => Some(BackupsDatabaseTypeEnum::Redis),
+        DatabaseBackupTypeInput::Libsql => Some(BackupsDatabaseTypeEnum::Libsql),
     }
 }
 
 fn parse_volume_service_type(value: &str) -> Option<VolumeBackupsServiceTypeEnum> {
-    match value.to_ascii_uppercase().as_str() {
-        "APPLICATION" => Some(VolumeBackupsServiceTypeEnum::Application),
-        "COMPOSE" => Some(VolumeBackupsServiceTypeEnum::Compose),
-        "POSTGRES" => Some(VolumeBackupsServiceTypeEnum::Postgres),
-        "MYSQL" => Some(VolumeBackupsServiceTypeEnum::Mysql),
-        "MARIADB" => Some(VolumeBackupsServiceTypeEnum::Mariadb),
-        "MONGO" | "MONGODB" => Some(VolumeBackupsServiceTypeEnum::Mongo),
-        "REDIS" => Some(VolumeBackupsServiceTypeEnum::Redis),
-        "LIBSQL" => Some(VolumeBackupsServiceTypeEnum::Libsql),
-        _ => None,
+    match VolumeBackupServiceTypeInput::from_str(value)? {
+        VolumeBackupServiceTypeInput::Application => {
+            Some(VolumeBackupsServiceTypeEnum::Application)
+        }
+        VolumeBackupServiceTypeInput::Compose => Some(VolumeBackupsServiceTypeEnum::Compose),
+        VolumeBackupServiceTypeInput::Postgres => Some(VolumeBackupsServiceTypeEnum::Postgres),
+        VolumeBackupServiceTypeInput::Mysql => Some(VolumeBackupsServiceTypeEnum::Mysql),
+        VolumeBackupServiceTypeInput::Mariadb => Some(VolumeBackupsServiceTypeEnum::Mariadb),
+        VolumeBackupServiceTypeInput::Mongo | VolumeBackupServiceTypeInput::Mongodb => {
+            Some(VolumeBackupsServiceTypeEnum::Mongo)
+        }
+        VolumeBackupServiceTypeInput::Redis => Some(VolumeBackupsServiceTypeEnum::Redis),
+        VolumeBackupServiceTypeInput::Libsql => Some(VolumeBackupsServiceTypeEnum::Libsql),
+    }
+}
+
+pub(crate) fn volume_backup_has_valid_resource(
+    backup: &crate::db::models::volume_backups::VolumeBackup,
+) -> bool {
+    match parse_volume_service_type(&backup.service_type) {
+        Some(VolumeBackupsServiceTypeEnum::Application) => backup.application_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Compose) => backup.compose_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Postgres) => backup.postgres_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Mysql) => backup.mysql_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Mariadb) => backup.mariadb_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Mongo) => backup.mongo_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Redis) => backup.redis_id.is_some(),
+        Some(VolumeBackupsServiceTypeEnum::Libsql) => backup.libsql_id.is_some(),
+        None => false,
+    }
+}
+
+#[cfg(test)]
+mod volume_backup_resource_tests {
+    use super::volume_backup_has_valid_resource;
+    use crate::db::models::volume_backups::VolumeBackup;
+
+    fn backup(service_type: &str) -> VolumeBackup {
+        VolumeBackup {
+            id: Some(1),
+            name: "test".into(),
+            volume_name: "data".into(),
+            prefix: "backups".into(),
+            service_type: service_type.into(),
+            app_name: "test-backup".into(),
+            service_name: None,
+            turn_off: 0,
+            cron_expression: "* * * * *".into(),
+            keep_latest_count: None,
+            enabled: 1,
+            destination_id: 1,
+            organization_id: 1,
+            application_id: None,
+            postgres_id: None,
+            mysql_id: None,
+            mariadb_id: None,
+            mongo_id: None,
+            redis_id: None,
+            libsql_id: None,
+            compose_id: None,
+            created_at: 0,
+            updated_at: 0,
+        }
+    }
+
+    #[test]
+    fn orphan_volume_backup_is_invalid() {
+        assert!(!volume_backup_has_valid_resource(&backup("COMPOSE")));
+        assert!(!volume_backup_has_valid_resource(&backup("POSTGRES")));
+        assert!(!volume_backup_has_valid_resource(&backup("UNKNOWN")));
+    }
+
+    #[test]
+    fn resource_linked_volume_backup_is_valid() {
+        let mut item = backup("COMPOSE");
+        item.compose_id = Some(7);
+        assert!(volume_backup_has_valid_resource(&item));
+    }
+}
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum DatabaseBackupTypeInput {
+        default = Postgres;
+
+        Postgres => "POSTGRES",
+        Postgresql => "POSTGRESQL",
+        Mysql => "MYSQL",
+        Mariadb => "MARIADB",
+        Mongo => "MONGO",
+        Mongodb => "MONGODB",
+        Redis => "REDIS",
+        Libsql => "LIBSQL",
+    }
+}
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum VolumeBackupServiceTypeInput {
+        default = Application;
+
+        Application => "APPLICATION",
+        Compose => "COMPOSE",
+        Postgres => "POSTGRES",
+        Mysql => "MYSQL",
+        Mariadb => "MARIADB",
+        Mongo => "MONGO",
+        Mongodb => "MONGODB",
+        Redis => "REDIS",
+        Libsql => "LIBSQL",
     }
 }

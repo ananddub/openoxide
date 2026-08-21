@@ -15,6 +15,8 @@ pub struct OverviewServiceItemDto {
     pub environment_id: i64,
     pub environment_name: String,
     pub db_kind: Option<String>,
+    pub server_id: Option<i64>,
+    pub server_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Object, TS)]

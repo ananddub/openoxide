@@ -1,25 +1,64 @@
-import {getApiBaseUrl} from '#/api/client';
+import { client } from "#/api/client";
+import type { components } from "#/types/api.d.ts";
 
-function apiUrl(path: string) {
-	const base = getApiBaseUrl();
-	return base === '/api' ? `/api${path}` : `${base}${path}`;
+type CreateAiSetting = components["schemas"]["CreateAiSettingDto"];
+type UpdateAiSetting = components["schemas"]["UpdateAiSettingDto"];
+
+function ensure<T>(result: { data?: T; error?: unknown }) {
+  if (result.error) throw new Error(String(result.error));
+  return result.data as T;
 }
 
-export async function aiRequest(path: string, init?: RequestInit) {
-	const response = await fetch(apiUrl(path), {
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json',
-			...init?.headers,
-		},
-		...init,
-	});
+export async function listAiSettings() {
+  return ensure(await client.GET("/api/ai/settings"));
+}
 
-	if (!response.ok) {
-		throw new Error(
-			(await response.text()) || `Request failed (${response.status})`,
-		);
-	}
+export async function createAiSetting(body: CreateAiSetting) {
+  return ensure(await client.POST("/api/ai/settings", { body }));
+}
 
-	return response.status === 204 ? null : response.json();
+export async function updateAiSetting(id: number, body: UpdateAiSetting) {
+  return ensure(
+    await client.PUT("/api/ai/settings/{id}", {
+      params: { path: { id } },
+      body,
+    }),
+  );
+}
+
+export async function deleteAiSetting(id: number) {
+  return ensure(
+    await client.DELETE("/api/ai/settings/{id}", { params: { path: { id } } }),
+  );
+}
+
+export async function discoverAiModels(body: {
+  api_url: string;
+  api_key: string;
+}) {
+  return ensure(await client.POST("/api/ai/models/discover", { body }));
+}
+
+export async function discoverSettingModels(id: number) {
+  return ensure(
+    await client.GET("/api/ai/settings/{id}/models", {
+      params: { path: { id } },
+    }),
+  );
+}
+
+export async function testAiConnection(body: {
+  api_url: string;
+  api_key: string;
+  model: string;
+}) {
+  return ensure(await client.POST("/api/ai/connection/test", { body }));
+}
+
+export async function testAiSetting(id: number) {
+  return ensure(
+    await client.POST("/api/ai/settings/{id}/test", {
+      params: { path: { id } },
+    }),
+  );
 }

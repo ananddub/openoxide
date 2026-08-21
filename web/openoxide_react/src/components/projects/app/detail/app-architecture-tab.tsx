@@ -2,6 +2,7 @@ import {useState, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {formatApiError} from '#/api/utils';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {ComposeDomainModal} from '#/components/projects/compose/detail/domains/compose-domain-modal';
 import {CreateScheduleModal} from '#/components/projects/compose/detail/schedules/create-schedule-modal';
@@ -284,6 +285,7 @@ export function AppArchitectureTab({
 		cronExpr: string;
 		prefix: string;
 		turnOff: boolean;
+		destinationId: number;
 	}) => {
 		try {
 			if (editingBackupData?.id) {
@@ -312,6 +314,7 @@ export function AppArchitectureTab({
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
 						application_id: appId,
+						destination_id: data.destinationId,
 					} as any,
 				});
 				toast.success('Volume backup created successfully');
@@ -321,8 +324,8 @@ export function AppArchitectureTab({
 			});
 			setActiveModal(null);
 			setEditingBackupData(null);
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to save volume backup');
+		} catch (error: unknown) {
+			toast.error(formatApiError(error));
 		}
 	};
 

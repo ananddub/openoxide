@@ -271,7 +271,7 @@ export const OverviewServicesTable: React.FC<Props> = ({
 								<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
 									<ServerIcon className="size-4 shrink-0 text-muted-foreground/70" />
 									<span className="truncate">
-										{svc.serverName || 'Rustploy Server'}
+										{svc.serverName || 'Localhost (Main server)'}
 									</span>
 								</div>
 							</TableCell>

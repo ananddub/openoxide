@@ -11,7 +11,6 @@ pub struct CreateCertificateDto {
     pub certificate_path: String,
     pub auto_renew: i64,
     pub server_id: Option<String>,
-    pub organization_id: i64,
 }
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
@@ -30,7 +29,7 @@ pub struct CertificateResponseDto {
     pub id: String,
     pub name: String,
     pub certificate_data: String,
-    pub private_key: String,
+    pub has_private_key: bool,
     pub certificate_path: String,
     pub auto_renew: i64,
     pub server_id: Option<String>,
@@ -45,7 +44,7 @@ impl From<Certificate> for CertificateResponseDto {
             id: val.id.unwrap_or_default().to_string(),
             name: val.name,
             certificate_data: val.certificate_data,
-            private_key: val.private_key,
+            has_private_key: !val.private_key.is_empty(),
             certificate_path: val.certificate_path,
             auto_renew: val.auto_renew,
             server_id: val.server_id.map(|id| id.to_string()),

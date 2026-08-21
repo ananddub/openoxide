@@ -108,6 +108,24 @@ impl MonitoringController {
         Ok(Json(val))
     }
 
+    #[get("/containers/{id}/states")]
+    #[live("container_states", tables = ["servers"], strategy = sqlite)]
+    async fn get_container_states(
+        &self,
+        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
+        Path(id): Path<i64>,
+    ) -> Result<Json<Value>, ApiError> {
+        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
+        serde_json::to_value(
+            self.service
+                .container_states(id)
+                .await
+                .map_err(|e| (StatusCode::BAD_GATEWAY, e))?,
+        )
+        .map(Json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    }
+
     #[post("/agents/{server_id}/token")]
     async fn rotate_agent_token(
         &self,
@@ -163,8 +181,8 @@ impl MonitoringController {
                 "monitoring agent is not registered".into(),
             ))?;
         let state = match status.last_seen_at {
-            Some(ts) if chrono::Utc::now().timestamp() - ts <= 180 => "ONLINE",
-            Some(_) => "STALE",
+            Some(ts) if chrono::Utc::now().timestamp() - ts <= 30 => "ONLINE",
+            Some(_) => "OFFLINE",
             None => "NEVER_SEEN",
         };
         Ok(Json(MonitoringAgentStatusDto {

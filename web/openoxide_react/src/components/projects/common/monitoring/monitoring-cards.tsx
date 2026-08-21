@@ -13,6 +13,17 @@ import {
 	CardTitle,
 } from '#/components/ui/card';
 
+function parseBytes(value?: string): number {
+	if (!value || typeof value !== 'string') return 0;
+	const amount = Number.parseFloat(value) || 0;
+	const unit = value.replace(/[0-9.\s]/g, '').toUpperCase();
+	if (unit.startsWith('K')) return amount * 1024;
+	if (unit.startsWith('M')) return amount * 1024 ** 2;
+	if (unit.startsWith('G')) return amount * 1024 ** 3;
+	if (unit.startsWith('T')) return amount * 1024 ** 4;
+	return amount;
+}
+
 interface MonitoringCardsProps {
 	metrics: any;
 	history?: Array<{

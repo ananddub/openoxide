@@ -1,9 +1,10 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useMemo, useRef} from 'react';
 import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useAppStore, selectApplicationById} from '#/stores/app-store';
+import {useApplicationGet} from 'virtual:openoxide-live';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
@@ -12,7 +13,14 @@ export function useAppDetail(appId: number) {
 	>(null);
 
 	// 100% Pure Centralized Zustand Store Resolution
-	const rawApp = useAppStore(state => selectApplicationById(state, appId));
+	const storeApp = useAppStore(state => selectApplicationById(state, appId));
+	const storeDeployments = useAppStore(state => state.deployments);
+	const {data: liveApp} = useApplicationGet(BigInt(appId));
+	// Once the realtime store has the service, prefer it so live detail cache
+	// cannot overwrite deployment lifecycle updates with an older snapshot.
+	const rawApp = storeApp || liveApp;
+	const actionInFlight = useRef(false);
+	const statusBeforeAction = useRef<string | null>(null);
 
 	const app = rawApp
 		? {
@@ -37,7 +45,11 @@ export function useAppDetail(appId: number) {
 		if (localStatusOverride && appStatus) {
 			const fetchedStatus = String(appStatus).toUpperCase();
 			const overrideUpper = localStatusOverride.toUpperCase();
+			const statusTransitioned =
+				statusBeforeAction.current !== null &&
+				fetchedStatus !== statusBeforeAction.current;
 			if (
+				statusTransitioned ||
 				fetchedStatus === overrideUpper ||
 				(overrideUpper === 'STARTING' &&
 					(fetchedStatus === 'RUNNING' || fetchedStatus === 'HEALTHY')) ||
@@ -51,15 +63,26 @@ export function useAppDetail(appId: number) {
 						fetchedStatus === 'IDLE'))
 			) {
 				setLocalStatusOverride(null);
+				actionInFlight.current = false;
+				statusBeforeAction.current = null;
 			}
 		}
 	}, [appStatus, localStatusOverride]);
+
+	useEffect(() => {
+		if (!localStatusOverride) return;
+		const timeout = window.setTimeout(() => {
+			setLocalStatusOverride(null);
+			actionInFlight.current = false;
+			statusBeforeAction.current = null;
+		}, 30_000);
+		return () => window.clearTimeout(timeout);
+	}, [localStatusOverride]);
 
 	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
 	const storeDomains = useAppStore(state => state.domains);
 	const storeSchedules = useAppStore(state => state.schedules);
 	const storeBackups = useAppStore(state => state.backups);
-	const storeDeployments = useAppStore(state => state.deployments);
 
 	const domains = useMemo(
 		() =>
@@ -89,9 +112,46 @@ export function useAppDetail(appId: number) {
 			),
 		[storeDeployments, appId],
 	);
+	const deploymentStatus = useMemo(() => {
+		const active = deployments
+			.filter((deployment: any) => {
+				if (deployment.finished_at && Number(deployment.finished_at) > 0)
+					return false;
+				const status = String(
+					deployment.status || deployment.state || '',
+				).toUpperCase();
+				return [
+					'QUEUED',
+					'PENDING',
+					'BUILDING',
+					'PREPARING',
+					'STARTING',
+					'DEPLOYING',
+				].includes(status);
+			})
+			.sort(
+				(a: any, b: any) =>
+					Number(b.created_at || 0) - Number(a.created_at || 0),
+			);
+		return active[0]
+			? String(active[0].status || active[0].state).toUpperCase()
+			: null;
+	}, [deployments]);
+	const displayApp = app
+		? {
+				...app,
+				...(deploymentStatus
+					? {app_status: deploymentStatus, status: deploymentStatus}
+					: {}),
+			}
+		: app;
 
 	// Central Live Container Monitoring Stream
-	const monitoring = useContainerMonitoring(appId, 'application');
+	const monitoring = useContainerMonitoring(
+		appId,
+		'application',
+		activeTab === 'Monitoring',
+	);
 
 	// Live hooks auto-push updates — only trigger monitoring refresh
 	const refetchAll = () => {
@@ -124,7 +184,10 @@ export function useAppDetail(appId: number) {
 	const handleAction = async (
 		action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel',
 	) => {
+		if (actionInFlight.current && action !== 'cancel') return;
+		actionInFlight.current = true;
 		const currentSt = (app?.app_status || app?.status || '').toUpperCase();
+		statusBeforeAction.current = currentSt;
 		const isCurrentlyBuilding = [
 			'QUEUED',
 			'BUILDING',
@@ -169,6 +232,9 @@ export function useAppDetail(appId: number) {
 			}
 			refetchAll();
 		} catch (err) {
+			setLocalStatusOverride(null);
+			actionInFlight.current = false;
+			statusBeforeAction.current = null;
 			toast.error(`Action failed: ${action}`);
 		}
 	};
@@ -187,7 +253,7 @@ export function useAppDetail(appId: number) {
 	};
 
 	return {
-		app,
+		app: displayApp,
 		domains,
 		schedules,
 		backups,

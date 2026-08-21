@@ -537,7 +537,7 @@ function OverviewPage() {
 													)}
 												</TableCell>
 												<TableCell className="px-4 py-3.5 text-xs font-medium text-muted-foreground">
-													{dom.project_name || 'Rustploy Project'}
+									{dom.project_name || 'OpenOxide Project'}
 												</TableCell>
 												<TableCell className="px-4 py-3.5 text-right">
 													<a

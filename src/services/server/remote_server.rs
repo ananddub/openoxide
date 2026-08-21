@@ -188,6 +188,12 @@ impl RemoteServerService {
             let _ = self.repo_ssh.touch_ssh_key(ssh_key_id).await;
         }
 
+        // A successful explicit verification is authoritative immediately;
+        // do not make the UI wait for the monitoring stream's next heartbeat.
+        self.repo_server
+            .set_status(id, RemoteServerStatus::Active.as_str())
+            .await?;
+
         Ok(server)
     }
 

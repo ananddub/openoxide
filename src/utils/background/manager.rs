@@ -4,8 +4,12 @@ use std::sync::Arc;
 use crate::repository::BackgroundPolicyRepository;
 use crate::{
     services::{
-        alert::AlertService, backup::PanelBackupService, deployment::DeploymentService,
-        notification::NotificationService, schedule::ScheduleRunner,
+        alert::AlertService,
+        backup::PanelBackupService,
+        deployment::DeploymentService,
+        monitoring::{lifecycle::MonitoringLifecycleService, reconciler::MonitoringReconciler},
+        notification::NotificationService,
+        schedule::ScheduleRunner,
         server::ServerPrivateNetworkService,
     },
     utils::builder::queue::BuilderQueue,
@@ -29,6 +33,22 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve alert service: {error}"))?;
         super::alert::start(alerts);
+
+        let monitoring = resolve::<MonitoringReconciler>()
+            .await
+            .map_err(|error| format!("failed to resolve monitoring reconciler: {error}"))?;
+        let monitoring_service =
+            resolve::<crate::services::monitoring::monitoring_service::MonitoringService>()
+                .await
+                .map_err(|error| format!("failed to resolve monitoring service: {error}"))?;
+        let monitoring_lifecycle = resolve::<MonitoringLifecycleService>()
+            .await
+            .map_err(|error| format!("failed to resolve monitoring lifecycle: {error}"))?;
+        monitoring_lifecycle
+            .ensure_local_registration()
+            .await
+            .map_err(|error| format!("failed to register local monitoring agent: {error}"))?;
+        super::monitoring::start(monitoring_service, monitoring, monitoring_lifecycle);
 
         let deployments = resolve::<DeploymentService>()
             .await

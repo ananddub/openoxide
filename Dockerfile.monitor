@@ -36,7 +36,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 # volume there. Scratch has no user management, so it runs as root (uid 0) —
 # the tradeoff for a sub-10 MB image.
 WORKDIR /app
-ENV MONITOR_DATABASE_URL="sqlite:///app/data/monitor.db" \
+ENV MONITOR_DATABASE_URL="memory://metrics" \
     GRPC_PORT=50051 \
     REFRESH_RATE=2 \
     RETENTION_DAYS=7 \

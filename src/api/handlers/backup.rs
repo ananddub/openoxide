@@ -24,7 +24,7 @@ use crate::{
     },
     core::cache::{AppStateCache, CacheEnum, CacheKey},
     core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    db::models::{backups::Backup, destinations::Destination, volume_backups::VolumeBackup},
+    db::models::{backups::Backup, volume_backups::VolumeBackup},
     repository::{
         BackupExecutionRepository, backups::BackupRepository, destinations::DestinationRepository,
         organization::OrganizationRepository, volume_backups::VolumeBackupRepository,
@@ -38,6 +38,14 @@ use crate::{
 type ApiError = (StatusCode, String);
 type RestoreStatusStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
 type RestoreStatusSse = Sse<RestoreStatusStream>;
+
+async fn refresh_schedule_runner() {
+    if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+        if let Err(error) = runner.refresh_jobs().await {
+            tracing::error!(%error, "could not refresh scheduler after backup mutation");
+        }
+    }
+}
 
 pub struct BackupController {
     db: Arc<sqlx::SqlitePool>,
@@ -275,10 +283,15 @@ impl BackupController {
             .map_err(map_sqlx_error)?
             .ok_or(sqlx::Error::RowNotFound)
             .map_err(map_sqlx_error)?;
-        let status = crate::services::backup::types::BackupExecutionStatus::try_from(
+        let status = crate::services::backup::types::BackupExecutionStatus::from_str(
             execution.status.as_str(),
         )
-        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("invalid backup execution status: {}", execution.status),
+            )
+        })?;
         if status == crate::services::backup::types::BackupExecutionStatus::Running {
             return Err((
                 StatusCode::CONFLICT,
@@ -290,11 +303,21 @@ impl BackupController {
             "execution is not linked to a retryable backup job".into(),
         ))?;
         let kind =
-            crate::services::backup::types::BackupKind::try_from(execution.backup_kind.as_str())
-                .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+            crate::services::backup::types::BackupKind::from_str(execution.backup_kind.as_str())
+                .ok_or_else(|| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("invalid backup kind: {}", execution.backup_kind),
+                    )
+                })?;
         let operation =
-            crate::services::backup::types::BackupOperation::try_from(execution.operation.as_str())
-                .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error))?;
+            crate::services::backup::types::BackupOperation::from_str(execution.operation.as_str())
+                .ok_or_else(|| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("invalid backup operation: {}", execution.operation),
+                    )
+                })?;
         let result = match (kind, operation) {
             (
                 crate::services::backup::types::BackupKind::Database,
@@ -389,50 +412,19 @@ impl BackupController {
         1
     }
 
-    async fn resolve_destination_id(&self, requested_id: Option<i64>) -> i64 {
-        if let Some(id) = requested_id {
-            if id > 0 {
-                if let Ok(Some(_)) = self.repo_dest.get_by_id(id).await {
-                    return id;
-                }
-            }
-        }
-
-        if let Ok(dests) = self.repo_dest.get_all().await {
-            if let Some(first) = dests.first() {
-                if let Some(id_str) = &first.id {
-                    if let Ok(parsed) = id_str.parse::<i64>() {
-                        return parsed;
-                    }
-                }
-            }
-        }
-
-        let org_id = self.resolve_organization_id(None).await;
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
-
-        let default_dest = Destination {
-            id: None,
-            name: "Local Storage".to_string(),
-            provider: "LOCAL".to_string(),
-            access_key: "".to_string(),
-            secret_access_key: "".to_string(),
-            bucket: "backups".to_string(),
-            region: "local".to_string(),
-            endpoint: "".to_string(),
-            organization_id: org_id,
-            created_at: now,
-            updated_at: now,
-        };
-
-        if let Ok(new_id) = self.repo_dest.create(&default_dest).await {
-            return new_id;
-        }
-
-        1
+    async fn require_destination_id(&self, requested_id: Option<i64>) -> Result<i64, ApiError> {
+        let id = requested_id
+            .filter(|id| *id > 0)
+            .ok_or((StatusCode::BAD_REQUEST, "S3 destination is required".into()))?;
+        self.repo_dest
+            .get_by_id(id)
+            .await
+            .map_err(map_sqlx_error)?
+            .ok_or((
+                StatusCode::BAD_REQUEST,
+                "selected S3 destination does not exist".into(),
+            ))?;
+        Ok(id)
     }
 
     async fn verify_fk_exists(&self, table: &str, id: Option<i64>) -> Option<i64> {
@@ -518,7 +510,9 @@ impl BackupController {
         let org_id = self
             .resolve_organization_id(Some(dto.organization_id))
             .await;
-        let dest_id = self.resolve_destination_id(Some(dto.destination_id)).await;
+        let dest_id = self
+            .require_destination_id(Some(dto.destination_id))
+            .await?;
         let item = Backup {
             id: None,
             app_name: dto.app_name,
@@ -548,6 +542,7 @@ impl BackupController {
             .create(&item)
             .await
             .map_err(map_sqlx_error)?;
+        refresh_schedule_runner().await;
         self.repo_backup
             .get_by_id(id)
             .await
@@ -610,6 +605,7 @@ impl BackupController {
             .update(id, &item)
             .await
             .map_err(map_sqlx_error)?;
+        refresh_schedule_runner().await;
 
         self.repo_backup
             .get_by_id(id)
@@ -628,6 +624,7 @@ impl BackupController {
         Path(id): Path<i64>,
     ) -> Result<StatusCode, ApiError> {
         self.repo_backup.delete(id).await.map_err(map_sqlx_error)?;
+        refresh_schedule_runner().await;
         Ok(StatusCode::NO_CONTENT)
     }
 
@@ -701,7 +698,9 @@ impl BackupController {
         ValidatedJson(dto): ValidatedJson<CreateVolumeBackupDto>,
     ) -> Result<(StatusCode, Json<VolumeBackupResponseDto>), ApiError> {
         let org_id = self.resolve_organization_id(dto.organization_id).await;
-        let dest_id = self.resolve_destination_id(dto.destination_id).await;
+        let dest_id = self.require_destination_id(dto.destination_id).await?;
+        crate::services::schedule::schedule::validate_backup_cron_expression(&dto.cron_expression)
+            .map_err(map_sqlx_error)?;
 
         let mut item = VolumeBackup {
             id: None,
@@ -748,6 +747,20 @@ impl BackupController {
         } else if item.libsql_id.is_some() {
             item.service_type = "LIBSQL".to_string();
         }
+        if item.application_id.is_none()
+            && item.compose_id.is_none()
+            && item.postgres_id.is_none()
+            && item.mysql_id.is_none()
+            && item.mariadb_id.is_none()
+            && item.mongo_id.is_none()
+            && item.redis_id.is_none()
+            && item.libsql_id.is_none()
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "valid backup resource is required".into(),
+            ));
+        }
         let id = self
             .repo_volume
             .create(&item)
@@ -764,6 +777,7 @@ impl BackupController {
             .map_err(map_sqlx_error)?;
 
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
+        refresh_schedule_runner().await;
         Ok(created)
     }
 
@@ -821,6 +835,7 @@ impl BackupController {
             .map_err(map_sqlx_error)?;
 
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
+        refresh_schedule_runner().await;
 
         self.repo_volume
             .get_by_id(id)
@@ -840,6 +855,7 @@ impl BackupController {
     ) -> Result<StatusCode, ApiError> {
         self.repo_volume.delete(id).await.map_err(map_sqlx_error)?;
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
+        refresh_schedule_runner().await;
         Ok(StatusCode::NO_CONTENT)
     }
 

@@ -6,9 +6,6 @@ pub enum MonitorError {
     #[error("Docker API error: {0}")]
     Docker(#[from] DockerError),
 
-    #[error("Database error: {0}")]
-    Database(#[from] sqlx::Error),
-
     #[error("Configuration error: {0}")]
     Config(String),
 

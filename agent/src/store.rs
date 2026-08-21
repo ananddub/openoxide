@@ -1,11 +1,17 @@
+use std::{
+    collections::VecDeque,
+    sync::atomic::{AtomicI64, Ordering},
+};
+
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
-use std::path::Path;
-use tracing::info;
+use tokio::sync::RwLock;
 
 use crate::error::MonitorError;
 
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+const SESSION_WINDOW_MINUTES: i64 = 5;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerMetric {
     pub id: Option<i64>,
     pub timestamp: String,
@@ -28,7 +34,7 @@ pub struct ServerMetric {
     pub network_out: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContainerMetricRow {
     pub id: Option<i64>,
     pub timestamp: String,
@@ -49,131 +55,34 @@ pub struct ContainerMetricRow {
 }
 
 pub struct Store {
-    pub pool: SqlitePool,
+    server_metrics: RwLock<VecDeque<ServerMetric>>,
+    container_metrics: RwLock<VecDeque<ContainerMetricRow>>,
+    sequence: AtomicI64,
 }
 
 impl Store {
-    pub async fn init(db_url: &str) -> Result<Self, MonitorError> {
-        if let Some(path_str) = db_url.strip_prefix("sqlite://") {
-            if path_str != ":memory:" {
-                if let Some(parent) = Path::new(path_str).parent() {
-                    let _ = tokio::fs::create_dir_all(parent).await;
-                }
-                if !Path::new(path_str).exists() {
-                    let _ = tokio::fs::File::create(path_str).await;
-                }
-            }
-        }
-
-        let pool = SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect(db_url)
-            .await?;
-
-        sqlx::query(
-            r#"
-            CREATE TABLE IF NOT EXISTS server_metrics (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                cpu REAL NOT NULL,
-                cpu_model TEXT NOT NULL,
-                cpu_cores INTEGER NOT NULL,
-                cpu_physical_cores INTEGER NOT NULL,
-                cpu_speed REAL NOT NULL,
-                os TEXT NOT NULL,
-                distro TEXT NOT NULL,
-                kernel TEXT NOT NULL,
-                arch TEXT NOT NULL,
-                mem_used REAL NOT NULL,
-                mem_used_gb REAL NOT NULL,
-                mem_total REAL NOT NULL,
-                uptime INTEGER NOT NULL,
-                disk_used REAL NOT NULL,
-                total_disk REAL NOT NULL,
-                network_in REAL NOT NULL,
-                network_out REAL NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS container_metrics (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                container_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                cpu_perc REAL NOT NULL,
-                mem_perc REAL NOT NULL,
-                mem_used_mb REAL NOT NULL,
-                mem_total_mb REAL NOT NULL,
-                net_in_mb REAL NOT NULL,
-                net_out_mb REAL NOT NULL,
-                block_read_mb REAL NOT NULL,
-                block_write_mb REAL NOT NULL,
-                application_id INTEGER,
-                compose_id INTEGER
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_server_metrics_ts ON server_metrics(timestamp);
-            CREATE INDEX IF NOT EXISTS idx_container_metrics_name ON container_metrics(name);
-            CREATE INDEX IF NOT EXISTS idx_container_metrics_ts ON container_metrics(timestamp);
-            "#,
-        )
-        .execute(&pool)
-        .await?;
-
-        let columns = sqlx::query("PRAGMA table_info(container_metrics)")
-            .fetch_all(&pool)
-            .await?;
-        use sqlx::Row;
-        let has_application_id = columns
-            .iter()
-            .any(|row| row.get::<String, _>("name") == "application_id");
-        let has_compose_id = columns
-            .iter()
-            .any(|row| row.get::<String, _>("name") == "compose_id");
-        if !has_application_id {
-            sqlx::query("ALTER TABLE container_metrics ADD COLUMN application_id INTEGER")
-                .execute(&pool)
-                .await?;
-        }
-        if !has_compose_id {
-            sqlx::query("ALTER TABLE container_metrics ADD COLUMN compose_id INTEGER")
-                .execute(&pool)
-                .await?;
-        }
-
-        info!(url = db_url, "metric store initialized");
-        Ok(Self { pool })
+    pub async fn init(_database_url: &str) -> Result<Self, MonitorError> {
+        tracing::info!(
+            session_minutes = SESSION_WINDOW_MINUTES,
+            "in-memory metric session initialized"
+        );
+        Ok(Self::new())
     }
 
-    pub async fn save_server_metric(&self, m: &ServerMetric) -> Result<(), MonitorError> {
-        sqlx::query(
-            r#"
-            INSERT INTO server_metrics (
-                timestamp, cpu, cpu_model, cpu_cores, cpu_physical_cores, cpu_speed,
-                os, distro, kernel, arch, mem_used, mem_used_gb, mem_total, uptime,
-                disk_used, total_disk, network_in, network_out
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            "#,
-        )
-        .bind(&m.timestamp)
-        .bind(m.cpu)
-        .bind(&m.cpu_model)
-        .bind(m.cpu_cores)
-        .bind(m.cpu_physical_cores)
-        .bind(m.cpu_speed)
-        .bind(&m.os)
-        .bind(&m.distro)
-        .bind(&m.kernel)
-        .bind(&m.arch)
-        .bind(m.mem_used)
-        .bind(m.mem_used_gb)
-        .bind(m.mem_total)
-        .bind(m.uptime as i64)
-        .bind(m.disk_used)
-        .bind(m.total_disk)
-        .bind(m.network_in)
-        .bind(m.network_out)
-        .execute(&self.pool)
-        .await?;
+    pub fn new() -> Self {
+        Self {
+            server_metrics: RwLock::new(VecDeque::new()),
+            container_metrics: RwLock::new(VecDeque::new()),
+            sequence: AtomicI64::new(1),
+        }
+    }
+
+    pub async fn save_server_metric(&self, metric: &ServerMetric) -> Result<(), MonitorError> {
+        let mut metric = metric.clone();
+        metric.id = Some(self.next_id());
+        let mut rows = self.server_metrics.write().await;
+        rows.push_back(metric);
+        prune(&mut rows, |row| &row.timestamp);
         Ok(())
     }
 
@@ -181,79 +90,36 @@ impl Store {
         &self,
         limit: i64,
     ) -> Result<Vec<ServerMetric>, MonitorError> {
-        let rows = sqlx::query_as::<_, ServerMetric>(
-            r#"SELECT id, timestamp, cpu, cpu_model, cpu_cores, cpu_physical_cores, cpu_speed, os, distro, kernel, arch, mem_used, mem_used_gb, mem_total, uptime, disk_used, total_disk, network_in, network_out FROM server_metrics ORDER BY id DESC LIMIT ?"#
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
-        Ok(rows)
+        let mut rows = self.server_metrics.write().await;
+        prune(&mut rows, |row| &row.timestamp);
+        Ok(rows
+            .iter()
+            .rev()
+            .take(limit.max(0) as usize)
+            .cloned()
+            .collect())
     }
 
-    pub async fn save_container_metric(&self, m: &ContainerMetricRow) -> Result<(), MonitorError> {
-        sqlx::query(
-            r#"
-            INSERT INTO container_metrics (
-                timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb,
-                mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb,
-                application_id, compose_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            "#,
-        )
-        .bind(&m.timestamp)
-        .bind(&m.container_id)
-        .bind(&m.name)
-        .bind(m.cpu_perc)
-        .bind(m.mem_perc)
-        .bind(m.mem_used_mb)
-        .bind(m.mem_total_mb)
-        .bind(m.net_in_mb)
-        .bind(m.net_out_mb)
-        .bind(m.block_read_mb)
-        .bind(m.block_write_mb)
-        .bind(m.application_id)
-        .bind(m.compose_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+    #[allow(dead_code)]
+    pub async fn save_container_metric(
+        &self,
+        metric: &ContainerMetricRow,
+    ) -> Result<(), MonitorError> {
+        self.save_container_metrics_batch(std::slice::from_ref(metric))
+            .await
     }
 
     pub async fn save_container_metrics_batch(
         &self,
         metrics: &[ContainerMetricRow],
     ) -> Result<(), MonitorError> {
-        if metrics.is_empty() {
-            return Ok(());
+        let mut rows = self.container_metrics.write().await;
+        for metric in metrics {
+            let mut metric = metric.clone();
+            metric.id = Some(self.next_id());
+            rows.push_back(metric);
         }
-
-        let mut tx = self.pool.begin().await?;
-        for m in metrics {
-            sqlx::query(
-                r#"
-                INSERT INTO container_metrics (
-                    timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb,
-                    mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb,
-                    application_id, compose_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                "#,
-            )
-            .bind(&m.timestamp)
-            .bind(&m.container_id)
-            .bind(&m.name)
-            .bind(m.cpu_perc)
-            .bind(m.mem_perc)
-            .bind(m.mem_used_mb)
-            .bind(m.mem_total_mb)
-            .bind(m.net_in_mb)
-            .bind(m.net_out_mb)
-            .bind(m.block_read_mb)
-            .bind(m.block_write_mb)
-            .bind(m.application_id)
-            .bind(m.compose_id)
-            .execute(&mut *tx)
-            .await?;
-        }
-        tx.commit().await?;
+        prune(&mut rows, |row| &row.timestamp);
         Ok(())
     }
 
@@ -262,30 +128,82 @@ impl Store {
         app_name: &str,
         limit: i64,
     ) -> Result<Vec<ContainerMetricRow>, MonitorError> {
-        let rows = sqlx::query_as::<_, ContainerMetricRow>(
-            r#"SELECT id, timestamp, container_id, name, cpu_perc, mem_perc, mem_used_mb, mem_total_mb, net_in_mb, net_out_mb, block_read_mb, block_write_mb, application_id, compose_id FROM container_metrics WHERE name LIKE ? ORDER BY id DESC LIMIT ?"#
-        )
-        .bind(format!("%{}%", app_name))
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
-        Ok(rows)
+        let mut rows = self.container_metrics.write().await;
+        prune(&mut rows, |row| &row.timestamp);
+        Ok(rows
+            .iter()
+            .rev()
+            .filter(|row| row.name.contains(app_name))
+            .take(limit.max(0) as usize)
+            .cloned()
+            .collect())
     }
 
-    pub async fn cleanup_old_metrics(&self, retention_days: i64) -> Result<u64, MonitorError> {
-        let cutoff = chrono::Utc::now() - chrono::Duration::days(retention_days);
-        let cutoff_str = cutoff.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    pub async fn cleanup_old_metrics(&self, _retention_days: i64) -> Result<u64, MonitorError> {
+        let mut server = self.server_metrics.write().await;
+        let mut containers = self.container_metrics.write().await;
+        let before = server.len() + containers.len();
+        prune(&mut server, |row| &row.timestamp);
+        prune(&mut containers, |row| &row.timestamp);
+        Ok((before - server.len() - containers.len()) as u64)
+    }
 
-        let res1 = sqlx::query("DELETE FROM server_metrics WHERE timestamp < ?")
-            .bind(&cutoff_str)
-            .execute(&self.pool)
-            .await?;
+    fn next_id(&self) -> i64 {
+        self.sequence.fetch_add(1, Ordering::Relaxed)
+    }
+}
 
-        let res2 = sqlx::query("DELETE FROM container_metrics WHERE timestamp < ?")
-            .bind(&cutoff_str)
-            .execute(&self.pool)
-            .await?;
+fn prune<T>(rows: &mut VecDeque<T>, timestamp: impl Fn(&T) -> &str) {
+    let cutoff = Utc::now() - Duration::minutes(SESSION_WINDOW_MINUTES);
+    while rows
+        .front()
+        .is_some_and(|row| is_older(timestamp(row), cutoff))
+    {
+        rows.pop_front();
+    }
+}
 
-        Ok(res1.rows_affected() + res2.rows_affected())
+fn is_older(raw: &str, cutoff: DateTime<Utc>) -> bool {
+    DateTime::parse_from_rfc3339(raw)
+        .map(|value| value.with_timezone(&Utc) < cutoff)
+        .unwrap_or(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn old_rows_are_removed_from_the_session() {
+        let store = Store::new();
+        let old = ServerMetric {
+            id: None,
+            timestamp: (Utc::now() - Duration::minutes(6)).to_rfc3339(),
+            cpu: 0.0,
+            cpu_model: String::new(),
+            cpu_cores: 0,
+            cpu_physical_cores: 0,
+            cpu_speed: 0.0,
+            os: String::new(),
+            distro: String::new(),
+            kernel: String::new(),
+            arch: String::new(),
+            mem_used: 0.0,
+            mem_used_gb: 0.0,
+            mem_total: 0.0,
+            uptime: 0,
+            disk_used: 0.0,
+            total_disk: 0.0,
+            network_in: 0.0,
+            network_out: 0.0,
+        };
+        store.save_server_metric(&old).await.unwrap();
+        assert!(
+            store
+                .get_last_n_server_metrics(10)
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 }

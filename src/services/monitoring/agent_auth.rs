@@ -27,6 +27,18 @@ impl MonitoringAgentAuth {
         Ok(token)
     }
 
+    pub async fn register_token(
+        &self,
+        server_id: i64,
+        organization_id: i64,
+        token: &str,
+    ) -> Result<(), sqlx::Error> {
+        let hash = hash_token(token);
+        self.repo
+            .rotate(server_id, organization_id, token, &hash)
+            .await
+    }
+
     pub async fn server_belongs_to_organization(
         &self,
         server_id: i64,

@@ -16,11 +16,17 @@ struct Previous {
     at: Instant,
 }
 
+struct ContainerIdentity {
+    name: ContainerName,
+    application_id: Option<i64>,
+    compose_id: Option<i64>,
+}
+
 pub struct CgroupCollector {
     reader: CgroupReader,
     filter: ContainerFilter,
     previous: HashMap<ContainerId, Previous>,
-    names: HashMap<ContainerId, ContainerName>,
+    containers: HashMap<ContainerId, ContainerIdentity>,
 }
 
 impl CgroupCollector {
@@ -30,27 +36,37 @@ impl CgroupCollector {
             reader,
             filter,
             previous: HashMap::new(),
-            names: HashMap::new(),
+            containers: HashMap::new(),
         })
     }
 
     pub async fn refresh_containers(&mut self, docker: &DockerApi) -> Result<usize, MonitorError> {
         let summaries: Vec<ContainerSummary> = docker.get_json("/containers/json").await?;
 
-        let before = self.names.len();
-        self.names.clear();
+        let before = self.containers.len();
+        self.containers.clear();
 
         for summary in summaries {
             let name = summary.display_name();
             if !self.filter.should_monitor(name.as_str()) {
                 continue;
             }
-            self.names.insert(summary.id, name);
+            let application_id = label_id(&summary, "com.openoxide.application-id");
+            let compose_id = label_id(&summary, "com.openoxide.compose-id");
+            self.containers.insert(
+                summary.id,
+                ContainerIdentity {
+                    name,
+                    application_id,
+                    compose_id,
+                },
+            );
         }
 
-        self.previous.retain(|id, _| self.names.contains_key(id));
+        self.previous
+            .retain(|id, _| self.containers.contains_key(id));
 
-        let now = self.names.len();
+        let now = self.containers.len();
         if now != before {
             debug!(monitored = now, "container set changed");
         }
@@ -63,7 +79,7 @@ impl CgroupCollector {
         let timestamp = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
         let ids: Vec<String> = self
-            .names
+            .containers
             .keys()
             .map(|id| id.as_str().to_string())
             .collect();
@@ -73,8 +89,8 @@ impl CgroupCollector {
 
         for (id_str, sample) in samples {
             let id = ContainerId::new(&id_str);
-            let name = match self.names.get(&id) {
-                Some(name) => name.as_str().to_string(),
+            let identity = match self.containers.get(&id) {
+                Some(identity) => identity,
                 None => continue,
             };
 
@@ -95,7 +111,7 @@ impl CgroupCollector {
                 id: None,
                 timestamp: timestamp.clone(),
                 container_id: id.short().to_string(),
-                name,
+                name: identity.name.as_str().to_string(),
                 cpu_perc,
                 mem_perc,
                 mem_used_mb: bytes_to_mb(mem_used as f64),
@@ -104,8 +120,8 @@ impl CgroupCollector {
                 net_out_mb: 0.0,
                 block_read_mb: bytes_to_mb(sample.io_read_bytes as f64),
                 block_write_mb: bytes_to_mb(sample.io_write_bytes as f64),
-                application_id: None,
-                compose_id: None,
+                application_id: identity.application_id,
+                compose_id: identity.compose_id,
             });
 
             self.previous.insert(id, Previous { sample, at: now });
@@ -115,8 +131,12 @@ impl CgroupCollector {
     }
 
     pub fn monitored_count(&self) -> usize {
-        self.names.len()
+        self.containers.len()
     }
+}
+
+fn label_id(summary: &ContainerSummary, key: &str) -> Option<i64> {
+    summary.labels.get(key).and_then(|value| value.parse().ok())
 }
 
 fn cpu_percent(prev: &Previous, current: &CgroupSample, now: Instant) -> f64 {

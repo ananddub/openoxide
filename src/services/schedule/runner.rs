@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, Semaphore};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
-use super::schedule::ScheduleService;
+use super::schedule::{ScheduleService, volume_backup_has_valid_resource};
 
 const REFRESH_CRON: &str = "0/30 * * * * *";
 
@@ -134,7 +134,10 @@ impl ScheduleRunner {
             .get_all()
             .await
             .map_err(|error| format!("could not load volume backups: {error}"))?;
-        let vol_backups: Vec<_> = vol_backups.into_iter().filter(|b| b.enabled == 1).collect();
+        let vol_backups: Vec<_> = vol_backups
+            .into_iter()
+            .filter(|backup| backup.enabled == 1 && volume_backup_has_valid_resource(backup))
+            .collect();
         for b in &vol_backups {
             if let Some(id) = b.id {
                 enabled_keys.insert(format!("vol_backup:{id}"));
@@ -277,6 +280,17 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
+                    let enabled = service
+                        .repo_backup
+                        .get_by_id(backup_id)
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|backup| backup.enabled);
+                    if !backup_is_enabled(enabled) {
+                        tracing::debug!(backup_id, "skipping deleted or disabled database backup");
+                        return;
+                    }
                     if !in_flight.insert(key_str.clone()) {
                         tracing::warn!(
                             key_str,
@@ -372,6 +386,22 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
+                    let current = service
+                        .repo_volume_backup
+                        .get_by_id(backup_id)
+                        .await
+                        .ok()
+                        .flatten();
+                    if !current.as_ref().is_some_and(|backup| {
+                        backup_is_enabled(Some(backup.enabled))
+                            && volume_backup_has_valid_resource(backup)
+                    }) {
+                        tracing::debug!(
+                            backup_id,
+                            "skipping deleted, disabled, or orphaned volume backup"
+                        );
+                        return;
+                    }
                     if !in_flight.insert(key_str.clone()) {
                         tracing::warn!(
                             key_str,
@@ -452,12 +482,24 @@ impl ScheduleRunner {
 
 fn normalize_cron_expression(value: &str) -> String {
     let trimmed = value.trim();
-    if croner::Cron::new(trimmed).parse().is_ok() {
-        return trimmed.to_string();
-    }
-    let with_seconds = format!("0 {trimmed}");
-    if croner::Cron::new(&with_seconds).parse().is_ok() {
-        return with_seconds;
+    if trimmed.split_whitespace().count() == 5 {
+        return format!("0 {trimmed}");
     }
     trimmed.to_string()
+}
+
+fn backup_is_enabled(enabled: Option<i64>) -> bool {
+    enabled == Some(1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::backup_is_enabled;
+
+    #[test]
+    fn deleted_or_disabled_backup_is_skipped() {
+        assert!(!backup_is_enabled(None));
+        assert!(!backup_is_enabled(Some(0)));
+        assert!(backup_is_enabled(Some(1)));
+    }
 }

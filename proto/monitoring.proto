@@ -13,6 +13,13 @@ service MonitoringService {
   // Query historical container metrics
   rpc GetContainerMetrics (GetContainerMetricsRequest) returns (ContainerMetricsResponse);
 
+  // Current Docker lifecycle state, including stopped/restarting containers.
+  rpc GetContainerStates (GetMetricsRequest) returns (ContainerStatesResponse);
+
+  // Persistent lifecycle channel. The panel keeps the request stream open and
+  // the agent emits snapshots immediately when Docker state changes.
+  rpc WatchContainerStates (stream LifecycleControl) returns (stream ContainerStatesResponse);
+
   // Tail a container's recent logs
   rpc StreamLogs (LogStreamRequest) returns (stream LogChunk);
 }
@@ -88,3 +95,20 @@ message GetContainerMetricsRequest {
 message ContainerMetricsResponse {
   repeated ContainerMetricPoint metrics = 1;
 }
+
+message ContainerStatePoint {
+  string container_id = 1;
+  string name = 2;
+  string state = 3;
+  string status = 4;
+  int64 application_id = 5;
+  int64 compose_id = 6;
+  string compose_project = 7;
+  string compose_service = 8;
+}
+
+message ContainerStatesResponse {
+  repeated ContainerStatePoint containers = 1;
+}
+
+message LifecycleControl {}

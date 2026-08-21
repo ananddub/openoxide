@@ -1,5 +1,6 @@
 import {useMemo, useState, useEffect} from 'react';
 import {$api} from '#/api/query';
+import {formatApiError} from '#/api/utils';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {
@@ -408,6 +409,7 @@ export function ComposeArchitectureTab({
 		cronExpr: string;
 		prefix: string;
 		turnOff: boolean;
+		destinationId: number;
 	}) => {
 		try {
 			if (editingBackupData?.id) {
@@ -439,6 +441,7 @@ export function ComposeArchitectureTab({
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
 						compose_id: composeId,
+						destination_id: data.destinationId,
 					} as any,
 				});
 				toast.success(`Backup rule attached to ${data.serviceName}`);
@@ -446,8 +449,8 @@ export function ComposeArchitectureTab({
 			queryClient.invalidateQueries();
 			setActiveModal(null);
 			setEditingBackupData(null);
-		} catch (err: any) {
-			toast.error(err?.message || 'Failed to save volume backup');
+		} catch (error: unknown) {
+			toast.error(formatApiError(error));
 		}
 	};
 

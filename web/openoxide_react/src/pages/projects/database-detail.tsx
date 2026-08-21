@@ -24,17 +24,6 @@ export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
 	component: DatabaseDetailPage,
 });
 
-const TABS = [
-	'General',
-	'Architecture',
-	'Environment',
-	'Deployments',
-	'Backups',
-	'Logs',
-	'Monitoring',
-	'Advanced',
-] as const;
-
 function DatabaseDetailPage() {
 	const {id, dbId} = Route.useParams();
 	const search: {tab?: string; kind?: string} = Route.useSearch();
@@ -51,7 +40,6 @@ function DatabaseDetailPage() {
 		schedules,
 		backups,
 		deployments,
-		monitoring,
 		isLoading,
 		actionLoading,
 		isBuilding,
@@ -61,6 +49,27 @@ function DatabaseDetailPage() {
 		setActiveTab,
 		handleAction,
 	} = useDatabaseDetail(parsedDbId, targetKind);
+	const isRedis = (detectedKind || targetKind)?.toLowerCase() === 'redis';
+	const tabs: readonly string[] = isRedis
+		? [
+				'General',
+				'Architecture',
+				'Environment',
+				'Deployments',
+				'Logs',
+				'Monitoring',
+				'Advanced',
+			]
+		: [
+				'General',
+				'Architecture',
+				'Environment',
+				'Deployments',
+				'Backups',
+				'Logs',
+				'Monitoring',
+				'Advanced',
+			];
 
 	const patchDatabase = $api.useMutation('patch', '/postgres/{id}');
 
@@ -111,7 +120,7 @@ function DatabaseDetailPage() {
 				refetch={refetchAll}
 				onOpenDeleteDialog={() => setIsDeleteDialogOpen(true)}
 				onAction={handleAction}
-				tabs={TABS}
+				tabs={tabs}
 			/>
 
 			{/* Tab Views */}
@@ -128,6 +137,8 @@ function DatabaseDetailPage() {
 				{activeTab === 'Architecture' && (
 					<DatabaseArchitectureTab
 						database={database}
+						databaseId={parsedDbId}
+						databaseKind={detectedKind || targetKind || 'postgres'}
 						schedules={schedules}
 						backups={backups}
 						onRefresh={refetchAll}
@@ -146,8 +157,13 @@ function DatabaseDetailPage() {
 						onAction={handleAction}
 					/>
 				)}
-				{activeTab === 'Backups' && (
-					<ComposeBackupsTab compose={database} />
+				{activeTab === 'Backups' && !isRedis && (
+					<ComposeBackupsTab
+						compose={database}
+						backups={backups}
+						databaseId={parsedDbId}
+						databaseKind={detectedKind || targetKind || 'postgres'}
+					/>
 				)}
 				{activeTab === 'Logs' && <DatabaseLogsTab database={database} />}
 				{activeTab === 'Monitoring' && (
@@ -155,7 +171,6 @@ function DatabaseDetailPage() {
 						app={database}
 						appId={parsedDbId}
 						entityType="database"
-						monitoring={monitoring}
 					/>
 				)}
 				{activeTab === 'Advanced' && (

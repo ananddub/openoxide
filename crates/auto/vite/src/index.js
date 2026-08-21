@@ -263,6 +263,10 @@ async function refetch(metadata, args, organizationId) {
 function createLiveHook(metadata) {
   return (...args) => {
     const key = safeStringify(args);
+    const disabled = (metadata.arguments ?? []).some((argument, index) =>
+      argument.kind === 'path' && argument.names.length === 1 &&
+      (args[index] === 0n || args[index] === 0 || args[index] === '0')
+    );
     const [organizationId, setOrganizationId] = useState(activeOrganizationId);
     const fullKey = \`\${organizationId ?? 'default'}:\${metadata.namespace}:\${metadata.endpoint}:\${key}\`;
     const endpoint = useMemo(() => ({...metadata, args}), [key]);
@@ -285,6 +289,12 @@ function createLiveHook(metadata) {
     }, []);
 
     useEffect(() => {
+      if (disabled) {
+        setDataState(undefined);
+        setError(undefined);
+        setConnected(false);
+        return;
+      }
       const cached = liveCache.get(fullKey);
       setDataState(cached);
       setError(liveErrors.get(fullKey));
@@ -430,7 +440,7 @@ function createLiveHook(metadata) {
         }
         socket.off('socket:ready', ready); socket.off('disconnect', disconnect); socket.off('live:subscribed', subscribed); socket.off('live:update', update); socket.off('live:invalidate', invalidate);
       };
-    }, [endpoint, key, fullKey, organizationId]);
+    }, [endpoint, key, fullKey, organizationId, disabled]);
     return {data, connected, loading: data === undefined && !error, error, setData};
   };
 }

@@ -3,7 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: openoxide:latest
+    image: ${OPENOXIDE_IMAGE:-dubeyanand/openoxide}:${OPENOXIDE_TAG:-latest}
+    pull_policy: always
     container_name: openoxide
     restart: unless-stopped
 
@@ -44,6 +45,10 @@ services:
       # Shared secret between panel and monitoring agents.
       # Empty string disables agent ingestion entirely.
       METRICS_TOKEN: "change_me_metrics_token"
+      # Server row used by the local monitor. Keep this aligned with the
+      # SERVER_ID configured in docker-compose.monitor.yml.
+      OPENOXIDE_LOCAL_SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-0}"
+      OPENOXIDE_SERVER_URL: "http://openoxide:4000"
 
       # ── Public URLs ────────────────────────────────────────────────────────
       # Used in password-reset / email-verification links sent to users.
@@ -64,6 +69,9 @@ services:
       # ── Logging ───────────────────────────────────────────────────────────
       RUST_LOG: "openoxide=info"
 
+    networks:
+      - openoxide-network
+
     # Give the panel enough room; tune down if the host is constrained.
     deploy:
       resources:
@@ -72,3 +80,7 @@ services:
 
 volumes:
   openoxide_data:
+
+networks:
+  openoxide-network:
+    external: true

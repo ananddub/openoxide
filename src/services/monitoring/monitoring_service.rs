@@ -44,7 +44,13 @@ impl MonitoringService {
             .await
             .map_err(|_| format!("monitoring server {server_id} not found"))?;
         let host = match server.ip_address.as_str() {
-            "" | "0.0.0.0" | "localhost" => "127.0.0.1",
+            "" | "0.0.0.0" | "localhost" | "127.0.0.1" => {
+                if std::path::Path::new("/.dockerenv").exists() {
+                    "openoxide-monitor"
+                } else {
+                    "127.0.0.1"
+                }
+            }
             other => other,
         };
         proto::monitoring_service_client::MonitoringServiceClient::connect(format!(
@@ -168,6 +174,85 @@ impl MonitoringService {
                 compose_id: (metric.compose_id > 0).then_some(metric.compose_id),
             })
             .collect())
+    }
+
+    pub async fn container_states(
+        &self,
+        server_id: i64,
+    ) -> Result<Vec<proto::ContainerStatePoint>, String> {
+        let mut client = self.client(server_id).await?;
+        let request = self
+            .authenticated(
+                server_id,
+                proto::GetMetricsRequest {
+                    server_id,
+                    limit: 0,
+                },
+            )
+            .await?;
+        let states = client
+            .get_container_states(request)
+            .await
+            .map_err(|error| format!("agent container state query failed: {error}"))?
+            .into_inner()
+            .containers;
+        let _ = self.agent_auth.touch_seen(server_id).await;
+        Ok(states)
+    }
+
+    pub async fn watch_container_states(
+        &self,
+        server_id: i64,
+    ) -> Result<tonic::Streaming<proto::ContainerStatesResponse>, String> {
+        let mut client = self.client(server_id).await?;
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        tx.send(proto::LifecycleControl {})
+            .await
+            .map_err(|_| "could not initialize lifecycle channel".to_string())?;
+        tokio::spawn(async move {
+            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(10));
+            loop {
+                ticker.tick().await;
+                if tx.send(proto::LifecycleControl {}).await.is_err() {
+                    break;
+                }
+            }
+        });
+        let request = self
+            .authenticated(server_id, tokio_stream::wrappers::ReceiverStream::new(rx))
+            .await?;
+        client
+            .watch_container_states(request)
+            .await
+            .map(|response| response.into_inner())
+            .map_err(|error| format!("agent lifecycle stream failed: {error}"))
+    }
+
+    pub async fn server_ids(&self) -> Result<Vec<i64>, String> {
+        self.server_service
+            .list()
+            .await
+            .map(|servers| servers.into_iter().filter_map(|server| server.id).collect())
+            .map_err(|error| error.to_string())
+    }
+
+    pub async fn remote_server_ids(&self) -> Result<Vec<i64>, String> {
+        self.server_service
+            .list()
+            .await
+            .map(|servers| {
+                servers
+                    .into_iter()
+                    .filter(|server| {
+                        !matches!(
+                            server.ip_address.as_str(),
+                            "" | "0.0.0.0" | "localhost" | "127.0.0.1" | "openoxide-monitor"
+                        )
+                    })
+                    .filter_map(|server| server.id)
+                    .collect()
+            })
+            .map_err(|error| error.to_string())
     }
 
     pub async fn get_latest_metrics_per_server(&self) -> Result<Vec<ServerMetric>, String> {

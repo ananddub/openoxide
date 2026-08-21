@@ -39,6 +39,11 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
         .await
         .expect("Failed to run database migrations");
 
+    // Keep older runtime databases repairable even when a container was built
+    // from a stale migration cache. This is idempotent and only runs while the
+    // legacy UNIQUE(app_name) constraint is still present.
+    repair_volume_backup_schema(&pool).await;
+
     // Performance Indexes for instant JWT auth check and fast query lookups
     let indexes = [
         "CREATE INDEX IF NOT EXISTS idx_jwt_tokens_jti ON jwt_tokens(jti);",
@@ -53,6 +58,33 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
 
     tracing::info!("Database connection established in WAL mode with indexes optimized.");
     pool
+}
+
+async fn repair_volume_backup_schema(pool: &SqlitePool) {
+    let Ok(schema) = sqlx::query_scalar::<_, String>(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'volume_backups'",
+    )
+    .fetch_optional(pool)
+    .await
+    else {
+        return;
+    };
+
+    if !schema
+        .as_deref()
+        .is_some_and(|value| value.contains("app_name TEXT NOT NULL UNIQUE"))
+    {
+        return;
+    }
+
+    if let Err(error) = sqlx::raw_sql(include_str!(
+        "../../../db/migrations/0048_volume_backup_rules.sql"
+    ))
+    .execute(pool)
+    .await
+    {
+        tracing::error!(%error, "failed to repair legacy volume backup uniqueness constraint");
+    }
 }
 
 async fn persist_failed_restore(error: &str) {

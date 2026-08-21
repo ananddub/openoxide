@@ -4,9 +4,7 @@ use crate::{
         repository::{AlertRuleRepository, MonitoringLifecycleRepository},
     },
     services::{
-        alert::{
-            AlertEngine, AlertEventState, MetricSample, ParsedRule, TargetKind, TargetReading,
-        },
+        alert::{AlertEngine, MetricSample, ParsedRule, TargetKind, TargetReading},
         monitoring::monitoring_service::MonitoringService,
         notification::{NotificationScope, NotificationService, NotificationTrigger},
     },
@@ -177,18 +175,6 @@ impl AlertService {
                     NotificationScope::Organization(alert.organization_id),
                     NotificationTrigger::ServerThreshold,
                     &alert.to_message(),
-                )
-                .await;
-            let _ = self
-                .repo
-                .record_event(
-                    alert.rule_id,
-                    alert.organization_id,
-                    &alert.target_key,
-                    AlertEventState::Firing,
-                    Some(alert.value),
-                    Some(alert.threshold),
-                    &alert.to_message().body,
                 )
                 .await;
         }

@@ -5,6 +5,18 @@ import {getActiveOrganizationId} from '#/stores/organization-context';
 
 const AUTH_STORAGE_KEY = 'openoxide-auth-session';
 
+export function getAccessToken(): string {
+	if (typeof localStorage === 'undefined') return '';
+	try {
+		const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+		if (!raw || raw === 'undefined') return '';
+		const session = JSON.parse(raw);
+		return session?.tokens?.access_token || '';
+	} catch {
+		return '';
+	}
+}
+
 export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 	if (import.meta.env.DEV) return '/api';
@@ -162,17 +174,7 @@ export async function authFetch(
 	options: RequestInit = {},
 ): Promise<Response> {
 	const baseUrl = getApiBaseUrl();
-	const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
-	let token = '';
-	if (sessionRaw) {
-		try {
-			const parsed = JSON.parse(sessionRaw);
-			token = parsed.state?.accessToken || parsed.accessToken || '';
-		} catch {}
-	}
-	if (!token) {
-		token = useAuthStore.getState().accessToken || '';
-	}
+	const token = getAccessToken();
 
 	const headers = new Headers(options.headers || {});
 	if (token && !headers.has('Authorization')) {

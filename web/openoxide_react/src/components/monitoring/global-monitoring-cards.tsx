@@ -1,11 +1,6 @@
 import {useState, useEffect, useMemo} from 'react';
 import {
-	Cpu,
-	HardDrive,
-	Database,
-	Disc,
-	Network,
-	Layers,
+	Server,
 } from 'lucide-react';
 import {
 	Card,
@@ -13,11 +8,17 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {Progress} from '#/components/ui/progress';
 import {$api} from '#/api/query';
-import {useDeploymentRunning} from 'virtual:openoxide-live';
+import {useMonitoringContainerStates} from 'virtual:openoxide-live';
 import {useAppStore} from '#/stores/app-store';
-import {useAuthStore} from '#/stores/auth-store';
+import {getAccessToken, refreshAccessToken} from '#/api/client';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -39,15 +40,6 @@ function parseBytes(str?: string): number {
 	if (unit.startsWith('G')) return val * 1024 * 1024 * 1024;
 	if (unit.startsWith('T')) return val * 1024 * 1024 * 1024 * 1024;
 	return val;
-}
-
-function formatBytes(bytes: number): string {
-	if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
-	if (bytes < 1024) return `${bytes.toFixed(0)} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024)
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 type DockerStat = Record<string, unknown>;
@@ -110,25 +102,6 @@ function extractDockerStats(payload: unknown): DockerStat[] {
 	}
 
 	return [];
-}
-
-function getAccessToken(): string {
-	try {
-		const storeState = useAuthStore.getState();
-		if (storeState.tokens?.access_token)
-			return storeState.tokens.access_token;
-
-		const sessionRaw = localStorage.getItem('openoxide-auth-session');
-		if (sessionRaw) {
-			const session = JSON.parse(sessionRaw);
-			return (
-				session?.state?.tokens?.access_token ||
-				session?.tokens?.access_token ||
-				''
-			);
-		}
-	} catch {}
-	return '';
 }
 
 function getSmoothPath(coords: Array<{x: number; y: number}>): string {
@@ -481,287 +454,92 @@ function GlobalDualChart({
 	);
 }
 
-function GlobalDockerDiskDonutChart({
-	totalStr = '5.45 GB',
-	containersStr = '5.45 GB',
-	imagesStr = '0 MB',
-	volumesStr = '0 MB',
-}: {
-	totalStr?: string;
-	containersStr?: string;
-	imagesStr?: string;
-	volumesStr?: string;
-}) {
-	const cVal = parseBytes(containersStr) || 1;
-	const iVal = parseBytes(imagesStr) || 0;
-	const vVal = parseBytes(volumesStr) || 0;
-	const totalVal = cVal + iVal + vVal || 1;
-
-	const cPercent = cVal / totalVal;
-	const iPercent = iVal / totalVal;
-	const vPercent = vVal / totalVal;
-
-	const radius = 45;
-	const circumference = 2 * Math.PI * radius;
-
-	const cStroke = cPercent * circumference;
-	const iStroke = iPercent * circumference;
-	const vStroke = vPercent * circumference;
-
-	const cOffset = 0;
-	const iOffset = -cStroke;
-	const vOffset = -(cStroke + iStroke);
-
-	return (
-		<div className="flex w-full flex-col items-center justify-center gap-3 py-1">
-			<div className="relative flex size-36 items-center justify-center">
-				<svg
-					viewBox="0 0 120 120"
-					className="size-full -rotate-90 overflow-visible">
-					<circle
-						cx="60"
-						cy="60"
-						r={radius}
-						fill="transparent"
-						stroke="currentColor"
-						strokeWidth="14"
-						className="text-secondary/40"
-					/>
-					{cPercent > 0 && (
-						<circle
-							cx="60"
-							cy="60"
-							r={radius}
-							fill="transparent"
-							stroke="#3b82f6"
-							strokeWidth="14"
-							strokeDasharray={`${cStroke} ${circumference - cStroke}`}
-							strokeDashoffset={cOffset}
-							className="transition-all duration-700 ease-in-out"
-						/>
-					)}
-					{iPercent > 0 && (
-						<circle
-							cx="60"
-							cy="60"
-							r={radius}
-							fill="transparent"
-							stroke="#10b981"
-							strokeWidth="14"
-							strokeDasharray={`${iStroke} ${circumference - iStroke}`}
-							strokeDashoffset={iOffset}
-							className="transition-all duration-700 ease-in-out"
-						/>
-					)}
-					{vPercent > 0 && (
-						<circle
-							cx="60"
-							cy="60"
-							r={radius}
-							fill="transparent"
-							stroke="#a855f7"
-							strokeWidth="14"
-							strokeDasharray={`${vStroke} ${circumference - vStroke}`}
-							strokeDashoffset={vOffset}
-							className="transition-all duration-700 ease-in-out"
-						/>
-					)}
-				</svg>
-
-				<div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-					<span className="font-mono text-sm leading-none font-extrabold text-foreground">
-						{totalStr}
-					</span>
-					<span className="mt-1 text-[10px] font-medium text-muted-foreground">
-						Docker Usage
-					</span>
-				</div>
-			</div>
-
-			<div className="flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-xs bg-blue-500" />
-					<span>Containers ({containersStr})</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-xs bg-emerald-500" />
-					<span>Images ({imagesStr})</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-xs bg-purple-500" />
-					<span>Volumes ({volumesStr})</span>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GlobalMonitoringCards() {
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
+	// `0` was only a UI placeholder. Passing it to the monitoring endpoint made
+	// the local agent query an invalid server and left the dashboard stale.
+	const LOCAL_SERVER_ID = 0;
+	const servers = useAppStore(state => state.servers || []);
+	const [selectedServerId, setSelectedServerId] = useState<number | null>(null);
+	const serverLabel = (server: any) => {
+		const isLocal =
+			String(server.server_type || server.type || '').toLowerCase() === 'local' ||
+			server.ip === '127.0.0.1' ||
+			server.ip_address === '127.0.0.1';
+		if (isLocal || Number(server.id) === LOCAL_SERVER_ID && !server.name)
+			return 'Localhost (Main server)';
+		return server.name || server.hostname || server.app_name || `Server ${server.id}`;
+	};
+	const localServer = servers.find((server: any) => {
+		const address = String(server.ip || server.ip_address || '').toLowerCase();
+		return address === '127.0.0.1' || address === 'localhost' || address === 'openoxide-monitor' || server.app_name === 'localhost';
+	});
+	const localServerId = Number(localServer?.id || 0);
+	const effectiveServerId = selectedServerId ?? localServerId;
+	const selectedServer = servers.find(
+		(server: any) => Number(server.id) === effectiveServerId,
 	);
+	const selectedServerName = selectedServer
+		? serverLabel(selectedServer)
+		: effectiveServerId === localServerId
+			? 'Localhost (Main server)'
+			: `Server ${effectiveServerId}`;
+	useEffect(() => {
+		if (selectedServerId !== null && !servers.some((server: any) => Number(server.id) === selectedServerId)) {
+			setSelectedServerId(null);
+		}
+	}, [servers, selectedServerId]);
 	const {data: rawDockerContainers = []} = $api.useQuery(
 		'get',
 		'/deployments/docker/containers',
-		{params: {query: {server_id: undefined} as any}},
+		{params: {query: {server_id: effectiveServerId || undefined} as any}},
 	);
 
-	const {data: rawDiskUsage} = $api.useQuery(
-		'get',
-		'/deployments/docker/disk-usage',
-		{params: {query: {server_id: undefined} as any}},
+
+	const {data: rawContainerStates} = useMonitoringContainerStates(
+		BigInt(effectiveServerId),
 	);
-
-	const {data: rawServerMetrics} = $api.useQuery(
-		'get',
-		'/monitoring/server/{id}',
-		{params: {path: {id: 1} as any}},
-	);
-
-	const {data: rawRunning} = useDeploymentRunning({
-		status: null,
-		state: null,
-		application_id: null,
-		compose_id: null,
-		database_id: null,
-		server_id: null,
-		limit: 50n,
-		offset: null,
-	});
-
-	const diskUsageFormatted = useMemo(() => {
-		if (!rawDiskUsage) {
-			return {
-				containersStr: '0 B',
-				imagesStr: '0 B',
-				volumesStr: '0 B',
-				totalStr: '0 B',
-				totalBytes: 0,
-				cBytes: 0,
-				iBytes: 0,
-				vBytes: 0,
-			};
-		}
-
-		let items: any[] = [];
-		if (Array.isArray(rawDiskUsage)) {
-			items = rawDiskUsage;
-		} else if (typeof rawDiskUsage === 'object') {
-			const obj = rawDiskUsage as Record<string, any>;
-			if (
-				Array.isArray(obj.Containers) ||
-				Array.isArray(obj.Images) ||
-				Array.isArray(obj.Volumes)
-			) {
-				const cArr = Array.isArray(obj.Containers) ? obj.Containers : [];
-				const iArr = Array.isArray(obj.Images) ? obj.Images : [];
-				const vArr = Array.isArray(obj.Volumes) ? obj.Volumes : [];
-				items = [
-					...cArr.map((x: any) => ({
-						Type: 'Containers',
-						Size: x.Size || x.size || x.sizeBytes,
-					})),
-					...iArr.map((x: any) => ({
-						Type: 'Images',
-						Size: x.Size || x.size || x.sizeBytes,
-					})),
-					...vArr.map((x: any) => ({
-						Type: 'Volumes',
-						Size: x.Size || x.size || x.sizeBytes,
-					})),
-				];
-			} else if (Array.isArray(obj.items)) {
-				items = obj.items;
-			}
-		}
-
-		let cBytes = 0,
-			iBytes = 0,
-			vBytes = 0,
-			bBytes = 0;
-
-		for (const item of items) {
-			if (!item) continue;
-			const typeStr = String(
-				item.Type || item.type || item.name || '',
-			).toLowerCase();
-			const sizeStr =
-				item.Size !== undefined
-					? item.Size
-					: item.size !== undefined
-						? item.size
-						: item.sizeBytes;
-			const bytes =
-				typeof sizeStr === 'number'
-					? sizeStr
-					: parseBytes(String(sizeStr || 0));
-
-			if (typeStr.includes('container')) cBytes += bytes;
-			else if (typeStr.includes('image')) iBytes += bytes;
-			else if (typeStr.includes('volume')) vBytes += bytes;
-			else if (typeStr.includes('cache') || typeStr.includes('build'))
-				bBytes += bytes;
-		}
-
-		const totalBytes = cBytes + iBytes + vBytes + bBytes;
-
-		const formatBytes = (bytes: number) => {
-			if (!bytes || isNaN(bytes) || bytes <= 0) return '0 B';
-			if (bytes >= 1024 ** 3)
-				return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
-			if (bytes >= 1024 ** 2)
-				return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
-			if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-			return `${bytes} B`;
-		};
-
-		return {
-			containersStr: formatBytes(cBytes),
-			imagesStr: formatBytes(iBytes),
-			volumesStr: formatBytes(vBytes),
-			totalStr: formatBytes(totalBytes),
-			totalBytes,
-			cBytes,
-			iBytes,
-			vBytes,
-		};
-	}, [rawDiskUsage]);
-
-	const hostDiskSpace = useMemo(() => {
-		if (Array.isArray(rawServerMetrics) && rawServerMetrics.length > 0) {
-			const m = rawServerMetrics[rawServerMetrics.length - 1] as any;
-			if (m && m.total_disk > 0) {
-				return {
-					diskUsedGB: (m.disk_used || 0) / 1024 ** 3,
-					diskTotalGB: (m.total_disk || 0) / 1024 ** 3,
-				};
-			}
-		}
-		return null;
-	}, [rawServerMetrics]);
 
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);
+	const [streamState, setStreamState] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
 	// SSE live stream
 	useEffect(() => {
 		const DISABLE_METRICS = false;
 		if (DISABLE_METRICS) return;
-		const token = getAccessToken();
 		let isMounted = true;
-		const controller = new AbortController();
+		let controller: AbortController | null = null;
+		let retryTimer: ReturnType<typeof setTimeout> | undefined;
+		let retryDelay = 2000;
 
 		const run = async () => {
+			if (!isMounted) return;
+			setStreamState('connecting');
+			controller = new AbortController();
 			try {
+				let token = getAccessToken();
+				if (!token) token = (await refreshAccessToken()) || '';
+				const statsUrl = effectiveServerId
+					? `/api/deployments/docker/stats?stream=true&server_id=${effectiveServerId}`
+					: '/api/deployments/docker/stats?stream=true';
 				const res = await fetch(
-					'/api/deployments/docker/stats?stream=true',
+					statsUrl,
 					{
 						headers: {Authorization: token ? `Bearer ${token}` : ''},
 						signal: controller.signal,
 					},
 				);
-				if (!res.ok || !res.body) return;
+				if (res.status === 401) {
+					const refreshed = await refreshAccessToken();
+					if (refreshed) {
+						controller.abort();
+						throw new Error('retry metrics stream with refreshed token');
+					}
+				}
+				if (!res.ok || !res.body) throw new Error(`metrics stream returned ${res.status}`);
+				setStreamState('connected');
+				retryDelay = 2000;
 
 				const reader = res.body.getReader();
 				const dec = new TextDecoder();
@@ -884,15 +662,22 @@ export function GlobalMonitoringCards() {
 						} catch {}
 					}
 				}
-			} catch {}
+				if (isMounted) throw new Error('metrics stream closed');
+			} catch {
+				if (!isMounted) return;
+				setStreamState('disconnected');
+				retryTimer = setTimeout(run, retryDelay);
+				retryDelay = Math.min(retryDelay * 2, 15000);
+			}
 		};
 
 		run();
 		return () => {
 			isMounted = false;
-			controller.abort();
+			if (retryTimer) clearTimeout(retryTimer);
+			controller?.abort();
 		};
-	}, []);
+	}, [effectiveServerId]);
 
 	const [history, setHistory] = useState<
 		Array<{
@@ -910,31 +695,34 @@ export function GlobalMonitoringCards() {
 		}>
 	>([]);
 
+	useEffect(() => {
+		setHistory([]);
+		setContainersList([]);
+	}, [effectiveServerId]);
+
 	// ─── Aggregate metrics ────────────────────────────────────────────────────
 	const dockerContainersArray = Array.isArray(rawDockerContainers)
 		? rawDockerContainers
 		: [];
-	const runningArray = Array.isArray(rawRunning) ? rawRunning : [];
-	const activeContainersCount = Math.max(
-		dockerContainersArray.length,
-		runningArray.length,
-		containersList.length,
-	);
+	const containerStates = Array.isArray(rawContainerStates)
+		? rawContainerStates as Array<Record<string, unknown>>
+		: [];
+	const runningStatesCount = containerStates.filter(container =>
+		String(container.state || '').toLowerCase() === 'running',
+	).length;
+	const localRunningCount = dockerContainersArray.filter((container: any) => {
+		const state = String(container?.state || container?.State || '').toLowerCase();
+		return state === 'running' || state === 'up';
+	}).length;
+	const activeContainersCount = effectiveServerId === localServerId
+		? (containerStates.length > 0 ? runningStatesCount : localRunningCount)
+		: Math.max(runningStatesCount, containersList.length);
 
 	const last = history[history.length - 1];
 	const latestCpu = last?.cpu || 0;
 	const latestMemUsed = last?.memUsedGB || 0;
 	const rawMemLimit = last?.memLimitGB || 1;
 	const latestMemLimit = Math.max(rawMemLimit, latestMemUsed, 0.1);
-
-	const latestDiskUsed =
-		hostDiskSpace?.diskUsedGB ||
-		last?.diskUsedGB ||
-		diskUsageFormatted.totalBytes / 1024 ** 3;
-	const latestDiskTotal =
-		hostDiskSpace?.diskTotalGB ||
-		last?.diskTotalGB ||
-		Math.max(latestDiskUsed * 1.5, 1);
 
 	const latestBlockR = last?.blockReadMB || 0;
 	const latestBlockW = last?.blockWriteMB || 0;
@@ -948,10 +736,42 @@ export function GlobalMonitoringCards() {
 
 	return (
 		<div className="flex flex-col gap-6">
+			<div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-xs">
+				<div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+					<Server className="size-4 text-muted-foreground" />
+					<span>Monitoring Server</span>
+				</div>
+				<Select
+					value={String(effectiveServerId)}
+					onValueChange={value => setSelectedServerId(Number(value))}>
+					<SelectTrigger className="w-full max-w-xs">
+						<SelectValue placeholder="Select server">
+							{selectedServerName}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						{localServerId === 0 && (
+							<SelectItem value={String(LOCAL_SERVER_ID)}>
+								Localhost (Main server)
+							</SelectItem>
+						)}
+						{servers.map((server: any) => (
+							<SelectItem key={server.id} value={String(server.id)}>
+								{serverLabel(server)}
+								{(server.ip || server.ip_address) &&
+									!['127.0.0.1', 'localhost'].includes(
+										String(server.ip || server.ip_address).toLowerCase(),
+									) &&
+									` (${server.ip || server.ip_address})`}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
 			{/* Header bar */}
 			<div className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-xs">
 				<div className="flex items-center gap-2.5">
-					<div className="size-2.5 animate-pulse rounded-full bg-emerald-500" />
+					<div className={`size-2.5 rounded-full ${streamState === 'connected' ? 'animate-pulse bg-emerald-500' : streamState === 'connecting' ? 'animate-pulse bg-amber-500' : 'bg-rose-500'}`} />
 					<span className="text-xs font-semibold text-foreground">
 						Docker Telemetry Engine
 					</span>
@@ -960,7 +780,7 @@ export function GlobalMonitoringCards() {
 					</span>
 				</div>
 				<span className="font-mono text-xs text-muted-foreground">
-					Realtime Monitoring
+					{streamState === 'connected' ? 'Realtime Monitoring' : streamState === 'connecting' ? 'Connecting...' : 'Reconnecting...'}
 				</span>
 			</div>
 
@@ -1028,66 +848,7 @@ export function GlobalMonitoringCards() {
 					</CardContent>
 				</Card>
 
-				{/* 3. Disk Space */}
-				<Card className="border-border bg-card shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">
-							Disk Space
-						</CardTitle>
-						<span className="font-mono text-xs text-muted-foreground">
-							Used:{' '}
-							<span className="font-bold text-foreground">
-								{formatGB(latestDiskUsed)}
-							</span>{' '}
-							/ Limit:{' '}
-							<span className="font-bold text-foreground">
-								{formatGB(latestDiskTotal)}
-							</span>
-						</span>
-					</CardHeader>
-					<CardContent className="pt-2">
-						<GlobalAreaChart
-							gradientId="dok-g-disk"
-							colorHex="#a855f7"
-							data={history}
-							dataKey="diskUsedGB"
-							maxVal={latestDiskTotal}
-							yTicks={[
-								'0 GB',
-								formatGB(latestDiskTotal * 0.25),
-								formatGB(latestDiskTotal * 0.5),
-								formatGB(latestDiskTotal * 0.75),
-								formatGB(latestDiskTotal),
-							]}
-							legendLabel="Disk Space"
-						/>
-					</CardContent>
-				</Card>
-
-				{/* 4. Docker Disk Usage */}
-				<Card className="flex flex-col justify-between border-border bg-card shadow-xs">
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="text-sm font-bold text-foreground">
-							Docker Disk Usage
-						</CardTitle>
-						<span className="font-mono text-xs text-muted-foreground">
-							Total:{' '}
-							<span className="font-bold text-foreground">
-								{diskUsageFormatted.totalStr}
-							</span>
-						</span>
-					</CardHeader>
-					<CardContent className="pt-2">
-						<GlobalDockerDiskDonutChart
-							totalStr={diskUsageFormatted.totalStr}
-							containersStr={diskUsageFormatted.containersStr}
-							imagesStr={diskUsageFormatted.imagesStr}
-							volumesStr={diskUsageFormatted.volumesStr}
-						/>
-					</CardContent>
-				</Card>
-
-				{/* 5. Block I/O */}
+				{/* 3. Block I/O */}
 				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">
@@ -1119,7 +880,7 @@ export function GlobalMonitoringCards() {
 					</CardContent>
 				</Card>
 
-				{/* 6. Network I/O */}
+				{/* 5. Network I/O */}
 				<Card className="border-border bg-card shadow-xs">
 					<CardHeader className="flex flex-row items-center justify-between pb-2">
 						<CardTitle className="text-sm font-bold text-foreground">

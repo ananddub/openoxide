@@ -51,11 +51,7 @@ export function CreateDestinationModal({
 
 	const createMutation = $api.useMutation('post', '/destinations');
 	const updateMutation = $api.useMutation('patch', '/destinations/{id}');
-	const testMutation = $api.useMutation('post', '/destinations/{id}/test');
-	const testRawMutation = $api.useMutation(
-		'post',
-		'/destinations/test-raw',
-	);
+	const testMutation = $api.useMutation('post', '/destinations/test');
 
 	const matchProvider = (raw?: string) => {
 		if (!raw) return 'aws';
@@ -94,7 +90,7 @@ export function CreateDestinationModal({
 	useEffect(() => {
 		if (editingDestination) {
 			setName(editingDestination.name || '');
-			setProvider(matchProvider(editingDestination.provider));
+			setProvider(matchProvider(editingDestination.provider?.toLocaleLowerCase()));
 			setBucket(editingDestination.bucket || '');
 			setRegion(editingDestination.region || 'us-east-1');
 			setEndpoint(editingDestination.endpoint || '');
@@ -127,43 +123,31 @@ export function CreateDestinationModal({
 		}
 		setTestStatus('testing');
 		try {
-			if (editingDestination?.id && !secretKey) {
-				await testMutation.mutateAsync({
-					params: {path: {id: String(editingDestination.id)}},
-					parseAs: 'text',
-				} as any);
-			} else {
-				if (!secretKey) {
-					toast.error('Secret Access Key is required to test connection');
-					setTestStatus('idle');
-					return;
-				}
-				await testRawMutation.mutateAsync({
-					body: {
-						provider: provider || 'aws',
-						bucket,
-						region: region || 'us-east-1',
-						endpoint: endpoint || '',
-						access_key: accessKey,
-						secret_access_key: secretKey,
-					} as any,
-					parseAs: 'text',
-				} as any);
+			if (!secretKey) {
+				toast.error('Secret Access Key is required to test connection');
+				setTestStatus('idle');
+				return;
 			}
+			await Promise.race([
+				testMutation.mutateAsync({
+				body: {
+					provider: provider || 'aws',
+					bucket,
+					region: region || 'us-east-1',
+					endpoint: endpoint || '',
+					access_key: accessKey,
+					secret_access_key: secretKey,
+				},
+				parseAs: 'text',
+				} as any),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error('S3 connection test timed out')), 15_000),
+				),
+			]);
 			setTestStatus('success');
 			toast.success('S3 Storage Destination connection test passed!');
 			setTimeout(() => setTestStatus('idle'), 3000);
 		} catch (err: unknown) {
-			const msg = String((err as any)?.message || err || '');
-			if (
-				msg.toLowerCase().includes('json') ||
-				msg.toLowerCase().includes('unexpected end')
-			) {
-				setTestStatus('success');
-				toast.success('S3 Storage Destination connection test passed!');
-				setTimeout(() => setTestStatus('idle'), 3000);
-				return;
-			}
 			setTestStatus('failed');
 			toast.error(formatApiError(err));
 			setTimeout(() => setTestStatus('idle'), 3000);

@@ -120,6 +120,14 @@ impl ProjectController {
     ) -> Result<StatusCode, ApiError> {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
 
+        // Project deletion cascades through environments/resources and removes
+        // their schedules and backups. Remove those jobs from memory now.
+        if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+            if let Err(error) = runner.refresh_jobs().await {
+                tracing::error!(%error, "could not refresh scheduler after project deletion");
+            }
+        }
+
         self.cache.invalidate_all().await;
         Ok(StatusCode::NO_CONTENT)
     }

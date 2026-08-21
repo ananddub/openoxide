@@ -18,8 +18,8 @@ function MonitoringPage() {
 						Monitoring
 					</h1>
 					<p className="mt-1 text-xs text-muted-foreground">
-						Real-time telemetry overview for CPU, Memory, Disk Space,
-						Docker Disk Usage, Block I/O, and Network I/O.
+						Real-time telemetry overview for CPU, Memory, Block I/O,
+						and Network I/O.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

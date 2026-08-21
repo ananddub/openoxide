@@ -332,6 +332,7 @@ impl ServerSetup {
             .detach()
             .name(name)
             .restart(RestartPolicy::Always)
+            .network(self.config.network_name.as_str())
             .mount(docker_socket_mount)
             .publish(p_grpc);
         if let (Some(server_id), Some(panel_url), Some(token)) = (
@@ -343,15 +344,17 @@ impl ServerSetup {
                 .env("SERVER_ID", server_id.to_string())
                 .env("OPENOXIDE_SERVER_URL", panel_url)
                 .env("METRICS_TOKEN", token)
-                .env("MONITOR_DATABASE_URL", "sqlite:///data/monitor.db")
-                .env("REFRESH_RATE", "10")
+                .env("MONITOR_DATABASE_URL", "memory://metrics")
+                .env("REFRESH_RATE", "2")
                 .env(
                     "RETENTION_DAYS",
                     self.config.monitoring_retention_days.to_string(),
-                )
-                .mount(Mount::volume("openoxide-monitor-data", "/data"));
+                );
         }
         create.run().await?;
+        // Docker create leaves the container in `Created`; lifecycle/gRPC
+        // monitoring must be running immediately after setup.
+        docker.container(name).start().run().await?;
         Ok(())
     }
 
@@ -781,6 +784,7 @@ impl ServerSetup {
                         .detach()
                         .name(name)
                         .restart(RestartPolicy::Always)
+                        .network(self.config.network_name.as_str())
                         .mount(Mount::bind_ro(
                             "/var/run/docker.sock",
                             "/var/run/docker.sock",
@@ -788,10 +792,9 @@ impl ServerSetup {
                         .env("SERVER_ID", self.config.monitoring_server_id.unwrap_or(0).to_string())
                         .env("OPENOXIDE_SERVER_URL", self.config.monitoring_panel_url.clone().unwrap_or_default())
                         .env("METRICS_TOKEN", self.config.monitoring_token.clone().unwrap_or_default())
-                        .env("MONITOR_DATABASE_URL", "sqlite:///app/data/monitor.db")
-                        .env("REFRESH_RATE", "10")
+                        .env("MONITOR_DATABASE_URL", "memory://metrics")
+                        .env("REFRESH_RATE", "2")
                         .env("RETENTION_DAYS", self.config.monitoring_retention_days.to_string())
-                        .mount(Mount::volume("openoxide-monitor-data", "/app/data"))
                         .publish(Port::tcp(50051, 50051));
                 }
             }
@@ -799,7 +802,7 @@ impl ServerSetup {
     }
 }
 
-fn monitoring_image() -> &'static str {
+pub(crate) fn monitoring_image() -> &'static str {
     "dubeyanand/openoxide-monitor:latest"
 }
 

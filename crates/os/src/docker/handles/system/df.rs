@@ -33,7 +33,10 @@ impl<'a> SystemDfBuilder<'a> {
     pub async fn run(self) -> DockerResult<DockerDiskUsage> {
         let args = self.args.build();
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-        self.cli.json(&refs).await
+        let rows: Vec<serde_json::Value> = self.cli.json_lines(&refs).await?;
+        let mut usage = serde_json::Map::new();
+        usage.insert("items".into(), serde_json::Value::Array(rows));
+        Ok(usage)
     }
 }
 

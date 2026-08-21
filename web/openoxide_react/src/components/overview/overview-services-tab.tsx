@@ -46,6 +46,10 @@ export function OverviewServicesTab() {
 	// Read directly from Realtime Zustand RAM Store (ZERO extra subscriptions!)
 	const storeServices = useAppStore(state => state.overviewServices || []);
 	const projectsToUse = useAppStore(state => state.projects || []);
+	const servers = useAppStore(state => state.servers || []);
+	const {data: remoteServers = []} = $api.useQuery('get', '/remote-servers');
+	const serverDirectory =
+		(remoteServers as any[]).length > 0 ? (remoteServers as any[]) : servers;
 	const rawServices = storeServices;
 	const isLiveLoading = false;
 
@@ -65,7 +69,28 @@ export function OverviewServicesTab() {
 	const allServices = useMemo<OverviewServiceItem[]>(() => {
 		if (!rawServices || !Array.isArray(rawServices)) return [];
 
-		return rawServices.map((svc: any) => ({
+		const uniqueServices = new Map<string, any>();
+		for (const svc of rawServices) {
+			const type = String(
+				svc.service_type || svc.type || svc.kind || 'APP',
+			).toUpperCase();
+			let dbKind = String(
+				svc.db_kind || svc.dbKind || svc.database_kind || '',
+			).toUpperCase();
+			if (dbKind.includes('POSTGRES')) dbKind = 'POSTGRES';
+			else if (dbKind.includes('MARIADB')) dbKind = 'MARIADB';
+			else if (dbKind.includes('MYSQL')) dbKind = 'MYSQL';
+			else if (dbKind.includes('MONGO')) dbKind = 'MONGO';
+			else if (dbKind.includes('REDIS')) dbKind = 'REDIS';
+			else if (dbKind.includes('LIBSQL') || dbKind.includes('SQLITE')) dbKind = 'LIBSQL';
+			uniqueServices.set(`${type}:${dbKind}:${String(svc.id)}`, svc);
+		}
+
+		return Array.from(uniqueServices.values()).map((svc: any) => {
+			const server = serverDirectory.find(
+				(item: any) => Number(item.id) === Number(svc.server_id),
+			);
+			return {
 			key: `${svc.service_type}-${svc.db_kind || ''}-${svc.id}`,
 			id: Number(svc.id),
 			name: svc.name,
@@ -77,9 +102,14 @@ export function OverviewServicesTab() {
 			environmentId: Number(svc.environment_id),
 			environmentName: svc.environment_name || 'production',
 			dbKind: svc.db_kind || undefined,
-			serverName: 'Rustploy Server',
-		}));
-	}, [rawServices]);
+			serverName: svc.server_name || (server
+				? server.name || server.hostname || `Server ${server.id}`
+				: svc.server_id == null
+					? 'Localhost (Main server)'
+					: `Server ${svc.server_id}`),
+		};
+		});
+	}, [rawServices, serverDirectory]);
 
 	// Filter and sort services
 	const filteredServices = useMemo(() => {

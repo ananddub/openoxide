@@ -155,6 +155,7 @@ const DISABLE_METRICS = false;
 export function useContainerMonitoring(
 	id: number,
 	entityType: MonitoringEntityType = 'application',
+	enabled = true,
 ) {
 	// All hooks declared unconditionally at the top — never reorder these
 	const [isLive, setIsLive] = useState(true);
@@ -168,7 +169,7 @@ export function useContainerMonitoring(
 	}, []);
 
 	useEffect(() => {
-		if (!id || DISABLE_METRICS) {
+		if (!id || !enabled || DISABLE_METRICS) {
 			setIsLoading(false);
 			return;
 		}
@@ -302,7 +303,7 @@ export function useContainerMonitoring(
 			isMounted = false;
 			controller.abort();
 		};
-	}, [id, entityType, isLive, refetchTrigger]);
+	}, [id, entityType, isLive, refetchTrigger, enabled]);
 
 	const [history, setHistory] = useState<
 		Array<{

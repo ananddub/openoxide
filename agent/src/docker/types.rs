@@ -80,6 +80,10 @@ pub struct ContainerSummary {
     pub names: Vec<String>,
     #[serde(rename = "Labels", default)]
     pub labels: HashMap<String, String>,
+    #[serde(rename = "State", default)]
+    pub state: String,
+    #[serde(rename = "Status", default)]
+    pub status: String,
 }
 
 impl ContainerSummary {

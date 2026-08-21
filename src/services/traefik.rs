@@ -312,6 +312,22 @@ impl TraefikService {
         Ok(())
     }
 
+    pub async fn delete_directory(
+        &self,
+        server_id: Option<i64>,
+        relative_path: &str,
+    ) -> Result<(), String> {
+        let full_path = Self::sanitize_write_path(relative_path)?;
+        let executor = self.get_executor(server_id).await?;
+        OsCli::new(&executor)
+            .dir(full_path.to_string_lossy().as_ref())
+            .delete()
+            .run()
+            .await
+            .map(|_| ())
+            .map_err(|error| format!("Failed to delete certificate directory: {error}"))
+    }
+
     pub async fn version(&self, server_id: Option<i64>) -> Result<TraefikVersionDto, String> {
         let executor = self.get_executor(server_id).await?;
         let inspect = crate::utils::docker::DockerCli::from_executor(executor)

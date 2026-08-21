@@ -28,7 +28,7 @@ function DestinationsPage() {
 
 	// Mutations
 	const deleteMutation = $api.useMutation('delete', '/destinations/{id}');
-	const testMutation = $api.useMutation('post', '/destinations/{id}/test');
+	const testMutation = $api.useMutation('post', '/destinations/test');
 
 	const handleDelete = async (id: string | number) => {
 		try {
@@ -40,22 +40,32 @@ function DestinationsPage() {
 	};
 
 	const handleTest = async (id: string | number) => {
+		const destination = destinations.find(item => String(item.id) === String(id));
+		if (!destination) {
+			toast.error('S3 destination not found');
+			return;
+		}
 		try {
-			await testMutation.mutateAsync({
-				params: {path: {id: String(id)}},
+			await Promise.race([
+				testMutation.mutateAsync({
+				body: {
+					provider: destination.provider,
+					bucket: destination.bucket,
+					region: destination.region,
+					endpoint: destination.endpoint,
+					access_key: destination.access_key,
+					secret_access_key: destination.secret_access_key,
+				},
 				parseAs: 'text',
-			} as any);
+				} as any),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error('S3 connection test timed out')), 15_000),
+				),
+			]);
 			toast.success('S3 Storage Destination connection test passed!');
 		} catch (err: unknown) {
-			const msg = String((err as any)?.message || err || '');
-			if (
-				msg.toLowerCase().includes('json') ||
-				msg.toLowerCase().includes('unexpected end')
-			) {
-				toast.success('S3 Storage Destination connection test passed!');
-				return;
-			}
 			toast.error(formatApiError(err));
+			throw err;
 		}
 	};
 

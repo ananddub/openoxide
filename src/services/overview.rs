@@ -33,10 +33,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                a.server_id,
+                s.name AS server_name
             FROM applications a
             JOIN environments e ON a.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON a.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY a.created_at DESC
             "#,
@@ -57,6 +60,8 @@ impl OverviewService {
                 environment_id: a.environment_id,
                 environment_name: a.environment_name,
                 db_kind: None,
+                server_id: a.server_id,
+                server_name: a.server_name,
             });
         }
 
@@ -71,10 +76,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                c.server_id,
+                s.name AS server_name
             FROM compose_projects c
             JOIN environments e ON c.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON c.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY c.created_at DESC
             "#,
@@ -95,6 +103,8 @@ impl OverviewService {
                 environment_id: c.environment_id,
                 environment_name: c.environment_name,
                 db_kind: None,
+                server_id: c.server_id,
+                server_name: c.server_name,
             });
         }
 
@@ -109,10 +119,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                d.server_id,
+                s.name AS server_name
             FROM postgres_dbs d
             JOIN environments e ON d.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON d.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY d.created_at DESC
             "#,
@@ -133,6 +146,8 @@ impl OverviewService {
                 environment_id: db.environment_id,
                 environment_name: db.environment_name,
                 db_kind: Some("postgres".into()),
+                server_id: db.server_id,
+                server_name: db.server_name,
             });
         }
 
@@ -147,10 +162,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                d.server_id,
+                s.name AS server_name
             FROM mysql_dbs d
             JOIN environments e ON d.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON d.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY d.created_at DESC
             "#,
@@ -171,6 +189,8 @@ impl OverviewService {
                 environment_id: db.environment_id,
                 environment_name: db.environment_name,
                 db_kind: Some("mysql".into()),
+                server_id: db.server_id,
+                server_name: db.server_name,
             });
         }
 
@@ -185,10 +205,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                d.server_id,
+                s.name AS server_name
             FROM mariadb_dbs d
             JOIN environments e ON d.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON d.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY d.created_at DESC
             "#,
@@ -209,6 +232,8 @@ impl OverviewService {
                 environment_id: db.environment_id,
                 environment_name: db.environment_name,
                 db_kind: Some("mariadb".into()),
+                server_id: db.server_id,
+                server_name: db.server_name,
             });
         }
 
@@ -223,10 +248,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                d.server_id,
+                s.name AS server_name
             FROM mongo_dbs d
             JOIN environments e ON d.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON d.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY d.created_at DESC
             "#,
@@ -247,6 +275,8 @@ impl OverviewService {
                 environment_id: db.environment_id,
                 environment_name: db.environment_name,
                 db_kind: Some("mongo".into()),
+                server_id: db.server_id,
+                server_name: db.server_name,
             });
         }
 
@@ -261,10 +291,13 @@ impl OverviewService {
                 p.id AS project_id, 
                 p.name AS project_name, 
                 e.id AS environment_id, 
-                e.name AS environment_name
+                e.name AS environment_name,
+                d.server_id,
+                s.name AS server_name
             FROM redis_dbs d
             JOIN environments e ON d.environment_id = e.id
             JOIN projects p ON e.project_id = p.id
+            LEFT JOIN servers s ON d.server_id = s.id
             WHERE p.organization_id = ?
             ORDER BY d.created_at DESC
             "#,
@@ -285,6 +318,8 @@ impl OverviewService {
                 environment_id: db.environment_id,
                 environment_name: db.environment_name,
                 db_kind: Some("redis".into()),
+                server_id: db.server_id,
+                server_name: db.server_name,
             });
         }
 

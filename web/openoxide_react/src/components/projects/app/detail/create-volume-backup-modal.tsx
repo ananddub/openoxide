@@ -10,6 +10,8 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Switch} from '#/components/ui/switch';
+import {useAppStore} from '#/stores/app-store';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
@@ -31,7 +33,8 @@ export function CreateVolumeBackupModal({
 	const [volumeName, setVolumeName] = useState('');
 	const [cronExpr, setCronExpr] = useState('0 0 * * *');
 	const [prefix, setPrefix] = useState('volume-backups/');
-	const [destinationId] = useState(1);
+	const destinations = useAppStore(state => state.destinations || []);
+	const [destinationId, setDestinationId] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,8 +42,8 @@ export function CreateVolumeBackupModal({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!name.trim() || !volumeName.trim()) {
-			toast.error('Name and Volume Name are required');
+		if (!name.trim() || !volumeName.trim() || !destinationId) {
+			toast.error('Name, volume, and S3 destination are required');
 			return;
 		}
 
@@ -52,7 +55,7 @@ export function CreateVolumeBackupModal({
 					volume_name: volumeName.trim(),
 					cron_expression: cronExpr.trim(),
 					prefix: prefix.trim(),
-					destination_id: destinationId,
+					destination_id: Number(destinationId),
 					organization_id: app?.organization_id || 1,
 					application_id: app?.id,
 					app_name: app?.app_name || app?.name || 'app',
@@ -79,6 +82,20 @@ export function CreateVolumeBackupModal({
 					<DialogTitle>Configure Volume Backup</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4 py-2">
+					<div className="space-y-1.5">
+						<Label>S3 Destination *</Label>
+						<Select value={destinationId} onValueChange={value => value && setDestinationId(value)}>
+							<SelectTrigger><SelectValue placeholder="Select S3 destination" /></SelectTrigger>
+							<SelectContent>
+								{destinations.map((destination: any) => (
+									<SelectItem key={destination.id} value={String(destination.id)}>
+										{destination.name} ({destination.bucket})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
 					<div className="space-y-1.5">
 						<Label htmlFor="vol-name">Backup Rule Name</Label>
 						<Input

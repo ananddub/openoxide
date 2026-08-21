@@ -39,11 +39,13 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # ── 2. Actual Source Build ─────────────────────────────────────────────────────
 COPY src/ src/
 
-# Touch main.rs to invalidate dummy binary and build real app (takes 5-10s!)
+# Invalidate the dummy binary and the SQLx migration embed point. The migration
+# macro reads SQL files at compile time, so recompile this module whenever the
+# copied db/migrations directory changes instead of reusing a stale Cargo cache.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
-    touch src/main.rs src/lib.rs && \
+    touch src/main.rs src/lib.rs src/db/connection/sqlite.rs && \
     cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
     cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
     strip /usr/src/openoxide/openoxide-binary
@@ -55,8 +57,11 @@ FROM alpine:3.21 AS runtime
 
 ARG NIXPACKS_VERSION=1.41.0
 ARG RAILPACK_VERSION=0.36.4
+ARG OPENOXIDE_BUILD_REV=backup-migration-0048
 
 WORKDIR /app
+
+RUN printf '%s' "$OPENOXIDE_BUILD_REV" > /tmp/openoxide-build-rev
 
 # Cloud Native Buildpacks (pack CLI)
 COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack

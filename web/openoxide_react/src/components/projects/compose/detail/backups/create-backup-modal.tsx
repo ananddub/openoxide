@@ -13,6 +13,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {toast} from 'sonner';
+import {useAppStore} from '#/stores/app-store';
 
 interface CreateBackupModalProps {
 	isOpen: boolean;
@@ -22,13 +23,14 @@ interface CreateBackupModalProps {
 	defaultVolumeName?: string;
 	hideServiceAndVolumeSelect?: boolean;
 	editingBackup?: any;
-	onCreate: (data: {
+		onCreate: (data: {
 		name: string;
 		serviceName: string;
 		volumeName: string;
 		cronExpr: string;
 		prefix: string;
 		turnOff: boolean;
+		destinationId: number;
 	}) => Promise<void>;
 }
 
@@ -52,6 +54,8 @@ export function CreateBackupModal({
 	const [cronExpr, setCronExpr] = useState('0 2 * * *');
 	const [prefix, setPrefix] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
+	const destinations = useAppStore(state => state.destinations || []);
+	const [destinationId, setDestinationId] = useState('');
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
@@ -75,12 +79,18 @@ export function CreateBackupModal({
 		}
 	}, [editingBackup, defaultServiceName, defaultVolumeName, servicesList]);
 
+	useEffect(() => {
+		if (!destinationId && destinations.length > 0) {
+			setDestinationId(String(destinations[0].id));
+		}
+	}, [destinationId, destinations]);
+
 	if (!isOpen || typeof document === 'undefined') return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!name.trim()) {
-			toast.error('Backup name is required');
+		if (!name.trim() || !volumeName.trim() || !destinationId) {
+			toast.error('Backup name, volume, and S3 destination are required');
 			return;
 		}
 
@@ -93,6 +103,7 @@ export function CreateBackupModal({
 				cronExpr: cronExpr.trim(),
 				prefix: prefix.trim(),
 				turnOff,
+				destinationId: Number(destinationId),
 			});
 			onClose();
 		} finally {
@@ -122,6 +133,22 @@ export function CreateBackupModal({
 				</div>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
+					<div className="flex flex-col gap-1.5">
+						<Label className="text-xs font-semibold">S3 Destination *</Label>
+						<Select value={destinationId} onValueChange={value => value && setDestinationId(value)}>
+							<SelectTrigger className="h-9 w-full text-xs">
+								<SelectValue placeholder="Select S3 destination" />
+							</SelectTrigger>
+							<SelectContent>
+								{destinations.map((destination: any) => (
+									<SelectItem key={destination.id} value={String(destination.id)}>
+										{destination.name} ({destination.bucket})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
 					<div className="flex flex-col gap-1.5">
 						<Label className="text-xs font-semibold">
 							Backup Rule Name *

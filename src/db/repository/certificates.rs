@@ -13,13 +13,23 @@ impl CertificateRepository {
         Self { pool }
     }
 
-    pub async fn get_all(&self) -> Result<Vec<Certificate>, sqlx::Error> {
+    pub async fn get_all(&self, organization_id: i64) -> Result<Vec<Certificate>, sqlx::Error> {
         sqlx::query_as!(
             Certificate,
-            r#"SELECT id AS "id?: i64", name AS "name: String", certificate_data AS "certificate_data: String", private_key AS "private_key: String", certificate_path AS "certificate_path: String", auto_renew AS "auto_renew: i64", server_id AS "server_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM certificates"#
+            r#"SELECT id AS "id?: i64", name AS "name: String", certificate_data AS "certificate_data: String", private_key AS "private_key: String", certificate_path AS "certificate_path: String", auto_renew AS "auto_renew: i64", server_id AS "server_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM certificates WHERE organization_id = ? ORDER BY created_at DESC, id DESC"#,
+            organization_id
         )
         .fetch_all(self.pool.as_ref())
         .await
+    }
+
+    pub async fn get_by_id_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Option<Certificate>, sqlx::Error> {
+        sqlx::query_as!(Certificate, r#"SELECT id AS "id?: i64", name AS "name: String", certificate_data AS "certificate_data: String", private_key AS "private_key: String", certificate_path AS "certificate_path: String", auto_renew AS "auto_renew: i64", server_id AS "server_id?: i64", organization_id AS "organization_id: i64", created_at AS "created_at: i64", updated_at AS "updated_at: i64" FROM certificates WHERE id = ? AND organization_id = ?"#, id, organization_id)
+            .fetch_optional(self.pool.as_ref()).await
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Certificate>, sqlx::Error> {
@@ -67,6 +77,21 @@ impl CertificateRepository {
         .execute(self.pool.as_ref())
         .await?;
         Ok(())
+    }
+
+    pub async fn delete_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"DELETE FROM certificates WHERE id = ? AND organization_id = ?"#,
+            id,
+            organization_id
+        )
+        .execute(self.pool.as_ref())
+        .await?;
+        Ok(result.rows_affected() > 0)
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {

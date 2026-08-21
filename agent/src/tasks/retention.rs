@@ -24,11 +24,7 @@ pub async fn prune_old_metrics(ctx: MonitorContext, shutdown: CancellationToken)
             .await
         {
             Ok(0) => {}
-            Ok(deleted) => info!(
-                deleted,
-                retention_days = ctx.config.retention_days,
-                "pruned old metrics"
-            ),
+            Ok(deleted) => info!(deleted, "pruned expired in-memory metrics"),
             Err(error) => error!(%error, "retention sweep failed"),
         }
     }

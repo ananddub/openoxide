@@ -1,637 +1,671 @@
-import {create} from 'zustand';
+import { create } from "zustand";
 
 export interface VaultProviderItem {
-	id: number;
-	name: string;
-	provider_type: string;
-	api_url: string;
-	auth_token: string;
-	namespace?: string;
-	config_json?: string;
-	created_at: number;
-	updated_at: number;
+  id: number;
+  name: string;
+  provider_type: string;
+  api_url: string;
+  auth_token: string;
+  namespace?: string;
+  config_json?: string;
+  created_at: number;
+  updated_at: number;
 }
 
 export interface DnsProviderItem {
-	id: number;
-	name: string;
-	provider_type: string;
-	credentials_json: string;
-	created_at: number;
-	updated_at: number;
+  id: number;
+  name: string;
+  provider_type: string;
+  credentials_json: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface AiSettingItem {
+  id: number;
+  name: string;
+  api_url: string;
+  model: string;
+  is_enabled: boolean;
+  provider: string;
+  has_api_key: boolean;
+  organization_id: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CertificateItem {
+  id: string;
+  name: string;
+  certificate_data: string;
+  certificate_path: string;
+  auto_renew: number;
+  server_id?: string;
+  organization_id: number;
+  created_at: number;
+  updated_at: number;
+  has_private_key?: boolean;
 }
 
 export interface ProjectItem {
-	id: number;
-	name: string;
-	description?: string;
-	created_at?: number;
-	updated_at?: number;
-	applications?: any[];
-	composes?: any[];
-	postgresDbs?: any[];
-	mysqlDbs?: any[];
-	mariadbDbs?: any[];
-	mongoDbs?: any[];
-	redisDbs?: any[];
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: number;
+  updated_at?: number;
+  applications?: any[];
+  composes?: any[];
+  postgresDbs?: any[];
+  mysqlDbs?: any[];
+  mariadbDbs?: any[];
+  mongoDbs?: any[];
+  redisDbs?: any[];
 }
 
 export interface ApplicationItem {
-	id: number;
-	name?: string;
-	app_name?: string;
-	project_id?: number;
-	status?: string;
-	build_type?: string;
-	created_at?: number;
-	updated_at?: number;
+  id: number;
+  name?: string;
+  app_name?: string;
+  project_id?: number;
+  status?: string;
+  build_type?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface DatabaseItem {
-	id: number;
-	name?: string;
-	kind?: string;
-	project_id?: number;
-	status?: string;
-	created_at?: number;
-	updated_at?: number;
+  id: number;
+  name?: string;
+  kind?: string;
+  project_id?: number;
+  status?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface ComposeItem {
-	id: number;
-	name?: string;
-	project_id?: number;
-	status?: string;
-	created_at?: number;
-	updated_at?: number;
+  id: number;
+  name?: string;
+  project_id?: number;
+  status?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface RemoteServerItem {
-	id: number;
-	name: string;
-	ip: string;
-	port?: number;
-	user?: string;
-	status?: string;
-	cpu_usage?: number;
-	memory_usage?: number;
-	disk_usage?: number;
+  id: number;
+  name: string;
+  ip: string;
+  port?: number;
+  user?: string;
+  status?: string;
+  cpu_usage?: number;
+  memory_usage?: number;
+  disk_usage?: number;
 }
 
 export interface OverviewServiceItem {
-	id: number;
-	name: string;
-	type: 'APP' | 'COMPOSE' | 'DATABASE';
-	project_id: number;
-	environment_id?: number;
-	status?: string;
-	createdAt?: number;
-	dbKind?: string;
+  id: number;
+  name: string;
+  type: "APP" | "COMPOSE" | "DATABASE";
+  project_id: number;
+  environment_id?: number;
+  status?: string;
+  createdAt?: number;
+  dbKind?: string;
 }
 
 export interface DeploymentItem {
-	id: number;
-	status: string;
-	commit_message?: string;
-	created_at?: number;
-	project_id?: number;
-	application_id?: number;
+  id: number;
+  status: string;
+  commit_message?: string;
+  created_at?: number;
+  project_id?: number;
+  application_id?: number;
 }
 
 export interface DomainItem {
-	id: number;
-	domain: string;
-	service_type?: string;
-	service_id?: number;
-	ssl_enabled?: boolean;
+  id: number;
+  domain: string;
+  service_type?: string;
+  service_id?: number;
+  ssl_enabled?: boolean;
 }
 
 export interface BackupItem {
-	id: number;
-	name: string;
-	status?: string;
-	file_size?: number;
-	created_at?: number;
+  id: number;
+  name: string;
+  status?: string;
+  file_size?: number;
+  created_at?: number;
 }
 
 export interface TagItem {
-	id: number;
-	name: string;
-	color?: string;
+  id: number;
+  name: string;
+  color?: string;
 }
 
 export interface ScheduleItem {
-	id: number;
-	name: string;
-	cron_expression: string;
-	enabled?: boolean;
+  id: number;
+  name: string;
+  cron_expression: string;
+  enabled?: boolean;
 }
 
 export interface SshKeyItem {
-	id: number;
-	title: string;
-	public_key: string;
+  id: number;
+  title: string;
+  public_key: string;
 }
 
 export interface DestinationItem {
-	id: number;
-	name: string;
-	server_id?: number;
+  id: number;
+  name: string;
+  server_id?: number;
 }
 
 export interface UserProfileItem {
-	id?: number;
-	email?: string;
-	name?: string;
-	role?: string;
-	avatar?: string;
+  id?: number;
+  email?: string;
+  name?: string;
+  role?: string;
+  avatar?: string;
 }
 
 export interface MemberItem {
-	id: string;
-	user_id?: number;
-	email: string;
-	name?: string;
-	role: string;
-	avatar?: string;
-	banned?: boolean;
-	created_at?: number;
+  id: string;
+  user_id?: number;
+  email: string;
+  name?: string;
+  role: string;
+  avatar?: string;
+  banned?: boolean;
+  created_at?: number;
 }
 
 export interface InviteItem {
-	id: string;
-	email: string;
-	role: string;
-	created_at?: number;
+  id: string;
+  email: string;
+  role: string;
+  created_at?: number;
 }
 
 export interface AppStoreState {
-	vaultProviders: VaultProviderItem[];
-	dnsProviders: DnsProviderItem[];
-	projects: ProjectItem[];
-	applications: ApplicationItem[];
-	databases: DatabaseItem[];
-	composes: ComposeItem[];
-	servers: RemoteServerItem[];
-	overviewServices: OverviewServiceItem[];
-	deployments: DeploymentItem[];
-	swarmNodes: any[];
-	domains: DomainItem[];
-	backups: BackupItem[];
-	tags: TagItem[];
-	schedules: ScheduleItem[];
-	sshKeys: SshKeyItem[];
-	destinations: DestinationItem[];
-	profile: UserProfileItem | null;
-	members: MemberItem[];
-	invites: InviteItem[];
+  vaultProviders: VaultProviderItem[];
+  dnsProviders: DnsProviderItem[];
+  aiSettings: AiSettingItem[];
+  certificates: CertificateItem[];
+  projects: ProjectItem[];
+  applications: ApplicationItem[];
+  databases: DatabaseItem[];
+  composes: ComposeItem[];
+  servers: RemoteServerItem[];
+  overviewServices: OverviewServiceItem[];
+  deployments: DeploymentItem[];
+  swarmNodes: any[];
+  domains: DomainItem[];
+  backups: BackupItem[];
+  tags: TagItem[];
+  schedules: ScheduleItem[];
+  sshKeys: SshKeyItem[];
+  destinations: DestinationItem[];
+  profile: UserProfileItem | null;
+  members: MemberItem[];
+  invites: InviteItem[];
 
-	isHydrated: boolean;
-	isWsConnected: boolean;
+  isHydrated: boolean;
+  isWsConnected: boolean;
 
-	setVaultProviders: (providers: VaultProviderItem[]) => void;
-	addVaultProvider: (provider: VaultProviderItem) => void;
-	updateVaultProvider: (
-		id: number | string,
-		updated: Partial<VaultProviderItem>,
-	) => void;
-	deleteVaultProvider: (id: number | string) => void;
+  setVaultProviders: (providers: VaultProviderItem[]) => void;
+  addVaultProvider: (provider: VaultProviderItem) => void;
+  updateVaultProvider: (
+    id: number | string,
+    updated: Partial<VaultProviderItem>,
+  ) => void;
+  deleteVaultProvider: (id: number | string) => void;
 
-	setDnsProviders: (providers: DnsProviderItem[]) => void;
-	addDnsProvider: (provider: DnsProviderItem) => void;
-	updateDnsProvider: (
-		id: number | string,
-		updated: Partial<DnsProviderItem>,
-	) => void;
-	deleteDnsProvider: (id: number | string) => void;
+  setDnsProviders: (providers: DnsProviderItem[]) => void;
+  setAiSettings: (settings: AiSettingItem[]) => void;
+  setCertificates: (certificates: CertificateItem[]) => void;
+  addDnsProvider: (provider: DnsProviderItem) => void;
+  updateDnsProvider: (
+    id: number | string,
+    updated: Partial<DnsProviderItem>,
+  ) => void;
+  deleteDnsProvider: (id: number | string) => void;
 
-	setProjects: (projects: ProjectItem[]) => void;
-	addProject: (project: ProjectItem) => void;
-	updateProject: (
-		id: number | string,
-		updated: Partial<ProjectItem>,
-	) => void;
-	deleteProject: (id: number | string) => void;
+  setProjects: (projects: ProjectItem[]) => void;
+  addProject: (project: ProjectItem) => void;
+  updateProject: (id: number | string, updated: Partial<ProjectItem>) => void;
+  deleteProject: (id: number | string) => void;
 
-	setApplications: (applications: ApplicationItem[]) => void;
-	addApplication: (app: ApplicationItem) => void;
-	updateApplication: (
-		id: number | string,
-		updated: Partial<ApplicationItem>,
-	) => void;
-	deleteApplication: (id: number | string) => void;
+  setApplications: (applications: ApplicationItem[]) => void;
+  addApplication: (app: ApplicationItem) => void;
+  updateApplication: (
+    id: number | string,
+    updated: Partial<ApplicationItem>,
+  ) => void;
+  deleteApplication: (id: number | string) => void;
 
-	setDatabases: (databases: DatabaseItem[]) => void;
-	addDatabase: (db: DatabaseItem) => void;
-	updateDatabase: (
-		id: number | string,
-		updated: Partial<DatabaseItem>,
-	) => void;
-	deleteDatabase: (id: number | string) => void;
+  setDatabases: (databases: DatabaseItem[]) => void;
+  addDatabase: (db: DatabaseItem) => void;
+  updateDatabase: (id: number | string, updated: Partial<DatabaseItem>) => void;
+  deleteDatabase: (id: number | string) => void;
 
-	setComposes: (composes: ComposeItem[]) => void;
-	addCompose: (compose: ComposeItem) => void;
-	updateCompose: (
-		id: number | string,
-		updated: Partial<ComposeItem>,
-	) => void;
-	deleteCompose: (id: number | string) => void;
+  setComposes: (composes: ComposeItem[]) => void;
+  addCompose: (compose: ComposeItem) => void;
+  updateCompose: (id: number | string, updated: Partial<ComposeItem>) => void;
+  deleteCompose: (id: number | string) => void;
 
-	setServers: (servers: RemoteServerItem[]) => void;
-	addServer: (server: RemoteServerItem) => void;
-	updateServer: (
-		id: number | string,
-		updated: Partial<RemoteServerItem>,
-	) => void;
-	deleteServer: (id: number | string) => void;
+  setServers: (servers: RemoteServerItem[]) => void;
+  addServer: (server: RemoteServerItem) => void;
+  updateServer: (
+    id: number | string,
+    updated: Partial<RemoteServerItem>,
+  ) => void;
+  deleteServer: (id: number | string) => void;
 
-	setOverviewServices: (services: OverviewServiceItem[]) => void;
-	setDeployments: (deployments: DeploymentItem[]) => void;
-	deleteDeployment: (id: number | string) => void;
-	clearDeployments: (filter?: {
-		appId?: number | string;
-		composeId?: number | string;
-		databaseId?: number | string;
-	}) => void;
-	setSwarmNodes: (nodes: any[]) => void;
-	setDomains: (domains: DomainItem[]) => void;
-	setBackups: (backups: BackupItem[]) => void;
+  setOverviewServices: (services: OverviewServiceItem[]) => void;
+  setDeployments: (deployments: DeploymentItem[]) => void;
+  deleteDeployment: (id: number | string) => void;
+  clearDeployments: (filter?: {
+    appId?: number | string;
+    composeId?: number | string;
+    databaseId?: number | string;
+  }) => void;
+  setSwarmNodes: (nodes: any[]) => void;
+  setDomains: (domains: DomainItem[]) => void;
+  setBackups: (backups: BackupItem[]) => void;
 
-	setTags: (tags: TagItem[]) => void;
-	addTag: (tag: TagItem) => void;
-	deleteTag: (id: number | string) => void;
+  setTags: (tags: TagItem[]) => void;
+  addTag: (tag: TagItem) => void;
+  deleteTag: (id: number | string) => void;
 
-	setSchedules: (schedules: ScheduleItem[]) => void;
-	addSchedule: (schedule: ScheduleItem) => void;
-	updateSchedule: (
-		id: number | string,
-		updated: Partial<ScheduleItem>,
-	) => void;
-	deleteSchedule: (id: number | string) => void;
+  setSchedules: (schedules: ScheduleItem[]) => void;
+  addSchedule: (schedule: ScheduleItem) => void;
+  updateSchedule: (id: number | string, updated: Partial<ScheduleItem>) => void;
+  deleteSchedule: (id: number | string) => void;
 
-	setSshKeys: (sshKeys: SshKeyItem[]) => void;
-	setDestinations: (destinations: DestinationItem[]) => void;
-	setProfile: (profile: UserProfileItem) => void;
+  setSshKeys: (sshKeys: SshKeyItem[]) => void;
+  setDestinations: (destinations: DestinationItem[]) => void;
+  setProfile: (profile: UserProfileItem) => void;
 
-	setMembers: (members: MemberItem[]) => void;
-	addMember: (member: MemberItem) => void;
-	updateMember: (id: string, updated: Partial<MemberItem>) => void;
-	deleteMember: (id: string) => void;
+  setMembers: (members: MemberItem[]) => void;
+  addMember: (member: MemberItem) => void;
+  updateMember: (id: string, updated: Partial<MemberItem>) => void;
+  deleteMember: (id: string) => void;
 
-	setInvites: (invites: InviteItem[]) => void;
-	addInvite: (invite: InviteItem) => void;
-	deleteInvite: (id: string) => void;
+  setInvites: (invites: InviteItem[]) => void;
+  addInvite: (invite: InviteItem) => void;
+  deleteInvite: (id: string) => void;
 
-	setHydrated: (hydrated: boolean) => void;
-	setWsConnected: (connected: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
+  setWsConnected: (connected: boolean) => void;
 }
 
-export const useAppStore = create<AppStoreState>(set => ({
-	vaultProviders: [],
-	dnsProviders: [],
-	projects: [],
-	applications: [],
-	databases: [],
-	composes: [],
-	servers: [],
-	overviewServices: [],
-	deployments: [],
-	swarmNodes: [],
-	domains: [],
-	backups: [],
-	tags: [],
-	schedules: [],
-	sshKeys: [],
-	destinations: [],
-	profile: null,
-	members: [],
-	invites: [],
+function overviewServiceKey(service: any): string {
+  const serviceType = String(
+    service?.service_type || service?.type || service?.kind || 'APP',
+  ).toUpperCase();
+  let databaseKind = String(
+    service?.db_kind || service?.dbKind || service?.database_kind || '',
+  ).toUpperCase();
+  if (databaseKind.includes('POSTGRES')) databaseKind = 'POSTGRES';
+  else if (databaseKind.includes('MARIADB')) databaseKind = 'MARIADB';
+  else if (databaseKind.includes('MYSQL')) databaseKind = 'MYSQL';
+  else if (databaseKind.includes('MONGO')) databaseKind = 'MONGO';
+  else if (databaseKind.includes('REDIS')) databaseKind = 'REDIS';
+  else if (databaseKind.includes('LIBSQL') || databaseKind.includes('SQLITE')) databaseKind = 'LIBSQL';
+  return `${serviceType}:${databaseKind}:${String(service?.id ?? '')}`;
+}
 
-	isHydrated: false,
-	isWsConnected: false,
+function dedupeOverviewServices(services: any[]): any[] {
+  const unique = new Map<string, any>();
+  for (const service of services) {
+    if (!service || service.id === undefined || service.id === null) continue;
+    unique.set(overviewServiceKey(service), service);
+  }
+  return Array.from(unique.values());
+}
 
-	setVaultProviders: providers => set({vaultProviders: providers}),
-	addVaultProvider: provider =>
-		set(state => ({
-			vaultProviders: [
-				provider,
-				...state.vaultProviders.filter(
-					p => String(p.id) !== String(provider.id),
-				),
-			],
-		})),
-	updateVaultProvider: (id, updated) =>
-		set(state => ({
-			vaultProviders: state.vaultProviders.map(p =>
-				String(p.id) === String(id) ? {...p, ...updated} : p,
-			),
-		})),
-	deleteVaultProvider: id =>
-		set(state => ({
-			vaultProviders: state.vaultProviders.filter(
-				p => String(p.id) !== String(id),
-			),
-		})),
+export const useAppStore = create<AppStoreState>((set) => ({
+  vaultProviders: [],
+  dnsProviders: [],
+  aiSettings: [],
+  certificates: [],
+  projects: [],
+  applications: [],
+  databases: [],
+  composes: [],
+  servers: [],
+  overviewServices: [],
+  deployments: [],
+  swarmNodes: [],
+  domains: [],
+  backups: [],
+  tags: [],
+  schedules: [],
+  sshKeys: [],
+  destinations: [],
+  profile: null,
+  members: [],
+  invites: [],
 
-	setDnsProviders: providers => set({dnsProviders: providers}),
-	addDnsProvider: provider =>
-		set(state => ({
-			dnsProviders: [
-				provider,
-				...state.dnsProviders.filter(
-					p => String(p.id) !== String(provider.id),
-				),
-			],
-		})),
-	updateDnsProvider: (id, updated) =>
-		set(state => ({
-			dnsProviders: state.dnsProviders.map(p =>
-				String(p.id) === String(id) ? {...p, ...updated} : p,
-			),
-		})),
-	deleteDnsProvider: id =>
-		set(state => ({
-			dnsProviders: state.dnsProviders.filter(
-				p => String(p.id) !== String(id),
-			),
-		})),
+  isHydrated: false,
+  isWsConnected: false,
 
-	setProjects: projects => set({projects}),
-	addProject: project =>
-		set(state => ({
-			projects: [
-				project,
-				...state.projects.filter(p => String(p.id) !== String(project.id)),
-			],
-		})),
-	updateProject: (id, updated) =>
-		set(state => ({
-			projects: state.projects.map(p =>
-				String(p.id) === String(id) ? {...p, ...updated} : p,
-			),
-		})),
-	deleteProject: id =>
-		set(state => ({
-			projects: state.projects.filter(p => String(p.id) !== String(id)),
-		})),
+  setVaultProviders: (providers) => set({ vaultProviders: providers }),
+  addVaultProvider: (provider) =>
+    set((state) => ({
+      vaultProviders: [
+        provider,
+        ...state.vaultProviders.filter(
+          (p) => String(p.id) !== String(provider.id),
+        ),
+      ],
+    })),
+  updateVaultProvider: (id, updated) =>
+    set((state) => ({
+      vaultProviders: state.vaultProviders.map((p) =>
+        String(p.id) === String(id) ? { ...p, ...updated } : p,
+      ),
+    })),
+  deleteVaultProvider: (id) =>
+    set((state) => ({
+      vaultProviders: state.vaultProviders.filter(
+        (p) => String(p.id) !== String(id),
+      ),
+    })),
 
-	setApplications: applications => set({applications}),
-	addApplication: app =>
-		set(state => ({
-			applications: [
-				app,
-				...state.applications.filter(a => String(a.id) !== String(app.id)),
-			],
-		})),
-	updateApplication: (id, updated) =>
-		set(state => ({
-			applications: state.applications.map(a =>
-				String(a.id) === String(id) ? {...a, ...updated} : a,
-			),
-		})),
-	deleteApplication: id =>
-		set(state => ({
-			applications: state.applications.filter(
-				a => String(a.id) !== String(id),
-			),
-		})),
+  setDnsProviders: (providers) => set({ dnsProviders: providers }),
+  setAiSettings: (settings) => set({ aiSettings: settings }),
+  setCertificates: (certificates) => set({ certificates }),
+  addDnsProvider: (provider) =>
+    set((state) => ({
+      dnsProviders: [
+        provider,
+        ...state.dnsProviders.filter(
+          (p) => String(p.id) !== String(provider.id),
+        ),
+      ],
+    })),
+  updateDnsProvider: (id, updated) =>
+    set((state) => ({
+      dnsProviders: state.dnsProviders.map((p) =>
+        String(p.id) === String(id) ? { ...p, ...updated } : p,
+      ),
+    })),
+  deleteDnsProvider: (id) =>
+    set((state) => ({
+      dnsProviders: state.dnsProviders.filter(
+        (p) => String(p.id) !== String(id),
+      ),
+    })),
 
-	setDatabases: databases => set({databases}),
-	addDatabase: db =>
-		set(state => ({
-			databases: [
-				db,
-				...state.databases.filter(d => String(d.id) !== String(db.id)),
-			],
-		})),
-	updateDatabase: (id, updated) =>
-		set(state => ({
-			databases: state.databases.map(d =>
-				String(d.id) === String(id) ? {...d, ...updated} : d,
-			),
-		})),
-	deleteDatabase: id =>
-		set(state => ({
-			databases: state.databases.filter(d => String(d.id) !== String(id)),
-		})),
+  setProjects: (projects) => set({ projects }),
+  addProject: (project) =>
+    set((state) => ({
+      projects: [
+        project,
+        ...state.projects.filter((p) => String(p.id) !== String(project.id)),
+      ],
+    })),
+  updateProject: (id, updated) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        String(p.id) === String(id) ? { ...p, ...updated } : p,
+      ),
+    })),
+  deleteProject: (id) =>
+    set((state) => ({
+      projects: state.projects.filter((p) => String(p.id) !== String(id)),
+    })),
 
-	setComposes: composes => set({composes}),
-	addCompose: compose =>
-		set(state => ({
-			composes: [
-				compose,
-				...state.composes.filter(c => String(c.id) !== String(compose.id)),
-			],
-		})),
-	updateCompose: (id, updated) =>
-		set(state => ({
-			composes: state.composes.map(c =>
-				String(c.id) === String(id) ? {...c, ...updated} : c,
-			),
-		})),
-	deleteCompose: id =>
-		set(state => ({
-			composes: state.composes.filter(c => String(c.id) !== String(id)),
-		})),
+  setApplications: (applications) => set({ applications }),
+  addApplication: (app) =>
+    set((state) => ({
+      applications: [
+        app,
+        ...state.applications.filter((a) => String(a.id) !== String(app.id)),
+      ],
+    })),
+  updateApplication: (id, updated) =>
+    set((state) => ({
+      applications: state.applications.map((a) =>
+        String(a.id) === String(id) ? { ...a, ...updated } : a,
+      ),
+    })),
+  deleteApplication: (id) =>
+    set((state) => ({
+      applications: state.applications.filter(
+        (a) => String(a.id) !== String(id),
+      ),
+    })),
 
-	setServers: servers => set({servers}),
-	addServer: server =>
-		set(state => ({
-			servers: [
-				server,
-				...state.servers.filter(s => String(s.id) !== String(server.id)),
-			],
-		})),
-	updateServer: (id, updated) =>
-		set(state => ({
-			servers: state.servers.map(s =>
-				String(s.id) === String(id) ? {...s, ...updated} : s,
-			),
-		})),
-	deleteServer: id =>
-		set(state => ({
-			servers: state.servers.filter(s => String(s.id) !== String(id)),
-		})),
+  setDatabases: (databases) => set({ databases }),
+  addDatabase: (db) =>
+    set((state) => ({
+      databases: [
+        db,
+        ...state.databases.filter((d) => String(d.id) !== String(db.id)),
+      ],
+    })),
+  updateDatabase: (id, updated) =>
+    set((state) => ({
+      databases: state.databases.map((d) =>
+        String(d.id) === String(id) ? { ...d, ...updated } : d,
+      ),
+    })),
+  deleteDatabase: (id) =>
+    set((state) => ({
+      databases: state.databases.filter((d) => String(d.id) !== String(id)),
+    })),
 
-	setOverviewServices: services => set({overviewServices: services}),
-	updateServiceStatus: (id, status, kind?) =>
-		set(state => {
-			const targetK = (kind || '').toLowerCase();
-			return {
-				databases: state.databases.map((d: any) => {
-					if (String(d.id) !== String(id)) return d;
-					if (targetK) {
-						const dk = String(d.kind || d.type || '').toLowerCase();
-						if (!dk.includes(targetK) && !targetK.includes(dk)) return d;
-					}
-					return {...d, status, app_status: status};
-				}),
-				applications: state.applications.map((a: any) =>
-					String(a.id) === String(id)
-						? {...a, status, app_status: status}
-						: a,
-				),
-				composes: state.composes.map((c: any) =>
-					String(c.id) === String(id)
-						? {...c, status, app_status: status}
-						: c,
-				),
-				overviewServices: state.overviewServices.map((s: any) => {
-					if (String(s.id) !== String(id)) return s;
-					if (
-						targetK &&
-						(s.service_type === 'DATABASE' || s.db_kind || s.dbKind)
-					) {
-						const sk = String(
-							s.db_kind || s.dbKind || s.kind || '',
-						).toLowerCase();
-						if (!sk.includes(targetK) && !targetK.includes(sk)) return s;
-					}
-					return {...s, status, app_status: status};
-				}),
-			};
-		}),
-	setDeployments: deployments => set({deployments}),
-	deleteDeployment: id =>
-		set(state => ({
-			deployments: state.deployments.filter(
-				d => String(d.id) !== String(id),
-			),
-		})),
-	clearDeployments: filter =>
-		set(state => ({
-			deployments: state.deployments.filter((d: any) => {
-				if (
-					filter?.appId &&
-					String(d.application_id) === String(filter.appId)
-				)
-					return false;
-				if (
-					filter?.composeId &&
-					String(d.compose_id) === String(filter.composeId)
-				)
-					return false;
-				if (
-					filter?.databaseId &&
-					String(d.database_id) === String(filter.databaseId)
-				)
-					return false;
-				if (!filter?.appId && !filter?.composeId && !filter?.databaseId)
-					return false;
-				return true;
-			}),
-		})),
-	setSwarmNodes: nodes => set({swarmNodes: nodes}),
-	setDomains: domains => set({domains}),
-	setBackups: backups => set({backups}),
+  setComposes: (composes) => set({ composes }),
+  addCompose: (compose) =>
+    set((state) => ({
+      composes: [
+        compose,
+        ...state.composes.filter((c) => String(c.id) !== String(compose.id)),
+      ],
+    })),
+  updateCompose: (id, updated) =>
+    set((state) => ({
+      composes: state.composes.map((c) =>
+        String(c.id) === String(id) ? { ...c, ...updated } : c,
+      ),
+    })),
+  deleteCompose: (id) =>
+    set((state) => ({
+      composes: state.composes.filter((c) => String(c.id) !== String(id)),
+    })),
 
-	setTags: tags => set({tags}),
-	addTag: tag =>
-		set(state => ({
-			tags: [
-				tag,
-				...state.tags.filter(t => String(t.id) !== String(tag.id)),
-			],
-		})),
-	deleteTag: id =>
-		set(state => ({
-			tags: state.tags.filter(t => String(t.id) !== String(id)),
-		})),
+  setServers: (servers) => set({ servers }),
+  addServer: (server) =>
+    set((state) => ({
+      servers: [
+        server,
+        ...state.servers.filter((s) => String(s.id) !== String(server.id)),
+      ],
+    })),
+  updateServer: (id, updated) =>
+    set((state) => ({
+      servers: state.servers.map((s) =>
+        String(s.id) === String(id) ? { ...s, ...updated } : s,
+      ),
+    })),
+  deleteServer: (id) =>
+    set((state) => ({
+      servers: state.servers.filter((s) => String(s.id) !== String(id)),
+    })),
 
-	setSchedules: schedules => set({schedules}),
-	addSchedule: schedule =>
-		set(state => ({
-			schedules: [
-				schedule,
-				...state.schedules.filter(
-					s => String(s.id) !== String(schedule.id),
-				),
-			],
-		})),
-	updateSchedule: (id, updated) =>
-		set(state => ({
-			schedules: state.schedules.map(s =>
-				String(s.id) === String(id) ? {...s, ...updated} : s,
-			),
-		})),
-	deleteSchedule: id =>
-		set(state => ({
-			schedules: state.schedules.filter(s => String(s.id) !== String(id)),
-		})),
+  setOverviewServices: (services) =>
+    set({overviewServices: dedupeOverviewServices(services as any[])}),
+  updateServiceStatus: (id, status, kind?) =>
+    set((state) => {
+      const targetK = (kind || "").toLowerCase();
+      return {
+        databases: state.databases.map((d: any) => {
+          if (String(d.id) !== String(id)) return d;
+          if (targetK) {
+            const dk = String(d.kind || d.type || "").toLowerCase();
+            if (!dk.includes(targetK) && !targetK.includes(dk)) return d;
+          }
+          return { ...d, status, app_status: status };
+        }),
+        applications: state.applications.map((a: any) =>
+          String(a.id) === String(id)
+            ? { ...a, status, app_status: status }
+            : a,
+        ),
+        composes: state.composes.map((c: any) =>
+          String(c.id) === String(id)
+            ? { ...c, status, app_status: status }
+            : c,
+        ),
+        overviewServices: state.overviewServices.map((s: any) => {
+          if (String(s.id) !== String(id)) return s;
+          if (
+            targetK &&
+            (s.service_type === "DATABASE" || s.db_kind || s.dbKind)
+          ) {
+            const sk = String(
+              s.db_kind || s.dbKind || s.kind || "",
+            ).toLowerCase();
+            if (!sk.includes(targetK) && !targetK.includes(sk)) return s;
+          }
+          return { ...s, status, app_status: status };
+        }),
+      };
+    }),
+  setDeployments: (deployments) => set({ deployments }),
+  deleteDeployment: (id) =>
+    set((state) => ({
+      deployments: state.deployments.filter((d) => String(d.id) !== String(id)),
+    })),
+  clearDeployments: (filter) =>
+    set((state) => ({
+      deployments: state.deployments.filter((d: any) => {
+        if (filter?.appId && String(d.application_id) === String(filter.appId))
+          return false;
+        if (
+          filter?.composeId &&
+          String(d.compose_id) === String(filter.composeId)
+        )
+          return false;
+        if (
+          filter?.databaseId &&
+          String(d.database_id) === String(filter.databaseId)
+        )
+          return false;
+        if (!filter?.appId && !filter?.composeId && !filter?.databaseId)
+          return false;
+        return true;
+      }),
+    })),
+  setSwarmNodes: (nodes) => set({ swarmNodes: nodes }),
+  setDomains: (domains) => set({ domains }),
+  setBackups: (backups) => set({ backups }),
 
-	setSshKeys: sshKeys => set({sshKeys}),
-	setDestinations: destinations => set({destinations}),
-	setProfile: profile =>
-		set(state => ({profile: {...state.profile, ...profile}})),
+  setTags: (tags) => set({ tags }),
+  addTag: (tag) =>
+    set((state) => ({
+      tags: [tag, ...state.tags.filter((t) => String(t.id) !== String(tag.id))],
+    })),
+  deleteTag: (id) =>
+    set((state) => ({
+      tags: state.tags.filter((t) => String(t.id) !== String(id)),
+    })),
 
-	setMembers: members => set({members}),
-	addMember: member =>
-		set(state => {
-			const mId = String(member.user_id || member.id);
-			return {
-				members: [
-					member,
-					...state.members.filter(
-						(m: any) => String(m.user_id || m.id) !== mId,
-					),
-				],
-			};
-		}),
-	updateMember: (id, updated) =>
-		set(state => ({
-			members: state.members.map((m: any) =>
-				String(m.user_id || m.id) === String(id) ? {...m, ...updated} : m,
-			),
-		})),
-	deleteMember: id =>
-		set(state => ({
-			members: state.members.filter(
-				(m: any) => String(m.user_id || m.id) !== String(id),
-			),
-		})),
+  setSchedules: (schedules) => set({ schedules }),
+  addSchedule: (schedule) =>
+    set((state) => ({
+      schedules: [
+        schedule,
+        ...state.schedules.filter((s) => String(s.id) !== String(schedule.id)),
+      ],
+    })),
+  updateSchedule: (id, updated) =>
+    set((state) => ({
+      schedules: state.schedules.map((s) =>
+        String(s.id) === String(id) ? { ...s, ...updated } : s,
+      ),
+    })),
+  deleteSchedule: (id) =>
+    set((state) => ({
+      schedules: state.schedules.filter((s) => String(s.id) !== String(id)),
+    })),
 
-	setInvites: invites => set({invites}),
-	addInvite: invite =>
-		set(state => ({
-			invites: [
-				invite,
-				...state.invites.filter(
-					(i: any) => String(i.id) !== String(invite.id),
-				),
-			],
-		})),
-	deleteInvite: id =>
-		set(state => ({
-			invites: state.invites.filter(
-				(i: any) => String(i.id) !== String(id),
-			),
-		})),
+  setSshKeys: (sshKeys) => set({ sshKeys }),
+  setDestinations: (destinations) => set({ destinations }),
+  setProfile: (profile) =>
+    set((state) => ({ profile: { ...state.profile, ...profile } })),
 
-	setHydrated: hydrated => set({isHydrated: hydrated}),
-	setWsConnected: connected => set({isWsConnected: connected}),
+  setMembers: (members) => set({ members }),
+  addMember: (member) =>
+    set((state) => {
+      const mId = String(member.user_id || member.id);
+      return {
+        members: [
+          member,
+          ...state.members.filter(
+            (m: any) => String(m.user_id || m.id) !== mId,
+          ),
+        ],
+      };
+    }),
+  updateMember: (id, updated) =>
+    set((state) => ({
+      members: state.members.map((m: any) =>
+        String(m.user_id || m.id) === String(id) ? { ...m, ...updated } : m,
+      ),
+    })),
+  deleteMember: (id) =>
+    set((state) => ({
+      members: state.members.filter(
+        (m: any) => String(m.user_id || m.id) !== String(id),
+      ),
+    })),
+
+  setInvites: (invites) => set({ invites }),
+  addInvite: (invite) =>
+    set((state) => ({
+      invites: [
+        invite,
+        ...state.invites.filter((i: any) => String(i.id) !== String(invite.id)),
+      ],
+    })),
+  deleteInvite: (id) =>
+    set((state) => ({
+      invites: state.invites.filter((i: any) => String(i.id) !== String(id)),
+    })),
+
+  setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+  setWsConnected: (connected) => set({ isWsConnected: connected }),
 }));
 
 // Centralized Selectors for 100% Pure Zustand Store Resolutions (Strict Object Reference Equality)
 export const selectApplicationById = (state: AppState, id: number) => {
-	return (
-		state.applications.find(a => String(a.id) === String(id)) ||
-		state.overviewServices.find(
-			s =>
-				String(s.id) === String(id) &&
-				(s.type === 'application' || s.kind === 'application'),
-		) ||
-		null
-	);
+  return (
+    state.applications.find((a) => String(a.id) === String(id)) ||
+    state.overviewServices.find(
+      (s) =>
+        String(s.id) === String(id) &&
+        (s.type === "application" || s.kind === "application"),
+    ) ||
+    null
+  );
 };
 
 export const selectComposeById = (state: AppState, id: number) => {
-	return (
-		state.composes.find(c => String(c.id) === String(id)) ||
-		state.overviewServices.find(
-			s =>
-				String(s.id) === String(id) &&
-				(s.type === 'compose' || s.kind === 'compose'),
-		) ||
-		null
-	);
+  return (
+    state.composes.find((c) => String(c.id) === String(id)) ||
+    state.overviewServices.find(
+      (s) =>
+        String(s.id) === String(id) &&
+        (s.type === "compose" || s.kind === "compose"),
+    ) ||
+    null
+  );
 };

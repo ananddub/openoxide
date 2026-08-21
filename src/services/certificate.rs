@@ -9,10 +9,7 @@ use crate::{
 use auto_di::singleton;
 use std::sync::Arc;
 
-use crate::utils::{
-    exec::{CommandExecutor, LocalExecutor},
-    os::OsCli,
-};
+mod files;
 
 pub struct CertificateService {
     repo_cert: Arc<CertificateRepository>,
@@ -34,18 +31,25 @@ impl CertificateService {
         }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Certificate> {
+    pub async fn get_by_id(&self, id: i64, organization_id: i64) -> sqlx::Result<Certificate> {
         self.repo_cert
-            .get_by_id(id)
+            .get_by_id_for_organization(id, organization_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Certificate>> {
-        self.repo_cert.get_all().await
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Certificate>> {
+        self.repo_cert.get_all(organization_id).await
     }
 
-    pub async fn create(&self, input: CreateCertificateDto) -> sqlx::Result<Certificate> {
+    pub async fn create(
+        &self,
+        input: CreateCertificateDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Certificate> {
+        files::validate_certificate_pair(&input.certificate_data, &input.private_key)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
         let server_id = if let Some(sid) = input.server_id {
             sid.parse::<i64>().ok()
         } else {
@@ -61,28 +65,42 @@ impl CertificateService {
             certificate_path: input.certificate_path,
             auto_renew: input.auto_renew,
             server_id,
-            organization_id: input.organization_id,
+            organization_id,
             created_at: now,
             updated_at: now,
         };
         let new_id = self.repo_cert.create(&item).await?;
-        self.repo_cert
+        let certificate = self
+            .repo_cert
             .get_by_id(new_id)
             .await?
-            .ok_or(sqlx::Error::RowNotFound)
+            .ok_or(sqlx::Error::RowNotFound)?;
+        if let Err(error) = files::write(&certificate).await {
+            let _ = self.repo_cert.delete(new_id).await;
+            return Err(sqlx::Error::Protocol(error));
+        }
+        Ok(certificate)
     }
 
-    pub async fn patch(&self, id: i64, input: PatchCertificateDto) -> sqlx::Result<Certificate> {
-        let mut current = self.get_by_id(id).await?;
+    pub async fn patch(
+        &self,
+        id: i64,
+        input: PatchCertificateDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Certificate> {
+        let mut current = self.get_by_id(id, organization_id).await?;
         let now = chrono::Utc::now().timestamp();
 
         if let Some(v) = input.name {
             current.name = v;
         }
-        if let Some(v) = input.certificate_data {
+        if let Some(v) = input
+            .certificate_data
+            .filter(|value| !value.trim().is_empty())
+        {
             current.certificate_data = v;
         }
-        if let Some(v) = input.private_key {
+        if let Some(v) = input.private_key.filter(|value| !value.trim().is_empty()) {
             current.private_key = v;
         }
         if let Some(v) = input.certificate_path {
@@ -100,42 +118,66 @@ impl CertificateService {
         }
         current.updated_at = now;
 
+        files::validate_certificate_pair(&current.certificate_data, &current.private_key)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+
+        files::write(&current)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
         self.repo_cert.update(id, &current).await?;
-        self.repo_cert
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        Ok(current)
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
         // Check existence
-        self.get_by_id(id).await?;
+        let current = self.get_by_id(id, organization_id).await?;
         let dependencies = self.dependencies.certificate(id).await?;
         if dependencies.running_renewals > 0 {
             return Err(sqlx::Error::Protocol(
                 "certificate has a running renewal".into(),
             ));
         }
-        self.repo_cert.delete(id).await
+        files::delete(&current)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        if !self
+            .repo_cert
+            .delete_for_organization(id, organization_id)
+            .await?
+        {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(())
     }
 
     pub async fn dependencies(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> sqlx::Result<crate::repository::CertificateDependencyCounts> {
-        self.get_by_id(id).await?;
+        self.get_by_id(id, organization_id).await?;
         self.dependencies.certificate(id).await
     }
 
-    pub async fn renew(&self, id: i64, input: RenewCertificateDto) -> sqlx::Result<Certificate> {
-        let mut current = self.get_by_id(id).await?;
-        let previous = certificate_expiry(&current.certificate_data).await.ok();
+    pub async fn renew(
+        &self,
+        id: i64,
+        input: RenewCertificateDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Certificate> {
+        let mut current = self.get_by_id(id, organization_id).await?;
+        let previous = files::certificate_expiry(&current.certificate_data)
+            .await
+            .ok();
         let execution = self
             .renewals
             .begin(id, current.organization_id, previous)
             .await?;
         let new_expiry =
-            match validate_certificate_pair(&input.certificate_data, &input.private_key).await {
+            match files::validate_certificate_pair(&input.certificate_data, &input.private_key)
+                .await
+            {
                 Ok(expiry) => expiry,
                 Err(error) => {
                     self.renewals.finish(execution, None, Some(&error)).await?;
@@ -145,6 +187,10 @@ impl CertificateService {
         current.certificate_data = input.certificate_data;
         current.private_key = input.private_key;
         current.updated_at = chrono::Utc::now().timestamp();
+        if let Err(error) = files::write(&current).await {
+            self.renewals.finish(execution, None, Some(&error)).await?;
+            return Err(sqlx::Error::Protocol(error));
+        }
         if let Err(error) = self.repo_cert.update(id, &current).await {
             let message = error.to_string();
             self.renewals
@@ -155,37 +201,15 @@ impl CertificateService {
         self.renewals
             .finish(execution, Some(new_expiry), None)
             .await?;
-        self.get_by_id(id).await
+        self.get_by_id(id, organization_id).await
     }
 
     pub async fn renewal_history(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> sqlx::Result<Vec<crate::db::repository::certificate_renewals::CertificateRenewal>> {
-        self.get_by_id(id).await?;
+        self.get_by_id(id, organization_id).await?;
         self.renewals.list(id).await
     }
-}
-
-async fn certificate_expiry(certificate: &str) -> Result<i64, String> {
-    let executor = CommandExecutor::Local(LocalExecutor::new());
-    OsCli::new(&executor)
-        .crypto()
-        .certificate(certificate)
-        .expiry()
-        .run()
-        .await
-        .map_err(|error| error.to_string())
-}
-
-async fn validate_certificate_pair(certificate: &str, private_key: &str) -> Result<i64, String> {
-    let executor = CommandExecutor::Local(LocalExecutor::new());
-    OsCli::new(&executor)
-        .crypto()
-        .certificate(certificate)
-        .validate_with_key(private_key)
-        .run()
-        .await
-        .map(|result| result.expires_at)
-        .map_err(|error| error.to_string())
 }

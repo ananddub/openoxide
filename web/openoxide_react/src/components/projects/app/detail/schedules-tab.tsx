@@ -39,7 +39,7 @@ export function SchedulesTab({
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/run');
+	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
 	const patchMutation = $api.useMutation('patch', '/schedules/{id}');
 	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
 

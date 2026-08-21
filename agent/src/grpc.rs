@@ -1,6 +1,8 @@
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio_stream::Stream;
+use tokio_stream::StreamExt;
 use tonic::{Request, Response, Status};
 use tracing::debug;
 
@@ -16,8 +18,9 @@ pub mod proto {
 use proto::monitoring_service_server::MonitoringService;
 pub use proto::monitoring_service_server::MonitoringServiceServer;
 use proto::{
-    ContainerMetricPoint, ContainerMetricsResponse, GetContainerMetricsRequest, GetMetricsRequest,
-    LogChunk, LogStreamRequest, ServerMetricPoint, ServerMetricsResponse,
+    ContainerMetricPoint, ContainerMetricsResponse, ContainerStatePoint, ContainerStatesResponse,
+    GetContainerMetricsRequest, GetMetricsRequest, LifecycleControl, LogChunk, LogStreamRequest,
+    ServerMetricPoint, ServerMetricsResponse,
 };
 
 const DEFAULT_LIMIT: i64 = 50;
@@ -62,6 +65,8 @@ fn clamp_limit(raw: i64) -> i64 {
 #[tonic::async_trait]
 impl MonitoringService for MonitoringGrpc {
     type StreamLogsStream = Pin<Box<dyn Stream<Item = Result<LogChunk, Status>> + Send + 'static>>;
+    type WatchContainerStatesStream =
+        Pin<Box<dyn Stream<Item = Result<ContainerStatesResponse, Status>> + Send + 'static>>;
 
     async fn get_server_metrics(
         &self,
@@ -155,6 +160,107 @@ impl MonitoringService for MonitoringGrpc {
         Ok(Response::new(ContainerMetricsResponse { metrics }))
     }
 
+    async fn get_container_states(
+        &self,
+        request: Request<GetMetricsRequest>,
+    ) -> Result<Response<ContainerStatesResponse>, Status> {
+        let req = request.into_inner();
+        self.check_server_id(req.server_id)?;
+        let rows: Vec<crate::docker::types::ContainerSummary> = self
+            .docker
+            .get_json("/containers/json?all=true")
+            .await
+            .map_err(|error| Status::unavailable(error.to_string()))?;
+        let containers = rows
+            .into_iter()
+            .map(|row| ContainerStatePoint {
+                container_id: row.id.short().to_string(),
+                name: row.display_name().as_str().to_string(),
+                state: row.state,
+                status: row.status,
+                application_id: label_id(&row.labels, "com.openoxide.application-id"),
+                compose_id: label_id(&row.labels, "com.openoxide.compose-id"),
+                compose_project: row
+                    .labels
+                    .get("com.docker.compose.project")
+                    .cloned()
+                    .unwrap_or_default(),
+                compose_service: row
+                    .labels
+                    .get("com.docker.compose.service")
+                    .cloned()
+                    .unwrap_or_default(),
+            })
+            .collect();
+        Ok(Response::new(ContainerStatesResponse { containers }))
+    }
+
+    async fn watch_container_states(
+        &self,
+        request: Request<tonic::Streaming<LifecycleControl>>,
+    ) -> Result<Response<Self::WatchContainerStatesStream>, Status> {
+        let mut controls = request.into_inner();
+        controls
+            .message()
+            .await?
+            .ok_or_else(|| Status::invalid_argument("missing lifecycle subscription"))?;
+
+        let docker = self.docker.clone();
+        let (tx, rx) = tokio::sync::mpsc::channel(8);
+        tokio::spawn(async move {
+            let mut events = match docker.get_stream("/events").await {
+                Ok(events) => events,
+                Err(error) => {
+                    let _ = tx.send(Err(Status::unavailable(error.to_string()))).await;
+                    return;
+                }
+            };
+            let mut heartbeat = tokio::time::interval(Duration::from_secs(15));
+            heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+            let mut buffer = Vec::new();
+
+            if send_container_snapshot(&docker, &tx).await.is_err() {
+                return;
+            }
+
+            loop {
+                tokio::select! {
+                    control = controls.message() => match control {
+                        Ok(Some(_)) => {}
+                        _ => break,
+                    },
+                    _ = heartbeat.tick() => {
+                        if send_container_snapshot(&docker, &tx).await.is_err() {
+                            break;
+                        }
+                    }
+                    chunk = events.next() => {
+                        match chunk {
+                            Some(Ok(bytes)) => {
+                                buffer.extend_from_slice(&bytes);
+                                while let Some(position) = buffer.iter().position(|byte| *byte == b'\n') {
+                                    buffer.drain(..=position);
+                                    if send_container_snapshot(&docker, &tx).await.is_err() {
+                                        return;
+                                    }
+                                }
+                            }
+                            Some(Err(error)) => {
+                                let _ = tx.send(Err(Status::unavailable(error.to_string()))).await;
+                                break;
+                            }
+                            None => break,
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(Response::new(Box::pin(
+            tokio_stream::wrappers::ReceiverStream::new(rx),
+        )))
+    }
+
     async fn stream_logs(
         &self,
         request: Request<LogStreamRequest>,
@@ -199,6 +305,51 @@ impl MonitoringService for MonitoringGrpc {
     }
 }
 
+async fn send_container_snapshot(
+    docker: &DockerApi,
+    tx: &tokio::sync::mpsc::Sender<Result<ContainerStatesResponse, Status>>,
+) -> Result<(), ()> {
+    let rows = docker
+        .get_json::<Vec<crate::docker::types::ContainerSummary>>("/containers/json?all=true")
+        .await
+        .map_err(|error| {
+            tracing::debug!(%error, "could not read containers after Docker event");
+        })?;
+    let mut containers: Vec<_> = rows.into_iter().map(container_state).collect();
+    containers.sort_by(|a, b| a.container_id.cmp(&b.container_id));
+    tx.send(Ok(ContainerStatesResponse { containers }))
+        .await
+        .map_err(|_| ())
+}
+
+fn label_id(labels: &std::collections::HashMap<String, String>, key: &str) -> i64 {
+    labels
+        .get(key)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0)
+}
+
+fn container_state(row: crate::docker::types::ContainerSummary) -> ContainerStatePoint {
+    ContainerStatePoint {
+        container_id: row.id.short().to_string(),
+        name: row.display_name().as_str().to_string(),
+        state: row.state,
+        status: row.status,
+        application_id: label_id(&row.labels, "com.openoxide.application-id"),
+        compose_id: label_id(&row.labels, "com.openoxide.compose-id"),
+        compose_project: row
+            .labels
+            .get("com.docker.compose.project")
+            .cloned()
+            .unwrap_or_default(),
+        compose_service: row
+            .labels
+            .get("com.docker.compose.service")
+            .cloned()
+            .unwrap_or_default(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -216,9 +367,8 @@ mod tests {
     }
 
     fn service_for(server_id: i64) -> MonitoringGrpc {
-        let pool = sqlx::SqlitePool::connect_lazy("sqlite::memory:").expect("lazy pool");
         MonitoringGrpc::new(
-            Arc::new(Store { pool }),
+            Arc::new(Store::new()),
             server_id,
             DockerApi::new("/var/run/docker.sock"),
         )

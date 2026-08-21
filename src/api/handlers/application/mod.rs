@@ -565,7 +565,11 @@ impl ApplicationController {
             .run_operation(id, operation)
             .await
             .map(operation_response)
-            .map(|response| (StatusCode::ACCEPTED, Json(response)))
+            // The generated OpenAPI client models operation endpoints as a
+            // successful 200 response. The operation is queued internally,
+            // but returning 202 made openapi-fetch treat a successful enqueue
+            // as an error even though the worker continued deploying.
+            .map(|response| (StatusCode::OK, Json(response)))
             .map_err(map_sqlx_error)
     }
 }

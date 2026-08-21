@@ -6,6 +6,7 @@ import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
 	useDomainListByCompose,
 	useScheduleListByCompose,
+	useComposeGet,
 } from 'virtual:openoxide-live';
 
 import {useAppStore, selectComposeById} from '#/stores/app-store';
@@ -17,9 +18,11 @@ export function useComposeDetail(composeId: number) {
 	>(null);
 
 	// 100% Pure Centralized Zustand Store Resolution
-	const rawCompose = useAppStore(state =>
+	const storeCompose = useAppStore(state =>
 		selectComposeById(state, composeId),
 	);
+	const {data: liveCompose} = useComposeGet(BigInt(composeId));
+	const rawCompose = liveCompose || storeCompose;
 
 	const compose = rawCompose
 		? {
@@ -103,7 +106,11 @@ export function useComposeDetail(composeId: number) {
 	const isLoadingDeployments = false;
 
 	// 6. Central Live Container Monitoring Stream
-	const monitoring = useContainerMonitoring(composeId, 'compose');
+	const monitoring = useContainerMonitoring(
+		composeId,
+		'compose',
+		activeTab === 'Monitoring',
+	);
 
 	// Live hooks auto-push updates — only trigger monitoring refresh
 	const refetchAll = () => {

@@ -233,18 +233,29 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		[rawSchedules],
 	);
 
-	// Backups — filter locally by database_id
+	// Volume backups store a typed resource foreign key, not a generic database_id.
 	const {data: rawBackupsAll, loading: isLoadingBackups} =
 		useBackupListVolumeBackups();
 	const backups = useMemo(() => {
 		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];
-		return all.filter((b: any) => b.database_id === dbId);
+		return all.filter((backup: any) =>
+			[
+				backup.application_id,
+				backup.postgres_id,
+				backup.mysql_id,
+				backup.mariadb_id,
+				backup.mongo_id,
+				backup.redis_id,
+				backup.libsql_id,
+			].some(value => Number(value) === Number(dbId)),
+		);
 	}, [rawBackupsAll, dbId]);
 
 	// Live Container Monitoring Stream
 	const monitoring = useContainerMonitoring(
 		dbId,
 		currentKind || 'postgres',
+		activeTab === 'Monitoring',
 	);
 
 	const allDeployments = useAppStore(state => state.deployments || []);

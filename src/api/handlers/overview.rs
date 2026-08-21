@@ -22,7 +22,7 @@ impl OverviewController {
     }
 
     #[get("/services/organization/{organization_id}")]
-    #[live(tables = ["applications", "compose_projects", "postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs"])]
+    #[live(tables = ["applications", "compose_projects", "postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs", "servers"])]
     async fn services(
         &self,
         RequirePermission(_claims, _): RequirePermission<Project, CanRead>,

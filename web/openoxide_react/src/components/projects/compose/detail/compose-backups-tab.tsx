@@ -1,4 +1,5 @@
 import {useState, useMemo, useEffect} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
@@ -17,13 +18,20 @@ interface ComposeBackupsTabProps {
 	compose: any;
 	backups?: any[];
 	isLoading?: boolean;
+	databaseId?: number;
+	databaseKind?: string;
 }
 
 export function ComposeBackupsTab({
 	compose,
 	backups: passedBackups,
 	isLoading: passedIsLoading,
+	databaseId,
+	databaseKind,
 }: ComposeBackupsTabProps) {
+	const queryClient = useQueryClient();
+	const isDatabase = databaseId !== undefined;
+	const normalizedDatabaseKind = (databaseKind || compose?.kind || '').toLowerCase();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
@@ -59,12 +67,19 @@ export function ComposeBackupsTab({
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
 		if (passedBackups && passedBackups.length > 0) return passedBackups;
-		return storeBackups.filter(
-			(b: any) =>
-				Number(b.compose_id) === Number(compose?.id) ||
-				b.app_name === compose?.app_name,
-		);
-	}, [passedBackups, storeBackups, compose]);
+		return storeBackups.filter((backup: any) => {
+			if (!isDatabase) {
+				return Number(backup.compose_id) === Number(compose?.id);
+			}
+			return (
+				Number(backup.postgres_id) === databaseId ||
+				Number(backup.mysql_id) === databaseId ||
+				Number(backup.mariadb_id) === databaseId ||
+				Number(backup.mongo_id) === databaseId ||
+				Number(backup.libsql_id) === databaseId
+			);
+		});
+	}, [passedBackups, storeBackups, compose, databaseId, isDatabase]);
 	const isLoading = false;
 
 	// Mutations
@@ -86,24 +101,47 @@ export function ComposeBackupsTab({
 		cronExpr: string;
 		prefix: string;
 		turnOff: boolean;
+		destinationId: number;
 	}) => {
 		try {
+			const databaseResource = isDatabase
+				? {
+						postgres_id: normalizedDatabaseKind.includes('postgres')
+							? databaseId
+							: undefined,
+						mysql_id: normalizedDatabaseKind.includes('mysql')
+							? databaseId
+							: undefined,
+						mariadb_id: normalizedDatabaseKind.includes('mariadb')
+							? databaseId
+							: undefined,
+						mongo_id: normalizedDatabaseKind.includes('mongo')
+							? databaseId
+							: undefined,
+						libsql_id: normalizedDatabaseKind.includes('libsql')
+							? databaseId
+							: undefined,
+					}
+				: {compose_id: compose?.id};
 			await createMutation.mutateAsync({
 				body: {
 					name: data.name,
-					compose_id: compose?.id,
+					...databaseResource,
 					app_name: compose?.app_name,
 					service_name: data.serviceName,
 					volume_name: data.volumeName,
 					cron_expression: data.cronExpr,
 					prefix: data.prefix,
 					turn_off: data.turnOff ? 1 : 0,
-					destination_id: 0,
-					organization_id: 1,
-					service_type: 'COMPOSE',
+					destination_id: data.destinationId,
+					organization_id: compose?.organization_id,
+					service_type: isDatabase
+						? normalizedDatabaseKind.toUpperCase()
+						: 'COMPOSE',
 				} as any,
 			});
-			toast.success('Compose volume backup rule created successfully');
+			await queryClient.invalidateQueries();
+			toast.success('Volume backup rule created successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		}
@@ -149,7 +187,7 @@ export function ComposeBackupsTab({
 					</h3>
 					<p className="mt-1 text-xs text-muted-foreground">
 						Configure volume backup rules to stream S3 snapshots of your
-						compose container data
+						{isDatabase ? ' database' : ' compose container'} data
 					</p>
 				</div>
 				<div className="flex items-center gap-3">

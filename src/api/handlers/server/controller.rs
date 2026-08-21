@@ -124,6 +124,7 @@ impl ServerController {
             .touch_test_connection(id)
             .await
             .map_err(map_sqlx_error)?;
+        trigger_monitoring_refresh(id);
         Ok(Json(ServerConnectionResponseDto {
             connected: true,
             reused_sessions: 0,
@@ -158,6 +159,7 @@ impl ServerController {
             .touch_test_connection(id)
             .await
             .map_err(map_sqlx_error)?;
+        trigger_monitoring_refresh(id);
         Ok(Json(audit.into()))
     }
 
@@ -378,6 +380,44 @@ impl ServerController {
         };
         Ok(executor)
     }
+}
+
+/// Kick the one-shot lifecycle reconciliation after an explicit connection
+/// check. The HTTP response is not held open while the agent is contacted.
+fn trigger_monitoring_refresh(server_id: i64) {
+    tokio::spawn(async move {
+        let monitoring =
+            match resolve::<crate::services::monitoring::monitoring_service::MonitoringService>()
+                .await
+            {
+                Ok(service) => service,
+                Err(error) => {
+                    tracing::debug!(server_id, %error, "monitoring refresh service unavailable");
+                    return;
+                }
+            };
+        let reconciler = match resolve::<
+            crate::services::monitoring::reconciler::MonitoringReconciler,
+        >()
+        .await
+        {
+            Ok(reconciler) => reconciler,
+            Err(error) => {
+                tracing::debug!(server_id, %error, "monitoring reconciler unavailable");
+                return;
+            }
+        };
+        match monitoring.container_states(server_id).await {
+            Ok(states) => {
+                if let Err(error) = reconciler.apply_snapshot(server_id, &states).await {
+                    tracing::warn!(server_id, %error, "explicit monitoring refresh reconciliation failed");
+                }
+            }
+            Err(error) => {
+                tracing::debug!(server_id, %error, "agent unavailable during explicit monitoring refresh")
+            }
+        }
+    });
 }
 
 fn host_key_policy(server_id: i64, host_key: &Option<String>) -> SshHostKey {

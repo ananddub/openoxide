@@ -7472,10 +7472,10 @@ export interface components {
 			/** Format: int64 */
 			created_at: number;
 			id: string;
+			has_private_key: boolean;
 			name: string;
 			/** Format: int64 */
 			organization_id: number;
-			private_key: string;
 			server_id?: string;
 			/** Format: int64 */
 			updated_at: number;
@@ -7775,8 +7775,6 @@ export interface components {
 			certificate_data: string;
 			certificate_path: string;
 			name: string;
-			/** Format: int64 */
-			organization_id: number;
 			private_key: string;
 			server_id?: string;
 		};

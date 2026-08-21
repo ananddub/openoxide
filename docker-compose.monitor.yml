@@ -10,16 +10,13 @@ services:
       context: .
       dockerfile: Dockerfile.monitor
     image: dubeyanand/openoxide-monitor:${MONITOR_TAG:-latest}
-    container_name: openoxide_monitor
+    pull_policy: always
+    container_name: openoxide-monitor
     restart: unless-stopped
-    # Host networking: the agent reports on the host, so sharing its network
-    # stack is the honest model — and it sidesteps host firewalls that block
-    # incoming traffic from docker bridges, which otherwise stops the agent
-    # from reaching the panel on the host at all.
-    #
-    # Consequences: GRPC_PORT binds directly on the host (no `ports:` mapping),
-    # and the panel is reachable at 127.0.0.1.
-    network_mode: host
+    # Local panel and agent share a private Docker network. The panel reaches
+    # this service at openoxide-monitor:50051.
+    networks:
+      - openoxide-network
     volumes:
       # The agent reads stats and logs via the socket. Read-only: it never
       # drives the daemon, only queries it.
@@ -30,13 +27,13 @@ services:
       - monitor_data:/app/data
     environment:
       # Must match an existing row in the panel's `servers` table.
-      SERVER_ID: "5"
-      MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
+      SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-5}"
+      MONITOR_DATABASE_URL: "memory://metrics"
       GRPC_PORT: "50051"
       REFRESH_RATE: "2"
       RETENTION_DAYS: "7"
-      OPENOXIDE_SERVER_URL: "http://127.0.0.1:4000"
-      METRICS_TOKEN: "change_me"
+      OPENOXIDE_SERVER_URL: "http://openoxide:4000"
+      METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       RUST_LOG: "openoxide_monitor=info"
       # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
       # of containers. Set to "stream" for per-second freshness and network I/O
@@ -52,3 +49,7 @@ services:
 
 volumes:
   monitor_data:
+
+networks:
+  openoxide-network:
+    external: true

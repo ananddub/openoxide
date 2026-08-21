@@ -2,6 +2,7 @@ import {useState, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
+import {formatApiError} from '#/api/utils';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
@@ -9,6 +10,8 @@ import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/det
 
 interface DatabaseArchitectureTabProps {
 	database: any;
+	databaseId?: number;
+	databaseKind?: string;
 	schedules?: any[];
 	backups?: any[];
 	onRefresh?: () => void;
@@ -16,12 +19,15 @@ interface DatabaseArchitectureTabProps {
 
 export function DatabaseArchitectureTab({
 	database,
+	databaseId,
+	databaseKind,
 	backups: passedBackups,
 	onRefresh,
 }: DatabaseArchitectureTabProps) {
 	const queryClient = useQueryClient();
-	const dbId = database?.id ? Number(database.id) : undefined;
-	const kind = (database?.kind || 'postgres').toLowerCase();
+	const dbId = databaseId ?? (database?.id ? Number(database.id) : undefined);
+	const kind = (databaseKind || database?.kind || 'postgres').toLowerCase();
+	const supportsVolumeBackup = !kind.includes('redis');
 	const internalPort =
 		kind.includes('mysql') || kind.includes('maria')
 			? 3306
@@ -132,20 +138,9 @@ export function DatabaseArchitectureTab({
 		cronExpr: string;
 		prefix: string;
 		turnOff: boolean;
+		destinationId: number;
 	}) => {
 		try {
-			const dbIdKey =
-				kind === 'mysql'
-					? 'mysql_id'
-					: kind === 'mariadb'
-						? 'mariadb_id'
-						: kind === 'mongo'
-							? 'mongo_id'
-							: kind === 'redis'
-								? 'redis_id'
-								: kind === 'libsql'
-									? 'libsql_id'
-									: 'postgres_id';
 			if (editingBackupData?.id) {
 				await patchBackupMutation.mutateAsync({
 					params: {path: {id: editingBackupData.id}},
@@ -174,7 +169,12 @@ export function DatabaseArchitectureTab({
 						service_name: data.serviceName,
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
-						[dbIdKey]: dbId,
+						postgres_id: kind.includes('postgres') ? dbId : undefined,
+						mysql_id: kind.includes('mysql') ? dbId : undefined,
+						mariadb_id: kind.includes('mariadb') ? dbId : undefined,
+						mongo_id: kind.includes('mongo') ? dbId : undefined,
+						libsql_id: kind.includes('libsql') ? dbId : undefined,
+						destination_id: data.destinationId,
 					} as any,
 				});
 				toast.success('Volume backup created successfully');
@@ -183,8 +183,8 @@ export function DatabaseArchitectureTab({
 			onRefresh?.();
 			setActiveModal(null);
 			setEditingBackupData(null);
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to save volume backup');
+		} catch (error: unknown) {
+			toast.error(formatApiError(error));
 		}
 	};
 
@@ -195,24 +195,24 @@ export function DatabaseArchitectureTab({
 					Database Topology & Connections
 				</h3>
 				<p className="text-xs text-muted-foreground">
-					Interactive real-time map of database service, volume backups,
-					and maintenance schedules. Click any node to add or edit
-					resources.
+					{supportsVolumeBackup
+						? 'Interactive real-time map of database service, volume backups, and maintenance schedules.'
+						: 'Interactive real-time map of the Redis service and maintenance schedules.'}
 				</p>
 			</div>
 
 			<ComposeVisualizer
 				customServices={dbServices}
-				backups={dbBackups as any}
-				onAddBackup={handleAddBackup}
+				backups={supportsVolumeBackup ? (dbBackups as any) : []}
+				onAddBackup={supportsVolumeBackup ? handleAddBackup : undefined}
 				onOpenTerminal={handleOpenTerminal}
 				onViewLogs={handleViewLogs}
-				onEditBackup={handleEditBackup}
-				onDeleteBackup={handleDeleteBackup}
+				onEditBackup={supportsVolumeBackup ? handleEditBackup : undefined}
+				onDeleteBackup={supportsVolumeBackup ? handleDeleteBackup : undefined}
 			/>
 
 			{/* Backup Modal */}
-			{activeModal === 'backup' && (
+			{supportsVolumeBackup && activeModal === 'backup' && (
 				<CreateBackupModal
 					isOpen={true}
 					onClose={() => {

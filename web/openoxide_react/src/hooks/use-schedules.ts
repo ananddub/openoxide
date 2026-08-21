@@ -37,7 +37,7 @@ export function useSchedules() {
 	const createMutation = $api.useMutation('post', '/schedules');
 	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
 	const patchMutation = $api.useMutation('patch', '/schedules/{id}');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/run');
+	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
 
 	const handleDelete = async (id: number) => {
 		try {

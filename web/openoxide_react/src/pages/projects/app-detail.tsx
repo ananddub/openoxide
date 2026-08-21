@@ -43,7 +43,6 @@ function AppDetailPage() {
 		schedules,
 		backups,
 		deployments,
-		monitoring,
 		isLoading,
 		refetchAll,
 		activeTab,
@@ -143,7 +142,6 @@ function AppDetailPage() {
 						app={app}
 						appId={parsedAppId}
 						entityType="application"
-						monitoring={monitoring}
 					/>
 				)}
 				{activeTab === 'Advanced' && (

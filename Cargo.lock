@@ -98,7 +98,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sh_macros",
- "sqlx",
  "sysinfo",
  "thiserror 2.0.18",
  "tokio",

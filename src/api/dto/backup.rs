@@ -119,16 +119,16 @@ impl From<BackupExecution> for BackupExecutionResponseDto {
     fn from(value: BackupExecution) -> Self {
         Self {
             id: value.id,
-            backup_kind: crate::services::backup::types::BackupKind::try_from(
+            backup_kind: crate::services::backup::types::BackupKind::from_str(
                 value.backup_kind.as_str(),
             )
             .expect("database enforces backup kind"),
-            operation: crate::services::backup::types::BackupOperation::try_from(
+            operation: crate::services::backup::types::BackupOperation::from_str(
                 value.operation.as_str(),
             )
             .expect("database enforces backup operation"),
             backup_id: value.backup_id,
-            status: crate::services::backup::types::BackupExecutionStatus::try_from(
+            status: crate::services::backup::types::BackupExecutionStatus::from_str(
                 value.status.as_str(),
             )
             .expect("database enforces backup status"),

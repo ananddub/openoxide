@@ -56,7 +56,7 @@ impl Config {
         let config = Self {
             server_id: parse_var("SERVER_ID", 1i64)?,
             database_url: env::var("MONITOR_DATABASE_URL")
-                .unwrap_or_else(|_| "sqlite://monitor.db".to_string()),
+                .unwrap_or_else(|_| "memory://metrics".to_string()),
             grpc_port: parse_var("GRPC_PORT", 50051u16)?,
             refresh_rate: parse_var("REFRESH_RATE", 2u64)?,
             retention_days: parse_var("RETENTION_DAYS", 7i64)?,
@@ -99,13 +99,6 @@ impl Config {
             ));
         }
 
-        if !self.database_url.starts_with("sqlite:") {
-            return Err(format!(
-                "MONITOR_DATABASE_URL must be a sqlite:// URL, got {:?}",
-                self.database_url
-            ));
-        }
-
         if !self.panel_url.starts_with("http://") && !self.panel_url.starts_with("https://") {
             return Err(format!(
                 "OPENOXIDE_SERVER_URL must start with http:// or https://, got {:?}",
@@ -137,7 +130,7 @@ mod tests {
     fn base() -> Config {
         Config {
             server_id: 1,
-            database_url: "sqlite://monitor.db".into(),
+            database_url: "memory://metrics".into(),
             grpc_port: 50051,
             refresh_rate: 60,
             retention_days: 7,
@@ -160,13 +153,6 @@ mod tests {
     fn rejects_zero_refresh_rate() {
         let mut cfg = base();
         cfg.refresh_rate = 0;
-        assert!(cfg.validate().is_err());
-    }
-
-    #[test]
-    fn rejects_non_sqlite_database_url() {
-        let mut cfg = base();
-        cfg.database_url = "postgres://localhost/db".into();
         assert!(cfg.validate().is_err());
     }
 

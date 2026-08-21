@@ -48,7 +48,6 @@ function ComposeDetailPage() {
 		schedules,
 		backups,
 		deployments,
-		monitoring,
 		isLoading,
 		refetchAll,
 		activeTab,
@@ -153,7 +152,6 @@ function ComposeDetailPage() {
 						app={compose}
 						appId={parsedComposeId}
 						entityType="compose"
-						monitoring={monitoring}
 					/>
 				)}
 				{activeTab === 'Advanced' && (

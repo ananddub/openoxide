@@ -19,6 +19,14 @@ use crate::{
     services::schedule::ScheduleService,
 };
 
+async fn refresh_schedule_runner() {
+    if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+        if let Err(error) = runner.refresh_jobs().await {
+            tracing::error!(%error, "could not refresh scheduler after schedule mutation");
+        }
+    }
+}
+
 type ApiError = (StatusCode, String);
 type ScheduleLogStream = Pin<Box<dyn futures::Stream<Item = Result<Event, Infallible>> + Send>>;
 type ScheduleLogSse = Sse<ScheduleLogStream>;
@@ -130,7 +138,7 @@ impl ScheduleController {
         &self,
         RequirePermission(_claims, _): RequirePermission<Application, CanCreate>,
         ValidatedJson(body): ValidatedJson<CreateScheduleDto>,
-    ) -> Result<(StatusCode, Json<ScheduleResponseDto>), ApiError> {
+    ) -> Result<Json<ScheduleResponseDto>, ApiError> {
         let app_id = body.application_id;
         let comp_id = body.compose_id;
 
@@ -139,7 +147,7 @@ impl ScheduleController {
             .create(body)
             .await
             .map(ScheduleResponseDto::from)
-            .map(|schedule| (StatusCode::CREATED, Json(schedule)))
+            .map(Json)
             .map_err(map_sqlx_error)?;
 
         if let Some(id) = app_id {
@@ -148,6 +156,7 @@ impl ScheduleController {
         if let Some(id) = comp_id {
             self.cache.invalidate(&CacheKey::SchedulesCompose(id)).await;
         }
+        refresh_schedule_runner().await;
 
         Ok(created)
     }
@@ -168,6 +177,7 @@ impl ScheduleController {
             .map_err(map_sqlx_error)?;
 
         self.cache.invalidate_all().await;
+        refresh_schedule_runner().await;
         Ok(updated)
     }
 
@@ -180,6 +190,7 @@ impl ScheduleController {
         self.service.delete(id).await.map_err(map_sqlx_error)?;
 
         self.cache.invalidate_all().await;
+        refresh_schedule_runner().await;
         Ok(StatusCode::NO_CONTENT)
     }
 

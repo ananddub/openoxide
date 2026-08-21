@@ -6,6 +6,17 @@ import {
 
 import {useAppStore} from '#/stores/app-store';
 
+function normalizeDatabaseKind(value: unknown): string {
+	const kind = String(value || '').toLowerCase();
+	if (kind.includes('postgres')) return 'postgres';
+	if (kind.includes('maria')) return 'mariadb';
+	if (kind.includes('mysql')) return 'mysql';
+	if (kind.includes('mongo')) return 'mongo';
+	if (kind.includes('redis')) return 'redis';
+	if (kind.includes('libsql') || kind.includes('sqlite')) return 'libsql';
+	return kind || 'postgres';
+}
+
 export function useProjectDetails(projectId: number) {
 	// Modals State
 	const [showCreateEnv, setShowCreateEnv] = useState(false);
@@ -225,9 +236,10 @@ export function useProjectDetails(projectId: number) {
 					envId === null ||
 					Number(envId) === Number(activeEnvId)
 				) {
-					const dbKind =
-						db.kind || db.type || db.db_kind || db.dbKind || 'postgres';
-					const key = `DATABASE-${dbKind}-${db.id}`;
+					const dbKind = normalizeDatabaseKind(
+						db.kind || db.type || db.db_kind || db.dbKind,
+					);
+					const key = `DATABASE-${dbKind}-${String(db.id)}`;
 					if (!seenKeys.has(key)) {
 						seenKeys.add(key);
 						const status = db.app_status || db.status || 'STOPPED';
@@ -273,7 +285,7 @@ export function useProjectDetails(projectId: number) {
 					? 'COMPOSE'
 					: 'APP';
 			const dbKind = isDb
-				? s.db_kind || s.dbKind || 'postgres'
+				? normalizeDatabaseKind(s.db_kind || s.dbKind || s.kind)
 				: undefined;
 			const key = isDb
 				? `DATABASE-${dbKind}-${s.id}`

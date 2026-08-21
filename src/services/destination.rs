@@ -1,23 +1,47 @@
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
-use crate::utils::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
+use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
 use crate::{
     api::dto::destination::{CreateDestinationDto, PatchDestinationDto},
     db::models::destinations::Destination,
     repository::destinations::DestinationRepository,
 };
 use auto_di::singleton;
+use os::string_enum;
 use std::sync::Arc;
 
 use crate::db::models::types::DestinationsProviderEnum;
 
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum DestinationProviderPreset {
+        default = S3;
+
+        S3 => "S3",
+        R2 => "R2",
+        CloudflareR2 => "CLOUDFLARE_R2",
+        Backblaze => "BACKBLAZE",
+        B2 => "B2",
+        Gcs => "GCS",
+        Gcp => "GCP",
+        Google => "GOOGLE",
+        DoSpaces => "DO_SPACES",
+        DigitalOcean => "DIGITALOCEAN",
+        Spaces => "SPACES",
+    }
+}
+
 impl DestinationsProviderEnum {
     pub fn from_preset(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "r2" | "cloudflare_r2" => Self::R2,
-            "backblaze" | "b2" => Self::Backblaze,
-            "gcs" | "gcp" | "google" => Self::Gcs,
-            "do_spaces" | "digitalocean" | "spaces" => Self::DoSpaces,
-            _ => Self::S3,
+        match DestinationProviderPreset::from(s) {
+            DestinationProviderPreset::R2 | DestinationProviderPreset::CloudflareR2 => Self::R2,
+            DestinationProviderPreset::Backblaze | DestinationProviderPreset::B2 => Self::Backblaze,
+            DestinationProviderPreset::Gcs
+            | DestinationProviderPreset::Gcp
+            | DestinationProviderPreset::Google => Self::Gcs,
+            DestinationProviderPreset::DoSpaces
+            | DestinationProviderPreset::DigitalOcean
+            | DestinationProviderPreset::Spaces => Self::DoSpaces,
+            DestinationProviderPreset::S3 => Self::S3,
         }
     }
 
@@ -143,17 +167,15 @@ impl DestinationService {
         region: &str,
         endpoint: &str,
     ) -> Result<(), String> {
-        let target = RcloneTarget::S3 {
-            provider: provider.to_string(),
-            access_key_id: access_key.to_string(),
-            secret_access_key: secret_access_key.to_string(),
+        let target = crate::utils::backup::database::S3Destination {
+            provider: Some(provider.to_string()),
+            access_key: access_key.to_string(),
+            secret_key: secret_access_key.to_string(),
             bucket: bucket.to_string(),
             region: region.to_string(),
             endpoint: endpoint.to_string(),
-            path: "".to_string(),
-            force_path_style: true,
-            no_check_bucket: true,
-        };
+        }
+        .to_rclone_target("");
 
         let builder = RcloneBuilder::new(RcloneCommand::Lsf)
             .source(target)

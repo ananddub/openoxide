@@ -69,7 +69,7 @@ export function ComposeSchedulesTab({
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/run');
+	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
 	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
 
 	const handleCreate = async (data: {

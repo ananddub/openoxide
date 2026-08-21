@@ -40,7 +40,18 @@ export const Route = createRootRoute({
 	},
 	component: RootComponent,
 	pendingComponent: RootPending,
+	errorComponent: RootError,
 });
+
+function RootError() {
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-background p-6 text-sm text-muted-foreground">
+			<div className="rounded-lg border border-border bg-card px-5 py-4 shadow-sm">
+				Unable to load this view. Please refresh the page.
+			</div>
+		</div>
+	);
+}
 
 // Create a client with 5-minute caching & mutation invalidation pattern
 const queryClient = new QueryClient({
