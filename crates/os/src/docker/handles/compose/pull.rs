@@ -66,7 +66,7 @@ impl<'a> ComposePullBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposePullBuilder);
+crate::impl_cli_builder_opts!(ComposePullBuilder);
 
 impl crate::exec::script::IntoCommand for ComposePullBuilder<'_> {
     fn build_str(&self) -> String {

@@ -178,14 +178,23 @@ export function useRealtimeSync() {
           domain: d.host,
           host: d.host,
           path: d.path || "/",
+          internal_path: d.internal_path || "/",
           port: d.port || 80,
           https: !!d.https,
+          strip_path: !!d.strip_path,
+          certificate_type: String(d.certificate_type || "NONE").toUpperCase(),
+          custom_cert_resolver: d.custom_cert_resolver || undefined,
+          custom_entrypoint: d.custom_entrypoint || undefined,
+          middlewares: d.middlewares || "[]",
+          domain_type: d.domain_type,
           application_id: d.application_id
             ? Number(d.application_id)
             : undefined,
           compose_id: d.compose_id ? Number(d.compose_id) : undefined,
           service_name: d.service_name,
           project_name: d.project_name,
+          created_at: Number(d.created_at || 0),
+          updated_at: Number(d.updated_at || 0),
         })) as any,
       );
     }

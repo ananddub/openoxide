@@ -5,6 +5,7 @@
 #[derive(Debug, Default, Clone)]
 pub struct ArgBuilder {
     args: Vec<String>,
+    pub api: bool,
     pub retry_limit: Option<u32>,
     pub cancel_token: Option<tokio_util::sync::CancellationToken>,
 }
@@ -17,6 +18,7 @@ impl ArgBuilder {
     pub fn cmd(subcmd: &[&str]) -> Self {
         Self {
             args: subcmd.iter().map(|s| (*s).to_string()).collect(),
+            api: false,
             retry_limit: None,
             cancel_token: None,
         }
@@ -95,6 +97,7 @@ impl ArgBuilder {
 
     /// Inherit retry_limit and cancel_token from another ArgBuilder.
     pub fn inherit_meta(&mut self, other: &Self) -> &mut Self {
+        self.api = other.api;
         self.retry_limit = other.retry_limit;
         self.cancel_token = other.cancel_token.clone();
         self

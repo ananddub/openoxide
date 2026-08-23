@@ -7,18 +7,21 @@ use tokio_util::sync::CancellationToken;
 pub enum ExecExitStatus {
     Local(ExitStatus),
     Remote(u32),
+    Api(u16),
 }
 impl ExecExitStatus {
     pub fn success(&self) -> bool {
         match self {
             Self::Local(s) => s.success(),
             Self::Remote(c) => *c == 0,
+            Self::Api(c) => *c < 400,
         }
     }
     pub fn code(&self) -> Option<i32> {
         match self {
             Self::Local(s) => s.code(),
             Self::Remote(c) => Some(*c as i32),
+            Self::Api(c) => Some(*c as i32),
         }
     }
 }

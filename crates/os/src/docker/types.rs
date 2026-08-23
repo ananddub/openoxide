@@ -6,8 +6,17 @@ fn deserialize_null_default<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let opt = Option::<String>::deserialize(deserializer)?;
-    Ok(opt.unwrap_or_default())
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::Null => Ok(String::new()),
+        serde_json::Value::String(value) => Ok(value),
+        serde_json::Value::Array(values) => Ok(values
+            .into_iter()
+            .filter_map(|value| value.as_str().map(str::to_owned))
+            .collect::<Vec<_>>()
+            .join(",")),
+        value => Ok(value.to_string()),
+    }
 }
 
 macro_rules! docker_row {

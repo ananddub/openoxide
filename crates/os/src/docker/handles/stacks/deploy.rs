@@ -57,7 +57,7 @@ impl<'a> StackDeployBuilder<'a> {
         self.cli.execute(&self.args).await
     }
 }
-crate::impl_builder_opts!(StackDeployBuilder);
+crate::impl_cli_builder_opts!(StackDeployBuilder);
 
 impl crate::exec::script::IntoCommand for StackDeployBuilder<'_> {
     fn build_str(&self) -> String {

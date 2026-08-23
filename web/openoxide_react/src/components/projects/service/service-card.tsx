@@ -10,6 +10,7 @@ import {
 	Eye,
 	MoreVertical,
 	XCircle,
+	Server,
 } from 'lucide-react';
 import {useNavigate, Link} from '@tanstack/react-router';
 import {cn} from '#/api/utils';
@@ -42,6 +43,7 @@ interface ServiceCardProps {
 	status: string;
 	createdAt: number;
 	dbKind?: string;
+	serverName?: string;
 	onDeleted?: () => void;
 }
 
@@ -54,6 +56,7 @@ export function ServiceCard({
 	status,
 	createdAt,
 	dbKind,
+	serverName,
 	onDeleted,
 }: ServiceCardProps) {
 	const navigate = useNavigate();
@@ -448,22 +451,31 @@ export function ServiceCard({
 					</div>
 				</div>
 
-				<div className="pointer-events-none relative z-10 flex items-center justify-between border-t border-border/40 pt-2.5">
-					<span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-						<span
-							className={cn(
-								'size-1.5 rounded-full',
-								getStatusDotColor(status),
-							)}
-						/>
-						{status?.toLowerCase() || 'idle'}
-					</span>
-					<span className="font-mono text-[10px] text-muted-foreground/70">
-						{new Date(createdAt * 1000).toLocaleDateString(undefined, {
-							day: '2-digit',
-							month: 'short',
-						})}
-					</span>
+				<div className="pointer-events-none relative z-10 flex flex-col gap-2 border-t border-border/40 pt-2.5">
+					<div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground" title="Deployment server">
+						<Server className="size-3 shrink-0" />
+						<span className="shrink-0">Server</span>
+						<span className="truncate font-semibold text-foreground">
+							{serverName || 'Localhost (Main server)'}
+						</span>
+					</div>
+					<div className="flex items-center justify-between">
+						<span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+							<span
+								className={cn(
+									'size-1.5 rounded-full',
+									getStatusDotColor(status),
+								)}
+							/>
+							{status?.toLowerCase() || 'idle'}
+						</span>
+						<span className="font-mono text-[10px] text-muted-foreground/70">
+							{new Date(createdAt * 1000).toLocaleDateString(undefined, {
+								day: '2-digit',
+								month: 'short',
+							})}
+						</span>
+					</div>
 				</div>
 			</div>
 

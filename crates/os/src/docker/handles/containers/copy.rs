@@ -1,4 +1,5 @@
 use crate::docker::{DockerCli, DockerOutput, DockerResult, core::ArgBuilder};
+use tokio::io::AsyncWriteExt;
 
 #[derive(Clone, Copy)]
 enum CopyDirection {
@@ -11,6 +12,7 @@ pub struct ContainerCopyBuilder<'a> {
     container: String,
     path: String,
     direction: CopyDirection,
+    api: bool,
 }
 
 impl<'a> ContainerCopyBuilder<'a> {
@@ -20,6 +22,7 @@ impl<'a> ContainerCopyBuilder<'a> {
             container,
             path: destination,
             direction: CopyDirection::ToContainer,
+            api: false,
         }
     }
     pub(crate) fn download(cli: &'a DockerCli, container: String, source: String) -> Self {
@@ -28,18 +31,25 @@ impl<'a> ContainerCopyBuilder<'a> {
             container,
             path: source,
             direction: CopyDirection::FromContainer,
+            api: false,
         }
+    }
+    pub fn api(mut self) -> Self {
+        self.api = true;
+        self
     }
     pub fn from_host(self, source: impl Into<String>) -> DockerCopyCommand<'a> {
         DockerCopyCommand {
             cli: self.cli,
             args: self.args(source.into()),
+            api: self.api,
         }
     }
     pub fn to_host(self, destination: impl Into<String>) -> DockerCopyCommand<'a> {
         DockerCopyCommand {
             cli: self.cli,
             args: self.args(destination.into()),
+            api: self.api,
         }
     }
     pub async fn read(self) -> DockerResult<Vec<u8>> {
@@ -67,8 +77,13 @@ impl<'a> ContainerCopyBuilder<'a> {
 pub struct DockerCopyCommand<'a> {
     cli: &'a DockerCli,
     args: Vec<String>,
+    api: bool,
 }
 impl DockerCopyCommand<'_> {
+    pub fn api(mut self) -> Self {
+        self.api = true;
+        self
+    }
     pub fn build_command_args(&self) -> Vec<String> {
         self.args.clone()
     }
@@ -76,12 +91,116 @@ impl DockerCopyCommand<'_> {
         self.args.join(" ")
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.api {
+            return self.run_api().await;
+        }
         self.cli.run(self.args).await
     }
 
     pub async fn download_bytes(self) -> DockerResult<Vec<u8>> {
+        if self.api {
+            let archive = self.download_archive().await?;
+            return extract_single_tar_file(&archive);
+        }
         let output = self.cli.run_bytes(self.args).await?;
         Ok(extract_single_tar_file(&output.stdout)?)
+    }
+
+    async fn run_api(self) -> DockerResult<DockerOutput> {
+        if self.args.get(1).is_some_and(|value| value.contains(':')) {
+            let archive = self.download_archive().await?;
+            let destination = self
+                .args
+                .get(2)
+                .ok_or_else(|| transfer_error("copy destination missing"))?;
+            if destination != "-" {
+                let destination = std::path::Path::new(destination);
+                tokio::fs::create_dir_all(destination).await?;
+                let mut command = tokio::process::Command::new("tar");
+                command
+                    .args(["-xf", "-", "-C"])
+                    .arg(destination)
+                    .stdin(std::process::Stdio::piped())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::piped());
+                let mut child = command.spawn()?;
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(&archive).await?;
+                }
+                let output = child.wait_with_output().await?;
+                if !output.status.success() {
+                    return Err(transfer_error(&format!(
+                        "failed to extract container archive: {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    )));
+                }
+            }
+        } else {
+            let source = self
+                .args
+                .get(1)
+                .ok_or_else(|| transfer_error("copy source missing"))?;
+            let target = self
+                .args
+                .get(2)
+                .ok_or_else(|| transfer_error("copy target missing"))?;
+            let (container, destination) = target
+                .split_once(':')
+                .ok_or_else(|| transfer_error("invalid container destination"))?;
+            let path = std::path::Path::new(source);
+            let parent = path.parent().unwrap_or(std::path::Path::new("."));
+            let name = path
+                .file_name()
+                .ok_or_else(|| transfer_error("invalid copy source"))?;
+            let archive = tokio::process::Command::new("tar")
+                .arg("-C")
+                .arg(parent)
+                .arg("-cf")
+                .arg("-")
+                .arg(name)
+                .output()
+                .await?;
+            if !archive.status.success() {
+                return Err(transfer_error("failed to archive copy source"));
+            }
+            self.cli
+                .api_bytes_request(
+                    "PUT",
+                    &format!(
+                        "/containers/{container}/archive?path={}",
+                        crate::docker::api::encode_query_public(destination)
+                    ),
+                    Some(archive.stdout),
+                    "application/x-tar",
+                )
+                .await?;
+        }
+        Ok(DockerOutput {
+            status: crate::exec::ExecExitStatus::Api(200),
+            stdout: String::new(),
+            stderr: String::new(),
+        })
+    }
+
+    async fn download_archive(&self) -> DockerResult<Vec<u8>> {
+        let source = self
+            .args
+            .get(1)
+            .ok_or_else(|| transfer_error("copy source missing"))?;
+        let (container, path) = source
+            .split_once(':')
+            .ok_or_else(|| transfer_error("invalid container source"))?;
+        self.cli
+            .api_bytes_request(
+                "GET",
+                &format!(
+                    "/containers/{container}/archive?path={}",
+                    crate::docker::api::encode_query_public(path)
+                ),
+                None,
+                "application/json",
+            )
+            .await
     }
 }
 

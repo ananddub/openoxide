@@ -58,7 +58,7 @@ export function ComposeDomainsTab({
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/domains');
-	const updateMutation = $api.useMutation('put', '/domains/{id}');
+	const updateMutation = $api.useMutation('patch', '/domains/{id}');
 	const deleteMutation = $api.useMutation('delete', '/domains/{id}');
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
@@ -69,10 +69,7 @@ export function ComposeDomainsTab({
 			if (editingDomain?.id) {
 				await updateMutation.mutateAsync({
 					params: {path: {id: editingDomain.id}},
-					body: {
-						...formData,
-						compose_id: composeId,
-					} as any,
+					body: formData as any,
 				});
 				toast.success('Compose domain route updated');
 			} else {

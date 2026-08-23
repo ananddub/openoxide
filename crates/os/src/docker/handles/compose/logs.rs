@@ -102,7 +102,7 @@ impl<'a> ComposeLogsBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeLogsBuilder);
+crate::impl_cli_builder_opts!(ComposeLogsBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeLogsBuilder<'_> {
     fn build_str(&self) -> String {

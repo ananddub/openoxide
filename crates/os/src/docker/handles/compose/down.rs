@@ -60,7 +60,7 @@ impl<'a> DownBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(DownBuilder);
+crate::impl_cli_builder_opts!(DownBuilder);
 
 impl crate::exec::script::IntoCommand for DownBuilder<'_> {
     fn build_str(&self) -> String {

@@ -51,7 +51,7 @@ impl<'a> ComposeRestartBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeRestartBuilder);
+crate::impl_cli_builder_opts!(ComposeRestartBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeRestartBuilder<'_> {
     fn build_str(&self) -> String {

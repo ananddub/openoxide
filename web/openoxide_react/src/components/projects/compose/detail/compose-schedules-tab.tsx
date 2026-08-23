@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
+import {useOrganizationStore} from '#/stores/organization-store';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
 import {
@@ -55,6 +56,7 @@ export function ComposeSchedulesTab({
 
 	// Read schedules directly from Zustand RAM Store
 	const composeId = compose?.id;
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const storeSchedules = useAppStore(state => state.schedules || []);
 
 	// Safe array normalization
@@ -83,6 +85,7 @@ export function ComposeSchedulesTab({
 				body: {
 					name: data.name,
 					compose_id: compose?.id,
+					organization_id: activeOrg?.id || 1,
 					service_name: data.serviceName,
 					command: data.command,
 					cron_expression: data.cronExpr,

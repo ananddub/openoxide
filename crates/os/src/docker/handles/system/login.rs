@@ -5,6 +5,7 @@ pub struct SystemLoginBuilder<'a> {
     pub(crate) username: Option<String>,
     pub(crate) password: Option<String>,
     pub(crate) registry: Option<String>,
+    api: bool,
 }
 
 impl<'a> SystemLoginBuilder<'a> {
@@ -14,7 +15,12 @@ impl<'a> SystemLoginBuilder<'a> {
             username: None,
             password: None,
             registry: None,
+            api: false,
         }
+    }
+    pub fn api(mut self) -> Self {
+        self.api = true;
+        self
     }
 
     pub fn username(mut self, u: impl Into<String>) -> Self {
@@ -33,6 +39,16 @@ impl<'a> SystemLoginBuilder<'a> {
     }
 
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.api {
+            use base64::Engine;
+            let auth = serde_json::json!({"username": self.username.unwrap_or_default(), "password": self.password.unwrap_or_default(), "serveraddress": self.registry.unwrap_or_default()});
+            let output = self.cli.api_json_request("/auth", auth.clone()).await?;
+            self.cli.set_registry_auth(
+                base64::engine::general_purpose::STANDARD
+                    .encode(serde_json::to_vec(&auth).unwrap()),
+            );
+            return Ok(output);
+        }
         let mut args = vec!["login"];
         let u = self.username.unwrap_or_default();
         if !u.is_empty() {

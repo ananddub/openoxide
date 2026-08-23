@@ -37,6 +37,16 @@ export function useProjectDetails(projectId: number) {
 	const overviewServices = useAppStore(
 		state => state.overviewServices || [],
 	);
+	const getServerName = (service: any) => {
+		if (service?.server_name || service?.serverName)
+			return String(service.server_name || service.serverName);
+		const serverId = service?.server_id ?? service?.serverId;
+		if (serverId == null) return 'Localhost (Main server)';
+		const server = (servers || []).find(
+			(item: any) => String(item.id) === String(serverId),
+		);
+		return String(server?.name || `Server ${serverId}`);
+	};
 
 	// Queries
 	const {data: liveProject} = useProjectGet(BigInt(projectId));
@@ -135,6 +145,7 @@ export function useProjectDetails(projectId: number) {
 							createdAt: app.created_at || Date.now(),
 							projectId: Number(app.project_id || projectId),
 							environmentId: envId,
+							serverName: getServerName(app),
 						});
 					}
 				}
@@ -171,6 +182,7 @@ export function useProjectDetails(projectId: number) {
 							createdAt: c.created_at || Date.now(),
 							projectId: Number(c.project_id || projectId),
 							environmentId: envId,
+							serverName: getServerName(c),
 						});
 					}
 				}
@@ -253,6 +265,7 @@ export function useProjectDetails(projectId: number) {
 							dbKind,
 							projectId: Number(db.project_id || projectId),
 							environmentId: envId,
+							serverName: getServerName(db),
 						});
 					}
 				}
@@ -307,6 +320,7 @@ export function useProjectDetails(projectId: number) {
 					...(dbKind ? {dbKind} : {}),
 					projectId: Number(s.project_id || projectId),
 					environmentId: envId,
+					serverName: getServerName(s),
 				});
 			}
 		});
@@ -320,6 +334,7 @@ export function useProjectDetails(projectId: number) {
 		project,
 		projectId,
 		activeEnvId,
+		servers,
 	]);
 
 	// Live hooks auto-push updates — no manual refetch needed
@@ -385,6 +400,7 @@ export function useProjectDetails(projectId: number) {
 				status: String(s?.status || s?.app_status || 'idle'),
 				createdAt: s?.createdAt || s?.created_at,
 				dbKind: dbKind,
+				serverName: s?.serverName || 'Localhost (Main server)',
 			};
 		});
 

@@ -18,7 +18,7 @@ use tokio::{io::AsyncWriteExt, process::Command};
 
 use helpers::{emit_error, socket_key};
 use local::{spawn_docker_terminal, spawn_local_terminal};
-use remote::{spawn_remote_docker_terminal, spawn_remote_terminal};
+use remote::{spawn_remote_docker_terminal_api, spawn_remote_terminal};
 pub use types::{
     DockerTerminalStart, ServerTerminalStart, SocketKey, TerminalInputPayload, TerminalKind,
     TerminalResize, TerminalSession,
@@ -146,13 +146,33 @@ impl TerminalSocket {
     }
 
     #[on("docker:start")]
-    async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
+    async fn docker_start(&self, socket: SocketRef, Data(mut input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         let start_token = self.prepare_start_token(&socket);
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
         if let Some(server_id) = input.server_id {
-            spawn_remote_docker_terminal(
+            // The localhost server is represented in the database for UI and
+            // monitoring, but it has no SSH credentials. Route it through the
+            // local Docker API shell instead of the remote SSH terminal path.
+            let is_local =
+                sqlx::query_scalar::<_, String>("SELECT ip_address FROM servers WHERE id = ?")
+                    .bind(server_id)
+                    .fetch_optional(self.db.as_ref())
+                    .await
+                    .ok()
+                    .flatten()
+                    .is_some_and(|ip| {
+                        matches!(ip.as_str(), "127.0.0.1" | "localhost" | "openoxide-monitor")
+                    });
+
+            if is_local {
+                input.server_id = None;
+                spawn_docker_terminal(socket, &self.sessions, input).await;
+                return;
+            }
+
+            spawn_remote_docker_terminal_api(
                 socket,
                 &self.sessions,
                 self.db.as_ref(),

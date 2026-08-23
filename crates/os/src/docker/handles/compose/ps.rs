@@ -73,7 +73,7 @@ impl<'a> ComposePsBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposePsBuilder);
+crate::impl_cli_builder_opts!(ComposePsBuilder);
 
 impl crate::exec::script::IntoCommand for ComposePsBuilder<'_> {
     fn build_str(&self) -> String {

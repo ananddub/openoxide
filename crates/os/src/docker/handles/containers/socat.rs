@@ -2,7 +2,7 @@ use crate::docker::DockerCli;
 use crate::socat::SocatRequestBuilder;
 
 pub struct ContainerSocketStreamBuilder<'a> {
-    pub(crate) _cli: &'a DockerCli,
+    pub(crate) cli: &'a DockerCli,
     pub(crate) container_id: String,
     pub(crate) cmd: Vec<String>,
     pub(crate) envs: Vec<(String, String)>,
@@ -21,7 +21,7 @@ pub struct ContainerSocketStreamBuilder<'a> {
 impl<'a> ContainerSocketStreamBuilder<'a> {
     pub fn new(cli: &'a DockerCli, container_id: impl Into<String>) -> Self {
         Self {
-            _cli: cli,
+            cli,
             container_id: container_id.into(),
             cmd: vec!["/bin/sh".to_string()],
             envs: Vec::new(),
@@ -90,6 +90,15 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
     }
 
     pub async fn connect(self) -> std::io::Result<ContainerSocketExecStream> {
+        let lease = self
+            .cli
+            .api_socket_lease()
+            .await
+            .map_err(std::io::Error::other)?;
+        let socket_path = lease
+            .as_ref()
+            .map(|lease| lease.socket().to_owned())
+            .unwrap_or(self.socket_path.clone());
         let env_strings: Vec<String> = self
             .envs
             .into_iter()
@@ -117,7 +126,7 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
         // Step 1: Create Exec Instance via SocatRequestBuilder
         let create_path = format!("/containers/{}/exec", self.container_id);
         let res1 = SocatRequestBuilder::post(create_path)
-            .socket_path(&self.socket_path)
+            .socket_path(&socket_path)
             .json(&payload)
             .send()
             .await?;
@@ -141,7 +150,7 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
             "Tty": self.tty
         });
         let (stream, _header) = SocatRequestBuilder::post(start_path)
-            .socket_path(&self.socket_path)
+            .socket_path(&socket_path)
             .json(&start_payload)
             .upgrade()
             .await?;
@@ -151,7 +160,8 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
             reader,
             writer,
             exec_id,
-            socket_path: self.socket_path,
+            socket_path,
+            lease,
         })
     }
 }
@@ -161,6 +171,7 @@ pub struct ContainerSocketExecStream {
     pub writer: tokio::net::unix::OwnedWriteHalf,
     pub exec_id: String,
     pub socket_path: String,
+    pub lease: Option<crate::docker::api::TunnelLease>,
 }
 
 impl ContainerSocketExecStream {

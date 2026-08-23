@@ -51,14 +51,22 @@ crate::impl_builder_opts!(SwarmJoinBuilder);
 
 pub struct SwarmJoinTokenBuilder<'a> {
     cli: &'a DockerCli,
+    api: bool,
 }
 
 impl<'a> SwarmJoinTokenBuilder<'a> {
     pub(crate) fn new(cli: &'a DockerCli) -> Self {
-        Self { cli }
+        Self { cli, api: false }
+    }
+    pub fn api(mut self) -> Self {
+        self.api = true;
+        self
     }
 
     pub async fn get(&self, role: SwarmRole) -> DockerResult<String> {
+        if self.api {
+            return swarm_token(self.cli, role, false).await;
+        }
         let out = self
             .cli
             .run(["swarm", "join-token", "--quiet", &role.to_string()])
@@ -67,6 +75,9 @@ impl<'a> SwarmJoinTokenBuilder<'a> {
     }
 
     pub async fn rotate(&self, role: SwarmRole) -> DockerResult<String> {
+        if self.api {
+            return swarm_token(self.cli, role, true).await;
+        }
         let out = self
             .cli
             .run([
@@ -79,4 +90,31 @@ impl<'a> SwarmJoinTokenBuilder<'a> {
             .await?;
         Ok(out.stdout.trim().to_string())
     }
+}
+
+async fn swarm_token(cli: &DockerCli, role: SwarmRole, rotate: bool) -> DockerResult<String> {
+    let swarm = cli.api_get_json("/swarm").await?;
+    if rotate {
+        let version = swarm["Version"]["Index"].as_u64().unwrap_or(0);
+        let spec = swarm["Spec"].clone();
+        cli.api_json_request(
+            &format!(
+                "/swarm/update?version={version}&rotateWorkerToken={}&rotateManagerToken={}",
+                role.to_string() == "worker",
+                role.to_string() == "manager"
+            ),
+            spec,
+        )
+        .await?;
+    }
+    let swarm = cli.api_get_json("/swarm").await?;
+    let key = if role.to_string() == "manager" {
+        "Manager"
+    } else {
+        "Worker"
+    };
+    Ok(swarm["JoinTokens"][key]
+        .as_str()
+        .unwrap_or_default()
+        .to_owned())
 }

@@ -223,5 +223,6 @@ pub enum TerminalSession {
         container: Option<String>,
         exec_id: String,
         socket_path: String,
+        api_lease: Option<Arc<os::docker::api::TunnelLease>>,
     },
 }

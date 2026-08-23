@@ -154,6 +154,7 @@ function ProjectDetailPage() {
 							status={srv.status}
 							createdAt={srv.createdAt}
 							dbKind={srv.dbKind}
+							serverName={srv.serverName}
 						/>
 					))}
 				</div>

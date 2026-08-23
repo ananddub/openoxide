@@ -109,7 +109,7 @@ impl<'a> UpBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(UpBuilder);
+crate::impl_cli_builder_opts!(UpBuilder);
 
 impl crate::exec::script::IntoCommand for UpBuilder<'_> {
     fn build_str(&self) -> String {

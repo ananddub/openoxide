@@ -15,6 +15,22 @@ impl<'a> ImagePushBuilder<'a> {
         }
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.args.api {
+            let payload = self
+                .cli
+                .api_bytes_request(
+                    "POST",
+                    &format!("/images/{}/push", self.image),
+                    None,
+                    "application/json",
+                )
+                .await?;
+            return Ok(DockerOutput {
+                status: crate::exec::ExecExitStatus::Api(200),
+                stdout: String::from_utf8_lossy(&payload).into_owned(),
+                stderr: String::new(),
+            });
+        }
         let mut a = self.args;
         a.push(&self.image);
         self.cli.execute(&a).await
@@ -41,6 +57,31 @@ impl<'a> ImageRmBuilder<'a> {
         self
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.args.api {
+            let output = self
+                .args
+                .clone()
+                .build()
+                .windows(2)
+                .find_map(|pair| (pair[0] == "--output").then(|| pair[1].clone()));
+            let bytes = self
+                .cli
+                .api_bytes_request(
+                    "GET",
+                    &format!("/images/get?names={}", self.image),
+                    None,
+                    "application/json",
+                )
+                .await?;
+            if let Some(path) = output {
+                tokio::fs::write(path, bytes).await?;
+            }
+            return Ok(DockerOutput {
+                status: crate::exec::ExecExitStatus::Api(200),
+                stdout: String::new(),
+                stderr: String::new(),
+            });
+        }
         let mut a = self.args;
         a.push(&self.image);
         self.cli.execute(&a).await
@@ -142,6 +183,30 @@ impl<'a> ImageLoadBuilder<'a> {
         self
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.args.api {
+            let input = self
+                .args
+                .clone()
+                .build()
+                .windows(2)
+                .find_map(|pair| (pair[0] == "--input").then(|| pair[1].clone()))
+                .ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "image load requires input file",
+                    )
+                })?;
+            let data = tokio::fs::read(input).await?;
+            let payload = self
+                .cli
+                .api_bytes_request("POST", "/images/load", Some(data), "application/x-tar")
+                .await?;
+            return Ok(DockerOutput {
+                status: crate::exec::ExecExitStatus::Api(200),
+                stdout: String::from_utf8_lossy(&payload).into_owned(),
+                stderr: String::new(),
+            });
+        }
         self.cli.execute(&self.args).await
     }
 }
@@ -166,6 +231,33 @@ impl<'a> ImageImportBuilder<'a> {
         self
     }
     pub async fn run(self) -> DockerResult<DockerOutput> {
+        if self.args.api {
+            let data = if self.source == "-" {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "API import requires a file or URL source",
+                )
+                .into());
+            } else if self.source.starts_with("http://") || self.source.starts_with("https://") {
+                None
+            } else {
+                Some(tokio::fs::read(&self.source).await?)
+            };
+            let path = if data.is_some() {
+                "/images/create?fromSrc=-".to_string()
+            } else {
+                format!("/images/create?fromSrc={}", self.source)
+            };
+            let payload = self
+                .cli
+                .api_bytes_request("POST", &path, data, "application/x-tar")
+                .await?;
+            return Ok(DockerOutput {
+                status: crate::exec::ExecExitStatus::Api(200),
+                stdout: String::from_utf8_lossy(&payload).into_owned(),
+                stderr: String::new(),
+            });
+        }
         let mut a = self.args;
         a.push(&self.source);
         self.cli.execute(&a).await

@@ -252,6 +252,15 @@ impl ServerSetup {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = self.config.traefik_name.as_str();
         if docker.container(name).inspect().await.is_ok() {
+            // Existing installations may have been created on the legacy
+            // network. Connecting is idempotent enough for setup: Docker
+            // returns an error when the endpoint already exists, which we can
+            // safely ignore while still repairing old deployments.
+            let _ = docker
+                .networks()
+                .connect(self.config.network_name.as_str(), name)
+                .run()
+                .await;
             docker.container(name).start().run().await?;
             return Ok(());
         }

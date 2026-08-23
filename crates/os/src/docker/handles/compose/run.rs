@@ -101,7 +101,7 @@ impl<'a> ComposeRunBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeRunBuilder);
+crate::impl_cli_builder_opts!(ComposeRunBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeRunBuilder<'_> {
     fn build_str(&self) -> String {

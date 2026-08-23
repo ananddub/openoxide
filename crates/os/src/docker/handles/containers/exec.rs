@@ -75,6 +75,39 @@ impl<'a> ExecBuilder<'a> {
         self.cli.execute_stream(&a, sender).await
     }
 
+    /// Open an interactive shell directly through Docker Engine's exec API.
+    pub async fn shell(
+        self,
+        cmd: impl IntoIterator<Item = impl Into<String>>,
+    ) -> DockerResult<super::socat::ContainerSocketExecStream> {
+        if !self.args.api {
+            return Err(crate::docker::DockerError::Ssh(
+                "ExecBuilder::shell requires .api(); use socket_stream() for the separate raw socket transport".into(),
+            ));
+        }
+        let options = self.args.clone().build();
+        let mut builder = super::socat::ContainerSocketStreamBuilder::new(self.cli, self.id)
+            .cmd(cmd)
+            .interactive(
+                options
+                    .iter()
+                    .any(|arg| arg == "-i" || arg == "--interactive"),
+            )
+            .tty(options.iter().any(|arg| arg == "-t" || arg == "--tty"));
+        for pair in options.windows(2) {
+            match pair[0].as_str() {
+                "-u" | "--user" => builder = builder.user(pair[1].clone()),
+                "-w" | "--workdir" => builder = builder.workdir(pair[1].clone()),
+                "--env" | "-e" => {
+                    let (key, value) = pair[1].split_once('=').unwrap_or((&pair[1], ""));
+                    builder = builder.env(key.to_owned(), value.to_owned());
+                }
+                _ => {}
+            }
+        }
+        builder.connect().await.map_err(Into::into)
+    }
+
     pub fn build_args(self, cmd: impl IntoIterator<Item = impl Into<String>>) -> Vec<String> {
         let mut a = ArgBuilder::cmd(&["exec"]);
         a.inherit_meta(&self.args);

@@ -57,25 +57,30 @@ impl BuilderQueue {
             BuilderError::Execution(format!("could not resolve application config: {e}"))
         })?;
 
-        let executor = match server_id {
-            Some(sid) => {
-                let pid_file = deployment_pid_file(deployment_id);
-                dep_repo
-                    .set_pid(deployment_id, &pid_file)
+        let executor = if self
+            .is_local_server_id(server_id)
+            .await
+            .map_err(BuilderError::Execution)?
+        {
+            CommandExecutor::Local(LocalExecutor::new())
+        } else if let Some(sid) = server_id {
+            let pid_file = deployment_pid_file(deployment_id);
+            dep_repo
+                .set_pid(deployment_id, &pid_file)
+                .await
+                .map_err(|e| {
+                    BuilderError::Execution(format!(
+                        "could not persist remote deployment pid file: {e}"
+                    ))
+                })?;
+            CommandExecutor::Remote(
+                remote_executor(self.db.as_ref(), sid)
                     .await
-                    .map_err(|e| {
-                        BuilderError::Execution(format!(
-                            "could not persist remote deployment pid file: {e}"
-                        ))
-                    })?;
-                CommandExecutor::Remote(
-                    remote_executor(self.db.as_ref(), sid)
-                        .await
-                        .map_err(|e| BuilderError::Execution(e.to_string()))?
-                        .with_job_pid_file(pid_file),
-                )
-            }
-            None => CommandExecutor::Local(LocalExecutor::new()),
+                    .map_err(|e| BuilderError::Execution(e.to_string()))?
+                    .with_job_pid_file(pid_file),
+            )
+        } else {
+            CommandExecutor::Local(LocalExecutor::new())
         };
 
         let mut mem_limit_str = memory_limit_db;

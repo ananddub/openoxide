@@ -20,7 +20,7 @@ impl<'a> StackRemoveBuilder<'a> {
         self.cli.execute(&self.args).await
     }
 }
-crate::impl_builder_opts!(StackRemoveBuilder);
+crate::impl_cli_builder_opts!(StackRemoveBuilder);
 
 impl crate::exec::script::IntoCommand for StackRemoveBuilder<'_> {
     fn build_str(&self) -> String {

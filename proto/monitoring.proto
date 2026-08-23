@@ -22,6 +22,35 @@ service MonitoringService {
 
   // Tail a container's recent logs
   rpc StreamLogs (LogStreamRequest) returns (stream LogChunk);
+
+  // Persistent host or Docker shell session.
+  rpc Shell (stream ShellMessage) returns (stream ShellMessage);
+
+  // One-shot non-PTY command execution for deployment and maintenance tasks.
+  rpc ExecTask (ExecTaskRequest) returns (stream ExecTaskOutput);
+}
+
+message ExecTaskRequest {
+  int64 server_id = 1;
+  string container = 2;
+  string command = 3;
+  string working_directory = 4;
+  uint32 timeout_seconds = 5;
+}
+
+message ExecTaskOutput {
+  ExecTaskOutputKind kind = 1;
+  bytes data = 2;
+  int32 exit_code = 3;
+  string error = 4;
+}
+
+enum ExecTaskOutputKind {
+  EXEC_TASK_OUTPUT_UNSPECIFIED = 0;
+  EXEC_TASK_OUTPUT_STDOUT = 1;
+  EXEC_TASK_OUTPUT_STDERR = 2;
+  EXEC_TASK_OUTPUT_EXIT = 3;
+  EXEC_TASK_OUTPUT_ERROR = 4;
 }
 
 message LogStreamRequest {
@@ -36,6 +65,30 @@ message LogChunk {
   string log_line = 2;
   int64 timestamp = 3;
   bool is_stderr = 4;
+}
+
+message ShellMessage {
+  int64 server_id = 1;
+  ShellAction action = 2;
+  string container = 3;
+  string shell = 4;
+  bytes data = 5;
+  uint32 cols = 6;
+  uint32 rows = 7;
+  int32 exit_code = 8;
+  string error = 9;
+}
+
+enum ShellAction {
+  SHELL_ACTION_UNSPECIFIED = 0;
+  SHELL_ACTION_OPEN = 1;
+  SHELL_ACTION_INPUT = 2;
+  SHELL_ACTION_RESIZE = 3;
+  SHELL_ACTION_CLOSE = 4;
+  SHELL_ACTION_STDOUT = 5;
+  SHELL_ACTION_STDERR = 6;
+  SHELL_ACTION_EXIT = 7;
+  SHELL_ACTION_ERROR = 8;
 }
 
 message ServerMetricPoint {

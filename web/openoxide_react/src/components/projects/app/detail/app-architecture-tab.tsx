@@ -10,6 +10,8 @@ import {CreateBackupModal} from '#/components/projects/compose/detail/backups/cr
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from '#/components/projects/compose/detail/deployments/compose-direct-deploy-logs-modal';
+import type {DomainFormData} from '#/components/projects/common/domain-dialog';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 interface AppArchitectureTabProps {
 	app: any;
@@ -28,6 +30,7 @@ export function AppArchitectureTab({
 }: AppArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const appId = app?.id;
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
 	const createDomainMutation = $api.useMutation('post', '/domains');
 	const patchDomainMutation = $api.useMutation('patch', '/domains/{id}');
@@ -194,36 +197,17 @@ export function AppArchitectureTab({
 		}
 	};
 
-	const handleSaveDomain = async (data: {
-		domain: string;
-		serviceName: string;
-		containerPort: number;
-		https: boolean;
-		path: string;
-	}) => {
+	const handleSaveDomain = async (data: DomainFormData) => {
 		try {
 			if (editingDomainData?.id) {
 				await patchDomainMutation.mutateAsync({
 					params: {path: {id: editingDomainData.id}},
-					body: {
-						host: data.domain,
-						service_name: data.serviceName,
-						port: data.containerPort,
-						https: data.https,
-						path: data.path,
-					} as any,
+					body: data as any,
 				});
 				toast.success('Domain updated successfully');
 			} else {
 				await createDomainMutation.mutateAsync({
-					body: {
-						application_id: appId,
-						host: data.domain,
-						service_name: data.serviceName,
-						port: data.containerPort,
-						https: data.https,
-						path: data.path,
-					} as any,
+					body: {...data, application_id: appId} as any,
 				});
 				toast.success('Domain attached successfully');
 			}
@@ -260,6 +244,7 @@ export function AppArchitectureTab({
 						cron_expression: data.cronExpr,
 						command: data.command,
 						application_id: appId,
+						organization_id: activeOrg?.id || 1,
 						app_name: app?.app_name || app?.name || data.serviceName,
 						service_name: data.serviceName,
 						schedule_type: 'APPLICATION',
@@ -369,7 +354,7 @@ export function AppArchitectureTab({
 						setEditingDomainData(null);
 					}}
 					editingDomain={editingDomainData}
-					servicesList={servicesList}
+					servicesList={[]}
 					onSave={handleSaveDomain}
 				/>
 			)}

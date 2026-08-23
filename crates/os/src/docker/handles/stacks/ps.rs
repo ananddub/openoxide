@@ -40,7 +40,7 @@ impl<'a> StackPsBuilder<'a> {
         self.cli.execute_json_lines(&self.args).await
     }
 }
-crate::impl_builder_opts!(StackPsBuilder);
+crate::impl_cli_builder_opts!(StackPsBuilder);
 
 impl crate::exec::script::IntoCommand for StackPsBuilder<'_> {
     fn build_str(&self) -> String {

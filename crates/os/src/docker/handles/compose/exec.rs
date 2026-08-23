@@ -85,7 +85,7 @@ impl<'a> ComposeExecBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeExecBuilder);
+crate::impl_cli_builder_opts!(ComposeExecBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeExecBuilder<'_> {
     fn build_str(&self) -> String {

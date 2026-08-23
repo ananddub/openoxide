@@ -13,6 +13,8 @@ import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeDirectContainerLogsModal} from './logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from './deployments/compose-direct-deploy-logs-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import type {DomainFormData} from '#/components/projects/common/domain-dialog';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 function buildRawGitUrl(compose: any): string | null {
 	if (!compose) return null;
@@ -89,6 +91,7 @@ export function ComposeArchitectureTab({
 }: ComposeArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const composeId = compose?.id;
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
 	// Modals State
 	const [activeModal, setActiveModal] = useState<
@@ -322,35 +325,16 @@ export function ComposeArchitectureTab({
 	};
 
 	// Save Handlers
-	const handleSaveDomain = async (data: {
-		domain: string;
-		serviceName: string;
-		containerPort: number;
-		https: boolean;
-		path: string;
-	}) => {
+	const handleSaveDomain = async (data: DomainFormData) => {
 		if (editingDomainData?.id) {
 			await patchDomainMutation.mutateAsync({
 				params: {path: {id: editingDomainData.id}},
-				body: {
-					host: data.domain,
-					service_name: data.serviceName,
-					port: data.containerPort,
-					https: data.https,
-					path: data.path,
-				} as any,
+				body: data as any,
 			});
 			toast.success(`Domain updated successfully`);
 		} else {
 			await createDomainMutation.mutateAsync({
-				body: {
-					compose_id: composeId,
-					host: data.domain,
-					service_name: data.serviceName,
-					port: data.containerPort,
-					https: data.https,
-					path: data.path,
-				} as any,
+				body: {...data, compose_id: composeId} as any,
 			});
 			toast.success(`Domain attached to ${data.serviceName}`);
 		}
@@ -383,7 +367,8 @@ export function ComposeArchitectureTab({
 						name: data.name,
 						cron_expression: data.cronExpr,
 						command: data.command,
-						compose_id: composeId,
+					compose_id: composeId,
+					organization_id: activeOrg?.id || 1,
 						app_name: compose?.app_name || data.serviceName,
 						service_name: data.serviceName,
 						schedule_type: 'compose',

@@ -47,6 +47,24 @@ impl<'a> ConfigCreateBuilder<'a> {
                 "Data source required for config creation",
             )
         })?;
+        if self.args.api {
+            use base64::Engine;
+            let data = match source {
+                DataSource::File(path) => tokio::fs::read(path).await?,
+                DataSource::String(data) => data.into_bytes(),
+                DataSource::Bytes(data) => data,
+            };
+            let mut labels = serde_json::Map::new();
+            let built = self.args.clone().build();
+            for pair in built.windows(2) {
+                if pair[0] == "--label" {
+                    if let Some((k, v)) = pair[1].split_once('=') {
+                        labels.insert(k.into(), serde_json::json!(v));
+                    }
+                }
+            }
+            return self.cli.api_json_request("/configs/create", serde_json::json!({"Name": self.name, "Labels": labels, "Data": base64::engine::general_purpose::STANDARD.encode(data)})).await;
+        }
         self.args.push(&self.name);
 
         match source {

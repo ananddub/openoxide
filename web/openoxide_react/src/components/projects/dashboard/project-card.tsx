@@ -7,6 +7,7 @@ import {
 	SquarePen,
 	FileText,
 	Trash2,
+	Server,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {TagBadge} from '#/components/shared/tag-badge';
@@ -56,6 +57,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 		projectServices.map(s => s.environment_id).filter(Boolean),
 	);
 	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
+	const projectServerNames = useMemo(() => {
+		const names = new Map<string, string>();
+		projectServices.forEach((service: any) => {
+			const name = String(
+				service.server_name ||
+				(service.server_id == null
+					? 'Localhost (Main server)'
+					: `Server ${service.server_id}`),
+			).trim();
+			if (name) names.set(name.toLowerCase(), name);
+		});
+		return [...names.values()];
+	}, [projectServices]);
 
 	// Extract project tags from description (hashtag tags)
 	const projectTagNames = getTagsFromDescription(
@@ -174,18 +188,29 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 				</div>
 
 				{/* Bottom Stats Footer */}
-				<div className="pointer-events-none relative z-10 mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground">
-					<div className="flex items-center gap-1.5 font-mono">
-						<span className="font-bold text-foreground">
-							{totalServices}
+				<div className="pointer-events-none relative z-10 mt-4 flex flex-col gap-2 border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground">
+					<div className="flex min-w-0 items-center gap-1.5" title="Deployment servers">
+						<Server className="size-3.5 shrink-0 text-muted-foreground/80" />
+						<span className="shrink-0">Server</span>
+						<span className="truncate font-semibold text-foreground">
+							{projectServerNames.length > 0
+								? projectServerNames.join(', ')
+								: 'No services deployed'}
 						</span>
-						<span>{totalServices === 1 ? 'service' : 'services'}</span>
 					</div>
-					<div className="flex items-center gap-1.5 font-mono">
-						<span className="font-bold text-foreground">
-							{totalEnvironments}
-						</span>
-						<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-1.5 font-mono">
+							<span className="font-bold text-foreground">
+								{totalServices}
+							</span>
+							<span>{totalServices === 1 ? 'service' : 'services'}</span>
+						</div>
+						<div className="flex items-center gap-1.5 font-mono">
+							<span className="font-bold text-foreground">
+								{totalEnvironments}
+							</span>
+							<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>
+						</div>
 					</div>
 				</div>
 			</div>

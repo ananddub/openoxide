@@ -23,6 +23,20 @@ pub struct BuilderQueue {
 
 #[singleton]
 impl BuilderQueue {
+    pub(crate) async fn is_local_server_id(&self, server_id: Option<i64>) -> Result<bool, String> {
+        let Some(server_id) = server_id else {
+            return Ok(true);
+        };
+        let ip = sqlx::query_scalar::<_, String>("SELECT ip_address FROM servers WHERE id = ?")
+            .bind(server_id)
+            .fetch_optional(self.db.as_ref())
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(ip
+            .as_deref()
+            .is_some_and(|value| matches!(value, "127.0.0.1" | "localhost" | "openoxide-monitor")))
+    }
+
     pub fn new(
         db: Arc<SqlitePool>,
         application_state: Arc<ApplicationState>,

@@ -22,7 +22,7 @@ impl<'a> StackListBuilder<'a> {
         self.cli.execute_json_lines(&self.args).await
     }
 }
-crate::impl_builder_opts!(StackListBuilder);
+crate::impl_cli_builder_opts!(StackListBuilder);
 
 impl crate::exec::script::IntoCommand for StackListBuilder<'_> {
     fn build_str(&self) -> String {

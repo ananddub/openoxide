@@ -31,7 +31,7 @@ pub async fn spawn_docker_terminal(
     let docker = crate::utils::docker::DockerCli::new_local();
     let mut container_found = false;
 
-    if let Ok(containers) = docker.containers().ps().list().await {
+    if let Ok(containers) = docker.containers().ps().api().list().await {
         let search = input.container.to_lowercase();
         if let Some(matching) = containers.iter().find(|c| {
             let n = c.names.to_lowercase();
@@ -40,7 +40,11 @@ pub async fn spawn_docker_terminal(
                 || n.contains(&format!("{}_", search))
                 || n.contains(&format!("{}.", search))
         }) {
-            target_container = matching.names.trim_start_matches('/').to_string();
+            target_container = if matching.id.is_empty() {
+                matching.names.trim_start_matches('/').to_string()
+            } else {
+                matching.id.clone()
+            };
             container_found = true;
         }
     }
@@ -53,23 +57,23 @@ pub async fn spawn_docker_terminal(
     let socket_stream = match docker
         .containers()
         .exec(&target_container)
-        .socket_stream()
-        .cmd([&shell_req])
+        .interactive()
+        .tty(true)
+        .api()
         .env("TERM", "xterm-256color")
         .env("OPENOXIDE_SOCKET_ID", &key_str)
-        .size(input.cols.unwrap_or(80), input.rows.unwrap_or(24))
-        .connect()
+        .shell([&shell_req])
         .await
     {
         Ok(stream) => stream,
         Err(error) => {
             let err_msg = format!(
-                "\r\n\x1b[31m[Error] Failed to connect to docker exec socket stream for '{target_container}': {error}\x1b[0m\r\n"
+                "\r\n\x1b[31m[Error] Failed to start docker API shell for '{target_container}': {error}\x1b[0m\r\n"
             );
             emit_terminal_bytes(&socket, "stdout", err_msg.as_bytes());
             emit_error(
                 &socket,
-                format!("could not start docker socket stream: {error}"),
+                format!("could not start docker API shell: {error}"),
             );
             return;
         }
@@ -83,6 +87,7 @@ pub async fn spawn_docker_terminal(
     let writer_arc = Arc::new(Mutex::new(socket_stream.writer));
     let exec_id = socket_stream.exec_id.clone();
     let socket_path = socket_stream.socket_path.clone();
+    let api_lease = socket_stream.lease.map(Arc::new);
 
     sessions.insert(
         key.clone(),
@@ -92,6 +97,7 @@ pub async fn spawn_docker_terminal(
             container: Some(target_container.clone()),
             exec_id: exec_id.clone(),
             socket_path: socket_path.clone(),
+            api_lease,
         },
     );
 

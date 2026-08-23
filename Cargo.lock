@@ -84,12 +84,16 @@ dependencies = [
 name = "agent"
 version = "0.4.0"
 dependencies = [
+ "auto-di",
+ "auto_grpc",
  "bytes",
  "chrono",
  "dotenvy",
+ "futures",
  "http-body-util",
  "hyper 1.10.1",
  "hyper-util",
+ "inventory",
  "os",
  "prost",
  "prost-build",
@@ -244,6 +248,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aed7c8b6089affd296a000e464816e9447f1cb329c8dbdc1fe6a86eed9992f4f"
 dependencies = [
  "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
+
+[[package]]
+name = "auto_grpc"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "auto_grpc_macros",
+ "futures",
+ "inventory",
+ "tonic",
+]
+
+[[package]]
+name = "auto_grpc_macros"
+version = "0.1.0"
+dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
@@ -3396,10 +3420,14 @@ dependencies = [
  "async-trait",
  "auto-di",
  "base64 0.22.1",
+ "bytes",
  "chrono",
  "dashmap",
  "futures",
  "getrandom 0.3.4",
+ "http-body-util",
+ "hyper 1.10.1",
+ "hyper-util",
  "ipnet",
  "libc",
  "paste",

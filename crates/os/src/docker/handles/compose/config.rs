@@ -70,7 +70,7 @@ impl<'a> ComposeConfigBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeConfigBuilder);
+crate::impl_cli_builder_opts!(ComposeConfigBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeConfigBuilder<'_> {
     fn build_str(&self) -> String {

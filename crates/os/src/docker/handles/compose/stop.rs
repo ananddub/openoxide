@@ -49,7 +49,7 @@ impl<'a> ComposeStopBuilder<'a> {
     }
 }
 
-crate::impl_builder_opts!(ComposeStopBuilder);
+crate::impl_cli_builder_opts!(ComposeStopBuilder);
 
 impl crate::exec::script::IntoCommand for ComposeStopBuilder<'_> {
     fn build_str(&self) -> String {

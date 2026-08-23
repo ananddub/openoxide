@@ -14,6 +14,7 @@ import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
+import {useOrganizationStore} from '#/stores/organization-store';
 
 interface SchedulesTabProps {
 	app: any;
@@ -36,6 +37,7 @@ export function SchedulesTab({
 	const [deleting, setDeleting] = useState(false);
 
 	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
+	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
 	// Mutations
 	const createMutation = $api.useMutation('post', '/schedules');
@@ -59,6 +61,7 @@ export function SchedulesTab({
 					cron_expression: cronExpression,
 					command,
 					application_id: app.id,
+					organization_id: activeOrg?.id || 1,
 					app_name: appNameVal,
 					enabled: 1,
 					schedule_type: 'APPLICATION',

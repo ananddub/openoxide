@@ -20,7 +20,7 @@ impl<'a> StackServicesBuilder<'a> {
         self.cli.execute(&self.args).await
     }
 }
-crate::impl_builder_opts!(StackServicesBuilder);
+crate::impl_cli_builder_opts!(StackServicesBuilder);
 
 impl crate::exec::script::IntoCommand for StackServicesBuilder<'_> {
     fn build_str(&self) -> String {

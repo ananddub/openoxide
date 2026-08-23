@@ -10,6 +10,8 @@ members = [
     "crates/auto/route",
     "crates/auto/socket_macros",
     "crates/auto/socket",
+    "crates/auto/grpc",
+    "crates/auto/grpc_macros",
     "crates/sh_macros",
     "crates/os",
     "agent",

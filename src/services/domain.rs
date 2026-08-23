@@ -12,6 +12,7 @@ use crate::utils::builder::application::{
 use crate::utils::builder::compose::labels::build_compose_service_labels;
 use crate::utils::docker::DockerCli;
 use crate::utils::exec::{CommandExecutor, LocalExecutor};
+use crate::utils::traefik::types::CertificateType;
 
 #[derive(Debug, Clone)]
 pub struct DomainRecord {
@@ -85,12 +86,23 @@ impl DomainService {
 
     pub async fn create(&self, input: CreateDomainDto) -> sqlx::Result<DomainRecord> {
         validate_owner(input.application_id, input.compose_id)?;
+        let certificate_type = input.certificate_type.to_uppercase();
+        let port = input.port.or(Some(3000));
+        validate_domain_configuration(
+            input.https,
+            port,
+            &input.path,
+            &input.internal_path,
+            input.strip_path,
+            &certificate_type,
+            input.custom_cert_resolver.as_deref(),
+            input.compose_id,
+            input.service_name.as_deref(),
+        )?;
         self.validate_route_available(&input.host, &input.path, None)
             .await?;
         let https = bool_to_i64(input.https);
         let strip_path = bool_to_i64(input.strip_path);
-        let port = input.port.or(Some(3000));
-        let certificate_type = input.certificate_type.to_uppercase();
         let domain_type = match (input.application_id, input.compose_id) {
             (Some(_), None) => "APPLICATION",
             (None, Some(_)) => "COMPOSE",
@@ -152,6 +164,17 @@ impl DomainService {
             .certificate_type
             .map(|v| v.to_uppercase())
             .unwrap_or(current.certificate_type);
+        validate_domain_configuration(
+            https != 0,
+            port,
+            path.as_deref().unwrap_or("/"),
+            internal_path.as_deref().unwrap_or("/"),
+            strip_path != 0,
+            &certificate_type,
+            custom_cert_resolver.as_deref(),
+            current.compose_id,
+            service_name.as_deref(),
+        )?;
 
         let domain = self
             .repo_domain
@@ -440,6 +463,56 @@ impl DomainService {
 
         Ok(())
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_domain_configuration(
+    https: bool,
+    port: Option<i64>,
+    path: &str,
+    internal_path: &str,
+    strip_path: bool,
+    certificate_type: &str,
+    custom_cert_resolver: Option<&str>,
+    compose_id: Option<i64>,
+    service_name: Option<&str>,
+) -> sqlx::Result<()> {
+    if !path.starts_with('/') || !internal_path.starts_with('/') {
+        return Err(sqlx::Error::Protocol(
+            "domain paths must start with /".into(),
+        ));
+    }
+    if !matches!(port, Some(1..=65_535)) {
+        return Err(sqlx::Error::Protocol(
+            "container port must be between 1 and 65535".into(),
+        ));
+    }
+    if strip_path && path == "/" {
+        return Err(sqlx::Error::Protocol(
+            "strip_path requires a non-root public path".into(),
+        ));
+    }
+
+    let certificate_type = CertificateType::from(certificate_type);
+    if !https && certificate_type != CertificateType::None {
+        return Err(sqlx::Error::Protocol(
+            "certificate_type must be NONE when HTTPS is disabled".into(),
+        ));
+    }
+    if https
+        && certificate_type == CertificateType::Custom
+        && custom_cert_resolver.is_none_or(|value| value.trim().is_empty())
+    {
+        return Err(sqlx::Error::Protocol(
+            "custom_cert_resolver is required for CUSTOM certificates".into(),
+        ));
+    }
+    if compose_id.is_some() && service_name.is_none_or(|value| value.trim().is_empty()) {
+        return Err(sqlx::Error::Protocol(
+            "service_name is required for compose domains".into(),
+        ));
+    }
+    Ok(())
 }
 
 fn bool_to_i64(value: bool) -> i64 {

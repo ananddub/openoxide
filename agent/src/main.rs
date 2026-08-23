@@ -1,30 +1,25 @@
-mod collector;
-mod config;
-mod context;
-mod docker;
-mod error;
-mod filter;
-mod grpc;
-mod logs;
-mod rollup;
-mod store;
-mod tasks;
+mod api;
+mod app;
+mod core;
+mod services;
+mod utils;
 
-use std::sync::Arc;
+pub use core::{config, context, error, filter};
+pub use utils::background::tasks;
+pub use utils::telemetry::{collector, logs, rollup};
+pub use utils::{docker, persistence::store};
+
+use auto_di::Container;
 use std::time::Duration;
 
+use crate::app::grpc::GrpcServerTask;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
-use config::Config;
-use context::MonitorContext;
-use docker::api::DockerApi;
-use store::Store;
-
 use tasks::{
-    container::collect_and_push_containers, grpc::serve_grpc, host::collect_host_metrics,
-    retention::prune_old_metrics,
+    collectors::{container::ContainerCollectorTask, host::HostCollectorTask},
+    maintenance::retention::RetentionTask,
 };
 
 #[tokio::main]
@@ -37,13 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
 
-    let config = match Config::from_env() {
-        Ok(config) => Arc::new(config),
-        Err(error) => {
-            error!(%error, "invalid configuration");
-            std::process::exit(1);
-        }
-    };
+    let container = Container::new()?;
+    let config = container.resolve::<core::config::Config>().await?;
 
     info!(
         server_id = config.server_id,
@@ -53,16 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "starting openoxide monitor agent"
     );
 
-    let store = Arc::new(Store::init(&config.database_url).await?);
-    let docker = DockerApi::new(&config.docker_socket);
-    let filter = config.container_filter();
-
-    let context = MonitorContext::new(
-        Arc::clone(&config),
-        Arc::clone(&store),
-        docker.clone(),
-        filter,
-    );
+    let context = container.resolve::<core::context::MonitorContext>().await?;
 
     if let Err(error) = context.docker.ping().await {
         warn!(%error, socket = %context.config.docker_socket, "docker daemon unreachable");
@@ -71,13 +52,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shutdown = CancellationToken::new();
 
     let mut tasks = tokio::task::JoinSet::new();
-    tasks.spawn(serve_grpc(context.clone(), shutdown.clone()));
-    tasks.spawn(collect_host_metrics(context.clone(), shutdown.clone()));
-    tasks.spawn(collect_and_push_containers(
-        context.clone(),
+    tasks.spawn(GrpcServerTask::run((*context).clone(), shutdown.clone()));
+    tasks.spawn(HostCollectorTask::run((*context).clone(), shutdown.clone()));
+    tasks.spawn(ContainerCollectorTask::run(
+        (*context).clone(),
         shutdown.clone(),
     ));
-    tasks.spawn(prune_old_metrics(context.clone(), shutdown.clone()));
+    tasks.spawn(RetentionTask::run((*context).clone(), shutdown.clone()));
 
     wait_for_shutdown_signal().await;
     info!("shutdown signal received, stopping tasks");

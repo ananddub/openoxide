@@ -3,7 +3,8 @@ use crate::docker::{
     handles::{
         ContainerCopyBuilder, ContainerInspectBuilder, ContainerKillBuilder, ContainerPauseBuilder,
         ContainerRemoveBuilder, ContainerRestartBuilder, ContainerStartBuilder,
-        ContainerStopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, LogsBuilder,
+        ContainerStopBuilder, ContainerUnpauseBuilder, ContainerUpdateBuilder, ExecBuilder,
+        LogsBuilder,
     },
 };
 
@@ -51,6 +52,10 @@ impl<'a> ContainerResource<'a> {
 
     pub fn logs(&self) -> LogsBuilder<'a> {
         LogsBuilder::new(self.cli, self.id.clone())
+    }
+
+    pub fn exec(&self) -> ExecBuilder<'a> {
+        ExecBuilder::new(self.cli, self.id.clone())
     }
 
     pub fn upload(&self, destination: impl Into<String>) -> ContainerCopyBuilder<'a> {
