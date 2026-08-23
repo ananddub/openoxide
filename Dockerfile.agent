@@ -1,0 +1,72 @@
+# Build the agent as a static binary. The runtime intentionally includes the
+# operational tools used by ExecTask: Docker/Compose, backups, source checkout
+# and common deployment scripts.
+FROM rust:alpine AS builder
+
+RUN apk add --no-cache musl-dev gcc build-base ca-certificates
+
+WORKDIR /usr/src/openoxide
+
+COPY Cargo.toml Cargo.lock ./
+COPY agent ./agent
+COPY crates ./crates
+COPY proto ./proto
+COPY src ./src
+
+# Static musl build. The flag is scoped to the target triple rather than set via
+# RUSTFLAGS, which would also apply to proc-macro crates — those are host
+# dynamic libraries and cannot be built static.
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static"
+RUN cargo build --release --target x86_64-unknown-linux-musl -p agent && \
+    strip target/x86_64-unknown-linux-musl/release/agent
+
+# The agent is the host-operation boundary, so tools live here instead of in
+# the Openoxide panel image.
+FROM alpine:3.21
+
+RUN apk add --no-cache \
+    bash \
+    ca-certificates \
+    coreutils \
+    curl \
+    docker-cli \
+    docker-cli-compose \
+    findutils \
+    git \
+    git-lfs \
+    gzip \
+    jq \
+    openssh-client \
+    rclone \
+    tar \
+    unzip \
+    zip \
+    && git lfs install --system
+
+# Keep build execution on the Agent. Nixpacks and Railpack are installed with
+# the same pinned versions used by the server setup flow; Pack pulls the
+# selected Heroku/Paketo builder image through the mounted Docker daemon.
+ARG NIXPACKS_VERSION=1.41.0
+ARG RAILPACK_VERSION=0.15.4
+ARG PACK_VERSION=0.39.1
+RUN curl -fsSL https://nixpacks.com/install.sh | NIXPACKS_VERSION=${NIXPACKS_VERSION} bash \
+    && curl -fsSL https://railpack.com/install.sh | RAILPACK_VERSION=${RAILPACK_VERSION} bash \
+    && curl -fsSL "https://github.com/buildpacks/pack/releases/download/v${PACK_VERSION}/pack-v${PACK_VERSION}-linux.tgz" \
+       | tar -xzf - -C /usr/local/bin --no-same-owner pack \
+    && nixpacks --version \
+    && railpack --version \
+    && pack --version
+
+COPY --from=builder /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/agent /agent
+
+WORKDIR /app
+RUN mkdir -p /app/data /app/workspace
+ENV MONITOR_DATABASE_URL="memory://metrics" \
+    GRPC_PORT=50051 \
+    REFRESH_RATE=2 \
+    RETENTION_DAYS=7 \
+    RUST_LOG=agent=info
+
+EXPOSE 50051
+
+ENTRYPOINT ["/agent"]
