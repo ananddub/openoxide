@@ -5,7 +5,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     services::compose::{
         ComposeOperation,
-        remote::{deployment_pid_file, remote_executor},
+        remote::{agent_executor, deployment_pid_file},
     },
     utils::{
         builder::errors::BuilderError,
@@ -76,12 +76,7 @@ impl BuilderQueue {
                         "could not persist remote compose pid file: {e}"
                     ))
                 })?;
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(|e| BuilderError::Execution(e.to_string()))?
-                    .with_job_pid_file(pid_file),
-            )
+            agent_executor(sid).await.map_err(BuilderError::Execution)?
         } else {
             CommandExecutor::Local(LocalExecutor::new())
         };

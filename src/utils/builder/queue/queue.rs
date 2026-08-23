@@ -34,7 +34,7 @@ impl BuilderQueue {
             .map_err(|error| error.to_string())?;
         Ok(ip
             .as_deref()
-            .is_some_and(|value| matches!(value, "127.0.0.1" | "localhost" | "openoxide-monitor")))
+            .is_some_and(|value| matches!(value, "127.0.0.1" | "localhost" | "openoxide-agent")))
     }
 
     pub fn new(
@@ -290,8 +290,7 @@ impl BuilderQueue {
         pid_file: &str,
         stage: &str,
     ) -> bool {
-        use crate::services::application::remote::remote_executor;
-        match remote_executor(self.db.as_ref(), server_id).await {
+        match crate::services::compose::remote::agent_executor(server_id).await {
             Ok(executor) => match executor.kill_pid_file(pid_file).await {
                 Ok(()) => {
                     if let Ok(repo) =

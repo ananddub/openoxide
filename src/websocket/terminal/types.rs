@@ -223,6 +223,11 @@ pub enum TerminalSession {
         container: Option<String>,
         exec_id: String,
         socket_path: String,
-        api_lease: Option<Arc<os::docker::api::TunnelLease>>,
+    },
+    AgentShell {
+        sender:
+            Arc<Mutex<tokio::sync::mpsc::Sender<crate::services::monitoring::proto::ShellMessage>>>,
+        session_id: SessionId,
+        cancel: tokio_util::sync::CancellationToken,
     },
 }

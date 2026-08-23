@@ -17,7 +17,7 @@ impl ShellService {
         server_id: i64,
         request: ExecTaskRequest,
     ) -> Result<impl Stream<Item = Result<ExecTaskOutput, Status>> + Send + 'static, Status> {
-        if request.server_id != server_id {
+        if request.server_id <= 0 || (server_id != -1 && request.server_id != server_id) {
             return Err(Status::not_found(
                 "task server_id does not match this agent",
             ));
@@ -45,7 +45,11 @@ impl ShellService {
         let mut child = command
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
-            .stdin(std::process::Stdio::null())
+            .stdin(if request.stdin.is_empty() {
+                std::process::Stdio::null()
+            } else {
+                std::process::Stdio::piped()
+            })
             .spawn()
             .map_err(|error| Status::internal(format!("could not start task: {error}")))?;
         let stdout = child
@@ -58,28 +62,43 @@ impl ShellService {
             .ok_or_else(|| Status::internal("task stderr unavailable"))?;
         let (tx, rx) = tokio::sync::mpsc::channel(32);
         let timeout = request.timeout_seconds;
+        let stdin_data = request.stdin;
         tokio::spawn(async move {
-            let read_stdout =
-                stream_task_output(stdout, ExecTaskOutputKind::ExecTaskOutputStdout, tx.clone());
-            let read_stderr =
-                stream_task_output(stderr, ExecTaskOutputKind::ExecTaskOutputStderr, tx.clone());
-            tokio::join!(read_stdout, read_stderr);
-            let status = if timeout == 0 {
-                child.wait().await
-            } else {
-                match tokio::time::timeout(
-                    std::time::Duration::from_secs(timeout as u64),
-                    child.wait(),
-                )
-                .await
-                {
-                    Ok(status) => status,
-                    Err(_) => {
-                        let _ = child.kill().await;
-                        child.wait().await
-                    }
+            let stdout_task = tokio::spawn(stream_task_output(
+                stdout,
+                ExecTaskOutputKind::ExecTaskOutputStdout,
+                tx.clone(),
+            ));
+            let stderr_task = tokio::spawn(stream_task_output(
+                stderr,
+                ExecTaskOutputKind::ExecTaskOutputStderr,
+                tx.clone(),
+            ));
+            if let Some(mut stdin) = child.stdin.take() {
+                tokio::spawn(async move {
+                    let _ = stdin.write_all(&stdin_data).await;
+                    let _ = stdin.shutdown().await;
+                });
+            }
+            let status = tokio::select! {
+                status = child.wait() => status,
+                _ = tokio::time::sleep(std::time::Duration::from_secs(timeout.max(1) as u64)), if timeout > 0 => {
+                    let _ = child.kill().await;
+                    let status = child.wait().await;
+                    let _ = tx.send(Ok(ExecTaskOutput {
+                        kind: ExecTaskOutputKind::ExecTaskOutputError as i32,
+                        error: format!("task timed out after {timeout} seconds"),
+                        ..Default::default()
+                    })).await;
+                    status
+                },
+                _ = tx.closed() => {
+                    let _ = child.kill().await;
+                    child.wait().await
                 }
             };
+            let _ = stdout_task.await;
+            let _ = stderr_task.await;
             let code = status.ok().and_then(|status| status.code()).unwrap_or(-1);
             let _ = tx
                 .send(Ok(ExecTaskOutput {
@@ -102,7 +121,10 @@ impl ShellService {
             .message()
             .await?
             .ok_or_else(|| Status::invalid_argument("missing shell open message"))?;
-        if first.server_id != server_id || server_id != expected_server_id {
+        if first.server_id <= 0
+            || server_id != expected_server_id
+            || (expected_server_id != -1 && first.server_id != expected_server_id)
+        {
             return Err(Status::not_found(
                 "shell server_id does not match this agent",
             ));
@@ -111,18 +133,16 @@ impl ShellService {
             return Err(Status::invalid_argument("first shell message must be open"));
         }
 
+        if !first.container.is_empty() {
+            return Self::open_container(input, first).await;
+        }
+
         let shell = if first.shell.is_empty() {
             "sh"
         } else {
             first.shell.as_str()
         };
-        let mut command = if first.container.is_empty() {
-            Command::new(shell)
-        } else {
-            let mut command = Command::new("docker");
-            command.args(["exec", "-i", &first.container, shell]);
-            command
-        };
+        let mut command = Command::new(shell);
         let mut child = command
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -178,6 +198,109 @@ impl ShellService {
                 }
             }
             let _ = child.kill().await;
+        });
+
+        Ok(Response::new(Box::pin(
+            tokio_stream::wrappers::ReceiverStream::new(rx),
+        )))
+    }
+
+    async fn open_container(
+        mut input: tonic::Streaming<ShellMessage>,
+        first: ShellMessage,
+    ) -> Result<Response<ShellStream>, Status> {
+        let docker = os::docker::DockerCli::new_local();
+        let mut target = first.container.clone();
+        if let Ok(containers) = docker.containers().ps().all().api().list().await {
+            let search = target.to_lowercase();
+            let clean_search = search.trim_end_matches("_db").trim_end_matches("-db");
+            if let Some(found) = containers.iter().find(|container| {
+                let name = container.names.to_lowercase();
+                name.contains(&search)
+                    || name.trim_start_matches('/').starts_with(&search)
+                    || name.contains(&format!("{}_", search))
+                    || name.contains(&format!("{}.", search))
+                    || (!clean_search.is_empty()
+                        && (name.contains(clean_search)
+                            || name.trim_start_matches('/').starts_with(clean_search)))
+            }) {
+                target = if found.id.is_empty() {
+                    found.names.trim_start_matches('/').to_owned()
+                } else {
+                    found.id.clone()
+                };
+            }
+        }
+        let shell = if first.shell.is_empty() {
+            "sh".to_owned()
+        } else {
+            first.shell.clone()
+        };
+        let stream = docker
+            .containers()
+            .exec(&target)
+            .interactive()
+            .tty(true)
+            .api()
+            .env("TERM", "xterm-256color")
+            .shell([shell])
+            .await
+            .map_err(|error| Status::internal(format!("could not start Docker shell: {error}")))?;
+        let cols = u16::try_from(first.cols.max(1)).unwrap_or(u16::MAX);
+        let rows = u16::try_from(first.rows.max(1)).unwrap_or(u16::MAX);
+        let _ = stream.resize(cols, rows).await;
+        let mut reader = stream.reader;
+        let mut writer = stream.writer;
+        let exec_id = stream.exec_id;
+        let socket_path = stream.socket_path;
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
+
+        tokio::spawn(async move {
+            let mut output = [0u8; 4096];
+            loop {
+                tokio::select! {
+                    message = input.message() => match message {
+                        Ok(Some(message)) if message.action == ShellAction::Input as i32 => {
+                            if writer.write_all(&message.data).await.is_err() { break; }
+                            let _ = writer.flush().await;
+                        }
+                        Ok(Some(message)) if message.action == ShellAction::Resize as i32 => {
+                            let cols = u16::try_from(message.cols.max(1)).unwrap_or(u16::MAX);
+                            let rows = u16::try_from(message.rows.max(1)).unwrap_or(u16::MAX);
+                            let _ = os::docker::handles::containers::socat::resize_container_exec(
+                                &socket_path, &exec_id, cols, rows,
+                            ).await;
+                        }
+                        Ok(Some(message)) if message.action == ShellAction::Close as i32 => {
+                            let _ = writer.shutdown().await;
+                            break;
+                        }
+                        Ok(Some(_)) => {}
+                        _ => break,
+                    },
+                    result = reader.read(&mut output) => match result {
+                        Ok(0) => {
+                            let _ = tx.send(Ok(ShellMessage { action: ShellAction::Exit as i32, ..Default::default() })).await;
+                            break;
+                        }
+                        Ok(size) => {
+                            if tx.send(Ok(ShellMessage {
+                                action: ShellAction::Stdout as i32,
+                                data: output[..size].to_vec(),
+                                ..Default::default()
+                            })).await.is_err() { break; }
+                        }
+                        Err(error) => {
+                            let _ = tx.send(Ok(ShellMessage {
+                                action: ShellAction::Error as i32,
+                                error: error.to_string(),
+                                ..Default::default()
+                            })).await;
+                            break;
+                        }
+                    }
+                }
+            }
         });
 
         Ok(Response::new(Box::pin(

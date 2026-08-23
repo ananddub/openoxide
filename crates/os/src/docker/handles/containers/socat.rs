@@ -90,15 +90,11 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
     }
 
     pub async fn connect(self) -> std::io::Result<ContainerSocketExecStream> {
-        let lease = self
+        let socket_path = self
             .cli
-            .api_socket_lease()
-            .await
-            .map_err(std::io::Error::other)?;
-        let socket_path = lease
-            .as_ref()
-            .map(|lease| lease.socket().to_owned())
-            .unwrap_or(self.socket_path.clone());
+            .api_socket_path()
+            .map_err(std::io::Error::other)?
+            .to_owned();
         let env_strings: Vec<String> = self
             .envs
             .into_iter()
@@ -161,7 +157,6 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
             writer,
             exec_id,
             socket_path,
-            lease,
         })
     }
 }
@@ -171,7 +166,6 @@ pub struct ContainerSocketExecStream {
     pub writer: tokio::net::unix::OwnedWriteHalf,
     pub exec_id: String,
     pub socket_path: String,
-    pub lease: Option<crate::docker::api::TunnelLease>,
 }
 
 impl ContainerSocketExecStream {

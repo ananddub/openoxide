@@ -94,6 +94,16 @@ impl TerminalSocket {
                     });
                 }
             }
+            TerminalSession::AgentShell { sender, cancel, .. } => {
+                cancel.cancel();
+                let sender = sender.lock().await;
+                let _ = sender
+                    .send(crate::services::monitoring::proto::ShellMessage {
+                        action: crate::services::monitoring::proto::ShellAction::Close as i32,
+                        ..Default::default()
+                    })
+                    .await;
+            }
         }
 
         let executor =
@@ -146,41 +156,14 @@ impl TerminalSocket {
     }
 
     #[on("docker:start")]
-    async fn docker_start(&self, socket: SocketRef, Data(mut input): Data<DockerTerminalStart>) {
+    async fn docker_start(&self, socket: SocketRef, Data(input): Data<DockerTerminalStart>) {
         self.stop_socket_session(&socket).await;
         let start_token = self.prepare_start_token(&socket);
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
         if let Some(server_id) = input.server_id {
-            // The localhost server is represented in the database for UI and
-            // monitoring, but it has no SSH credentials. Route it through the
-            // local Docker API shell instead of the remote SSH terminal path.
-            let is_local =
-                sqlx::query_scalar::<_, String>("SELECT ip_address FROM servers WHERE id = ?")
-                    .bind(server_id)
-                    .fetch_optional(self.db.as_ref())
-                    .await
-                    .ok()
-                    .flatten()
-                    .is_some_and(|ip| {
-                        matches!(ip.as_str(), "127.0.0.1" | "localhost" | "openoxide-monitor")
-                    });
-
-            if is_local {
-                input.server_id = None;
-                spawn_docker_terminal(socket, &self.sessions, input).await;
-                return;
-            }
-
-            spawn_remote_docker_terminal_api(
-                socket,
-                &self.sessions,
-                self.db.as_ref(),
-                server_id,
-                input,
-                start_token,
-            )
-            .await;
+            spawn_remote_docker_terminal_api(socket, &self.sessions, server_id, input, start_token)
+                .await;
             return;
         }
 
@@ -231,8 +214,11 @@ impl TerminalSocket {
         };
 
         let Some(session) = self.sessions.get(&key).map(|entry| entry.clone()) else {
-            tracing::warn!("Input received for session {key} but session is not found");
-            emit_error(&socket, "terminal session is not running");
+            // The browser can flush a queued input event after startup failed
+            // (for example while an Agent reinstall is being queued). The
+            // startup error is already emitted; do not mask it with a second
+            // misleading terminal-state error.
+            tracing::debug!("Input received for closed terminal session {key}");
             return;
         };
 
@@ -264,6 +250,22 @@ impl TerminalSocket {
                     let _ = w.flush().await;
                 }
             }
+            TerminalSession::AgentShell { sender, .. } => {
+                let sender = sender.lock().await;
+                if let Err(error) = sender
+                    .send(crate::services::monitoring::proto::ShellMessage {
+                        action: crate::services::monitoring::proto::ShellAction::Input as i32,
+                        data: data.into_bytes(),
+                        ..Default::default()
+                    })
+                    .await
+                {
+                    emit_error(
+                        &socket,
+                        format!("could not write Agent shell input: {error}"),
+                    );
+                }
+            }
         }
     }
 
@@ -291,6 +293,22 @@ impl TerminalSocket {
                     let rows = payload.rows.unwrap_or(24);
                     tokio::spawn(async move {
                         let _ = crate::utils::docker::handles::containers::socat::resize_container_exec(&path, &eid, cols, rows).await;
+                    });
+                }
+                TerminalSession::AgentShell { sender, .. } => {
+                    let sender = sender.clone();
+                    let size = payload.size();
+                    tokio::spawn(async move {
+                        let sender = sender.lock().await;
+                        let _ = sender
+                            .send(crate::services::monitoring::proto::ShellMessage {
+                                action: crate::services::monitoring::proto::ShellAction::Resize
+                                    as i32,
+                                cols: size.cols as u32,
+                                rows: size.rows as u32,
+                                ..Default::default()
+                            })
+                            .await;
                     });
                 }
                 _ => {}

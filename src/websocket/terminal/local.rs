@@ -87,8 +87,6 @@ pub async fn spawn_docker_terminal(
     let writer_arc = Arc::new(Mutex::new(socket_stream.writer));
     let exec_id = socket_stream.exec_id.clone();
     let socket_path = socket_stream.socket_path.clone();
-    let api_lease = socket_stream.lease.map(Arc::new);
-
     sessions.insert(
         key.clone(),
         TerminalSession::DockerSocket {
@@ -97,7 +95,6 @@ pub async fn spawn_docker_terminal(
             container: Some(target_container.clone()),
             exec_id: exec_id.clone(),
             socket_path: socket_path.clone(),
-            api_lease,
         },
     );
 

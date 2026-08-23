@@ -18,7 +18,6 @@ pub struct DockerCli {
     executor: CommandExecutor,
     executable: String,
     global_args: Vec<String>,
-    api_tunnel: super::api::RemoteApiTunnel,
     registry_auth: Arc<RwLock<Option<String>>>,
 }
 impl Default for DockerCli {
@@ -32,12 +31,15 @@ impl DockerCli {
             *value = Some(auth);
         }
     }
-    pub(crate) async fn api_socket_lease(&self) -> DockerResult<Option<super::api::TunnelLease>> {
+    pub(crate) fn api_socket_path(&self) -> DockerResult<&str> {
         match &self.executor {
-            crate::exec::CommandExecutor::Remote(remote) => {
-                Ok(Some(self.api_tunnel.acquire(remote).await?))
-            }
-            crate::exec::CommandExecutor::Local(_) => Ok(None),
+            crate::exec::CommandExecutor::Local(_) => Ok("/var/run/docker.sock"),
+            crate::exec::CommandExecutor::Remote(_) => Err(DockerError::Ssh(
+                "remote Docker API tunneling was removed; use an Agent executor".into(),
+            )),
+            crate::exec::CommandExecutor::Agent(_) => Err(DockerError::Ssh(
+                "direct Docker API access is local-only; run the Docker command through the Agent executor".into(),
+            )),
         }
     }
     pub(crate) async fn api_json_request(
@@ -45,18 +47,7 @@ impl DockerCli {
         path: &str,
         body: serde_json::Value,
     ) -> DockerResult<DockerOutput> {
-        let lease = match &self.executor {
-            crate::exec::CommandExecutor::Remote(remote) => {
-                Some(self.api_tunnel.acquire(remote).await?)
-            }
-            crate::exec::CommandExecutor::Local(_) => None,
-        };
-        let api = super::DockerApi::new(
-            lease
-                .as_ref()
-                .map(|lease| lease.socket())
-                .unwrap_or("/var/run/docker.sock"),
-        );
+        let api = super::DockerApi::new(self.api_socket_path()?);
         let payload = api
             .request_with_auth(
                 "POST",
@@ -78,18 +69,7 @@ impl DockerCli {
         body: Option<Vec<u8>>,
         content_type: &str,
     ) -> DockerResult<Vec<u8>> {
-        let lease = match &self.executor {
-            crate::exec::CommandExecutor::Remote(remote) => {
-                Some(self.api_tunnel.acquire(remote).await?)
-            }
-            crate::exec::CommandExecutor::Local(_) => None,
-        };
-        let api = super::DockerApi::new(
-            lease
-                .as_ref()
-                .map(|lease| lease.socket())
-                .unwrap_or("/var/run/docker.sock"),
-        );
+        let api = super::DockerApi::new(self.api_socket_path()?);
         Ok(api
             .request_with_type(method, path, body.map(Into::into), content_type)
             .await?
@@ -114,7 +94,6 @@ impl DockerCli {
             executor: CommandExecutor::Local(LocalExecutor::new()),
             executable: "docker".into(),
             global_args: vec![],
-            api_tunnel: Default::default(),
             registry_auth: Default::default(),
         }
     }
@@ -123,7 +102,6 @@ impl DockerCli {
             executor,
             executable: "docker".into(),
             global_args: vec![],
-            api_tunnel: Default::default(),
             registry_auth: Default::default(),
         }
     }
@@ -139,7 +117,6 @@ impl DockerCli {
             executor: CommandExecutor::Local(LocalExecutor::new()),
             executable: executable.into().to_string_lossy().into_owned(),
             global_args: vec![],
-            api_tunnel: Default::default(),
             registry_auth: Default::default(),
         }
     }
@@ -157,7 +134,6 @@ impl DockerCli {
             executor: CommandExecutor::Remote(executor),
             executable: "docker".into(),
             global_args: vec![],
-            api_tunnel: Default::default(),
             registry_auth: Default::default(),
         }
     }
@@ -194,6 +170,9 @@ impl DockerCli {
             }
             CommandExecutor::Remote(_) => Err(DockerError::Ssh(
                 "a local process cannot be created for a remote client; use run_stream".into(),
+            )),
+            CommandExecutor::Agent(_) => Err(DockerError::Ssh(
+                "a local process cannot be created for an agent client; use run_stream".into(),
             )),
         }
     }
@@ -359,18 +338,7 @@ impl DockerCli {
                 args.join(" ")
             )));
         }
-        let lease = match &self.executor {
-            crate::exec::CommandExecutor::Remote(remote) => {
-                Some(self.api_tunnel.acquire(remote).await?)
-            }
-            crate::exec::CommandExecutor::Local(_) => None,
-        };
-        let api = super::DockerApi::new(
-            lease
-                .as_ref()
-                .map(|l| l.socket())
-                .unwrap_or("/var/run/docker.sock"),
-        );
+        let api = super::DockerApi::new(self.api_socket_path()?);
         if args.first().map(String::as_str) == Some("container")
             && args.get(1).map(String::as_str) == Some("exec")
         {
@@ -562,41 +530,16 @@ impl DockerCli {
                     args.join(" ")
                 )));
             }
-            let lease = match &self.executor {
-                crate::exec::CommandExecutor::Remote(remote) => {
-                    Some(self.api_tunnel.acquire(remote).await?)
-                }
-                crate::exec::CommandExecutor::Local(_) => None,
-            };
+            let api = super::DockerApi::new(self.api_socket_path()?);
             if args.first().map(String::as_str) == Some("container")
                 && args.get(1).map(String::as_str) == Some("exec")
             {
-                return super::api::exec::execute_stream(
-                    &super::DockerApi::new(
-                        lease
-                            .as_ref()
-                            .map(|l| l.socket())
-                            .unwrap_or("/var/run/docker.sock"),
-                    ),
-                    &args,
-                    sender,
-                )
-                .await;
+                return super::api::exec::execute_stream(&api, &args, sender).await;
             }
             if args.first().map(String::as_str) == Some("image")
                 && args.get(1).map(String::as_str) == Some("build")
             {
-                return super::api::build::execute_stream(
-                    &super::DockerApi::new(
-                        lease
-                            .as_ref()
-                            .map(|l| l.socket())
-                            .unwrap_or("/var/run/docker.sock"),
-                    ),
-                    &args,
-                    sender,
-                )
-                .await;
+                return super::api::build::execute_stream(&api, &args, sender).await;
             }
             let request = super::api::map_cli_args(&args).ok_or_else(|| {
                 crate::docker::DockerError::Ssh(format!(
@@ -604,12 +547,6 @@ impl DockerCli {
                     args.join(" ")
                 ))
             })?;
-            let api = super::DockerApi::new(
-                lease
-                    .as_ref()
-                    .map(|l| l.socket())
-                    .unwrap_or("/var/run/docker.sock"),
-            );
             let body = request
                 .body
                 .map(|body| serde_json::to_vec(&body).unwrap().into());

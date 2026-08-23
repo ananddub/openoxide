@@ -3,18 +3,16 @@ pub(crate) mod exec;
 mod mapping;
 pub(crate) mod mutations;
 mod transport;
-mod tunnel;
 
 pub use mapping::{ResponseShape, encode_query_public, map_cli_args};
 pub use transport::DockerApi;
-pub use tunnel::{RemoteApiTunnel, TunnelLease};
 
 pub const API_VERSION: &str = "v1.52";
 
 /// Returns whether a CLI command has a concrete Engine API v1.52 mapping.
 ///
 /// This is intentionally kept beside the dispatcher so callers can reject
-/// unsupported `.api()` requests before opening a remote API tunnel.
+/// unsupported `.api()` requests before dispatching to the local Engine API.
 pub fn supports_command(args: &[String]) -> bool {
     let is_exec = args.first().map(String::as_str) == Some("container")
         && args.get(1).map(String::as_str) == Some("exec");

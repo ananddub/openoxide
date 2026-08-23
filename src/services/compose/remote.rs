@@ -4,6 +4,21 @@ use crate::repository::ServerRepository;
 use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
 use auto_di::resolve;
 
+/// Returns the persistent Agent-backed executor used for normal server
+/// operations. SSH remains limited to bootstrap/setup and explicit terminal
+/// sessions; deployments and Docker commands must use the Agent gRPC channel.
+pub(crate) async fn agent_executor(
+    server_id: i64,
+) -> Result<crate::utils::exec::CommandExecutor, String> {
+    let monitoring =
+        resolve::<crate::services::monitoring::monitoring_service::MonitoringService>()
+            .await
+            .map_err(|error| format!("monitoring Agent unavailable: {error}"))?;
+    Ok(crate::utils::exec::CommandExecutor::Agent(
+        monitoring.agent_executor(server_id),
+    ))
+}
+
 pub(crate) fn deployment_pid_file(deployment_id: i64) -> String {
     format!("/tmp/openoxide-deployment-{deployment_id}.pid")
 }
