@@ -177,7 +177,7 @@ impl ApplicationService {
                         if s_low.contains(&app_n_low) || s_low.contains(&user_n_low) {
                             let _ = tokio::time::timeout(
                                 std::time::Duration::from_secs(3),
-                                docker_cli.services().scale().service(&s.name, 0).run(),
+                                docker_cli.services().remove(&s.name).run(),
                             )
                             .await;
                         }

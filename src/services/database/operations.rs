@@ -198,10 +198,9 @@ impl DatabaseService {
                 let docker_cli = match server_id {
                     Some(sid) => {
                         if let Ok(executor) =
-                            crate::services::compose::remote::remote_executor(db_ref.as_ref(), sid)
-                                .await
+                            crate::services::compose::remote::agent_executor(sid).await
                         {
-                            crate::utils::docker::DockerCli::from_remote_executor(executor)
+                            crate::utils::docker::DockerCli::from_executor(executor)
                         } else {
                             crate::utils::docker::DockerCli::new_local()
                         }
@@ -234,20 +233,18 @@ impl DatabaseService {
                     },
                 )) {
                     for s in services {
-                        if &s.replicas != "0/0" {
-                            let _ = tokio::time::timeout(
-                                std::time::Duration::from_secs(3),
-                                docker_cli.services().scale().service(&s.name, 0).run(),
-                            )
-                            .await;
-                        }
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(3),
+                            docker_cli.services().remove(&s.name).run(),
+                        )
+                        .await;
                     }
                 }
 
                 for candidate in &candidates {
                     let _ = tokio::time::timeout(
                         std::time::Duration::from_secs(3),
-                        docker_cli.services().scale().service(candidate, 0).run(),
+                        docker_cli.services().remove(candidate).run(),
                     )
                     .await;
                     let _ = tokio::time::timeout(
@@ -309,13 +306,10 @@ impl DatabaseService {
     ) -> sqlx::Result<crate::utils::docker::DockerCli> {
         match server_id {
             Some(server_id) => {
-                let executor =
-                    crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
-                        .await
-                        .map_err(sqlx::Error::Protocol)?;
-                Ok(crate::utils::docker::DockerCli::from_remote_executor(
-                    executor,
-                ))
+                let executor = crate::services::compose::remote::agent_executor(server_id)
+                    .await
+                    .map_err(sqlx::Error::Protocol)?;
+                Ok(crate::utils::docker::DockerCli::from_executor(executor))
             }
             None => Ok(crate::utils::docker::DockerCli::new_local()),
         }

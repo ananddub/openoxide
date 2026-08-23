@@ -443,17 +443,14 @@ impl DatabaseBuilder {
             .await;
         if let Ok(services) = services {
             for s in services {
-                if &s.replicas != "0/0" {
-                    let _ = self
-                        .ctx
-                        .docker
-                        .services()
-                        .scale()
-                        .service(&s.name, 0)
-                        .cancel_with(cancel.clone())
-                        .run()
-                        .await;
-                }
+                let _ = self
+                    .ctx
+                    .docker
+                    .services()
+                    .remove(&s.name)
+                    .cancel_with(cancel.clone())
+                    .run()
+                    .await;
             }
         } else {
             let service_name = format!("{}_db", app_name);
@@ -461,8 +458,7 @@ impl DatabaseBuilder {
                 .ctx
                 .docker
                 .services()
-                .scale()
-                .service(&service_name, 0)
+                .remove(&service_name)
                 .cancel_with(cancel.clone())
                 .run()
                 .await;

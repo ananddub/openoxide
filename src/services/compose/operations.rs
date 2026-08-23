@@ -211,13 +211,11 @@ async fn scale_down_compose(
                 },
             )) {
                 for service in services {
-                    if service.replicas != "0/0" {
-                        let _ = tokio::time::timeout(
-                            std::time::Duration::from_secs(3),
-                            docker.services().scale().service(&service.name, 0).run(),
-                        )
-                        .await;
-                    }
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        docker.services().remove(&service.name).run(),
+                    )
+                    .await;
                 }
             }
             Ok(())
