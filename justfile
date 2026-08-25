@@ -81,6 +81,10 @@ gen-mod:
 query-gen:
     bash scripts/query-gen.sh
 
+# Extract static SQL from repository methods into Flash named queries.
+repository-query-gen:
+    node scripts/extract-repository-queries.mjs
+
 # Generate Rust models + CRUD repositories from the SQLite database
 db-gen:
     #!/usr/bin/env bash
