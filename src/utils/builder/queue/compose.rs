@@ -15,7 +15,6 @@ use crate::{
             hash_state::ApplicationState,
             queue::queue::BuilderQueue,
         },
-        exec::{CommandExecutor, LocalExecutor},
     },
 };
 
@@ -55,13 +54,10 @@ impl BuilderQueue {
             .cancellation_token(compose_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let executor = if self
-            .is_local_server_id(server_id)
+        let effective_server_id = crate::services::compose::remote::agent_server_id(server_id)
             .await
-            .map_err(BuilderError::Execution)?
-        {
-            CommandExecutor::Local(LocalExecutor::new())
-        } else if let Some(sid) = server_id {
+            .map_err(BuilderError::Execution)?;
+        let executor = {
             let pid_file = deployment_pid_file(deployment_id);
             let dep_repo = resolve::<crate::repository::DeploymentRepository>()
                 .await
@@ -76,9 +72,9 @@ impl BuilderQueue {
                         "could not persist remote compose pid file: {e}"
                     ))
                 })?;
-            agent_executor(sid).await.map_err(BuilderError::Execution)?
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
+            agent_executor(effective_server_id)
+                .await
+                .map_err(BuilderError::Execution)?
         };
 
         let (events_tx, events_rx) = mpsc::channel(64);

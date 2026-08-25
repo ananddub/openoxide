@@ -595,16 +595,10 @@ impl DeploymentService {
         &self,
         server_id: Option<i64>,
     ) -> sqlx::Result<DockerCli> {
-        match server_id {
-            Some(server_id) => {
-                let executor =
-                    crate::services::compose::remote::remote_executor(self.database(), server_id)
-                        .await
-                        .map_err(sqlx::Error::Protocol)?;
-                Ok(DockerCli::from_remote_executor(executor))
-            }
-            None => Ok(DockerCli::new_local()),
-        }
+        crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map(DockerCli::from_executor)
+            .map_err(sqlx::Error::Protocol)
     }
 }
 

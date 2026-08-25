@@ -1,0 +1,187 @@
+import {useState} from 'react';
+import {HardDrive, Package, Pencil, Plus, Trash2} from 'lucide-react';
+import {Button} from '#/components/ui/button';
+import {toast} from 'sonner';
+import {$api} from '#/api/query';
+import {formatApiError} from '#/api/utils';
+import {databaseKind} from './database-endpoint';
+import {
+	DatabaseVolumeDialog,
+	type DatabaseMount,
+} from './database-volume-dialog';
+
+export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
+	const kind = databaseKind(database);
+	const base = '/database-management/{kind}/{id}/mounts' as any;
+	const item =
+		'/database-management/{kind}/{database_id}/mounts/{id}' as any;
+	const {data, refetch} = $api.useQuery('get', base, {
+		params: {path: {kind, id: Number(database?.id)}},
+	} as any);
+	const mounts = normalizeMounts(data);
+	const create = $api.useMutation('post', base);
+	const update = $api.useMutation('put', item);
+	const remove = $api.useMutation('delete', item);
+	const [open, setOpen] = useState(false);
+	const [editing, setEditing] = useState<DatabaseMount | null>(null);
+	const [saving, setSaving] = useState(false);
+	const showDialog = (mount: DatabaseMount | null) => {
+		setEditing(mount);
+		setOpen(true);
+	};
+	const saveMount = async (value: Omit<DatabaseMount, 'id'>) => {
+		setSaving(true);
+		try {
+			const body = {
+				...value,
+				volume_name: value.volume_name || undefined,
+				host_path: value.host_path || undefined,
+				file_path: value.file_path || undefined,
+				content: value.content ?? undefined,
+			};
+			if (editing)
+				await update.mutateAsync({
+					params: {
+						path: {kind, database_id: Number(database.id), id: editing.id},
+					},
+					body,
+				} as any);
+			else
+				await create.mutateAsync({
+					params: {path: {kind, id: Number(database.id)}},
+					body,
+				} as any);
+			toast.success(editing ? 'Volume updated' : 'Volume added');
+			setOpen(false);
+			await refetch();
+			onUpdated();
+		} catch (error) {
+			toast.error(formatApiError(error));
+		} finally {
+			setSaving(false);
+		}
+	};
+	const deleteMount = async (mount: DatabaseMount) => {
+		try {
+			await remove.mutateAsync({
+				params: {
+					path: {kind, database_id: Number(database.id), id: mount.id},
+				},
+			} as any);
+			toast.success('Volume removed');
+			await refetch();
+			onUpdated();
+		} catch (error) {
+			toast.error(formatApiError(error));
+		}
+	};
+	return (
+		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+			<div className="flex flex-wrap items-start justify-between gap-4">
+				<div>
+					<h3 className="flex items-center gap-2 text-base font-bold">
+						<HardDrive className="size-4 text-primary" /> Volumes
+					</h3>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Configure persistent volumes, host binds, and file mounts.
+					</p>
+				</div>
+				{mounts.length > 0 && (
+					<Button
+						onClick={() => showDialog(null)}
+						className="h-9 gap-1.5 text-xs">
+						<Plus className="size-3.5" /> Add Volume
+					</Button>
+				)}
+			</div>
+			{mounts.length === 0 ? (
+				<div className="flex flex-col items-center gap-3 border-t border-border/40 py-10 text-muted-foreground">
+					<Package className="size-8" />
+					<p className="text-sm">No volumes/mounts configured</p>
+					<Button
+						onClick={() => showDialog(null)}
+						className="h-9 gap-1.5 text-xs">
+						<Plus className="size-3.5" /> Add Volume
+					</Button>
+				</div>
+			) : (
+				<div className="flex flex-col gap-4 border-t border-border/40 pt-4">
+					<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+						Redeploy the database after adding, editing, or deleting a
+						mount.
+					</div>
+					{mounts.map(mount => (
+						<div
+							key={mount.id}
+							className="flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
+							<div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
+								<MountValue label="Mount Type" value={mount.mount_type} />
+								<MountValue
+									label={
+										mount.mount_type === 'VOLUME'
+											? 'Volume Name'
+											: mount.mount_type === 'BIND'
+												? 'Host Path'
+												: 'File Path'
+									}
+									value={
+										mount.volume_name ||
+										mount.host_path ||
+										mount.file_path ||
+										'-'
+									}
+								/>
+								<MountValue label="Mount Path" value={mount.mount_path} />
+							</div>
+							<div className="flex gap-1">
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => showDialog(mount)}>
+									<Pencil className="size-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="text-destructive"
+									onClick={() => deleteMount(mount)}>
+									<Trash2 className="size-4" />
+								</Button>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+			<DatabaseVolumeDialog
+				open={open}
+				mount={editing}
+				saving={saving}
+				onOpenChange={setOpen}
+				onSave={saveMount}
+			/>
+		</section>
+	);
+}
+
+function normalizeMounts(value: unknown): DatabaseMount[] {
+	if (Array.isArray(value)) return value as DatabaseMount[];
+	if (
+		value &&
+		typeof value === 'object' &&
+		Array.isArray((value as {items?: unknown}).items)
+	) {
+		return (value as {items: DatabaseMount[]}).items;
+	}
+	return [];
+}
+
+function MountValue({label, value}: {label: string; value: string}) {
+	return (
+		<div className="min-w-0">
+			<p className="text-xs font-medium">{label}</p>
+			<p className="mt-1 truncate text-xs text-muted-foreground">
+				{value}
+			</p>
+		</div>
+	);
+}

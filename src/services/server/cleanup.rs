@@ -106,9 +106,8 @@ impl ServerCleanupService {
     }
 
     async fn executor(&self, server_id: i64) -> sqlx::Result<CommandExecutor> {
-        crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
+        crate::services::compose::remote::agent_executor(server_id)
             .await
-            .map(CommandExecutor::Remote)
             .map_err(sqlx::Error::Protocol)
     }
 }

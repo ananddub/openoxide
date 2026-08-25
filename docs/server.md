@@ -81,7 +81,7 @@ Invokes automated system setup commands over SSH:
 
 ### Phase 4: Traefik & Monitoring Agent Deployment (`remote_server.rs`)
 1. **Traefik Reverse Proxy**: Launches edge proxy container to handle HTTP/HTTPS ingress routing and Let's Encrypt TLS certificates.
-2. **Monitoring Agent**: Launches the `openoxide-monitor` container on port `50051`, passing `SERVER_ID` and `METRICS_TOKEN` environment variables for gRPC metrics ingestion.
+2. **Agent**: Launches the `openoxide-agent` container on port `50051`, passing `SERVER_ID` and `METRICS_TOKEN` environment variables for authenticated gRPC operations.
 
 ### Phase 5: Health Activation & Garbage Collection (`cleanup.rs`)
 1. Performs health probe verifying gRPC agent connectivity.

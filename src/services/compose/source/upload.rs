@@ -59,16 +59,3 @@ pub async fn save_multipart_to_file(
         .await
         .map_err(|e| format!("Failed to flush file: {e}"))
 }
-
-pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), String> {
-    let executor =
-        crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
-    crate::utils::os::OsCli::new(&executor)
-        .archive(input)
-        .zip()
-        .sanitize()
-        .to(output)
-        .run()
-        .await
-        .map_err(|e| format!("ZIP validation error: {e}"))
-}

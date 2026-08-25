@@ -1,15 +1,10 @@
 use crate::{
-    api::dto::traefik::TraefikWriteFileDto,
-    db::models::certificates::Certificate,
-    services::traefik::TraefikService,
-    utils::{
-        exec::{CommandExecutor, LocalExecutor},
-        os::OsCli,
-    },
+    api::dto::traefik::TraefikWriteFileDto, db::models::certificates::Certificate,
+    services::traefik::TraefikService, utils::os::OsCli,
 };
 
 pub(super) async fn certificate_expiry(certificate: &str) -> Result<i64, String> {
-    let executor = CommandExecutor::Local(LocalExecutor::new());
+    let executor = crate::services::compose::remote::agent_executor_for(None).await?;
     OsCli::new(&executor)
         .crypto()
         .certificate(certificate)
@@ -23,7 +18,7 @@ pub(super) async fn validate_certificate_pair(
     certificate: &str,
     private_key: &str,
 ) -> Result<i64, String> {
-    let executor = CommandExecutor::Local(LocalExecutor::new());
+    let executor = crate::services::compose::remote::agent_executor_for(None).await?;
     OsCli::new(&executor)
         .crypto()
         .certificate(certificate)

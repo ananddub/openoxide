@@ -10,7 +10,7 @@ use crate::{
     services::monitoring::agent_auth::MonitoringAgentAuth,
     utils::{
         docker::DockerCli,
-        setup::{ServerSetup, SetupConfig},
+        setup::{AGENT_CONTAINER_NAME, ServerSetup, SetupConfig},
     },
 };
 
@@ -62,12 +62,12 @@ impl MonitoringLifecycleService {
     }
 
     pub async fn restart_agent(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
-        let executor = crate::services::compose::remote::remote_executor(&self.db, server_id)
+        let executor = crate::services::compose::remote::agent_executor(server_id)
             .await
             .map_err(sqlx::Error::Protocol)?;
-        DockerCli::from_remote_executor(executor)
+        DockerCli::from_executor(executor)
             .containers()
-            .restart("openoxide-monitor")
+            .restart(AGENT_CONTAINER_NAME)
             .run()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
@@ -77,13 +77,22 @@ impl MonitoringLifecycleService {
     /// Pull the published agent image and recreate the monitor only when the
     /// running container is backed by an older image.
     pub async fn update_agent_if_needed(&self, server_id: i64) -> sqlx::Result<bool> {
-        let executor = crate::services::compose::remote::remote_executor(&self.db, server_id)
+        let executor = crate::services::compose::remote::agent_executor(server_id)
             .await
             .map_err(sqlx::Error::Protocol)?;
-        let docker = DockerCli::from_remote_executor(executor);
-        let image = crate::utils::setup::monitoring_image();
+        let docker = DockerCli::from_executor(executor);
+        let image = crate::utils::setup::agent_image();
 
-        let inspected = docker.container("openoxide-monitor").inspect().await.ok();
+        let inspected = match docker.container(AGENT_CONTAINER_NAME).inspect().await {
+            Ok(container) => Some(container),
+            Err(error) => {
+                // If the Agent transport itself is unavailable (or is too old to
+                // answer the Docker operation), use SSH only as bootstrap recovery.
+                tracing::warn!(server_id, error = %error, "Agent inspection failed; falling back to SSH bootstrap repair");
+                self.reinstall_agent(server_id).await?;
+                return Ok(true);
+            }
+        };
         let mut running_image_id = inspected.as_ref().map(|container| container.image.clone());
         let configured_server_id = inspected.as_ref().and_then(|container| {
             container
@@ -94,7 +103,7 @@ impl MonitoringLifecycleService {
         });
         if configured_server_id != Some(server_id) {
             let _ = docker
-                .container("openoxide-monitor")
+                .container(AGENT_CONTAINER_NAME)
                 .remove()
                 .force()
                 .run()
@@ -104,7 +113,7 @@ impl MonitoringLifecycleService {
         if let Some(container) = inspected.as_ref() {
             if configured_server_id == Some(server_id) && !container.state.running {
                 docker
-                    .container("openoxide-monitor")
+                    .container(AGENT_CONTAINER_NAME)
                     .start()
                     .run()
                     .await
@@ -142,15 +151,15 @@ impl MonitoringLifecycleService {
                 .await
                 .map_err(sqlx::Error::Protocol)?;
             let mut config = SetupConfig::default();
-            config.monitoring_server_id = Some(server_id);
-            config.monitoring_token = Some(self.agent_auth_token_fallback());
-            config.monitoring_panel_url = Some(
+            config.agent_server_id = Some(server_id);
+            config.agent_token = Some(self.agent_auth_token_fallback());
+            config.agent_panel_url = Some(
                 std::env::var("OPENOXIDE_SERVER_URL")
                     .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                     .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
             );
             ServerSetup::new_remote(executor, config)
-                .ensure_monitoring()
+                .ensure_agent()
                 .await
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         }
@@ -161,6 +170,16 @@ impl MonitoringLifecycleService {
     /// SSH-managed host. Local monitoring gets a real server identity so the
     /// same gRPC agent and lifecycle watcher are used as remote hosts.
     pub async fn ensure_local_registration(&self) -> sqlx::Result<i64> {
+        // Normalize databases created before the Agent rename. Those rows
+        // still point at the removed `openoxide-monitor` DNS name, which
+        // makes the panel call an old/unavailable gRPC endpoint.
+        sqlx::query(
+            "UPDATE servers SET ip_address='openoxide-agent', app_name='localhost'
+             WHERE ip_address IN ('openoxide-monitor', '127.0.0.1', 'localhost')
+               AND (app_name='localhost' OR name LIKE 'Localhost%')",
+        )
+        .execute(self.db.as_ref())
+        .await?;
         let configured_id = std::env::var("OPENOXIDE_LOCAL_SERVER_ID")
             .or_else(|_| std::env::var("MONITORING_SERVER_ID"))
             .ok()
@@ -178,7 +197,7 @@ impl MonitoringLifecycleService {
             id
         } else {
             let existing: Option<(i64,)> = sqlx::query_as(
-                "SELECT id FROM servers WHERE (ip_address IN ('127.0.0.1','localhost','openoxide-monitor') OR app_name='localhost') LIMIT 1",
+                "SELECT id FROM servers WHERE (ip_address IN ('127.0.0.1','localhost','openoxide-agent') OR app_name='localhost') LIMIT 1",
             )
             .fetch_optional(self.db.as_ref())
             .await?;
@@ -218,19 +237,22 @@ impl MonitoringLifecycleService {
     pub async fn update_local_agent_if_needed(&self) -> sqlx::Result<bool> {
         let server_id = self.ensure_local_registration().await?;
 
-        let docker = DockerCli::new_local();
-        let image = crate::utils::setup::monitoring_image();
-        let legacy = "openoxide_monitor";
-        if docker
-            .container("openoxide-monitor")
-            .inspect()
+        let executor = crate::services::compose::remote::agent_executor(server_id)
             .await
-            .is_err()
-            && docker.container(legacy).inspect().await.is_ok()
-        {
-            let _ = docker.container(legacy).remove().force().run().await;
+            .map_err(sqlx::Error::Protocol)?;
+        let docker = DockerCli::from_executor(executor);
+        let image = crate::utils::setup::agent_image();
+        let inspected = docker.container(AGENT_CONTAINER_NAME).inspect().await.ok();
+        // The local Agent is managed by docker-compose.agent.yml in the
+        // development/self-hosted setup. Let Compose own its image and
+        // lifecycle; the panel must not pull a registry image or recreate it.
+        if inspected.as_ref().is_some_and(|container| {
+            container.config.labels.iter().any(|(key, value)| {
+                key == "com.docker.compose.service" && value == "openoxide-agent"
+            })
+        }) {
+            return Ok(false);
         }
-        let inspected = docker.container("openoxide-monitor").inspect().await.ok();
         let configured_server_id = inspected.as_ref().and_then(|container| {
             container
                 .config
@@ -242,7 +264,7 @@ impl MonitoringLifecycleService {
         if configured_server_id != Some(server_id) {
             if inspected.is_some() {
                 let _ = docker
-                    .container("openoxide-monitor")
+                    .container(AGENT_CONTAINER_NAME)
                     .remove()
                     .force()
                     .run()
@@ -252,7 +274,7 @@ impl MonitoringLifecycleService {
         } else if let Some(container) = inspected.as_ref() {
             if !container.state.running {
                 docker
-                    .container("openoxide-monitor")
+                    .container(AGENT_CONTAINER_NAME)
                     .start()
                     .run()
                     .await
@@ -274,15 +296,15 @@ impl MonitoringLifecycleService {
         }
 
         let mut config = SetupConfig::default();
-        config.monitoring_server_id = Some(server_id);
-        config.monitoring_token = Some(self.agent_auth_token_fallback());
-        config.monitoring_panel_url = Some(
+        config.agent_server_id = Some(server_id);
+        config.agent_token = Some(self.agent_auth_token_fallback());
+        config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| "http://openoxide:4000".into()),
         );
         ServerSetup::new_local(config)
-            .ensure_monitoring()
+            .ensure_agent()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         Ok(true)
@@ -293,34 +315,73 @@ impl MonitoringLifecycleService {
     }
 
     pub async fn reinstall_agent(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
-        let organization_id = self
-            .agent_auth
-            .organization_id(server_id)
+        // Legacy installations can have a server/resource but no monitoring_agents
+        // row yet. Resolve the owning organization from linked resources so an
+        // outdated Agent can still bootstrap itself.
+        let organization_id = match self.agent_auth.organization_id(server_id).await? {
+            Some(id) => id,
+            None => sqlx::query_scalar(
+                "SELECT p.organization_id
+                 FROM projects p
+                 JOIN environments e ON e.project_id = p.id
+                 WHERE e.id IN (
+                    SELECT environment_id FROM applications WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM compose_projects WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM postgres_dbs WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM redis_dbs WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM mysql_dbs WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM mariadb_dbs WHERE server_id = ?
+                    UNION ALL SELECT environment_id FROM mongo_dbs WHERE server_id = ?
+                 )
+                 LIMIT 1",
+            )
+            .bind(server_id)
+            .bind(server_id)
+            .bind(server_id)
+            .bind(server_id)
+            .bind(server_id)
+            .bind(server_id)
+            .bind(server_id)
+            .fetch_optional(self.db.as_ref())
             .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+            .ok_or(sqlx::Error::RowNotFound)?,
+        };
         let policy = self.repository.policy(organization_id).await?;
-        let token = self.agent_auth.rotate(server_id, organization_id).await?;
+        let token = if self.agent_auth.organization_id(server_id).await?.is_some() {
+            self.agent_auth.rotate(server_id, organization_id).await?
+        } else {
+            let token = self.agent_auth_token_fallback();
+            if token.is_empty() {
+                return Err(sqlx::Error::Protocol(
+                    "cannot reinstall Agent: METRICS_TOKEN is not configured".into(),
+                ));
+            }
+            self.agent_auth
+                .register_token(server_id, organization_id, &token)
+                .await?;
+            token
+        };
         let executor = crate::services::compose::remote::remote_executor(&self.db, server_id)
             .await
             .map_err(sqlx::Error::Protocol)?;
         let docker = DockerCli::from_remote_executor(executor.clone());
         let _ = docker
             .containers()
-            .rm("openoxide-monitor")
+            .rm(AGENT_CONTAINER_NAME)
             .force()
             .run()
             .await;
         let mut config = SetupConfig::default();
-        config.monitoring_server_id = Some(server_id);
-        config.monitoring_token = Some(token);
-        config.monitoring_retention_days = policy.retention_days;
-        config.monitoring_panel_url = Some(
+        config.agent_server_id = Some(server_id);
+        config.agent_token = Some(token);
+        config.agent_retention_days = policy.retention_days;
+        config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
         );
         ServerSetup::new_remote(executor, config)
-            .ensure_monitoring()
+            .ensure_agent()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         Ok(action(

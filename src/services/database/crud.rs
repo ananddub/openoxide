@@ -149,21 +149,13 @@ impl DatabaseService {
                     .clone()
                     .unwrap_or_else(|| "openoxide".to_string());
                 tokio::spawn(async move {
-                    let docker = match server_id {
-                        Some(sid) => {
-                            if let Ok(executor) = crate::services::compose::remote::remote_executor(
-                                db_ref.as_ref(),
-                                sid,
-                            )
-                            .await
-                            {
-                                crate::utils::docker::DockerCli::from_remote_executor(executor)
-                            } else {
-                                crate::utils::docker::DockerCli::new_local()
-                            }
-                        }
-                        None => crate::utils::docker::DockerCli::new_local(),
+                    let Ok(executor) =
+                        crate::services::compose::remote::agent_executor_for(server_id).await
+                    else {
+                        tracing::warn!(database = %app_name, "could not resolve Agent for password update");
+                        return;
                     };
+                    let docker = crate::utils::docker::DockerCli::from_executor(executor);
 
                     let containers = docker
                         .containers()

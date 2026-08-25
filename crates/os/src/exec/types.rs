@@ -1,13 +1,43 @@
-use super::{ExecError, ExecResult, LocalExecutor, RemoteExecutor};
+use super::{AgentExecutor, ExecError, ExecResult, LocalExecutor, RemoteExecutor};
 use std::{ffi::OsStr, process::ExitStatus};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
+
+crate::string_enum! {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        serde::Serialize,
+        serde::Deserialize,
+        poem_openapi::Enum,
+    )]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum ExecutionKind {
+        default = Agent;
+
+        Agent => "AGENT",
+        Local => "LOCAL",
+        Remote => "REMOTE",
+    }
+}
+
+impl Default for ExecutionKind {
+    fn default() -> Self {
+        Self::Agent
+    }
+}
 
 #[derive(Debug)]
 pub enum ExecExitStatus {
     Local(ExitStatus),
     Remote(u32),
     Api(u16),
+    Agent(i32),
 }
 impl ExecExitStatus {
     pub fn success(&self) -> bool {
@@ -15,6 +45,7 @@ impl ExecExitStatus {
             Self::Local(s) => s.success(),
             Self::Remote(c) => *c == 0,
             Self::Api(c) => *c < 400,
+            Self::Agent(c) => *c == 0,
         }
     }
     pub fn code(&self) -> Option<i32> {
@@ -22,6 +53,7 @@ impl ExecExitStatus {
             Self::Local(s) => s.code(),
             Self::Remote(c) => Some(*c as i32),
             Self::Api(c) => Some(*c as i32),
+            Self::Agent(c) => Some(*c),
         }
     }
 }
@@ -146,12 +178,32 @@ pub enum SshHostKey {
 pub enum CommandExecutor {
     Local(LocalExecutor),
     Remote(RemoteExecutor),
+    Agent(AgentExecutor),
 }
 impl CommandExecutor {
+    /// Stop a cancellable job through the selected execution transport.
+    pub async fn kill_pid_file(&self, pid_file: impl AsRef<OsStr>) -> ExecResult<()> {
+        let output = self.run("cat", [pid_file.as_ref()]).await?;
+        let pid = output.stdout.trim();
+        if !pid.is_empty() {
+            let _ = self.run("kill", [pid]).await;
+        }
+        let _ = self.run("rm", [pid_file.as_ref()]).await;
+        Ok(())
+    }
+    pub const fn kind(&self) -> ExecutionKind {
+        match self {
+            Self::Local(_) => ExecutionKind::Local,
+            Self::Remote(_) => ExecutionKind::Remote,
+            Self::Agent(_) => ExecutionKind::Agent,
+        }
+    }
+
     pub fn host(&self) -> Option<&str> {
         match self {
             Self::Local(_) => None,
             Self::Remote(e) => Some(e.host()),
+            Self::Agent(_) => None,
         }
     }
 
@@ -210,6 +262,7 @@ impl CommandExecutor {
         match self {
             Self::Local(e) => e.run(program, args).await,
             Self::Remote(e) => e.run(program, args).await,
+            Self::Agent(e) => e.run(program, args).await,
         }
     }
     pub async fn run_with_stdin<I, S>(
@@ -229,6 +282,7 @@ impl CommandExecutor {
         match self {
             Self::Local(e) => e.run_with_stdin(program, &args, stdin).await,
             Self::Remote(e) => e.run_with_stdin(program, &args, stdin).await,
+            Self::Agent(e) => e.run_with_stdin(program, &args, stdin).await,
         }
     }
     pub async fn run_cancelled<I, S>(
@@ -248,6 +302,7 @@ impl CommandExecutor {
         match self {
             Self::Local(e) => e.run_cancelled(program, &args, cancel).await,
             Self::Remote(e) => e.run_cancelled(program, &args, cancel).await,
+            Self::Agent(e) => e.run_cancelled(program, &args, cancel).await,
         }
     }
     pub async fn run_with_stdin_cancelled<I, S>(
@@ -274,6 +329,10 @@ impl CommandExecutor {
                 e.run_with_stdin_cancelled(program, &args, stdin, cancel)
                     .await
             }
+            Self::Agent(e) => {
+                e.run_with_stdin_cancelled(program, &args, stdin, cancel)
+                    .await
+            }
         }
     }
     pub async fn run_stream<I, S>(
@@ -293,6 +352,7 @@ impl CommandExecutor {
         match self {
             Self::Local(e) => e.run_stream(program, &args, sender).await,
             Self::Remote(e) => e.run_stream(program, &args, sender).await,
+            Self::Agent(e) => e.run_stream(program, &args, sender).await,
         }
     }
 
@@ -372,7 +432,7 @@ fn validate_file_path(path: &str) -> ExecResult<()> {
 
 #[cfg(test)]
 mod file_path_tests {
-    use super::validate_file_path;
+    use super::{ExecutionKind, validate_file_path};
 
     #[test]
     fn rejects_unsafe_transfer_paths() {
@@ -380,5 +440,11 @@ mod file_path_tests {
         assert!(validate_file_path("../secret").is_err());
         assert!(validate_file_path("/srv/../secret").is_err());
         assert!(validate_file_path("").is_err());
+    }
+
+    #[test]
+    fn execution_kind_supports_agent() {
+        assert_eq!(ExecutionKind::from_str("agent"), Some(ExecutionKind::Agent));
+        assert_eq!(ExecutionKind::Agent.as_str(), "AGENT");
     }
 }

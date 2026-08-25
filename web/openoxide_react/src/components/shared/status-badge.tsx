@@ -1,5 +1,9 @@
+import {AlertCircle} from 'lucide-react';
+import {Tooltip, TooltipContent, TooltipTrigger} from '#/components/ui/tooltip';
+
 interface StatusBadgeProps {
 	status: string;
+	error?: string | null;
 	isBuilding?: boolean;
 	actionLoading?: string | null;
 }
@@ -8,6 +12,7 @@ export function StatusBadge({
 	status,
 	isBuilding,
 	actionLoading,
+	error,
 }: StatusBadgeProps) {
 	const st = (status || '').toUpperCase();
 
@@ -83,11 +88,21 @@ export function StatusBadge({
 	}
 
 	if (st === 'ERROR') {
-		return (
+		const badge = (
 			<span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-500 select-none">
 				<span className="h-2 w-2 rounded-full bg-rose-500" />
 				ERROR
+				{error && <AlertCircle className="size-3.5" />}
 			</span>
+		);
+		if (!error) return badge;
+		return (
+			<Tooltip>
+				<TooltipTrigger render={badge} />
+				<TooltipContent className="max-w-sm whitespace-pre-wrap text-xs">
+					{error}
+				</TooltipContent>
+			</Tooltip>
 		);
 	}
 

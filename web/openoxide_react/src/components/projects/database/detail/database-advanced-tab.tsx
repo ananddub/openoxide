@@ -7,6 +7,12 @@ import {formatApiError} from '#/api/utils';
 import {DeleteDatabaseDialog} from '#/components/projects/database/delete-database-dialog';
 import {DatabaseAdvancedCustomCommand} from './database-advanced-custom-command';
 import {DatabaseAdvancedResources} from './database-advanced-resources';
+import {DatabaseAdvancedMetadata} from './database-advanced-metadata';
+import {DatabaseAdvancedNetworks} from './database-advanced-networks';
+import {DatabaseAdvancedVolumes} from './database-advanced-volumes';
+import {DatabasePostgresConfig} from './database-postgres-config';
+import {databaseKind} from './database-endpoint';
+import {DatabaseSwarmSettings} from './database-swarm-settings';
 
 interface DatabaseAdvancedTabProps {
 	database: any;
@@ -68,17 +74,23 @@ export function DatabaseAdvancedTab({
 
 	return (
 		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
-			{/* 1. Custom Docker Image, Command & Engine Args (Dokploy style) */}
+			<DatabaseAdvancedMetadata database={database} onUpdated={onUpdated} />
 			<DatabaseAdvancedCustomCommand
 				database={database}
 				onUpdated={onUpdated}
 			/>
+			{databaseKind(database) === 'postgres' && (
+				<DatabasePostgresConfig database={database} onUpdated={onUpdated} />
+			)}
 
 			{/* 2. Replicas & Resource Limits (Memory / CPU Limits & Reservations) */}
 			<DatabaseAdvancedResources
 				database={database}
 				onUpdated={onUpdated}
 			/>
+			<DatabaseAdvancedVolumes database={database} onUpdated={onUpdated} />
+			<DatabaseAdvancedNetworks database={database} onUpdated={onUpdated} />
+			<DatabaseSwarmSettings database={database} onUpdated={onUpdated} />
 
 			{/* 3. Danger Zone Card */}
 			<section className="flex flex-col gap-5 rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">

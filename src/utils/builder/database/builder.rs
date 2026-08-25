@@ -5,7 +5,7 @@ use crate::utils::builder::spec::BuilderEvent;
 use crate::utils::docker::query::filter::{TaskDesiredState, TaskFilter};
 use crate::utils::exec::{CommandExecutor, ExecError, ExecResult};
 use os::pipeline;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use tokio::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
@@ -37,29 +37,42 @@ pub struct StackService {
     pub command: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<StackMount>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub networks: Vec<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub networks: BTreeMap<String, ServiceNetworkAttachment>,
     pub deploy: DeploySpec,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub healthcheck: Option<HealthSpec>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_grace_period: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ulimits: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub ports: Vec<String>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct HealthSpec {
+    #[serde(alias = "Test")]
     pub test: Vec<String>,
+    #[serde(alias = "Interval")]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: String,
+    #[serde(alias = "Timeout")]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub timeout: String,
+    #[serde(alias = "Retries")]
     pub retries: u32,
+    #[serde(alias = "StartPeriod")]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub start_period: String,
 }
 
 #[derive(Serialize)]
 pub struct DeploySpec {
-    pub replicas: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replicas: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
     pub resources: DeployResources,
     pub restart_policy: RestartPolicy,
     pub update_config: UpdateConfig,
@@ -68,6 +81,8 @@ pub struct DeploySpec {
     pub placement: Placement,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub endpoint_mode: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -94,36 +109,379 @@ impl Limits {
 
 #[derive(Serialize)]
 pub struct RestartPolicy {
-    pub condition: &'static str,
-    pub delay: &'static str,
-    pub max_attempts: u8,
-    pub window: &'static str,
+    pub condition: String,
+    pub delay: String,
+    pub max_attempts: u64,
+    pub window: String,
 }
 
 #[derive(Serialize)]
 pub struct UpdateConfig {
-    pub parallelism: u8,
-    pub delay: &'static str,
-    pub order: &'static str,
-    pub failure_action: &'static str,
+    pub parallelism: u64,
+    pub delay: String,
+    pub order: String,
+    pub failure_action: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monitor: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_failure_ratio: Option<f64>,
 }
 
 #[derive(Serialize, Default)]
 pub struct Placement {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub constraints: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub preferences: Vec<PlacementPreference>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_replicas_per_node: Option<u32>,
+}
+
+#[derive(Serialize, Default)]
+pub struct PlacementPreference {
+    pub spread: String,
 }
 
 impl Placement {
     pub fn is_empty(&self) -> bool {
         self.constraints.is_empty()
+            && self.preferences.is_empty()
+            && self.max_replicas_per_node.is_none()
     }
+}
+
+pub async fn apply_database_swarm_settings(
+    kind: DatabaseKind,
+    id: i64,
+    service: &mut StackService,
+    networks: &mut BTreeMap<String, ExternalNetwork>,
+) -> ExecResult<()> {
+    let settings = auto_di::resolve::<
+        crate::services::database::swarm_settings::DatabaseSwarmSettingsService,
+    >()
+    .await
+    .map_err(|error| ExecError::CommandFailed {
+        code: None,
+        stderr: error.to_string(),
+    })?
+    .get(kind, id)
+    .await
+    .map_err(|error| ExecError::CommandFailed {
+        code: None,
+        stderr: error.to_string(),
+    })?;
+
+    if let Some(raw) = settings.health_check_swarm.filter(|v| !v.trim().is_empty()) {
+        service.healthcheck = Some(parse_setting(&raw, "health check")?);
+    }
+    if let Some(raw) = settings
+        .restart_policy_swarm
+        .filter(|v| !v.trim().is_empty())
+    {
+        let value: serde_json::Value = parse_setting(&raw, "restart policy")?;
+        service.deploy.restart_policy = RestartPolicy {
+            condition: string_field(&value, "Condition", "condition", "on-failure"),
+            delay: duration_field(&value, "Delay", "delay", "5s"),
+            max_attempts: number_field(&value, "MaxAttempts", "max_attempts", 3),
+            window: duration_field(&value, "Window", "window", "120s"),
+        };
+    }
+    if let Some(raw) = settings.placement_swarm.filter(|v| !v.trim().is_empty()) {
+        let value: serde_json::Value = parse_setting(&raw, "placement")?;
+        service.deploy.placement.constraints = array_field(&value, "Constraints", "constraints");
+        service.deploy.placement.preferences = field(&value, "Preferences", "preferences")
+            .and_then(|v| v.as_array())
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| {
+                        string_field_opt(item, "SpreadDescriptor", "spread")
+                            .map(|spread| PlacementPreference { spread })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        service.deploy.placement.max_replicas_per_node =
+            field(&value, "MaxReplicas", "max_replicas_per_node")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32);
+        apply_platform_constraints(&value, &mut service.deploy.placement.constraints)?;
+    }
+    if let Some(raw) = settings.mode_swarm.filter(|v| !v.trim().is_empty()) {
+        let value: serde_json::Value = parse_setting(&raw, "mode")?;
+        if let Some(replicated) = value.get("Replicated").or_else(|| value.get("replicated")) {
+            service.deploy.mode = None;
+            service.deploy.replicas = replicated
+                .get("Replicas")
+                .or_else(|| replicated.get("replicas"))
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32);
+        } else if value
+            .get("Global")
+            .or_else(|| value.get("global"))
+            .is_some()
+        {
+            service.deploy.mode = Some("global".to_string());
+            service.deploy.replicas = None;
+        } else if let Some(mode) = value.as_str() {
+            service.deploy.mode = Some(mode.to_string());
+        }
+    }
+    apply_update_setting(
+        settings.update_config_swarm,
+        &mut service.deploy.update_config,
+        "update config",
+    )?;
+    apply_update_setting(
+        settings.rollback_config_swarm,
+        &mut service.deploy.rollback_config,
+        "rollback config",
+    )?;
+    if let Some(raw) = settings.labels_swarm.filter(|v| !v.trim().is_empty()) {
+        let value: BTreeMap<String, String> = parse_setting(&raw, "labels")?;
+        service.deploy.labels = value
+            .into_iter()
+            .map(|(key, value)| format!("{key}={value}"))
+            .collect();
+    }
+    if let Some(raw) = settings
+        .endpoint_spec_swarm
+        .filter(|v| !v.trim().is_empty())
+    {
+        let value: serde_json::Value = parse_setting(&raw, "endpoint spec")?;
+        service.deploy.endpoint_mode = Some(string_field(&value, "Mode", "mode", "vip"));
+        if let Some(ports) = field(&value, "Ports", "ports").and_then(|v| v.as_array()) {
+            for port in ports {
+                let target = field(port, "TargetPort", "target_port").and_then(|v| v.as_u64());
+                let published =
+                    field(port, "PublishedPort", "published_port").and_then(|v| v.as_u64());
+                if let (Some(target), Some(published)) = (target, published) {
+                    let protocol = string_field(port, "Protocol", "protocol", "tcp");
+                    let mode = string_field(port, "PublishMode", "publish_mode", "ingress");
+                    if mode != "ingress" {
+                        return Err(ExecError::CommandFailed {
+                            code: None,
+                            stderr: "Database endpoint port publish mode 'host' is not supported by the current stack port adapter".to_string(),
+                        });
+                    }
+                    service
+                        .ports
+                        .push(format!("{published}:{target}/{protocol}"));
+                }
+            }
+        }
+    }
+    if let Some(raw) = settings.network_swarm.filter(|v| !v.trim().is_empty()) {
+        apply_network_setting(&raw, service, networks)?;
+    }
+    service.ulimits = settings
+        .ulimits_swarm
+        .filter(|v| !v.trim().is_empty())
+        .map(|raw| parse_setting(&raw, "ulimits").map(|value| normalize_ulimits(&value)))
+        .transpose()?;
+    service.stop_grace_period = settings
+        .stop_grace_period_swarm
+        .map(|value| format!("{value}ns"));
+    Ok(())
+}
+
+fn parse_setting<T: serde::de::DeserializeOwned>(raw: &str, name: &str) -> ExecResult<T> {
+    serde_json::from_str(raw).map_err(|error| ExecError::CommandFailed {
+        code: None,
+        stderr: format!("Invalid database {name} JSON: {error}"),
+    })
+}
+
+fn field<'a>(
+    value: &'a serde_json::Value,
+    first: &str,
+    second: &str,
+) -> Option<&'a serde_json::Value> {
+    value.get(first).or_else(|| value.get(second))
+}
+fn string_field(value: &serde_json::Value, first: &str, second: &str, default: &str) -> String {
+    field(value, first, second)
+        .and_then(|v| v.as_str())
+        .unwrap_or(default)
+        .to_string()
+}
+fn string_field_opt(value: &serde_json::Value, first: &str, second: &str) -> Option<String> {
+    field(value, first, second)
+        .and_then(|v| v.as_str())
+        .map(str::to_owned)
+}
+fn number_field(value: &serde_json::Value, first: &str, second: &str, default: u64) -> u64 {
+    field(value, first, second)
+        .and_then(|v| v.as_u64())
+        .unwrap_or(default)
+}
+fn duration_field(value: &serde_json::Value, first: &str, second: &str, default: &str) -> String {
+    field(value, first, second)
+        .map(|v| {
+            v.as_str()
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("{}ns", v.as_u64().unwrap_or_default()))
+        })
+        .unwrap_or_else(|| default.to_string())
+}
+fn array_field(value: &serde_json::Value, first: &str, second: &str) -> Vec<String> {
+    field(value, first, second)
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default()
+}
+
+fn deserialize_duration<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(match value {
+        serde_json::Value::String(value) => value,
+        serde_json::Value::Number(value) => format!("{}ns", value),
+        _ => "0s".to_string(),
+    })
+}
+
+fn normalize_ulimits(value: &serde_json::Value) -> serde_json::Value {
+    if let Some(items) = value.as_array() {
+        let mut result = serde_json::Map::new();
+        for item in items {
+            let Some(name) = string_field_opt(item, "Name", "name") else {
+                continue;
+            };
+            let mut limits = serde_json::Map::new();
+            if let Some(soft) = field(item, "Soft", "soft") {
+                limits.insert("soft".to_string(), soft.clone());
+            }
+            if let Some(hard) = field(item, "Hard", "hard") {
+                limits.insert("hard".to_string(), hard.clone());
+            }
+            result.insert(name, serde_json::Value::Object(limits));
+        }
+        return serde_json::Value::Object(result);
+    }
+    let Some(object) = value.as_object() else {
+        return value.clone();
+    };
+    if object.contains_key("nofile_soft") || object.contains_key("nofile_hard") {
+        let mut nofile = serde_json::Map::new();
+        if let Some(value) = object.get("nofile_soft") {
+            nofile.insert("soft".to_string(), value.clone());
+        }
+        if let Some(value) = object.get("nofile_hard") {
+            nofile.insert("hard".to_string(), value.clone());
+        }
+        let mut result = serde_json::Map::new();
+        result.insert("nofile".to_string(), serde_json::Value::Object(nofile));
+        result.into()
+    } else {
+        value.clone()
+    }
+}
+
+fn apply_platform_constraints(
+    value: &serde_json::Value,
+    constraints: &mut Vec<String>,
+) -> ExecResult<()> {
+    let platforms = field(value, "Platforms", "platforms")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    if platforms.len() > 1 {
+        return Err(ExecError::CommandFailed {
+            code: None,
+            stderr: "Database placement supports one platform per Swarm service".to_string(),
+        });
+    }
+    if let Some(platform) = platforms.first() {
+        if let Some(architecture) = string_field_opt(platform, "Architecture", "architecture") {
+            constraints.push(format!("node.platform.arch == {architecture}"));
+        }
+        if let Some(os) = string_field_opt(platform, "OS", "os") {
+            constraints.push(format!("node.platform.os == {os}"));
+        }
+    }
+    Ok(())
+}
+
+fn apply_network_setting(
+    raw: &str,
+    service: &mut StackService,
+    networks: &mut BTreeMap<String, ExternalNetwork>,
+) -> ExecResult<()> {
+    let value: serde_json::Value = parse_setting(raw, "network")?;
+    let attachments = value.as_array().cloned().unwrap_or_else(|| vec![value]);
+    for attachment in attachments {
+        let Some(target) = string_field_opt(&attachment, "Target", "target") else {
+            return Err(ExecError::CommandFailed {
+                code: None,
+                stderr: "Database Swarm network target is required".to_string(),
+            });
+        };
+        let aliases = array_field(&attachment, "Aliases", "aliases");
+        if field(&attachment, "DriverOpts", "driver_opts")
+            .and_then(|value| value.as_object())
+            .is_some_and(|value| !value.is_empty())
+        {
+            return Err(ExecError::CommandFailed {
+                code: None,
+                stderr: "Driver options belong to top-level network definitions and cannot be applied to an external Swarm attachment".to_string(),
+            });
+        }
+        service.networks.insert(
+            target.clone(),
+            ServiceNetworkAttachment {
+                aliases,
+                driver_opts: BTreeMap::new(),
+            },
+        );
+        networks.entry(target.clone()).or_insert(ExternalNetwork {
+            external: true,
+            name: target,
+        });
+    }
+    Ok(())
+}
+fn apply_update_setting(
+    raw: Option<String>,
+    target: &mut UpdateConfig,
+    name: &str,
+) -> ExecResult<()> {
+    let Some(raw) = raw.filter(|v| !v.trim().is_empty()) else {
+        return Ok(());
+    };
+    let value: serde_json::Value = parse_setting(&raw, name)?;
+    target.parallelism = number_field(&value, "Parallelism", "parallelism", target.parallelism);
+    target.delay = duration_field(&value, "Delay", "delay", &target.delay);
+    target.order = string_field(&value, "Order", "order", &target.order);
+    target.failure_action = string_field(
+        &value,
+        "FailureAction",
+        "failure_action",
+        &target.failure_action,
+    );
+    target.monitor = field(&value, "Monitor", "monitor").map(|v| {
+        v.as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("{}ns", v.as_u64().unwrap_or_default()))
+    });
+    target.max_failure_ratio =
+        field(&value, "MaxFailureRatio", "max_failure_ratio").and_then(|v| v.as_f64());
+    Ok(())
 }
 
 #[derive(Serialize)]
 pub struct ExternalNetwork {
     pub external: bool,
     pub name: String,
+}
+
+#[derive(Serialize, Default)]
+pub struct ServiceNetworkAttachment {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub driver_opts: BTreeMap<String, String>,
 }
 
 pub async fn resolve_database_networks(
@@ -159,7 +517,7 @@ pub async fn resolve_database_networks(
         }
     }
 
-    let service_networks = names.iter().cloned().collect::<Vec<_>>();
+    let service_networks = names.iter().cloned().collect();
     let networks = names
         .into_iter()
         .map(|name| {

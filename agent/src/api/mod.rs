@@ -1,2 +1,2 @@
-pub mod grpc;
-pub use grpc::proto;
+pub mod agent;
+pub use agent::proto;

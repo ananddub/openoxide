@@ -22,7 +22,7 @@ pub enum SetupStep {
     Network,
     TraefikConfig,
     Traefik,
-    Monitoring,
+    Agent,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -304,17 +304,39 @@ impl ServerSetup {
         Ok(())
     }
 
-    pub async fn ensure_monitoring(&self) -> ExecResult<()> {
+    pub async fn ensure_agent(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
-        let name = "openoxide-monitor";
-        if docker.container(name).inspect().await.is_ok() {
-            if self.config.monitoring_server_id.is_some() {
-                // Recreate so a setup run cannot keep stale SERVER_ID/token env.
-                let _ = docker.container(name).remove().force().run().await;
-            } else {
+        let name = AGENT_CONTAINER_NAME;
+        // Older releases used a different container name but published the
+        // same host gRPC port. Remove it before recreating the Agent, otherwise
+        // Docker leaves the new container in Created state with a 50051 bind
+        // conflict and every retry only reports the stale name conflict.
+        if self.config.agent_server_id.is_some()
+            && docker
+                .container("openoxide-monitor")
+                .inspect()
+                .await
+                .is_ok()
+        {
+            let _ = docker
+                .container("openoxide-monitor")
+                .remove()
+                .force()
+                .run()
+                .await;
+        }
+        if let Ok(existing) = docker.container(name).inspect().await {
+            if existing.state.running && self.config.agent_server_id.is_some() {
+                // A healthy Agent already owns gRPC port 50051. Reusing it
+                // makes setup idempotent and avoids a bind race on reinstall.
+                return Ok(());
+            }
+            if self.config.agent_server_id.is_none() {
                 docker.container(name).start().run().await?;
                 return Ok(());
             }
+            let _ = docker.container(name).stop().run().await;
+            let _ = docker.container(name).remove().force().run().await;
         }
 
         let architecture = OsCli::new(&self.executor)
@@ -324,14 +346,17 @@ impl ServerSetup {
             .await
             .map(|output| output.stdout_trimmed().to_owned())
             .unwrap_or_default();
-        if monitoring_image_unsupported(&architecture) {
+        if agent_image_unsupported(&architecture) {
             return Ok(());
         }
 
-        let image = monitoring_image();
+        let image = agent_image();
         docker.images().pull(image).pull().await?;
 
-        let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
+        let docker_socket_mount = Mount::bind("/var/run/docker.sock", "/var/run/docker.sock");
+        let cgroup_mount = Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup");
+        let workspace_mount = Mount::bind(&self.config.paths.agent, "/app/workspace");
+        let traefik_mount = Mount::bind(&self.config.paths.traefik, "/etc/openoxide/traefik");
 
         let p_grpc = Port::tcp(50051, 50051);
 
@@ -343,11 +368,14 @@ impl ServerSetup {
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(docker_socket_mount)
+            .mount(cgroup_mount)
+            .mount(workspace_mount)
+            .mount(traefik_mount)
             .publish(p_grpc);
         if let (Some(server_id), Some(panel_url), Some(token)) = (
-            self.config.monitoring_server_id,
-            self.config.monitoring_panel_url.as_deref(),
-            self.config.monitoring_token.as_deref(),
+            self.config.agent_server_id,
+            self.config.agent_panel_url.as_deref(),
+            self.config.agent_token.as_deref(),
         ) {
             create = create
                 .env("SERVER_ID", server_id.to_string())
@@ -357,7 +385,7 @@ impl ServerSetup {
                 .env("REFRESH_RATE", "2")
                 .env(
                     "RETENTION_DAYS",
-                    self.config.monitoring_retention_days.to_string(),
+                    self.config.agent_retention_days.to_string(),
                 );
         }
         create.run().await?;
@@ -373,8 +401,10 @@ impl ServerSetup {
         if install_dependencies {
             self.install_dependencies().await?;
             completed.push(SetupStep::Dependencies);
-            self.install_build_tools().await?;
-            completed.push(SetupStep::BuildTools);
+            if self.config.build_server {
+                self.install_build_tools().await?;
+                completed.push(SetupStep::BuildTools);
+            }
         }
         self.setup_directories().await?;
         completed.push(SetupStep::Directories);
@@ -390,8 +420,8 @@ impl ServerSetup {
         completed.push(SetupStep::TraefikConfig);
         self.ensure_traefik().await?;
         completed.push(SetupStep::Traefik);
-        self.ensure_monitoring().await?;
-        completed.push(SetupStep::Monitoring);
+        self.ensure_agent().await?;
+        completed.push(SetupStep::Agent);
         let audit = self.audit().await?;
         Ok(SetupOutcome { completed, audit })
     }
@@ -403,7 +433,9 @@ impl ServerSetup {
 
         if install_dependencies {
             self.append_dependency_steps(&mut steps, &os);
-            self.append_build_tool_steps(&mut steps, &os);
+            if self.config.build_server {
+                self.append_build_tool_steps(&mut steps, &os);
+            }
         }
 
         self.append_directory_steps(&mut steps, &os);
@@ -414,7 +446,7 @@ impl ServerSetup {
         self.append_network_step(&mut steps, &docker);
         self.append_traefik_config_steps(&mut steps, &os);
         self.append_traefik_step(&mut steps, &docker);
-        self.append_monitoring_step(&mut steps, &docker);
+        self.append_agent_step(&mut steps, &docker);
 
         ScriptPipeline::new().cmd(steps)
     }
@@ -430,7 +462,7 @@ impl ServerSetup {
             .await?;
         let audit = self.audit().await?;
         Ok(SetupOutcome {
-            completed: setup_steps(install_dependencies),
+            completed: setup_steps(install_dependencies, self.config.build_server),
             audit,
         })
     }
@@ -490,7 +522,7 @@ impl ServerSetup {
 
         let audit = self.audit().await?;
         Ok(SetupOutcome {
-            completed: setup_steps(install_dependencies),
+            completed: setup_steps(install_dependencies, self.config.build_server),
             audit,
         })
     }
@@ -759,34 +791,34 @@ impl ServerSetup {
         ));
     }
 
-    fn append_monitoring_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
-        let name = "openoxide-monitor";
-        let image = monitoring_image();
+    fn append_agent_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        let name = AGENT_CONTAINER_NAME;
+        let image = agent_image();
 
         steps.extend(sh!(
-            info!("Checking OpenOxide monitor container");
+            info!("Checking OpenOxide agent container");
             if docker
                 .containers()
                 .inspect_cmd(name)
                 .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
-                info!("Starting existing OpenOxide monitor container");
+                info!("Starting existing OpenOxide agent container");
                 docker.container(name).start();
             } else {
                 let _openoxide_arch = capture_stdout! {
                     cmd("uname", "-m");
                 };
                 if cmd("test", _openoxide_arch, "=", "aarch64") {
-                    echo("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
+                    echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
                         .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 } else if cmd("test", _openoxide_arch, "=", "arm64") {
-                    echo("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
+                    echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
                         .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
                 } else {
-                    info!("Pulling OpenOxide monitor image");
+                    info!("Pulling OpenOxide agent image");
                     docker.images().pull(image);
-                    info!("Creating OpenOxide monitor container");
+                    info!("Creating OpenOxide agent container");
                     docker
                         .containers()
                         .create(image)
@@ -794,16 +826,19 @@ impl ServerSetup {
                         .name(name)
                         .restart(RestartPolicy::Always)
                         .network(self.config.network_name.as_str())
-                        .mount(Mount::bind_ro(
-                            "/var/run/docker.sock",
-                            "/var/run/docker.sock",
+                        .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
+                        .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
+                        .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
+                        .mount(Mount::bind(
+                            self.config.paths.traefik.as_str(),
+                            "/etc/openoxide/traefik",
                         ))
-                        .env("SERVER_ID", self.config.monitoring_server_id.unwrap_or(0).to_string())
-                        .env("OPENOXIDE_SERVER_URL", self.config.monitoring_panel_url.clone().unwrap_or_default())
-                        .env("METRICS_TOKEN", self.config.monitoring_token.clone().unwrap_or_default())
+                        .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
+                        .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
+                        .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
                         .env("MONITOR_DATABASE_URL", "memory://metrics")
                         .env("REFRESH_RATE", "2")
-                        .env("RETENTION_DAYS", self.config.monitoring_retention_days.to_string())
+                        .env("RETENTION_DAYS", self.config.agent_retention_days.to_string())
                         .publish(Port::tcp(50051, 50051));
                 }
             }
@@ -811,27 +846,34 @@ impl ServerSetup {
     }
 }
 
-pub(crate) fn monitoring_image() -> &'static str {
-    "dubeyanand/openoxide-monitor:latest"
+pub(crate) const AGENT_CONTAINER_NAME: &str = "openoxide-agent";
+
+pub(crate) fn agent_image() -> &'static str {
+    "dubeyanand/openoxide-agent:latest"
 }
 
-fn monitoring_image_unsupported(architecture: &str) -> bool {
+fn agent_image_unsupported(architecture: &str) -> bool {
     matches!(architecture, "aarch64" | "arm64")
 }
 
-fn setup_steps(install_dependencies: bool) -> Vec<SetupStep> {
+fn setup_steps(install_dependencies: bool, build_server: bool) -> Vec<SetupStep> {
     let mut completed = Vec::new();
     if install_dependencies {
         completed.push(SetupStep::Dependencies);
-        completed.push(SetupStep::BuildTools);
+        if build_server {
+            completed.push(SetupStep::BuildTools);
+        }
+    }
+    completed.push(SetupStep::Directories);
+    if build_server {
+        return completed;
     }
     completed.extend([
-        SetupStep::Directories,
         SetupStep::Swarm,
         SetupStep::Network,
         SetupStep::TraefikConfig,
         SetupStep::Traefik,
-        SetupStep::Monitoring,
+        SetupStep::Agent,
     ]);
     completed
 }
@@ -852,10 +894,8 @@ mod tests {
         assert!(script.contains("echo '[INFO] Checking Traefik container'"));
         assert!(script.contains("Removing directory created at Traefik config file path"));
         assert!(script.contains("https://get.docker.com"));
-        assert!(script.contains("env 'bash' \"$_openoxide_installer\""));
-        assert!(script.contains("https://nixpacks.com/install.sh"));
-        assert!(script.contains("'NIXPACKS_VERSION=1.41.0' 'bash' \"$_openoxide_installer\""));
-        assert!(script.contains("_openoxide_pack_url="));
+        assert!(!script.contains("https://nixpacks.com/install.sh"));
+        assert!(!script.contains("_openoxide_pack_url="));
         assert!(script.contains(
             "_openoxide_vpn_addr=$(ip '-4' '-o' 'addr' 'show' | grep '-E' '^[0-9]+: (tailscale|wg|zt|wt|nebula|ipsec|ppp|tun|tap)' | grep '-oE' '([0-9]+\\.){3}[0-9]+' | head '-n' '1')"
         ));
@@ -872,18 +912,19 @@ mod tests {
         assert!(script.contains("docker swarm init --advertise-addr $_openoxide_advertise_addr"));
         assert!(script.contains("docker network create --driver overlay --attachable openoxide"));
         assert!(script.contains("traefik:v"));
-        assert!(script.contains("dubeyanand/openoxide-monitor:latest"));
+        assert!(script.contains("dubeyanand/openoxide-agent:latest"));
         assert!(script.contains("uname '-m'"));
-        assert!(
-            script.contains("Skipping openoxide monitor on ARM64; image has no arm64 manifest")
-        );
+        assert!(script.contains("Skipping OpenOxide agent on ARM64; image has no arm64 manifest"));
+        assert!(script.contains("Checking OpenOxide agent container"));
+        assert!(script.contains("Removing legacy OpenOxide monitor container"));
+        assert!(script.contains("--name openoxide-agent"));
     }
 
     #[test]
-    fn monitoring_image_is_skipped_on_arm64() {
-        assert!(monitoring_image_unsupported("aarch64"));
-        assert!(monitoring_image_unsupported("arm64"));
-        assert!(!monitoring_image_unsupported("x86_64"));
+    fn agent_image_is_skipped_on_arm64() {
+        assert!(agent_image_unsupported("aarch64"));
+        assert!(agent_image_unsupported("arm64"));
+        assert!(!agent_image_unsupported("x86_64"));
     }
 
     #[test]
@@ -943,9 +984,10 @@ mod tests {
 
         assert!(script.contains("https://get.docker.com"));
         assert!(script.contains("https://nixpacks.com/install.sh"));
+        assert!(script.contains("_openoxide_pack_url="));
         assert!(!script.contains("docker swarm init"));
         assert!(!script.contains("docker network create --driver overlay"));
         assert!(!script.contains("traefik:v"));
-        assert!(!script.contains("dubeyanand/openoxide-monitor:latest"));
+        assert!(!script.contains("dubeyanand/openoxide-agent:latest"));
     }
 }

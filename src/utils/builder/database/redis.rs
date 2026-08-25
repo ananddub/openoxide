@@ -123,21 +123,25 @@ pub async fn build_redis_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:6379", port));
     }
-    let (service_networks, networks) =
+    let (service_networks, mut networks) =
         crate::utils::builder::database::builder::resolve_database_networks(
             Some(&db.network_ids),
             db.detach_rustploy_network,
         )
         .await?;
 
-    let service = StackService {
+    let mut service = StackService {
         image: db.docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
-        networks: service_networks,
+        networks: service_networks
+            .into_iter()
+            .map(|name| (name, Default::default()))
+            .collect(),
         deploy: DeploySpec {
-            replicas: db.replicas as u32,
+            replicas: Some(db.replicas as u32),
+            mode: None,
             resources: DeployResources {
                 limits: Limits {
                     cpus: db.cpu_limit.clone(),
@@ -149,30 +153,43 @@ pub async fn build_redis_stack(
                 },
             },
             restart_policy: RestartPolicy {
-                condition: "on-failure",
-                delay: "5s",
+                condition: "on-failure".into(),
+                delay: "5s".into(),
                 max_attempts: 3,
-                window: "120s",
+                window: "120s".into(),
             },
             update_config: UpdateConfig {
                 parallelism: 1,
-                delay: "5s",
-                order: "stop-first",
-                failure_action: "rollback",
+                delay: "5s".into(),
+                order: "stop-first".into(),
+                failure_action: "rollback".into(),
+                monitor: None,
+                max_failure_ratio: None,
             },
             rollback_config: UpdateConfig {
                 parallelism: 1,
-                delay: "5s",
-                order: "stop-first",
-                failure_action: "pause",
+                delay: "5s".into(),
+                order: "stop-first".into(),
+                failure_action: "pause".into(),
+                monitor: None,
+                max_failure_ratio: None,
             },
+            endpoint_mode: None,
             placement: Default::default(),
             labels: Vec::new(),
         },
         healthcheck: None,
         stop_grace_period: None,
+        ulimits: None,
         ports,
     };
+    crate::utils::builder::database::builder::apply_database_swarm_settings(
+        crate::services::database::DatabaseKind::Redis,
+        db_id,
+        &mut service,
+        &mut networks,
+    )
+    .await?;
 
     let mut services = BTreeMap::new();
     services.insert("db".to_string(), service);

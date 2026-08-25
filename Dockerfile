@@ -45,64 +45,52 @@ COPY src/ src/
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
+    cargo clean -p openoxide --target x86_64-unknown-linux-musl && \
     touch src/main.rs src/lib.rs src/db/connection/sqlite.rs && \
     cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
     cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
     strip /usr/src/openoxide/openoxide-binary
 
 # =============================================================================
-# Stage 2: Alpine Runtime Image
+# Stage 2: Minimal filesystem preparation
 # =============================================================================
-FROM alpine:3.21 AS runtime
+FROM alpine:3.21 AS runtime-files
 
-ARG NIXPACKS_VERSION=1.41.0
-ARG RAILPACK_VERSION=0.36.4
 ARG OPENOXIDE_BUILD_REV=backup-migration-0048
 
 WORKDIR /app
 
 RUN printf '%s' "$OPENOXIDE_BUILD_REV" > /tmp/openoxide-build-rev
 
-# Cloud Native Buildpacks (pack CLI)
-COPY --from=buildpacksio/pack:0.39.1 /usr/local/bin/pack /usr/local/bin/pack
+RUN apk add --no-cache ca-certificates \
+    && mkdir -p /app/data /tmp \
+    && touch /app/data/.keep /tmp/.keep \
+    && rm -rf /var/cache/apk/* /root/.cache
 
-# Minimal System Packages + Rclone + Nixpacks + Railpack
-RUN apk add --no-cache \
-    ca-certificates \
-    docker-cli \
-    docker-cli-compose \
-    containerd-ctr \
-    wireguard-tools \
-    socat \
-    sudo \
-    curl \
-    git \
-    git-lfs \
-    tar \
-    zip \
-    unzip \
-    bash \
-    && git lfs install --system \
-    && wget -qO- https://rclone.org/install.sh | bash \
-    && curl -fsSL https://github.com/railwayapp/nixpacks/releases/download/v${NIXPACKS_VERSION}/nixpacks-v${NIXPACKS_VERSION}-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin \
-    && wget -qO- https://railpack.com/install.sh | bash \
-    && rm -rf /tmp/* /var/cache/apk/* /root/.cache
-
-# Copy Compiled OpenOxide Server Static Binary
+# Copy the compiled binary into the prepared filesystem.
 COPY --from=backend-builder \
     /usr/src/openoxide/openoxide-binary \
     /usr/local/bin/openoxide
 
+# =============================================================================
+# Stage 3: Scratch runtime
+# =============================================================================
+FROM scratch
+
+COPY --from=runtime-files /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=runtime-files /app /app
+COPY --from=runtime-files /tmp /tmp
+COPY --from=runtime-files /usr/local/bin/openoxide /usr/local/bin/openoxide
+
 WORKDIR /app
-RUN mkdir -p /app/data
 
 ENV PORT=4000 \
     HOST=0.0.0.0 \
-    DATABASE_URL="sqlite:///app/data/db.sqlite3"
+    DATABASE_URL="sqlite:///app/data/db.sqlite3" \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fs http://localhost:4000/ || exit 0
+ENTRYPOINT ["/usr/local/bin/openoxide"]
 
 CMD ["openoxide"]

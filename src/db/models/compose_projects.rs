@@ -32,6 +32,8 @@ pub struct ComposeProject {
         column_default = "'DOCKER-COMPOSE'"
     )]
     pub compose_type: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub last_error: Option<String>,
     #[sqlx_gen(
         sql_type = "compose_projects_compose_status_enum",
         column_default = "'IDLE'"

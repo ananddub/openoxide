@@ -52,6 +52,7 @@ pub struct ComposeRecord {
     pub source_type: String,
     pub compose_type: ComposeType,
     pub compose_status: String,
+    pub last_error: Option<String>,
     pub trigger_type: String,
     pub repository: Option<String>,
     pub owner: Option<String>,
@@ -131,6 +132,7 @@ impl From<crate::db::models::compose_projects::ComposeProject> for ComposeRecord
             compose_type: ComposeType::from_str(&item.compose_type)
                 .unwrap_or(ComposeType::DockerCompose),
             compose_status: item.compose_status,
+            last_error: item.last_error,
             trigger_type: item.trigger_type,
             repository: item.repository,
             owner: item.owner,

@@ -28,6 +28,8 @@ pub struct Application {
     pub build_type: String,
     #[sqlx_gen(sql_type = "applications_app_status_enum", column_default = "'IDLE'")]
     pub app_status: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub last_error: Option<String>,
     #[sqlx_gen(sql_type = "applications_trigger_type_enum", column_default = "'PUSH'")]
     pub trigger_type: String,
     #[sqlx_gen(sql_type = "TEXT")]

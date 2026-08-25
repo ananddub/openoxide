@@ -59,6 +59,8 @@ impl DatabaseService {
 
 pub mod crud;
 pub mod management;
+pub mod mount;
 pub mod operations;
 pub mod queries;
+pub mod swarm_settings;
 pub mod types;

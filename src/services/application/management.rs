@@ -32,10 +32,9 @@ impl ApplicationService {
         ) && let (Some(server_id), Some(pid_file)) =
             (deployment.server_id, deployment.pid.as_deref())
         {
-            let executor =
-                crate::services::application::remote::remote_executor(self.db.as_ref(), server_id)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?;
+            let executor = crate::services::compose::remote::agent_executor(server_id)
+                .await
+                .map_err(sqlx::Error::Protocol)?;
             executor
                 .kill_pid_file(pid_file)
                 .await

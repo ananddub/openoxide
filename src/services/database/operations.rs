@@ -190,23 +190,31 @@ impl DatabaseService {
         let repo_mongo = self.repo_mongo.clone();
         let repo_redis = self.repo_redis.clone();
         let repo_libsql = self.repo_libsql.clone();
+        let repo_deploy = self.repo_deploy.clone();
         let cache = self.cache.clone();
 
         // Spawn Docker container cleanup asynchronously so HTTP handler returns INSTANTLY (<5ms)
         tokio::spawn(async move {
             if let Some(ref app_name) = app_name {
-                let docker_cli = match server_id {
-                    Some(sid) => {
-                        if let Ok(executor) =
-                            crate::services::compose::remote::agent_executor(sid).await
-                        {
-                            crate::utils::docker::DockerCli::from_executor(executor)
-                        } else {
-                            crate::utils::docker::DockerCli::new_local()
+                let docker_cli =
+                    match crate::services::compose::remote::agent_executor_for(server_id).await {
+                        Ok(executor) => crate::utils::docker::DockerCli::from_executor(executor),
+                        Err(error) => {
+                            let reason = format!("could not stop database: {error}");
+                            let _ = repo_deploy
+                                .update_database_status_and_error(
+                                    id,
+                                    kind.as_str(),
+                                    "ERROR",
+                                    Some(&reason),
+                                )
+                                .await;
+                            cache
+                                .invalidate(&crate::core::cache::CacheKey::Database(id))
+                                .await;
+                            return;
                         }
-                    }
-                    None => crate::utils::docker::DockerCli::new_local(),
-                };
+                    };
 
                 let candidates = [
                     app_name.clone(),
@@ -311,7 +319,10 @@ impl DatabaseService {
                     .map_err(sqlx::Error::Protocol)?;
                 Ok(crate::utils::docker::DockerCli::from_executor(executor))
             }
-            None => Ok(crate::utils::docker::DockerCli::new_local()),
+            None => crate::services::compose::remote::agent_executor_for(None)
+                .await
+                .map(crate::utils::docker::DockerCli::from_executor)
+                .map_err(sqlx::Error::Protocol),
         }
     }
 }

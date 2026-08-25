@@ -15,7 +15,6 @@ use crate::{
             queue::queue::BuilderQueue,
         },
         cgroup::{CgroupBuilder, CpuLimit, MemoryLimit},
-        exec::{CommandExecutor, LocalExecutor},
     },
 };
 
@@ -57,13 +56,10 @@ impl BuilderQueue {
             BuilderError::Execution(format!("could not resolve application config: {e}"))
         })?;
 
-        let executor = if self
-            .is_local_server_id(server_id)
+        let effective_server_id = crate::services::compose::remote::agent_server_id(server_id)
             .await
-            .map_err(BuilderError::Execution)?
-        {
-            CommandExecutor::Local(LocalExecutor::new())
-        } else if let Some(sid) = server_id {
+            .map_err(BuilderError::Execution)?;
+        let executor = {
             let pid_file = deployment_pid_file(deployment_id);
             dep_repo
                 .set_pid(deployment_id, &pid_file)
@@ -73,9 +69,9 @@ impl BuilderQueue {
                         "could not persist remote deployment pid file: {e}"
                     ))
                 })?;
-            agent_executor(sid).await.map_err(BuilderError::Execution)?
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
+            agent_executor(effective_server_id)
+                .await
+                .map_err(BuilderError::Execution)?
         };
 
         let mut mem_limit_str = memory_limit_db;

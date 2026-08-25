@@ -8,7 +8,7 @@ use crate::api::dto::traefik::{
     TraefikStatsLogsResponseDto, TraefikToggleRequestsDto, TraefikVersionDto, TraefikWriteFileDto,
     UpdateTraefikVersionDto,
 };
-use crate::utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor};
+use crate::utils::exec::CommandExecutor;
 use crate::utils::os::OsCli;
 use crate::utils::paths::openoxide_paths;
 
@@ -29,29 +29,7 @@ impl TraefikService {
     }
 
     async fn get_executor(&self, server_id: Option<i64>) -> Result<CommandExecutor, String> {
-        match server_id {
-            Some(id) if id > 0 => {
-                let server_repo = auto_di::resolve::<crate::repository::ServerRepository>()
-                    .await
-                    .map_err(|e| e.to_string())?;
-                let creds = server_repo
-                    .get_ssh_credentials(id)
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .ok_or_else(|| format!("Server {} not found", id))?;
-                let port = u16::try_from(creds.1).map_err(|e| e.to_string())?;
-                let remote = RemoteExecutor::new(
-                    creds.0,
-                    port,
-                    creds.2,
-                    crate::utils::exec::SshAuth::key_pair(creds.3, creds.4),
-                    crate::utils::exec::SshHostKey::InsecureAcceptAny,
-                )
-                .with_sudo();
-                Ok(CommandExecutor::Remote(remote))
-            }
-            _ => Ok(CommandExecutor::Local(LocalExecutor::new())),
-        }
+        crate::services::compose::remote::agent_executor_for(server_id).await
     }
 
     pub fn sanitize_read_path(relative_path: &str) -> Result<PathBuf, String> {

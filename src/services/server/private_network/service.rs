@@ -13,7 +13,7 @@ use crate::{
         PrivateNetworkStatus,
     },
     repository::{ServerPrivateNetworkRepository, ServerRepository},
-    utils::exec::{CommandExecutor, LocalExecutor, RemoteExecutor, SshAuth, SshHostKey},
+    utils::exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},
 };
 
 use super::{
@@ -98,7 +98,9 @@ impl ServerPrivateNetworkService {
     pub async fn disable(&self, server_id: i64) -> sqlx::Result<()> {
         self.assert_server(server_id).await?;
         let iface = interface_name(server_id);
-        let local_exec = CommandExecutor::Local(LocalExecutor::new());
+        let local_exec = crate::services::compose::remote::agent_executor_for(None)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
         let local_os = crate::utils::os::OsCli::new(&local_exec);
         let _ = local_os
             .wireguard()
@@ -618,16 +620,13 @@ impl ServerPrivateNetworkService {
     }
 
     async fn executors(&self, server_id: i64) -> sqlx::Result<(CommandExecutor, CommandExecutor)> {
-        let remote = self.direct_executor(server_id).await?;
-        let remote = if remote.username() == "root" {
-            remote
-        } else {
-            remote.with_sudo()
-        };
-        Ok((
-            CommandExecutor::Local(LocalExecutor::new().with_non_interactive_sudo()),
-            CommandExecutor::Remote(remote),
-        ))
+        let local = crate::services::compose::remote::agent_executor_for(None)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        let remote = crate::services::compose::remote::agent_executor(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        Ok((local, remote))
     }
 
     async fn get_model(

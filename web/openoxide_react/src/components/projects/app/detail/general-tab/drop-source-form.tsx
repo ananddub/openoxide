@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {getApiBaseUrl} from '#/api/client';
+import {Progress} from '#/components/ui/progress';
 
 interface DropSourceFormProps {
 	app: any;
@@ -19,6 +20,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 	const [selectedZip, setSelectedZip] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 
 	const patchDrop = $api.useMutation(
 		'patch',
@@ -47,21 +49,21 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				const accessToken = sessionRaw
 					? JSON.parse(sessionRaw)?.tokens?.access_token
 					: undefined;
-				const response = await fetch(
-					`${getApiBaseUrl()}/applications/${app.id}/source/upload`,
-					{
-						method: 'POST',
-						headers: accessToken
-							? {Authorization: `Bearer ${accessToken}`}
-							: undefined,
-						body: form,
-					},
-				);
-				if (!response.ok) {
-					throw new Error(
-						(await response.text()) || 'Source upload failed',
-					);
-				}
+				await new Promise<void>((resolve, reject) => {
+					const request = new XMLHttpRequest();
+					request.open('POST', `${getApiBaseUrl()}/applications/${app.id}/source/upload`);
+					if (accessToken) request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+					request.upload.onprogress = event => {
+						if (event.lengthComputable) setUploadProgress(Math.round((event.loaded / event.total) * 100));
+					};
+					request.onload = () => {
+						if (request.status >= 200 && request.status < 300) resolve();
+						else reject(new Error('Upload failed. Please retry.'));
+					};
+					request.onerror = () => reject(new Error('Upload failed. Please retry.'));
+					request.onabort = () => reject(new Error('Upload failed. Please retry.'));
+					request.send(form);
+				});
 			} else {
 				await patchDrop.mutateAsync({
 					params: {path: {id: app.id}},
@@ -76,6 +78,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSaving(false);
+			setUploadProgress(0);
 		}
 	};
 
@@ -149,10 +152,19 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 							type="button"
 							variant="ghost"
 							size="sm"
+							disabled={saving}
 							onClick={() => setSelectedZip(null)}
 							className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
 							<Trash2 className="h-4 w-4" />
 						</Button>
+					</div>
+				)}
+				{saving && selectedZip && (
+					<div className="mt-2 flex flex-col gap-1.5">
+						<div className="flex justify-between text-[10px] text-muted-foreground">
+							<span>Uploading source archive</span><span>{uploadProgress}%</span>
+						</div>
+						<Progress value={uploadProgress} />
 					</div>
 				)}
 			</div>

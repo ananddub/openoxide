@@ -1,71 +1,41 @@
-use crate::repository::ServerRepository;
-use crate::services::compose::remote::remote_executor;
-use crate::utils::exec::{CommandExecutor, LocalExecutor};
+use crate::services::monitoring::monitoring_service::MonitoringService;
+use crate::utils::exec::CommandExecutor;
 use crate::utils::os::OsCli;
-use crate::utils::rclone::{builder::RcloneBuilder, command::RcloneCommand, target::RcloneTarget};
 use std::path::Path;
-use std::sync::Arc;
 
-/// Transfer a ZIP to a remote server via rclone SFTP, then extract it via SSH.
+/// Stream a ZIP to the server agent, then extract it through the same agent.
 pub async fn deploy_zip_to_remote(
-    db: &Arc<sqlx::SqlitePool>,
     zip_path: &Path,
     dest_path: &str,
     server_id: i64,
-    key_path: &Path,
     uuid: &str,
 ) -> Result<(), String> {
-    let repo = auto_di::resolve::<ServerRepository>()
+    let monitoring = auto_di::resolve::<MonitoringService>()
         .await
         .map_err(|e| format!("DI error: {e}"))?;
-    let (ip, port, username, private_key, _pub_key) = repo
-        .get_ssh_credentials(server_id)
-        .await
-        .map_err(|e| format!("Failed to load server credentials: {e}"))?
-        .ok_or_else(|| "Server not found".to_string())?;
-
-    std::fs::write(key_path, &private_key)
-        .map_err(|e| format!("Failed to write private key: {e}"))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(key_path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| format!("Failed to set key permissions: {e}"))?;
-    }
-
-    let local = CommandExecutor::Local(LocalExecutor::new());
     let remote_zip = format!("/tmp/upload-{uuid}.zip");
-
-    RcloneBuilder::new(RcloneCommand::Copyto)
-        .source(RcloneTarget::Local {
-            path: zip_path.to_string_lossy().into_owned(),
-        })
-        .destination(RcloneTarget::Sftp {
-            host: ip.clone(),
-            port: Some(port as u16),
-            user: username.clone(),
-            pass: None,
-            key_file: Some(key_path.to_string_lossy().into_owned()),
-            key_use_agent: false,
-            path: remote_zip.clone(),
-        })
-        .execute(&local)
+    let clean_zip = format!("/tmp/clean-{uuid}.zip");
+    monitoring
+        .upload_file(server_id, zip_path, &remote_zip)
         .await
-        .map_err(|e| format!("Rclone transfer failed: {e}"))?;
-
-    let ssh = remote_executor(db, server_id)
-        .await
-        .map_err(|e| format!("Failed to build SSH executor: {e}"))?;
-    let cmd = CommandExecutor::Remote(ssh);
+        .map_err(|e| format!("Agent transfer failed: {e}"))?;
+    let cmd = CommandExecutor::Agent(monitoring.agent_executor(server_id));
 
     let os = OsCli::new(&cmd);
+    os.archive(&remote_zip)
+        .zip()
+        .sanitize()
+        .to(&clean_zip)
+        .run()
+        .await
+        .map_err(|e| format!("ZIP validation failed: {e}"))?;
     os.dir(dest_path)
         .create()
         .run()
         .await
         .map_err(|e| format!("Failed to create remote directory: {e}"))?;
 
-    os.archive(&remote_zip)
+    os.archive(&clean_zip)
         .zip()
         .extract_to(dest_path)
         .overwrite()
@@ -74,6 +44,7 @@ pub async fn deploy_zip_to_remote(
         .map_err(|e| format!("Failed to unzip on remote: {e}"))?;
 
     let _ = os.file(&remote_zip).delete().run().await;
+    let _ = os.file(&clean_zip).delete().run().await;
 
     Ok(())
 }

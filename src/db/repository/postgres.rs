@@ -21,39 +21,39 @@ impl PostgresRepository {
         sqlx::query_as!(
             DatabaseRecord,
             r#"SELECT 'postgres' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM postgres_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mysql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM mysql_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mariadb' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM mariadb_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'mongo' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM mongo_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'redis' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               CAST(NULL AS TEXT) AS "database_name?", CAST(NULL AS TEXT) AS "database_user?", database_password AS "database_password?", external_port,
+               CAST(NULL AS TEXT) AS "database_name?", CAST(NULL AS TEXT) AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM redis_dbs WHERE environment_id = ?
                UNION ALL
                SELECT 'libsql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               CAST(NULL AS TEXT) AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM libsql_dbs WHERE environment_id = ?
                ORDER BY created_at DESC, id DESC"#,
             environment_id,
@@ -71,9 +71,9 @@ impl PostgresRepository {
         sqlx::query_as!(
             DatabaseRecord,
             r#"SELECT 'postgres' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM postgres_dbs WHERE id = ?"#,
             id
         )
@@ -165,7 +165,7 @@ impl PostgresRepository {
     pub async fn update_status(&self, id: i64, status: &str) -> sqlx::Result<()> {
         let upper = status.to_uppercase();
         sqlx::query!(
-            "UPDATE postgres_dbs SET app_status = ? WHERE id = ?",
+            "UPDATE postgres_dbs SET app_status = ?, last_error = NULL WHERE id = ?",
             upper,
             id
         )

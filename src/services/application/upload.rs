@@ -3,13 +3,11 @@ use axum::extract::Multipart;
 use super::{ApplicationRecord, ApplicationService};
 use crate::{
     core::cache::CacheKey,
-    repository::ServerRepository,
+    services::monitoring::monitoring_service::MonitoringService,
     utils::{
-        exec::{CommandExecutor, LocalExecutor},
+        exec::CommandExecutor,
         paths::openoxide_paths,
-        upload::{
-            MAX_UPLOAD_BYTES, extract_zip, sanitize_zip, stream_multipart_file, upload_via_rclone,
-        },
+        upload::{MAX_UPLOAD_BYTES, extract_zip, stream_multipart_file},
     },
 };
 
@@ -28,14 +26,11 @@ impl ApplicationService {
 
         let upload = tempfile::NamedTempFile::new()
             .map_err(|error| format!("failed to create upload file: {error}"))?;
-        let clean = tempfile::NamedTempFile::new()
-            .map_err(|error| format!("failed to create sanitized archive: {error}"))?;
         let uploaded =
             stream_multipart_file(multipart, "file", upload.path(), MAX_UPLOAD_BYTES).await?;
         if !uploaded.filename.to_ascii_lowercase().ends_with(".zip") {
             return Err("application source upload must be a .zip archive".into());
         }
-        sanitize_zip(upload.path(), clean.path()).await?;
         let build_path = uploaded
             .fields
             .get("drop_build_path")
@@ -52,36 +47,33 @@ impl ApplicationService {
         };
 
         let destination = openoxide_paths().application_code(&application.app_name);
-        match application.server_id {
-            None => {
-                extract_zip(
-                    &CommandExecutor::Local(LocalExecutor::new()),
-                    clean.path(),
-                    &destination,
-                )
-                .await?;
-            }
-            Some(server_id) => {
-                let servers = auto_di::resolve::<ServerRepository>()
-                    .await
-                    .map_err(|error| format!("failed to resolve server repository: {error}"))?;
-                let remote_archive = format!(
-                    "/tmp/openoxide-application-upload-{}.zip",
-                    uuid::Uuid::new_v4()
-                );
-                let remote =
-                    upload_via_rclone(servers.as_ref(), server_id, clean.path(), &remote_archive)
-                        .await?;
-                let executor = CommandExecutor::Remote(remote);
-                let result = extract_zip(&executor, &remote_archive, &destination).await;
-                let _ = crate::utils::os::OsCli::new(&executor)
-                    .file(&remote_archive)
-                    .delete()
-                    .run()
-                    .await;
-                result?;
-            }
+        let server_id =
+            crate::services::compose::remote::agent_server_id(application.server_id).await?;
+        let monitoring = auto_di::resolve::<MonitoringService>()
+            .await
+            .map_err(|error| format!("failed to resolve agent service: {error}"))?;
+        let upload_id = uuid::Uuid::new_v4();
+        let remote_archive = format!("/tmp/openoxide-application-upload-{upload_id}.zip");
+        let clean_archive = format!("/tmp/openoxide-application-clean-{upload_id}.zip");
+        monitoring
+            .upload_file(server_id, upload.path(), &remote_archive)
+            .await?;
+        let executor = CommandExecutor::Agent(monitoring.agent_executor(server_id));
+        let os = crate::utils::os::OsCli::new(&executor);
+        let result = async {
+            os.archive(&remote_archive)
+                .zip()
+                .sanitize()
+                .to(&clean_archive)
+                .run()
+                .await
+                .map_err(|error| format!("ZIP validation failed: {error}"))?;
+            extract_zip(&executor, &clean_archive, &destination).await
         }
+        .await;
+        let _ = os.file(&remote_archive).delete().run().await;
+        let _ = os.file(&clean_archive).delete().run().await;
+        result?;
 
         self.repo_app
             .set_drop_source(id, build_path.to_owned())

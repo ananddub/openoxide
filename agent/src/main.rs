@@ -1,18 +1,8 @@
-mod api;
-mod app;
-mod core;
-mod services;
-mod utils;
-
-pub use core::{config, context, error, filter};
-pub use utils::background::tasks;
-pub use utils::telemetry::{collector, logs, rollup};
-pub use utils::{docker, persistence::store};
-
+use agent::utils::background::tasks;
+use agent::{app::grpc::GrpcServerTask, core};
 use auto_di::Container;
 use std::time::Duration;
 
-use crate::app::grpc::GrpcServerTask;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -40,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         refresh_rate = config.refresh_rate,
         grpc_port = config.grpc_port,
         panel = %config.panel_url,
-        "starting openoxide monitor agent"
+        "starting openoxide agent"
     );
 
     let context = container.resolve::<core::context::MonitorContext>().await?;

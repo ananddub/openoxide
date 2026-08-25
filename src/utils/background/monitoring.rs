@@ -13,6 +13,18 @@ pub fn start(
     reconciler: Arc<MonitoringReconciler>,
     lifecycle: Arc<MonitoringLifecycleService>,
 ) {
+    let local_lifecycle = Arc::clone(&lifecycle);
+    let local_monitoring = Arc::clone(&monitoring);
+    let local_reconciler = Arc::clone(&reconciler);
+    tokio::spawn(async move {
+        match local_lifecycle.ensure_local_registration().await {
+            Ok(server_id) => {
+                tracing::info!(server_id, "starting local Agent lifecycle watcher");
+                watch_server(server_id, local_monitoring, local_reconciler).await;
+            }
+            Err(error) => tracing::warn!(%error, "could not start local Agent lifecycle watcher"),
+        }
+    });
     start_agent_updates(Arc::clone(&monitoring), lifecycle);
     tokio::spawn(async move {
         let mut watched = std::collections::HashSet::new();
@@ -51,15 +63,9 @@ fn start_agent_updates(
 
         loop {
             ticker.tick().await;
-            match lifecycle.update_local_agent_if_needed().await {
-                Ok(true) => {
-                    tracing::info!("updated local OpenOxide monitoring agent to the latest image")
-                }
-                Ok(false) => {}
-                Err(error) => {
-                    tracing::warn!(%error, "automatic local monitoring agent update failed")
-                }
-            }
+            // The panel runtime is intentionally Docker-CLI-free. Local agent
+            // lifecycle/update work is owned by the Agent deployment, so do
+            // not try to pull or recreate it from this process.
             let server_ids = match monitoring.remote_server_ids().await {
                 Ok(server_ids) => server_ids,
                 Err(error) => {
@@ -92,23 +98,44 @@ async fn watch_server(
     reconciler: Arc<MonitoringReconciler>,
 ) {
     loop {
-        match monitoring.watch_container_states(server_id).await {
-            Ok(mut stream) => loop {
-                match tokio::time::timeout(std::time::Duration::from_secs(30), stream.message())
-                    .await
-                {
-                    Ok(Ok(Some(snapshot))) => {
-                        if let Err(error) = reconciler
-                            .apply_snapshot(server_id, &snapshot.containers)
-                            .await
-                        {
-                            tracing::warn!(server_id, %error, "could not apply lifecycle snapshot");
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            monitoring.watch_container_states(server_id),
+        )
+        .await
+        {
+            Ok(result) => match result {
+                Ok(mut stream) => loop {
+                    match tokio::time::timeout(std::time::Duration::from_secs(30), stream.message())
+                        .await
+                    {
+                        Ok(Ok(Some(snapshot))) => {
+                            if let Err(error) = reconciler
+                                .apply_snapshot(server_id, &snapshot.containers)
+                                .await
+                            {
+                                tracing::warn!(server_id, %error, "could not apply lifecycle snapshot");
+                            }
+                        }
+                        Ok(Ok(None)) => {
+                            tracing::warn!(server_id, "monitoring lifecycle stream ended");
+                            break;
+                        }
+                        Ok(Err(error)) => {
+                            tracing::warn!(server_id, %error, "monitoring lifecycle stream failed");
+                            break;
+                        }
+                        Err(error) => {
+                            tracing::warn!(server_id, %error, "monitoring lifecycle stream timed out");
+                            break;
                         }
                     }
-                    Ok(Ok(None)) | Ok(Err(_)) | Err(_) => break,
-                }
+                },
+                Err(error) => tracing::warn!(server_id, %error, "lifecycle stream unavailable"),
             },
-            Err(error) => tracing::debug!(server_id, %error, "lifecycle stream unavailable"),
+            Err(error) => {
+                tracing::warn!(server_id, %error, "lifecycle stream connection timed out")
+            }
         }
         if server_ssh_is_reachable(server_id).await {
             tracing::debug!(

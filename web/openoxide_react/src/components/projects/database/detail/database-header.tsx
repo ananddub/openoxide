@@ -23,6 +23,7 @@ import {toast} from 'sonner';
 interface DatabaseHeaderProps {
 	id: string;
 	database: DatabaseResponse | null;
+	latestError?: string | null;
 	detectedKind: string;
 	actionLoading: string | null;
 	isBuilding: boolean;
@@ -39,6 +40,7 @@ interface DatabaseHeaderProps {
 export function DatabaseHeader({
 	id,
 	database,
+	latestError,
 	detectedKind,
 	actionLoading,
 	isBuilding,
@@ -150,6 +152,7 @@ export function DatabaseHeader({
 
 					<StatusBadge
 						status={database?.status || database?.app_status || 'STOPPED'}
+						error={(database as any)?.last_error || latestError}
 						isBuilding={isBuilding}
 						actionLoading={actionLoading}
 					/>

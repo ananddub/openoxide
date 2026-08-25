@@ -1,33 +1,40 @@
 use auto_grpc::service;
 
-pub use crate::core::middleware::MonitoringMiddleware;
+pub use crate::core::middleware::AgentMiddleware;
+use crate::services::file_transfer::FileTransferService;
 use crate::services::monitoring::MonitoringService as AgentMonitoringService;
 use std::sync::Arc;
 
 pub mod proto {
-    tonic::include_proto!("monitoring");
+    tonic::include_proto!("agent");
 }
 
-use proto::monitoring_service_server::MonitoringService;
-pub use proto::monitoring_service_server::MonitoringServiceServer;
+use proto::agent_service_server::AgentService;
+pub use proto::agent_service_server::AgentServiceServer;
 
 #[derive(Clone)]
-pub struct MonitoringGrpc {
+pub struct AgentGrpc {
     config: Arc<crate::core::config::Config>,
     service: Arc<AgentMonitoringService>,
+    file_transfer: Arc<FileTransferService>,
 }
 
 #[auto_di::singleton]
-impl MonitoringGrpc {
+impl AgentGrpc {
     pub fn new(
         config: Arc<crate::core::config::Config>,
         service: Arc<AgentMonitoringService>,
+        file_transfer: Arc<FileTransferService>,
     ) -> Self {
-        Self { config, service }
+        Self {
+            config,
+            service,
+            file_transfer,
+        }
     }
 
     fn check_server_id(&self, requested: i64) -> Result<(), tonic::Status> {
-        if requested == self.config.server_id {
+        if requested > 0 && (self.config.server_id == -1 || requested == self.config.server_id) {
             Ok(())
         } else {
             Err(tonic::Status::not_found(format!(
@@ -38,8 +45,8 @@ impl MonitoringGrpc {
     }
 }
 
-#[service(middleware = [MonitoringMiddleware])]
-impl MonitoringService for MonitoringGrpc {
+#[service(middleware = [AgentMiddleware])]
+impl AgentService for AgentGrpc {
     type StreamLogsStream = crate::services::monitoring::logs::LogStream;
     type WatchContainerStatesStream = crate::services::monitoring::lifecycle::LifecycleStream;
     type ShellStream = crate::services::monitoring::shell::ShellStream;
@@ -58,6 +65,15 @@ impl MonitoringService for MonitoringGrpc {
         let request = request.into_inner();
         self.check_server_id(request.server_id)?;
         self.service.server_metrics(request).await
+    }
+
+    async fn get_agent_info(
+        &self,
+        request: tonic::Request<proto::AgentInfoRequest>,
+    ) -> Result<tonic::Response<proto::AgentInfoResponse>, tonic::Status> {
+        let request = request.into_inner();
+        self.check_server_id(request.server_id)?;
+        Ok(tonic::Response::new(self.file_transfer.agent_info()))
     }
 
     async fn get_container_metrics(
@@ -113,5 +129,14 @@ impl MonitoringService for MonitoringGrpc {
         )
         .await?;
         Ok(tonic::Response::new(Box::pin(stream)))
+    }
+
+    async fn upload_file(
+        &self,
+        request: tonic::Request<tonic::Streaming<proto::FileUploadChunk>>,
+    ) -> Result<tonic::Response<proto::FileUploadResult>, tonic::Status> {
+        Ok(tonic::Response::new(
+            self.file_transfer.upload(request.into_inner()).await?,
+        ))
     }
 }

@@ -1,6 +1,6 @@
 # OpenOxide Monitor
 
-`openoxide_monitor` is the host-side monitoring agent for OpenOxide. One agent
+`agent` is the host-side Agent for OpenOxide. One Agent
 runs on every Docker server managed by the OpenOxide panel. It collects host and
 container telemetry, keeps the only durable metric history on that node, and
 exposes an authenticated gRPC API for panel metric and log queries.
@@ -13,7 +13,7 @@ authentication, storage, deployment, and troubleshooting model.
 ```text
 Docker host
 ┌──────────────────────────────────────────────────────────────┐
-│ openoxide_monitor                                             │
+│ openoxide-agent                                               │
 │                                                              │
 │  Host collector ───────────────┐                             │
 │  Container collector ──────────┼── Local SQLite history      │
@@ -340,7 +340,7 @@ does not provide a writable-layer percentage against a defined capacity.
 ## gRPC metric and log API
 
 The agent listens on `GRPC_PORT`, default `50051`, and serves definitions from
-`proto/monitoring.proto`:
+`proto/agent.proto`:
 
 - `GetServerMetrics`
 - `GetContainerMetrics`
@@ -366,12 +366,14 @@ network/VPN is still recommended for remote hosts.
 | `RETENTION_DAYS` | `7` | Agent-local raw history retention. |
 | `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Reachable base URL of the OpenOxide panel. |
 | `METRICS_TOKEN` | none | Required agent secret. Must match a per-server or panel migration token. |
+| `AGENT_TLS_CERT` | none | PEM server certificate path. Must be configured together with `AGENT_TLS_KEY`. |
+| `AGENT_TLS_KEY` | none | PEM private-key path for the gRPC server certificate. |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker Engine Unix socket. |
 | `COLLECTION_MODE` | `auto` | `auto`, `cgroup`, or `stream`. |
 | `INCLUDE_CONTAINERS` | empty | Comma-separated include patterns. Empty includes all. |
 | `EXCLUDE_CONTAINERS` | empty | Comma-separated exclusion patterns. |
 | `ROLLUP_SAMPLES` | `1` | Samples per average/peak rollup window. |
-| `RUST_LOG` | `openoxide_monitor=info` | Rust tracing filter. |
+| `RUST_LOG` | `agent=info` | Rust tracing filter. |
 
 Invalid critical configuration causes startup to fail with a clear message.
 The agent requires a non-empty metrics token, a positive server ID, a valid
@@ -383,7 +385,7 @@ URL.
 The published image is:
 
 ```text
-dubeyanand/openoxide-monitor:latest
+dubeyanand/openoxide-agent:latest
 ```
 
 It is built as a static musl binary in a `scratch` image. It contains no shell
@@ -393,9 +395,9 @@ Example compose service:
 
 ```yaml
 services:
-  openoxide-monitor:
-    image: dubeyanand/openoxide-monitor:latest
-    container_name: openoxide_monitor
+  openoxide-agent:
+    image: dubeyanand/openoxide-agent:latest
+      container_name: openoxide-agent
     restart: unless-stopped
     network_mode: host
     volumes:
@@ -430,18 +432,17 @@ configuration and logs. Run the agent only on trusted hosts.
 Start and inspect:
 
 ```bash
-docker compose -f docker-compose.monitor.yml up -d --force-recreate
-docker logs --tail=100 openoxide_monitor
+docker compose -f docker-compose.agent.yml up -d --force-recreate
+docker logs --tail=100 openoxide-agent
 ```
 
 ## Running from source
 
 ```bash
-just run-monitor
-just test-monitor
-just docker-build-monitor
-just up-monitor
-just logs-monitor
+just docker-build-agent
+just up-agent
+just logs-agent
+just logs-agent
 ```
 
 Or directly:
@@ -450,7 +451,7 @@ Or directly:
 SERVER_ID=5 \
 OPENOXIDE_SERVER_URL=http://127.0.0.1:4000 \
 METRICS_TOKEN='replace-with-a-random-secret' \
-cargo run -p openoxide_monitor
+cargo run -p agent
 ```
 
 ## Expected logs
@@ -458,7 +459,7 @@ cargo run -p openoxide_monitor
 Healthy startup resembles:
 
 ```text
-starting openoxide monitor agent server_id=5 refresh_rate=60 grpc_port=50051
+starting openoxide agent server_id=5 refresh_rate=60 grpc_port=50051
 metric store initialized url="sqlite:///app/data/monitor.db"
 gRPC query server listening addr=0.0.0.0:50051
 collecting container metrics mode="cgroup" filter=all containers
@@ -503,7 +504,7 @@ Verify:
 Inspect container configuration without printing the secret itself:
 
 ```bash
-docker inspect openoxide_monitor \
+docker inspect openoxide-agent \
   --format '{{range .Config.Env}}{{println .}}{{end}}' |
   grep -E '^(SERVER_ID|OPENOXIDE_SERVER_URL)='
 ```
@@ -517,7 +518,7 @@ sends `SERVER_ID=1` but the panel only has IDs `5`, `10`, and `12`.
 After changing compose environment values, recreate the container:
 
 ```bash
-docker compose -f docker-compose.monitor.yml \
+docker compose -f docker-compose.agent.yml \
   up -d --force-recreate --no-build
 ```
 
@@ -551,7 +552,7 @@ reconcile `_sqlx_migrations` only when every migration object already exists.
 ## Source layout
 
 ```text
-openoxide_monitor/src/
+agent/src/
 ├── main.rs             startup, task lifecycle, graceful shutdown
 ├── config.rs           environment parsing and validation
 ├── context.rs          shared task dependencies

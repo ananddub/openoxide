@@ -4,12 +4,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("PROTOC", protoc_path);
     }
 
-    let proto_path = if std::path::Path::new("../../proto/monitoring.proto").exists() {
-        "../../proto/monitoring.proto"
-    } else if std::path::Path::new("../proto/monitoring.proto").exists() {
-        "../proto/monitoring.proto"
+    let proto_path = if std::path::Path::new("../../proto/agent.proto").exists() {
+        "../../proto/agent.proto"
+    } else if std::path::Path::new("../proto/agent.proto").exists() {
+        "../proto/agent.proto"
     } else {
-        "proto/monitoring.proto"
+        "proto/agent.proto"
     };
 
     let mut config = prost_build::Config::new();

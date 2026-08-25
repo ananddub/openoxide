@@ -23,16 +23,13 @@ use crate::{
     },
     services::{
         application::{ApplicationOperation, ApplicationService},
-        compose::{ComposeOperation, ComposeService, remote::remote_executor},
+        compose::{ComposeOperation, ComposeService},
         notification::{
             NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
             NotificationTrigger,
         },
     },
-    utils::{
-        docker::DockerCli,
-        exec::{CommandExecutor, LocalExecutor},
-    },
+    utils::docker::DockerCli,
 };
 
 #[derive(Debug, Clone)]
@@ -270,15 +267,9 @@ impl ScheduleService {
             .ok_or(sqlx::Error::RowNotFound)?;
 
         let server_id = self.resolve_database_backup_server_id(&backup).await?;
-        let executor = if let Some(sid) = server_id {
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?,
-            )
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
 
         let dumper = self.resolve_database_dumper(&backup).await?;
         let dest_model = self
@@ -335,15 +326,9 @@ impl ScheduleService {
             .ok_or(sqlx::Error::RowNotFound)?;
 
         let server_id = self.resolve_volume_backup_server_id(&backup).await?;
-        let executor = if let Some(sid) = server_id {
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?,
-            )
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
 
         let target = self.resolve_volume_service_target(&backup).await?;
         let dest_model = self
@@ -716,17 +701,9 @@ impl ScheduleService {
             return Err(sqlx::Error::Protocol("schedule command is empty".into()));
         }
 
-        let executor = if let Some(server_id) = schedule.server_id {
-            match remote_executor(self.db.as_ref(), server_id).await {
-                Ok(remote) => CommandExecutor::Remote(remote),
-                Err(err) => {
-                    tracing::warn!(server_id, error = %err, "remote SSH unavailable for server, falling back to local executor");
-                    CommandExecutor::Local(LocalExecutor::new())
-                }
-            }
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(schedule.server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
         let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
             sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
         })?;
@@ -897,12 +874,10 @@ impl ScheduleService {
     }
 
     async fn docker_for_server(&self, server_id: Option<i64>) -> sqlx::Result<DockerCli> {
-        if let Some(server_id) = server_id {
-            if let Ok(executor) = remote_executor(self.db.as_ref(), server_id).await {
-                return Ok(DockerCli::from_remote_executor(executor));
-            }
-        }
-        Ok(DockerCli::new_local())
+        crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map(DockerCli::from_executor)
+            .map_err(sqlx::Error::Protocol)
     }
 
     async fn resolve_volume_backup_server_id(
@@ -1288,15 +1263,9 @@ impl ScheduleService {
         }
 
         let server_id = self.resolve_database_backup_server_id(&backup).await?;
-        let executor = if let Some(sid) = server_id {
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?,
-            )
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
 
         let dumper = self.resolve_database_dumper(&backup).await?;
         let dest_model = self
@@ -1374,15 +1343,9 @@ impl ScheduleService {
         }
 
         let server_id = self.resolve_volume_backup_server_id(&backup).await?;
-        let executor = if let Some(sid) = server_id {
-            CommandExecutor::Remote(
-                remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?,
-            )
-        } else {
-            CommandExecutor::Local(LocalExecutor::new())
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
 
         let target = self.resolve_volume_service_target(&backup).await?;
         let dest_model = self

@@ -474,7 +474,22 @@ impl MonitoringService {
         self.server_service
             .list()
             .await
-            .map(|servers| servers.into_iter().filter_map(|server| server.id).collect())
+            .map(|servers| {
+                servers
+                    .into_iter()
+                    .filter(|server| {
+                        !matches!(
+                            server.ip_address.as_str(),
+                            "" | "0.0.0.0"
+                                | "localhost"
+                                | "127.0.0.1"
+                                | "openoxide-agent"
+                                | "openoxide-monitor"
+                        )
+                    })
+                    .filter_map(|server| server.id)
+                    .collect()
+            })
             .map_err(|error| error.to_string())
     }
 

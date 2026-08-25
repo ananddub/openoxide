@@ -109,7 +109,8 @@ impl RegistryService {
         username: &str,
         password: &str,
     ) -> Result<(), String> {
-        let docker = crate::utils::docker::DockerCli::new_local();
+        let executor = crate::services::compose::remote::agent_executor_for(None).await?;
+        let docker = crate::utils::docker::DockerCli::from_executor(executor);
         let registry = if registry_url.trim().is_empty() || registry_url.contains("docker.io") {
             None
         } else {

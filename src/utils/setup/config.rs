@@ -8,7 +8,7 @@ pub struct SetupPaths {
     pub compose: String,
     pub ssh: String,
     pub certificates: String,
-    pub monitoring: String,
+    pub agent: String,
     pub registry: String,
     pub schedules: String,
     pub volume_backups: String,
@@ -27,7 +27,7 @@ impl SetupPaths {
             compose: format!("{base}/compose"),
             ssh: format!("{base}/ssh"),
             certificates: format!("{traefik_dynamic}/certificates"),
-            monitoring: format!("{base}/monitoring"),
+            agent: format!("{base}/agent"),
             registry: format!("{base}/registry"),
             schedules: format!("{base}/schedules"),
             volume_backups: format!("{base}/volume-backups"),
@@ -48,7 +48,7 @@ impl SetupPaths {
             &self.compose,
             &self.ssh,
             &self.certificates,
-            &self.monitoring,
+            &self.agent,
             &self.registry,
             &self.schedules,
             &self.volume_backups,
@@ -73,10 +73,10 @@ pub struct SetupConfig {
     pub dashboard_port: u16,
     pub acme_email: String,
     pub advertise_addr: Option<String>,
-    pub monitoring_server_id: Option<i64>,
-    pub monitoring_panel_url: Option<String>,
-    pub monitoring_token: Option<String>,
-    pub monitoring_retention_days: i64,
+    pub agent_server_id: Option<i64>,
+    pub agent_panel_url: Option<String>,
+    pub agent_token: Option<String>,
+    pub agent_retention_days: i64,
 }
 
 impl Default for SetupConfig {
@@ -93,10 +93,10 @@ impl Default for SetupConfig {
             dashboard_port: 8080,
             acme_email: "admin@localhost".into(),
             advertise_addr: None,
-            monitoring_server_id: None,
-            monitoring_panel_url: None,
-            monitoring_token: None,
-            monitoring_retention_days: 7,
+            agent_server_id: None,
+            agent_panel_url: None,
+            agent_token: None,
+            agent_retention_days: 7,
         }
     }
 }

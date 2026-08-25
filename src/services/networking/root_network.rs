@@ -9,7 +9,7 @@ use crate::{
     utils::{
         builder::swarm::{OPENOXIDE_NETWORK, ensure_overlay_network, ensure_swarm_manager},
         docker::DockerCli,
-        exec::{CommandExecutor, LocalExecutor},
+        exec::CommandExecutor,
     },
 };
 
@@ -79,12 +79,7 @@ impl RootNetworkService {
     }
 
     async fn executor(&self, server_id: Option<i64>) -> Result<CommandExecutor, String> {
-        match server_id {
-            Some(id) => crate::services::compose::remote::remote_executor(self.db.as_ref(), id)
-                .await
-                .map(CommandExecutor::Remote),
-            None => Ok(CommandExecutor::Local(LocalExecutor::new())),
-        }
+        crate::services::compose::remote::agent_executor_for(server_id).await
     }
 }
 

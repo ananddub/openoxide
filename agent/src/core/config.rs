@@ -40,6 +40,11 @@ pub struct Config {
     pub exclude_containers: Vec<String>,
     pub collection_mode: CollectionMode,
     pub rollup_samples: u32,
+    pub max_upload_bytes: u64,
+    pub upload_timeout_seconds: u64,
+    pub upload_roots: Vec<String>,
+    pub tls_cert: Option<String>,
+    pub tls_key: Option<String>,
 }
 
 fn parse_var<T: std::str::FromStr>(key: &str, default: T) -> Result<T, String> {
@@ -75,6 +80,21 @@ impl Config {
             ),
             collection_mode: parse_var("COLLECTION_MODE", CollectionMode::Auto)?,
             rollup_samples: parse_var("ROLLUP_SAMPLES", 1u32)?,
+            max_upload_bytes: parse_var("MAX_UPLOAD_BYTES", 1024u64 * 1024 * 1024)?,
+            upload_timeout_seconds: parse_var("UPLOAD_TIMEOUT_SECONDS", 300u64)?,
+            upload_roots: env::var("UPLOAD_ROOTS")
+                .unwrap_or_else(|_| "/tmp,/etc/openoxide,/app/workspace".into())
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_owned)
+                .collect(),
+            tls_cert: env::var("AGENT_TLS_CERT")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            tls_key: env::var("AGENT_TLS_KEY")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
         };
 
         config.validate()?;
@@ -82,9 +102,9 @@ impl Config {
     }
 
     fn validate(&self) -> Result<(), String> {
-        if self.server_id <= 0 {
+        if self.server_id == 0 || self.server_id < -1 {
             return Err(format!(
-                "SERVER_ID must be a positive integer, got {}",
+                "SERVER_ID must be a positive integer or -1 for the local Agent, got {}",
                 self.server_id
             ));
         }
@@ -111,6 +131,20 @@ impl Config {
             return Err(
                 "METRICS_TOKEN must be set; anonymous metric pushes are disabled".to_string(),
             );
+        }
+        if self.max_upload_bytes == 0 || self.upload_timeout_seconds == 0 {
+            return Err("upload size and timeout limits must be positive".into());
+        }
+        if self.upload_roots.is_empty()
+            || self
+                .upload_roots
+                .iter()
+                .any(|root| !std::path::Path::new(root).is_absolute())
+        {
+            return Err("UPLOAD_ROOTS must contain absolute paths".into());
+        }
+        if self.tls_cert.is_some() != self.tls_key.is_some() {
+            return Err("AGENT_TLS_CERT and AGENT_TLS_KEY must be configured together".into());
         }
 
         Ok(())
@@ -143,12 +177,17 @@ mod tests {
             refresh_rate: 60,
             retention_days: 7,
             panel_url: "http://127.0.0.1:4000".into(),
-            metrics_token: "test-monitoring-token".into(),
+            metrics_token: "test-agent-token".into(),
             docker_socket: "/var/run/docker.sock".into(),
             include_containers: Vec::new(),
             exclude_containers: Vec::new(),
             collection_mode: CollectionMode::Auto,
             rollup_samples: 1,
+            max_upload_bytes: 1024 * 1024,
+            upload_timeout_seconds: 300,
+            upload_roots: vec!["/tmp".into()],
+            tls_cert: None,
+            tls_key: None,
         }
     }
 

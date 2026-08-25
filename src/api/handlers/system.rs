@@ -42,16 +42,28 @@ impl SystemController {
                 detail: e.to_string(),
             },
         };
-        let docker = match DockerCli::new_local().system().info().run().await {
-            Ok(_) => DependencyStatusDto {
-                name: "docker".into(),
-                healthy: true,
-                detail: "Docker API reachable".into(),
+        let docker = match crate::services::compose::remote::agent_executor_for(None).await {
+            Ok(executor) => match DockerCli::from_executor(executor)
+                .system()
+                .info()
+                .run()
+                .await
+            {
+                Ok(_) => DependencyStatusDto {
+                    name: "docker".into(),
+                    healthy: true,
+                    detail: "Docker reachable through local Agent".into(),
+                },
+                Err(error) => DependencyStatusDto {
+                    name: "docker".into(),
+                    healthy: false,
+                    detail: error.to_string(),
+                },
             },
-            Err(e) => DependencyStatusDto {
+            Err(error) => DependencyStatusDto {
                 name: "docker".into(),
                 healthy: false,
-                detail: e.to_string(),
+                detail: error,
             },
         };
         let dependencies = vec![database, docker];

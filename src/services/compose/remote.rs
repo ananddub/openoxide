@@ -19,6 +19,28 @@ pub(crate) async fn agent_executor(
     ))
 }
 
+/// Resolve an optional resource server to an Agent identity. Resources with
+/// no explicit server belong to the panel host, which is represented by the
+/// local Agent registration just like every remote host.
+pub(crate) async fn agent_server_id(server_id: Option<i64>) -> Result<i64, String> {
+    if let Some(server_id) = server_id {
+        return Ok(server_id);
+    }
+    let lifecycle = resolve::<crate::services::monitoring::lifecycle::MonitoringLifecycleService>()
+        .await
+        .map_err(|error| format!("local Agent lifecycle unavailable: {error}"))?;
+    lifecycle
+        .ensure_local_registration()
+        .await
+        .map_err(|error| format!("local Agent registration failed: {error}"))
+}
+
+pub(crate) async fn agent_executor_for(
+    server_id: Option<i64>,
+) -> Result<crate::utils::exec::CommandExecutor, String> {
+    agent_executor(agent_server_id(server_id).await?).await
+}
+
 pub(crate) fn deployment_pid_file(deployment_id: i64) -> String {
     format!("/tmp/openoxide-deployment-{deployment_id}.pid")
 }

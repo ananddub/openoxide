@@ -148,33 +148,21 @@ web-gen: live-gen
 dev:
     sudo pkill openoxide || true
     cargo watch -x check -x 'run --bin openoxide'
-# Build standalone openoxide_monitor binary
-build-monitor:
-    cargo build --release -p openoxide_monitor
+# Build the standalone Agent image
+docker-build-agent:
+    docker build -f Dockerfile.agent -t openoxide-agent:latest .
 
-# Run standalone openoxide_monitor binary locally
-run-monitor:
-    cargo run -p openoxide_monitor
+# Start the Agent container
+up-agent:
+    docker compose -f docker-compose.agent.yml up -d --build
 
-# Run the monitoring agent's test suite
-test-monitor:
-    cargo test -p openoxide_monitor
+# Stop the Agent container
+down-agent:
+    docker compose -f docker-compose.agent.yml down
 
-# Build standalone openoxide_monitor Docker image
-docker-build-monitor:
-    docker build -f Dockerfile.monitor -t openoxide-monitor:latest .
-
-# Start the monitoring agent as a container
-up-monitor:
-    docker compose -f docker-compose.monitor.yml up -d --build
-
-# Stop the monitoring agent container
-down-monitor:
-    docker compose -f docker-compose.monitor.yml down
-
-# Tail the monitoring agent's logs
-logs-monitor:
-    docker compose -f docker-compose.monitor.yml logs -f
+# Tail the Agent logs
+logs-agent:
+    docker compose -f docker-compose.agent.yml logs -f
 
 # Start the main OpenOxide compose stack (builder/panel)
 compose-up:

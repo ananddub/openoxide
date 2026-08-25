@@ -142,19 +142,13 @@ impl ApplicationService {
         let db_ref = self.db.clone();
 
         tokio::spawn(async move {
-            let docker_cli = match server_id {
-                Some(sid) => {
-                    if let Ok(executor) =
-                        crate::services::application::remote::remote_executor(db_ref.as_ref(), sid)
-                            .await
-                    {
-                        crate::utils::docker::DockerCli::from_remote_executor(executor)
-                    } else {
-                        crate::utils::docker::DockerCli::new_local()
-                    }
-                }
-                None => crate::utils::docker::DockerCli::new_local(),
+            let Ok(executor) =
+                crate::services::compose::remote::agent_executor_for(server_id).await
+            else {
+                tracing::warn!(application = %app_name, "could not resolve Agent for application cleanup");
+                return;
             };
+            let docker_cli = crate::utils::docker::DockerCli::from_executor(executor);
 
             let candidates = [
                 app_name.clone(),

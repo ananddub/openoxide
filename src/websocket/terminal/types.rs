@@ -2,10 +2,7 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::sync::Arc;
-use tokio::{
-    process::{Child, ChildStdin},
-    sync::Mutex,
-};
+use tokio::sync::Mutex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Size {
@@ -208,22 +205,6 @@ pub type SessionMap = Arc<DashMap<SocketKey, TerminalSession>>;
 
 #[derive(Debug, Clone)]
 pub enum TerminalSession {
-    Local {
-        stdin: Arc<Mutex<ChildStdin>>,
-        child: Arc<Mutex<Child>>,
-    },
-    InMemorySsh {
-        terminal: Arc<os::ssh::RusshTerminal>,
-        session_id: SessionId,
-        cancel: tokio_util::sync::CancellationToken,
-    },
-    DockerSocket {
-        writer: Arc<Mutex<tokio::net::unix::OwnedWriteHalf>>,
-        cancel: tokio_util::sync::CancellationToken,
-        container: Option<String>,
-        exec_id: String,
-        socket_path: String,
-    },
     AgentShell {
         sender:
             Arc<Mutex<tokio::sync::mpsc::Sender<crate::services::monitoring::proto::ShellMessage>>>,

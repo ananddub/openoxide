@@ -18,6 +18,7 @@ string_enum! {
 }
 
 use crate::services::database::{DatabaseOperationResult, DatabaseRecord};
+use crate::utils::builder::spec::MountType;
 
 #[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
 pub struct CreateDatabaseDto {
@@ -72,6 +73,23 @@ pub struct PatchDatabaseDto {
     pub detach_rustploy_network: Option<i64>,
 }
 
+#[derive(
+    Debug, Clone, Serialize, Deserialize, Validate, sqlx::FromRow, poem_openapi::Object, ts_rs::TS,
+)]
+pub struct DatabaseSwarmSettingsDto {
+    pub health_check_swarm: Option<String>,
+    pub restart_policy_swarm: Option<String>,
+    pub placement_swarm: Option<String>,
+    pub update_config_swarm: Option<String>,
+    pub rollback_config_swarm: Option<String>,
+    pub mode_swarm: Option<String>,
+    pub labels_swarm: Option<String>,
+    pub network_swarm: Option<String>,
+    pub endpoint_spec_swarm: Option<String>,
+    pub ulimits_swarm: Option<String>,
+    pub stop_grace_period_swarm: Option<i64>,
+}
+
 #[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
 pub struct DatabaseResponseDto {
     pub kind: crate::services::database::DatabaseKind,
@@ -84,6 +102,8 @@ pub struct DatabaseResponseDto {
     pub database_user: Option<String>,
     pub database_password: Option<String>,
     pub external_port: Option<i64>,
+    pub command: Option<String>,
+    pub args: Vec<String>,
     pub env_var: Option<String>,
     pub memory_reservation: Option<String>,
     pub memory_limit: Option<String>,
@@ -93,11 +113,52 @@ pub struct DatabaseResponseDto {
     pub network_ids: Vec<String>,
     pub detach_rustploy_network: i64,
     pub app_status: String,
+    pub last_error: Option<String>,
     pub status: String,
     pub environment_id: i64,
     pub server_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
+}
+
+#[derive(Debug, Validate, Deserialize, poem_openapi::Object)]
+pub struct UpsertDatabaseMountDto {
+    pub mount_type: MountType,
+    pub host_path: Option<String>,
+    pub volume_name: Option<String>,
+    pub file_path: Option<String>,
+    pub content: Option<String>,
+    #[validate(length(min = 1, max = 4_096))]
+    pub mount_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, poem_openapi::Object, ts_rs::TS)]
+pub struct DatabaseMountResponseDto {
+    pub id: i64,
+    pub mount_type: String,
+    pub host_path: Option<String>,
+    pub volume_name: Option<String>,
+    pub file_path: Option<String>,
+    pub content: Option<String>,
+    pub mount_path: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl From<crate::db::models::mounts::Mount> for DatabaseMountResponseDto {
+    fn from(value: crate::db::models::mounts::Mount) -> Self {
+        Self {
+            id: value.id.unwrap_or_default(),
+            mount_type: value.mount_type,
+            host_path: value.host_path,
+            volume_name: value.volume_name,
+            file_path: value.file_path,
+            content: value.content,
+            mount_path: value.mount_path,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
 }
 
 impl From<DatabaseRecord> for DatabaseResponseDto {
@@ -113,6 +174,8 @@ impl From<DatabaseRecord> for DatabaseResponseDto {
             database_user: value.database_user,
             database_password: value.database_password,
             external_port: value.external_port,
+            command: value.command,
+            args: parse_json_string_vec(value.args.as_deref().unwrap_or("[]")),
             env_var: value.env_var,
             memory_reservation: value.memory_reservation,
             memory_limit: value.memory_limit,
@@ -123,6 +186,7 @@ impl From<DatabaseRecord> for DatabaseResponseDto {
             detach_rustploy_network: value.detach_rustploy_network,
             status: value.app_status.clone(),
             app_status: value.app_status,
+            last_error: value.last_error,
             environment_id: value.environment_id,
             server_id: value.server_id,
             created_at: value.created_at,

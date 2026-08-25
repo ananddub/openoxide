@@ -250,8 +250,8 @@ export function SetupServerModal({
 										Setup Server
 									</h4>
 									<p className="text-[11px] text-muted-foreground">
-										Install dependencies, Docker, Swarm, Traefik, and
-										monitoring
+										Install dependencies, Docker, Swarm, Traefik, and the
+										OpenOxide Agent
 									</p>
 								</div>
 							</div>

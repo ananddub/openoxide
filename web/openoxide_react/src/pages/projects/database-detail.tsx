@@ -112,6 +112,11 @@ function DatabaseDetailPage() {
 			<DatabaseHeader
 				id={id}
 				database={database as any}
+				latestError={
+					(deployments?.find((deployment: any) =>
+						['ERROR', 'CANCELLED'].includes(String(deployment.status).toUpperCase()),
+					)?.error_message as string | undefined) || null
+				}
 				detectedKind={detectedKind || 'postgres'}
 				actionLoading={actionLoading}
 				isBuilding={isBuilding}

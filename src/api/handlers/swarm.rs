@@ -15,8 +15,7 @@ use crate::{
     utils::{
         docker::DockerCli,
         exec::{
-            CommandExecutor, ExecError, LocalExecutor, RemoteExecutor, SshAuth, SshHostKey,
-            detect_advertise_addr,
+            CommandExecutor, ExecError, RemoteExecutor, SshAuth, SshHostKey, detect_advertise_addr,
         },
         jwt::claim::Claims,
     },
@@ -331,13 +330,9 @@ impl SwarmController {
     }
 
     async fn executor_for(&self, server_id: Option<i64>) -> Result<CommandExecutor, ApiError> {
-        match server_id {
-            None => Ok(CommandExecutor::Local(LocalExecutor::new())),
-            Some(id) => {
-                let executor = remote_executor_for(self.db.as_ref(), id).await?;
-                Ok(CommandExecutor::Remote(executor))
-            }
-        }
+        crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(|error| (StatusCode::BAD_GATEWAY, error))
     }
 
     async fn docker(&self, server_id: Option<i64>) -> Result<DockerCli, ApiError> {

@@ -11,7 +11,6 @@ use crate::utils::builder::application::{
 };
 use crate::utils::builder::compose::labels::build_compose_service_labels;
 use crate::utils::docker::DockerCli;
-use crate::utils::exec::{CommandExecutor, LocalExecutor};
 use crate::utils::traefik::types::CertificateType;
 
 #[derive(Debug, Clone)]
@@ -276,16 +275,9 @@ impl DomainService {
         let new_labels = application_traefik_labels(&spec);
 
         // Build docker executor (local or remote).
-        let executor = match server_id {
-            Some(sid) => {
-                use crate::services::application::remote::remote_executor;
-                let remote = remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(|e| format!("remote executor error: {e}"))?;
-                CommandExecutor::Remote(remote)
-            }
-            None => CommandExecutor::Local(LocalExecutor::new()),
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(|e| format!("Agent executor error: {e}"))?;
 
         let docker = DockerCli::from_executor(executor);
 
@@ -357,16 +349,9 @@ impl DomainService {
         let server_id = compose.server_id;
         let compose_type = compose.compose_type;
 
-        let executor = match server_id {
-            Some(sid) => {
-                use crate::services::compose::remote::remote_executor;
-                let remote = remote_executor(self.db.as_ref(), sid)
-                    .await
-                    .map_err(|e| format!("remote executor: {e}"))?;
-                CommandExecutor::Remote(remote)
-            }
-            None => CommandExecutor::Local(LocalExecutor::new()),
-        };
+        let executor = crate::services::compose::remote::agent_executor_for(server_id)
+            .await
+            .map_err(|e| format!("Agent executor: {e}"))?;
         let docker = DockerCli::from_executor(executor.clone());
 
         let domains = self

@@ -1,12 +1,13 @@
 syntax = "proto3";
 
-package monitoring;
+package agent;
 
 // Query API the panel uses to read metrics collected by an agent.
 //
 // Agents are the only durable metric store. The panel authenticates to this
 // query API and proxies results to authorized browser clients.
-service MonitoringService {
+service AgentService {
+  rpc GetAgentInfo (AgentInfoRequest) returns (AgentInfoResponse);
   // Query historical server metrics
   rpc GetServerMetrics (GetMetricsRequest) returns (ServerMetricsResponse);
 
@@ -28,6 +29,33 @@ service MonitoringService {
 
   // One-shot non-PTY command execution for deployment and maintenance tasks.
   rpc ExecTask (ExecTaskRequest) returns (stream ExecTaskOutput);
+
+  // Stream a host file to the agent and atomically install it at destination.
+  rpc UploadFile (stream FileUploadChunk) returns (FileUploadResult);
+}
+
+message AgentInfoRequest { int64 server_id = 1; }
+
+message AgentInfoResponse {
+  string protocol_version = 1;
+  string agent_version = 2;
+  repeated string capabilities = 3;
+  uint64 max_upload_bytes = 4;
+  repeated string upload_roots = 5;
+}
+
+message FileUploadChunk {
+  int64 server_id = 1;
+  string destination = 2;
+  bytes data = 3;
+  bool finish = 4;
+  string checksum_sha256 = 5;
+  uint64 total_size = 6;
+}
+
+message FileUploadResult {
+  uint64 bytes_written = 1;
+  string destination = 2;
 }
 
 message ExecTaskRequest {
@@ -36,6 +64,7 @@ message ExecTaskRequest {
   string command = 3;
   string working_directory = 4;
   uint32 timeout_seconds = 5;
+  bytes stdin = 6;
 }
 
 message ExecTaskOutput {

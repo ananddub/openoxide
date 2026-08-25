@@ -18,9 +18,9 @@ impl MysqlRepository {
         sqlx::query_as!(
             DatabaseRecord,
             r#"SELECT 'mysql' AS "kind: DatabaseKind", id AS "id!: i64", name, app_name, description, docker_image,
-               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port,
+               database_name AS "database_name?", database_user AS "database_user?", database_password AS "database_password?", external_port, command, args,
                env_var, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas,
-               network_ids, detach_rustploy_network, app_status, environment_id, server_id, created_at, updated_at
+               network_ids, detach_rustploy_network, app_status, last_error, environment_id, server_id, created_at, updated_at
                FROM mysql_dbs WHERE id = ?"#,
             id
         )
@@ -114,7 +114,7 @@ impl MysqlRepository {
     pub async fn update_status(&self, id: i64, status: &str) -> sqlx::Result<()> {
         let upper = status.to_uppercase();
         sqlx::query!(
-            "UPDATE mysql_dbs SET app_status = ? WHERE id = ?",
+            "UPDATE mysql_dbs SET app_status = ?, last_error = NULL WHERE id = ?",
             upper,
             id
         )

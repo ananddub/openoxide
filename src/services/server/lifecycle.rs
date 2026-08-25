@@ -159,9 +159,8 @@ impl ServerLifecycleService {
             .get_by_id(server_id)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
-        crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
+        crate::services::compose::remote::agent_executor(server_id)
             .await
-            .map(CommandExecutor::Remote)
             .map_err(sqlx::Error::Protocol)
     }
 }
@@ -178,5 +177,8 @@ fn remote(executor: &CommandExecutor) -> sqlx::Result<crate::utils::exec::Remote
     match executor {
         CommandExecutor::Remote(value) => Ok(value.clone()),
         CommandExecutor::Local(_) => Err(sqlx::Error::Protocol("remote server required".into())),
+        CommandExecutor::Agent(_) => {
+            Err(sqlx::Error::Protocol("remote SSH executor required".into()))
+        }
     }
 }

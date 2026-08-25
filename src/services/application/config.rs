@@ -103,19 +103,13 @@ impl ApplicationService {
         let db_pool = self.db.clone();
 
         tokio::spawn(async move {
-            let docker = match server_id {
-                Some(sid) => {
-                    if let Ok(exec) =
-                        crate::services::compose::remote::remote_executor(db_pool.as_ref(), sid)
-                            .await
-                    {
-                        crate::utils::docker::DockerCli::from_remote_executor(exec)
-                    } else {
-                        crate::utils::docker::DockerCli::new_local()
-                    }
-                }
-                None => crate::utils::docker::DockerCli::new_local(),
+            let Ok(executor) =
+                crate::services::compose::remote::agent_executor_for(server_id).await
+            else {
+                tracing::warn!(application = %app_name, "could not resolve Agent for live resource update");
+                return;
             };
+            let docker = crate::utils::docker::DockerCli::from_executor(executor);
 
             // 1. Live cgroup update for container resources (memory/cpu)
             let mut has_cgroup_update = false;

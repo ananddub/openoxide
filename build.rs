@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tonic_build::configure().compile_protos_with_config(
         config,
-        &["proto/monitoring.proto"],
+        &["proto/agent.proto"],
         &["proto"],
     )?;
 

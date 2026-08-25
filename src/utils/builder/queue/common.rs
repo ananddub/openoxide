@@ -69,11 +69,7 @@ impl BuilderQueue {
             )),
         };
 
-        let final_status = match &result {
-            Ok(()) => "DONE",
-            Err(e) if is_cancelled_error(&e.to_string()) => "CANCELLED",
-            Err(_) => "ERROR",
-        };
+        let succeeded = result.is_ok();
         let error_message = result.err().map(|e| e.to_string());
         if let Some(ref err) = error_message {
             tracing::error!(deployment_id, error = %err, "builder queue: job failed with error");
@@ -87,6 +83,24 @@ impl BuilderQueue {
             }
         };
 
+        // Do not infer cancellation from arbitrary command/agent error text.
+        // A disconnected stream can contain the word "cancel" while the user
+        // never requested cancellation. The persisted lifecycle state is the
+        // source of truth for this decision.
+        let cancel_requested = repo
+            .get_status(deployment_id)
+            .await
+            .ok()
+            .flatten()
+            .is_some_and(|status| matches!(status.as_str(), "CANCELLING" | "CANCELLED"));
+        let final_status = if succeeded {
+            "DONE"
+        } else if cancel_requested {
+            "CANCELLED"
+        } else {
+            "ERROR"
+        };
+
         let is_stop = operation.eq_ignore_ascii_case("stop");
         let target_status = if final_status == "DONE" {
             if is_stop {
@@ -94,6 +108,8 @@ impl BuilderQueue {
             } else {
                 ComposeStatus::Running.as_str()
             }
+        } else if final_status == "CANCELLED" {
+            ComposeStatus::Cancelled.as_str()
         } else {
             ComposeStatus::Error.as_str()
         };
@@ -354,7 +370,8 @@ pub fn builder_event_state_opt(event: &BuilderEvent) -> Option<DeployState> {
 }
 
 pub fn is_cancelled_error(error: &str) -> bool {
-    error.to_ascii_lowercase().contains("cancel")
+    let error = error.to_ascii_lowercase();
+    error.contains("cancelled by user") || error.contains("canceled by user")
 }
 
 /// Which notification a finished deployment should raise, if any.

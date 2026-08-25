@@ -433,22 +433,25 @@ impl DeploymentRepository {
         }
 
         if let Some(resource_id) = application_id {
-            sqlx::query("UPDATE applications SET app_status=? WHERE id=?")
+            sqlx::query("UPDATE applications SET app_status=?, last_error=? WHERE id=?")
                 .bind(resource_status)
+                .bind(error_message)
                 .bind(resource_id)
                 .execute(&mut *tx)
                 .await?;
         } else if let Some(resource_id) = compose_id {
-            sqlx::query("UPDATE compose_projects SET compose_status=? WHERE id=?")
+            sqlx::query("UPDATE compose_projects SET compose_status=?, last_error=? WHERE id=?")
                 .bind(resource_status)
+                .bind(error_message)
                 .bind(resource_id)
                 .execute(&mut *tx)
                 .await?;
         } else if let (Some(resource_id), Some(kind)) = (database_id, database_kind) {
             let table = db_kind_to_table(kind)?;
-            let query = format!("UPDATE {table} SET app_status=? WHERE id=?");
+            let query = format!("UPDATE {table} SET app_status=?, last_error=? WHERE id=?");
             sqlx::query(sqlx::AssertSqlSafe(query))
                 .bind(resource_status)
+                .bind(error_message)
                 .bind(resource_id)
                 .execute(&mut *tx)
                 .await?;
@@ -467,7 +470,7 @@ impl DeploymentRepository {
     }
 
     pub async fn set_application_status(&self, id: i64, status: &str) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE applications SET app_status = ? WHERE id = ?")
+        sqlx::query("UPDATE applications SET app_status = ?, last_error = NULL WHERE id = ?")
             .bind(status)
             .bind(id)
             .execute(self.pool.as_ref())
@@ -476,11 +479,13 @@ impl DeploymentRepository {
     }
 
     pub async fn set_compose_status(&self, id: i64, status: &str) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE compose_projects SET compose_status = ? WHERE id = ?")
-            .bind(status)
-            .bind(id)
-            .execute(self.pool.as_ref())
-            .await?;
+        sqlx::query(
+            "UPDATE compose_projects SET compose_status = ?, last_error = NULL WHERE id = ?",
+        )
+        .bind(status)
+        .bind(id)
+        .execute(self.pool.as_ref())
+        .await?;
         Ok(())
     }
 
@@ -496,6 +501,24 @@ impl DeploymentRepository {
         let query_str = format!("UPDATE {} SET app_status = ? WHERE id = ?", table_name);
         sqlx::query(sqlx::AssertSqlSafe(&*query_str))
             .bind(status)
+            .bind(id)
+            .execute(self.pool.as_ref())
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_database_status_and_error(
+        &self,
+        id: i64,
+        db_kind: &str,
+        status: &str,
+        error_message: Option<&str>,
+    ) -> Result<(), sqlx::Error> {
+        let table = db_kind_to_table(db_kind)?;
+        let query = format!("UPDATE {table} SET app_status=?, last_error=? WHERE id=?");
+        sqlx::query(sqlx::AssertSqlSafe(query))
+            .bind(status)
+            .bind(error_message)
             .bind(id)
             .execute(self.pool.as_ref())
             .await?;

@@ -1,4 +1,3 @@
-use crate::utils::exec::{CommandExecutor, LocalExecutor};
 use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
 use crate::{
     api::dto::destination::{CreateDestinationDto, PatchDestinationDto},
@@ -183,7 +182,7 @@ impl DestinationService {
             .connect_timeout("5s")
             .retries(1);
 
-        let executor = CommandExecutor::Local(LocalExecutor::new());
+        let executor = crate::services::compose::remote::agent_executor_for(None).await?;
         let out = builder
             .execute(&executor)
             .await

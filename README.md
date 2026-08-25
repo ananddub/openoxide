@@ -106,8 +106,8 @@ openoxide/
 │   └── websocket/               # Terminal and streaming socket handlers
 ├── web/openoxide_react/          # React 19 dashboard
 ├── Dockerfile                   # Panel image definition
-├── Dockerfile.monitor           # Static monitoring-agent image
-├── docker-compose.monitor.yml   # Monitoring-agent deployment example
+├── Dockerfile.agent             # Static Agent image
+├── docker-compose.agent.yml     # Agent deployment example
 ├── flake.nix                    # Reproducible Nix development shell
 └── justfile                     # Common development commands
 ```
@@ -369,8 +369,8 @@ cargo run -p agent
 Or run the container example after editing its server ID and token:
 
 ```bash
-docker compose -f docker-compose.monitor.yml up -d --build
-docker compose -f docker-compose.monitor.yml logs -f
+docker compose -f docker-compose.agent.yml up -d --build
+docker compose -f docker-compose.agent.yml logs -f
 ```
 
 ## Build and test
@@ -398,7 +398,7 @@ Build release artifacts:
 ```bash
 cargo build --release -p openoxide
 cargo build --release -p agent
-docker build -f Dockerfile.monitor -t openoxide-monitor:latest .
+docker build -f Dockerfile.agent -t openoxide-agent:latest .
 ```
 
 The root release profile optimizes for small binaries using size optimization, LTO, one codegen unit, abort-on-panic, and symbol stripping.
@@ -407,7 +407,7 @@ The root release profile optimizes for small binaries using size optimization, L
 
 The monitoring image is a static musl binary copied into a `scratch` image. It needs access to the Docker socket, cgroups for the scalable collector, persistent storage for its SQLite database, and network reachability to the panel.
 
-`docker-compose.monitor.yml` uses host networking, so `OPENOXIDE_SERVER_URL=http://127.0.0.1:4000` reaches a panel running on the same host and `GRPC_PORT` binds directly to the host.
+`docker-compose.agent.yml` connects the Agent to the OpenOxide network and publishes its gRPC port.
 
 The panel image needs persistent database/data storage and Docker socket access. Docker socket access is equivalent to high privilege over the Docker host; only run OpenOxide on trusted infrastructure and protect the panel with authentication and network controls.
 

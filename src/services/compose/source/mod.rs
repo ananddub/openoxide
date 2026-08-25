@@ -6,7 +6,7 @@ use crate::api::dto::compose::{
 use crate::core::cache::CacheKey;
 use crate::utils::paths::openoxide_paths;
 use std::env::temp_dir;
-use upload::{TempFileGuard, sanitize_zip, save_multipart_to_file};
+use upload::{TempFileGuard, save_multipart_to_file};
 
 impl ComposeService {
     // ── Git provider sources ──────────────────────────────────────────────────
@@ -138,29 +138,15 @@ impl ComposeService {
         let mut cleanup = TempFileGuard::new();
 
         let upload_zip = temp_dir().join(format!("upload-{uuid}.zip"));
-        let clean_zip = temp_dir().join(format!("clean-{uuid}.zip"));
         cleanup.track(&upload_zip);
-        cleanup.track(&clean_zip);
 
         // 3. Save upload + sanitize
         save_multipart_to_file(multipart, &upload_zip).await?;
-        sanitize_zip(&upload_zip, &clean_zip).await?;
-
-        // 4. Deploy — local or remote
+        // 4. Upload, sanitize and deploy through the target Agent.
         let dest_path = openoxide_paths().compose_source(&project.app_name);
-        match project.server_id {
-            None => {
-                local::deploy_zip_locally(&clean_zip, &dest_path).await?;
-            }
-            Some(server_id) => {
-                let key_path = temp_dir().join(format!("key-{uuid}.pem"));
-                cleanup.track(&key_path);
-                remote::deploy_zip_to_remote(
-                    &self.db, &clean_zip, &dest_path, server_id, &key_path, &uuid,
-                )
-                .await?;
-            }
-        }
+        let server_id =
+            crate::services::compose::remote::agent_server_id(project.server_id).await?;
+        remote::deploy_zip_to_remote(&upload_zip, &dest_path, server_id, &uuid).await?;
 
         // 5. Mark source type in DB
         self.repo_compose
@@ -175,6 +161,5 @@ impl ComposeService {
     }
 }
 
-pub mod local;
 pub mod remote;
 pub mod upload;

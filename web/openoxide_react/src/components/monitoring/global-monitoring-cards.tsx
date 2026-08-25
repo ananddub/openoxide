@@ -473,7 +473,7 @@ export function GlobalMonitoringCards() {
 	};
 	const localServer = servers.find((server: any) => {
 		const address = String(server.ip || server.ip_address || '').toLowerCase();
-		return address === '127.0.0.1' || address === 'localhost' || address === 'openoxide-monitor' || server.app_name === 'localhost';
+		return address === '127.0.0.1' || address === 'localhost' || address === 'openoxide-agent' || server.app_name === 'localhost';
 	});
 	const localServerId = Number(localServer?.id || 0);
 	const effectiveServerId = selectedServerId ?? localServerId;

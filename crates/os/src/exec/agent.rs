@@ -116,7 +116,12 @@ impl AgentExecutor {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let request = self.request(program, args, &[]);
+        // A stream is lifetime-bound to its receiver (for example `docker
+        // logs --follow`).  Do not apply the regular command timeout here:
+        // the Agent treats `0` as "no execution deadline" and will stop the
+        // process when the output channel is closed/cancelled instead.
+        let mut request = self.request(program, args, &[]);
+        request.timeout_seconds = 0;
         let code = self.transport.execute(request, sender).await?;
         Ok(ExecExitStatus::Agent(code))
     }

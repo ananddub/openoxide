@@ -14,6 +14,8 @@ pub enum ExecError {
     CommandFailed { code: Option<i32>, stderr: String },
     #[error("remote SSH execution failed: {0}")]
     Ssh(String),
+    #[error("agent execution failed: {0}")]
+    Agent(String),
     #[error("command stream consumer disconnected")]
     StreamCancelled,
     #[error("command timed out after {seconds} seconds")]

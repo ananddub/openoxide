@@ -3,12 +3,12 @@ use std::sync::Arc;
 use auto_grpc::middleware;
 
 #[derive(Clone)]
-pub struct MonitoringMiddleware {
+pub struct AgentMiddleware {
     token: Arc<str>,
 }
 
 #[middleware(order = 1)]
-impl MonitoringMiddleware {
+impl AgentMiddleware {
     pub fn new(config: Arc<crate::core::config::Config>) -> Self {
         Self {
             token: Arc::from(config.metrics_token.clone()),
@@ -26,7 +26,7 @@ impl MonitoringMiddleware {
         if supplied == Some(self.token.as_ref()) {
             Ok(request)
         } else {
-            Err(tonic::Status::unauthenticated("invalid monitoring token"))
+            Err(tonic::Status::unauthenticated("invalid agent token"))
         }
     }
 }

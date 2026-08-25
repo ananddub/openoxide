@@ -282,15 +282,10 @@ impl DatabaseService {
                 "stop libSQL before rotating its authentication token".into(),
             ));
         }
-        let docker = match current.server_id {
-            Some(server_id) => {
-                crate::services::compose::remote::remote_executor(self.db.as_ref(), server_id)
-                    .await
-                    .map(crate::utils::docker::DockerCli::from_remote_executor)
-                    .map_err(sqlx::Error::Protocol)?
-            }
-            None => crate::utils::docker::DockerCli::new_local(),
-        };
+        let docker = crate::services::compose::remote::agent_executor_for(current.server_id)
+            .await
+            .map(crate::utils::docker::DockerCli::from_executor)
+            .map_err(sqlx::Error::Protocol)?;
         let containers = docker
             .containers()
             .ps()

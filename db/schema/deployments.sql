@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS "deployments" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	title TEXT NOT NULL,
+	description TEXT,
+	status TEXT NOT NULL DEFAULT 'QUEUED',
+	state TEXT NOT NULL DEFAULT 'QUEUE',
+	log_path TEXT NOT NULL,
+	pid TEXT,
+	error_message TEXT,
+	operation TEXT,
+	is_preview_deployment INTEGER NOT NULL DEFAULT 0,
+	started_at INTEGER,
+	last_state_at INTEGER,
+	finished_at INTEGER,
+	application_id INTEGER REFERENCES applications(id) ON DELETE CASCADE,
+	compose_id INTEGER REFERENCES compose_projects(id) ON DELETE CASCADE,
+	server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
+	created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL, database_id INTEGER, database_kind TEXT,
+	CONSTRAINT deployment_status_check CHECK (status IN ('QUEUED', 'RUNNING', 'DONE', 'ERROR', 'CANCELLED'))
+) STRICT;
+CREATE INDEX idx_deployments_status ON deployments(status);
+CREATE INDEX idx_deployments_state ON deployments(state);
+CREATE INDEX idx_deployments_created_at ON deployments(created_at);
+CREATE INDEX idx_deployments_compose_id ON deployments(compose_id);
+CREATE INDEX idx_deployments_application_id ON deployments(application_id);
+CREATE UNIQUE INDEX idx_deployments_one_active_application
+	ON deployments(application_id)
+	WHERE status IN ('QUEUED', 'RUNNING') AND application_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_deployments_one_active_compose
+	ON deployments(compose_id)
+	WHERE status IN ('QUEUED', 'RUNNING') AND compose_id IS NOT NULL;

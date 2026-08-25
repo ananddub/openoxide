@@ -20,24 +20,11 @@ impl MonitoringReconciler {
         server_id: i64,
         states: &[ContainerStatePoint],
     ) -> Result<(), String> {
-        self.update_server(server_id, "ACTIVE").await?;
-        self.reconcile_server_resources(server_id, states).await?;
-        // Agent lifecycle snapshots are background writes, so make the
-        // affected live rooms explicit. This keeps the browser in sync for
-        // direct Docker start/stop/restart events, including local hosts.
-        auto_socket::notify_table_changes([
-            "servers",
-            "applications",
-            "compose_projects",
-            "postgres_dbs",
-            "mysql_dbs",
-            "mariadb_dbs",
-            "mongo_dbs",
-            "redis_dbs",
-            "libsql_dbs",
-            "deployments",
-        ]);
-        Ok(())
+        crate::db::reactive::request_scope(async {
+            self.update_server(server_id, "ACTIVE").await?;
+            self.reconcile_server_resources(server_id, states).await
+        })
+        .await
     }
 
     pub async fn mark_offline(&self, server_id: i64) -> Result<(), String> {
@@ -144,9 +131,7 @@ impl MonitoringReconciler {
             .map_err(|error| error.to_string())?;
         Ok(row
             .and_then(|row| row.try_get::<String, _>("ip_address").ok())
-            .is_some_and(|ip| {
-                matches!(ip.as_str(), "127.0.0.1" | "localhost" | "openoxide-monitor")
-            }))
+            .is_some_and(|ip| matches!(ip.as_str(), "127.0.0.1" | "localhost" | "openoxide-agent")))
     }
 
     async fn update_resource_status(

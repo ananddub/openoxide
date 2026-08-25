@@ -22,13 +22,10 @@ services:
     volumes:
       # Panel database + runtime data (backups, logs, traefik config, etc.)
       - openoxide_data:/app/data
-      # Docker socket — panel drives the local Docker daemon for deployments
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Containerd sockets (Direct containerd gRPC socket stream)
-      - /run/containerd/containerd.sock:/run/containerd/containerd.sock
-      - /run/docker/containerd/containerd.sock:/run/docker/containerd/containerd.sock
       # Host Kernel Modules (Required for WireGuard interface creation)
       - /lib/modules:/lib/modules:ro
+      # Trust root used to verify TLS certificates presented by agents.
+      # - ./agent-tls/ca.crt:/etc/openoxide/agent-tls/ca.crt:ro
 
     environment:
       PORT: "4000"
@@ -45,8 +42,13 @@ services:
       # Shared secret between panel and monitoring agents.
       # Empty string disables agent ingestion entirely.
       METRICS_TOKEN: "change_me_metrics_token"
-      # Server row used by the local monitor. Keep this aligned with the
-      # SERVER_ID configured in docker-compose.monitor.yml.
+      # Enable encrypted/authenticated gRPC transport to every agent.
+      # AGENT_TLS_CA_CERT: "/etc/openoxide/agent-tls/ca.crt"
+      # Use only when every agent certificate has the same DNS SAN.
+      # Otherwise hostname/IP verification uses each server address.
+      # AGENT_TLS_DOMAIN: "agent.example.com"
+      # Server row used by the local agent. Keep this aligned with the
+      # SERVER_ID configured in docker-compose.agent.yml.
       OPENOXIDE_LOCAL_SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-0}"
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
 

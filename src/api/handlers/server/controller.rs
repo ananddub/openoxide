@@ -187,20 +187,19 @@ impl ServerController {
             .map_err(map_sqlx_error)?
             .server_type
             .eq_ignore_ascii_case("BUILD");
-        config.monitoring_server_id = Some(id);
+        config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "configuration unavailable".into(),
             )
         })?;
-        config.monitoring_panel_url = Some(
+        config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
         );
-        config.monitoring_token =
-            Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
+        config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = self
             .service
             .setup_advertise_addr(id, body.advertise_addr)
@@ -249,20 +248,19 @@ impl ServerController {
             .map_err(map_sqlx_error)?
             .server_type
             .eq_ignore_ascii_case("BUILD");
-        config.monitoring_server_id = Some(id);
+        config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "configuration unavailable".into(),
             )
         })?;
-        config.monitoring_panel_url = Some(
+        config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
         );
-        config.monitoring_token =
-            Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
+        config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = self
             .service
             .setup_advertise_addr(id, body.advertise_addr)

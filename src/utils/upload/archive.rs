@@ -1,22 +1,6 @@
 use std::path::Path;
 
-use crate::utils::{
-    exec::{CommandExecutor, LocalExecutor},
-    os::OsCli,
-};
-
-pub async fn sanitize_zip(input: &Path, output: &Path) -> Result<(), String> {
-    let executor = CommandExecutor::Local(LocalExecutor::new());
-    OsCli::new(&executor)
-        .archive(input)
-        .zip()
-        .sanitize()
-        .to(output)
-        .run()
-        .await
-        .map(|_| ())
-        .map_err(|error| format!("ZIP validation failed: {error}"))
-}
+use crate::utils::{exec::CommandExecutor, os::OsCli};
 
 pub async fn extract_zip(
     executor: &CommandExecutor,

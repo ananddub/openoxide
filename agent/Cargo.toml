@@ -20,7 +20,7 @@ reqwest = { version = "0.13.4", default-features = false, features = [
     "charset",
 ] }
 dotenvy = "0.15.7"
-tonic = "0.12.3"
+tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"
 tokio-util = "0.7"
 auto-di = "0.6.0"
@@ -34,6 +34,8 @@ hyper = { version = "1", features = ["client", "http1"] }
 hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "tokio"] }
 http-body-util = "0.1"
 bytes = "1"
+uuid = { version = "1.2.2", features = ["v4"] }
+sha2 = "0.10"
 
 [build-dependencies]
 tonic-build = "0.12.3"

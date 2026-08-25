@@ -1,40 +1,52 @@
-# Standalone monitoring agent. Runs one per host, independently of the panel.
+# Standalone OpenOxide Agent. Runs one per host, independently of the panel.
 #
 # Set SERVER_ID to the panel's id for this host, and METRICS_TOKEN to the same
 # secret the panel expects, before starting.
 
 services:
-  openoxide-monitor:
+  openoxide-agent:
     # Pulls the published image by default. Use `--build` to run local changes.
     build:
       context: .
-      dockerfile: Dockerfile.monitor
-    image: dubeyanand/openoxide-monitor:${MONITOR_TAG:-latest}
+      dockerfile: Dockerfile.agent
+    image: dubeyanand/openoxide-agent:${AGENT_TAG:-latest}
     pull_policy: always
-    container_name: openoxide-monitor
+    container_name: openoxide-agent
     restart: unless-stopped
     # Local panel and agent share a private Docker network. The panel reaches
-    # this service at openoxide-monitor:50051.
+    # this service at openoxide-agent:50051.
     networks:
       - openoxide-network
     volumes:
-      # The agent reads stats and logs via the socket. Read-only: it never
-      # drives the daemon, only queries it.
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # The agent is the host Docker executor for monitoring, compose,
+      # deployment, backup and maintenance tasks. Keep this mount read-write;
+      # Docker authorizes operations through the socket itself.
+      - /var/run/docker.sock:/var/run/docker.sock
       # cgroup mode reads container metrics from here. Without this mount the
       # agent falls back to the streaming collector.
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - monitor_data:/app/data
+      # Persistent task workspace for repositories, compose files and backup
+      # staging. Remote agents use their own host-local volume.
+      - agent_workspace:/app/workspace
+      # Traefik static/dynamic configuration and certificates. The agent owns
+      # host-side route updates, so this mount must remain read-write.
+      - /etc/openoxide/traefik:/etc/openoxide/traefik
+      # Server certificate and private key signed by the CA trusted by panel.
+      # - ./agent-tls:/etc/openoxide/agent-tls:ro
     environment:
       # Must match an existing row in the panel's `servers` table.
-      SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-5}"
+      # -1 is the local-Agent sentinel. The panel maps it to its actual local
+      # server row, so development databases do not need a hard-coded id.
+      SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:--1}"
       MONITOR_DATABASE_URL: "memory://metrics"
       GRPC_PORT: "50051"
       REFRESH_RATE: "2"
       RETENTION_DAYS: "7"
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
-      RUST_LOG: "openoxide_monitor=info"
+      # AGENT_TLS_CERT: "/etc/openoxide/agent-tls/server.crt"
+      # AGENT_TLS_KEY: "/etc/openoxide/agent-tls/server.key"
+      RUST_LOG: "agent=info"
       # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
       # of containers. Set to "stream" for per-second freshness and network I/O
       # on hosts with only a handful of containers.
@@ -48,7 +60,7 @@ services:
       ROLLUP_SAMPLES: "1"
 
 volumes:
-  monitor_data:
+  agent_workspace:
 
 networks:
   openoxide-network:

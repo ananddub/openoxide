@@ -1,0 +1,8 @@
+CREATE TABLE notif_pushover (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	user_key TEXT NOT NULL,
+	api_token TEXT NOT NULL,
+	priority INTEGER NOT NULL DEFAULT 0,
+	retry INTEGER,
+	expire INTEGER
+) STRICT;

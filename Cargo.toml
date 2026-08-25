@@ -22,6 +22,7 @@ members = [
 tokio = { version = "1", features = ["full"] }
 
 auto-di = "0.6.0"
+async-trait = "0.1"
 auto_route = { version = "0.2.1", path = "crates/auto/route" }
 sh_macros = { path = "crates/sh_macros" }
 os = { path = "crates/os" }
@@ -72,7 +73,7 @@ lettre = { version = "0.11", default-features = false, features = ["smtp-transpo
 totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
 notify = "8.1.0"
 minijinja = "2.21.0"
-tonic = "0.12.3"
+tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"
 ipnet = "2.12"
 base64 = "0.22"
@@ -94,8 +95,8 @@ codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use kareg
 
 [profile.release]
 opt-level = "z"        # size ke liye optimize
-lto = "thin"           # Thin LTO — 15s ultra-fast compile with 98% size reduction
-codegen-units = 8      # 8 parallel codegen units
+lto = "fat"            # whole-program optimization for the smallest binary
+codegen-units = 1      # enables maximum cross-crate size optimization
 panic = "abort"        # unwinding code remove karta hai
 strip = true           # debug symbols remove karta hai
 overflow-checks = false

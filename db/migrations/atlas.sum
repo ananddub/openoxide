@@ -1,4 +1,4 @@
-h1:LBuJlXbX0NNJxqHe8DHuy6ocBXBJMr5zmkXWpYh9JQw=
+h1:f+/SK094G+z4qTRxBR6HD/68neCQiB9+LxtXc4FmCzw=
 0001_initial.sql h1:jJMsqaXqaihh8x7ZtlFdmBLKm8wCuPLfabH2+Hjzbb4=
 0002_schedule_action.sql h1:FbJYEscjGBHgEYhpeyFV1Tar79knqNcGsatMxhLEDLo=
 0003_deployment_queue.sql h1:/ggNSriI/uWdtzFUSUFtrPLCbKGa/ZT+aMZv+BqXtjY=
@@ -47,3 +47,4 @@ h1:LBuJlXbX0NNJxqHe8DHuy6ocBXBJMr5zmkXWpYh9JQw=
 0046_dns_providers.sql h1:Mibr94Rat/Lo+kXkLmMVKUiPtMA6OGNPNyJMAqfQbx0=
 0047_expand_database_status_checks.sql h1:DMTZUGQReRBtbQHYpChbU4/J173PGc+uhzyRHp9sqes=
 0048_volume_backup_rules.sql h1:gO5mhKB4f/MgmWUuynCw5sin3Ajwq2Bb0kIfxXoLxk0=
+0049_database_error_details.sql h1:KeGXeMGjxlzkv9y1g8B+0+ztY3/KVeI3lejwoi/RbxY=

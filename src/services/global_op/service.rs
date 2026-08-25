@@ -7,14 +7,16 @@ use crate::{
         ContainerActionDto, DockerActionResponseDto, DockerPruneRequestDto, DockerPruneResponseDto,
     },
     repository::ServerRepository,
+    services::monitoring::monitoring_service::MonitoringService,
     utils::{
         docker::{ContainerSummary, DockerCli, ImageSummary, NetworkSummary, VolumeSummary},
-        exec::{CommandExecutor, LocalExecutor, RemoteExecutor, SshAuth, SshHostKey},
+        exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},
     },
 };
 
 pub struct DockerManagementService {
     servers: Arc<ServerRepository>,
+    monitoring: Arc<MonitoringService>,
 }
 
 #[singleton]
@@ -48,14 +50,10 @@ impl DockerManagementService {
                     "/tmp/openoxide-container-upload-{}-{filename}",
                     uuid::Uuid::new_v4()
                 );
-                let remote = crate::utils::upload::upload_via_rclone(
-                    self.servers.as_ref(),
-                    server_id,
-                    local_path,
-                    &remote_path,
-                )
-                .await?;
-                let executor = CommandExecutor::Remote(remote);
+                self.monitoring
+                    .upload_file(server_id, local_path, &remote_path)
+                    .await?;
+                let executor = CommandExecutor::Agent(self.monitoring.agent_executor(server_id));
                 let docker = DockerCli::from_executor(executor.clone());
                 let result = docker
                     .container(id)
@@ -91,8 +89,11 @@ impl DockerManagementService {
             .await
             .map_err(error)
     }
-    fn new(servers: Arc<ServerRepository>) -> Self {
-        Self { servers }
+    fn new(servers: Arc<ServerRepository>, monitoring: Arc<MonitoringService>) -> Self {
+        Self {
+            servers,
+            monitoring,
+        }
     }
 
     pub async fn containers(
@@ -286,9 +287,9 @@ impl DockerManagementService {
     }
     async fn docker(&self, server_id: Option<i64>) -> Result<DockerCli, String> {
         match server_id {
-            None => Ok(DockerCli::from_executor(CommandExecutor::Local(
-                LocalExecutor::new(),
-            ))),
+            None => crate::services::compose::remote::agent_executor_for(None)
+                .await
+                .map(DockerCli::from_executor),
             Some(server_id) => {
                 let (host, port, username, private_key, public_key) = self
                     .servers

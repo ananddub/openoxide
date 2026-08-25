@@ -1,5 +1,4 @@
 pub mod helpers;
-pub mod local;
 pub mod remote;
 pub mod types;
 
@@ -9,16 +8,12 @@ use auto_di::singleton;
 #[allow(unused_imports)]
 use auto_socket::{auto_socket, on};
 use dashmap::DashMap;
+use helpers::{emit_error, socket_key};
+use remote::{spawn_agent_server_terminal, spawn_remote_docker_terminal_api};
 use socketioxide::{
     extract::{Data, SocketRef},
     socket::DisconnectReason,
 };
-use sqlx::SqlitePool;
-use tokio::{io::AsyncWriteExt, process::Command};
-
-use helpers::{emit_error, socket_key};
-use local::{spawn_docker_terminal, spawn_local_terminal};
-use remote::{spawn_remote_docker_terminal_api, spawn_remote_terminal};
 pub use types::{
     DockerTerminalStart, ServerTerminalStart, SocketKey, TerminalInputPayload, TerminalKind,
     TerminalResize, TerminalSession,
@@ -28,72 +23,20 @@ pub use types::{
 pub struct TerminalSocket {
     sessions: Arc<DashMap<SocketKey, TerminalSession>>,
     pending_starts: Arc<DashMap<SocketKey, tokio_util::sync::CancellationToken>>,
-    db: Arc<SqlitePool>,
 }
 
 #[singleton]
 #[auto_socket("/terminal")]
 impl TerminalSocket {
-    fn new(db: Arc<SqlitePool>) -> Self {
+    fn new() -> Self {
         Self {
             sessions: Arc::new(DashMap::new()),
             pending_starts: Arc::new(DashMap::new()),
-            db,
         }
     }
 
-    async fn terminate_session_for_key(session: TerminalSession, key_str: &str) {
+    async fn terminate_session(session: TerminalSession) {
         match session {
-            TerminalSession::Local { child, stdin, .. } => {
-                let mut s = stdin.lock().await;
-                let _ = s.shutdown().await;
-                let mut c = child.lock().await;
-                let _ = c.kill().await;
-                let _ = c.wait().await;
-            }
-            TerminalSession::InMemorySsh { cancel, .. } => {
-                cancel.cancel();
-            }
-            TerminalSession::DockerSocket {
-                cancel, container, ..
-            } => {
-                cancel.cancel();
-                if let Some(target) = container {
-                    let k = key_str.to_string();
-                    tokio::spawn(async move {
-                        use os::exec::IntoCommand;
-                        use sh_macros::sh;
-
-                        let executor = crate::utils::exec::CommandExecutor::Local(
-                            crate::utils::exec::LocalExecutor::new(),
-                        );
-                        let os = crate::utils::os::OsCli::new(&executor);
-
-                        let proc_script_ir = sh!(for p in ["/proc/[0-9]*"] {
-                            if grep!(
-                                "-q",
-                                word!["OPENOXIDE_SOCKET_ID=", dynamic!(k)],
-                                word!["$p", "/environ"]
-                            ) {
-                                os.process_api().kill_pid("${p#/proc/}");
-                            }
-                        });
-
-                        let bash_script = proc_script_ir
-                            .iter()
-                            .map(|step| step.to_bash())
-                            .collect::<Vec<_>>()
-                            .join("\n");
-
-                        let _ = os
-                            .docker()
-                            .containers()
-                            .exec(target)
-                            .run(["sh", "-c", &bash_script])
-                            .await;
-                    });
-                }
-            }
             TerminalSession::AgentShell { sender, cancel, .. } => {
                 cancel.cancel();
                 let sender = sender.lock().await;
@@ -105,28 +48,15 @@ impl TerminalSocket {
                     .await;
             }
         }
-
-        let executor =
-            crate::utils::exec::CommandExecutor::Local(crate::utils::exec::LocalExecutor::new());
-        let os = crate::utils::os::OsCli::new(&executor);
-        let _ = os
-            .process_api()
-            .pkill()
-            .sigkill()
-            .full_match(true)
-            .env("OPENOXIDE_SOCKET_ID", key_str)
-            .run()
-            .await;
     }
 
     async fn stop_socket_session(&self, socket: &SocketRef) {
         let key = socket_key(socket);
-        let key_str = key.to_string();
         if let Some((_, token)) = self.pending_starts.remove(&key) {
             token.cancel();
         }
         if let Some((_, session)) = self.sessions.remove(&key) {
-            Self::terminate_session_for_key(session, &key_str).await;
+            Self::terminate_session(session).await;
         }
     }
 
@@ -145,11 +75,10 @@ impl TerminalSocket {
         socket.on_disconnect(move |_socket: SocketRef, reason: DisconnectReason| {
             let sessions = sessions.clone();
             let key = key.clone();
-            let key_str = key.to_string();
             async move {
                 tracing::info!(%key, ?reason, "Terminal WebSocket disconnected; performing session cleanup");
                 if let Some((_, session)) = sessions.remove(&key) {
-                    Self::terminate_session_for_key(session, &key_str).await;
+                    Self::terminate_session(session).await;
                 }
             }
         });
@@ -161,13 +90,16 @@ impl TerminalSocket {
         let start_token = self.prepare_start_token(&socket);
         self.bind_disconnect_cleanup(&socket, socket_key(&socket));
 
-        if let Some(server_id) = input.server_id {
-            spawn_remote_docker_terminal_api(socket, &self.sessions, server_id, input, start_token)
-                .await;
-            return;
-        }
-
-        spawn_docker_terminal(socket, &self.sessions, input).await;
+        let server_id =
+            match crate::services::compose::remote::agent_server_id(input.server_id).await {
+                Ok(server_id) => server_id,
+                Err(error) => {
+                    emit_error(&socket, error);
+                    return;
+                }
+            };
+        spawn_remote_docker_terminal_api(socket, &self.sessions, server_id, input, start_token)
+            .await;
     }
 
     #[on("server:start")]
@@ -180,29 +112,15 @@ impl TerminalSocket {
             input.shell = input.command.clone();
         }
 
-        if let Some(server_id) = input.server_id {
-            spawn_remote_terminal(
-                socket,
-                &self.sessions,
-                self.db.as_ref(),
-                server_id,
-                input,
-                start_token,
-            )
-            .await;
-            return;
-        }
-
-        let shell_cmd = input
-            .shell
-            .unwrap_or_else(|| std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()));
-        let mut command = Command::new(shell_cmd);
-        command
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
-
-        spawn_local_terminal(socket, &self.sessions, TerminalKind::Server, command).await;
+        let server_id =
+            match crate::services::compose::remote::agent_server_id(input.server_id).await {
+                Ok(server_id) => server_id,
+                Err(error) => {
+                    emit_error(&socket, error);
+                    return;
+                }
+            };
+        spawn_agent_server_terminal(socket, &self.sessions, server_id, input, start_token).await;
     }
 
     #[on("input")]
@@ -223,33 +141,6 @@ impl TerminalSocket {
         };
 
         match session {
-            TerminalSession::Local { stdin, .. } => {
-                let mut s = stdin.lock().await;
-                if let Err(error) = s.write_all(data.as_bytes()).await {
-                    tracing::warn!("Local terminal write_all failed: {error}");
-                    emit_error(&socket, format!("could not write terminal input: {error}"));
-                } else {
-                    let _ = s.flush().await;
-                }
-            }
-            TerminalSession::InMemorySsh { terminal, .. } => {
-                let term = terminal.clone();
-                tokio::spawn(async move {
-                    let _ = term.write(data.as_bytes()).await;
-                });
-            }
-            TerminalSession::DockerSocket { writer, .. } => {
-                let mut w = writer.lock().await;
-                if let Err(error) = w.write_all(data.as_bytes()).await {
-                    tracing::warn!("DockerSocket write_all failed: {error}");
-                    emit_error(
-                        &socket,
-                        format!("could not write docker socket input: {error}"),
-                    );
-                } else {
-                    let _ = w.flush().await;
-                }
-            }
             TerminalSession::AgentShell { sender, .. } => {
                 let sender = sender.lock().await;
                 if let Err(error) = sender
@@ -274,27 +165,6 @@ impl TerminalSocket {
         let key = socket_key(&socket);
         if let Some(session) = self.sessions.get(&key) {
             match session.value() {
-                TerminalSession::InMemorySsh { terminal, .. } => {
-                    let term = terminal.clone();
-                    let cols = payload.cols.unwrap_or(80);
-                    let rows = payload.rows.unwrap_or(24);
-                    tokio::spawn(async move {
-                        let _ = term.resize(cols, rows).await;
-                    });
-                }
-                TerminalSession::DockerSocket {
-                    socket_path,
-                    exec_id,
-                    ..
-                } => {
-                    let path = socket_path.clone();
-                    let eid = exec_id.clone();
-                    let cols = payload.cols.unwrap_or(80);
-                    let rows = payload.rows.unwrap_or(24);
-                    tokio::spawn(async move {
-                        let _ = crate::utils::docker::handles::containers::socat::resize_container_exec(&path, &eid, cols, rows).await;
-                    });
-                }
                 TerminalSession::AgentShell { sender, .. } => {
                     let sender = sender.clone();
                     let size = payload.size();
@@ -311,7 +181,6 @@ impl TerminalSocket {
                             .await;
                     });
                 }
-                _ => {}
             }
         }
     }
