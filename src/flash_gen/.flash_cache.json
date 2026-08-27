@@ -1,0 +1,518 @@
+{
+  "version": "1.0",
+  "query_file_checksums": {
+    ".flash/queries/ai_generations.sql": "b5b42b0f006116ac0adc72b75578fd0a29e9642d7124a3906fea978c75846fbf",
+    ".flash/queries/ai_settings.sql": "77c80e2d77f0d512ac7f75ca41658e3043d7529818d0c7470d6d03de8a9cfb0b",
+    ".flash/queries/alert_rule.sql": "d39c730c682d1b4878046700057b44386fd16f5d5cff90d0f1a69b8874186abf",
+    ".flash/queries/application_middlewares.sql": "f3a5baa7a2ef1b63b492c2afc5a09e2d268931d2ab53ae099eff2b94f17e6400",
+    ".flash/queries/applications.sql": "d6ba7de0fde084b65a0778e2fc8e2d8d5c010b1b417b0ce9282bbf8647bb9131",
+    ".flash/queries/applications_1.sql": "13f14a88ec028ab6f42e72a2ebacbe3a73d922c9d027f0bce2972124dc632992",
+    ".flash/queries/applications_2.sql": "a7abdb1585ba2092b330282060a5e719d625aa0be7fde5a333598d9827782c72",
+    ".flash/queries/audit_log.sql": "edfe8f51222e7c5a8ee6abf11ae80f2627179e43021a7152e10ce275e3f9969b",
+    ".flash/queries/audit_logs.sql": "4a5a70a3bc5fea35583d66fd53a1750b08deae4ec588ce93d379b1a4f53ad639",
+    ".flash/queries/background_policies.sql": "6598aba79ce795aa0e94600d6326eaccdb24cd50ea0a98f9030981f289d8a413",
+    ".flash/queries/backups.sql": "7837f3d082774c25b67c827640dece099f1f2605dee7f33d8472fa07eb6db213",
+    ".flash/queries/bitbucket_providers.sql": "f01af19af2145240517a00ceb08503f006ec286db71a2050167e8451a2b3575b",
+    ".flash/queries/certificate_renewals.sql": "ded4030a703f8e88fb49c572f3d7987bfec218b4d53efe7126b7b519a27f92e0",
+    ".flash/queries/certificates.sql": "fdd3e6bdf1bd81d31f957c32c60ad48ae8e132a40c45bd795c99722a2673b95d",
+    ".flash/queries/compose.sql": "ad2b76de15eb86c58ee377a99c7461d663d18ebb369f244601020e9be6460e17",
+    ".flash/queries/compose_projects.sql": "4c3915e95f7715a6ad838b8a0fc946c486cbab64124ed523f3402113afef4945",
+    ".flash/queries/database_management.sql": "92b4ed7f47a08657dbdf91602439be5a85fdd93330f0d0f5a5af19687eac55d4",
+    ".flash/queries/database_networks.sql": "571ee385c5d020745034f7ccc986857d476d096d33b2b26e39c2e0e1c10df4ae",
+    ".flash/queries/databases.sql": "4f4ec960eccb302ea0ed77a7736cd828c4e3c0360be8dd19cde334181c45beb7",
+    ".flash/queries/deployments.sql": "40b0f2687f08e7a190afcba64291d97b2c0b7a9125cb0898386c4a3dd5f2eb80",
+    ".flash/queries/deployments_1.sql": "53d7b2a3b4cc708ee88ad6e14727f54363575bb3bbb151eb3d512f6af347c82a",
+    ".flash/queries/deployments_2.sql": "646a2e4e46eb99051e6855a2cf6736021c4d89a7ac13f21b458f5bb8028e269a",
+    ".flash/queries/deployments_3.sql": "e74183785c5a009889f5a155a589025a2d46a6a6189274431987be0fee5cb638",
+    ".flash/queries/destinations.sql": "696c72681b96869f2eb693ef00040c3acc36c83de5dff46d833714c0fa9a7bd6",
+    ".flash/queries/dns_providers.sql": "26cd13c0f2853b9cd120440641ae4408e0d5fb19529ad02b71a65a28013f10e4",
+    ".flash/queries/domains.sql": "9ceb03f8a9746519efbcd535f743c455b2c20efac117dec0cf95eb06045310bc",
+    ".flash/queries/domains_patches_mounts.sql": "6333f052d1d53d3826ee2aaf602d254d21e44d2a9e8b680e0443825594ccad14",
+    ".flash/queries/email_verification_tokens.sql": "543220963b594d174588b16be054dac468bcd28817b19518d7fa76c3c0770ee1",
+    ".flash/queries/environments.sql": "5c5848e7b077d0bb96c2114d26889bcc8e3f15c23afa066daf5572504b374592",
+    ".flash/queries/git_providers.sql": "179c55188580debeba724e4e61e6a9bcefe5f83fa4c119b9e6bc78afa0aafe3b",
+    ".flash/queries/git_providers_2.sql": "eceea0471668a030add32b029ce5456129dea69b18fde0b69b29d5cf2d05b012",
+    ".flash/queries/gitea_providers.sql": "fa953667a2975a6869846f6fd924faaf400ad1e1de7382355021b58c921f105a",
+    ".flash/queries/github_providers.sql": "1f7e3524a67f4e973855cba0a3a57bd70099686930662910b63367dee4da9ff0",
+    ".flash/queries/gitlab_providers.sql": "987b3c6636362ebd2e9ab303182addd579bcf2fb5590f8e61815e253119483bb",
+    ".flash/queries/group_policy.sql": "38ad1258e3246a48ef25ccb64480eac4c145547b1e1335851709e52f4e951dd0",
+    ".flash/queries/groups.sql": "96007cc9f0710d80c50b37378cced4429315b0dd43d296d9fe4cca16014c15b9",
+    ".flash/queries/health_report.sql": "64ffe643957ceb404a7a22910230e6f81ba891e1e6c0ca1b192bf72a246b67c3",
+    ".flash/queries/jwt_tokens.sql": "062d5a71ba47344338db5739c7e9da8edf04a72bfbe8ddcff059950ec1d1400b",
+    ".flash/queries/libsql.sql": "960b8853780c8ec5afdef7f5115d8848a4a4a4280ac9b26d9a1797b4b468b658",
+    ".flash/queries/mariadb.sql": "4a8ae30e0fa8464b4914b465f0f2c6a4df81da0adcd5812ee70558089a7e2932",
+    ".flash/queries/mongo.sql": "6890ef7a227abe6621b7e7a5b1a7c0de4cdad857b5b2ab9a5b1be068e90fd7a7",
+    ".flash/queries/monitoring_agents.sql": "0d715b90f2711b6c359c0a1634d1bc7d22b385965122b2db7b29a1381aa03b69",
+    ".flash/queries/monitoring_lifecycle.sql": "3be80c68f4b81b52db90f4a2c31695c40f1c6a3dec7c535c2233be79e8cb242b",
+    ".flash/queries/mount.sql": "3756ce0848891288d498f95930a1948014a880787bd36b0e07e06ea8b9ae6ae5",
+    ".flash/queries/mysql.sql": "66df018a76544e87701d48e978c09c6f6beddb838db63eabd10282a407b5f4aa",
+    ".flash/queries/network.sql": "3e2fe40ff62840cae338032ac3b67f4d3f33bec72b44d0f4f393471b3d339b3e",
+    ".flash/queries/notif_custom.sql": "ed82a07c47509cd3fc672f2aac96adc2fc4a29a7944f8c9d4c89000b52ef8fd3",
+    ".flash/queries/notif_discord.sql": "5d1011aa391138a3b96f80c08cf12abb1b94a1aca35bb46560c0825954f0058f",
+    ".flash/queries/notif_email.sql": "d046c7aee10db913a6aa2b7907790eae900b2f2130c271bc170983d236bf5b5e",
+    ".flash/queries/notif_gotify.sql": "75aed609fd411a132190737deec4af68f7125ab9a3860bc13d434ddf96f6896e",
+    ".flash/queries/notif_lark.sql": "72540d7cc4aba0c52b6a727ff573eabd347613e5a2ff4cc799958d553d238393",
+    ".flash/queries/notif_mattermost.sql": "6baa960f7803bc5e4a3608956af3e10ac45c6b3b217f4699c40fc3bf1322c418",
+    ".flash/queries/notif_ntfy.sql": "d48cc6a28b6ff2085bbf4d26c686fcedcce975487cd11537a886f84ad475ed6e",
+    ".flash/queries/notif_pushover.sql": "b1d3a75758d1abe31f9c83e3909655fd7fac053b18d3c11eaa418650668eb279",
+    ".flash/queries/notif_resend.sql": "62ecdee349efd78cc1240a27ef6469b4251d750674cb060bb98b222f02ce6d75",
+    ".flash/queries/notif_slack.sql": "a70f4ba87929a0785ad006a6c3ba84baf0cf5d8903ae777fc49a8474bba9451d",
+    ".flash/queries/notif_teams.sql": "3874cc04b1571f0fd743c99c7ec704e0774f122792731ad8570c8b06f8fc3b69",
+    ".flash/queries/notif_telegram.sql": "013b3387b62fb4afb2ca66fb3e42335bf130672c91228f9ceb7a996b3dc7675c",
+    ".flash/queries/notification_delivery.sql": "b0f9d9c6dbb37f4ec37dda9e903d88c6c5b90f38fac97e85ee2409454cfa89f7",
+    ".flash/queries/notifications.sql": "1541c87fe25a0392b84bdde4639b14fcec3c12689d4b7b7c057e52a1c7e2050b",
+    ".flash/queries/organization.sql": "26849ccfb4b81d4f0f6ce20a07c83f704c4d913e22d577e912b34188e76c6f84",
+    ".flash/queries/organization_invites.sql": "953e366bd87f675974e73fd9683cc7494996aea5329ef9252340e7118a3c8ed9",
+    ".flash/queries/organization_members.sql": "d3da229fd1dfd56b56238d7edd08805b017ed5b19c55d5f77badfc30165c1279",
+    ".flash/queries/organizations.sql": "5add339e7924582ae7d24d41341abe73bc8c5e61d2e54a9064122a0b1bf4a710",
+    ".flash/queries/password_reset_tokens.sql": "e126975f8daab68730e2b2f9ef918f0148f722004070c9cfecbdc6e6ee0fe87d",
+    ".flash/queries/patches.sql": "16eb6183c8c65ba895dfe03ab8fef9e60cece6b35c685eaa5b661e7dd708f68c",
+    ".flash/queries/personal_access_tokens.sql": "81b6b81e2a1377f16eeefc2bbf6e28d986a57ef4f04a836306d2cc5c0a1ba538",
+    ".flash/queries/policy.sql": "5eb2d81771d60ff81ca37ba1720238d2d49db25343d37cc91fd689aae07118ed",
+    ".flash/queries/ports.sql": "d33edba9501fbbc478453d0029092b58477dd0086aab259fd6d27cc25fecb55a",
+    ".flash/queries/postgres.sql": "4fcfa1285510b0c7841fcd23501a42e0b79ddf1f3f9ce57e1b89a6309ac45023",
+    ".flash/queries/preview_deployments.sql": "7f59b54dd7e56e54ae2d7b023a052c04074f6e77a374d35693193455ab24da82",
+    ".flash/queries/project_tags.sql": "2d0e152e420384fca73104f8888862ee604564c11fc1804f7c96f53a5519de5d",
+    ".flash/queries/projects.sql": "c016052197117d9c6591fac383bb13af648f73783f151f8f84daf33945e0e191",
+    ".flash/queries/redis.sql": "a455ed5344042a10ececba9b9ee3a21537e4a9f3722b3784893867593b73415f",
+    ".flash/queries/registries.sql": "ebf873443358f2b79ec791606d6673f844c277ab118042345832230854962442",
+    ".flash/queries/resource_access.sql": "9fc8cc07484d286d02dfea3d09443eec4f1b13e41b7da5dfcd767b4a11e63c6d",
+    ".flash/queries/rollbacks.sql": "0d069d37e31c2380ee49fa51e0bc8ae4c2426cf566870a8a80db56c0c0d3392a",
+    ".flash/queries/schedule_runtime.sql": "1ed08a7f41a5b776f983ca1c69a5df1edb877c8119d8c1c2fdd293bca8142e35",
+    ".flash/queries/schedules.sql": "77c8f17f0ee9f9dda75456bb2998a894060656d274dc7b56317eb6b02e2bcd00",
+    ".flash/queries/security.sql": "3f57c1f450bc54647c0b5a189a780ec9fe1720a3a1ab722f67892b317112c4da",
+    ".flash/queries/server_management.sql": "39ddec90b07eea1fbae61336db034942cc6815c2f79c531bb15988ff95c438c4",
+    ".flash/queries/server_migrations.sql": "594959fc7c9778844608149a53402fc86da553c541836f62bd2b61f94fe2e5f6",
+    ".flash/queries/server_private_networks.sql": "dcae6551fd0d3adababb6693dd9ff0eff1208682470039248f28871979921074",
+    ".flash/queries/servers.sql": "53bf220dd14d26d50ae33a5b34d8c3faffceaa8e45281e58dafaa901cbb2948c",
+    ".flash/queries/settings.sql": "b933b1178726a3ff7f6d2d05e68705b1d4dc2c0d178170441c9a1a7bba6de183",
+    ".flash/queries/ssh_keys.sql": "2c1f292efd98e32459c9cd4e67a22183cb95a995a15d025b87ebab9d0ae9ed4f",
+    ".flash/queries/ssh_keys_registries.sql": "fc557cedfb248e1b57a27c19fa075b4c4c3f9814b785d0e42c7c8a3c086a663c",
+    ".flash/queries/tags.sql": "5b5e65bae1165a66b796abb026dcbe6d779a5fdf29114a3a588a7652e4ef1ec5",
+    ".flash/queries/two_factor.sql": "31ad7216136683ef91de35033a35cbd35a05a4dee7eff5caf90a9b1465800d8d",
+    ".flash/queries/user_policy.sql": "e864b0a9d2293fc88d6639fe8100c49fbb4cf4b7c864fdb0cae6636bbed3049c",
+    ".flash/queries/users.sql": "4c210b7746e8bf7a62619adf801c5e24f4344119ab8d6f0a5c00fd02d8cc49f1",
+    ".flash/queries/vault_providers.sql": "3c96965280c328be1a3cb892679b76f96cb5b2fe7ff21d712593d9dbde662b52",
+    ".flash/queries/volume_backups.sql": "0b7d873924feb685eaed8b78f273b002f4652d88163acf7447058a805a15a019",
+    ".flash/queries/webhooks.sql": "2bce9d57507da0dbbe67d8a98121c5fe9e329db7b57dcc4f8996aacf31db9d65"
+  },
+  "schema_checksum": "e08fdf80f684e199d0149adab0002419c5bccaf6fb515356e567b5bd7567929a",
+  "config_checksum": "726d0fb95a453f37a1dc855c01e31fe73256cedb6546045a2b81e61e3018728c",
+  "query_table_deps": {
+    ".flash/queries/ai_generations.sql": [
+      "ai_generations"
+    ],
+    ".flash/queries/ai_settings.sql": [
+      "ai_settings;",
+      "ai_settings"
+    ],
+    ".flash/queries/alert_rule.sql": [
+      "alert_rules",
+      "alert_events"
+    ],
+    ".flash/queries/application_middlewares.sql": [
+      "application_middlewares"
+    ],
+    ".flash/queries/applications.sql": [
+      "applications",
+      "rollbacks"
+    ],
+    ".flash/queries/applications_1.sql": [
+      "applications",
+      "applications;"
+    ],
+    ".flash/queries/applications_2.sql": [
+      "applications"
+    ],
+    ".flash/queries/audit_log.sql": [
+      "audit_logs"
+    ],
+    ".flash/queries/audit_logs.sql": [
+      "audit_logs",
+      "audit_logs;"
+    ],
+    ".flash/queries/background_policies.sql": [
+      "background_policies"
+    ],
+    ".flash/queries/backups.sql": [
+      "destinations",
+      "backups",
+      "volume_backups",
+      "backups;"
+    ],
+    ".flash/queries/bitbucket_providers.sql": [
+      "bitbucket_providers;",
+      "bitbucket_providers"
+    ],
+    ".flash/queries/certificate_renewals.sql": [
+      "certificate_renewals"
+    ],
+    ".flash/queries/certificates.sql": [
+      "certificates"
+    ],
+    ".flash/queries/compose.sql": [
+      "compose_projects"
+    ],
+    ".flash/queries/compose_projects.sql": [
+      "compose_projects;",
+      "compose_projects"
+    ],
+    ".flash/queries/database_management.sql": [
+      "mariadb_dbs",
+      "mongo_dbs",
+      "redis_dbs",
+      "libsql_dbs",
+      "postgres_dbs",
+      "mysql_dbs"
+    ],
+    ".flash/queries/database_networks.sql": [
+      "database_networks"
+    ],
+    ".flash/queries/databases.sql": [
+      "mongo_dbs",
+      "redis_dbs",
+      "libsql_dbs",
+      "postgres_dbs",
+      "mysql_dbs",
+      "mariadb_dbs"
+    ],
+    ".flash/queries/deployments.sql": [
+      "deployments"
+    ],
+    ".flash/queries/deployments_1.sql": [
+      "applications",
+      "compose_projects",
+      "preview_deployments",
+      "deployments",
+      "deployments;"
+    ],
+    ".flash/queries/deployments_2.sql": [
+      "deployments",
+      "applications",
+      "compose_projects"
+    ],
+    ".flash/queries/deployments_3.sql": [
+      "deployments"
+    ],
+    ".flash/queries/destinations.sql": [
+      "destinations;",
+      "destinations"
+    ],
+    ".flash/queries/dns_providers.sql": [
+      "dns_providers"
+    ],
+    ".flash/queries/domains.sql": [
+      "domains",
+      "domains;"
+    ],
+    ".flash/queries/domains_patches_mounts.sql": [
+      "domains",
+      "patches",
+      "mounts"
+    ],
+    ".flash/queries/email_verification_tokens.sql": [
+      "email_verification_tokens",
+      "users"
+    ],
+    ".flash/queries/environments.sql": [
+      "environments;",
+      "environments"
+    ],
+    ".flash/queries/git_providers.sql": [
+      "git_providers",
+      "github_providers",
+      "gitlab_providers",
+      "gitea_providers",
+      "bitbucket_providers"
+    ],
+    ".flash/queries/git_providers_2.sql": [
+      "git_providers",
+      "git_providers;"
+    ],
+    ".flash/queries/gitea_providers.sql": [
+      "gitea_providers;",
+      "gitea_providers"
+    ],
+    ".flash/queries/github_providers.sql": [
+      "github_providers;",
+      "github_providers"
+    ],
+    ".flash/queries/gitlab_providers.sql": [
+      "gitlab_providers;",
+      "gitlab_providers"
+    ],
+    ".flash/queries/group_policy.sql": [
+      "group_policy;",
+      "group_policy"
+    ],
+    ".flash/queries/groups.sql": [
+      "groups;",
+      "groups",
+      "policy",
+      "p",
+      "group_policy",
+      "perms"
+    ],
+    ".flash/queries/health_report.sql": [
+      "health_reports"
+    ],
+    ".flash/queries/jwt_tokens.sql": [
+      "jwt_tokens",
+      "jwt_tokens;"
+    ],
+    ".flash/queries/libsql.sql": [
+      "libsql_dbs"
+    ],
+    ".flash/queries/mariadb.sql": [
+      "mariadb_dbs"
+    ],
+    ".flash/queries/mongo.sql": [
+      "mongo_dbs"
+    ],
+    ".flash/queries/monitoring_agents.sql": [
+      "monitoring_agents"
+    ],
+    ".flash/queries/monitoring_lifecycle.sql": [
+      "monitoring_maintenance_windows",
+      "monitoring_policy",
+      "alert_events"
+    ],
+    ".flash/queries/mount.sql": [
+      "mounts"
+    ],
+    ".flash/queries/mysql.sql": [
+      "mysql_dbs"
+    ],
+    ".flash/queries/network.sql": [
+      "redirects",
+      "ports",
+      "security"
+    ],
+    ".flash/queries/notif_custom.sql": [
+      "notif_custom;",
+      "notif_custom"
+    ],
+    ".flash/queries/notif_discord.sql": [
+      "notif_discord;",
+      "notif_discord"
+    ],
+    ".flash/queries/notif_email.sql": [
+      "notif_email;",
+      "notif_email"
+    ],
+    ".flash/queries/notif_gotify.sql": [
+      "notif_gotify;",
+      "notif_gotify"
+    ],
+    ".flash/queries/notif_lark.sql": [
+      "notif_lark;",
+      "notif_lark"
+    ],
+    ".flash/queries/notif_mattermost.sql": [
+      "notif_mattermost;",
+      "notif_mattermost"
+    ],
+    ".flash/queries/notif_ntfy.sql": [
+      "notif_ntfy;",
+      "notif_ntfy"
+    ],
+    ".flash/queries/notif_pushover.sql": [
+      "notif_pushover",
+      "notif_pushover;"
+    ],
+    ".flash/queries/notif_resend.sql": [
+      "notif_resend;",
+      "notif_resend"
+    ],
+    ".flash/queries/notif_slack.sql": [
+      "notif_slack;",
+      "notif_slack"
+    ],
+    ".flash/queries/notif_teams.sql": [
+      "notif_teams;",
+      "notif_teams"
+    ],
+    ".flash/queries/notif_telegram.sql": [
+      "notif_telegram;",
+      "notif_telegram"
+    ],
+    ".flash/queries/notification_delivery.sql": [
+      "notification_delivery_attempts",
+      "notification_resource_bindings"
+    ],
+    ".flash/queries/notifications.sql": [
+      "notif_mattermost",
+      "notif_slack",
+      "notif_gotify",
+      "notif_teams",
+      "notif_lark",
+      "notif_pushover",
+      "notif_custom",
+      "notifications",
+      "notifications;",
+      "notif_telegram",
+      "notif_discord",
+      "notif_email",
+      "notif_resend",
+      "notif_ntfy"
+    ],
+    ".flash/queries/organization.sql": [
+      "organization;",
+      "organization"
+    ],
+    ".flash/queries/organization_invites.sql": [
+      "organization_invites;",
+      "organization_invites"
+    ],
+    ".flash/queries/organization_members.sql": [
+      "organization_members",
+      "organization_members;"
+    ],
+    ".flash/queries/organizations.sql": [
+      "organization",
+      "organization_members",
+      "om",
+      "organization_invites"
+    ],
+    ".flash/queries/password_reset_tokens.sql": [
+      "users",
+      "jwt_tokens",
+      "password_reset_tokens"
+    ],
+    ".flash/queries/patches.sql": [
+      "patches;",
+      "patches"
+    ],
+    ".flash/queries/personal_access_tokens.sql": [
+      "personal_access_tokens"
+    ],
+    ".flash/queries/policy.sql": [
+      "policy;",
+      "policy"
+    ],
+    ".flash/queries/ports.sql": [
+      "ports;",
+      "ports"
+    ],
+    ".flash/queries/postgres.sql": [
+      "postgres_dbs"
+    ],
+    ".flash/queries/preview_deployments.sql": [
+      "preview_deployments",
+      "applications",
+      "deployments"
+    ],
+    ".flash/queries/project_tags.sql": [
+      "project_tags;",
+      "project_tags"
+    ],
+    ".flash/queries/projects.sql": [
+      "projects",
+      "environments",
+      "tags",
+      "t",
+      "project_tags",
+      "projects;"
+    ],
+    ".flash/queries/redis.sql": [
+      "redis_dbs"
+    ],
+    ".flash/queries/registries.sql": [
+      "registries;",
+      "registries",
+      "applications"
+    ],
+    ".flash/queries/resource_access.sql": [
+      "resource_access"
+    ],
+    ".flash/queries/rollbacks.sql": [
+      "rollbacks;",
+      "rollbacks"
+    ],
+    ".flash/queries/schedule_runtime.sql": [
+      "schedule_runtime_policies",
+      "schedule_execution_locks",
+      "schedule_executions"
+    ],
+    ".flash/queries/schedules.sql": [
+      "schedules",
+      "schedules;"
+    ],
+    ".flash/queries/security.sql": [
+      "security;",
+      "security"
+    ],
+    ".flash/queries/server_management.sql": [
+      "server_management",
+      "server_cleanup_executions"
+    ],
+    ".flash/queries/server_migrations.sql": [
+      "server_migrations"
+    ],
+    ".flash/queries/server_private_networks.sql": [
+      "server_private_networks"
+    ],
+    ".flash/queries/servers.sql": [
+      "certificates",
+      "schedules",
+      "postgres_dbs",
+      "mongo_dbs",
+      "applications",
+      "compose_projects",
+      "mysql_dbs",
+      "mariadb_dbs",
+      "redis_dbs",
+      "libsql_dbs",
+      "servers;",
+      "servers"
+    ],
+    ".flash/queries/settings.sql": [
+      "ai_settings",
+      "settings;",
+      "settings"
+    ],
+    ".flash/queries/ssh_keys.sql": [
+      "ssh_keys",
+      "ssh_keys;"
+    ],
+    ".flash/queries/ssh_keys_registries.sql": [
+      "ssh_keys",
+      "registries"
+    ],
+    ".flash/queries/tags.sql": [
+      "tags;",
+      "tags"
+    ],
+    ".flash/queries/two_factor.sql": [
+      "two_factor;",
+      "two_factor"
+    ],
+    ".flash/queries/user_policy.sql": [
+      "user_policy"
+    ],
+    ".flash/queries/users.sql": [
+      "users",
+      "two_factor",
+      "jwt_tokens",
+      "users;"
+    ],
+    ".flash/queries/vault_providers.sql": [
+      "vault_providers"
+    ],
+    ".flash/queries/volume_backups.sql": [
+      "volume_backups;",
+      "volume_backups"
+    ],
+    ".flash/queries/webhooks.sql": [
+      "applications",
+      "compose_projects",
+      "github_providers",
+      "gitlab_providers",
+      "gitea_providers",
+      "bitbucket_providers"
+    ]
+  },
+  "generated_file_checksums": {},
+  "last_generation": "2026-08-27T19:16:06.760397643+05:30",
+  "OutDir": "src/flash_gen"
+}

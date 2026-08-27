@@ -1,68 +1,89 @@
 use crate::db::models::tags::Tag;
+use crate::flash_gen::{
+    db::Queries,
+    models::Tags,
+    tags::{TagsCreateParams, TagsGetAllRow, TagsUpdateParams},
+};
 use auto_di::singleton;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
 pub struct TagRepository {
-    pool: Arc<SqlitePool>,
+    queries: Queries,
 }
 
 #[singleton]
 impl TagRepository {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
-        Self { pool }
+        Self {
+            queries: Queries::new(pool.as_ref().clone()),
+        }
     }
 
     pub async fn get_all(&self) -> Result<Vec<Tag>, sqlx::Error> {
-        sqlx::query_as!(
-            Tag,
-            r#"SELECT id AS "id?: i64", name AS "name: String", color AS "color: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64" FROM tags"#
-        )
-        .fetch_all(self.pool.as_ref())
-        .await
+        self.queries
+            .tags_get_all()
+            .await
+            .map(|rows| rows.into_iter().map(Into::into).collect())
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Tag>, sqlx::Error> {
-        sqlx::query_as!(
-            Tag,
-            r#"SELECT id AS "id?: i64", name AS "name: String", color AS "color: String", organization_id AS "organization_id: i64", created_at AS "created_at: i64" FROM tags WHERE id = ?"#,
-            id
-        )
-        .fetch_optional(self.pool.as_ref())
-        .await
+        match self.queries.tags_get_by_id(id).await {
+            Ok(row) => Ok(Some(row.into())),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error),
+        }
     }
 
     pub async fn create(&self, item: &Tag) -> Result<i64, sqlx::Error> {
-        let _res = sqlx::query!(
-            r#"INSERT INTO tags (name, color, organization_id, created_at) VALUES (?, ?, ?, ?)"#,
-            &item.name,
-            &item.color,
-            item.organization_id,
-            item.created_at
-        )
-        .execute(self.pool.as_ref())
-        .await?;
-        Ok(_res.last_insert_rowid())
+        self.queries
+            .tags_create(&TagsCreateParams {
+                name: item.name.clone(),
+                color: item.color.clone(),
+                organization_id: item.organization_id,
+                created_at: item.created_at,
+            })
+            .await?;
+        self.queries.tags_get_last_insert_rowid().await
     }
 
     pub async fn update(&self, id: i64, item: &Tag) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"UPDATE tags SET name = ?, color = ?, organization_id = ?, created_at = ? WHERE id = ?"#,
-            &item.name,
-            &item.color,
-            item.organization_id,
-            item.created_at,
-            id
-        )
-        .execute(self.pool.as_ref())
-        .await?;
-        Ok(())
+        self.queries
+            .tags_update(&TagsUpdateParams {
+                name: item.name.clone(),
+                color: item.color.clone(),
+                organization_id: item.organization_id,
+                created_at: item.created_at,
+                id,
+            })
+            .await
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), sqlx::Error> {
-        sqlx::query!(r#"DELETE FROM tags WHERE id = ?"#, id)
-            .execute(self.pool.as_ref())
-            .await?;
-        Ok(())
+        self.queries.tags_delete(id).await
+    }
+}
+
+impl From<TagsGetAllRow> for Tag {
+    fn from(row: TagsGetAllRow) -> Self {
+        Self {
+            id: Some(row.id),
+            name: row.name,
+            color: row.color,
+            organization_id: row.organization_id,
+            created_at: row.created_at,
+        }
+    }
+}
+
+impl From<Tags> for Tag {
+    fn from(row: Tags) -> Self {
+        Self {
+            id: Some(row.id),
+            name: row.name,
+            color: row.color,
+            organization_id: row.organization_id,
+            created_at: row.created_at,
+        }
     }
 }
