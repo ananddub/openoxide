@@ -1,0 +1,20 @@
+CREATE TABLE mounts (
+    id INTEGER NOT NULL PRIMARY KEY,
+    mount_type TEXT NOT NULL,
+    service_type TEXT NOT NULL,
+    host_path TEXT,
+    volume_name TEXT,
+    file_path TEXT,
+    content TEXT,
+    mount_path TEXT NOT NULL,
+    postgres_id INTEGER,
+    mysql_id INTEGER,
+    mariadb_id INTEGER,
+    mongo_id INTEGER,
+    redis_id INTEGER,
+    libsql_id INTEGER,
+    compose_id INTEGER,
+    application_id INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);

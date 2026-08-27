@@ -1,0 +1,21 @@
+CREATE TABLE deployments (
+    id INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL,
+    state TEXT NOT NULL,
+    log_path TEXT NOT NULL,
+    pid TEXT,
+    error_message TEXT,
+    operation TEXT,
+    is_preview_deployment INTEGER NOT NULL,
+    started_at INTEGER,
+    last_state_at INTEGER,
+    finished_at INTEGER,
+    application_id INTEGER,
+    compose_id INTEGER,
+    server_id INTEGER,
+    created_at INTEGER NOT NULL,
+    database_id INTEGER,
+    database_kind TEXT
+);

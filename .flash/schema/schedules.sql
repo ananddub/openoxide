@@ -1,0 +1,21 @@
+CREATE TABLE schedules (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    cron_expression TEXT NOT NULL,
+    app_name TEXT NOT NULL,
+    service_name TEXT,
+    shell_type TEXT NOT NULL,
+    schedule_type TEXT NOT NULL,
+    command TEXT NOT NULL,
+    script TEXT,
+    timezone TEXT,
+    enabled INTEGER NOT NULL,
+    application_id INTEGER,
+    compose_id INTEGER,
+    server_id INTEGER,
+    organization_id INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    schedule_action TEXT NOT NULL
+);

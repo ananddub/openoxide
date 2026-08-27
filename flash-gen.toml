@@ -1,0 +1,15 @@
+# FlashORM Rust code generation only.
+# Migrations are intentionally not configured here; use flash.toml for
+# schema migration commands separately.
+version = "2"
+schema_dir = ".flash/schema"
+queries = ".flash/queries/"
+
+[database]
+provider = "sqlite"
+url_env = "DATABASE_URL"
+
+[gen.rust]
+enabled = true
+out = "src/flash_gen"
+driver = "sqlx"

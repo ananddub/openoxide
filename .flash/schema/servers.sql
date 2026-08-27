@@ -1,0 +1,20 @@
+CREATE TABLE servers (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    ip_address TEXT NOT NULL,
+    port INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    app_name TEXT NOT NULL,
+    server_status TEXT NOT NULL,
+    server_type TEXT NOT NULL,
+    enable_docker_cleanup INTEGER NOT NULL,
+    log_cleanup_cron TEXT,
+    command TEXT NOT NULL,
+    metrics_config TEXT NOT NULL,
+    ssh_key_id INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    build_memory_limit TEXT,
+    build_cpu_limit TEXT
+);

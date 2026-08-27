@@ -1,9 +1,9 @@
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const sourceDir = "src/db/repository";
 const outputDir = "db/queries";
-const outputPrefix = "repository_";
+const outputPrefix = "";
 const maxLines = 180;
 
 const pascal = (value) =>
@@ -113,11 +113,7 @@ function chunks(entries) {
 }
 
 await mkdir(outputDir, { recursive: true });
-for (const file of await readdir(outputDir)) {
-  if (file.startsWith(outputPrefix) && (file.endsWith(".sql") || file === `${outputPrefix}DYNAMIC_QUERIES.md`)) {
-    await rm(path.join(outputDir, file), { force: true });
-  }
-}
+// Repository extraction now targets the default db/queries directory directly.
 const dynamic = new Set();
 let queryCount = 0;
 

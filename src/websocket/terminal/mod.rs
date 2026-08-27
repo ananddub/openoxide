@@ -9,7 +9,7 @@ use auto_di::singleton;
 use auto_socket::{auto_socket, on};
 use dashmap::DashMap;
 use helpers::{emit_error, socket_key};
-use remote::{spawn_agent_server_terminal, spawn_remote_docker_terminal_api};
+use remote::spawn_remote_docker_terminal_api;
 use socketioxide::{
     extract::{Data, SocketRef},
     socket::DisconnectReason,
@@ -46,6 +46,9 @@ impl TerminalSocket {
                         ..Default::default()
                     })
                     .await;
+            }
+            TerminalSession::RusshShell { cancel, .. } => {
+                cancel.cancel();
             }
         }
     }
@@ -112,15 +115,15 @@ impl TerminalSocket {
             input.shell = input.command.clone();
         }
 
-        let server_id =
-            match crate::services::compose::remote::agent_server_id(input.server_id).await {
-                Ok(server_id) => server_id,
-                Err(error) => {
-                    emit_error(&socket, error);
-                    return;
-                }
-            };
-        spawn_agent_server_terminal(socket, &self.sessions, server_id, input, start_token).await;
+        let Some(server_id) = input.server_id else {
+            emit_error(
+                &socket,
+                "A remote server is required for SSH terminal".to_owned(),
+            );
+            return;
+        };
+        remote::spawn_russh_server_terminal(socket, &self.sessions, server_id, input, start_token)
+            .await;
     }
 
     #[on("input")]
@@ -157,6 +160,14 @@ impl TerminalSocket {
                     );
                 }
             }
+            TerminalSession::RusshShell { terminal, .. } => {
+                if let Err(error) = terminal.write(data.as_bytes()).await {
+                    emit_error(
+                        &socket,
+                        format!("could not write SSH terminal input: {error}"),
+                    );
+                }
+            }
         }
     }
 
@@ -179,6 +190,13 @@ impl TerminalSocket {
                                 ..Default::default()
                             })
                             .await;
+                    });
+                }
+                TerminalSession::RusshShell { terminal, .. } => {
+                    let terminal = terminal.clone();
+                    let size = payload.size();
+                    tokio::spawn(async move {
+                        let _ = terminal.resize(size.cols, size.rows).await;
                     });
                 }
             }

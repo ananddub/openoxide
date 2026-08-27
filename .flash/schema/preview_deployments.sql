@@ -1,0 +1,21 @@
+CREATE TABLE preview_deployments (
+    id INTEGER NOT NULL PRIMARY KEY,
+    base_application_id INTEGER NOT NULL,
+    preview_application_id INTEGER,
+    provider_type TEXT NOT NULL,
+    provider_id INTEGER NOT NULL,
+    owner TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    pull_request_number TEXT NOT NULL,
+    source_branch TEXT NOT NULL,
+    target_branch TEXT NOT NULL,
+    commit_sha TEXT,
+    author TEXT,
+    status TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    last_deployment_id INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    source_owner TEXT,
+    source_repository TEXT
+);

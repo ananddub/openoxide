@@ -1,3 +1,4 @@
+use os::exec::{SshAuth, SshHostKey};
 use socketioxide::extract::SocketRef;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -125,27 +126,113 @@ async fn spawn_agent_shell(
     });
 }
 
-pub async fn spawn_agent_server_terminal(
+pub async fn spawn_russh_server_terminal(
     socket: SocketRef,
     sessions: &SessionMap,
     server_id: i64,
     input: ServerTerminalStart,
     start_token: tokio_util::sync::CancellationToken,
 ) {
-    let docker_input = DockerTerminalStart {
-        container: String::new(),
-        shell: Some(input.shell().as_str().to_owned()),
-        server_id: Some(server_id),
-        cols: input.cols,
-        rows: input.rows,
+    let key = socket_key(&socket);
+    let repository = match auto_di::resolve::<crate::repository::ServerRepository>().await {
+        Ok(repository) => repository,
+        Err(error) => {
+            emit_error(
+                &socket,
+                format!("could not resolve server repository: {error}"),
+            );
+            return;
+        }
     };
-    spawn_agent_shell(
-        socket,
-        sessions,
-        server_id,
-        docker_input,
-        start_token,
-        TerminalKind::Server,
+    let Some((host, port, username, private_key, public_key)) =
+        (match repository.get_ssh_credentials(server_id).await {
+            Ok(value) => value,
+            Err(error) => {
+                emit_error(&socket, format!("could not load SSH credentials: {error}"));
+                return;
+            }
+        })
+    else {
+        emit_error(
+            &socket,
+            "Server not found or SSH credentials are missing".to_owned(),
+        );
+        return;
+    };
+    let port = match u16::try_from(port) {
+        Ok(port) => port,
+        Err(_) => {
+            emit_error(&socket, "SSH port is invalid".to_owned());
+            return;
+        }
+    };
+    let session = match os::ssh::connect_russh(
+        &host,
+        port,
+        &username,
+        &SshAuth::key_pair(private_key, public_key),
+        &SshHostKey::InsecureAcceptAny,
+        std::time::Duration::from_secs(15),
     )
-    .await;
+    .await
+    {
+        Ok(session) => session,
+        Err(error) => {
+            emit_error(&socket, format!("SSH connection failed: {error}"));
+            return;
+        }
+    };
+    let size = input.size();
+    let shell_command = match input.shell.as_deref().or(input.command.as_deref()) {
+        Some("sh") | Some("/bin/sh") | Some("bash") | Some("/bin/bash") | Some("") | None => None,
+        Some(command) => Some(command),
+    };
+    let terminal = match os::ssh::RusshTerminal::connect(
+        &session,
+        size.cols,
+        size.rows,
+        shell_command,
+    )
+    .await
+    {
+        Ok(terminal) => Arc::new(terminal),
+        Err(error) => {
+            emit_error(&socket, format!("SSH terminal failed to open: {error}"));
+            return;
+        }
+    };
+    let session_id = next_session_id();
+    sessions.insert(
+        key.clone(),
+        TerminalSession::RusshShell {
+            terminal: terminal.clone(),
+            session_id,
+            cancel: start_token.clone(),
+        },
+    );
+    let _ = socket.emit(
+        "started",
+        &TerminalStarted {
+            kind: TerminalKind::RemoteServer,
+            host: Some(&host),
+        },
+    );
+    let socket_clone = socket.clone();
+    let sessions_clone = sessions.clone();
+    tokio::spawn(async move {
+        let mut code = Some(0);
+        loop {
+            tokio::select! {
+                _ = start_token.cancelled() => break,
+                output = terminal.read_next() => match output {
+                    Some(bytes) => emit_terminal_bytes(&socket_clone, "stdout", &bytes),
+                    None => break,
+                },
+            }
+        }
+        if sessions_clone.get(&key).is_some_and(|entry| matches!(entry.value(), TerminalSession::RusshShell { session_id: id, .. } if *id == session_id)) {
+            sessions_clone.remove(&key);
+            let _ = socket_clone.emit("exit", &TerminalExit { code: code.take() });
+        }
+    });
 }

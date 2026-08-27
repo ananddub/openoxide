@@ -211,4 +211,9 @@ pub enum TerminalSession {
         session_id: SessionId,
         cancel: tokio_util::sync::CancellationToken,
     },
+    RusshShell {
+        terminal: Arc<os::ssh::RusshTerminal>,
+        session_id: SessionId,
+        cancel: tokio_util::sync::CancellationToken,
+    },
 }
