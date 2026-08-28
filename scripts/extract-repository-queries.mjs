@@ -1,10 +1,11 @@
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const sourceDir = "src/db/repository";
 const outputDir = "db/queries";
 const outputPrefix = "";
-const maxLines = 180;
+const generatedMarker = "-- BEGIN GENERATED REPOSITORY QUERIES";
+const excludedRepositories = new Set(["mod", "atlas_schema_revisions"]);
 
 const pascal = (value) =>
   value
@@ -94,24 +95,6 @@ function command(sql, body) {
   return /\.fetch_all\s*\(/.test(body) ? ":many" : ":one";
 }
 
-function chunks(entries) {
-  const result = [];
-  let current = [];
-  let lines = 2;
-  for (const entry of entries) {
-    const size = entry.sql.split("\n").length + 3;
-    if (current.length && lines + size > maxLines) {
-      result.push(current);
-      current = [];
-      lines = 2;
-    }
-    current.push(entry);
-    lines += size;
-  }
-  if (current.length) result.push(current);
-  return result;
-}
-
 await mkdir(outputDir, { recursive: true });
 // Repository extraction now targets the default db/queries directory directly.
 const dynamic = new Set();
@@ -120,6 +103,7 @@ let queryCount = 0;
 for (const file of (await readdir(sourceDir)).filter((name) => name.endsWith(".rs")).sort()) {
   const source = await readFile(path.join(sourceDir, file), "utf8");
   const repository = file.replace(/\.rs$/, "");
+  if (excludedRepositories.has(repository)) continue;
   const entries = [];
   for (const method of methods(source)) {
     const statements = sqlStrings(method.body);
@@ -139,14 +123,41 @@ for (const file of (await readdir(sourceDir)).filter((name) => name.endsWith(".r
       dynamic.add(`${repository}::${method.name} (runtime-built SQL)`);
     }
   }
-  const parts = chunks(entries);
-  for (const [index, part] of parts.entries()) {
-    const suffix = parts.length > 1 ? `_${index + 1}` : "";
-    const header = `-- Extracted from src/db/repository/${file}. Do not edit repository SQL directly.\n\n`;
-    const body = part.map((entry) => `-- name: ${entry.name} ${entry.command}\n${entry.sql}\n`).join("\n");
-    await writeFile(path.join(outputDir, `${outputPrefix}${repository}${suffix}.sql`), header + body);
-    queryCount += part.length;
+
+  const stalePattern = new RegExp(`^${repository}_[0-9]+\\.sql$`);
+  for (const stale of (await readdir(outputDir)).filter((name) => stalePattern.test(name))) {
+    await rm(path.join(outputDir, stale));
   }
+  // Once a repository has migrated to generated Flash queries it contains no
+  // SQL literals. Its canonical query file is then the source of truth and
+  // must not be replaced with an empty generated section.
+  if (entries.length === 0) continue;
+
+  const outputFile = path.join(outputDir, `${outputPrefix}${repository}.sql`);
+  let canonical = "";
+  try {
+    canonical = await readFile(outputFile, "utf8");
+  } catch {
+    // The repository does not have a hand-maintained query section yet.
+  }
+  if (canonical.startsWith("-- Extracted from src/db/repository/")) canonical = "";
+  const markerIndex = canonical.indexOf(generatedMarker);
+  if (markerIndex >= 0) canonical = canonical.slice(0, markerIndex);
+  canonical = canonical.trimEnd();
+
+  const canonicalNames = new Set(
+    [...canonical.matchAll(/^-- name:\s+([^\s]+)/gm)].map((match) => match[1]),
+  );
+  const generatedEntries = entries.filter((entry) => !canonicalNames.has(entry.name));
+
+  const header = canonical
+    ? `${generatedMarker}\n-- Extracted from src/db/repository/${file}. Do not edit this generated section directly.\n\n`
+    : `-- Extracted from src/db/repository/${file}. Do not edit repository SQL directly.\n\n`;
+  const body = generatedEntries.map((entry) => `-- name: ${entry.name} ${entry.command}\n${entry.sql}\n`).join("\n");
+  const separator = canonical ? "\n\n" : "";
+  await writeFile(outputFile, `${canonical}${separator}${header}${body}`);
+
+  queryCount += generatedEntries.length;
 }
 
 await writeFile(

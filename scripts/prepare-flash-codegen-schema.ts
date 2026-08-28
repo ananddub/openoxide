@@ -68,6 +68,7 @@ database.close();
 await mkdir(queryOutput, { recursive: true });
 for (const file of await readdir(queryOutput)) await rm(path.join(queryOutput, file));
 const unsupported = new Set([
+  "atlas_schema_revisions.sql",
   "backup_executions.sql",
   "permission_groups.sql",
   "redirects.sql",
@@ -88,7 +89,7 @@ for (const file of (await readdir(sourceQueries)).filter((name) => name.endsWith
       .replace("COALESCE(?, '[]')", "?")
       .replace("COALESCE(?, 0)", "?");
   }
-  if (file === "deployments_1.sql") {
+  if (file === "deployments.sql") {
     // This legacy statement targets a removed `deployments.logs` column.
     // Keep the canonical repository SQL unchanged; omit only this statement
     // from Flash's validation input.
