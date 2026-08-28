@@ -342,14 +342,14 @@ impl Queries {
     /// AddTagToProject
     pub async fn add_tag_to_project(
         &self,
-        param1: &str,
-        param2: &str,
+        project_id: i64,
+        tag_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT OR IGNORE INTO project_tags (project_id, tag_id) VALUES (?, ?);"
         )
-        .bind(param1)
-        .bind(param2)
+        .bind(project_id)
+        .bind(tag_id)
         .execute(&self.pool)
         .await?;
         Ok(())
