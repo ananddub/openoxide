@@ -9,12 +9,7 @@ impl DnsService {
         id: i64,
         organization_id: i64,
     ) -> Result<DnsTestResultDto, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type = Self::parse_provider_type(&provider.provider_type)?;
 
@@ -44,12 +39,7 @@ impl DnsService {
         id: i64,
         organization_id: i64,
     ) -> Result<Vec<DnsZoneDto>, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type = Self::parse_provider_type(&provider.provider_type)?;
 
@@ -68,12 +58,7 @@ impl DnsService {
         organization_id: i64,
         zone_id: &str,
     ) -> Result<Vec<DnsRecordDto>, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type = Self::parse_provider_type(&provider.provider_type)?;
 
@@ -96,12 +81,7 @@ impl DnsService {
         organization_id: i64,
         body: UpsertDnsRecordDto,
     ) -> Result<DnsRecordDto, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type = Self::parse_provider_type(&provider.provider_type)?;
 
@@ -125,12 +105,7 @@ impl DnsService {
         zone_id: &str,
         record_id: &str,
     ) -> Result<bool, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type = Self::parse_provider_type(&provider.provider_type)?;
 

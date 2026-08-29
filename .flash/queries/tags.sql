@@ -1,4 +1,4 @@
--- Extracted from src/db/repository/tags.rs. Do not edit repository SQL directly.
+-- FlashORM queries for tags.
 
 -- name: TagsGetAll :many
 SELECT id AS id, name AS name, color AS color, organization_id AS organization_id, created_at AS created_at FROM tags;

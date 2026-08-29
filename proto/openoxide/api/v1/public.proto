@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+import "buf/validate/validate.proto";
+
+service PublicService {
+  rpc ListGitBranches(ListGitBranchesRequest) returns (ListGitBranchesResponse);
+  rpc GenerateDomain(GenerateDomainRequest) returns (GenerateDomainResponse);
+}
+
+message ListGitBranchesRequest {
+  string repository_url = 1 [(buf.validate.field).string.uri = true];
+}
+
+message ListGitBranchesResponse {
+  repeated string branches = 1;
+}
+
+message GenerateDomainRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 63, hostname: true}];
+}
+
+message GenerateDomainResponse {
+  string domain = 1;
+}

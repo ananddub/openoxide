@@ -1,0 +1,337 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "openoxide/api/v1/platform.proto";
+import "buf/validate/validate.proto";
+
+service ApplicationService {
+  rpc GetApplication(GetApplicationRequest) returns (Application);
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
+  rpc CreateApplication(CreateApplicationRequest) returns (Application);
+  rpc UpdateApplication(UpdateApplicationRequest) returns (Application);
+  rpc DeleteApplication(DeleteApplicationRequest) returns (Empty);
+  rpc ImportApplication(ImportApplicationRequest) returns (Application);
+  rpc ExportApplication(ExportApplicationRequest) returns (ApplicationExport);
+  rpc SetGithubSource(SetGithubSourceRequest) returns (Application);
+  rpc SetGitlabSource(SetGitlabSourceRequest) returns (Application);
+  rpc SetBitbucketSource(SetBitbucketSourceRequest) returns (Application);
+  rpc SetGiteaSource(SetGiteaSourceRequest) returns (Application);
+  rpc SetCustomGitSource(SetCustomGitSourceRequest) returns (Application);
+  rpc SetDockerSource(SetDockerSourceRequest) returns (Application);
+  rpc SetDropSource(SetDropSourceRequest) returns (Application);
+  rpc UploadSource(stream UploadSourceRequest) returns (Application);
+  rpc UpdateBuildConfig(UpdateBuildConfigRequest) returns (Application);
+  rpc UpdateResourceConfig(UpdateResourceConfigRequest) returns (Application);
+  rpc UpdatePreviewConfig(UpdatePreviewConfigRequest) returns (Application);
+  rpc Deploy(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Redeploy(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Rebuild(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Reload(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Start(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Stop(ApplicationOperationRequest) returns (ApplicationOperation);
+  rpc Cancel(ApplicationOperationRequest) returns (Empty);
+  rpc RotateWebhookToken(ApplicationOperationRequest) returns (ApplicationWebhookToken);
+  rpc MoveApplication(MoveApplicationRequest) returns (Application);
+  rpc ClearDeploymentHistory(ApplicationOperationRequest) returns (Empty);
+  rpc CleanupDeploymentQueue(ApplicationOperationRequest) returns (Empty);
+  rpc ForceKillDeployment(ApplicationOperationRequest) returns (Empty);
+  rpc ListRollbacks(ListRollbacksRequest) returns (ListRollbacksResponse);
+  rpc TriggerRollback(TriggerRollbackRequest) returns (RollbackTrigger);
+  rpc DeleteRollback(DeleteRollbackRequest) returns (Empty);
+  rpc ListDependencies(ApplicationOperationRequest) returns (ApplicationDependencies);
+  rpc ListApplicationPorts(ResourceListRequest) returns (ApplicationPorts);
+  rpc ListApplicationMounts(ResourceListRequest) returns (ApplicationMounts);
+  rpc ListApplicationNetworks(ResourceListRequest) returns (ApplicationNetworks);
+  rpc ListApplicationPatches(ResourceListRequest) returns (ApplicationPatches);
+  rpc ListApplicationMiddlewares(ResourceListRequest) returns (ApplicationMiddlewares);
+  rpc ListApplicationRedirects(ResourceListRequest) returns (ApplicationRedirects);
+  rpc ListApplicationSecurity(ResourceListRequest) returns (ApplicationSecurity);
+  rpc ListPorts(ResourceRequest) returns (ResourceListResponse);
+  rpc CreatePort(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePort(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePort(ResourceRequest) returns (Empty);
+  rpc ListMounts(ResourceRequest) returns (ResourceListResponse);
+  rpc CreateMount(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateMount(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteMount(ResourceRequest) returns (Empty);
+  rpc ListPatches(ResourceRequest) returns (ResourceListResponse);
+  rpc CreatePatch(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePatch(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePatch(ResourceRequest) returns (Empty);
+  rpc ListMiddlewares(ResourceRequest) returns (ResourceListResponse);
+  rpc CreateMiddleware(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateMiddleware(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteMiddleware(ResourceRequest) returns (Empty);
+  rpc ListRedirects(ResourceRequest) returns (ResourceListResponse);
+  rpc CreateRedirect(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRedirect(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRedirect(ResourceRequest) returns (Empty);
+  rpc GetSecurity(ResourceRequest) returns (ResourceResponse);
+  rpc CreateSecurity(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSecurity(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteSecurity(ResourceRequest) returns (Empty);
+  rpc UpdateNetworks(ResourceRequest) returns (OperationResult);
+}
+
+enum ApplicationSourceType {
+  APPLICATION_SOURCE_TYPE_UNSPECIFIED = 0;
+  APPLICATION_SOURCE_TYPE_GITHUB = 1;
+  APPLICATION_SOURCE_TYPE_GITLAB = 2;
+  APPLICATION_SOURCE_TYPE_BITBUCKET = 3;
+  APPLICATION_SOURCE_TYPE_GITEA = 4;
+  APPLICATION_SOURCE_TYPE_CUSTOM_GIT = 5;
+  APPLICATION_SOURCE_TYPE_DOCKER = 6;
+  APPLICATION_SOURCE_TYPE_DROP = 7;
+}
+enum ApplicationBuildType {
+  APPLICATION_BUILD_TYPE_UNSPECIFIED = 0;
+  APPLICATION_BUILD_TYPE_BUILDPACKS = 1;
+  APPLICATION_BUILD_TYPE_DOCKERFILE = 2;
+  APPLICATION_BUILD_TYPE_NIXPACKS = 3;
+  APPLICATION_BUILD_TYPE_HEROKU = 4;
+}
+
+message Application {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  string app_name = 4;
+  ApplicationSourceType source_type = 5;
+  ApplicationBuildType build_type = 6;
+  string status = 7;
+  optional string last_error = 8;
+  string trigger_type = 9;
+  int64 environment_id = 10;
+  optional int64 server_id = 11;
+  optional int64 build_server_id = 12;
+  optional int64 registry_id = 13;
+  repeated string network_ids = 14;
+  bool detach_rustploy_network = 15;
+  optional string env_var = 16;
+  optional string icon = 17;
+  optional string repository = 18;
+  optional string owner = 19;
+  optional string branch = 20;
+  optional string docker_image = 21;
+  optional string registry_url = 22;
+  optional string custom_git_url = 23;
+  optional string custom_git_branch = 24;
+  optional string preview_wildcard = 25;
+  optional int64 preview_port = 26;
+  int64 created_at = 27;
+  int64 updated_at = 28;
+}
+message GetApplicationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListApplicationsRequest {
+  int64 environment_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListApplicationsResponse {
+  repeated Application applications = 1;
+}
+message CreateApplicationRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string description = 2;
+  int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 4 [(buf.validate.field).int64.gt = 0];
+  ApplicationSourceType source_type = 5;
+  ApplicationBuildType build_type = 6;
+}
+message UpdateApplicationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2;
+  optional string description = 3;
+  optional ApplicationBuildType build_type = 4;
+  optional string trigger_type = 5;
+  optional string env_var = 6;
+  optional int64 server_id = 7;
+  optional int64 build_server_id = 8;
+  optional int64 registry_id = 9;
+  repeated string network_ids = 10;
+  optional bool detach_rustploy_network = 11;
+}
+message DeleteApplicationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ImportApplicationRequest {
+  string archive = 1 [(buf.validate.field).string = {min_len: 1, max_len: 10485760}];
+}
+message ExportApplicationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool include_secrets = 2;
+}
+message ApplicationExport {
+  string format = 1;
+  int64 schema_version = 2;
+  string archive = 3;
+}
+message SetGithubSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+  string owner = 3 [(buf.validate.field).string.min_len = 1];
+  optional string branch = 4;
+  optional string build_path = 5;
+  optional int64 provider_id = 6;
+  optional bool auto_deploy = 7;
+}
+message SetGitlabSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+  string owner = 3 [(buf.validate.field).string.min_len = 1];
+  optional string branch = 4;
+  optional string build_path = 5;
+  optional string path_namespace = 6;
+  optional int64 provider_id = 7;
+  optional int64 project_id = 8;
+}
+message SetBitbucketSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+  string owner = 3 [(buf.validate.field).string.min_len = 1];
+  optional string branch = 4;
+  optional string build_path = 5;
+  optional string repository_slug = 6;
+  optional int64 provider_id = 7;
+}
+message SetGiteaSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+  string owner = 3 [(buf.validate.field).string.min_len = 1];
+  optional string branch = 4;
+  optional string build_path = 5;
+  optional int64 provider_id = 6;
+}
+message SetCustomGitSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string url = 2 [(buf.validate.field).string.uri = true];
+  optional string branch = 3;
+  optional string build_path = 4;
+  optional int64 ssh_key_id = 5;
+}
+message SetDockerSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string image = 2 [(buf.validate.field).string.min_len = 1];
+  optional string username = 3;
+  optional string password = 4;
+  optional string registry_url = 5;
+}
+message SetDropSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string build_path = 2;
+}
+message UploadSourceRequest {
+  oneof payload {
+    int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+    bytes chunk = 2 [(buf.validate.field).bytes = {min_len: 1, max_len: 4194304}];
+  }
+}
+message UpdateBuildConfigRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string build_args = 2;
+  optional string build_secrets = 3;
+  optional string dockerfile = 4;
+  optional string context_path = 5;
+  optional string build_stage = 6;
+  optional string publish_directory = 7;
+  optional bool static_spa = 8;
+  optional bool create_env_file = 9;
+  optional string command = 10;
+  optional string args = 11;
+  optional string build_path = 12;
+  optional bool clean_cache = 13;
+  optional bool enable_submodules = 14;
+  optional string watch_paths = 15;
+}
+message UpdateResourceConfigRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string memory_reservation = 2;
+  optional string memory_limit = 3;
+  optional string cpu_reservation = 4;
+  optional string cpu_limit = 5;
+  optional int64 replicas = 6;
+}
+message UpdatePreviewConfigRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string preview_env = 2;
+  optional string build_args = 3;
+  optional string build_secrets = 4;
+  optional string labels = 5;
+  optional string wildcard = 6;
+  optional int64 port = 7 [(buf.validate.field).int64 = {gte: 1, lte: 65535}];
+  bool https = 8;
+  string path = 9;
+  string certificate_type = 10;
+  optional string custom_cert_resolver = 11;
+  int64 limit = 12;
+  bool active = 13;
+  bool require_collaborator_permissions = 14;
+}
+message ApplicationOperationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ApplicationOperation {
+  Application application = 1;
+  string operation = 2;
+}
+message ApplicationWebhookToken {
+  string token = 1;
+}
+message MoveApplicationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 target_environment_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message ListRollbacksRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListRollbacksResponse {
+  repeated Rollback rollbacks = 1;
+}
+message Rollback {
+  int64 id = 1;
+  int64 application_id = 2;
+  string status = 3;
+  optional string commit = 4;
+  int64 created_at = 5;
+}
+message TriggerRollbackRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 rollback_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message RollbackTrigger {
+  int64 rollback_id = 1;
+  string status = 2;
+}
+message DeleteRollbackRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 rollback_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message ApplicationDependencies {
+  repeated string items = 1;
+}
+message ResourceListRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ApplicationPorts {
+  repeated string items = 1;
+}
+message ApplicationMounts {
+  repeated string items = 1;
+}
+message ApplicationNetworks {
+  repeated string items = 1;
+}
+message ApplicationPatches {
+  repeated string items = 1;
+}
+message ApplicationMiddlewares {
+  repeated string items = 1;
+}
+message ApplicationRedirects {
+  repeated string items = 1;
+}
+message ApplicationSecurity {
+  repeated string items = 1;
+}

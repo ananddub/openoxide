@@ -1,0 +1,319 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+// Remaining control-plane contracts. Payloads retain the validated domain JSON
+// while the resource identifiers and operation names stay strongly typed.
+message ResourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gte = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
+  string payload = 4 [(buf.validate.field).string.max_len = 1048576];
+}
+message ResourceResponse {
+  int64 id = 1;
+  string kind = 2;
+  string payload = 3;
+}
+message ResourceListResponse {
+  repeated ResourceResponse items = 1;
+}
+message ResourceQuery {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string query = 3 [(buf.validate.field).string.max_len = 1000];
+  optional int64 limit = 4 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 5 [(buf.validate.field).int64.gte = 0];
+}
+message OperationResult {
+  bool success = 1;
+  string operation = 2;
+  optional string message = 3;
+  optional string payload = 4;
+}
+message StreamQuery {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string filter = 2 [(buf.validate.field).string.max_len = 1000];
+}
+
+service ServerService {
+  rpc ListServers(ResourceQuery) returns (ResourceListResponse);
+  rpc GetServer(ResourceRequest) returns (ResourceResponse);
+  rpc CreateServer(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateServer(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteServer(ResourceRequest) returns (Empty);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc SetupServer(ResourceRequest) returns (OperationResult);
+  rpc StartServer(ResourceRequest) returns (OperationResult);
+  rpc StopServer(ResourceRequest) returns (OperationResult);
+  rpc RestartServer(ResourceRequest) returns (OperationResult);
+  rpc RemoveServer(ResourceRequest) returns (Empty);
+  rpc GetServerErrors(ResourceRequest) returns (ResourceListResponse);
+  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
+  rpc ListPrivateNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc CreatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePrivateNetwork(ResourceRequest) returns (Empty);
+}
+service GitProviderService {
+  rpc ListGitProviders(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGitProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGithubProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGitlabProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGiteaProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGithubProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGitlabProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGiteaProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteGitProvider(ResourceRequest) returns (Empty);
+  rpc TestGitProvider(ResourceRequest) returns (OperationResult);
+  rpc RotateWebhookSecret(ResourceRequest) returns (ResourceResponse);
+  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
+  rpc ListBranches(ResourceRequest) returns (ResourceListResponse);
+  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
+  rpc Authorize(ResourceRequest) returns (ResourceResponse);
+  rpc OAuthCallback(ResourceRequest) returns (ResourceResponse);
+  rpc Disconnect(ResourceRequest) returns (Empty);
+  rpc GetCollaboratorPermission(ResourceRequest) returns (OperationResult);
+  rpc GetWebhookStatus(ResourceRequest) returns (OperationResult);
+  rpc InstallWebhook(ResourceRequest) returns (OperationResult);
+  rpc RecreateWebhook(ResourceRequest) returns (OperationResult);
+  rpc DeleteWebhook(ResourceRequest) returns (Empty);
+}
+service DnsService {
+  rpc ListProviders(ResourceQuery) returns (ResourceListResponse);
+  rpc GetProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteProvider(ResourceRequest) returns (Empty);
+  rpc TestProvider(ResourceRequest) returns (OperationResult);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc ListZones(ResourceRequest) returns (ResourceListResponse);
+  rpc ListRecords(ResourceRequest) returns (ResourceListResponse);
+  rpc CreateRecord(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRecord(ResourceRequest) returns (Empty);
+}
+service VaultService {
+  rpc ListProviders(ResourceQuery) returns (ResourceListResponse);
+  rpc GetProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteProvider(ResourceRequest) returns (Empty);
+  rpc TestProvider(ResourceRequest) returns (OperationResult);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc ListSecrets(ResourceRequest) returns (ResourceListResponse);
+  rpc ListAssignments(ResourceRequest) returns (ResourceListResponse);
+  rpc UpdateAssignments(ResourceRequest) returns (OperationResult);
+}
+service CertificateService {
+  rpc ListCertificates(ResourceQuery) returns (ResourceListResponse);
+  rpc GetCertificate(ResourceRequest) returns (ResourceResponse);
+  rpc CreateCertificate(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateCertificate(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteCertificate(ResourceRequest) returns (Empty);
+  rpc IssueCertificate(ResourceRequest) returns (OperationResult);
+  rpc RenewCertificate(ResourceRequest) returns (OperationResult);
+  rpc ValidateCertificate(ResourceRequest) returns (OperationResult);
+}
+service DomainService {
+  rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
+  rpc GetDomain(ResourceRequest) returns (ResourceResponse);
+  rpc CreateDomain(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateDomain(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteDomain(ResourceRequest) returns (Empty);
+  rpc AttachDomain(ResourceRequest) returns (OperationResult);
+  rpc DetachDomain(ResourceRequest) returns (Empty);
+}
+service BackupService {
+  rpc ListBackups(ResourceQuery) returns (ResourceListResponse);
+  rpc GetBackup(ResourceRequest) returns (ResourceResponse);
+  rpc CreateBackup(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateBackup(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteBackup(ResourceRequest) returns (Empty);
+  rpc RunBackup(ResourceRequest) returns (OperationResult);
+  rpc RestoreBackup(ResourceRequest) returns (OperationResult);
+  rpc ValidateDestination(ResourceRequest) returns (OperationResult);
+}
+service ScheduleService {
+  rpc ListSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc GetSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc CreateSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteSchedule(ResourceRequest) returns (Empty);
+  rpc RunSchedule(ResourceRequest) returns (OperationResult);
+  rpc PauseSchedule(ResourceRequest) returns (OperationResult);
+  rpc ResumeSchedule(ResourceRequest) returns (OperationResult);
+}
+service DestinationService {
+  rpc ListDestinations(ResourceQuery) returns (ResourceListResponse);
+  rpc GetDestination(ResourceRequest) returns (ResourceResponse);
+  rpc CreateDestination(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateDestination(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteDestination(ResourceRequest) returns (Empty);
+  rpc TestDestination(ResourceRequest) returns (OperationResult);
+}
+service MonitoringService {
+  rpc GetOverview(ResourceRequest) returns (ResourceResponse);
+  rpc GetMetrics(ResourceRequest) returns (ResourceResponse);
+  rpc StreamMetrics(StreamQuery) returns (stream ResourceResponse);
+  rpc StreamContainerEvents(StreamQuery) returns (stream ResourceResponse);
+  rpc GetContainerState(ResourceRequest) returns (ResourceResponse);
+}
+service RegistryService {
+  rpc ListRegistries(ResourceQuery) returns (ResourceListResponse);
+  rpc GetRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc CreateRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRegistry(ResourceRequest) returns (Empty);
+  rpc TestRegistry(ResourceRequest) returns (OperationResult);
+  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
+  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
+  rpc RotateCredentials(ResourceRequest) returns (OperationResult);
+  rpc GetUsage(ResourceRequest) returns (ResourceResponse);
+}
+service NotificationService {
+  rpc ListNotifications(ResourceQuery) returns (ResourceListResponse);
+  rpc GetNotification(ResourceRequest) returns (ResourceResponse);
+  rpc CreateNotification(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateNotification(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteNotification(ResourceRequest) returns (Empty);
+  rpc TestNotification(ResourceRequest) returns (OperationResult);
+}
+service PermissionService {
+  rpc ListPermissions(ResourceQuery) returns (ResourceListResponse);
+  rpc GetPermission(ResourceRequest) returns (ResourceResponse);
+  rpc CreatePermission(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePermission(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePermission(ResourceRequest) returns (Empty);
+  rpc ListGroups(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGroup(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGroup(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGroup(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteGroup(ResourceRequest) returns (Empty);
+  rpc ListPolicies(ResourceQuery) returns (ResourceListResponse);
+  rpc AssignMemberGroup(ResourceRequest) returns (OperationResult);
+  rpc ListMembers(ResourceQuery) returns (ResourceListResponse);
+  rpc AddMember(ResourceRequest) returns (OperationResult);
+  rpc UpdateMemberRole(ResourceRequest) returns (OperationResult);
+  rpc RemoveMember(ResourceRequest) returns (Empty);
+  rpc ListInvites(ResourceQuery) returns (ResourceListResponse);
+  rpc CreateInvite(ResourceRequest) returns (ResourceResponse);
+  rpc AcceptInvite(ResourceRequest) returns (OperationResult);
+  rpc CancelInvite(ResourceRequest) returns (Empty);
+  rpc ReplaceUserPolicies(ResourceRequest) returns (OperationResult);
+}
+service AuditService {
+  rpc ListAuditLogs(ResourceQuery) returns (ResourceListResponse);
+  rpc ExportAuditLogs(ResourceQuery) returns (ResourceResponse);
+}
+service AiService {
+  rpc ListSettings(ResourceQuery) returns (ResourceListResponse);
+  rpc GetSettings(ResourceRequest) returns (ResourceResponse);
+  rpc CreateSettings(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteSettings(ResourceRequest) returns (Empty);
+  rpc ListModels(ResourceRequest) returns (ResourceListResponse);
+  rpc TestSettings(ResourceRequest) returns (OperationResult);
+  rpc DiscoverModels(ResourceRequest) returns (ResourceListResponse);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc ListGenerations(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGeneration(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGeneration(ResourceRequest) returns (ResourceResponse);
+  rpc ReviewGeneration(ResourceRequest) returns (OperationResult);
+  rpc DeployGeneration(ResourceRequest) returns (OperationResult);
+  rpc AnalyzeLogs(ResourceRequest) returns (ResourceResponse);
+}
+service SwarmService {
+  rpc GetSettings(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
+  rpc ListNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc CreateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteNetwork(ResourceRequest) returns (Empty);
+  rpc ListServices(ResourceQuery) returns (ResourceListResponse);
+  rpc GetService(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateService(ResourceRequest) returns (ResourceResponse);
+}
+service TraefikService {
+  rpc ListFiles(ResourceQuery) returns (ResourceListResponse);
+  rpc GetFileTree(ResourceQuery) returns (ResourceListResponse);
+  rpc GetFileContent(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateFileContent(ResourceRequest) returns (OperationResult);
+  rpc Health(Empty) returns (OperationResult);
+  rpc GetRequestStatus(Empty) returns (OperationResult);
+  rpc ToggleRequests(ResourceRequest) returns (OperationResult);
+  rpc GetRequestLogs(ResourceQuery) returns (ResourceListResponse);
+  rpc GetVersion(Empty) returns (ResourceResponse);
+  rpc UpdateVersion(ResourceRequest) returns (OperationResult);
+  rpc RenderMiddleware(ResourceRequest) returns (ResourceResponse);
+}
+service SshKeyService {
+  rpc ListKeys(ResourceQuery) returns (ResourceListResponse);
+  rpc GetKey(ResourceRequest) returns (ResourceResponse);
+  rpc CreateKey(ResourceRequest) returns (ResourceResponse);
+  rpc GenerateKey(ResourceRequest) returns (ResourceResponse);
+  rpc GeneratePair(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateKey(ResourceRequest) returns (ResourceResponse);
+  rpc MarkUsed(ResourceRequest) returns (OperationResult);
+  rpc DeleteKey(ResourceRequest) returns (Empty);
+}
+service GlobalOperationsService {
+  rpc UploadContainerFile(stream ResourceRequest) returns (OperationResult);
+  rpc DownloadContainerFile(ResourceRequest) returns (ResourceResponse);
+  rpc ListContainers(ResourceQuery) returns (ResourceListResponse);
+  rpc ListImages(ResourceQuery) returns (ResourceListResponse);
+  rpc ListNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc ListVolumes(ResourceQuery) returns (ResourceListResponse);
+  rpc InspectContainer(ResourceRequest) returns (ResourceResponse);
+  rpc InspectImage(ResourceRequest) returns (ResourceResponse);
+  rpc InspectNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc InspectVolume(ResourceRequest) returns (ResourceResponse);
+  rpc ContainerAction(ResourceRequest) returns (OperationResult);
+  rpc DeleteContainer(ResourceRequest) returns (Empty);
+  rpc DiskUsage(ResourceQuery) returns (ResourceResponse);
+  rpc Prune(ResourceRequest) returns (OperationResult);
+}
+service SystemService {
+  rpc Health(Empty) returns (OperationResult);
+  rpc TestConfig(Empty) returns (OperationResult);
+}
+service OverviewService {
+  rpc ListServices(ResourceQuery) returns (ResourceListResponse);
+  rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
+  rpc ListBackups(ResourceQuery) returns (ResourceListResponse);
+}
+service AlertRuleService {
+  rpc ListRules(ResourceQuery) returns (ResourceListResponse);
+  rpc GetRule(ResourceRequest) returns (ResourceResponse);
+  rpc CreateRule(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRule(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRule(ResourceRequest) returns (Empty);
+  rpc TestRule(ResourceRequest) returns (OperationResult);
+}
+service TagService {
+  rpc ListTags(ResourceQuery) returns (ResourceListResponse);
+  rpc GetTag(ResourceRequest) returns (ResourceResponse);
+  rpc CreateTag(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateTag(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteTag(ResourceRequest) returns (Empty);
+  rpc AddTag(ResourceRequest) returns (OperationResult);
+  rpc RemoveTag(ResourceRequest) returns (Empty);
+  rpc ListProjectTags(ResourceQuery) returns (ResourceListResponse);
+  rpc AttachProjectTag(ResourceRequest) returns (OperationResult);
+  rpc DetachProjectTag(ResourceRequest) returns (Empty);
+}
+service WebhookService {
+  rpc ListWebhooks(ResourceQuery) returns (ResourceListResponse);
+  rpc GetWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc CreateWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteWebhook(ResourceRequest) returns (Empty);
+  rpc TestWebhook(ResourceRequest) returns (OperationResult);
+}
+service SettingsService {
+  rpc GetSettings(Empty) returns (ResourceResponse);
+  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
+}

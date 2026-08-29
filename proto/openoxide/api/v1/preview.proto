@@ -1,0 +1,40 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service PreviewDeploymentService {
+  rpc ListPreviews(ListPreviewsRequest) returns (ListPreviewsResponse);
+  rpc GetPreview(GetPreviewRequest) returns (PreviewDeployment);
+  rpc CreatePreview(CreatePreviewRequest) returns (PreviewDeployment);
+  rpc RedeployPreview(PreviewOperationRequest) returns (PreviewDeployment);
+  rpc DeletePreview(PreviewOperationRequest) returns (Empty);
+}
+message PreviewDeployment {
+  int64 id = 1;
+  int64 application_id = 2;
+  string status = 3;
+  optional string branch = 4;
+  optional string url = 5;
+  optional string error = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+message ListPreviewsRequest {
+  optional int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListPreviewsResponse {
+  repeated PreviewDeployment previews = 1;
+}
+message GetPreviewRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message CreatePreviewRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  string branch = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string commit = 3;
+}
+message PreviewOperationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}

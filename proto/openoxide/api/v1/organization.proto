@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service OrganizationService {
+  rpc GetOrganization(GetOrganizationRequest) returns (Organization);
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (Empty);
+}
+
+message Organization {
+  int64 id = 1;
+  string name = 2;
+  optional string logo = 3;
+  string slug = 4;
+  int64 owner_id = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+message GetOrganizationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListOrganizationsRequest {}
+
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+}
+
+message CreateOrganizationRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string logo = 2;
+  optional string slug = 3;
+}
+
+message UpdateOrganizationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2;
+  optional string logo = 3;
+  optional string slug = 4;
+}
+
+message DeleteOrganizationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}

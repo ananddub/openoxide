@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service ProjectService {
+  rpc GetProject(GetProjectRequest) returns (Project);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc CreateProject(CreateProjectRequest) returns (Project);
+  rpc UpdateProject(UpdateProjectRequest) returns (Project);
+  rpc DeleteProject(DeleteProjectRequest) returns (Empty);
+}
+
+message Project {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2;
+  optional string description = 3;
+  string environment_variables = 4;
+  int64 organization_id = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+message GetProjectRequest {
+  int64 id = 1;
+}
+
+message ListProjectsRequest {
+  int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message CreateProjectRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string description = 2;
+  string environment_variables = 3;
+  int64 organization_id = 4 [(buf.validate.field).int64.gt = 0];
+}
+
+message UpdateProjectRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2;
+  optional string description = 3;
+  optional string environment_variables = 4;
+}
+
+message DeleteProjectRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "openoxide/api/v1/platform.proto";
+service AlertOperationsService {
+  rpc ListRules(ResourceQuery) returns (ResourceListResponse);
+  rpc ListEvents(ResourceQuery) returns (ResourceListResponse);
+  rpc GetRule(ResourceRequest) returns (ResourceResponse);
+  rpc CreateRule(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRule(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRule(ResourceRequest) returns (Empty);
+  rpc TestRule(ResourceRequest) returns (OperationResult);
+  rpc AcknowledgeEvent(ResourceRequest) returns (OperationResult);
+  rpc SilenceEvent(ResourceRequest) returns (OperationResult);
+}

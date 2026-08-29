@@ -1,9 +1,15 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
-use syn::{Expr, ExprArray, ItemImpl, Path, Token, parse_macro_input};
+use syn::{Expr, ExprArray, ItemImpl, LitBool, Path, Token, parse_macro_input};
+
+mod connect;
+
+use connect::expand_connect;
 
 struct Options {
+    connect: bool,
+    auth: bool,
     middleware: Vec<Path>,
     server: Option<Path>,
 }
@@ -35,6 +41,8 @@ impl syn::parse::Parse for Options {
     fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
         let mut middleware = Vec::new();
         let mut server = None;
+        let mut connect = false;
+        let mut auth = false;
         while !input.is_empty() {
             let key: syn::Ident = input.parse()?;
             input.parse::<Token![=]>()?;
@@ -53,6 +61,10 @@ impl syn::parse::Parse for Options {
                 }
             } else if key == "server" {
                 server = Some(input.parse()?);
+            } else if key == "connect" {
+                connect = input.parse::<LitBool>()?.value;
+            } else if key == "auth" {
+                auth = input.parse::<LitBool>()?.value;
             } else {
                 return Err(syn::Error::new_spanned(key, "unknown auto_grpc option"));
             }
@@ -60,7 +72,12 @@ impl syn::parse::Parse for Options {
                 input.parse::<Token![,]>()?;
             }
         }
-        Ok(Self { middleware, server })
+        Ok(Self {
+            connect,
+            auth,
+            middleware,
+            server,
+        })
     }
 }
 
@@ -75,6 +92,31 @@ pub fn service(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn expand(options: Options, item: ItemImpl) -> syn::Result<proc_macro2::TokenStream> {
+    if options.connect {
+        if !options.middleware.is_empty() {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "Connect middleware is configured on the Connect router, not as a Tonic interceptor",
+            ));
+        }
+        if options.server.is_some() {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "server is only supported for Tonic services",
+            ));
+        }
+        return expand_connect(item, options.auth);
+    }
+    if options.auth && !options.connect {
+        return Err(syn::Error::new(
+            Span::call_site(),
+            "auth = true is only supported for ConnectRPC services (use connect = true, auth = true)",
+        ));
+    }
+    expand_tonic(options, item)
+}
+
+fn expand_tonic(options: Options, item: ItemImpl) -> syn::Result<proc_macro2::TokenStream> {
     let trait_path = item
         .trait_
         .as_ref()
@@ -130,7 +172,7 @@ fn expand(options: Options, item: ItemImpl) -> syn::Result<proc_macro2::TokenStr
         }
     };
     Ok(quote! {
-        #[tonic::async_trait]
+        #[::auto_grpc::__private::tonic::async_trait]
         #item
         fn #registrar<'a>(container: &'a ::auto_grpc::__private::auto_di::Container, builder: &'a mut ::auto_grpc::__private::tonic::service::RoutesBuilder) -> ::auto_grpc::__private::auto_di::BoxFuture<'a, Result<(), ::auto_grpc::__private::auto_di::DiError>> {
             Box::pin(async move {
@@ -141,7 +183,7 @@ fn expand(options: Options, item: ItemImpl) -> syn::Result<proc_macro2::TokenStr
             })
         }
         ::auto_grpc::__private::inventory::submit! {
-            ::auto_grpc::Descriptor { registrar: #registrar }
+            ::auto_grpc::TonicDescriptor { registrar: #registrar }
         }
     })
 }

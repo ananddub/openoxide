@@ -7,12 +7,7 @@ impl VaultService {
         id: i64,
         organization_id: i64,
     ) -> Result<VaultTestResultDto, VaultServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type: VaultProviderType = provider
             .provider_type
@@ -79,12 +74,7 @@ impl VaultService {
         id: i64,
         organization_id: i64,
     ) -> Result<VaultSecretListDto, VaultServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
 
         let p_type: VaultProviderType = provider
             .provider_type

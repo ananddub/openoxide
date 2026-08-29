@@ -7,34 +7,36 @@ package agent;
 // Agents are the only durable metric store. The panel authenticates to this
 // query API and proxies results to authorized browser clients.
 service AgentService {
-  rpc GetAgentInfo (AgentInfoRequest) returns (AgentInfoResponse);
+  rpc GetAgentInfo(AgentInfoRequest) returns (AgentInfoResponse);
   // Query historical server metrics
-  rpc GetServerMetrics (GetMetricsRequest) returns (ServerMetricsResponse);
+  rpc GetServerMetrics(GetMetricsRequest) returns (ServerMetricsResponse);
 
   // Query historical container metrics
-  rpc GetContainerMetrics (GetContainerMetricsRequest) returns (ContainerMetricsResponse);
+  rpc GetContainerMetrics(GetContainerMetricsRequest) returns (ContainerMetricsResponse);
 
   // Current Docker lifecycle state, including stopped/restarting containers.
-  rpc GetContainerStates (GetMetricsRequest) returns (ContainerStatesResponse);
+  rpc GetContainerStates(GetMetricsRequest) returns (ContainerStatesResponse);
 
   // Persistent lifecycle channel. The panel keeps the request stream open and
   // the agent emits snapshots immediately when Docker state changes.
-  rpc WatchContainerStates (stream LifecycleControl) returns (stream ContainerStatesResponse);
+  rpc WatchContainerStates(stream LifecycleControl) returns (stream ContainerStatesResponse);
 
   // Tail a container's recent logs
-  rpc StreamLogs (LogStreamRequest) returns (stream LogChunk);
+  rpc StreamLogs(LogStreamRequest) returns (stream LogChunk);
 
   // Persistent host or Docker shell session.
-  rpc Shell (stream ShellMessage) returns (stream ShellMessage);
+  rpc Shell(stream ShellMessage) returns (stream ShellMessage);
 
   // One-shot non-PTY command execution for deployment and maintenance tasks.
-  rpc ExecTask (ExecTaskRequest) returns (stream ExecTaskOutput);
+  rpc ExecTask(ExecTaskRequest) returns (stream ExecTaskOutput);
 
   // Stream a host file to the agent and atomically install it at destination.
-  rpc UploadFile (stream FileUploadChunk) returns (FileUploadResult);
+  rpc UploadFile(stream FileUploadChunk) returns (FileUploadResult);
 }
 
-message AgentInfoRequest { int64 server_id = 1; }
+message AgentInfoRequest {
+  int64 server_id = 1;
+}
 
 message AgentInfoResponse {
   string protocol_version = 1;

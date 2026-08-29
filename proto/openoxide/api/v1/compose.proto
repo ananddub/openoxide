@@ -1,0 +1,173 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "openoxide/api/v1/platform.proto";
+import "buf/validate/validate.proto";
+
+service ComposeService {
+  rpc GetCompose(GetComposeRequest) returns (Compose);
+  rpc ListComposes(ListComposesRequest) returns (ListComposesResponse);
+  rpc CreateCompose(CreateComposeRequest) returns (Compose);
+  rpc UpdateCompose(UpdateComposeRequest) returns (Compose);
+  rpc DeleteCompose(DeleteComposeRequest) returns (Empty);
+  rpc SetGithubSource(SetComposeSourceRequest) returns (Compose);
+  rpc SetGitlabSource(SetComposeSourceRequest) returns (Compose);
+  rpc SetBitbucketSource(SetComposeSourceRequest) returns (Compose);
+  rpc SetGiteaSource(SetComposeSourceRequest) returns (Compose);
+  rpc SetCustomGitSource(SetComposeSourceRequest) returns (Compose);
+  rpc SetRawSource(SetRawSourceRequest) returns (Compose);
+  rpc UploadSource(stream UploadComposeRequest) returns (Compose);
+  rpc Deploy(ComposeOperationRequest) returns (ComposeOperation);
+  rpc Redeploy(ComposeOperationRequest) returns (ComposeOperation);
+  rpc Reload(ComposeOperationRequest) returns (ComposeOperation);
+  rpc Start(ComposeOperationRequest) returns (ComposeOperation);
+  rpc Stop(ComposeOperationRequest) returns (ComposeOperation);
+  rpc Cancel(ComposeOperationRequest) returns (Empty);
+  rpc MoveCompose(MoveComposeRequest) returns (Compose);
+  rpc RotateWebhookToken(ComposeOperationRequest) returns (ComposeWebhookToken);
+  rpc ListDependencies(ComposeOperationRequest) returns (ComposeDependencies);
+  rpc PreviewCompose(PreviewComposeRequest) returns (ComposePreview);
+  rpc InstallTemplate(InstallTemplateRequest) returns (Compose);
+  rpc ExportCompose(ExportComposeRequest) returns (ComposeExport);
+  rpc ImportCompose(ImportComposeRequest) returns (Compose);
+  rpc RemoveServices(ServiceMutationRequest) returns (Empty);
+  rpc UpdateResources(UpdateComposeResourcesRequest) returns (Compose);
+  rpc ClearDeploymentHistory(ComposeOperationRequest) returns (Empty);
+  rpc CleanupDeploymentQueue(ComposeOperationRequest) returns (Empty);
+  rpc ForceKillDeployment(ComposeOperationRequest) returns (Empty);
+  rpc ListMounts(ComposeMountRequest) returns (ResourceListResponse);
+  rpc CreateMount(ComposeMountRequest) returns (ResourceResponse);
+  rpc UpdateMount(ComposeMountRequest) returns (ResourceResponse);
+  rpc DeleteMount(ComposeMountRequest) returns (Empty);
+  rpc ListPatches(ComposePatchRequest) returns (ResourceListResponse);
+  rpc CreatePatch(ComposePatchRequest) returns (ResourceResponse);
+  rpc UpdatePatch(ComposePatchRequest) returns (ResourceResponse);
+  rpc DeletePatch(ComposePatchRequest) returns (Empty);
+}
+message Compose {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  int64 environment_id = 4;
+  optional int64 server_id = 5;
+  string status = 6;
+  optional string source_type = 7;
+  optional string repository = 8;
+  optional string branch = 9;
+  optional string compose_file = 10;
+  int64 created_at = 11;
+  int64 updated_at = 12;
+}
+message GetComposeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListComposesRequest {
+  int64 environment_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ListComposesResponse {
+  repeated Compose composes = 1;
+}
+message CreateComposeRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string description = 2;
+  int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 4;
+  optional string compose_file = 5;
+}
+message UpdateComposeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2;
+  optional string description = 3;
+  optional string compose_file = 4;
+  optional int64 server_id = 5;
+  repeated string network_ids = 6;
+}
+message DeleteComposeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ComposeOperationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message ComposeOperation {
+  Compose compose = 1;
+  string operation = 2;
+}
+message SetComposeSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+  string owner = 3 [(buf.validate.field).string.min_len = 1];
+  optional string branch = 4;
+  optional string build_path = 5;
+  optional int64 provider_id = 6;
+}
+message SetRawSourceRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string content = 2 [(buf.validate.field).string = {min_len: 1, max_len: 1048576}];
+  optional string file_name = 3;
+}
+message UploadComposeRequest {
+  oneof payload {
+    int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+    bytes chunk = 2 [(buf.validate.field).bytes = {min_len: 1, max_len: 4194304}];
+  }
+}
+message MoveComposeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 target_environment_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message ComposeWebhookToken {
+  string token = 1;
+}
+message ComposeDependencies {
+  repeated string items = 1;
+}
+message PreviewComposeRequest {
+  string content = 1 [(buf.validate.field).string = {min_len: 1, max_len: 1048576}];
+}
+message ComposePreview {
+  string content = 1;
+  repeated string services = 2;
+}
+message InstallTemplateRequest {
+  string template = 1 [(buf.validate.field).string.min_len = 1];
+  int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string name = 3;
+}
+message ExportComposeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool include_secrets = 2;
+}
+message ComposeExport {
+  string archive = 1;
+}
+message ImportComposeRequest {
+  int64 environment_id = 1 [(buf.validate.field).int64.gt = 0];
+  string archive = 2 [(buf.validate.field).string = {min_len: 1, max_len: 10485760}];
+}
+message ServiceMutationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  repeated string services = 2 [(buf.validate.field).repeated = {min_items: 1, max_items: 100}];
+}
+message UpdateComposeResourcesRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string memory_limit = 2;
+  optional string cpu_limit = 3;
+  optional int64 replicas = 4;
+}
+message ComposeMountRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string mount_type = 3 [(buf.validate.field).string.min_len = 1];
+  optional string host_path = 4;
+  optional string volume_name = 5;
+  optional string file_path = 6;
+  optional string content = 7;
+  string mount_path = 8 [(buf.validate.field).string.min_len = 1];
+}
+message ComposePatchRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string patch_type = 3 [(buf.validate.field).string.min_len = 1];
+  string payload = 4 [(buf.validate.field).string = {min_len: 1, max_len: 1048576}];
+}

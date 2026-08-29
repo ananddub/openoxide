@@ -10,13 +10,6 @@ pub fn internal(message: &str) -> PermissionRejection {
     )
 }
 
-pub fn no_organization() -> PermissionRejection {
-    (
-        StatusCode::FORBIDDEN,
-        Json(json!({ "error": "user has no organization membership" })),
-    )
-}
-
 pub fn denied(required_action: String) -> PermissionRejection {
     (
         StatusCode::FORBIDDEN,
@@ -25,9 +18,4 @@ pub fn denied(required_action: String) -> PermissionRejection {
             "required_action": required_action,
         })),
     )
-}
-
-pub fn evaluation(error: sqlx::Error) -> PermissionRejection {
-    tracing::error!(%error, "permission evaluation failed");
-    internal("failed to evaluate permission")
 }

@@ -31,6 +31,8 @@ async fn main() {
     openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
 
     let service: Arc<Router> = resolve::<Router<()>>().await.unwrap();
+    let connect_router = auto_grpc::connect_routes().await.unwrap();
+    let connect_service = connectrpc::ConnectRpcService::new(connect_router);
     BackgroundManager::start_all()
         .await
         .expect("failed to start background systems");
@@ -44,5 +46,7 @@ async fn main() {
     let svc = service.as_ref().to_owned();
 
     tracing::info!("Listening on {}:{}", host, port);
-    axum::serve(listener, svc).await.unwrap();
+    openoxide::api::connect::serve(listener, svc, connect_service)
+        .await
+        .unwrap();
 }

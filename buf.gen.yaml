@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - local: web/openoxide_react/node_modules/.bin/protoc-gen-es
+    out: web/openoxide_react/src/gen/connect
+    opt:
+      - target=ts

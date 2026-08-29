@@ -7,7 +7,7 @@
 	},
 	"scripts": {
 		"build": "vite build",
-		"dev": "vite dev --host localhost --port 3001",
+		"dev": "vite dev --host 0.0.0.0 --port 3001",
 		"preview": "vite preview",
 		"test": "vitest run",
 		"format": "oxfmt .",
@@ -17,10 +17,14 @@
 		"gen:routes": "tsr generate",
 		"gen:live": "node ../../crates/auto/vite/src/generate.js . ../../Cargo.toml src/openoxide-live.generated.d.ts openoxide-live-manifest",
 		"gen:api": "openapi-typescript http://das.tail25b5a0.ts.net:4000/openapi.json -o src/types/api.d.ts",
+		"gen:connect": "cd ../.. && buf generate --path proto/openoxide/api/v1",
 		"prepare": "cd .. && lefthook install"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.6.0",
+		"@bufbuild/protobuf": "^2.14.0",
+		"@connectrpc/connect": "^2.1.2",
+		"@connectrpc/connect-web": "^2.1.2",
 		"@dagrejs/dagre": "^3.0.0",
 		"@hookform/resolvers": "^5.4.0",
 		"@monaco-editor/react": "^4.7.0",
@@ -56,6 +60,7 @@
 	},
 	"devDependencies": {
 		"@babel/core": "^8.0.1",
+		"@bufbuild/protoc-gen-es": "^2.14.0",
 		"@openoxide/vite": "file:../../crates/auto/vite",
 		"@rolldown/plugin-babel": "^0.2.3",
 		"@tailwindcss/vite": "^4.3.3",

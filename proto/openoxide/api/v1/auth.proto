@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service AuthService {
+  rpc Signup(SignupRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc Refresh(RefreshRequest) returns (AuthResponse);
+  rpc WhoAmI(WhoAmIRequest) returns (User);
+  rpc Logout(LogoutRequest) returns (Empty);
+  rpc GetSetupStatus(GetSetupStatusRequest) returns (SetupStatus);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (Empty);
+  rpc ResetPassword(ResetPasswordRequest) returns (Empty);
+
+  rpc GetEmailVerificationStatus(GetEmailVerificationStatusRequest) returns (EmailVerificationStatus);
+  rpc RequestEmailVerification(RequestEmailVerificationRequest) returns (Empty);
+  rpc ConfirmEmailVerification(ConfirmEmailVerificationRequest) returns (Empty);
+
+  rpc GetTwoFactorStatus(GetTwoFactorStatusRequest) returns (TwoFactorStatus);
+  rpc SetupTwoFactor(SetupTwoFactorRequest) returns (TwoFactorSetup);
+  rpc EnableTwoFactor(EnableTwoFactorRequest) returns (Empty);
+  rpc DisableTwoFactor(DisableTwoFactorRequest) returns (Empty);
+  rpc RegenerateRecoveryCodes(RegenerateRecoveryCodesRequest) returns (RecoveryCodes);
+
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (Empty);
+
+  rpc ListPersonalAccessTokens(ListPersonalAccessTokensRequest) returns (ListPersonalAccessTokensResponse);
+  rpc CreatePersonalAccessToken(CreatePersonalAccessTokenRequest) returns (CreatedPersonalAccessToken);
+  rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (Empty);
+}
+
+message SignupRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string password = 2 [(buf.validate.field).string.min_len = 8];
+  optional string first_name = 3;
+  optional string last_name = 4;
+  optional string avatar = 5;
+}
+
+message LoginRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string password = 2 [(buf.validate.field).string.min_len = 1];
+  optional string two_factor_code = 3;
+  optional string recovery_code = 4;
+}
+
+message RefreshRequest {
+  string refresh_token = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message AuthResponse {
+  User user = 1;
+  TokenPair tokens = 2;
+}
+
+message WhoAmIRequest {}
+message LogoutRequest {}
+message GetSetupStatusRequest {}
+
+message SetupStatus {
+  bool owner_present = 1;
+}
+
+message UpdateUserRequest {
+  optional string email = 1 [(buf.validate.field).string.email = true];
+  optional string password = 2 [(buf.validate.field).string.min_len = 8];
+  optional string first_name = 3 [(buf.validate.field).string.max_len = 255];
+  optional string last_name = 4 [(buf.validate.field).string.max_len = 255];
+  optional string avatar = 5 [(buf.validate.field).string.uri = true];
+}
+
+message RequestPasswordResetRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+}
+
+message ResetPasswordRequest {
+  string token = 1 [(buf.validate.field).string.min_len = 1];
+  string password = 2 [(buf.validate.field).string.min_len = 8];
+}
+
+message GetEmailVerificationStatusRequest {}
+message RequestEmailVerificationRequest {}
+
+message ConfirmEmailVerificationRequest {
+  string token = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message EmailVerificationStatus {
+  bool verified = 1;
+  optional int64 verified_at = 2;
+}
+
+message GetTwoFactorStatusRequest {}
+
+message TwoFactorStatus {
+  bool enabled = 1;
+  bool configured = 2;
+}
+
+message SetupTwoFactorRequest {
+  string password = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message TwoFactorSetup {
+  string secret = 1;
+  string otpauth_url = 2;
+  repeated string recovery_codes = 3;
+}
+
+message EnableTwoFactorRequest {
+  string code = 1 [(buf.validate.field).string = {min_len: 6, max_len: 10}];
+}
+
+message DisableTwoFactorRequest {
+  string password = 1 [(buf.validate.field).string.min_len = 1];
+  string code = 2 [(buf.validate.field).string = {min_len: 6, max_len: 10}];
+}
+
+message RegenerateRecoveryCodesRequest {
+  string password = 1 [(buf.validate.field).string.min_len = 1];
+  string code = 2 [(buf.validate.field).string = {min_len: 6, max_len: 10}];
+}
+
+message RecoveryCodes {
+  repeated string recovery_codes = 1;
+}
+
+message ListSessionsRequest {}
+
+message ListSessionsResponse {
+  repeated AuthSession sessions = 1;
+}
+
+message AuthSession {
+  string session_id = 1;
+  int64 created_at = 2;
+  optional int64 expires_at = 3;
+  bool active = 4;
+  bool current = 5;
+}
+
+message RevokeSessionRequest {
+  string session_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message ListPersonalAccessTokensRequest {}
+
+message ListPersonalAccessTokensResponse {
+  repeated PersonalAccessToken tokens = 1;
+}
+
+message CreatePersonalAccessTokenRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string password = 2 [(buf.validate.field).string.min_len = 1];
+  optional int64 expires_at = 3;
+}
+
+message PersonalAccessToken {
+  int64 id = 1;
+  string name = 2;
+  string token_prefix = 3;
+  optional int64 expires_at = 4;
+  optional int64 last_used_at = 5;
+  optional int64 revoked_at = 6;
+  int64 created_at = 7;
+}
+
+message CreatedPersonalAccessToken {
+  string token = 1;
+  PersonalAccessToken details = 2;
+}
+
+message RevokePersonalAccessTokenRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}

@@ -7,5 +7,11 @@ edition = "2024"
 auto-di = "0.6.0"
 futures = "0.3"
 inventory = "0.3"
-tonic = "0.12.3"
+connectrpc = { version = "0.9.0", default-features = false, optional = true }
+tonic = { version = "0.12.3", optional = true }
 auto_grpc_macros = { path = "../grpc_macros" }
+
+[features]
+default = ["tonic"]
+tonic = ["dep:tonic"]
+connect = ["dep:connectrpc"]

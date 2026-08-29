@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package openoxide.api.v1;
+
+message Empty {}
+
+message User {
+  int64 id = 1;
+  optional string email = 2;
+  optional string first_name = 3;
+  optional string last_name = 4;
+  string avatar = 5;
+  optional string role = 6;
+  int64 group_id = 7;
+}
+
+message TokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+}

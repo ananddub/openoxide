@@ -3,7 +3,11 @@ use crate::api::dto::vault::{
     VaultProviderType,
 };
 use crate::db::models::vault_providers::VaultProvider;
-use crate::db::repository::VaultProviderRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::{
+    models::VaultProviders,
+    vault_providers::{VaultProvidersCreateParams, VaultProvidersUpdateParams},
+};
 use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
@@ -35,18 +39,18 @@ pub enum VaultServiceError {
 }
 
 pub struct VaultService {
-    repository: Arc<VaultProviderRepository>,
+    queries: Arc<FlashQueries>,
     client: Client,
 }
 
 #[singleton]
 impl VaultService {
-    pub fn new(repository: Arc<VaultProviderRepository>) -> Self {
+    pub fn new(queries: Arc<FlashQueries>) -> Self {
         let client = Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
             .unwrap_or_default();
-        Self { repository, client }
+        Self { queries, client }
     }
 
     pub async fn list_providers(
@@ -54,10 +58,14 @@ impl VaultService {
         organization_id: i64,
     ) -> Result<Vec<VaultProviderDto>, VaultServiceError> {
         let providers = self
-            .repository
-            .list_by_organization(organization_id)
+            .queries
+            .vault_providers_list_by_organization(organization_id)
             .await?;
-        Ok(providers.into_iter().map(Self::into_dto).collect())
+        Ok(providers
+            .into_iter()
+            .map(vault_provider_from_model)
+            .map(Self::into_dto)
+            .collect())
     }
 
     pub async fn get_provider(
@@ -65,12 +73,7 @@ impl VaultService {
         id: i64,
         organization_id: i64,
     ) -> Result<VaultProviderDto, VaultServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
         Ok(Self::into_dto(provider))
     }
 
@@ -94,12 +97,11 @@ impl VaultService {
             updated_at: now,
         };
 
-        let id = self.repository.create(&provider).await?;
-        let created = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .ok_or(VaultServiceError::NotFound)?;
+        self.queries
+            .vault_providers_create(&vault_create_params(&provider))
+            .await?;
+        let id = self.queries.vault_providers_get_last_insert_rowid().await?;
+        let created = vault_provider_from_model(self.queries.vault_providers_get_by_id(id).await?);
         Ok(Self::into_dto(created))
     }
 
@@ -109,12 +111,7 @@ impl VaultService {
         organization_id: i64,
         body: UpdateVaultProviderDto,
     ) -> Result<VaultProviderDto, VaultServiceError> {
-        let mut existing = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let mut existing = self.provider_for_organization(id, organization_id).await?;
 
         if let Some(name) = body.name {
             existing.name = name;
@@ -139,7 +136,9 @@ impl VaultService {
         }
         existing.updated_at = chrono::Utc::now().timestamp();
 
-        self.repository.update(id, &existing).await?;
+        self.queries
+            .vault_providers_update(&vault_update_params(id, &existing))
+            .await?;
         Ok(Self::into_dto(existing))
     }
 
@@ -148,7 +147,15 @@ impl VaultService {
         id: i64,
         organization_id: i64,
     ) -> Result<bool, VaultServiceError> {
-        Ok(self.repository.delete(id, organization_id).await?)
+        match self
+            .queries
+            .vault_providers_delete(id, organization_id)
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error.into()),
+        }
     }
 
     pub async fn get_assignments(
@@ -156,12 +163,7 @@ impl VaultService {
         id: i64,
         organization_id: i64,
     ) -> Result<Vec<VaultProviderAssignmentDto>, VaultServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let provider = self.provider_for_organization(id, organization_id).await?;
         Ok(Self::read_assignments(provider.config_json.as_deref()))
     }
 
@@ -171,16 +173,27 @@ impl VaultService {
         organization_id: i64,
         assignments: Vec<VaultProviderAssignmentDto>,
     ) -> Result<Vec<VaultProviderAssignmentDto>, VaultServiceError> {
-        let mut provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(VaultServiceError::NotFound)?;
+        let mut provider = self.provider_for_organization(id, organization_id).await?;
         provider.config_json = Self::merge_assignments(provider.config_json, &assignments);
         provider.updated_at = chrono::Utc::now().timestamp();
-        self.repository.update(id, &provider).await?;
+        self.queries
+            .vault_providers_update(&vault_update_params(id, &provider))
+            .await?;
         Ok(assignments)
+    }
+
+    async fn provider_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<VaultProvider, VaultServiceError> {
+        match self.queries.vault_providers_get_by_id(id).await {
+            Ok(provider) if provider.organization_id == organization_id => {
+                Ok(vault_provider_from_model(provider))
+            }
+            Ok(_) | Err(sqlx::Error::RowNotFound) => Err(VaultServiceError::NotFound),
+            Err(error) => Err(error.into()),
+        }
     }
 
     fn into_dto(p: VaultProvider) -> VaultProviderDto {
@@ -235,5 +248,48 @@ impl VaultService {
                     .to_string(),
             )
         }
+    }
+}
+
+fn vault_create_params(provider: &VaultProvider) -> VaultProvidersCreateParams {
+    VaultProvidersCreateParams {
+        name: provider.name.clone(),
+        provider_type: provider.provider_type.clone(),
+        api_url: provider.api_url.clone(),
+        auth_token: provider.auth_token.clone(),
+        namespace: provider.namespace.clone(),
+        config_json: provider.config_json.clone(),
+        organization_id: provider.organization_id,
+        created_at: provider.created_at,
+        updated_at: provider.updated_at,
+    }
+}
+
+fn vault_update_params(id: i64, provider: &VaultProvider) -> VaultProvidersUpdateParams {
+    VaultProvidersUpdateParams {
+        name: provider.name.clone(),
+        provider_type: provider.provider_type.clone(),
+        api_url: provider.api_url.clone(),
+        auth_token: provider.auth_token.clone(),
+        namespace: provider.namespace.clone(),
+        config_json: provider.config_json.clone(),
+        updated_at: provider.updated_at,
+        id,
+        organization_id: provider.organization_id,
+    }
+}
+
+fn vault_provider_from_model(provider: VaultProviders) -> VaultProvider {
+    VaultProvider {
+        id: Some(provider.id),
+        name: provider.name,
+        provider_type: provider.provider_type,
+        api_url: provider.api_url,
+        auth_token: provider.auth_token,
+        namespace: provider.namespace,
+        config_json: provider.config_json,
+        organization_id: provider.organization_id,
+        created_at: provider.created_at,
+        updated_at: provider.updated_at,
     }
 }

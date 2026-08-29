@@ -1,0 +1,225 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service DatabaseService {
+  rpc GetDatabase(GetDatabaseRequest) returns (Database);
+  rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse);
+  rpc CreateDatabase(CreateDatabaseRequest) returns (Database);
+  rpc UpdateDatabase(UpdateDatabaseRequest) returns (Database);
+  rpc DeleteDatabase(DeleteDatabaseRequest) returns (Empty);
+  rpc Deploy(DatabaseOperationRequest) returns (DatabaseOperation);
+  rpc Redeploy(DatabaseOperationRequest) returns (DatabaseOperation);
+  rpc Reload(DatabaseOperationRequest) returns (DatabaseOperation);
+  rpc Start(DatabaseOperationRequest) returns (DatabaseOperation);
+  rpc Stop(DatabaseOperationRequest) returns (DatabaseOperation);
+  rpc Cancel(DatabaseOperationRequest) returns (Empty);
+  rpc GetSwarmSettings(SwarmSettingsRequest) returns (SwarmSettings);
+  rpc UpdateSwarmSettings(UpdateSwarmSettingsRequest) returns (SwarmSettings);
+  rpc ListMounts(DatabaseTargetRequest) returns (MountList);
+  rpc CreateMount(CreateMountRequest) returns (Mount);
+  rpc UpdateMount(UpdateMountRequest) returns (Mount);
+  rpc DeleteMount(DeleteMountRequest) returns (Empty);
+  rpc ListDependencies(DatabaseTargetRequest) returns (Dependencies);
+  rpc ExportDatabase(ExportDatabaseRequest) returns (DatabaseExport);
+  rpc ImportDatabase(ImportDatabaseRequest) returns (Database);
+  rpc GetConnection(DatabaseTargetRequest) returns (DatabaseConnection);
+  rpc RotateCredentials(DatabaseTargetRequest) returns (Database);
+  rpc ValidateDatabase(DatabaseTargetRequest) returns (ValidationResult);
+  rpc GetPostgresAdvancedConfig(DatabaseTargetRequest) returns (AdvancedConfig);
+  rpc UpdatePostgresAdvancedConfig(UpdateAdvancedConfigRequest) returns (AdvancedConfig);
+}
+enum DatabaseKind {
+  DATABASE_KIND_UNSPECIFIED = 0;
+  DATABASE_KIND_POSTGRES = 1;
+  DATABASE_KIND_MYSQL = 2;
+  DATABASE_KIND_MARIADB = 3;
+  DATABASE_KIND_MONGO = 4;
+  DATABASE_KIND_REDIS = 5;
+  DATABASE_KIND_LIBSQL = 6;
+}
+message Database {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string name = 3;
+  optional string description = 4;
+  string docker_image = 5;
+  optional string database_name = 6;
+  optional string database_user = 7;
+  optional string database_password = 8;
+  optional int64 external_port = 9;
+  optional string command = 10;
+  repeated string args = 11;
+  optional string env_var = 12;
+  optional string memory_limit = 13;
+  optional string cpu_limit = 14;
+  int64 replicas = 15;
+  repeated string network_ids = 16;
+  string status = 17;
+  optional string last_error = 18;
+  int64 environment_id = 19;
+  optional int64 server_id = 20;
+  int64 created_at = 21;
+  int64 updated_at = 22;
+}
+message GetDatabaseRequest {
+  DatabaseKind kind = 1;
+  int64 id = 2;
+}
+message ListDatabasesRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message ListDatabasesResponse {
+  repeated Database databases = 1;
+}
+message CreateDatabaseRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  optional string description = 3;
+  int64 environment_id = 4 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 5;
+  optional string docker_image = 6;
+  optional string database_name = 7;
+  optional string database_user = 8;
+  optional string database_password = 9;
+  optional int64 external_port = 10 [(buf.validate.field).int64 = {gte: 1, lte: 65535}];
+  repeated string args = 11;
+  optional string env_var = 12;
+  repeated string network_ids = 13;
+}
+message UpdateDatabaseRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string name = 3;
+  optional string description = 4;
+  optional string docker_image = 5;
+  optional string database_name = 6;
+  optional string database_user = 7;
+  optional string database_password = 8;
+  optional int64 external_port = 9 [(buf.validate.field).int64 = {gte: 1, lte: 65535}];
+  optional string command = 10;
+  repeated string args = 11;
+  optional string env_var = 12;
+  optional string memory_limit = 13;
+  optional string cpu_limit = 14;
+  optional int64 replicas = 15;
+  optional int64 server_id = 16;
+  repeated string network_ids = 17;
+}
+message DeleteDatabaseRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message DatabaseOperationRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message DatabaseOperation {
+  Database database = 1;
+  string operation = 2;
+}
+message DatabaseTargetRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message SwarmSettingsRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+message SwarmSettings {
+  optional string health_check = 1;
+  optional string restart_policy = 2;
+  optional string placement = 3;
+  optional string update_config = 4;
+  optional string rollback_config = 5;
+  optional string mode = 6;
+  optional string labels = 7;
+  optional string network = 8;
+  optional string endpoint_spec = 9;
+  optional string ulimits = 10;
+  optional int64 stop_grace_period = 11;
+}
+message UpdateSwarmSettingsRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  SwarmSettings settings = 3;
+}
+message Mount {
+  int64 id = 1;
+  string mount_type = 2;
+  optional string host_path = 3;
+  optional string volume_name = 4;
+  optional string file_path = 5;
+  optional string content = 6;
+  string mount_path = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+message MountList {
+  repeated Mount mounts = 1;
+}
+message CreateMountRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 database_id = 2 [(buf.validate.field).int64.gt = 0];
+  string mount_type = 3 [(buf.validate.field).string.min_len = 1];
+  optional string host_path = 4;
+  optional string volume_name = 5;
+  optional string file_path = 6;
+  optional string content = 7;
+  string mount_path = 8 [(buf.validate.field).string.min_len = 1];
+}
+message UpdateMountRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 database_id = 2 [(buf.validate.field).int64.gt = 0];
+  int64 id = 3 [(buf.validate.field).int64.gt = 0];
+  string mount_type = 4 [(buf.validate.field).string.min_len = 1];
+  optional string host_path = 5;
+  optional string volume_name = 6;
+  optional string file_path = 7;
+  optional string content = 8;
+  string mount_path = 9 [(buf.validate.field).string.min_len = 1];
+}
+message DeleteMountRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 database_id = 2 [(buf.validate.field).int64.gt = 0];
+  int64 id = 3 [(buf.validate.field).int64.gt = 0];
+}
+message Dependencies {
+  repeated string items = 1;
+}
+message ExportDatabaseRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  bool include_secrets = 3;
+}
+message DatabaseExport {
+  string archive = 1;
+}
+message ImportDatabaseRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  string archive = 3 [(buf.validate.field).string = {min_len: 1, max_len: 10485760}];
+}
+message DatabaseConnection {
+  DatabaseKind kind = 1;
+  string host = 2;
+  int64 port = 3;
+  string database = 4;
+  string username = 5;
+}
+message ValidationResult {
+  bool valid = 1;
+  optional string message = 2;
+}
+message AdvancedConfig {
+  optional string replication_role = 1;
+  optional string config = 2;
+}
+message UpdateAdvancedConfigRequest {
+  DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  AdvancedConfig config = 3;
+}

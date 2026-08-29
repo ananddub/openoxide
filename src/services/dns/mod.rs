@@ -2,7 +2,11 @@ use crate::api::dto::dns::{
     CreateDnsProviderDto, DnsProviderDto, DnsProviderType, UpdateDnsProviderDto,
 };
 use crate::db::models::dns_providers::DnsProvider;
-use crate::db::repository::DnsProviderRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::{
+    dns_providers::{DnsProvidersCreateParams, DnsProvidersUpdateParams},
+    models::DnsProviders,
+};
 use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
@@ -30,18 +34,18 @@ pub enum DnsServiceError {
 }
 
 pub struct DnsService {
-    repository: Arc<DnsProviderRepository>,
+    queries: Arc<FlashQueries>,
     client: Client,
 }
 
 #[singleton]
 impl DnsService {
-    pub fn new(repository: Arc<DnsProviderRepository>) -> Self {
+    pub fn new(queries: Arc<FlashQueries>) -> Self {
         let client = Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
             .unwrap_or_default();
-        Self { repository, client }
+        Self { queries, client }
     }
 
     pub async fn list_providers(
@@ -49,10 +53,14 @@ impl DnsService {
         organization_id: i64,
     ) -> Result<Vec<DnsProviderDto>, DnsServiceError> {
         let providers = self
-            .repository
-            .list_by_organization(organization_id)
+            .queries
+            .dns_providers_list_by_organization(organization_id)
             .await?;
-        Ok(providers.into_iter().map(Self::into_dto).collect())
+        Ok(providers
+            .into_iter()
+            .map(dns_provider_from_model)
+            .map(Self::into_dto)
+            .collect())
     }
 
     pub async fn get_provider(
@@ -60,12 +68,13 @@ impl DnsService {
         id: i64,
         organization_id: i64,
     ) -> Result<DnsProviderDto, DnsServiceError> {
-        let provider = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let provider = match self.queries.dns_providers_get_by_id(id).await {
+            Ok(provider) if provider.organization_id == organization_id => {
+                dns_provider_from_model(provider)
+            }
+            Ok(_) | Err(sqlx::Error::RowNotFound) => return Err(DnsServiceError::NotFound),
+            Err(error) => return Err(error.into()),
+        };
         Ok(Self::into_dto(provider))
     }
 
@@ -86,12 +95,18 @@ impl DnsService {
             updated_at: now,
         };
 
-        let id = self.repository.create(&provider).await?;
-        let created = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .ok_or(DnsServiceError::NotFound)?;
+        self.queries
+            .dns_providers_create(&DnsProvidersCreateParams {
+                name: provider.name.clone(),
+                provider_type: provider.provider_type.clone(),
+                credentials_json: provider.credentials_json.clone(),
+                organization_id: provider.organization_id,
+                created_at: provider.created_at,
+                updated_at: provider.updated_at,
+            })
+            .await?;
+        let id = self.queries.dns_providers_get_last_insert_rowid().await?;
+        let created = dns_provider_from_model(self.queries.dns_providers_get_by_id(id).await?);
         Ok(Self::into_dto(created))
     }
 
@@ -101,12 +116,13 @@ impl DnsService {
         organization_id: i64,
         body: UpdateDnsProviderDto,
     ) -> Result<DnsProviderDto, DnsServiceError> {
-        let mut existing = self
-            .repository
-            .get_by_id(id)
-            .await?
-            .filter(|p| p.organization_id == organization_id)
-            .ok_or(DnsServiceError::NotFound)?;
+        let mut existing = match self.queries.dns_providers_get_by_id(id).await {
+            Ok(provider) if provider.organization_id == organization_id => {
+                dns_provider_from_model(provider)
+            }
+            Ok(_) | Err(sqlx::Error::RowNotFound) => return Err(DnsServiceError::NotFound),
+            Err(error) => return Err(error.into()),
+        };
 
         if let Some(name) = body.name {
             existing.name = name;
@@ -124,7 +140,16 @@ impl DnsService {
         }
         existing.updated_at = chrono::Utc::now().timestamp();
 
-        self.repository.update(id, &existing).await?;
+        self.queries
+            .dns_providers_update(&DnsProvidersUpdateParams {
+                name: existing.name.clone(),
+                provider_type: existing.provider_type.clone(),
+                credentials_json: existing.credentials_json.clone(),
+                updated_at: existing.updated_at,
+                id,
+                organization_id,
+            })
+            .await?;
         Ok(Self::into_dto(existing))
     }
 
@@ -133,7 +158,25 @@ impl DnsService {
         id: i64,
         organization_id: i64,
     ) -> Result<bool, DnsServiceError> {
-        Ok(self.repository.delete(id, organization_id).await?)
+        match self.queries.dns_providers_delete(id, organization_id).await {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error.into()),
+        }
+    }
+
+    async fn provider_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<DnsProvider, DnsServiceError> {
+        match self.queries.dns_providers_get_by_id(id).await {
+            Ok(provider) if provider.organization_id == organization_id => {
+                Ok(dns_provider_from_model(provider))
+            }
+            Ok(_) | Err(sqlx::Error::RowNotFound) => Err(DnsServiceError::NotFound),
+            Err(error) => Err(error.into()),
+        }
     }
 
     fn into_dto(p: DnsProvider) -> DnsProviderDto {
@@ -151,6 +194,18 @@ impl DnsService {
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
+    }
+}
+
+fn dns_provider_from_model(provider: DnsProviders) -> DnsProvider {
+    DnsProvider {
+        id: Some(provider.id),
+        name: provider.name,
+        provider_type: provider.provider_type,
+        credentials_json: provider.credentials_json,
+        organization_id: provider.organization_id,
+        created_at: provider.created_at,
+        updated_at: provider.updated_at,
     }
 }
 

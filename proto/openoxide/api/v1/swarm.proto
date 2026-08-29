@@ -1,0 +1,7 @@
+syntax = "proto3";
+package openoxide.api.v1;
+import "openoxide/api/v1/platform.proto";
+
+service SwarmOperationsService {
+  rpc Info(ResourceRequest) returns (ResourceResponse); rpc GetJoinTokens(ResourceRequest) returns (ResourceResponse); rpc ListNodes(ResourceRequest) returns (ResourceListResponse); rpc PromoteNode(ResourceRequest) returns (OperationResult); rpc DemoteNode(ResourceRequest) returns (OperationResult); rpc UpdateNodeAvailability(ResourceRequest) returns (OperationResult); rpc RemoveNode(ResourceRequest) returns (OperationResult); rpc Leave(ResourceRequest) returns (OperationResult); rpc Join(ResourceRequest) returns (OperationResult);
+}

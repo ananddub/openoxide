@@ -81,24 +81,24 @@ pub struct DeploymentsClaimQueuedDeploymentRow {
 
 pub struct CreateDeploymentParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub status: String,
     pub log_path: String,
     pub is_preview_deployment: i64,
-    pub started_at: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
-    pub server_id: i64,
+    pub started_at: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
 }
 
 pub struct FinishDeploymentParams {
     pub status: String,
-    pub error_message: String,
+    pub error_message: Option<String>,
     pub id: i64,
 }
 
 pub struct DeleteOldDeploymentsParams {
-    pub application_id: i64,
+    pub application_id: Option<i64>,
     pub created_at: i64,
     pub application_id2: i64,
     pub limit: i64,
@@ -106,113 +106,113 @@ pub struct DeleteOldDeploymentsParams {
 
 pub struct DeploymentsCreateRunningDeploymentParams {
     pub title: String,
-    pub description: String,
-    pub operation: String,
-    pub application_id: i64,
-    pub server_id: i64,
+    pub description: Option<String>,
+    pub operation: Option<String>,
+    pub application_id: Option<i64>,
+    pub server_id: Option<i64>,
 }
 
 pub struct DeploymentsCreateParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub status: String,
     pub state: String,
     pub log_path: String,
-    pub pid: String,
-    pub error_message: String,
-    pub operation: String,
+    pub pid: Option<String>,
+    pub error_message: Option<String>,
+    pub operation: Option<String>,
     pub is_preview_deployment: i64,
-    pub started_at: i64,
-    pub last_state_at: i64,
-    pub finished_at: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
-    pub server_id: i64,
+    pub started_at: Option<i64>,
+    pub last_state_at: Option<i64>,
+    pub finished_at: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
     pub created_at: i64,
-    pub database_id: i64,
-    pub database_kind: String,
+    pub database_id: Option<i64>,
+    pub database_kind: Option<String>,
 }
 
 pub struct DeploymentsUpdateParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub status: String,
     pub state: String,
     pub log_path: String,
-    pub pid: String,
-    pub error_message: String,
-    pub operation: String,
+    pub pid: Option<String>,
+    pub error_message: Option<String>,
+    pub operation: Option<String>,
     pub is_preview_deployment: i64,
-    pub started_at: i64,
-    pub last_state_at: i64,
-    pub finished_at: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
-    pub server_id: i64,
+    pub started_at: Option<i64>,
+    pub last_state_at: Option<i64>,
+    pub finished_at: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
     pub created_at: i64,
-    pub database_id: i64,
-    pub database_kind: String,
+    pub database_id: Option<i64>,
+    pub database_kind: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsCreateQueuedDeploymentParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub log_path: String,
-    pub operation: String,
-    pub application_id: i64,
-    pub server_id: i64,
+    pub operation: Option<String>,
+    pub application_id: Option<i64>,
+    pub server_id: Option<i64>,
 }
 
 pub struct DeploymentsUpdateStateIfRunningParams {
     pub state: String,
-    pub error_message: String,
+    pub error_message: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsUpdateFinalStatusParams {
     pub status: String,
     pub state: String,
-    pub error_message: String,
+    pub error_message: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsFinalizeWithResource1Params {
     pub status: String,
     pub state: String,
-    pub error_message: String,
+    pub error_message: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsFinalizeWithResource3Params {
     pub app_status: String,
-    pub last_error: String,
+    pub last_error: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsFinalizeWithResource4Params {
     pub compose_status: String,
-    pub last_error: String,
+    pub last_error: Option<String>,
     pub id: i64,
 }
 
 pub struct DeploymentsCreateQueuedComposeDeploymentParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub log_path: String,
-    pub operation: String,
-    pub compose_id: i64,
-    pub server_id: i64,
+    pub operation: Option<String>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
 }
 
 pub struct DeploymentsCreateQueuedDatabaseDeploymentParams {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub log_path: String,
-    pub operation: String,
-    pub database_id: i64,
-    pub database_kind: String,
-    pub server_id: i64,
+    pub operation: Option<String>,
+    pub database_id: Option<i64>,
+    pub database_kind: Option<String>,
+    pub server_id: Option<i64>,
 }
 
 pub struct DeploymentsListFilteredParams {
@@ -220,13 +220,13 @@ pub struct DeploymentsListFilteredParams {
     pub status2: String,
     pub state: String,
     pub state2: String,
-    pub application_id: i64,
+    pub application_id: Option<i64>,
     pub application_id2: i64,
-    pub compose_id: i64,
+    pub compose_id: Option<i64>,
     pub compose_id2: i64,
-    pub database_id: i64,
+    pub database_id: Option<i64>,
     pub database_id2: i64,
-    pub server_id: i64,
+    pub server_id: Option<i64>,
     pub server_id2: i64,
     pub limit: i64,
     pub offset: i64,
@@ -244,7 +244,7 @@ impl Queries {
     /// ListDeploymentsByApplication
     pub async fn list_deployments_by_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<Vec<Deployments>, sqlx::Error> {
         sqlx::query_as::<_, Deployments>(
             "SELECT * FROM deployments WHERE application_id = ? ORDER BY created_at DESC;",
@@ -257,7 +257,7 @@ impl Queries {
     /// ListDeploymentsByCompose
     pub async fn list_deployments_by_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<Vec<Deployments>, sqlx::Error> {
         sqlx::query_as::<_, Deployments>(
             "SELECT * FROM deployments WHERE compose_id = ? ORDER BY created_at DESC;",
@@ -270,7 +270,7 @@ impl Queries {
     /// ListDeploymentsByServer
     pub async fn list_deployments_by_server(
         &self,
-        server_id: i64,
+        server_id: Option<i64>,
     ) -> Result<Vec<Deployments>, sqlx::Error> {
         sqlx::query_as::<_, Deployments>(
             "SELECT * FROM deployments WHERE server_id = ? ORDER BY created_at DESC;",
@@ -309,7 +309,7 @@ impl Queries {
     /// GetLatestDeploymentForApp
     pub async fn get_latest_deployment_for_app(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<Deployments, sqlx::Error> {
         sqlx::query_as::<_, Deployments>(
             "SELECT * FROM deployments WHERE application_id = ? AND is_preview_deployment = 0 ORDER BY created_at DESC LIMIT 1;"
@@ -322,7 +322,7 @@ impl Queries {
     /// GetRunningDeploymentForApp
     pub async fn get_running_deployment_for_app(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<Deployments, sqlx::Error> {
         sqlx::query_as::<_, Deployments>(
             "SELECT * FROM deployments WHERE application_id = ? AND status = 'RUNNING' ORDER BY created_at DESC LIMIT 1;"
@@ -380,7 +380,11 @@ impl Queries {
     }
 
     /// SetDeploymentPID
-    pub async fn set_deployment_p_i_d(&self, pid: &str, id: i64) -> Result<(), sqlx::Error> {
+    pub async fn set_deployment_p_i_d(
+        &self,
+        pid: Option<&str>,
+        id: i64,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE deployments SET pid = ? WHERE id = ?;")
             .bind(pid)
             .bind(id)
@@ -429,7 +433,7 @@ impl Queries {
     /// DeploymentsRunningForApplication
     pub async fn deployments_running_for_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<DeploymentsRunningForApplicationRow, sqlx::Error> {
         sqlx::query_as::<_, DeploymentsRunningForApplicationRow>(
             "SELECT id AS id, server_id AS server_id, pid AS pid FROM deployments WHERE application_id = ? AND status = 'RUNNING' ORDER BY id DESC LIMIT 1;"
@@ -442,7 +446,7 @@ impl Queries {
     /// DeploymentsRunningForCompose
     pub async fn deployments_running_for_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<DeploymentsRunningForComposeRow, sqlx::Error> {
         sqlx::query_as::<_, DeploymentsRunningForComposeRow>(
             "SELECT id AS id, server_id AS server_id, pid AS pid FROM deployments WHERE compose_id = ? AND status = 'RUNNING' ORDER BY id DESC LIMIT 1;"
@@ -577,7 +581,7 @@ impl Queries {
     /// DeploymentsListFinishedIdsForApplication
     pub async fn deployments_list_finished_ids_for_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM deployments WHERE application_id = ? AND status NOT IN ('QUEUED', 'RUNNING') ORDER BY id;"
@@ -590,7 +594,7 @@ impl Queries {
     /// DeploymentsDeleteFinishedForApplication
     pub async fn deployments_delete_finished_for_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "DELETE FROM deployments WHERE application_id = ? AND status NOT IN ('QUEUED', 'RUNNING');"
@@ -604,7 +608,7 @@ impl Queries {
     /// DeploymentsCancelQueuedForApplicationCount
     pub async fn deployments_cancel_queued_for_application_count(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = CURRENT_TIMESTAMP, last_state_at = CURRENT_TIMESTAMP WHERE application_id = ? AND status = 'QUEUED';"
@@ -618,7 +622,7 @@ impl Queries {
     /// DeploymentsListFinishedIdsForCompose
     pub async fn deployments_list_finished_ids_for_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM deployments WHERE compose_id = ? AND status NOT IN ('QUEUED', 'RUNNING') ORDER BY id;"
@@ -631,7 +635,7 @@ impl Queries {
     /// DeploymentsDeleteFinishedForCompose
     pub async fn deployments_delete_finished_for_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "DELETE FROM deployments WHERE compose_id = ? AND status NOT IN ('QUEUED', 'RUNNING');",
@@ -662,7 +666,7 @@ impl Queries {
     /// DeploymentsCancelQueuedForComposeCount
     pub async fn deployments_cancel_queued_for_compose_count(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = CURRENT_TIMESTAMP, last_state_at = CURRENT_TIMESTAMP WHERE compose_id = ? AND status = 'QUEUED';"
@@ -787,7 +791,7 @@ impl Queries {
     /// DeploymentsFinalizeWithResource6
     pub async fn deployments_finalize_with_resource6(
         &self,
-        last_deployment_id: i64,
+        last_deployment_id: Option<i64>,
         last_deployment_id2: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
@@ -869,7 +873,7 @@ impl Queries {
     /// DeploymentsRequestCancelDeployment
     pub async fn deployments_request_cancel_deployment(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_state_at = CURRENT_TIMESTAMP WHERE application_id = ? AND status = 'RUNNING';"
@@ -928,7 +932,7 @@ impl Queries {
     /// DeploymentsRequestCancelComposeDeployment
     pub async fn deployments_request_cancel_compose_deployment(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET state = 'CANCEL_REQUESTED', last_state_at = CURRENT_TIMESTAMP WHERE compose_id = ? AND status = 'RUNNING';"
@@ -1044,7 +1048,7 @@ impl Queries {
     /// DeploymentsGetLatestApplicationDeploymentId
     pub async fn deployments_get_latest_application_deployment_id(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM deployments WHERE application_id = ? ORDER BY id DESC LIMIT 1;",
@@ -1057,7 +1061,7 @@ impl Queries {
     /// DeploymentsGetLatestComposeDeploymentId
     pub async fn deployments_get_latest_compose_deployment_id(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM deployments WHERE compose_id = ? ORDER BY id DESC LIMIT 1;",
@@ -1070,7 +1074,7 @@ impl Queries {
     /// DeploymentsGetLatestDatabaseDeploymentId
     pub async fn deployments_get_latest_database_deployment_id(
         &self,
-        database_id: i64,
+        database_id: Option<i64>,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM deployments WHERE database_id = ? ORDER BY id DESC LIMIT 1;",
@@ -1092,7 +1096,7 @@ impl Queries {
     /// DeploymentsGetQueuedIdsForApplication
     pub async fn deployments_get_queued_ids_for_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id FROM deployments WHERE application_id = ? AND status = 'QUEUED';",
@@ -1105,7 +1109,7 @@ impl Queries {
     /// DeploymentsCancelQueuedForApplication
     pub async fn deployments_cancel_queued_for_application(
         &self,
-        application_id: i64,
+        application_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = CURRENT_TIMESTAMP, last_state_at = CURRENT_TIMESTAMP WHERE application_id = ? AND status = 'QUEUED';"
@@ -1119,7 +1123,7 @@ impl Queries {
     /// DeploymentsGetQueuedIdsForCompose
     pub async fn deployments_get_queued_ids_for_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id FROM deployments WHERE compose_id = ? AND status = 'QUEUED';",
@@ -1132,7 +1136,7 @@ impl Queries {
     /// DeploymentsCancelQueuedForCompose
     pub async fn deployments_cancel_queued_for_compose(
         &self,
-        compose_id: i64,
+        compose_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = CURRENT_TIMESTAMP, last_state_at = CURRENT_TIMESTAMP WHERE compose_id = ? AND status = 'QUEUED';"
@@ -1146,7 +1150,7 @@ impl Queries {
     /// DeploymentsGetQueuedIdsForDatabase
     pub async fn deployments_get_queued_ids_for_database(
         &self,
-        database_id: i64,
+        database_id: Option<i64>,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id FROM deployments WHERE database_id = ? AND status = 'QUEUED';",
@@ -1159,7 +1163,7 @@ impl Queries {
     /// DeploymentsCancelQueuedForDatabase
     pub async fn deployments_cancel_queued_for_database(
         &self,
-        database_id: i64,
+        database_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = CURRENT_TIMESTAMP, last_state_at = CURRENT_TIMESTAMP WHERE database_id = ? AND status = 'QUEUED';"
@@ -1173,7 +1177,7 @@ impl Queries {
     /// DeploymentsRequestCancelDatabaseDeployment
     pub async fn deployments_request_cancel_database_deployment(
         &self,
-        database_id: i64,
+        database_id: Option<i64>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_state_at = CURRENT_TIMESTAMP WHERE database_id = ? AND status IN ('RUNNING', 'BUILDING', 'QUEUED');"
@@ -1237,7 +1241,7 @@ impl Queries {
     }
 
     /// DeploymentsSetPid
-    pub async fn deployments_set_pid(&self, pid: &str, id: i64) -> Result<(), sqlx::Error> {
+    pub async fn deployments_set_pid(&self, pid: Option<&str>, id: i64) -> Result<(), sqlx::Error> {
         sqlx::query("UPDATE deployments SET pid = ? WHERE id = ?;")
             .bind(pid)
             .bind(id)

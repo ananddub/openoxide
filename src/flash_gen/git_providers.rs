@@ -37,94 +37,94 @@ pub struct UpdateGitProviderParams {
 }
 
 pub struct CreateGithubProviderParams {
-    pub github_app_name: String,
-    pub github_app_id: i64,
-    pub github_client_id: String,
-    pub github_client_secret: String,
-    pub github_installation_id: String,
-    pub github_private_key: String,
-    pub github_webhook_secret: String,
+    pub github_app_name: Option<String>,
+    pub github_app_id: Option<i64>,
+    pub github_client_id: Option<String>,
+    pub github_client_secret: Option<String>,
+    pub github_installation_id: Option<String>,
+    pub github_private_key: Option<String>,
+    pub github_webhook_secret: Option<String>,
     pub git_provider_id: i64,
 }
 
 pub struct UpdateGithubProviderParams {
-    pub github_app_name: String,
-    pub github_app_id: i64,
-    pub github_client_id: String,
-    pub github_client_secret: String,
-    pub github_installation_id: String,
-    pub github_private_key: String,
-    pub github_webhook_secret: String,
+    pub github_app_name: Option<String>,
+    pub github_app_id: Option<i64>,
+    pub github_client_id: Option<String>,
+    pub github_client_secret: Option<String>,
+    pub github_installation_id: Option<String>,
+    pub github_private_key: Option<String>,
+    pub github_webhook_secret: Option<String>,
     pub id: i64,
 }
 
 pub struct CreateGitlabProviderParams {
     pub gitlab_url: String,
-    pub gitlab_internal_url: String,
-    pub application_id: String,
-    pub redirect_uri: String,
-    pub secret: String,
-    pub access_token: String,
-    pub refresh_token: String,
-    pub group_name: String,
-    pub expires_at: i64,
+    pub gitlab_internal_url: Option<String>,
+    pub application_id: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub secret: Option<String>,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub group_name: Option<String>,
+    pub expires_at: Option<i64>,
     pub git_provider_id: i64,
 }
 
 pub struct UpdateGitlabProviderParams {
     pub gitlab_url: String,
-    pub gitlab_internal_url: String,
-    pub application_id: String,
-    pub redirect_uri: String,
-    pub secret: String,
-    pub access_token: String,
-    pub refresh_token: String,
-    pub group_name: String,
-    pub expires_at: i64,
+    pub gitlab_internal_url: Option<String>,
+    pub application_id: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub secret: Option<String>,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub group_name: Option<String>,
+    pub expires_at: Option<i64>,
     pub id: i64,
 }
 
 pub struct CreateGiteaProviderParams {
     pub gitea_url: String,
-    pub gitea_internal_url: String,
-    pub redirect_uri: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub access_token: String,
-    pub refresh_token: String,
-    pub expires_at: i64,
-    pub scopes: String,
+    pub gitea_internal_url: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub expires_at: Option<i64>,
+    pub scopes: Option<String>,
     pub git_provider_id: i64,
 }
 
 pub struct UpdateGiteaProviderParams {
     pub gitea_url: String,
-    pub gitea_internal_url: String,
-    pub redirect_uri: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub access_token: String,
-    pub refresh_token: String,
-    pub expires_at: i64,
-    pub scopes: String,
+    pub gitea_internal_url: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub expires_at: Option<i64>,
+    pub scopes: Option<String>,
     pub id: i64,
 }
 
 pub struct CreateBitbucketProviderParams {
-    pub bitbucket_username: String,
-    pub bitbucket_email: String,
-    pub app_password: String,
-    pub api_token: String,
-    pub bitbucket_workspace_name: String,
+    pub bitbucket_username: Option<String>,
+    pub bitbucket_email: Option<String>,
+    pub app_password: Option<String>,
+    pub api_token: Option<String>,
+    pub bitbucket_workspace_name: Option<String>,
     pub git_provider_id: i64,
 }
 
 pub struct UpdateBitbucketProviderParams {
-    pub bitbucket_username: String,
-    pub bitbucket_email: String,
-    pub app_password: String,
-    pub api_token: String,
-    pub bitbucket_workspace_name: String,
+    pub bitbucket_username: Option<String>,
+    pub bitbucket_email: Option<String>,
+    pub app_password: Option<String>,
+    pub api_token: Option<String>,
+    pub bitbucket_workspace_name: Option<String>,
     pub id: i64,
 }
 
@@ -588,7 +588,7 @@ impl Queries {
     /// GitProvidersRotateWebhookSecret
     pub async fn git_providers_rotate_webhook_secret(
         &self,
-        webhook_secret: &str,
+        webhook_secret: Option<&str>,
         id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(

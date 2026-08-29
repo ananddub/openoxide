@@ -1,0 +1,102 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+service DeploymentService {
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  rpc SearchLogs(SearchLogsRequest) returns (ListDeploymentsResponse);
+  rpc ListActiveDeployments(Empty) returns (ListDeploymentsResponse);
+  rpc ListRunningDeployments(Empty) returns (ListDeploymentsResponse);
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc StreamApplicationEvents(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamComposeEvents(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamDatabaseEvents(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamApplicationStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamComposeStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamDatabaseStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamContainerLogs(LogTargetRequest) returns (stream DeploymentEvent);
+  rpc ExportContainerLogs(LogTargetRequest) returns (LogExport);
+  rpc StreamDockerStats(Empty) returns (stream DeploymentEvent);
+  rpc ListContainers(Empty) returns (ContainerList);
+  rpc StreamContainerStats(LogTargetRequest) returns (stream DeploymentEvent);
+  rpc StreamServiceLogs(LogTargetRequest) returns (stream DeploymentEvent);
+  rpc ExportServiceLogs(LogTargetRequest) returns (LogExport);
+  rpc StreamComposeLogs(ComposeLogsRequest) returns (stream DeploymentEvent);
+  rpc ExportComposeLogs(ComposeLogsRequest) returns (LogExport);
+  rpc StreamDeploymentLogs(GetDeploymentRequest) returns (stream DeploymentEvent);
+  rpc CancelDeployment(CancelDeploymentRequest) returns (Empty);
+  rpc DeleteDeployment(GetDeploymentRequest) returns (Empty);
+  rpc DeleteApplicationDeployments(ResourceTargetRequest) returns (Empty);
+  rpc DeleteComposeDeployments(ResourceTargetRequest) returns (Empty);
+  rpc DeleteDatabaseDeployments(ResourceTargetRequest) returns (Empty);
+  rpc ClearDeployments(Empty) returns (Empty);
+}
+message Deployment {
+  int64 id = 1;
+  string resource_type = 2;
+  int64 resource_id = 3;
+  string status = 4;
+  optional string error = 5;
+  optional string logs = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+message ListDeploymentsRequest {
+  optional string resource_type = 1;
+  optional int64 resource_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 3 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 4 [(buf.validate.field).int64.gte = 0];
+}
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+}
+message GetDeploymentRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message SearchLogsRequest {
+  string query = 1 [(buf.validate.field).string = {min_len: 1, max_len: 1000}];
+  optional string resource_type = 2;
+  optional int64 resource_id = 3;
+}
+message StreamTargetRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message LogTargetRequest {
+  string target = 1 [(buf.validate.field).string.min_len = 1];
+  optional int64 server_id = 2;
+  optional int64 tail = 3 [(buf.validate.field).int64 = {gte: 1, lte: 100000}];
+  optional string filter = 4;
+}
+message ComposeLogsRequest {
+  optional int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string service = 2 [(buf.validate.field).string.max_len = 255];
+  optional int64 server_id = 3 [(buf.validate.field).int64.gt = 0];
+}
+message ResourceTargetRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message CancelDeploymentRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+message DeploymentEvent {
+  string type = 1;
+  int64 timestamp = 2;
+  string payload = 3;
+  optional string error = 4;
+}
+message LogExport {
+  string content = 1;
+  string file_name = 2;
+}
+message ContainerList {
+  repeated Container containers = 1;
+}
+message Container {
+  string id = 1;
+  string name = 2;
+  string image = 3;
+  string state = 4;
+  optional string status = 5;
+}
