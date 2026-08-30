@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, GitProviderService, GitProviderServiceExt, OperationResult, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::services::git_provider::{CreateProvider, ProviderCredentials, UpdateProvider};
+use crate::services::integrations::git::{CreateProvider, ProviderCredentials, UpdateProvider};
 
 use super::helper::*;
 use super::init::GitProviderController;

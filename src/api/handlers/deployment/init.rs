@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::deployment::DeploymentService as AppDeploymentService;
+use crate::services::compute::engine::DeploymentService as AppDeploymentService;
 
 pub struct DeploymentController {
     pub(super) service: Arc<AppDeploymentService>,

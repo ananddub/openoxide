@@ -1,7 +1,7 @@
 use auto_di::resolve;
 use std::sync::Arc;
 
-use crate::services::monitoring::{
+use crate::services::observability::monitoring::{
     lifecycle::MonitoringLifecycleService, monitoring_service::MonitoringService,
     reconciler::MonitoringReconciler,
 };
@@ -154,7 +154,7 @@ async fn server_ssh_is_reachable(server_id: i64) -> bool {
         return false;
     };
     let Ok(Some((host, port, username, private_key, public_key))) =
-        crate::services::server::ssh_credentials(&queries, server_id).await
+        crate::services::infrastructure::server::ssh_credentials(&queries, server_id).await
     else {
         return false;
     };

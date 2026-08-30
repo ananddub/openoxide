@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1 as proto;
-use crate::services::permission::group_service::{
+use crate::services::identity::permission::group_service::{
     AddOrganizationMemberDto, CreateOrganizationInviteDto, ReplaceUserPoliciesDto,
     SavePermissionGroupDto,
 };

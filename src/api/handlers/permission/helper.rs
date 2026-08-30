@@ -2,8 +2,8 @@ use connectrpc::{ConnectError, ErrorCode};
 use serde::{Deserialize, Serialize};
 
 use crate::api::connect::generated::openoxide::api::v1 as proto;
-use crate::services::permission::group_service::{PermissionGroupDto, PermissionPolicyDto};
-use crate::services::permission::PermissionGroupError;
+use crate::services::identity::permission::group_service::{PermissionGroupDto, PermissionPolicyDto};
+use crate::services::identity::permission::PermissionGroupError;
 
 pub fn map_error(err: PermissionGroupError) -> ConnectError {
     match &err {

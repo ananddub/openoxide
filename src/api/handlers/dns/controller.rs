@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     DnsService, DnsServiceExt, Empty, OperationResult, ResourceListResponse, ResourceQuery,
     ResourceRequest, ResourceResponse,
 };
-use crate::services::dns::{CreateDnsProviderDto, UpdateDnsProviderDto, UpsertDnsRecordDto};
+use crate::services::networking::dns::{CreateDnsProviderDto, UpdateDnsProviderDto, UpsertDnsRecordDto};
 
 use super::helper::*;
 use super::init::DnsController;

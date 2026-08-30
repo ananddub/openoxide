@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceRequest, ResourceResponse,
     ServerPrivateNetworkService, ServerPrivateNetworkServiceExt,
 };
-use crate::services::server::ServerPrivateNetworkService as AppServerPrivateNetworkService;
+use crate::services::infrastructure::server::ServerPrivateNetworkService as AppServerPrivateNetworkService;
 
 use super::init::ServerPrivateNetworkController;
 

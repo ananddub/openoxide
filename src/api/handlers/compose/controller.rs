@@ -10,19 +10,19 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ServiceMutationRequest, SetComposeSourceRequest, SetRawSourceRequest,
     UpdateComposeRequest, UpdateComposeResourcesRequest, UploadComposeRequest,
 };
-use crate::services::compose::crud::{
+use crate::services::compute::compose::crud::{
     ComposeOperationResponseDto, ComposeResponseDto, CreateComposeDto, PatchComposeDto,
 };
-use crate::services::compose::queries::ComposeDependencyCounts;
-use crate::services::compose::management::{
+use crate::services::compute::compose::queries::ComposeDependencyCounts;
+use crate::services::compute::compose::management::{
     ComposePreviewDto, ImportComposeDto, InstallComposeTemplateDto, UpsertComposePatchDto,
     UpsertComposeResourceDto,
 };
-use crate::services::compose::source::{
+use crate::services::compute::compose::source::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
-use crate::services::compose::ComposeOperation as AppComposeOperation;
+use crate::services::compute::compose::ComposeOperation as AppComposeOperation;
 use super::helper::*;
 use super::init::ComposeController;
 

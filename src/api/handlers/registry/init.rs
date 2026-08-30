@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::core::cache::AppStateCache;
-use crate::services::registry::RegistryService as AppRegistryService;
+use crate::services::platform::registry::RegistryService as AppRegistryService;
 
 pub struct RegistryController {
     pub(super) service: Arc<AppRegistryService>,

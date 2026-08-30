@@ -186,7 +186,7 @@ pub async fn build_redis_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Redis,
+        crate::services::compute::database::DatabaseKind::Redis,
         db_id,
         &mut service,
         &mut networks,

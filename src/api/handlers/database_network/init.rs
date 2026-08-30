@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::database_network::DatabaseNetworkService as AppDatabaseNetworkService;
+use crate::services::networking::database_network::DatabaseNetworkService as AppDatabaseNetworkService;
 
 pub struct DatabaseNetworkController {
     pub(super) service: Arc<AppDatabaseNetworkService>,

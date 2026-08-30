@@ -1,0 +1,242 @@
+use auto_di::resolve;
+use std::sync::Arc;
+
+use crate::flash_gen::deployments::{
+    AppCoreQueueDeploymentNoServerParams, AppCoreQueueDeploymentWithServerParams,
+};
+use crate::services::compute::application::auto_executer::app_new_cmd;
+use crate::utils::builder::queue::BuilderQueue;
+use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
+use crate::utils::docker::DockerCli;
+
+use super::{ApplicationOperation, ApplicationOperationResult, ApplicationService};
+
+impl ApplicationService {
+    pub async fn run_operation(
+        &self,
+        id: i64,
+        operation: ApplicationOperation,
+    ) -> sqlx::Result<ApplicationOperationResult> {
+        // Param is generated as a string bind (json_each inference quirk).
+        if self
+            .queries
+            .deployments_has_running_deployment(&id.to_string())
+            .await?
+        {
+            return Err(sqlx::Error::Protocol(
+                "application deployment already queued or running; cancel it first".into(),
+            ));
+        }
+
+        resolve::<BuilderQueue>()
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?
+            .ensure_capacity()
+            .await?;
+
+        let app = self.get_by_id(id).await?;
+        // Old ServerManagementRepository::assert_deployable: no-op without a
+        // server, otherwise the server_management row must not be in
+        // maintenance mode.
+        if let Some(server_id) = app.server_id {
+            self.queries.server_management_get_or_create1(server_id).await?;
+            let management = self
+                .queries
+                .server_management_get_or_create2(server_id)
+                .await?;
+            if management.maintenance_mode != 0 {
+                return Err(sqlx::Error::Protocol(
+                    management
+                        .maintenance_message
+                        .unwrap_or_else(|| "server is in maintenance mode".into()),
+                ));
+            }
+        }
+
+        let log_path = format!("pending-app-{}", id);
+        let description = format!("{} requested for {}", operation.as_str(), app.name);
+        let deployment_id = match app.server_id {
+            Some(server_id) => {
+                self.queries
+                    .app_core_queue_deployment_with_server(
+                        &AppCoreQueueDeploymentWithServerParams {
+                            title: operation.title().to_string(),
+                            description,
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                            server_id,
+                        },
+                    )
+                    .await?
+            }
+            None => {
+                self.queries
+                    .app_core_queue_deployment_no_server(&AppCoreQueueDeploymentNoServerParams {
+                        title: operation.title().to_string(),
+                        description,
+                        log_path,
+                        operation: operation.as_str().to_string(),
+                        service_id: id,
+                    })
+                    .await?
+            }
+        };
+
+        self.queries.update_service_status("STARTING", id).await?;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Application(id))
+            .await;
+
+        let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
+        self.queries
+            .deployments_update_log_path(&log_path, deployment_id)
+            .await?;
+
+        if let Ok(mut log) =
+            crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id).await
+        {
+            let _ = log
+                .write_line(&format!(
+                    "[QUEUED] deployment queued for {}",
+                    operation.as_str()
+                ))
+                .await;
+        }
+
+        resolve::<BuilderQueue>()
+            .await
+            .map_err(|e| sqlx::Error::Protocol(e.to_string()))?
+            .notify();
+
+        Ok(ApplicationOperationResult {
+            application: app,
+            deployment_id: Some(deployment_id),
+            operation,
+        })
+    }
+
+    pub async fn stop_operation(&self, id: i64) -> sqlx::Result<bool> {
+        self.stop_or_cancel_smart(id).await
+    }
+
+    pub async fn cancel_operation(&self, id: i64) -> sqlx::Result<bool> {
+        self.stop_or_cancel_smart(id).await
+    }
+
+    pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
+        let app_user = self.get_by_id(id).await?;
+        let current_status =
+            crate::services::compute::application::types::ApplicationStatus::from_str(&app_user.app_status)
+                .unwrap_or(crate::services::compute::application::types::ApplicationStatus::Idle);
+
+        let (intermediate, final_st) = if current_status.is_building() {
+            (
+                crate::services::compute::application::types::ApplicationStatus::Cancelling.as_str(),
+                crate::services::compute::application::types::ApplicationStatus::Cancelled.as_str(),
+            )
+        } else {
+            (
+                crate::services::compute::application::types::ApplicationStatus::Stopping.as_str(),
+                crate::services::compute::application::types::ApplicationStatus::Stopped.as_str(),
+            )
+        };
+
+        let _ = self.queries.update_service_status(intermediate, id).await;
+        self.cache
+            .invalidate(&crate::core::cache::CacheKey::Application(id))
+            .await;
+
+        if let Ok(queue) = resolve::<BuilderQueue>().await {
+            let _ = queue.cancel_queued_application(id).await;
+        }
+
+        if let Ok(state) = resolve::<ApplicationState>().await {
+            state.cancel_by_id(IdType::AppId(id));
+        }
+
+        let _ = self.queries.deployments_request_cancel_deployment(id).await;
+
+        let db_ref = self.db.clone();
+        let queries = Arc::clone(&self.queries);
+        let cache = self.cache.clone();
+
+        tokio::spawn(async move {
+            if let Ok(cmd) = app_new_cmd(db_ref, id).await {
+                let docker_cli = DockerCli::from_executor(cmd);
+                let app_n = app_user.app_name.clone();
+                let user_n = app_user.name.clone();
+
+                let candidates = [
+                    format!("{}_{}", app_n, app_n),
+                    format!("{}_{}", user_n, user_n),
+                    app_n.clone(),
+                    user_n.clone(),
+                    format!("{}_app", app_n),
+                    format!("{}-app", app_n),
+                    format!("{}_web", app_n),
+                    format!("{}_srv", app_n),
+                    format!("{}_app", user_n),
+                    format!("{}-app", user_n),
+                ];
+
+                // 1. Remove Swarm stack if active
+                let _ = tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    docker_cli.stacks().remove(&app_n).run(),
+                )
+                .await;
+
+                if user_n != app_n {
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(4),
+                        docker_cli.stacks().remove(&user_n).run(),
+                    )
+                    .await;
+                }
+
+                // 2. Scale down any Swarm services matching app_name or user_name
+                if let Ok(services) = tokio::time::timeout(
+                    std::time::Duration::from_secs(5),
+                    docker_cli.services().list().run_json(),
+                )
+                .await
+                .unwrap_or(Err(
+                    crate::utils::docker::error::DockerError::CommandFailed {
+                        code: None,
+                        stderr: "timeout".into(),
+                    },
+                )) {
+                    let app_n_low = app_n.to_lowercase();
+                    let user_n_low = user_n.to_lowercase();
+                    for s in services {
+                        let s_low = s.name.to_lowercase();
+                        if s_low.contains(&app_n_low) || s_low.contains(&user_n_low) {
+                            let _ = tokio::time::timeout(
+                                std::time::Duration::from_secs(3),
+                                docker_cli.services().remove(&s.name).run(),
+                            )
+                            .await;
+                        }
+                    }
+                }
+
+                // 3. Stop candidate containers
+                for candidate in &candidates {
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_secs(3),
+                        docker_cli.container(candidate).stop().run(),
+                    )
+                    .await;
+                }
+            }
+
+            let _ = queries.update_service_status(final_st, id).await;
+            cache
+                .invalidate(&crate::core::cache::CacheKey::Application(id))
+                .await;
+        });
+
+        Ok(true)
+    }
+}

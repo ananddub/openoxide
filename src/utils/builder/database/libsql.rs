@@ -175,7 +175,7 @@ pub async fn build_libsql_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Libsql,
+        crate::services::compute::database::DatabaseKind::Libsql,
         db_id,
         &mut service,
         &mut networks,

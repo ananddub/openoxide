@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::services::notification::{
+use crate::services::integrations::notification::{
     NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
     NotificationTrigger,
 };

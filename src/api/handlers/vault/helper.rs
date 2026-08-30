@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
-use crate::services::vault::{VaultProviderAssignmentDto, VaultProviderDto, VaultServiceError};
+use crate::services::integrations::vault::{VaultProviderAssignmentDto, VaultProviderDto, VaultServiceError};
 
 pub fn map_vault_error(error: VaultServiceError) -> ConnectError {
     match error {

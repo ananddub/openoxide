@@ -1,6 +1,6 @@
 use connectrpc::ConnectError;
 
-use crate::services::webhook::{
+use crate::services::integrations::git::webhooks::{
     GitProviderKind, WebhookCredential, verify_hmac_sha256, verify_token,
 };
 

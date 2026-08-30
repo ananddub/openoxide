@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::db::queries::FlashQueries;
-use crate::services::deployment::DeploymentService;
+use crate::services::compute::engine::DeploymentService;
 
 pub fn start(service: Arc<DeploymentService>, queries: Arc<FlashQueries>) {
     tokio::spawn(async move {

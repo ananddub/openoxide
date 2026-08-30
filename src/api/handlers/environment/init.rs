@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::environment::EnvironmentService as AppEnvironmentService;
+use crate::services::workspace::environment::EnvironmentService as AppEnvironmentService;
 
 pub struct EnvironmentController {
     pub(super) service: Arc<AppEnvironmentService>,

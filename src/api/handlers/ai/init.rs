@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::ai::AiService as AppAiService;
+use crate::services::platform::ai::AiService as AppAiService;
 
 pub struct AiController {
     pub(super) service: Arc<AppAiService>,

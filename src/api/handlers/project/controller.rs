@@ -92,7 +92,7 @@ impl ProjectService for ProjectController {
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service.delete(request.id).await.map_err(map_db_error)?;
 
-        if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+        if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
             if let Err(error) = runner.refresh_jobs().await {
                 tracing::error!(%error, "could not refresh scheduler after project deletion");
             }

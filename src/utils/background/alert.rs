@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::services::alert::{AlertService, service::EVALUATION_INTERVAL_SECS};
+use crate::services::observability::alert::{AlertService, service::EVALUATION_INTERVAL_SECS};
 
 pub fn start(service: Arc<AlertService>) {
     tokio::spawn(async move {

@@ -152,7 +152,7 @@ pub async fn build_mysql_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Mysql,
+        crate::services::compute::database::DatabaseKind::Mysql,
         db_id,
         &mut service,
         &mut networks,

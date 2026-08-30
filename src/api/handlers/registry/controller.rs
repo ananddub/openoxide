@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
-use crate::services::registry::{CreateRegistryDto, PatchRegistryDto};
+use crate::services::platform::registry::{CreateRegistryDto, PatchRegistryDto};
 
 use super::helper::*;
 use super::init::RegistryController;

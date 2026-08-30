@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::core::cache::AppStateCache;
-use crate::services::project::ProjectService as AppProjectService;
+use crate::services::workspace::project::ProjectService as AppProjectService;
 
 pub struct ProjectController {
     pub(super) service: Arc<AppProjectService>,

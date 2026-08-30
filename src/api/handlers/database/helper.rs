@@ -5,9 +5,9 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Database as DatabaseProto, DatabaseKind as ProtoDatabaseKind,
     DatabaseOperation as DatabaseOperationProto, Mount as MountProto, SwarmSettings,
 };
-use crate::services::database::crud::parse_json_string_vec;
-use crate::services::database::swarm_settings::DatabaseSwarmSettingsDto;
-use crate::services::database::{
+use crate::services::compute::database::crud::parse_json_string_vec;
+use crate::services::compute::database::swarm_settings::DatabaseSwarmSettingsDto;
+use crate::services::compute::database::{
     DatabaseKind, DatabaseOperation, DatabaseService as AppDatabaseService,
 };
 
@@ -34,7 +34,7 @@ pub fn proto_to_kind(value: ::buffa::EnumValue<ProtoDatabaseKind>) -> Result<Dat
     }
 }
 
-pub fn record_to_proto(record: crate::services::database::DatabaseRecord) -> DatabaseProto {
+pub fn record_to_proto(record: crate::services::compute::database::DatabaseRecord) -> DatabaseProto {
     DatabaseProto {
         kind: ::buffa::EnumValue::Known(kind_to_proto(record.kind)),
         id: record.id,

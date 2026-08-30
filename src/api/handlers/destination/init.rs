@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::core::cache::AppStateCache;
-use crate::services::destination::DestinationService as AppDestinationService;
+use crate::services::automation::destination::DestinationService as AppDestinationService;
 
 pub struct DestinationController {
     pub(super) service: Arc<AppDestinationService>,

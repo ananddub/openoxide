@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     TraefikOperationsService, TraefikOperationsServiceExt,
 };
-use crate::services::traefik::{
+use crate::services::networking::traefik::{
     StructuredMiddlewareDto, TraefikService, TraefikStatsLogsQueryDto, TraefikToggleRequestsDto,
     TraefikWriteFileDto, UpdateTraefikVersionDto,
 };

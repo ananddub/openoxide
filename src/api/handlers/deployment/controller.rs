@@ -6,7 +6,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ListDeploymentsResponse, LogExport, LogTargetRequest, ResourceTargetRequest,
     SearchLogsRequest, StreamTargetRequest,
 };
-use crate::services::deployment::{
+use crate::services::compute::engine::{
     CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DockerLogOptions,
     LogSearchOptions,
 };

@@ -238,30 +238,30 @@ impl BackupOperationsService for BackupController {
             sqlx::Error::RowNotFound => ConnectError::not_found("backup execution not found"),
             other => map_error(other),
         })?;
-        let status = crate::services::backup::types::BackupExecutionStatus::from_str(&execution.status)
+        let status = crate::services::automation::backup::types::BackupExecutionStatus::from_str(&execution.status)
             .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup execution status: {}", execution.status)))?;
-        if status == crate::services::backup::types::BackupExecutionStatus::Running {
+        if status == crate::services::automation::backup::types::BackupExecutionStatus::Running {
             return Err(ConnectError::new(ErrorCode::FailedPrecondition, "backup execution is still running"));
         }
         let backup_id = execution.backup_id
             .ok_or_else(|| ConnectError::invalid_argument("execution is not linked to a retryable backup job"))?;
-        let kind = crate::services::backup::types::BackupKind::from_str(&execution.backup_kind)
+        let kind = crate::services::automation::backup::types::BackupKind::from_str(&execution.backup_kind)
             .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup kind: {}", execution.backup_kind)))?;
-        let operation = crate::services::backup::types::BackupOperation::from_str(&execution.operation)
+        let operation = crate::services::automation::backup::types::BackupOperation::from_str(&execution.operation)
             .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup operation: {}", execution.operation)))?;
         let result = match (kind, operation) {
-            (crate::services::backup::types::BackupKind::Database, crate::services::backup::types::BackupOperation::Backup) => {
+            (crate::services::automation::backup::types::BackupKind::Database, crate::services::automation::backup::types::BackupOperation::Backup) => {
                 self.service.run_database_backup(backup_id).await
             }
-            (crate::services::backup::types::BackupKind::Volume, crate::services::backup::types::BackupOperation::Backup) => {
+            (crate::services::automation::backup::types::BackupKind::Volume, crate::services::automation::backup::types::BackupOperation::Backup) => {
                 self.service.run_volume_backup(backup_id).await
             }
-            (crate::services::backup::types::BackupKind::Database, crate::services::backup::types::BackupOperation::Restore) => {
+            (crate::services::automation::backup::types::BackupKind::Database, crate::services::automation::backup::types::BackupOperation::Restore) => {
                 let object_key = execution.object_key
                     .ok_or_else(|| ConnectError::invalid_argument("restore execution has no object key"))?;
                 self.service.restore_database_backup(backup_id, &object_key).await
             }
-            (crate::services::backup::types::BackupKind::Volume, crate::services::backup::types::BackupOperation::Restore) => {
+            (crate::services::automation::backup::types::BackupKind::Volume, crate::services::automation::backup::types::BackupOperation::Restore) => {
                 let object_key = execution.object_key
                     .ok_or_else(|| ConnectError::invalid_argument("restore execution has no object key"))?;
                 self.service.restore_volume_backup(backup_id, &object_key).await
@@ -433,7 +433,7 @@ impl BackupOperationsService for BackupController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let org_id = self.resolve_organization_id(dto.organization_id).await;
         let dest_id = self.require_destination_id(dto.destination_id).await?;
-        crate::services::schedule::schedule::validate_backup_cron_expression(&dto.cron_expression)
+        crate::services::automation::schedule::schedule::validate_backup_cron_expression(&dto.cron_expression)
             .map_err(map_error)?;
         let service_id = self.verify_service_exists(dto.service_id).await
             .ok_or_else(|| ConnectError::invalid_argument("valid backup resource is required"))?;

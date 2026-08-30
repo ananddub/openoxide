@@ -10,7 +10,7 @@ use super::generated::openoxide::api::v1::{
     GenerateDomainRequest, GenerateDomainResponse, ListGitBranchesRequest, ListGitBranchesResponse,
     PublicService, PublicServiceExt,
 };
-use crate::services::permission::{PermissionOperation, PermissionResource, Server, CanRead};
+use crate::services::identity::permission::{PermissionOperation, PermissionResource, Server, CanRead};
 use crate::utils::git::GitCli;
 
 pub struct PublicConnectService {

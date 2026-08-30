@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::db::queries::FlashQueries;
-use crate::services::notification::NotificationService;
+use crate::services::integrations::notification::NotificationService;
 
 use super::builder::NotificationProviderBuilder;
 

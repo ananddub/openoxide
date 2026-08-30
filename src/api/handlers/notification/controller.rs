@@ -9,7 +9,7 @@ use crate::flash_gen::notification_delivery::NotificationDeliveryCreateBindingPa
 use crate::flash_gen::notifications::{
     CreateNotificationWithTriggersParams, UpdateNotificationFullParams,
 };
-use crate::services::notification::{NotificationLevel, NotificationMessage};
+use crate::services::integrations::notification::{NotificationLevel, NotificationMessage};
 use super::helper::*;
 use super::init::NotificationController;
 

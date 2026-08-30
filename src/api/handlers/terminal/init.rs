@@ -4,8 +4,8 @@ use auto_di::{resolve, singleton};
 use dashmap::DashMap;
 
 use crate::api::connect::generated::openoxide::api::v1::OpenTerminalRequest;
-use crate::services::monitoring::monitoring_service::MonitoringService;
-use crate::services::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::monitoring_service::MonitoringService;
+use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
 
 use super::helper::{SanitizedShell, TerminalPump, TerminalSessionEntry, TerminalSessionHandle};
 
@@ -42,7 +42,7 @@ impl TerminalController {
         cols: u16,
         rows: u16,
     ) -> Result<(TerminalSessionHandle, TerminalPump, Option<String>), String> {
-        let server_id = crate::services::compose::remote::agent_server_id(request.server_id)
+        let server_id = crate::services::compute::compose::remote::agent_server_id(request.server_id)
             .await
             .map_err(|error| format!("could not resolve Agent server: {error}"))?;
         let monitoring = resolve::<MonitoringService>()
@@ -86,7 +86,7 @@ impl TerminalController {
         let queries = resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|error| format!("could not resolve database queries: {error}"))?;
-        let credentials = crate::services::server::ssh_credentials(&queries, server_id)
+        let credentials = crate::services::infrastructure::server::ssh_credentials(&queries, server_id)
             .await
             .map_err(|error| format!("could not load SSH credentials: {error}"))?;
         let Some((host, port, username, private_key, public_key)) = credentials else {

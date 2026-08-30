@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     TagService, TagServiceExt,
 };
-use crate::services::tag::{CreateTagDto, UpdateTagDto};
+use crate::services::workspace::tag::{CreateTagDto, UpdateTagDto};
 
 use super::helper::*;
 use super::init::TagController;

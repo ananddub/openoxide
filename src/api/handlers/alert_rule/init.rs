@@ -3,9 +3,8 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::services::{
-    alert::AlertService,
-    monitoring::lifecycle::MonitoringLifecycleService,
-    notification::NotificationService,
+    integrations::notification::NotificationService, observability::alert::AlertService,
+    observability::monitoring::lifecycle::MonitoringLifecycleService,
 };
 
 pub struct AlertRuleController {

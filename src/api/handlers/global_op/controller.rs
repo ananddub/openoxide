@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     GlobalOperationsApiService, GlobalOperationsApiServiceExt,
 };
-use crate::services::global_op::DockerPruneRequestDto;
+use crate::services::platform::global_ops::DockerPruneRequestDto;
 
 use super::helper::*;
 use super::init::DockerManagementController;

@@ -6,8 +6,8 @@ use connectrpc::ConnectError;
 use crate::core::cache::AppStateCache;
 use crate::db::queries::FlashQueries;
 use crate::services::{
-    backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
-    schedule::ScheduleService,
+    automation::backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
+    automation::schedule::ScheduleService,
 };
 
 use super::helper::map_error;

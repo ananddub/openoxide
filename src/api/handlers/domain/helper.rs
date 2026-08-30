@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
-use crate::services::domain::DomainRecord;
+use crate::services::networking::domain::DomainRecord;
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
     match &err {

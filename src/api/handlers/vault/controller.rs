@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     VaultService, VaultServiceExt,
 };
-use crate::services::vault::{
+use crate::services::integrations::vault::{
     CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto,
 };
 

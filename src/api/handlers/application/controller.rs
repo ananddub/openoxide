@@ -15,8 +15,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateApplicationRequest, UpdateBuildConfigRequest, UpdatePreviewConfigRequest,
     UpdateResourceConfigRequest,
 };
-use crate::services::application::import_export::ImportApplicationDto;
-use crate::services::application::ApplicationOperation as AppApplicationOperation;
+use crate::services::compute::application::import_export::ImportApplicationDto;
+use crate::services::compute::application::ApplicationOperation as AppApplicationOperation;
 
 use super::helper::*;
 use super::init::ApplicationController;
@@ -626,7 +626,7 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|p| serde_json::to_string(&crate::services::application::port::ApplicationPortResponseDto::from(p)).unwrap_or_default())
+            .map(|p| serde_json::to_string(&crate::services::compute::application::port::ApplicationPortResponseDto::from(p)).unwrap_or_default())
             .collect();
         Response::ok(ApplicationPorts {
             items,
@@ -647,7 +647,7 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|m| serde_json::to_string(&crate::services::application::mount::ApplicationMountResponseDto::from(m)).unwrap_or_default())
+            .map(|m| serde_json::to_string(&crate::services::compute::application::mount::ApplicationMountResponseDto::from(m)).unwrap_or_default())
             .collect();
         Response::ok(ApplicationMounts {
             items,
@@ -672,7 +672,7 @@ impl ApplicationService for ApplicationController {
                 // Field-wise mapping: works for both the hand-written
                 // DatabaseNetwork model and the flash-generated
                 // DatabaseNetworks model (identical field layout).
-                let dto = crate::services::database_network::DatabaseNetworkResponseDto {
+                let dto = crate::services::networking::database_network::DatabaseNetworkResponseDto {
                     id: n.id,
                     name: n.name,
                     docker_network_name: n.docker_network_name,
@@ -704,7 +704,7 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|p| serde_json::to_string(&crate::services::application::patch::ApplicationPatchResponseDto::from(p)).unwrap_or_default())
+            .map(|p| serde_json::to_string(&crate::services::compute::application::patch::ApplicationPatchResponseDto::from(p)).unwrap_or_default())
             .collect();
         Response::ok(ApplicationPatches {
             items,
@@ -746,7 +746,7 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|r| serde_json::to_string(&crate::services::application::redirect::ApplicationRedirectResponseDto::from(r)).unwrap_or_default())
+            .map(|r| serde_json::to_string(&crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(r)).unwrap_or_default())
             .collect();
         Response::ok(ApplicationRedirects {
             items,
@@ -767,7 +767,7 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|s| serde_json::to_string(&crate::services::application::security::ApplicationSecurityResponseDto::from(s)).unwrap_or_default())
+            .map(|s| serde_json::to_string(&crate::services::compute::application::security::ApplicationSecurityResponseDto::from(s)).unwrap_or_default())
             .collect();
         Response::ok(ApplicationSecurity {
             items,
@@ -804,7 +804,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::port::UpsertApplicationPortDto =
+        let dto: crate::services::compute::application::port::UpsertApplicationPortDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -823,7 +823,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::port::UpsertApplicationPortDto =
+        let dto: crate::services::compute::application::port::UpsertApplicationPortDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -876,7 +876,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::mount::UpsertApplicationMountDto =
+        let dto: crate::services::compute::application::mount::UpsertApplicationMountDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -895,7 +895,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::mount::UpsertApplicationMountDto =
+        let dto: crate::services::compute::application::mount::UpsertApplicationMountDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -948,7 +948,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::patch::UpsertApplicationPatchDto =
+        let dto: crate::services::compute::application::patch::UpsertApplicationPatchDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -967,7 +967,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::patch::UpsertApplicationPatchDto =
+        let dto: crate::services::compute::application::patch::UpsertApplicationPatchDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1020,7 +1020,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::middleware::UpsertApplicationMiddlewareDto =
+        let dto: crate::services::compute::application::middleware::UpsertApplicationMiddlewareDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1039,7 +1039,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::middleware::UpsertApplicationMiddlewareDto =
+        let dto: crate::services::compute::application::middleware::UpsertApplicationMiddlewareDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1096,7 +1096,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::redirect::UpsertApplicationRedirectDto =
+        let dto: crate::services::compute::application::redirect::UpsertApplicationRedirectDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1115,7 +1115,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::redirect::UpsertApplicationRedirectDto =
+        let dto: crate::services::compute::application::redirect::UpsertApplicationRedirectDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1158,7 +1158,7 @@ impl ApplicationService for ApplicationController {
         let payload = serde_json::to_string(
             &items
                 .into_iter()
-                .map(crate::services::application::security::ApplicationSecurityResponseDto::from)
+                .map(crate::services::compute::application::security::ApplicationSecurityResponseDto::from)
                 .collect::<Vec<_>>(),
         )
         .unwrap_or_default();
@@ -1177,7 +1177,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::security::UpsertApplicationSecurityDto =
+        let dto: crate::services::compute::application::security::UpsertApplicationSecurityDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1196,7 +1196,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let resource_id = request.id;
         let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::application::security::UpsertApplicationSecurityDto =
+        let dto: crate::services::compute::application::security::UpsertApplicationSecurityDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self
@@ -1231,7 +1231,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
         let application_id = request.id;
-        let dto: crate::services::application::network::UpdateApplicationNetworksDto =
+        let dto: crate::services::compute::application::network::UpdateApplicationNetworksDto =
             serde_json::from_str(request.payload)
                 .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let (_detach, _networks) = self

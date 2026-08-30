@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     DatabaseNetworkService, DatabaseNetworkServiceExt, Empty, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::services::database_network::{
+use crate::services::networking::database_network::{
     CreateDatabaseNetworkDto, DatabaseNetworkResponseDto, PatchDatabaseNetworkDto,
 };
 

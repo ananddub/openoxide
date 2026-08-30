@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::core::cache::AppStateCache;
-use crate::services::schedule::ScheduleService;
+use crate::services::automation::schedule::ScheduleService;
 
 pub struct ScheduleController {
     pub(super) service: Arc<ScheduleService>,

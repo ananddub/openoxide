@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 use serde::{Deserialize, Serialize};
 
-use crate::services::monitoring::agent_auth::MonitoringAgentAuth;
+use crate::services::observability::monitoring::agent_auth::MonitoringAgentAuth;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ContainerQueryParam {

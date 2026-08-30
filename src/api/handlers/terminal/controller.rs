@@ -11,7 +11,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     TerminalService, TerminalServiceExt, TerminalStarted, execution_command_request,
     terminal_event,
 };
-use crate::services::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
 
 use super::helper::*;
 use super::init::TerminalController;

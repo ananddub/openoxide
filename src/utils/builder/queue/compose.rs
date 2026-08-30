@@ -3,7 +3,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    services::compose::{
+    services::compute::compose::{
         ComposeOperation,
         remote::{agent_executor, deployment_pid_file},
     },
@@ -56,7 +56,7 @@ impl BuilderQueue {
             .cancellation_token(compose_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let effective_server_id = crate::services::compose::remote::agent_server_id(server_id)
+        let effective_server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
             .await
             .map_err(BuilderError::Execution)?;
         let executor = {

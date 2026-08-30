@@ -5,8 +5,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ApplicationSourceType, ResourceResponse,
 };
 
-pub fn app_to_proto(value: crate::services::application::ApplicationRecord) -> ApplicationProto {
-    use crate::services::database::crud::parse_json_string_vec;
+pub fn app_to_proto(value: crate::services::compute::application::ApplicationRecord) -> ApplicationProto {
+    use crate::services::compute::database::crud::parse_json_string_vec;
     ApplicationProto {
         id: value.id,
         name: value.name,
@@ -89,7 +89,7 @@ pub fn map_db_error(err: sqlx::Error) -> ConnectError {
 }
 
 pub fn operation_result(
-    value: crate::services::application::ApplicationOperationResult,
+    value: crate::services::compute::application::ApplicationOperationResult,
 ) -> ApplicationOperation {
     ApplicationOperation {
         application: app_to_proto(value.application).into(),
@@ -99,7 +99,7 @@ pub fn operation_result(
 }
 
 pub fn middleware_to_resource(
-    value: crate::services::application::middleware::ApplicationMiddlewareResponseDto,
+    value: crate::services::compute::application::middleware::ApplicationMiddlewareResponseDto,
 ) -> ResourceResponse {
     let id = value.id;
     let payload = serde_json::to_string(&value).unwrap_or_default();
@@ -112,7 +112,7 @@ pub fn middleware_to_resource(
 }
 
 pub fn mount_to_resource(value: crate::flash_gen::models::Mounts) -> ResourceResponse {
-    let dto = crate::services::application::mount::ApplicationMountResponseDto::from(value);
+    let dto = crate::services::compute::application::mount::ApplicationMountResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
         id: dto.id,
@@ -123,7 +123,7 @@ pub fn mount_to_resource(value: crate::flash_gen::models::Mounts) -> ResourceRes
 }
 
 pub fn patch_to_resource(value: crate::flash_gen::models::Patches) -> ResourceResponse {
-    let dto = crate::services::application::patch::ApplicationPatchResponseDto::from(value);
+    let dto = crate::services::compute::application::patch::ApplicationPatchResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
         id: dto.id,
@@ -134,7 +134,7 @@ pub fn patch_to_resource(value: crate::flash_gen::models::Patches) -> ResourceRe
 }
 
 pub fn port_to_resource(value: crate::flash_gen::models::Ports) -> ResourceResponse {
-    let dto = crate::services::application::port::ApplicationPortResponseDto::from(value);
+    let dto = crate::services::compute::application::port::ApplicationPortResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
         id: dto.id,
@@ -144,9 +144,9 @@ pub fn port_to_resource(value: crate::flash_gen::models::Ports) -> ResourceRespo
     }
 }
 
-pub fn redirect_to_resource(value: crate::services::application::redirect::Redirect) -> ResourceResponse {
+pub fn redirect_to_resource(value: crate::services::compute::application::redirect::Redirect) -> ResourceResponse {
     let dto =
-        crate::services::application::redirect::ApplicationRedirectResponseDto::from(value);
+        crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
         id: dto.id,
@@ -158,7 +158,7 @@ pub fn redirect_to_resource(value: crate::services::application::redirect::Redir
 
 pub fn security_to_resource(value: crate::flash_gen::models::Security) -> ResourceResponse {
     let dto =
-        crate::services::application::security::ApplicationSecurityResponseDto::from(value);
+        crate::services::compute::application::security::ApplicationSecurityResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
         id: dto.id,

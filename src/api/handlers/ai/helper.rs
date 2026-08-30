@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 use serde::Deserialize;
 
-use crate::services::ai::{
+use crate::services::platform::ai::{
     AiDeployInput, AiGenerationOutput, AiSettingInput, AiSettingUpdate,
 };
 

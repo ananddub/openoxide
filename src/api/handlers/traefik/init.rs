@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::traefik::TraefikService;
+use crate::services::networking::traefik::TraefikService;
 
 pub struct TraefikController {
     pub(super) service: Arc<TraefikService>,

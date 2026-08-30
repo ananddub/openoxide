@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::organization::OrganizationService as AppOrganizationService;
+use crate::services::identity::organization::OrganizationService as AppOrganizationService;
 
 pub struct OrganizationController {
     pub(super) service: Arc<AppOrganizationService>,

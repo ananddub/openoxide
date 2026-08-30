@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::auth::AuthService as AppAuthService;
+use crate::services::identity::auth::AuthService as AppAuthService;
 
 pub struct AuthController {
     pub(super) service: Arc<AppAuthService>,

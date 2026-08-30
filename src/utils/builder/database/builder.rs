@@ -1,5 +1,5 @@
 use crate::db::queries::FlashQueries;
-use crate::services::database::DatabaseKind;
+use crate::services::compute::database::DatabaseKind;
 use crate::utils::builder::shared::BuilderContext;
 use crate::utils::builder::spec::BuilderEvent;
 use crate::utils::docker::query::filter::{TaskDesiredState, TaskFilter};
@@ -157,7 +157,7 @@ pub async fn apply_database_swarm_settings(
     networks: &mut BTreeMap<String, ExternalNetwork>,
 ) -> ExecResult<()> {
     let settings = auto_di::resolve::<
-        crate::services::database::swarm_settings::DatabaseSwarmSettingsService,
+        crate::services::compute::database::swarm_settings::DatabaseSwarmSettingsService,
     >()
     .await
     .map_err(|error| ExecError::CommandFailed {

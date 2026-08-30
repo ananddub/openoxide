@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
 use crate::flash_gen::models::{Backups, BackupExecutions, VolumeBackups};
 
 pub async fn refresh_schedule_runner() {
-    if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+    if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
         if let Err(error) = runner.refresh_jobs().await {
             tracing::error!(%error, "could not refresh scheduler after backup mutation");
         }
@@ -94,10 +94,10 @@ pub struct VerifyBackupFileDto {
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct BackupExecutionResponseDto {
     pub id: i64,
-    pub backup_kind: crate::services::backup::types::BackupKind,
-    pub operation: crate::services::backup::types::BackupOperation,
+    pub backup_kind: crate::services::automation::backup::types::BackupKind,
+    pub operation: crate::services::automation::backup::types::BackupOperation,
     pub backup_id: Option<i64>,
-    pub status: crate::services::backup::types::BackupExecutionStatus,
+    pub status: crate::services::automation::backup::types::BackupExecutionStatus,
     pub object_key: Option<String>,
     pub checksum_sha256: Option<String>,
     pub size_bytes: Option<i64>,
@@ -111,16 +111,16 @@ impl From<BackupExecutions> for BackupExecutionResponseDto {
     fn from(value: BackupExecutions) -> Self {
         Self {
             id: value.id,
-            backup_kind: crate::services::backup::types::BackupKind::from_str(
+            backup_kind: crate::services::automation::backup::types::BackupKind::from_str(
                 value.backup_kind.as_str(),
             )
             .expect("database enforces backup kind"),
-            operation: crate::services::backup::types::BackupOperation::from_str(
+            operation: crate::services::automation::backup::types::BackupOperation::from_str(
                 value.operation.as_str(),
             )
             .expect("database enforces backup operation"),
             backup_id: value.backup_id,
-            status: crate::services::backup::types::BackupExecutionStatus::from_str(
+            status: crate::services::automation::backup::types::BackupExecutionStatus::from_str(
                 value.status.as_str(),
             )
             .expect("database enforces backup status"),

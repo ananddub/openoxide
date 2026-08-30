@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
-use crate::services::destination::{CreateDestinationDto, PatchDestinationDto};
+use crate::services::automation::destination::{CreateDestinationDto, PatchDestinationDto};
 
 use super::helper::*;
 use super::init::DestinationController;

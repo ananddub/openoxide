@@ -1,8 +1,8 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::PreviewDeployment;
-use crate::services::preview::{PreviewDeploymentOutcome, PreviewDeploymentView};
-use crate::services::webhook::{GitProviderKind, PullRequestEvent};
+use crate::services::compute::preview::{PreviewDeploymentOutcome, PreviewDeploymentView};
+use crate::services::integrations::git::webhooks::{GitProviderKind, PullRequestEvent};
 
 pub fn view_to_proto(v: PreviewDeploymentView) -> PreviewDeployment {
     PreviewDeployment {

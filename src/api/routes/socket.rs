@@ -9,14 +9,14 @@ pub struct Socket {
 #[singleton]
 pub async fn socket_init() -> Socket {
     let _ = auto_socket::set_authenticator(|token| async move {
-        let auth = auto_di::resolve::<crate::services::auth::AuthService>()
+        let auth = auto_di::resolve::<crate::services::identity::auth::AuthService>()
             .await
             .map_err(|error| error.to_string())?;
         let claims = auth
             .validate_access_token(&token)
             .await
             .map_err(|error| error.to_string())?;
-        let permissions = auto_di::resolve::<crate::services::permission::PermissionService>()
+        let permissions = auto_di::resolve::<crate::services::identity::permission::PermissionService>()
             .await
             .map_err(|error| error.to_string())?;
         let organization_id = permissions
@@ -32,7 +32,7 @@ pub async fn socket_init() -> Socket {
         let Some(organization_id) = identity.organization_id else {
             return Ok(false);
         };
-        let permissions = auto_di::resolve::<crate::services::permission::PermissionService>()
+        let permissions = auto_di::resolve::<crate::services::identity::permission::PermissionService>()
             .await
             .map_err(|error| error.to_string())?;
         let resource = match resource.rsplit("::").next().unwrap_or(resource) {
@@ -78,7 +78,7 @@ pub async fn socket_init() -> Socket {
             .check_permission(
                 identity.user_id,
                 organization_id,
-                crate::services::permission::PolicyAction::new(resource, operation),
+                crate::services::identity::permission::PolicyAction::new(resource, operation),
             )
             .await
             .map_err(|error| error.to_string())

@@ -186,7 +186,7 @@ pub async fn build_postgres_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Postgres,
+        crate::services::compute::database::DatabaseKind::Postgres,
         db_id,
         &mut service,
         &mut networks,

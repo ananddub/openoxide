@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::CacheKey;
-use crate::services::domain::{CreateDomainDto, PatchDomainDto};
+use crate::services::networking::domain::{CreateDomainDto, PatchDomainDto};
 
 use super::helper::*;
 use super::init::DomainController;

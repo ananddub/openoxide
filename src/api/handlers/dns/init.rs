@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::dns::DnsService as AppDnsService;
+use crate::services::networking::dns::DnsService as AppDnsService;
 
 pub struct DnsController {
     pub(super) service: Arc<AppDnsService>,

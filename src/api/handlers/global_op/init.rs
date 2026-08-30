@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::global_op::DockerManagementService;
+use crate::services::platform::global_ops::DockerManagementService;
 
 pub struct DockerManagementController {
     pub(super) service: Arc<DockerManagementService>,

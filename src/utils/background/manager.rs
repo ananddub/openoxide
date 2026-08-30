@@ -4,13 +4,13 @@ use std::sync::Arc;
 use crate::db::queries::FlashQueries;
 use crate::{
     services::{
-        alert::AlertService,
-        backup::PanelBackupService,
-        deployment::DeploymentService,
-        monitoring::{lifecycle::MonitoringLifecycleService, reconciler::MonitoringReconciler},
-        notification::NotificationService,
-        schedule::ScheduleRunner,
-        server::ServerPrivateNetworkService,
+        automation::backup::PanelBackupService, automation::schedule::ScheduleRunner,
+        compute::engine::DeploymentService,
+        infrastructure::server::ServerPrivateNetworkService,
+        integrations::notification::NotificationService, observability::alert::AlertService,
+        observability::monitoring::{
+            lifecycle::MonitoringLifecycleService, reconciler::MonitoringReconciler,
+        },
     },
     utils::builder::queue::BuilderQueue,
 };
@@ -38,7 +38,7 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve monitoring reconciler: {error}"))?;
         let monitoring_service =
-            resolve::<crate::services::monitoring::monitoring_service::MonitoringService>()
+            resolve::<crate::services::observability::monitoring::monitoring_service::MonitoringService>()
                 .await
                 .map_err(|error| format!("failed to resolve monitoring service: {error}"))?;
         let monitoring_lifecycle = resolve::<MonitoringLifecycleService>()

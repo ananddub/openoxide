@@ -298,7 +298,7 @@ impl BuilderQueue {
         pid_file: &str,
         stage: &str,
     ) -> bool {
-        match crate::services::compose::remote::agent_executor(server_id).await {
+        match crate::services::compute::compose::remote::agent_executor(server_id).await {
             Ok(executor) => match executor.kill_pid_file(pid_file).await {
                 Ok(()) => {
                     if let Ok(q) = auto_di::resolve::<crate::db::queries::FlashQueries>().await {

@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::services::server::ServerPrivateNetworkService;
+use crate::services::infrastructure::server::ServerPrivateNetworkService;
 
 pub fn start(service: Arc<ServerPrivateNetworkService>) {
     tokio::spawn(async move {

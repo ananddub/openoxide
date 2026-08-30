@@ -265,7 +265,7 @@ fn mapping_mut<'a>(value: &'a mut Value, message: &str) -> ExecResult<&'a mut Ma
 /// Returns HashMap<service_name, Vec<label>>
 pub fn build_compose_service_labels(
     app_name: &str,
-    domains: &[crate::services::domain::DomainRecord],
+    domains: &[crate::services::networking::domain::DomainRecord],
 ) -> std::collections::HashMap<String, Vec<String>> {
     let shared_domains: Vec<crate::utils::builder::shared::traefik::SharedDomain> = domains
         .iter()

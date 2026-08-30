@@ -2,11 +2,10 @@ use auto_di::resolve;
 
 use crate::{
     services::{
-        application::ApplicationOperation,
-        compose::ComposeOperation,
-        compose::ComposeStatus,
-        database::DatabaseOperation,
-        notification::{
+        compute::application::ApplicationOperation,
+        compute::compose::{ComposeOperation, ComposeStatus},
+        compute::database::DatabaseOperation,
+        integrations::notification::{
             NotificationLevel, NotificationMessage, NotificationScope, NotificationService,
             NotificationTrigger,
         },

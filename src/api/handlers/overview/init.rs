@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::overview::OverviewService;
+use crate::services::platform::overview::OverviewService;
 
 pub struct OverviewController {
     pub(super) service: Arc<OverviewService>,

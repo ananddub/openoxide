@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     RemoteServerService, RemoteServerServiceExt,
 };
-use crate::services::server::{
+use crate::services::infrastructure::server::{
     CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
     RemoteServerAction, RemoteServerActionResponseDto, RemoteServerResponseDto,
     RemoteServerStatus, ServerDependencyMigrationDto,

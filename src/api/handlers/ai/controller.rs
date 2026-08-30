@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     AiService, AiServiceExt, Empty, OperationResult, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::services::ai::AiLogContext;
+use crate::services::platform::ai::AiLogContext;
 
 use super::helper::*;
 use super::init::AiController;

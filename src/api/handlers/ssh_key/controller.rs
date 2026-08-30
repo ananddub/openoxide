@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     SshKeyService, SshKeyServiceExt,
 };
-use crate::services::ssh_key::{CreateSshKeyDto, PatchSshKeyDto};
+use crate::services::infrastructure::ssh_key::{CreateSshKeyDto, PatchSshKeyDto};
 
 use super::helper::*;
 use super::init::SshKeyController;

@@ -13,7 +13,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     TerminalError, TerminalEvent, TerminalExit, TerminalOutputStream,
     TerminalOutput, terminal_event,
 };
-use crate::services::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
 
 use super::init::TerminalController;
 

@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::api::connect::generated::openoxide::api::v1::{Compose, ResourceResponse};
 use crate::flash_gen::models::{Mounts, Patches};
-use crate::services::compose::crud::ComposeResponseDto;
+use crate::services::compute::compose::crud::ComposeResponseDto;
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
     match &err {

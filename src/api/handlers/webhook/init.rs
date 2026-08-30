@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::webhook::{WebhookCredentialStore, WebhookDispatcher};
+use crate::services::integrations::git::webhooks::{WebhookCredentialStore, WebhookDispatcher};
 
 pub struct WebhookController {
     pub(super) credentials: Arc<WebhookCredentialStore>,

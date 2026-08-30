@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 use serde::Deserialize;
 
-use crate::services::global_op::ContainerActionDto;
+use crate::services::platform::global_ops::ContainerActionDto;
 
 pub fn api_error(error: String) -> ConnectError {
     if error.starts_with("invalid") {

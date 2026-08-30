@@ -1,8 +1,8 @@
 use auto_di::resolve;
 use connectrpc::{ConnectError, ErrorCode, RequestContext};
 
-use crate::services::auth::AuthService;
-use crate::services::permission::{PermissionService, PolicyAction};
+use crate::services::identity::auth::AuthService;
+use crate::services::identity::permission::{PermissionService, PolicyAction};
 use crate::utils::jwt::claim::Claims;
 
 /// Transport-neutral authentication and authorization context.

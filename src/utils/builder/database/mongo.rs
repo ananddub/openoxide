@@ -161,7 +161,7 @@ pub async fn build_mongo_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Mongo,
+        crate::services::compute::database::DatabaseKind::Mongo,
         db_id,
         &mut service,
         &mut networks,

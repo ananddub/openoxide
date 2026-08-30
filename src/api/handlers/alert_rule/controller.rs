@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     AlertOperationsService, AlertOperationsServiceExt, Empty, OperationResult,
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::services::notification::{NotificationLevel, NotificationMessage};
+use crate::services::integrations::notification::{NotificationLevel, NotificationMessage};
 
 use super::helper::*;
 use super::init::AlertRuleController;

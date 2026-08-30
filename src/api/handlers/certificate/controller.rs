@@ -4,7 +4,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     CertificateOperationsService, CertificateOperationsServiceExt, Empty, OperationResult,
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::services::certificate::{CreateCertificateDto, PatchCertificateDto, RenewCertificateDto};
+use crate::services::networking::certificate::{CreateCertificateDto, PatchCertificateDto, RenewCertificateDto};
 
 use super::helper::*;
 use super::init::CertificateController;

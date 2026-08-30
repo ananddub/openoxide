@@ -5,7 +5,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ScheduleOperationsService, ScheduleOperationsServiceExt, StreamQuery,
 };
 use crate::core::cache::CacheKey;
-use crate::services::schedule::schedule::{CreateScheduleDto, PatchScheduleDto};
+use crate::services::automation::schedule::schedule::{CreateScheduleDto, PatchScheduleDto};
 
 use super::helper::*;
 use super::init::ScheduleController;
@@ -216,7 +216,7 @@ impl ScheduleOperationsService for ScheduleController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
-        let content = crate::services::schedule::file_log::read(&format!("schedule-{}", request.id))
+        let content = crate::services::automation::schedule::file_log::read(&format!("schedule-{}", request.id))
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         let dto = ScheduleLogDto { content };
@@ -254,7 +254,7 @@ impl ScheduleOperationsService for ScheduleController {
         if !belongs {
             return Err(ConnectError::not_found("schedule execution not found"));
         }
-        let content = crate::services::schedule::file_log::read(&format!(
+        let content = crate::services::automation::schedule::file_log::read(&format!(
             "schedule-{}-execution-{}", request.id, execution_id
         )).await.map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         let dto = ScheduleLogDto { content };

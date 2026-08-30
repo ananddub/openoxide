@@ -4,7 +4,7 @@ use auto_di::singleton;
 use connectrpc::ConnectError;
 
 use crate::db::queries::FlashQueries;
-use crate::services::server::{
+use crate::services::infrastructure::server::{
     RemoteServerService, RemoteServerService as AppRemoteServerService, ServerCleanupService,
     ServerLifecycleService, ServerManagementService as AppServerManagementService,
     ServerPrivateNetworkService as AppServerPrivateNetworkService,

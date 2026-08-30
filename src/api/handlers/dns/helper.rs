@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
-use crate::services::dns::{DnsProviderDto, DnsRecordDto, DnsServiceError, DnsZoneDto};
+use crate::services::networking::dns::{DnsProviderDto, DnsRecordDto, DnsServiceError, DnsZoneDto};
 
 pub fn map_dns_error(error: DnsServiceError) -> ConnectError {
     match error {

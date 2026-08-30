@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::monitoring::{
+use crate::services::observability::monitoring::{
     agent_auth::MonitoringAgentAuth, lifecycle::MonitoringLifecycleService,
     monitoring_service::MonitoringService,
 };

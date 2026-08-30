@@ -2,7 +2,7 @@ mod error;
 mod extractor;
 mod rules;
 
-pub use crate::services::permission::{
+pub use crate::services::identity::permission::{
     Alert, Application, AuditLog, Backup, CanCancel, CanCreate, CanDelete, CanDeploy, CanMonitor,
     CanRead, CanRestore, CanUpdate, CanWrite, Certificate, Database, Deployment, Environment,
     Groups, Invitation, Logs, Members, Monitoring, Notification, Organization, Project, Registry,
@@ -10,5 +10,5 @@ pub use crate::services::permission::{
 };
 pub use extractor::{PermissionOrganization, RequirePermission};
 
-pub(crate) use crate::services::permission::{PermissionOperation, PermissionResource};
+pub(crate) use crate::services::identity::permission::{PermissionOperation, PermissionResource};
 pub(crate) use rules::Allows;

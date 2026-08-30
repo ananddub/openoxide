@@ -5,7 +5,7 @@ use connectrpc::{ConnectError, ErrorCode};
 use sqlx::SqlitePool;
 
 use crate::core::cache::{AppStateCache, CacheKey};
-use crate::services::server::RemoteServerService;
+use crate::services::infrastructure::server::RemoteServerService;
 use crate::utils::docker::DockerCli;
 
 pub struct SwarmController {
@@ -60,7 +60,7 @@ impl SwarmController {
         &self,
         server_id: Option<i64>,
     ) -> Result<crate::utils::exec::CommandExecutor, ConnectError> {
-        crate::services::compose::remote::agent_executor_for(server_id)
+        crate::services::compute::compose::remote::agent_executor_for(server_id)
             .await
             .map_err(|error| ConnectError::new(ErrorCode::FailedPrecondition, error))
     }

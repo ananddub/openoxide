@@ -12,9 +12,9 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateDatabaseRequest, UpdateSwarmSettingsRequest, UpdateMountRequest,
     ValidationResult,
 };
-use crate::services::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
-use crate::services::database::management::{ImportDatabaseDto, PostgresAdvancedConfigDto};
-use crate::services::database::DatabaseOperation;
+use crate::services::compute::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
+use crate::services::compute::database::management::{ImportDatabaseDto, PostgresAdvancedConfigDto};
+use crate::services::compute::database::DatabaseOperation;
 
 use super::helper::*;
 use super::init::DatabaseController;
@@ -459,7 +459,7 @@ impl DatabaseService for DatabaseController {
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
             .unwrap_or_default();
         let replication_role_str = config.replication_role.as_deref().unwrap_or("STANDALONE");
-        let replication_role = crate::services::database::management::PostgresReplicationRole::from_str(replication_role_str)
+        let replication_role = crate::services::compute::database::management::PostgresReplicationRole::from_str(replication_role_str)
             .ok_or_else(|| ConnectError::invalid_argument(format!("invalid replication role: {}", replication_role_str)))?;
         let config_map = config
             .config

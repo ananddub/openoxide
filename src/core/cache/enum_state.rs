@@ -1,5 +1,6 @@
 use crate::services::{
-    application::ApplicationRecord, compose::ComposeRecord, database::DatabaseRecord,
+    compute::application::ApplicationRecord, compute::compose::ComposeRecord,
+    compute::database::DatabaseRecord,
 };
 use crate::utils::docker::{NodeInspect, SwarmInfo};
 

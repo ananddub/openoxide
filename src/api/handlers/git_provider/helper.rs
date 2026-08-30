@@ -2,7 +2,7 @@ use connectrpc::{ConnectError, ErrorCode};
 use serde::{Deserialize, Serialize};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
-use crate::services::git_provider::{GitProviderConfigView, GitProviderView};
+use crate::services::integrations::git::{GitProviderConfigView, GitProviderView};
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {

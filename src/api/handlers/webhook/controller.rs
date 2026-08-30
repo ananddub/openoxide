@@ -3,7 +3,7 @@ use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceReque
 use crate::api::connect::generated::openoxide::api::v1::{
     IncomingWebhookRequest, OperationResult, IncomingWebhookService, IncomingWebhookServiceExt,
 };
-use crate::services::webhook::{DispatchOutcome, WebhookEvent, parse_event};
+use crate::services::integrations::git::webhooks::{DispatchOutcome, WebhookEvent, parse_event};
 
 use super::helper::*;
 use super::init::WebhookController;

@@ -3,13 +3,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
 use crate::flash_gen::models::{ScheduleExecutions, ScheduleRuntimePolicies, Schedules};
-use crate::services::schedule::ScheduleRunResult;
-use crate::services::schedule::types::{
+use crate::services::automation::schedule::ScheduleRunResult;
+use crate::services::automation::schedule::types::{
     ConcurrencyPolicy, MissedRunPolicy, ScheduleExecutionStatus, ScheduleTriggerKind,
 };
 
 pub async fn refresh_schedule_runner() {
-    if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
+    if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
         if let Err(error) = runner.refresh_jobs().await {
             tracing::error!(%error, "could not refresh scheduler after schedule mutation");
         }

@@ -3,7 +3,7 @@ use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, Service
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, ResourceRequest, ResourceResponse, SettingsService, SettingsServiceExt,
 };
-use crate::services::settings::UpdateSettingsDto;
+use crate::services::platform::settings::UpdateSettingsDto;
 
 use super::helper::*;
 use super::init::SettingsController;

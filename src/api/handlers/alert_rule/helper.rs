@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 use serde::{Deserialize, Serialize};
 
-use crate::services::alert::{
+use crate::services::observability::alert::{
     AlertEventState, AlertRule, MetricKind, Operator, RuleState, TargetKind,
 };
 

@@ -150,7 +150,7 @@ pub async fn build_mariadb_stack(
         ports,
     };
     crate::utils::builder::database::builder::apply_database_swarm_settings(
-        crate::services::database::DatabaseKind::Mariadb,
+        crate::services::compute::database::DatabaseKind::Mariadb,
         db_id,
         &mut service,
         &mut networks,

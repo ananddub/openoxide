@@ -5,8 +5,8 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     core::config::Config,
     services::{
-        compose::remote::{agent_executor, deployment_pid_file},
-        database::DatabaseOperation,
+        compute::compose::remote::{agent_executor, deployment_pid_file},
+        compute::database::DatabaseOperation,
     },
     utils::{
         builder::errors::BuilderError,
@@ -63,7 +63,7 @@ impl BuilderQueue {
             BuilderError::Execution(format!("could not resolve application config: {e}"))
         })?;
 
-        let effective_server_id = crate::services::compose::remote::agent_server_id(server_id)
+        let effective_server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
             .await
             .map_err(BuilderError::Execution)?;
         let executor = {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::db::queries::FlashQueries;
-use crate::services::backup::PanelBackupService;
+use crate::services::automation::backup::PanelBackupService;
 
 pub fn start(service: Arc<PanelBackupService>, queries: Arc<FlashQueries>) {
     tokio::spawn(async move {

@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::api::connect::generated::openoxide::api::v1::DeploymentEvent;
 use crate::flash_gen::models::Deployments;
-use crate::services::deployment::DockerLogOptions;
+use crate::services::compute::engine::DockerLogOptions;
 use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
 
 #[derive(Debug, Clone, Copy, Default, Deserialize)]

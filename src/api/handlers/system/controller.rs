@@ -26,7 +26,7 @@ impl SystemService for SystemController {
             }
         };
 
-        let docker_healthy = match crate::services::compose::remote::agent_executor_for(None).await
+        let docker_healthy = match crate::services::compute::compose::remote::agent_executor_for(None).await
         {
             Ok(executor) => match DockerCli::from_executor(executor)
                 .system()

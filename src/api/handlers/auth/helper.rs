@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{AuthResponse, TokenPair, User};
-use crate::services::auth::AuthError;
+use crate::services::identity::auth::AuthError;
 
 // ── Error mapping ──────────────────────────────────────────────────
 

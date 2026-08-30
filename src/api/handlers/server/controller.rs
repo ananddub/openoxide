@@ -8,7 +8,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ServerControllerService, ServerControllerServiceExt, StreamQuery,
 };
 use crate::core::config::Config;
-use crate::services::server::RemoteServerStatus;
+use crate::services::infrastructure::server::RemoteServerStatus;
 use crate::utils::{
     exec::{RemoteExecutor, SshAuth, SshHostKey},
     setup::{ServerSetup, SetupConfig},

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
 use crate::flash_gen::models::Notifications as Notification;
-use crate::services::notification::NotificationProvider;
+use crate::services::integrations::notification::NotificationProvider;
 
 pub fn notif_to_resource(dto: NotificationResponseDto) -> ResourceResponse {
     let payload = serde_json::to_string(&dto).unwrap_or_default();
