@@ -206,7 +206,7 @@ impl MonitoringLifecycleService {
                 id
             } else {
                 let result = sqlx::query(
-                    "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_status, server_type, command, metrics_config) VALUES ('Localhost (Main server)', 'Panel host monitoring agent', '127.0.0.1', 22, 'root', 'localhost', 'ACTIVE', 'DEPLOY', '', '{}')",
+                    "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_status, server_type, enable_docker_cleanup, command, metrics_config) VALUES ('Localhost (Main server)', 'Panel host monitoring agent', '127.0.0.1', 22, 'root', 'localhost', 'ACTIVE', 'DEPLOY', 0, '', '{}')",
                 )
                 .execute(&self.queries.pool)
                 .await?;
