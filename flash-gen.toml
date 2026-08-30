@@ -2,8 +2,8 @@
 # Migrations are intentionally not configured here; use flash.toml for
 # schema migration commands separately.
 version = "2"
-schema_dir = ".flash/schema"
-queries = ".flash/queries/"
+schema_dir = "db/schema"
+queries = "db/queries/"
 
 [database]
 provider = "sqlite"

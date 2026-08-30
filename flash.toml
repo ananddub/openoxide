@@ -7,8 +7,8 @@
 #   Rust:   "sqlx" (default)
 # Add driver = "<name>" inside the [gen.*] block below.
 version = "2"
-schema_dir = ".flash/schema"
-queries = ".flash/queries/"
+schema_dir = "db/schema"
+queries = "db/queries/"
 
 [database]
 provider = "sqlite"

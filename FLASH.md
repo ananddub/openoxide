@@ -18,8 +18,8 @@ JavaScript, Python, Kotlin, Java, and Rust**.
 
 Two inputs drive everything:
 
-- `.flash/schema/` — table definitions (DDL, `.sql` files).
-- `.flash/queries/` — named queries, each tagged with `-- name:`.
+- `db/schema/` — table definitions (DDL, `.sql` files).
+- `db/queries/` — named queries, each tagged with `-- name:`.
 
 `flash gen` reads both and emits type-safe functions and structs.
 
@@ -61,18 +61,14 @@ When `flash gen` runs it prints `Output: <dir>/` so you can confirm the path.
 
 ```
 flash.toml            # config: provider, codegen targets, cache settings
-.flash/schema/        # schema DDL — CREATE TABLE ... (edit these)
+db/schema/            # schema DDL — CREATE TABLE ... (edit these)
   users.sql
-.flash/queries/       # named SQL queries (edit these)
+db/queries/           # named SQL queries (edit these)
   users.sql
 db/migrations/        # runtime migrations — append-only
-db/schema/            # mirror of .flash/schema for atlas (read-only mirror)
 .env                  # DATABASE_URL and secrets (never commit)
 <gen.*.out>/          # generated type-safe code — do not edit
 ```
-
-> In this repo `.flash/` is the source of truth for schema and queries;
-> `db/schema/` is only a mirror for atlas tooling.
 
 ---
 
@@ -81,12 +77,12 @@ db/schema/            # mirror of .flash/schema for atlas (read-only mirror)
 ```bash
 # 1. (already done) flash init --sqlite
 # 2. Edit schema
-edit .flash/schema/users.sql
+edit db/schema/users.sql
 # 3. Create and apply migration
 flash migrate "describe change"
 flash apply
 # 4. Write queries
-edit .flash/queries/users.sql
+edit db/queries/users.sql
 # 5. Generate code (check flash.toml for the output dir)
 flash gen
 # 6. (optional) visual editor
@@ -129,8 +125,8 @@ Re-run `flash gen` after every `.sql` file change.
 
 ```toml
 version = "2"
-schema_dir = ".flash/schema"    # DDL directory
-queries    = ".flash/queries/"  # query directory
+schema_dir = "db/schema"    # DDL directory
+queries    = "db/queries/"      # query directory
 migrations_path = "db/migrations"
 export_path     = "db/export"
 env_path        = ""                # extra .env file path (optional)
@@ -227,7 +223,7 @@ Connection string formats:
 
 ---
 
-## 8. Writing schema (`.flash/schema/`)
+## 8. Writing schema (`db/schema/`)
 
 Plain DDL. Scaffolded schema for `sqlite`:
 
@@ -284,7 +280,7 @@ RETURNING id, name, email, created_at, updated_at;
 Rules:
 - Prefer `RETURNING` (Postgres/SQLite) so inserts can be `:one`.
 - MySQL has no `RETURNING` — use `:execresult` for inserts.
-- Any `.sql` file under `.flash/queries/` works; filenames are free.
+- Any `.sql` file under `db/queries/` works; filenames are free.
 
 ---
 
