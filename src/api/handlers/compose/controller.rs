@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
@@ -25,33 +22,9 @@ use crate::services::compose::source::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
-use crate::services::compose::{ComposeOperation as AppComposeOperation, ComposeService as AppComposeService};
-use crate::services::compose::management::{
-    ComposeManagementService, ComposeMountService, ComposePatchService, ComposeTransferService,
-};
+use crate::services::compose::ComposeOperation as AppComposeOperation;
 use super::helper::*;
-
-pub struct ComposeController {
-    service: Arc<AppComposeService>,
-    management: Arc<ComposeManagementService>,
-    transfer: Arc<ComposeTransferService>,
-    mounts: Arc<ComposeMountService>,
-    patches: Arc<ComposePatchService>,
-}
-
-#[singleton]
-impl ComposeController {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        service: Arc<AppComposeService>,
-        management: Arc<ComposeManagementService>,
-        transfer: Arc<ComposeTransferService>,
-        mounts: Arc<ComposeMountService>,
-        patches: Arc<ComposePatchService>,
-    ) -> Self {
-        Self { service, management, transfer, mounts, patches }
-    }
-}
+use super::init::ComposeController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl ComposeService for ComposeController {

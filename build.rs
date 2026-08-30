@@ -69,6 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "proto/openoxide/api/v1/traefik.proto",
             "proto/openoxide/api/v1/traefik_operations.proto",
             "proto/openoxide/api/v1/ssh_key.proto",
+            "proto/openoxide/api/v1/terminal.proto",
             "proto/openoxide/api/v1/global.proto",
             "proto/openoxide/api/v1/global_operations.proto",
             "proto/openoxide/api/v1/system.proto",

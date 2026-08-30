@@ -2,16 +2,8 @@
 // @generated from file openoxide/api/v1/auth.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {
-  GenFile,
-  GenMessage,
-  GenService,
-} from "@bufbuild/protobuf/codegenv2";
-import {
-  fileDesc,
-  messageDesc,
-  serviceDesc,
-} from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { EmptySchema, TokenPair, User, UserSchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
@@ -20,12 +12,8 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file openoxide/api/v1/auth.proto.
  */
-export const file_openoxide_api_v1_auth: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "ChtvcGVub3hpZGUvYXBpL3YxL2F1dGgucHJvdG8SEG9wZW5veGlkZS5hcGkudjEisAEKDVNpZ251cFJlcXVlc3QSFgoFZW1haWwYASABKAlCB7pIBHICYAESGQoIcGFzc3dvcmQYAiABKAlCB7pIBHICEAgSFwoKZmlyc3RfbmFtZRgDIAEoCUgAiAEBEhYKCWxhc3RfbmFtZRgEIAEoCUgBiAEBEhMKBmF2YXRhchgFIAEoCUgCiAEBQg0KC19maXJzdF9uYW1lQgwKCl9sYXN0X25hbWVCCQoHX2F2YXRhciKhAQoMTG9naW5SZXF1ZXN0EhYKBWVtYWlsGAEgASgJQge6SARyAmABEhkKCHBhc3N3b3JkGAIgASgJQge6SARyAhABEhwKD3R3b19mYWN0b3JfY29kZRgDIAEoCUgAiAEBEhoKDXJlY292ZXJ5X2NvZGUYBCABKAlIAYgBAUISChBfdHdvX2ZhY3Rvcl9jb2RlQhAKDl9yZWNvdmVyeV9jb2RlIjAKDlJlZnJlc2hSZXF1ZXN0Eh4KDXJlZnJlc2hfdG9rZW4YASABKAlCB7pIBHICEAEiYQoMQXV0aFJlc3BvbnNlEiQKBHVzZXIYASABKAsyFi5vcGVub3hpZGUuYXBpLnYxLlVzZXISKwoGdG9rZW5zGAIgASgLMhsub3Blbm94aWRlLmFwaS52MS5Ub2tlblBhaXIiDwoNV2hvQW1JUmVxdWVzdCIPCg1Mb2dvdXRSZXF1ZXN0IhcKFUdldFNldHVwU3RhdHVzUmVxdWVzdCIkCgtTZXR1cFN0YXR1cxIVCg1vd25lcl9wcmVzZW50GAEgASgIIvMBChFVcGRhdGVVc2VyUmVxdWVzdBIbCgVlbWFpbBgBIAEoCUIHukgEcgJgAUgAiAEBEh4KCHBhc3N3b3JkGAIgASgJQge6SARyAhAISAGIAQESIQoKZmlyc3RfbmFtZRgDIAEoCUIIukgFcgMY/wFIAogBARIgCglsYXN0X25hbWUYBCABKAlCCLpIBXIDGP8BSAOIAQESHQoGYXZhdGFyGAUgASgJQgi6SAVyA4gBAUgEiAEBQggKBl9lbWFpbEILCglfcGFzc3dvcmRCDQoLX2ZpcnN0X25hbWVCDAoKX2xhc3RfbmFtZUIJCgdfYXZhdGFyIjUKG1JlcXVlc3RQYXNzd29yZFJlc2V0UmVxdWVzdBIWCgVlbWFpbBgBIAEoCUIHukgEcgJgASJJChRSZXNldFBhc3N3b3JkUmVxdWVzdBIWCgV0b2tlbhgBIAEoCUIHukgEcgIQARIZCghwYXNzd29yZBgCIAEoCUIHukgEcgIQCCIjCiFHZXRFbWFpbFZlcmlmaWNhdGlvblN0YXR1c1JlcXVlc3QiIQofUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdCI5Ch9Db25maXJtRW1haWxWZXJpZmljYXRpb25SZXF1ZXN0EhYKBXRva2VuGAEgASgJQge6SARyAhABIlUKF0VtYWlsVmVyaWZpY2F0aW9uU3RhdHVzEhAKCHZlcmlmaWVkGAEgASgIEhgKC3ZlcmlmaWVkX2F0GAIgASgDSACIAQFCDgoMX3ZlcmlmaWVkX2F0IhsKGUdldFR3b0ZhY3RvclN0YXR1c1JlcXVlc3QiNgoPVHdvRmFjdG9yU3RhdHVzEg8KB2VuYWJsZWQYASABKAgSEgoKY29uZmlndXJlZBgCIAEoCCIyChVTZXR1cFR3b0ZhY3RvclJlcXVlc3QSGQoIcGFzc3dvcmQYASABKAlCB7pIBHICEAEiTQoOVHdvRmFjdG9yU2V0dXASDgoGc2VjcmV0GAEgASgJEhMKC290cGF1dGhfdXJsGAIgASgJEhYKDnJlY292ZXJ5X2NvZGVzGAMgAygJIjEKFkVuYWJsZVR3b0ZhY3RvclJlcXVlc3QSFwoEY29kZRgBIAEoCUIJukgGcgQQBhgKIk0KF0Rpc2FibGVUd29GYWN0b3JSZXF1ZXN0EhkKCHBhc3N3b3JkGAEgASgJQge6SARyAhABEhcKBGNvZGUYAiABKAlCCbpIBnIEEAYYCiJUCh5SZWdlbmVyYXRlUmVjb3ZlcnlDb2Rlc1JlcXVlc3QSGQoIcGFzc3dvcmQYASABKAlCB7pIBHICEAESFwoEY29kZRgCIAEoCUIJukgGcgQQBhgKIicKDVJlY292ZXJ5Q29kZXMSFgoOcmVjb3ZlcnlfY29kZXMYASADKAkiFQoTTGlzdFNlc3Npb25zUmVxdWVzdCJHChRMaXN0U2Vzc2lvbnNSZXNwb25zZRIvCghzZXNzaW9ucxgBIAMoCzIdLm9wZW5veGlkZS5hcGkudjEuQXV0aFNlc3Npb24ifgoLQXV0aFNlc3Npb24SEgoKc2Vzc2lvbl9pZBgBIAEoCRISCgpjcmVhdGVkX2F0GAIgASgDEhcKCmV4cGlyZXNfYXQYAyABKANIAIgBARIOCgZhY3RpdmUYBCABKAgSDwoHY3VycmVudBgFIAEoCEINCgtfZXhwaXJlc19hdCIzChRSZXZva2VTZXNzaW9uUmVxdWVzdBIbCgpzZXNzaW9uX2lkGAEgASgJQge6SARyAhABIiEKH0xpc3RQZXJzb25hbEFjY2Vzc1Rva2Vuc1JlcXVlc3QiWQogTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zUmVzcG9uc2USNQoGdG9rZW5zGAEgAygLMiUub3Blbm94aWRlLmFwaS52MS5QZXJzb25hbEFjY2Vzc1Rva2VuIn8KIENyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESGQoIcGFzc3dvcmQYAiABKAlCB7pIBHICEAESFwoKZXhwaXJlc19hdBgDIAEoA0gAiAEBQg0KC19leHBpcmVzX2F0ItUBChNQZXJzb25hbEFjY2Vzc1Rva2VuEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSFAoMdG9rZW5fcHJlZml4GAMgASgJEhcKCmV4cGlyZXNfYXQYBCABKANIAIgBARIZCgxsYXN0X3VzZWRfYXQYBSABKANIAYgBARIXCgpyZXZva2VkX2F0GAYgASgDSAKIAQESEgoKY3JlYXRlZF9hdBgHIAEoA0INCgtfZXhwaXJlc19hdEIPCg1fbGFzdF91c2VkX2F0Qg0KC19yZXZva2VkX2F0ImMKGkNyZWF0ZWRQZXJzb25hbEFjY2Vzc1Rva2VuEg0KBXRva2VuGAEgASgJEjYKB2RldGFpbHMYAiABKAsyJS5vcGVub3hpZGUuYXBpLnYxLlBlcnNvbmFsQWNjZXNzVG9rZW4iNwogUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAylxAKC0F1dGhTZXJ2aWNlEkkKBlNpZ251cBIfLm9wZW5veGlkZS5hcGkudjEuU2lnbnVwUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuQXV0aFJlc3BvbnNlEkcKBUxvZ2luEh4ub3Blbm94aWRlLmFwaS52MS5Mb2dpblJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLkF1dGhSZXNwb25zZRJLCgdSZWZyZXNoEiAub3Blbm94aWRlLmFwaS52MS5SZWZyZXNoUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuQXV0aFJlc3BvbnNlEkEKBldob0FtSRIfLm9wZW5veGlkZS5hcGkudjEuV2hvQW1JUmVxdWVzdBoWLm9wZW5veGlkZS5hcGkudjEuVXNlchJCCgZMb2dvdXQSHy5vcGVub3hpZGUuYXBpLnYxLkxvZ291dFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKDkdldFNldHVwU3RhdHVzEicub3Blbm94aWRlLmFwaS52MS5HZXRTZXR1cFN0YXR1c1JlcXVlc3QaHS5vcGVub3hpZGUuYXBpLnYxLlNldHVwU3RhdHVzEkkKClVwZGF0ZVVzZXISIy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZVVzZXJSZXF1ZXN0GhYub3Blbm94aWRlLmFwaS52MS5Vc2VyEl4KFFJlcXVlc3RQYXNzd29yZFJlc2V0Ei0ub3Blbm94aWRlLmFwaS52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElAKDVJlc2V0UGFzc3dvcmQSJi5vcGVub3hpZGUuYXBpLnYxLlJlc2V0UGFzc3dvcmRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ8ChpHZXRFbWFpbFZlcmlmaWNhdGlvblN0YXR1cxIzLm9wZW5veGlkZS5hcGkudjEuR2V0RW1haWxWZXJpZmljYXRpb25TdGF0dXNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5FbWFpbFZlcmlmaWNhdGlvblN0YXR1cxJmChhSZXF1ZXN0RW1haWxWZXJpZmljYXRpb24SMS5vcGVub3hpZGUuYXBpLnYxLlJlcXVlc3RFbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmYKGENvbmZpcm1FbWFpbFZlcmlmaWNhdGlvbhIxLm9wZW5veGlkZS5hcGkudjEuQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZAoSR2V0VHdvRmFjdG9yU3RhdHVzEisub3Blbm94aWRlLmFwaS52MS5HZXRUd29GYWN0b3JTdGF0dXNSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5Ud29GYWN0b3JTdGF0dXMSWwoOU2V0dXBUd29GYWN0b3ISJy5vcGVub3hpZGUuYXBpLnYxLlNldHVwVHdvRmFjdG9yUmVxdWVzdBogLm9wZW5veGlkZS5hcGkudjEuVHdvRmFjdG9yU2V0dXASVAoPRW5hYmxlVHdvRmFjdG9yEigub3Blbm94aWRlLmFwaS52MS5FbmFibGVUd29GYWN0b3JSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWChBEaXNhYmxlVHdvRmFjdG9yEikub3Blbm94aWRlLmFwaS52MS5EaXNhYmxlVHdvRmFjdG9yUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSbAoXUmVnZW5lcmF0ZVJlY292ZXJ5Q29kZXMSMC5vcGVub3hpZGUuYXBpLnYxLlJlZ2VuZXJhdGVSZWNvdmVyeUNvZGVzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuUmVjb3ZlcnlDb2RlcxJdCgxMaXN0U2Vzc2lvbnMSJS5vcGVub3hpZGUuYXBpLnYxLkxpc3RTZXNzaW9uc1JlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlElAKDVJldm9rZVNlc3Npb24SJi5vcGVub3hpZGUuYXBpLnYxLlJldm9rZVNlc3Npb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRKBAQoYTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zEjEub3Blbm94aWRlLmFwaS52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXNwb25zZRJ9ChlDcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuEjIub3Blbm94aWRlLmFwaS52MS5DcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlZFBlcnNvbmFsQWNjZXNzVG9rZW4SaAoZUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlbhIyLm9wZW5veGlkZS5hcGkudjEuUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM",
-    [file_openoxide_api_v1_common, file_buf_validate_validate],
-  );
+export const file_openoxide_api_v1_auth: GenFile = /*@__PURE__*/
+  fileDesc("ChtvcGVub3hpZGUvYXBpL3YxL2F1dGgucHJvdG8SEG9wZW5veGlkZS5hcGkudjEisAEKDVNpZ251cFJlcXVlc3QSFgoFZW1haWwYASABKAlCB7pIBHICYAESGQoIcGFzc3dvcmQYAiABKAlCB7pIBHICEAgSFwoKZmlyc3RfbmFtZRgDIAEoCUgAiAEBEhYKCWxhc3RfbmFtZRgEIAEoCUgBiAEBEhMKBmF2YXRhchgFIAEoCUgCiAEBQg0KC19maXJzdF9uYW1lQgwKCl9sYXN0X25hbWVCCQoHX2F2YXRhciKhAQoMTG9naW5SZXF1ZXN0EhYKBWVtYWlsGAEgASgJQge6SARyAmABEhkKCHBhc3N3b3JkGAIgASgJQge6SARyAhABEhwKD3R3b19mYWN0b3JfY29kZRgDIAEoCUgAiAEBEhoKDXJlY292ZXJ5X2NvZGUYBCABKAlIAYgBAUISChBfdHdvX2ZhY3Rvcl9jb2RlQhAKDl9yZWNvdmVyeV9jb2RlIjAKDlJlZnJlc2hSZXF1ZXN0Eh4KDXJlZnJlc2hfdG9rZW4YASABKAlCB7pIBHICEAEiYQoMQXV0aFJlc3BvbnNlEiQKBHVzZXIYASABKAsyFi5vcGVub3hpZGUuYXBpLnYxLlVzZXISKwoGdG9rZW5zGAIgASgLMhsub3Blbm94aWRlLmFwaS52MS5Ub2tlblBhaXIiDwoNV2hvQW1JUmVxdWVzdCIPCg1Mb2dvdXRSZXF1ZXN0IhcKFUdldFNldHVwU3RhdHVzUmVxdWVzdCIkCgtTZXR1cFN0YXR1cxIVCg1vd25lcl9wcmVzZW50GAEgASgIIvMBChFVcGRhdGVVc2VyUmVxdWVzdBIbCgVlbWFpbBgBIAEoCUIHukgEcgJgAUgAiAEBEh4KCHBhc3N3b3JkGAIgASgJQge6SARyAhAISAGIAQESIQoKZmlyc3RfbmFtZRgDIAEoCUIIukgFcgMY/wFIAogBARIgCglsYXN0X25hbWUYBCABKAlCCLpIBXIDGP8BSAOIAQESHQoGYXZhdGFyGAUgASgJQgi6SAVyA4gBAUgEiAEBQggKBl9lbWFpbEILCglfcGFzc3dvcmRCDQoLX2ZpcnN0X25hbWVCDAoKX2xhc3RfbmFtZUIJCgdfYXZhdGFyIjUKG1JlcXVlc3RQYXNzd29yZFJlc2V0UmVxdWVzdBIWCgVlbWFpbBgBIAEoCUIHukgEcgJgASJJChRSZXNldFBhc3N3b3JkUmVxdWVzdBIWCgV0b2tlbhgBIAEoCUIHukgEcgIQARIZCghwYXNzd29yZBgCIAEoCUIHukgEcgIQCCIjCiFHZXRFbWFpbFZlcmlmaWNhdGlvblN0YXR1c1JlcXVlc3QiIQofUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdCI5Ch9Db25maXJtRW1haWxWZXJpZmljYXRpb25SZXF1ZXN0EhYKBXRva2VuGAEgASgJQge6SARyAhABIlUKF0VtYWlsVmVyaWZpY2F0aW9uU3RhdHVzEhAKCHZlcmlmaWVkGAEgASgIEhgKC3ZlcmlmaWVkX2F0GAIgASgDSACIAQFCDgoMX3ZlcmlmaWVkX2F0IhsKGUdldFR3b0ZhY3RvclN0YXR1c1JlcXVlc3QiNgoPVHdvRmFjdG9yU3RhdHVzEg8KB2VuYWJsZWQYASABKAgSEgoKY29uZmlndXJlZBgCIAEoCCIyChVTZXR1cFR3b0ZhY3RvclJlcXVlc3QSGQoIcGFzc3dvcmQYASABKAlCB7pIBHICEAEiTQoOVHdvRmFjdG9yU2V0dXASDgoGc2VjcmV0GAEgASgJEhMKC290cGF1dGhfdXJsGAIgASgJEhYKDnJlY292ZXJ5X2NvZGVzGAMgAygJIjEKFkVuYWJsZVR3b0ZhY3RvclJlcXVlc3QSFwoEY29kZRgBIAEoCUIJukgGcgQQBhgKIk0KF0Rpc2FibGVUd29GYWN0b3JSZXF1ZXN0EhkKCHBhc3N3b3JkGAEgASgJQge6SARyAhABEhcKBGNvZGUYAiABKAlCCbpIBnIEEAYYCiJUCh5SZWdlbmVyYXRlUmVjb3ZlcnlDb2Rlc1JlcXVlc3QSGQoIcGFzc3dvcmQYASABKAlCB7pIBHICEAESFwoEY29kZRgCIAEoCUIJukgGcgQQBhgKIicKDVJlY292ZXJ5Q29kZXMSFgoOcmVjb3ZlcnlfY29kZXMYASADKAkiFQoTTGlzdFNlc3Npb25zUmVxdWVzdCJHChRMaXN0U2Vzc2lvbnNSZXNwb25zZRIvCghzZXNzaW9ucxgBIAMoCzIdLm9wZW5veGlkZS5hcGkudjEuQXV0aFNlc3Npb24ifgoLQXV0aFNlc3Npb24SEgoKc2Vzc2lvbl9pZBgBIAEoCRISCgpjcmVhdGVkX2F0GAIgASgDEhcKCmV4cGlyZXNfYXQYAyABKANIAIgBARIOCgZhY3RpdmUYBCABKAgSDwoHY3VycmVudBgFIAEoCEINCgtfZXhwaXJlc19hdCIzChRSZXZva2VTZXNzaW9uUmVxdWVzdBIbCgpzZXNzaW9uX2lkGAEgASgJQge6SARyAhABIiEKH0xpc3RQZXJzb25hbEFjY2Vzc1Rva2Vuc1JlcXVlc3QiWQogTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zUmVzcG9uc2USNQoGdG9rZW5zGAEgAygLMiUub3Blbm94aWRlLmFwaS52MS5QZXJzb25hbEFjY2Vzc1Rva2VuIn8KIENyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESGQoIcGFzc3dvcmQYAiABKAlCB7pIBHICEAESFwoKZXhwaXJlc19hdBgDIAEoA0gAiAEBQg0KC19leHBpcmVzX2F0ItUBChNQZXJzb25hbEFjY2Vzc1Rva2VuEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSFAoMdG9rZW5fcHJlZml4GAMgASgJEhcKCmV4cGlyZXNfYXQYBCABKANIAIgBARIZCgxsYXN0X3VzZWRfYXQYBSABKANIAYgBARIXCgpyZXZva2VkX2F0GAYgASgDSAKIAQESEgoKY3JlYXRlZF9hdBgHIAEoA0INCgtfZXhwaXJlc19hdEIPCg1fbGFzdF91c2VkX2F0Qg0KC19yZXZva2VkX2F0ImMKGkNyZWF0ZWRQZXJzb25hbEFjY2Vzc1Rva2VuEg0KBXRva2VuGAEgASgJEjYKB2RldGFpbHMYAiABKAsyJS5vcGVub3hpZGUuYXBpLnYxLlBlcnNvbmFsQWNjZXNzVG9rZW4iNwogUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAylxAKC0F1dGhTZXJ2aWNlEkkKBlNpZ251cBIfLm9wZW5veGlkZS5hcGkudjEuU2lnbnVwUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuQXV0aFJlc3BvbnNlEkcKBUxvZ2luEh4ub3Blbm94aWRlLmFwaS52MS5Mb2dpblJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLkF1dGhSZXNwb25zZRJLCgdSZWZyZXNoEiAub3Blbm94aWRlLmFwaS52MS5SZWZyZXNoUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuQXV0aFJlc3BvbnNlEkEKBldob0FtSRIfLm9wZW5veGlkZS5hcGkudjEuV2hvQW1JUmVxdWVzdBoWLm9wZW5veGlkZS5hcGkudjEuVXNlchJCCgZMb2dvdXQSHy5vcGVub3hpZGUuYXBpLnYxLkxvZ291dFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKDkdldFNldHVwU3RhdHVzEicub3Blbm94aWRlLmFwaS52MS5HZXRTZXR1cFN0YXR1c1JlcXVlc3QaHS5vcGVub3hpZGUuYXBpLnYxLlNldHVwU3RhdHVzEkkKClVwZGF0ZVVzZXISIy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZVVzZXJSZXF1ZXN0GhYub3Blbm94aWRlLmFwaS52MS5Vc2VyEl4KFFJlcXVlc3RQYXNzd29yZFJlc2V0Ei0ub3Blbm94aWRlLmFwaS52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElAKDVJlc2V0UGFzc3dvcmQSJi5vcGVub3hpZGUuYXBpLnYxLlJlc2V0UGFzc3dvcmRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ8ChpHZXRFbWFpbFZlcmlmaWNhdGlvblN0YXR1cxIzLm9wZW5veGlkZS5hcGkudjEuR2V0RW1haWxWZXJpZmljYXRpb25TdGF0dXNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5FbWFpbFZlcmlmaWNhdGlvblN0YXR1cxJmChhSZXF1ZXN0RW1haWxWZXJpZmljYXRpb24SMS5vcGVub3hpZGUuYXBpLnYxLlJlcXVlc3RFbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmYKGENvbmZpcm1FbWFpbFZlcmlmaWNhdGlvbhIxLm9wZW5veGlkZS5hcGkudjEuQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZAoSR2V0VHdvRmFjdG9yU3RhdHVzEisub3Blbm94aWRlLmFwaS52MS5HZXRUd29GYWN0b3JTdGF0dXNSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5Ud29GYWN0b3JTdGF0dXMSWwoOU2V0dXBUd29GYWN0b3ISJy5vcGVub3hpZGUuYXBpLnYxLlNldHVwVHdvRmFjdG9yUmVxdWVzdBogLm9wZW5veGlkZS5hcGkudjEuVHdvRmFjdG9yU2V0dXASVAoPRW5hYmxlVHdvRmFjdG9yEigub3Blbm94aWRlLmFwaS52MS5FbmFibGVUd29GYWN0b3JSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWChBEaXNhYmxlVHdvRmFjdG9yEikub3Blbm94aWRlLmFwaS52MS5EaXNhYmxlVHdvRmFjdG9yUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSbAoXUmVnZW5lcmF0ZVJlY292ZXJ5Q29kZXMSMC5vcGVub3hpZGUuYXBpLnYxLlJlZ2VuZXJhdGVSZWNvdmVyeUNvZGVzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuUmVjb3ZlcnlDb2RlcxJdCgxMaXN0U2Vzc2lvbnMSJS5vcGVub3hpZGUuYXBpLnYxLkxpc3RTZXNzaW9uc1JlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlElAKDVJldm9rZVNlc3Npb24SJi5vcGVub3hpZGUuYXBpLnYxLlJldm9rZVNlc3Npb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRKBAQoYTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zEjEub3Blbm94aWRlLmFwaS52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXNwb25zZRJ9ChlDcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuEjIub3Blbm94aWRlLmFwaS52MS5DcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlZFBlcnNvbmFsQWNjZXNzVG9rZW4SaAoZUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlbhIyLm9wZW5veGlkZS5hcGkudjEuUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.SignupRequest
@@ -61,8 +49,7 @@ export type SignupRequest = Message<"openoxide.api.v1.SignupRequest"> & {
  * Describes the message openoxide.api.v1.SignupRequest.
  * Use `create(SignupRequestSchema)` to create a new message.
  */
-export const SignupRequestSchema: GenMessage<SignupRequest> =
-  /*@__PURE__*/
+export const SignupRequestSchema: GenMessage<SignupRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 0);
 
 /**
@@ -94,8 +81,7 @@ export type LoginRequest = Message<"openoxide.api.v1.LoginRequest"> & {
  * Describes the message openoxide.api.v1.LoginRequest.
  * Use `create(LoginRequestSchema)` to create a new message.
  */
-export const LoginRequestSchema: GenMessage<LoginRequest> =
-  /*@__PURE__*/
+export const LoginRequestSchema: GenMessage<LoginRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 1);
 
 /**
@@ -112,8 +98,7 @@ export type RefreshRequest = Message<"openoxide.api.v1.RefreshRequest"> & {
  * Describes the message openoxide.api.v1.RefreshRequest.
  * Use `create(RefreshRequestSchema)` to create a new message.
  */
-export const RefreshRequestSchema: GenMessage<RefreshRequest> =
-  /*@__PURE__*/
+export const RefreshRequestSchema: GenMessage<RefreshRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 2);
 
 /**
@@ -135,48 +120,46 @@ export type AuthResponse = Message<"openoxide.api.v1.AuthResponse"> & {
  * Describes the message openoxide.api.v1.AuthResponse.
  * Use `create(AuthResponseSchema)` to create a new message.
  */
-export const AuthResponseSchema: GenMessage<AuthResponse> =
-  /*@__PURE__*/
+export const AuthResponseSchema: GenMessage<AuthResponse> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 3);
 
 /**
  * @generated from message openoxide.api.v1.WhoAmIRequest
  */
-export type WhoAmIRequest = Message<"openoxide.api.v1.WhoAmIRequest"> & {};
+export type WhoAmIRequest = Message<"openoxide.api.v1.WhoAmIRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.WhoAmIRequest.
  * Use `create(WhoAmIRequestSchema)` to create a new message.
  */
-export const WhoAmIRequestSchema: GenMessage<WhoAmIRequest> =
-  /*@__PURE__*/
+export const WhoAmIRequestSchema: GenMessage<WhoAmIRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 4);
 
 /**
  * @generated from message openoxide.api.v1.LogoutRequest
  */
-export type LogoutRequest = Message<"openoxide.api.v1.LogoutRequest"> & {};
+export type LogoutRequest = Message<"openoxide.api.v1.LogoutRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.LogoutRequest.
  * Use `create(LogoutRequestSchema)` to create a new message.
  */
-export const LogoutRequestSchema: GenMessage<LogoutRequest> =
-  /*@__PURE__*/
+export const LogoutRequestSchema: GenMessage<LogoutRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 5);
 
 /**
  * @generated from message openoxide.api.v1.GetSetupStatusRequest
  */
-export type GetSetupStatusRequest =
-  Message<"openoxide.api.v1.GetSetupStatusRequest"> & {};
+export type GetSetupStatusRequest = Message<"openoxide.api.v1.GetSetupStatusRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.GetSetupStatusRequest.
  * Use `create(GetSetupStatusRequestSchema)` to create a new message.
  */
-export const GetSetupStatusRequestSchema: GenMessage<GetSetupStatusRequest> =
-  /*@__PURE__*/
+export const GetSetupStatusRequestSchema: GenMessage<GetSetupStatusRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 6);
 
 /**
@@ -193,175 +176,161 @@ export type SetupStatus = Message<"openoxide.api.v1.SetupStatus"> & {
  * Describes the message openoxide.api.v1.SetupStatus.
  * Use `create(SetupStatusSchema)` to create a new message.
  */
-export const SetupStatusSchema: GenMessage<SetupStatus> =
-  /*@__PURE__*/
+export const SetupStatusSchema: GenMessage<SetupStatus> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 7);
 
 /**
  * @generated from message openoxide.api.v1.UpdateUserRequest
  */
-export type UpdateUserRequest =
-  Message<"openoxide.api.v1.UpdateUserRequest"> & {
-    /**
-     * @generated from field: optional string email = 1;
-     */
-    email?: string | undefined;
+export type UpdateUserRequest = Message<"openoxide.api.v1.UpdateUserRequest"> & {
+  /**
+   * @generated from field: optional string email = 1;
+   */
+  email?: string | undefined;
 
-    /**
-     * @generated from field: optional string password = 2;
-     */
-    password?: string | undefined;
+  /**
+   * @generated from field: optional string password = 2;
+   */
+  password?: string | undefined;
 
-    /**
-     * @generated from field: optional string first_name = 3;
-     */
-    firstName?: string | undefined;
+  /**
+   * @generated from field: optional string first_name = 3;
+   */
+  firstName?: string | undefined;
 
-    /**
-     * @generated from field: optional string last_name = 4;
-     */
-    lastName?: string | undefined;
+  /**
+   * @generated from field: optional string last_name = 4;
+   */
+  lastName?: string | undefined;
 
-    /**
-     * @generated from field: optional string avatar = 5;
-     */
-    avatar?: string | undefined;
-  };
+  /**
+   * @generated from field: optional string avatar = 5;
+   */
+  avatar?: string | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.UpdateUserRequest.
  * Use `create(UpdateUserRequestSchema)` to create a new message.
  */
-export const UpdateUserRequestSchema: GenMessage<UpdateUserRequest> =
-  /*@__PURE__*/
+export const UpdateUserRequestSchema: GenMessage<UpdateUserRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 8);
 
 /**
  * @generated from message openoxide.api.v1.RequestPasswordResetRequest
  */
-export type RequestPasswordResetRequest =
-  Message<"openoxide.api.v1.RequestPasswordResetRequest"> & {
-    /**
-     * @generated from field: string email = 1;
-     */
-    email: string;
-  };
+export type RequestPasswordResetRequest = Message<"openoxide.api.v1.RequestPasswordResetRequest"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.RequestPasswordResetRequest.
  * Use `create(RequestPasswordResetRequestSchema)` to create a new message.
  */
-export const RequestPasswordResetRequestSchema: GenMessage<RequestPasswordResetRequest> =
-  /*@__PURE__*/
+export const RequestPasswordResetRequestSchema: GenMessage<RequestPasswordResetRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 9);
 
 /**
  * @generated from message openoxide.api.v1.ResetPasswordRequest
  */
-export type ResetPasswordRequest =
-  Message<"openoxide.api.v1.ResetPasswordRequest"> & {
-    /**
-     * @generated from field: string token = 1;
-     */
-    token: string;
+export type ResetPasswordRequest = Message<"openoxide.api.v1.ResetPasswordRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
 
-    /**
-     * @generated from field: string password = 2;
-     */
-    password: string;
-  };
+  /**
+   * @generated from field: string password = 2;
+   */
+  password: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.ResetPasswordRequest.
  * Use `create(ResetPasswordRequestSchema)` to create a new message.
  */
-export const ResetPasswordRequestSchema: GenMessage<ResetPasswordRequest> =
-  /*@__PURE__*/
+export const ResetPasswordRequestSchema: GenMessage<ResetPasswordRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 10);
 
 /**
  * @generated from message openoxide.api.v1.GetEmailVerificationStatusRequest
  */
-export type GetEmailVerificationStatusRequest =
-  Message<"openoxide.api.v1.GetEmailVerificationStatusRequest"> & {};
+export type GetEmailVerificationStatusRequest = Message<"openoxide.api.v1.GetEmailVerificationStatusRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.GetEmailVerificationStatusRequest.
  * Use `create(GetEmailVerificationStatusRequestSchema)` to create a new message.
  */
-export const GetEmailVerificationStatusRequestSchema: GenMessage<GetEmailVerificationStatusRequest> =
-  /*@__PURE__*/
+export const GetEmailVerificationStatusRequestSchema: GenMessage<GetEmailVerificationStatusRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 11);
 
 /**
  * @generated from message openoxide.api.v1.RequestEmailVerificationRequest
  */
-export type RequestEmailVerificationRequest =
-  Message<"openoxide.api.v1.RequestEmailVerificationRequest"> & {};
+export type RequestEmailVerificationRequest = Message<"openoxide.api.v1.RequestEmailVerificationRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.RequestEmailVerificationRequest.
  * Use `create(RequestEmailVerificationRequestSchema)` to create a new message.
  */
-export const RequestEmailVerificationRequestSchema: GenMessage<RequestEmailVerificationRequest> =
-  /*@__PURE__*/
+export const RequestEmailVerificationRequestSchema: GenMessage<RequestEmailVerificationRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 12);
 
 /**
  * @generated from message openoxide.api.v1.ConfirmEmailVerificationRequest
  */
-export type ConfirmEmailVerificationRequest =
-  Message<"openoxide.api.v1.ConfirmEmailVerificationRequest"> & {
-    /**
-     * @generated from field: string token = 1;
-     */
-    token: string;
-  };
+export type ConfirmEmailVerificationRequest = Message<"openoxide.api.v1.ConfirmEmailVerificationRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.ConfirmEmailVerificationRequest.
  * Use `create(ConfirmEmailVerificationRequestSchema)` to create a new message.
  */
-export const ConfirmEmailVerificationRequestSchema: GenMessage<ConfirmEmailVerificationRequest> =
-  /*@__PURE__*/
+export const ConfirmEmailVerificationRequestSchema: GenMessage<ConfirmEmailVerificationRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 13);
 
 /**
  * @generated from message openoxide.api.v1.EmailVerificationStatus
  */
-export type EmailVerificationStatus =
-  Message<"openoxide.api.v1.EmailVerificationStatus"> & {
-    /**
-     * @generated from field: bool verified = 1;
-     */
-    verified: boolean;
+export type EmailVerificationStatus = Message<"openoxide.api.v1.EmailVerificationStatus"> & {
+  /**
+   * @generated from field: bool verified = 1;
+   */
+  verified: boolean;
 
-    /**
-     * @generated from field: optional int64 verified_at = 2;
-     */
-    verifiedAt?: bigint | undefined;
-  };
+  /**
+   * @generated from field: optional int64 verified_at = 2;
+   */
+  verifiedAt?: bigint | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.EmailVerificationStatus.
  * Use `create(EmailVerificationStatusSchema)` to create a new message.
  */
-export const EmailVerificationStatusSchema: GenMessage<EmailVerificationStatus> =
-  /*@__PURE__*/
+export const EmailVerificationStatusSchema: GenMessage<EmailVerificationStatus> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 14);
 
 /**
  * @generated from message openoxide.api.v1.GetTwoFactorStatusRequest
  */
-export type GetTwoFactorStatusRequest =
-  Message<"openoxide.api.v1.GetTwoFactorStatusRequest"> & {};
+export type GetTwoFactorStatusRequest = Message<"openoxide.api.v1.GetTwoFactorStatusRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.GetTwoFactorStatusRequest.
  * Use `create(GetTwoFactorStatusRequestSchema)` to create a new message.
  */
-export const GetTwoFactorStatusRequestSchema: GenMessage<GetTwoFactorStatusRequest> =
-  /*@__PURE__*/
+export const GetTwoFactorStatusRequestSchema: GenMessage<GetTwoFactorStatusRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 15);
 
 /**
@@ -383,27 +352,24 @@ export type TwoFactorStatus = Message<"openoxide.api.v1.TwoFactorStatus"> & {
  * Describes the message openoxide.api.v1.TwoFactorStatus.
  * Use `create(TwoFactorStatusSchema)` to create a new message.
  */
-export const TwoFactorStatusSchema: GenMessage<TwoFactorStatus> =
-  /*@__PURE__*/
+export const TwoFactorStatusSchema: GenMessage<TwoFactorStatus> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 16);
 
 /**
  * @generated from message openoxide.api.v1.SetupTwoFactorRequest
  */
-export type SetupTwoFactorRequest =
-  Message<"openoxide.api.v1.SetupTwoFactorRequest"> & {
-    /**
-     * @generated from field: string password = 1;
-     */
-    password: string;
-  };
+export type SetupTwoFactorRequest = Message<"openoxide.api.v1.SetupTwoFactorRequest"> & {
+  /**
+   * @generated from field: string password = 1;
+   */
+  password: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.SetupTwoFactorRequest.
  * Use `create(SetupTwoFactorRequestSchema)` to create a new message.
  */
-export const SetupTwoFactorRequestSchema: GenMessage<SetupTwoFactorRequest> =
-  /*@__PURE__*/
+export const SetupTwoFactorRequestSchema: GenMessage<SetupTwoFactorRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 17);
 
 /**
@@ -430,75 +396,68 @@ export type TwoFactorSetup = Message<"openoxide.api.v1.TwoFactorSetup"> & {
  * Describes the message openoxide.api.v1.TwoFactorSetup.
  * Use `create(TwoFactorSetupSchema)` to create a new message.
  */
-export const TwoFactorSetupSchema: GenMessage<TwoFactorSetup> =
-  /*@__PURE__*/
+export const TwoFactorSetupSchema: GenMessage<TwoFactorSetup> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 18);
 
 /**
  * @generated from message openoxide.api.v1.EnableTwoFactorRequest
  */
-export type EnableTwoFactorRequest =
-  Message<"openoxide.api.v1.EnableTwoFactorRequest"> & {
-    /**
-     * @generated from field: string code = 1;
-     */
-    code: string;
-  };
+export type EnableTwoFactorRequest = Message<"openoxide.api.v1.EnableTwoFactorRequest"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.EnableTwoFactorRequest.
  * Use `create(EnableTwoFactorRequestSchema)` to create a new message.
  */
-export const EnableTwoFactorRequestSchema: GenMessage<EnableTwoFactorRequest> =
-  /*@__PURE__*/
+export const EnableTwoFactorRequestSchema: GenMessage<EnableTwoFactorRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 19);
 
 /**
  * @generated from message openoxide.api.v1.DisableTwoFactorRequest
  */
-export type DisableTwoFactorRequest =
-  Message<"openoxide.api.v1.DisableTwoFactorRequest"> & {
-    /**
-     * @generated from field: string password = 1;
-     */
-    password: string;
+export type DisableTwoFactorRequest = Message<"openoxide.api.v1.DisableTwoFactorRequest"> & {
+  /**
+   * @generated from field: string password = 1;
+   */
+  password: string;
 
-    /**
-     * @generated from field: string code = 2;
-     */
-    code: string;
-  };
+  /**
+   * @generated from field: string code = 2;
+   */
+  code: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.DisableTwoFactorRequest.
  * Use `create(DisableTwoFactorRequestSchema)` to create a new message.
  */
-export const DisableTwoFactorRequestSchema: GenMessage<DisableTwoFactorRequest> =
-  /*@__PURE__*/
+export const DisableTwoFactorRequestSchema: GenMessage<DisableTwoFactorRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 20);
 
 /**
  * @generated from message openoxide.api.v1.RegenerateRecoveryCodesRequest
  */
-export type RegenerateRecoveryCodesRequest =
-  Message<"openoxide.api.v1.RegenerateRecoveryCodesRequest"> & {
-    /**
-     * @generated from field: string password = 1;
-     */
-    password: string;
+export type RegenerateRecoveryCodesRequest = Message<"openoxide.api.v1.RegenerateRecoveryCodesRequest"> & {
+  /**
+   * @generated from field: string password = 1;
+   */
+  password: string;
 
-    /**
-     * @generated from field: string code = 2;
-     */
-    code: string;
-  };
+  /**
+   * @generated from field: string code = 2;
+   */
+  code: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.RegenerateRecoveryCodesRequest.
  * Use `create(RegenerateRecoveryCodesRequestSchema)` to create a new message.
  */
-export const RegenerateRecoveryCodesRequestSchema: GenMessage<RegenerateRecoveryCodesRequest> =
-  /*@__PURE__*/
+export const RegenerateRecoveryCodesRequestSchema: GenMessage<RegenerateRecoveryCodesRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 21);
 
 /**
@@ -515,41 +474,37 @@ export type RecoveryCodes = Message<"openoxide.api.v1.RecoveryCodes"> & {
  * Describes the message openoxide.api.v1.RecoveryCodes.
  * Use `create(RecoveryCodesSchema)` to create a new message.
  */
-export const RecoveryCodesSchema: GenMessage<RecoveryCodes> =
-  /*@__PURE__*/
+export const RecoveryCodesSchema: GenMessage<RecoveryCodes> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 22);
 
 /**
  * @generated from message openoxide.api.v1.ListSessionsRequest
  */
-export type ListSessionsRequest =
-  Message<"openoxide.api.v1.ListSessionsRequest"> & {};
+export type ListSessionsRequest = Message<"openoxide.api.v1.ListSessionsRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.ListSessionsRequest.
  * Use `create(ListSessionsRequestSchema)` to create a new message.
  */
-export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> =
-  /*@__PURE__*/
+export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 23);
 
 /**
  * @generated from message openoxide.api.v1.ListSessionsResponse
  */
-export type ListSessionsResponse =
-  Message<"openoxide.api.v1.ListSessionsResponse"> & {
-    /**
-     * @generated from field: repeated openoxide.api.v1.AuthSession sessions = 1;
-     */
-    sessions: AuthSession[];
-  };
+export type ListSessionsResponse = Message<"openoxide.api.v1.ListSessionsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.AuthSession sessions = 1;
+   */
+  sessions: AuthSession[];
+};
 
 /**
  * Describes the message openoxide.api.v1.ListSessionsResponse.
  * Use `create(ListSessionsResponseSchema)` to create a new message.
  */
-export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> =
-  /*@__PURE__*/
+export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 24);
 
 /**
@@ -586,181 +541,167 @@ export type AuthSession = Message<"openoxide.api.v1.AuthSession"> & {
  * Describes the message openoxide.api.v1.AuthSession.
  * Use `create(AuthSessionSchema)` to create a new message.
  */
-export const AuthSessionSchema: GenMessage<AuthSession> =
-  /*@__PURE__*/
+export const AuthSessionSchema: GenMessage<AuthSession> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 25);
 
 /**
  * @generated from message openoxide.api.v1.RevokeSessionRequest
  */
-export type RevokeSessionRequest =
-  Message<"openoxide.api.v1.RevokeSessionRequest"> & {
-    /**
-     * @generated from field: string session_id = 1;
-     */
-    sessionId: string;
-  };
+export type RevokeSessionRequest = Message<"openoxide.api.v1.RevokeSessionRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.RevokeSessionRequest.
  * Use `create(RevokeSessionRequestSchema)` to create a new message.
  */
-export const RevokeSessionRequestSchema: GenMessage<RevokeSessionRequest> =
-  /*@__PURE__*/
+export const RevokeSessionRequestSchema: GenMessage<RevokeSessionRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 26);
 
 /**
  * @generated from message openoxide.api.v1.ListPersonalAccessTokensRequest
  */
-export type ListPersonalAccessTokensRequest =
-  Message<"openoxide.api.v1.ListPersonalAccessTokensRequest"> & {};
+export type ListPersonalAccessTokensRequest = Message<"openoxide.api.v1.ListPersonalAccessTokensRequest"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.ListPersonalAccessTokensRequest.
  * Use `create(ListPersonalAccessTokensRequestSchema)` to create a new message.
  */
-export const ListPersonalAccessTokensRequestSchema: GenMessage<ListPersonalAccessTokensRequest> =
-  /*@__PURE__*/
+export const ListPersonalAccessTokensRequestSchema: GenMessage<ListPersonalAccessTokensRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 27);
 
 /**
  * @generated from message openoxide.api.v1.ListPersonalAccessTokensResponse
  */
-export type ListPersonalAccessTokensResponse =
-  Message<"openoxide.api.v1.ListPersonalAccessTokensResponse"> & {
-    /**
-     * @generated from field: repeated openoxide.api.v1.PersonalAccessToken tokens = 1;
-     */
-    tokens: PersonalAccessToken[];
-  };
+export type ListPersonalAccessTokensResponse = Message<"openoxide.api.v1.ListPersonalAccessTokensResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PersonalAccessToken tokens = 1;
+   */
+  tokens: PersonalAccessToken[];
+};
 
 /**
  * Describes the message openoxide.api.v1.ListPersonalAccessTokensResponse.
  * Use `create(ListPersonalAccessTokensResponseSchema)` to create a new message.
  */
-export const ListPersonalAccessTokensResponseSchema: GenMessage<ListPersonalAccessTokensResponse> =
-  /*@__PURE__*/
+export const ListPersonalAccessTokensResponseSchema: GenMessage<ListPersonalAccessTokensResponse> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 28);
 
 /**
  * @generated from message openoxide.api.v1.CreatePersonalAccessTokenRequest
  */
-export type CreatePersonalAccessTokenRequest =
-  Message<"openoxide.api.v1.CreatePersonalAccessTokenRequest"> & {
-    /**
-     * @generated from field: string name = 1;
-     */
-    name: string;
+export type CreatePersonalAccessTokenRequest = Message<"openoxide.api.v1.CreatePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
 
-    /**
-     * @generated from field: string password = 2;
-     */
-    password: string;
+  /**
+   * @generated from field: string password = 2;
+   */
+  password: string;
 
-    /**
-     * @generated from field: optional int64 expires_at = 3;
-     */
-    expiresAt?: bigint | undefined;
-  };
+  /**
+   * @generated from field: optional int64 expires_at = 3;
+   */
+  expiresAt?: bigint | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.CreatePersonalAccessTokenRequest.
  * Use `create(CreatePersonalAccessTokenRequestSchema)` to create a new message.
  */
-export const CreatePersonalAccessTokenRequestSchema: GenMessage<CreatePersonalAccessTokenRequest> =
-  /*@__PURE__*/
+export const CreatePersonalAccessTokenRequestSchema: GenMessage<CreatePersonalAccessTokenRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 29);
 
 /**
  * @generated from message openoxide.api.v1.PersonalAccessToken
  */
-export type PersonalAccessToken =
-  Message<"openoxide.api.v1.PersonalAccessToken"> & {
-    /**
-     * @generated from field: int64 id = 1;
-     */
-    id: bigint;
+export type PersonalAccessToken = Message<"openoxide.api.v1.PersonalAccessToken"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
 
-    /**
-     * @generated from field: string name = 2;
-     */
-    name: string;
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
 
-    /**
-     * @generated from field: string token_prefix = 3;
-     */
-    tokenPrefix: string;
+  /**
+   * @generated from field: string token_prefix = 3;
+   */
+  tokenPrefix: string;
 
-    /**
-     * @generated from field: optional int64 expires_at = 4;
-     */
-    expiresAt?: bigint | undefined;
+  /**
+   * @generated from field: optional int64 expires_at = 4;
+   */
+  expiresAt?: bigint | undefined;
 
-    /**
-     * @generated from field: optional int64 last_used_at = 5;
-     */
-    lastUsedAt?: bigint | undefined;
+  /**
+   * @generated from field: optional int64 last_used_at = 5;
+   */
+  lastUsedAt?: bigint | undefined;
 
-    /**
-     * @generated from field: optional int64 revoked_at = 6;
-     */
-    revokedAt?: bigint | undefined;
+  /**
+   * @generated from field: optional int64 revoked_at = 6;
+   */
+  revokedAt?: bigint | undefined;
 
-    /**
-     * @generated from field: int64 created_at = 7;
-     */
-    createdAt: bigint;
-  };
+  /**
+   * @generated from field: int64 created_at = 7;
+   */
+  createdAt: bigint;
+};
 
 /**
  * Describes the message openoxide.api.v1.PersonalAccessToken.
  * Use `create(PersonalAccessTokenSchema)` to create a new message.
  */
-export const PersonalAccessTokenSchema: GenMessage<PersonalAccessToken> =
-  /*@__PURE__*/
+export const PersonalAccessTokenSchema: GenMessage<PersonalAccessToken> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 30);
 
 /**
  * @generated from message openoxide.api.v1.CreatedPersonalAccessToken
  */
-export type CreatedPersonalAccessToken =
-  Message<"openoxide.api.v1.CreatedPersonalAccessToken"> & {
-    /**
-     * @generated from field: string token = 1;
-     */
-    token: string;
+export type CreatedPersonalAccessToken = Message<"openoxide.api.v1.CreatedPersonalAccessToken"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
 
-    /**
-     * @generated from field: openoxide.api.v1.PersonalAccessToken details = 2;
-     */
-    details?: PersonalAccessToken | undefined;
-  };
+  /**
+   * @generated from field: openoxide.api.v1.PersonalAccessToken details = 2;
+   */
+  details?: PersonalAccessToken | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.CreatedPersonalAccessToken.
  * Use `create(CreatedPersonalAccessTokenSchema)` to create a new message.
  */
-export const CreatedPersonalAccessTokenSchema: GenMessage<CreatedPersonalAccessToken> =
-  /*@__PURE__*/
+export const CreatedPersonalAccessTokenSchema: GenMessage<CreatedPersonalAccessToken> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 31);
 
 /**
  * @generated from message openoxide.api.v1.RevokePersonalAccessTokenRequest
  */
-export type RevokePersonalAccessTokenRequest =
-  Message<"openoxide.api.v1.RevokePersonalAccessTokenRequest"> & {
-    /**
-     * @generated from field: int64 id = 1;
-     */
-    id: bigint;
-  };
+export type RevokePersonalAccessTokenRequest = Message<"openoxide.api.v1.RevokePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
 
 /**
  * Describes the message openoxide.api.v1.RevokePersonalAccessTokenRequest.
  * Use `create(RevokePersonalAccessTokenRequestSchema)` to create a new message.
  */
-export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAccessTokenRequest> =
-  /*@__PURE__*/
+export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAccessTokenRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_auth, 32);
 
 /**
@@ -774,7 +715,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof SignupRequestSchema;
     output: typeof AuthResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.Login
    */
@@ -782,7 +723,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof LoginRequestSchema;
     output: typeof AuthResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.Refresh
    */
@@ -790,7 +731,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RefreshRequestSchema;
     output: typeof AuthResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.WhoAmI
    */
@@ -798,7 +739,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof WhoAmIRequestSchema;
     output: typeof UserSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.Logout
    */
@@ -806,7 +747,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof LogoutRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.GetSetupStatus
    */
@@ -814,7 +755,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof GetSetupStatusRequestSchema;
     output: typeof SetupStatusSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.UpdateUser
    */
@@ -822,7 +763,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof UpdateUserRequestSchema;
     output: typeof UserSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.RequestPasswordReset
    */
@@ -830,7 +771,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RequestPasswordResetRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.ResetPassword
    */
@@ -838,7 +779,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ResetPasswordRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.GetEmailVerificationStatus
    */
@@ -846,7 +787,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof GetEmailVerificationStatusRequestSchema;
     output: typeof EmailVerificationStatusSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.RequestEmailVerification
    */
@@ -854,7 +795,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RequestEmailVerificationRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.ConfirmEmailVerification
    */
@@ -862,7 +803,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ConfirmEmailVerificationRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.GetTwoFactorStatus
    */
@@ -870,7 +811,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof GetTwoFactorStatusRequestSchema;
     output: typeof TwoFactorStatusSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.SetupTwoFactor
    */
@@ -878,7 +819,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof SetupTwoFactorRequestSchema;
     output: typeof TwoFactorSetupSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.EnableTwoFactor
    */
@@ -886,7 +827,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof EnableTwoFactorRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.DisableTwoFactor
    */
@@ -894,7 +835,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof DisableTwoFactorRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.RegenerateRecoveryCodes
    */
@@ -902,7 +843,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RegenerateRecoveryCodesRequestSchema;
     output: typeof RecoveryCodesSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.ListSessions
    */
@@ -910,7 +851,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ListSessionsRequestSchema;
     output: typeof ListSessionsResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.RevokeSession
    */
@@ -918,7 +859,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RevokeSessionRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.ListPersonalAccessTokens
    */
@@ -926,7 +867,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ListPersonalAccessTokensRequestSchema;
     output: typeof ListPersonalAccessTokensResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.CreatePersonalAccessToken
    */
@@ -934,7 +875,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof CreatePersonalAccessTokenRequestSchema;
     output: typeof CreatedPersonalAccessTokenSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuthService.RevokePersonalAccessToken
    */
@@ -942,5 +883,7 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RevokePersonalAccessTokenRequestSchema;
     output: typeof EmptySchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_auth, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_auth, 0);
+

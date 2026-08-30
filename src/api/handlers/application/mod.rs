@@ -1,4 +1,5 @@
 mod controller;
 mod helper;
+mod init;
 
-pub use controller::ApplicationController;
+pub use init::ApplicationController;

@@ -10,24 +10,20 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file openoxide/api/v1/common.proto.
  */
-export const file_openoxide_api_v1_common: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "Ch1vcGVub3hpZGUvYXBpL3YxL2NvbW1vbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIHCgVFbXB0eSK8AQoEVXNlchIKCgJpZBgBIAEoAxISCgVlbWFpbBgCIAEoCUgAiAEBEhcKCmZpcnN0X25hbWUYAyABKAlIAYgBARIWCglsYXN0X25hbWUYBCABKAlIAogBARIOCgZhdmF0YXIYBSABKAkSEQoEcm9sZRgGIAEoCUgDiAEBEhAKCGdyb3VwX2lkGAcgASgDQggKBl9lbWFpbEINCgtfZmlyc3RfbmFtZUIMCgpfbGFzdF9uYW1lQgcKBV9yb2xlIjgKCVRva2VuUGFpchIUCgxhY2Nlc3NfdG9rZW4YASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCSK2AQoPUmVzb3VyY2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAigAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAMgASgDQge6SAQiAiAASAGIAQESGgoHcGF5bG9hZBgEIAEoCUIJukgGcgQYgIBAQhIKEF9vcmdhbml6YXRpb25faWRCEQoPX2Vudmlyb25tZW50X2lkIj0KEFJlc291cmNlUmVzcG9uc2USCgoCaWQYASABKAMSDAoEa2luZBgCIAEoCRIPCgdwYXlsb2FkGAMgASgJIkkKFFJlc291cmNlTGlzdFJlc3BvbnNlEjEKBWl0ZW1zGAEgAygLMiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlIv4BCg1SZXNvdXJjZVF1ZXJ5EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAASAGIAQESHAoFcXVlcnkYAyABKAlCCLpIBXIDGOgHSAKIAQESHgoFbGltaXQYBCABKANCCrpIByIFGOgHKAFIA4gBARIcCgZvZmZzZXQYBSABKANCB7pIBCICKABIBIgBAUISChBfb3JnYW5pemF0aW9uX2lkQhEKD19lbnZpcm9ubWVudF9pZEIICgZfcXVlcnlCCAoGX2xpbWl0QgkKB19vZmZzZXQieQoPT3BlcmF0aW9uUmVzdWx0Eg8KB3N1Y2Nlc3MYASABKAgSEQoJb3BlcmF0aW9uGAIgASgJEhQKB21lc3NhZ2UYAyABKAlIAIgBARIUCgdwYXlsb2FkGAQgASgJSAGIAQFCCgoIX21lc3NhZ2VCCgoIX3BheWxvYWQiTAoLU3RyZWFtUXVlcnkSEwoCaWQYASABKANCB7pIBCICIAASHQoGZmlsdGVyGAIgASgJQgi6SAVyAxjoB0gAiAEBQgkKB19maWx0ZXJiBnByb3RvMw",
-    [file_buf_validate_validate],
-  );
+export const file_openoxide_api_v1_common: GenFile = /*@__PURE__*/
+  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL2NvbW1vbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIHCgVFbXB0eSK8AQoEVXNlchIKCgJpZBgBIAEoAxISCgVlbWFpbBgCIAEoCUgAiAEBEhcKCmZpcnN0X25hbWUYAyABKAlIAYgBARIWCglsYXN0X25hbWUYBCABKAlIAogBARIOCgZhdmF0YXIYBSABKAkSEQoEcm9sZRgGIAEoCUgDiAEBEhAKCGdyb3VwX2lkGAcgASgDQggKBl9lbWFpbEINCgtfZmlyc3RfbmFtZUIMCgpfbGFzdF9uYW1lQgcKBV9yb2xlIjgKCVRva2VuUGFpchIUCgxhY2Nlc3NfdG9rZW4YASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCSK2AQoPUmVzb3VyY2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAigAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAMgASgDQge6SAQiAiAASAGIAQESGgoHcGF5bG9hZBgEIAEoCUIJukgGcgQYgIBAQhIKEF9vcmdhbml6YXRpb25faWRCEQoPX2Vudmlyb25tZW50X2lkIj0KEFJlc291cmNlUmVzcG9uc2USCgoCaWQYASABKAMSDAoEa2luZBgCIAEoCRIPCgdwYXlsb2FkGAMgASgJIkkKFFJlc291cmNlTGlzdFJlc3BvbnNlEjEKBWl0ZW1zGAEgAygLMiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlIv4BCg1SZXNvdXJjZVF1ZXJ5EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAASAGIAQESHAoFcXVlcnkYAyABKAlCCLpIBXIDGOgHSAKIAQESHgoFbGltaXQYBCABKANCCrpIByIFGOgHKAFIA4gBARIcCgZvZmZzZXQYBSABKANCB7pIBCICKABIBIgBAUISChBfb3JnYW5pemF0aW9uX2lkQhEKD19lbnZpcm9ubWVudF9pZEIICgZfcXVlcnlCCAoGX2xpbWl0QgkKB19vZmZzZXQieQoPT3BlcmF0aW9uUmVzdWx0Eg8KB3N1Y2Nlc3MYASABKAgSEQoJb3BlcmF0aW9uGAIgASgJEhQKB21lc3NhZ2UYAyABKAlIAIgBARIUCgdwYXlsb2FkGAQgASgJSAGIAQFCCgoIX21lc3NhZ2VCCgoIX3BheWxvYWQiTAoLU3RyZWFtUXVlcnkSEwoCaWQYASABKANCB7pIBCICIAASHQoGZmlsdGVyGAIgASgJQgi6SAVyAxjoB0gAiAEBQgkKB19maWx0ZXJiBnByb3RvMw", [file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.Empty
  */
-export type Empty = Message<"openoxide.api.v1.Empty"> & {};
+export type Empty = Message<"openoxide.api.v1.Empty"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.Empty.
  * Use `create(EmptySchema)` to create a new message.
  */
-export const EmptySchema: GenMessage<Empty> =
-  /*@__PURE__*/
+export const EmptySchema: GenMessage<Empty> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 0);
 
 /**
@@ -74,8 +70,7 @@ export type User = Message<"openoxide.api.v1.User"> & {
  * Describes the message openoxide.api.v1.User.
  * Use `create(UserSchema)` to create a new message.
  */
-export const UserSchema: GenMessage<User> =
-  /*@__PURE__*/
+export const UserSchema: GenMessage<User> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 1);
 
 /**
@@ -97,8 +92,7 @@ export type TokenPair = Message<"openoxide.api.v1.TokenPair"> & {
  * Describes the message openoxide.api.v1.TokenPair.
  * Use `create(TokenPairSchema)` to create a new message.
  */
-export const TokenPairSchema: GenMessage<TokenPair> =
-  /*@__PURE__*/
+export const TokenPairSchema: GenMessage<TokenPair> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 2);
 
 /**
@@ -133,8 +127,7 @@ export type ResourceRequest = Message<"openoxide.api.v1.ResourceRequest"> & {
  * Describes the message openoxide.api.v1.ResourceRequest.
  * Use `create(ResourceRequestSchema)` to create a new message.
  */
-export const ResourceRequestSchema: GenMessage<ResourceRequest> =
-  /*@__PURE__*/
+export const ResourceRequestSchema: GenMessage<ResourceRequest> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 3);
 
 /**
@@ -161,27 +154,24 @@ export type ResourceResponse = Message<"openoxide.api.v1.ResourceResponse"> & {
  * Describes the message openoxide.api.v1.ResourceResponse.
  * Use `create(ResourceResponseSchema)` to create a new message.
  */
-export const ResourceResponseSchema: GenMessage<ResourceResponse> =
-  /*@__PURE__*/
+export const ResourceResponseSchema: GenMessage<ResourceResponse> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 4);
 
 /**
  * @generated from message openoxide.api.v1.ResourceListResponse
  */
-export type ResourceListResponse =
-  Message<"openoxide.api.v1.ResourceListResponse"> & {
-    /**
-     * @generated from field: repeated openoxide.api.v1.ResourceResponse items = 1;
-     */
-    items: ResourceResponse[];
-  };
+export type ResourceListResponse = Message<"openoxide.api.v1.ResourceListResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.ResourceResponse items = 1;
+   */
+  items: ResourceResponse[];
+};
 
 /**
  * Describes the message openoxide.api.v1.ResourceListResponse.
  * Use `create(ResourceListResponseSchema)` to create a new message.
  */
-export const ResourceListResponseSchema: GenMessage<ResourceListResponse> =
-  /*@__PURE__*/
+export const ResourceListResponseSchema: GenMessage<ResourceListResponse> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 5);
 
 /**
@@ -218,8 +208,7 @@ export type ResourceQuery = Message<"openoxide.api.v1.ResourceQuery"> & {
  * Describes the message openoxide.api.v1.ResourceQuery.
  * Use `create(ResourceQuerySchema)` to create a new message.
  */
-export const ResourceQuerySchema: GenMessage<ResourceQuery> =
-  /*@__PURE__*/
+export const ResourceQuerySchema: GenMessage<ResourceQuery> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 6);
 
 /**
@@ -251,8 +240,7 @@ export type OperationResult = Message<"openoxide.api.v1.OperationResult"> & {
  * Describes the message openoxide.api.v1.OperationResult.
  * Use `create(OperationResultSchema)` to create a new message.
  */
-export const OperationResultSchema: GenMessage<OperationResult> =
-  /*@__PURE__*/
+export const OperationResultSchema: GenMessage<OperationResult> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 7);
 
 /**
@@ -274,6 +262,6 @@ export type StreamQuery = Message<"openoxide.api.v1.StreamQuery"> & {
  * Describes the message openoxide.api.v1.StreamQuery.
  * Use `create(StreamQuerySchema)` to create a new message.
  */
-export const StreamQuerySchema: GenMessage<StreamQuery> =
-  /*@__PURE__*/
+export const StreamQuerySchema: GenMessage<StreamQuery> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 8);
+

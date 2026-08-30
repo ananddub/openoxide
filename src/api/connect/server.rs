@@ -144,7 +144,7 @@ fn apply_cors_headers(headers: &mut HeaderMap) {
     headers.insert(
         ACCESS_CONTROL_ALLOW_HEADERS,
         HeaderValue::from_static(
-            "authorization, content-type, connect-protocol-version, connect-timeout-ms, connect-content-encoding",
+            "authorization, content-type, connect-protocol-version, connect-timeout-ms, connect-content-encoding, x-organization-id, x-grpc-web, grpc-timeout, x-user-agent",
         ),
     );
 }

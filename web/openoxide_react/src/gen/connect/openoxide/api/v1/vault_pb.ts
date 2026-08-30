@@ -4,25 +4,14 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type {
-  EmptySchema,
-  OperationResultSchema,
-  ResourceListResponseSchema,
-  ResourceQuerySchema,
-  ResourceRequestSchema,
-  ResourceResponseSchema,
-} from "./common_pb";
+import type { EmptySchema, OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 
 /**
  * Describes the file openoxide/api/v1/vault.proto.
  */
-export const file_openoxide_api_v1_vault: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "ChxvcGVub3hpZGUvYXBpL3YxL3ZhdWx0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMv8GCgxWYXVsdFNlcnZpY2USWAoNTGlzdFByb3ZpZGVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVAoLR2V0UHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJXCg5DcmVhdGVQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTAoORGVsZXRlUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVAoMVGVzdFByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5UZXN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWAoLTGlzdFNlY3JldHMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXAoPTGlzdEFzc2lnbm1lbnRzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElkKEVVwZGF0ZUFzc2lnbm1lbnRzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z",
-    [file_openoxide_api_v1_common],
-  );
+export const file_openoxide_api_v1_vault: GenFile = /*@__PURE__*/
+  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL3ZhdWx0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMv8GCgxWYXVsdFNlcnZpY2USWAoNTGlzdFByb3ZpZGVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVAoLR2V0UHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJXCg5DcmVhdGVQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTAoORGVsZXRlUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVAoMVGVzdFByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5UZXN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWAoLTGlzdFNlY3JldHMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXAoPTGlzdEFzc2lnbm1lbnRzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElkKEVVwZGF0ZUFzc2lnbm1lbnRzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.VaultService
@@ -35,7 +24,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.GetProvider
    */
@@ -43,7 +32,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
    */
@@ -51,7 +40,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
    */
@@ -59,7 +48,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.DeleteProvider
    */
@@ -67,7 +56,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.TestProvider
    */
@@ -75,7 +64,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.TestConnection
    */
@@ -83,7 +72,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.ListSecrets
    */
@@ -91,7 +80,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceListResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.ListAssignments
    */
@@ -99,7 +88,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceListResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.VaultService.UpdateAssignments
    */
@@ -107,5 +96,7 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_vault, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_vault, 0);
+

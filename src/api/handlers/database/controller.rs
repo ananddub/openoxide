@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use buffa::MessageView;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
@@ -17,30 +14,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
 };
 use crate::services::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
 use crate::services::database::management::{ImportDatabaseDto, PostgresAdvancedConfigDto};
-use crate::services::database::{DatabaseOperation, DatabaseService as AppDatabaseService};
+use crate::services::database::DatabaseOperation;
 
 use super::helper::*;
-
-pub struct DatabaseController {
-    service: Arc<AppDatabaseService>,
-    mounts: Arc<crate::services::database::mount::DatabaseMountService>,
-    swarm: Arc<crate::services::database::swarm_settings::DatabaseSwarmSettingsService>,
-}
-
-#[singleton]
-impl DatabaseController {
-    pub fn new(
-        service: Arc<AppDatabaseService>,
-        mounts: Arc<crate::services::database::mount::DatabaseMountService>,
-        swarm: Arc<crate::services::database::swarm_settings::DatabaseSwarmSettingsService>,
-    ) -> Self {
-        Self {
-            service,
-            mounts,
-            swarm,
-        }
-    }
-}
+use super::init::DatabaseController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl DatabaseService for DatabaseController {

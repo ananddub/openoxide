@@ -4,25 +4,14 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type {
-  EmptySchema,
-  OperationResultSchema,
-  ResourceListResponseSchema,
-  ResourceQuerySchema,
-  ResourceRequestSchema,
-  ResourceResponseSchema,
-} from "./common_pb";
+import type { EmptySchema, OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 
 /**
  * Describes the file openoxide/api/v1/notification.proto.
  */
-export const file_openoxide_api_v1_notification: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKzBAoTTm90aWZpY2F0aW9uU2VydmljZRJcChFMaXN0Tm90aWZpY2F0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoSRGVsZXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKEFRlc3ROb3RpZmljYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM",
-    [file_openoxide_api_v1_common],
-  );
+export const file_openoxide_api_v1_notification: GenFile = /*@__PURE__*/
+  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKzBAoTTm90aWZpY2F0aW9uU2VydmljZRJcChFMaXN0Tm90aWZpY2F0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoSRGVsZXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKEFRlc3ROb3RpZmljYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.NotificationService
@@ -35,7 +24,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
    */
@@ -43,7 +32,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
    */
@@ -51,7 +40,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
    */
@@ -59,7 +48,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
    */
@@ -67,7 +56,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof EmptySchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
    */
@@ -75,5 +64,7 @@ export const NotificationService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_notification, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_notification, 0);
+

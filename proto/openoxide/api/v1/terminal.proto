@@ -1,0 +1,93 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+// Interactive terminal over the panel's ConnectRPC API. Browsers cannot
+// stream request bodies over the Connect protocol, so the session is split
+// in two legs: a server-streaming RPC that carries all terminal output for
+// the session lifetime, and a unary RPC that feeds input, resize and stop
+// commands addressed by the session id returned in the first `started`
+// event.
+service TerminalService {
+  // Opens a Docker or SSH PTY session and streams its output. The first
+  // event is always `started` carrying the `session_id`; the stream ends
+  // after `exit` or `error`.
+  rpc OpenTerminal(OpenTerminalRequest) returns (stream TerminalEvent);
+  // Sends a command (input / resize / stop) to an open terminal session.
+  rpc ExecutionCommand(ExecutionCommandRequest) returns (Empty);
+}
+
+enum TerminalKind {
+  TERMINAL_KIND_UNSPECIFIED = 0;
+  TERMINAL_KIND_DOCKER = 1;
+  TERMINAL_KIND_REMOTE_SERVER = 2;
+}
+
+enum TerminalOutputStream {
+  TERMINAL_OUTPUT_STREAM_UNSPECIFIED = 0;
+  TERMINAL_OUTPUT_STREAM_STDOUT = 1;
+  TERMINAL_OUTPUT_STREAM_STDERR = 2;
+}
+
+message OpenTerminalRequest {
+  TerminalKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Required for TERMINAL_KIND_REMOTE_SERVER; optional for
+  // TERMINAL_KIND_DOCKER (falls back to the local Agent).
+  optional int64 server_id = 2 [(buf.validate.field).int64.gt = 0];
+  // Container name for TERMINAL_KIND_DOCKER.
+  optional string container = 3 [(buf.validate.field).string.max_len = 255];
+  optional string shell = 4 [(buf.validate.field).string.max_len = 255];
+  optional uint32 cols = 5 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
+  optional uint32 rows = 6 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
+}
+
+message TerminalEvent {
+  string session_id = 1;
+  oneof payload {
+    TerminalStarted started = 2;
+    TerminalOutput output = 3;
+    TerminalError error = 4;
+    TerminalExit exit = 5;
+  }
+}
+
+message TerminalStarted {
+  TerminalKind kind = 1;
+  optional string host = 2;
+}
+
+message TerminalOutput {
+  TerminalOutputStream stream = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  bytes data = 2;
+}
+
+message TerminalError {
+  string message = 1;
+  optional string code = 2;
+}
+
+message TerminalExit {
+  optional int32 code = 1;
+}
+
+message ExecutionCommandRequest {
+  string session_id = 1 [(buf.validate.field).string.min_len = 1];
+  oneof command {
+    TerminalInput input = 2;
+    TerminalResize resize = 3;
+    TerminalStop stop = 4;
+  }
+}
+
+message TerminalInput {
+  bytes data = 1 [(buf.validate.field).bytes.max_len = 65536];
+}
+
+message TerminalResize {
+  uint32 cols = 1 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
+  uint32 rows = 2 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
+}
+
+message TerminalStop {}

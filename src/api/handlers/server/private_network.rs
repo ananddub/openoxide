@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
@@ -9,16 +6,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
 };
 use crate::services::server::ServerPrivateNetworkService as AppServerPrivateNetworkService;
 
-pub struct ServerPrivateNetworkController {
-    service: Arc<AppServerPrivateNetworkService>,
-}
-
-#[singleton]
-impl ServerPrivateNetworkController {
-    pub fn new(service: Arc<AppServerPrivateNetworkService>) -> Self {
-        Self { service }
-    }
-}
+use super::init::ServerPrivateNetworkController;
 
 fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {

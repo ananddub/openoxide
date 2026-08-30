@@ -4,22 +4,14 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type {
-  EmptySchema,
-  ResourceRequestSchema,
-  ResourceResponseSchema,
-} from "./common_pb";
+import type { EmptySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 
 /**
  * Describes the file openoxide/api/v1/settings.proto.
  */
-export const file_openoxide_api_v1_settings: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "Ch9vcGVub3hpZGUvYXBpL3YxL3NldHRpbmdzLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMrYBCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVNldHRpbmdzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2ViBnByb3RvMw",
-    [file_openoxide_api_v1_common],
-  );
+export const file_openoxide_api_v1_settings: GenFile = /*@__PURE__*/
+  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3NldHRpbmdzLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMrYBCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVNldHRpbmdzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.SettingsService
@@ -32,7 +24,7 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof EmptySchema;
     output: typeof ResourceResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.SettingsService.UpdateSettings
    */
@@ -40,5 +32,7 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_settings, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_settings, 0);
+

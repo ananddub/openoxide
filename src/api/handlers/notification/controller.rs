@@ -1,40 +1,17 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, NotificationOperationsService, NotificationOperationsServiceExt,
     OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::db::queries::FlashQueries;
 use crate::flash_gen::models::Notifications as Notification;
 use crate::flash_gen::notification_delivery::NotificationDeliveryCreateBindingParams;
 use crate::flash_gen::notifications::{
     CreateNotificationWithTriggersParams, UpdateNotificationFullParams,
 };
-use crate::services::notification::{
-    NotificationLevel, NotificationMessage, NotificationService,
-};
-use super::builder::NotificationProviderBuilder;
+use crate::services::notification::{NotificationLevel, NotificationMessage};
 use super::helper::*;
-
-pub struct NotificationController {
-    queries: Arc<FlashQueries>,
-    service: Arc<NotificationService>,
-    builder: NotificationProviderBuilder,
-}
-
-#[singleton]
-impl NotificationController {
-    pub fn new(
-        queries: Arc<FlashQueries>,
-        service: Arc<NotificationService>,
-    ) -> Self {
-        let builder = NotificationProviderBuilder;
-        Self { queries, service, builder }
-    }
-}
+use super::init::NotificationController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl NotificationOperationsService for NotificationController {

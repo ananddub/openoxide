@@ -11,4 +11,3 @@ pub mod db;
 pub mod flash_gen;
 pub mod services;
 pub mod utils;
-pub mod websocket;

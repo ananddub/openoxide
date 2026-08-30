@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
@@ -18,53 +15,11 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateApplicationRequest, UpdateBuildConfigRequest, UpdatePreviewConfigRequest,
     UpdateResourceConfigRequest,
 };
-use crate::services::application::import_export::{
-    ApplicationTransferService, ImportApplicationDto,
-};
-use crate::services::application::{
-    ApplicationOperation as AppApplicationOperation, ApplicationService as AppApplicationService,
-};
+use crate::services::application::import_export::ImportApplicationDto;
+use crate::services::application::ApplicationOperation as AppApplicationOperation;
 
 use super::helper::*;
-
-pub struct ApplicationController {
-    service: Arc<AppApplicationService>,
-    transfer: Arc<ApplicationTransferService>,
-    patches: Arc<crate::services::application::patch::PatchService>,
-    middles: Arc<crate::services::application::middleware::ApplicationMiddlewareService>,
-    mounts: Arc<crate::services::application::mount::MountService>,
-    networks: Arc<crate::services::application::network::ApplicationNetworkService>,
-    ports: Arc<crate::services::application::port::PortService>,
-    redirects: Arc<crate::services::application::redirect::RedirectService>,
-    securities: Arc<crate::services::application::security::SecurityService>,
-}
-
-#[singleton]
-impl ApplicationController {
-    pub fn new(
-        service: Arc<AppApplicationService>,
-        transfer: Arc<ApplicationTransferService>,
-        patches: Arc<crate::services::application::patch::PatchService>,
-        middles: Arc<crate::services::application::middleware::ApplicationMiddlewareService>,
-        mounts: Arc<crate::services::application::mount::MountService>,
-        networks: Arc<crate::services::application::network::ApplicationNetworkService>,
-        ports: Arc<crate::services::application::port::PortService>,
-        redirects: Arc<crate::services::application::redirect::RedirectService>,
-        securities: Arc<crate::services::application::security::SecurityService>,
-    ) -> Self {
-        Self {
-            service,
-            transfer,
-            patches,
-            middles,
-            mounts,
-            networks,
-            ports,
-            redirects,
-            securities,
-        }
-    }
-}
+use super::init::ApplicationController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl ApplicationService for ApplicationController {

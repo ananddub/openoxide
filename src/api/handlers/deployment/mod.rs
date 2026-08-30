@@ -1,4 +1,5 @@
 mod controller;
 mod helper;
+mod init;
 
-pub use controller::DeploymentController;
+pub use init::DeploymentController;

@@ -31,6 +31,7 @@ pub mod ssh_key;
 pub mod swarm;
 pub mod system;
 pub mod tag;
+pub mod terminal;
 pub mod traefik;
 pub mod vault;
 pub mod webhook;

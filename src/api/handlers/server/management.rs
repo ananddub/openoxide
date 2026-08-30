@@ -1,34 +1,11 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     ServerManagementService, ServerManagementServiceExt,
 };
-use crate::services::server::{ServerCleanupService, ServerLifecycleService, ServerManagementService as AppServerManagementService};
 
-pub struct ServerManagementController {
-    management: Arc<AppServerManagementService>,
-    cleanup: Arc<ServerCleanupService>,
-    lifecycle: Arc<ServerLifecycleService>,
-}
-
-#[singleton]
-impl ServerManagementController {
-    pub fn new(
-        management: Arc<AppServerManagementService>,
-        cleanup: Arc<ServerCleanupService>,
-        lifecycle: Arc<ServerLifecycleService>,
-    ) -> Self {
-        Self {
-            management,
-            cleanup,
-            lifecycle,
-        }
-    }
-}
+use super::init::ServerManagementController;
 
 fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {

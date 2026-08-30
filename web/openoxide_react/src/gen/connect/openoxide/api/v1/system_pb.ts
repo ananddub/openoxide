@@ -10,12 +10,8 @@ import { file_openoxide_api_v1_common } from "./common_pb";
 /**
  * Describes the file openoxide/api/v1/system.proto.
  */
-export const file_openoxide_api_v1_system: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "Ch1vcGVub3hpZGUvYXBpL3YxL3N5c3RlbS5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKfAQoNU3lzdGVtU2VydmljZRJECgZIZWFsdGgSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSSAoKVGVzdENvbmZpZxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z",
-    [file_openoxide_api_v1_common],
-  );
+export const file_openoxide_api_v1_system: GenFile = /*@__PURE__*/
+  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL3N5c3RlbS5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKfAQoNU3lzdGVtU2VydmljZRJECgZIZWFsdGgSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSSAoKVGVzdENvbmZpZxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.SystemService
@@ -28,7 +24,7 @@ export const SystemService: GenService<{
     methodKind: "unary";
     input: typeof EmptySchema;
     output: typeof OperationResultSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.SystemService.TestConfig
    */
@@ -36,5 +32,7 @@ export const SystemService: GenService<{
     methodKind: "unary";
     input: typeof EmptySchema;
     output: typeof OperationResultSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_system, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_system, 0);
+

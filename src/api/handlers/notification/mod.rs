@@ -2,5 +2,6 @@ pub mod builder;
 
 mod controller;
 mod helper;
+mod init;
 
-pub use controller::NotificationController;
+pub use init::NotificationController;

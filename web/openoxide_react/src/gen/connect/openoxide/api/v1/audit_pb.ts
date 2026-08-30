@@ -4,22 +4,14 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type {
-  ResourceListResponseSchema,
-  ResourceQuerySchema,
-  ResourceResponseSchema,
-} from "./common_pb";
+import type { ResourceListResponseSchema, ResourceQuerySchema, ResourceResponseSchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 
 /**
  * Describes the file openoxide/api/v1/audit.proto.
  */
-export const file_openoxide_api_v1_audit: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "ChxvcGVub3hpZGUvYXBpL3YxL2F1ZGl0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMsABCgxBdWRpdFNlcnZpY2USWAoNTGlzdEF1ZGl0TG9ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoPRXhwb3J0QXVkaXRMb2dzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM",
-    [file_openoxide_api_v1_common],
-  );
+export const file_openoxide_api_v1_audit: GenFile = /*@__PURE__*/
+  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL2F1ZGl0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMsABCgxBdWRpdFNlcnZpY2USWAoNTGlzdEF1ZGl0TG9ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoPRXhwb3J0QXVkaXRMb2dzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.AuditService
@@ -32,7 +24,7 @@ export const AuditService: GenService<{
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  };
+  },
   /**
    * @generated from rpc openoxide.api.v1.AuditService.ExportAuditLogs
    */
@@ -40,5 +32,7 @@ export const AuditService: GenService<{
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceResponseSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_audit, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_audit, 0);
+

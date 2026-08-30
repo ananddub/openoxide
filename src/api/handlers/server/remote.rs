@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 use validator::Validate;
 
@@ -11,19 +8,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
 use crate::services::server::{
     CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
     RemoteServerAction, RemoteServerActionResponseDto, RemoteServerResponseDto,
-    RemoteServerService as AppRemoteServerService, RemoteServerStatus, ServerDependencyMigrationDto,
+    RemoteServerStatus, ServerDependencyMigrationDto,
 };
 
-pub struct RemoteServerController {
-    service: Arc<AppRemoteServerService>,
-}
-
-#[singleton]
-impl RemoteServerController {
-    pub fn new(service: Arc<AppRemoteServerService>) -> Self {
-        Self { service }
-    }
-}
+use super::init::RemoteServerController;
 
 fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {

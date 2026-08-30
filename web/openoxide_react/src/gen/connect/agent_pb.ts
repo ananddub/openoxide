@@ -2,28 +2,15 @@
 // @generated from file agent.proto (package agent, syntax proto3)
 /* eslint-disable */
 
-import type {
-  GenEnum,
-  GenFile,
-  GenMessage,
-  GenService,
-} from "@bufbuild/protobuf/codegenv2";
-import {
-  enumDesc,
-  fileDesc,
-  messageDesc,
-  serviceDesc,
-} from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file agent.proto.
  */
-export const file_agent: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "CgthZ2VudC5wcm90bxIFYWdlbnQiJQoQQWdlbnRJbmZvUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMiigEKEUFnZW50SW5mb1Jlc3BvbnNlEhgKEHByb3RvY29sX3ZlcnNpb24YASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIUCgxjYXBhYmlsaXRpZXMYAyADKAkSGAoQbWF4X3VwbG9hZF9ieXRlcxgEIAEoBBIUCgx1cGxvYWRfcm9vdHMYBSADKAkihAEKD0ZpbGVVcGxvYWRDaHVuaxIRCglzZXJ2ZXJfaWQYASABKAMSEwoLZGVzdGluYXRpb24YAiABKAkSDAoEZGF0YRgDIAEoDBIOCgZmaW5pc2gYBCABKAgSFwoPY2hlY2tzdW1fc2hhMjU2GAUgASgJEhIKCnRvdGFsX3NpemUYBiABKAQiPgoQRmlsZVVwbG9hZFJlc3VsdBIVCg1ieXRlc193cml0dGVuGAEgASgEEhMKC2Rlc3RpbmF0aW9uGAIgASgJIosBCg9FeGVjVGFza1JlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDEhEKCWNvbnRhaW5lchgCIAEoCRIPCgdjb21tYW5kGAMgASgJEhkKEXdvcmtpbmdfZGlyZWN0b3J5GAQgASgJEhcKD3RpbWVvdXRfc2Vjb25kcxgFIAEoDRINCgVzdGRpbhgGIAEoDCJpCg5FeGVjVGFza091dHB1dBInCgRraW5kGAEgASgOMhkuYWdlbnQuRXhlY1Rhc2tPdXRwdXRLaW5kEgwKBGRhdGEYAiABKAwSEQoJZXhpdF9jb2RlGAMgASgFEg0KBWVycm9yGAQgASgJImgKEExvZ1N0cmVhbVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAMSEgoKY29tcG9zZV9pZBgCIAEoAxIUCgxjb250YWluZXJfaWQYAyABKAkSEgoKdGFpbF9saW5lcxgEIAEoBSJYCghMb2dDaHVuaxIUCgxjb250YWluZXJfaWQYASABKAkSEAoIbG9nX2xpbmUYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDEhEKCWlzX3N0ZGVychgEIAEoCCKzAQoMU2hlbGxNZXNzYWdlEhEKCXNlcnZlcl9pZBgBIAEoAxIiCgZhY3Rpb24YAiABKA4yEi5hZ2VudC5TaGVsbEFjdGlvbhIRCgljb250YWluZXIYAyABKAkSDQoFc2hlbGwYBCABKAkSDAoEZGF0YRgFIAEoDBIMCgRjb2xzGAYgASgNEgwKBHJvd3MYByABKA0SEQoJZXhpdF9jb2RlGAggASgFEg0KBWVycm9yGAkgASgJIugCChFTZXJ2ZXJNZXRyaWNQb2ludBIKCgJpZBgBIAEoAxIRCgl0aW1lc3RhbXAYAiABKAkSCwoDY3B1GAMgASgBEhEKCWNwdV9tb2RlbBgEIAEoCRIRCgljcHVfY29yZXMYBSABKAUSGgoSY3B1X3BoeXNpY2FsX2NvcmVzGAYgASgFEhEKCWNwdV9zcGVlZBgHIAEoARIKCgJvcxgIIAEoCRIOCgZkaXN0cm8YCSABKAkSDgoGa2VybmVsGAogASgJEgwKBGFyY2gYCyABKAkSEAoIbWVtX3VzZWQYDCABKAESEwoLbWVtX3VzZWRfZ2IYDSABKAESEQoJbWVtX3RvdGFsGA4gASgBEg4KBnVwdGltZRgPIAEoBBIRCglkaXNrX3VzZWQYECABKAESEgoKdG90YWxfZGlzaxgRIAEoARISCgpuZXR3b3JrX2luGBIgASgBEhMKC25ldHdvcmtfb3V0GBMgASgBIqoCChRDb250YWluZXJNZXRyaWNQb2ludBIKCgJpZBgBIAEoAxIRCgl0aW1lc3RhbXAYAiABKAkSFAoMY29udGFpbmVyX2lkGAMgASgJEgwKBG5hbWUYBCABKAkSEAoIY3B1X3BlcmMYBSABKAESEAoIbWVtX3BlcmMYBiABKAESEwoLbWVtX3VzZWRfbWIYByABKAESFAoMbWVtX3RvdGFsX21iGAggASgBEhEKCW5ldF9pbl9tYhgJIAEoARISCgpuZXRfb3V0X21iGAogASgBEhUKDWJsb2NrX3JlYWRfbWIYCyABKAESFgoOYmxvY2tfd3JpdGVfbWIYDCABKAESFgoOYXBwbGljYXRpb25faWQYDSABKAMSEgoKY29tcG9zZV9pZBgOIAEoAyI1ChFHZXRNZXRyaWNzUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMSDQoFbGltaXQYAiABKAUiQgoVU2VydmVyTWV0cmljc1Jlc3BvbnNlEikKB21ldHJpY3MYASADKAsyGC5hZ2VudC5TZXJ2ZXJNZXRyaWNQb2ludCJQChpHZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMSEAoIYXBwX25hbWUYAiABKAkSDQoFbGltaXQYAyABKAUiSAoYQ29udGFpbmVyTWV0cmljc1Jlc3BvbnNlEiwKB21ldHJpY3MYASADKAsyGy5hZ2VudC5Db250YWluZXJNZXRyaWNQb2ludCK2AQoTQ29udGFpbmVyU3RhdGVQb2ludBIUCgxjb250YWluZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOYXBwbGljYXRpb25faWQYBSABKAMSEgoKY29tcG9zZV9pZBgGIAEoAxIXCg9jb21wb3NlX3Byb2plY3QYByABKAkSFwoPY29tcG9zZV9zZXJ2aWNlGAggASgJIkkKF0NvbnRhaW5lclN0YXRlc1Jlc3BvbnNlEi4KCmNvbnRhaW5lcnMYASADKAsyGi5hZ2VudC5Db250YWluZXJTdGF0ZVBvaW50IhIKEExpZmVjeWNsZUNvbnRyb2wqpwEKEkV4ZWNUYXNrT3V0cHV0S2luZBIgChxFWEVDX1RBU0tfT1VUUFVUX1VOU1BFQ0lGSUVEEAASGwoXRVhFQ19UQVNLX09VVFBVVF9TVERPVVQQARIbChdFWEVDX1RBU0tfT1VUUFVUX1NUREVSUhACEhkKFUVYRUNfVEFTS19PVVRQVVRfRVhJVBADEhoKFkVYRUNfVEFTS19PVVRQVVRfRVJST1IQBCrsAQoLU2hlbGxBY3Rpb24SHAoYU0hFTExfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFQoRU0hFTExfQUNUSU9OX09QRU4QARIWChJTSEVMTF9BQ1RJT05fSU5QVVQQAhIXChNTSEVMTF9BQ1RJT05fUkVTSVpFEAMSFgoSU0hFTExfQUNUSU9OX0NMT1NFEAQSFwoTU0hFTExfQUNUSU9OX1NURE9VVBAFEhcKE1NIRUxMX0FDVElPTl9TVERFUlIQBhIVChFTSEVMTF9BQ1RJT05fRVhJVBAHEhYKElNIRUxMX0FDVElPTl9FUlJPUhAIMowFCgxBZ2VudFNlcnZpY2USQQoMR2V0QWdlbnRJbmZvEhcuYWdlbnQuQWdlbnRJbmZvUmVxdWVzdBoYLmFnZW50LkFnZW50SW5mb1Jlc3BvbnNlEkoKEEdldFNlcnZlck1ldHJpY3MSGC5hZ2VudC5HZXRNZXRyaWNzUmVxdWVzdBocLmFnZW50LlNlcnZlck1ldHJpY3NSZXNwb25zZRJZChNHZXRDb250YWluZXJNZXRyaWNzEiEuYWdlbnQuR2V0Q29udGFpbmVyTWV0cmljc1JlcXVlc3QaHy5hZ2VudC5Db250YWluZXJNZXRyaWNzUmVzcG9uc2USTgoSR2V0Q29udGFpbmVyU3RhdGVzEhguYWdlbnQuR2V0TWV0cmljc1JlcXVlc3QaHi5hZ2VudC5Db250YWluZXJTdGF0ZXNSZXNwb25zZRJTChRXYXRjaENvbnRhaW5lclN0YXRlcxIXLmFnZW50LkxpZmVjeWNsZUNvbnRyb2waHi5hZ2VudC5Db250YWluZXJTdGF0ZXNSZXNwb25zZSgBMAESOAoKU3RyZWFtTG9ncxIXLmFnZW50LkxvZ1N0cmVhbVJlcXVlc3QaDy5hZ2VudC5Mb2dDaHVuazABEjUKBVNoZWxsEhMuYWdlbnQuU2hlbGxNZXNzYWdlGhMuYWdlbnQuU2hlbGxNZXNzYWdlKAEwARI7CghFeGVjVGFzaxIWLmFnZW50LkV4ZWNUYXNrUmVxdWVzdBoVLmFnZW50LkV4ZWNUYXNrT3V0cHV0MAESPwoKVXBsb2FkRmlsZRIWLmFnZW50LkZpbGVVcGxvYWRDaHVuaxoXLmFnZW50LkZpbGVVcGxvYWRSZXN1bHQoAWIGcHJvdG8z",
-  );
+export const file_agent: GenFile = /*@__PURE__*/
+  fileDesc("CgthZ2VudC5wcm90bxIFYWdlbnQiJQoQQWdlbnRJbmZvUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMiigEKEUFnZW50SW5mb1Jlc3BvbnNlEhgKEHByb3RvY29sX3ZlcnNpb24YASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIUCgxjYXBhYmlsaXRpZXMYAyADKAkSGAoQbWF4X3VwbG9hZF9ieXRlcxgEIAEoBBIUCgx1cGxvYWRfcm9vdHMYBSADKAkihAEKD0ZpbGVVcGxvYWRDaHVuaxIRCglzZXJ2ZXJfaWQYASABKAMSEwoLZGVzdGluYXRpb24YAiABKAkSDAoEZGF0YRgDIAEoDBIOCgZmaW5pc2gYBCABKAgSFwoPY2hlY2tzdW1fc2hhMjU2GAUgASgJEhIKCnRvdGFsX3NpemUYBiABKAQiPgoQRmlsZVVwbG9hZFJlc3VsdBIVCg1ieXRlc193cml0dGVuGAEgASgEEhMKC2Rlc3RpbmF0aW9uGAIgASgJIosBCg9FeGVjVGFza1JlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDEhEKCWNvbnRhaW5lchgCIAEoCRIPCgdjb21tYW5kGAMgASgJEhkKEXdvcmtpbmdfZGlyZWN0b3J5GAQgASgJEhcKD3RpbWVvdXRfc2Vjb25kcxgFIAEoDRINCgVzdGRpbhgGIAEoDCJpCg5FeGVjVGFza091dHB1dBInCgRraW5kGAEgASgOMhkuYWdlbnQuRXhlY1Rhc2tPdXRwdXRLaW5kEgwKBGRhdGEYAiABKAwSEQoJZXhpdF9jb2RlGAMgASgFEg0KBWVycm9yGAQgASgJImgKEExvZ1N0cmVhbVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAMSEgoKY29tcG9zZV9pZBgCIAEoAxIUCgxjb250YWluZXJfaWQYAyABKAkSEgoKdGFpbF9saW5lcxgEIAEoBSJYCghMb2dDaHVuaxIUCgxjb250YWluZXJfaWQYASABKAkSEAoIbG9nX2xpbmUYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDEhEKCWlzX3N0ZGVychgEIAEoCCKzAQoMU2hlbGxNZXNzYWdlEhEKCXNlcnZlcl9pZBgBIAEoAxIiCgZhY3Rpb24YAiABKA4yEi5hZ2VudC5TaGVsbEFjdGlvbhIRCgljb250YWluZXIYAyABKAkSDQoFc2hlbGwYBCABKAkSDAoEZGF0YRgFIAEoDBIMCgRjb2xzGAYgASgNEgwKBHJvd3MYByABKA0SEQoJZXhpdF9jb2RlGAggASgFEg0KBWVycm9yGAkgASgJIugCChFTZXJ2ZXJNZXRyaWNQb2ludBIKCgJpZBgBIAEoAxIRCgl0aW1lc3RhbXAYAiABKAkSCwoDY3B1GAMgASgBEhEKCWNwdV9tb2RlbBgEIAEoCRIRCgljcHVfY29yZXMYBSABKAUSGgoSY3B1X3BoeXNpY2FsX2NvcmVzGAYgASgFEhEKCWNwdV9zcGVlZBgHIAEoARIKCgJvcxgIIAEoCRIOCgZkaXN0cm8YCSABKAkSDgoGa2VybmVsGAogASgJEgwKBGFyY2gYCyABKAkSEAoIbWVtX3VzZWQYDCABKAESEwoLbWVtX3VzZWRfZ2IYDSABKAESEQoJbWVtX3RvdGFsGA4gASgBEg4KBnVwdGltZRgPIAEoBBIRCglkaXNrX3VzZWQYECABKAESEgoKdG90YWxfZGlzaxgRIAEoARISCgpuZXR3b3JrX2luGBIgASgBEhMKC25ldHdvcmtfb3V0GBMgASgBIqoCChRDb250YWluZXJNZXRyaWNQb2ludBIKCgJpZBgBIAEoAxIRCgl0aW1lc3RhbXAYAiABKAkSFAoMY29udGFpbmVyX2lkGAMgASgJEgwKBG5hbWUYBCABKAkSEAoIY3B1X3BlcmMYBSABKAESEAoIbWVtX3BlcmMYBiABKAESEwoLbWVtX3VzZWRfbWIYByABKAESFAoMbWVtX3RvdGFsX21iGAggASgBEhEKCW5ldF9pbl9tYhgJIAEoARISCgpuZXRfb3V0X21iGAogASgBEhUKDWJsb2NrX3JlYWRfbWIYCyABKAESFgoOYmxvY2tfd3JpdGVfbWIYDCABKAESFgoOYXBwbGljYXRpb25faWQYDSABKAMSEgoKY29tcG9zZV9pZBgOIAEoAyI1ChFHZXRNZXRyaWNzUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMSDQoFbGltaXQYAiABKAUiQgoVU2VydmVyTWV0cmljc1Jlc3BvbnNlEikKB21ldHJpY3MYASADKAsyGC5hZ2VudC5TZXJ2ZXJNZXRyaWNQb2ludCJQChpHZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMSEAoIYXBwX25hbWUYAiABKAkSDQoFbGltaXQYAyABKAUiSAoYQ29udGFpbmVyTWV0cmljc1Jlc3BvbnNlEiwKB21ldHJpY3MYASADKAsyGy5hZ2VudC5Db250YWluZXJNZXRyaWNQb2ludCK2AQoTQ29udGFpbmVyU3RhdGVQb2ludBIUCgxjb250YWluZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOYXBwbGljYXRpb25faWQYBSABKAMSEgoKY29tcG9zZV9pZBgGIAEoAxIXCg9jb21wb3NlX3Byb2plY3QYByABKAkSFwoPY29tcG9zZV9zZXJ2aWNlGAggASgJIkkKF0NvbnRhaW5lclN0YXRlc1Jlc3BvbnNlEi4KCmNvbnRhaW5lcnMYASADKAsyGi5hZ2VudC5Db250YWluZXJTdGF0ZVBvaW50IhIKEExpZmVjeWNsZUNvbnRyb2wqpwEKEkV4ZWNUYXNrT3V0cHV0S2luZBIgChxFWEVDX1RBU0tfT1VUUFVUX1VOU1BFQ0lGSUVEEAASGwoXRVhFQ19UQVNLX09VVFBVVF9TVERPVVQQARIbChdFWEVDX1RBU0tfT1VUUFVUX1NUREVSUhACEhkKFUVYRUNfVEFTS19PVVRQVVRfRVhJVBADEhoKFkVYRUNfVEFTS19PVVRQVVRfRVJST1IQBCrsAQoLU2hlbGxBY3Rpb24SHAoYU0hFTExfQUNUSU9OX1VOU1BFQ0lGSUVEEAASFQoRU0hFTExfQUNUSU9OX09QRU4QARIWChJTSEVMTF9BQ1RJT05fSU5QVVQQAhIXChNTSEVMTF9BQ1RJT05fUkVTSVpFEAMSFgoSU0hFTExfQUNUSU9OX0NMT1NFEAQSFwoTU0hFTExfQUNUSU9OX1NURE9VVBAFEhcKE1NIRUxMX0FDVElPTl9TVERFUlIQBhIVChFTSEVMTF9BQ1RJT05fRVhJVBAHEhYKElNIRUxMX0FDVElPTl9FUlJPUhAIMowFCgxBZ2VudFNlcnZpY2USQQoMR2V0QWdlbnRJbmZvEhcuYWdlbnQuQWdlbnRJbmZvUmVxdWVzdBoYLmFnZW50LkFnZW50SW5mb1Jlc3BvbnNlEkoKEEdldFNlcnZlck1ldHJpY3MSGC5hZ2VudC5HZXRNZXRyaWNzUmVxdWVzdBocLmFnZW50LlNlcnZlck1ldHJpY3NSZXNwb25zZRJZChNHZXRDb250YWluZXJNZXRyaWNzEiEuYWdlbnQuR2V0Q29udGFpbmVyTWV0cmljc1JlcXVlc3QaHy5hZ2VudC5Db250YWluZXJNZXRyaWNzUmVzcG9uc2USTgoSR2V0Q29udGFpbmVyU3RhdGVzEhguYWdlbnQuR2V0TWV0cmljc1JlcXVlc3QaHi5hZ2VudC5Db250YWluZXJTdGF0ZXNSZXNwb25zZRJTChRXYXRjaENvbnRhaW5lclN0YXRlcxIXLmFnZW50LkxpZmVjeWNsZUNvbnRyb2waHi5hZ2VudC5Db250YWluZXJTdGF0ZXNSZXNwb25zZSgBMAESOAoKU3RyZWFtTG9ncxIXLmFnZW50LkxvZ1N0cmVhbVJlcXVlc3QaDy5hZ2VudC5Mb2dDaHVuazABEjUKBVNoZWxsEhMuYWdlbnQuU2hlbGxNZXNzYWdlGhMuYWdlbnQuU2hlbGxNZXNzYWdlKAEwARI7CghFeGVjVGFzaxIWLmFnZW50LkV4ZWNUYXNrUmVxdWVzdBoVLmFnZW50LkV4ZWNUYXNrT3V0cHV0MAESPwoKVXBsb2FkRmlsZRIWLmFnZW50LkZpbGVVcGxvYWRDaHVuaxoXLmFnZW50LkZpbGVVcGxvYWRSZXN1bHQoAWIGcHJvdG8z");
 
 /**
  * @generated from message agent.AgentInfoRequest
@@ -39,8 +26,7 @@ export type AgentInfoRequest = Message<"agent.AgentInfoRequest"> & {
  * Describes the message agent.AgentInfoRequest.
  * Use `create(AgentInfoRequestSchema)` to create a new message.
  */
-export const AgentInfoRequestSchema: GenMessage<AgentInfoRequest> =
-  /*@__PURE__*/
+export const AgentInfoRequestSchema: GenMessage<AgentInfoRequest> = /*@__PURE__*/
   messageDesc(file_agent, 0);
 
 /**
@@ -77,8 +63,7 @@ export type AgentInfoResponse = Message<"agent.AgentInfoResponse"> & {
  * Describes the message agent.AgentInfoResponse.
  * Use `create(AgentInfoResponseSchema)` to create a new message.
  */
-export const AgentInfoResponseSchema: GenMessage<AgentInfoResponse> =
-  /*@__PURE__*/
+export const AgentInfoResponseSchema: GenMessage<AgentInfoResponse> = /*@__PURE__*/
   messageDesc(file_agent, 1);
 
 /**
@@ -120,8 +105,7 @@ export type FileUploadChunk = Message<"agent.FileUploadChunk"> & {
  * Describes the message agent.FileUploadChunk.
  * Use `create(FileUploadChunkSchema)` to create a new message.
  */
-export const FileUploadChunkSchema: GenMessage<FileUploadChunk> =
-  /*@__PURE__*/
+export const FileUploadChunkSchema: GenMessage<FileUploadChunk> = /*@__PURE__*/
   messageDesc(file_agent, 2);
 
 /**
@@ -143,8 +127,7 @@ export type FileUploadResult = Message<"agent.FileUploadResult"> & {
  * Describes the message agent.FileUploadResult.
  * Use `create(FileUploadResultSchema)` to create a new message.
  */
-export const FileUploadResultSchema: GenMessage<FileUploadResult> =
-  /*@__PURE__*/
+export const FileUploadResultSchema: GenMessage<FileUploadResult> = /*@__PURE__*/
   messageDesc(file_agent, 3);
 
 /**
@@ -186,8 +169,7 @@ export type ExecTaskRequest = Message<"agent.ExecTaskRequest"> & {
  * Describes the message agent.ExecTaskRequest.
  * Use `create(ExecTaskRequestSchema)` to create a new message.
  */
-export const ExecTaskRequestSchema: GenMessage<ExecTaskRequest> =
-  /*@__PURE__*/
+export const ExecTaskRequestSchema: GenMessage<ExecTaskRequest> = /*@__PURE__*/
   messageDesc(file_agent, 4);
 
 /**
@@ -219,8 +201,7 @@ export type ExecTaskOutput = Message<"agent.ExecTaskOutput"> & {
  * Describes the message agent.ExecTaskOutput.
  * Use `create(ExecTaskOutputSchema)` to create a new message.
  */
-export const ExecTaskOutputSchema: GenMessage<ExecTaskOutput> =
-  /*@__PURE__*/
+export const ExecTaskOutputSchema: GenMessage<ExecTaskOutput> = /*@__PURE__*/
   messageDesc(file_agent, 5);
 
 /**
@@ -252,8 +233,7 @@ export type LogStreamRequest = Message<"agent.LogStreamRequest"> & {
  * Describes the message agent.LogStreamRequest.
  * Use `create(LogStreamRequestSchema)` to create a new message.
  */
-export const LogStreamRequestSchema: GenMessage<LogStreamRequest> =
-  /*@__PURE__*/
+export const LogStreamRequestSchema: GenMessage<LogStreamRequest> = /*@__PURE__*/
   messageDesc(file_agent, 6);
 
 /**
@@ -285,8 +265,7 @@ export type LogChunk = Message<"agent.LogChunk"> & {
  * Describes the message agent.LogChunk.
  * Use `create(LogChunkSchema)` to create a new message.
  */
-export const LogChunkSchema: GenMessage<LogChunk> =
-  /*@__PURE__*/
+export const LogChunkSchema: GenMessage<LogChunk> = /*@__PURE__*/
   messageDesc(file_agent, 7);
 
 /**
@@ -343,8 +322,7 @@ export type ShellMessage = Message<"agent.ShellMessage"> & {
  * Describes the message agent.ShellMessage.
  * Use `create(ShellMessageSchema)` to create a new message.
  */
-export const ShellMessageSchema: GenMessage<ShellMessage> =
-  /*@__PURE__*/
+export const ShellMessageSchema: GenMessage<ShellMessage> = /*@__PURE__*/
   messageDesc(file_agent, 8);
 
 /**
@@ -451,8 +429,7 @@ export type ServerMetricPoint = Message<"agent.ServerMetricPoint"> & {
  * Describes the message agent.ServerMetricPoint.
  * Use `create(ServerMetricPointSchema)` to create a new message.
  */
-export const ServerMetricPointSchema: GenMessage<ServerMetricPoint> =
-  /*@__PURE__*/
+export const ServerMetricPointSchema: GenMessage<ServerMetricPoint> = /*@__PURE__*/
   messageDesc(file_agent, 9);
 
 /**
@@ -534,8 +511,7 @@ export type ContainerMetricPoint = Message<"agent.ContainerMetricPoint"> & {
  * Describes the message agent.ContainerMetricPoint.
  * Use `create(ContainerMetricPointSchema)` to create a new message.
  */
-export const ContainerMetricPointSchema: GenMessage<ContainerMetricPoint> =
-  /*@__PURE__*/
+export const ContainerMetricPointSchema: GenMessage<ContainerMetricPoint> = /*@__PURE__*/
   messageDesc(file_agent, 10);
 
 /**
@@ -557,8 +533,7 @@ export type GetMetricsRequest = Message<"agent.GetMetricsRequest"> & {
  * Describes the message agent.GetMetricsRequest.
  * Use `create(GetMetricsRequestSchema)` to create a new message.
  */
-export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> =
-  /*@__PURE__*/
+export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> = /*@__PURE__*/
   messageDesc(file_agent, 11);
 
 /**
@@ -575,56 +550,51 @@ export type ServerMetricsResponse = Message<"agent.ServerMetricsResponse"> & {
  * Describes the message agent.ServerMetricsResponse.
  * Use `create(ServerMetricsResponseSchema)` to create a new message.
  */
-export const ServerMetricsResponseSchema: GenMessage<ServerMetricsResponse> =
-  /*@__PURE__*/
+export const ServerMetricsResponseSchema: GenMessage<ServerMetricsResponse> = /*@__PURE__*/
   messageDesc(file_agent, 12);
 
 /**
  * @generated from message agent.GetContainerMetricsRequest
  */
-export type GetContainerMetricsRequest =
-  Message<"agent.GetContainerMetricsRequest"> & {
-    /**
-     * @generated from field: int64 server_id = 1;
-     */
-    serverId: bigint;
+export type GetContainerMetricsRequest = Message<"agent.GetContainerMetricsRequest"> & {
+  /**
+   * @generated from field: int64 server_id = 1;
+   */
+  serverId: bigint;
 
-    /**
-     * @generated from field: string app_name = 2;
-     */
-    appName: string;
+  /**
+   * @generated from field: string app_name = 2;
+   */
+  appName: string;
 
-    /**
-     * @generated from field: int32 limit = 3;
-     */
-    limit: number;
-  };
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit: number;
+};
 
 /**
  * Describes the message agent.GetContainerMetricsRequest.
  * Use `create(GetContainerMetricsRequestSchema)` to create a new message.
  */
-export const GetContainerMetricsRequestSchema: GenMessage<GetContainerMetricsRequest> =
-  /*@__PURE__*/
+export const GetContainerMetricsRequestSchema: GenMessage<GetContainerMetricsRequest> = /*@__PURE__*/
   messageDesc(file_agent, 13);
 
 /**
  * @generated from message agent.ContainerMetricsResponse
  */
-export type ContainerMetricsResponse =
-  Message<"agent.ContainerMetricsResponse"> & {
-    /**
-     * @generated from field: repeated agent.ContainerMetricPoint metrics = 1;
-     */
-    metrics: ContainerMetricPoint[];
-  };
+export type ContainerMetricsResponse = Message<"agent.ContainerMetricsResponse"> & {
+  /**
+   * @generated from field: repeated agent.ContainerMetricPoint metrics = 1;
+   */
+  metrics: ContainerMetricPoint[];
+};
 
 /**
  * Describes the message agent.ContainerMetricsResponse.
  * Use `create(ContainerMetricsResponseSchema)` to create a new message.
  */
-export const ContainerMetricsResponseSchema: GenMessage<ContainerMetricsResponse> =
-  /*@__PURE__*/
+export const ContainerMetricsResponseSchema: GenMessage<ContainerMetricsResponse> = /*@__PURE__*/
   messageDesc(file_agent, 14);
 
 /**
@@ -676,40 +646,37 @@ export type ContainerStatePoint = Message<"agent.ContainerStatePoint"> & {
  * Describes the message agent.ContainerStatePoint.
  * Use `create(ContainerStatePointSchema)` to create a new message.
  */
-export const ContainerStatePointSchema: GenMessage<ContainerStatePoint> =
-  /*@__PURE__*/
+export const ContainerStatePointSchema: GenMessage<ContainerStatePoint> = /*@__PURE__*/
   messageDesc(file_agent, 15);
 
 /**
  * @generated from message agent.ContainerStatesResponse
  */
-export type ContainerStatesResponse =
-  Message<"agent.ContainerStatesResponse"> & {
-    /**
-     * @generated from field: repeated agent.ContainerStatePoint containers = 1;
-     */
-    containers: ContainerStatePoint[];
-  };
+export type ContainerStatesResponse = Message<"agent.ContainerStatesResponse"> & {
+  /**
+   * @generated from field: repeated agent.ContainerStatePoint containers = 1;
+   */
+  containers: ContainerStatePoint[];
+};
 
 /**
  * Describes the message agent.ContainerStatesResponse.
  * Use `create(ContainerStatesResponseSchema)` to create a new message.
  */
-export const ContainerStatesResponseSchema: GenMessage<ContainerStatesResponse> =
-  /*@__PURE__*/
+export const ContainerStatesResponseSchema: GenMessage<ContainerStatesResponse> = /*@__PURE__*/
   messageDesc(file_agent, 16);
 
 /**
  * @generated from message agent.LifecycleControl
  */
-export type LifecycleControl = Message<"agent.LifecycleControl"> & {};
+export type LifecycleControl = Message<"agent.LifecycleControl"> & {
+};
 
 /**
  * Describes the message agent.LifecycleControl.
  * Use `create(LifecycleControlSchema)` to create a new message.
  */
-export const LifecycleControlSchema: GenMessage<LifecycleControl> =
-  /*@__PURE__*/
+export const LifecycleControlSchema: GenMessage<LifecycleControl> = /*@__PURE__*/
   messageDesc(file_agent, 17);
 
 /**
@@ -745,8 +712,7 @@ export enum ExecTaskOutputKind {
 /**
  * Describes the enum agent.ExecTaskOutputKind.
  */
-export const ExecTaskOutputKindSchema: GenEnum<ExecTaskOutputKind> =
-  /*@__PURE__*/
+export const ExecTaskOutputKindSchema: GenEnum<ExecTaskOutputKind> = /*@__PURE__*/
   enumDesc(file_agent, 0);
 
 /**
@@ -802,8 +768,7 @@ export enum ShellAction {
 /**
  * Describes the enum agent.ShellAction.
  */
-export const ShellActionSchema: GenEnum<ShellAction> =
-  /*@__PURE__*/
+export const ShellActionSchema: GenEnum<ShellAction> = /*@__PURE__*/
   enumDesc(file_agent, 1);
 
 /**
@@ -822,7 +787,7 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof AgentInfoRequestSchema;
     output: typeof AgentInfoResponseSchema;
-  };
+  },
   /**
    * Query historical server metrics
    *
@@ -832,7 +797,7 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetMetricsRequestSchema;
     output: typeof ServerMetricsResponseSchema;
-  };
+  },
   /**
    * Query historical container metrics
    *
@@ -842,7 +807,7 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetContainerMetricsRequestSchema;
     output: typeof ContainerMetricsResponseSchema;
-  };
+  },
   /**
    * Current Docker lifecycle state, including stopped/restarting containers.
    *
@@ -852,7 +817,7 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetMetricsRequestSchema;
     output: typeof ContainerStatesResponseSchema;
-  };
+  },
   /**
    * Persistent lifecycle channel. The panel keeps the request stream open and
    * the agent emits snapshots immediately when Docker state changes.
@@ -863,7 +828,7 @@ export const AgentService: GenService<{
     methodKind: "bidi_streaming";
     input: typeof LifecycleControlSchema;
     output: typeof ContainerStatesResponseSchema;
-  };
+  },
   /**
    * Tail a container's recent logs
    *
@@ -873,7 +838,7 @@ export const AgentService: GenService<{
     methodKind: "server_streaming";
     input: typeof LogStreamRequestSchema;
     output: typeof LogChunkSchema;
-  };
+  },
   /**
    * Persistent host or Docker shell session.
    *
@@ -883,7 +848,7 @@ export const AgentService: GenService<{
     methodKind: "bidi_streaming";
     input: typeof ShellMessageSchema;
     output: typeof ShellMessageSchema;
-  };
+  },
   /**
    * One-shot non-PTY command execution for deployment and maintenance tasks.
    *
@@ -893,7 +858,7 @@ export const AgentService: GenService<{
     methodKind: "server_streaming";
     input: typeof ExecTaskRequestSchema;
     output: typeof ExecTaskOutputSchema;
-  };
+  },
   /**
    * Stream a host file to the agent and atomically install it at destination.
    *
@@ -903,5 +868,7 @@ export const AgentService: GenService<{
     methodKind: "client_streaming";
     input: typeof FileUploadChunkSchema;
     output: typeof FileUploadResultSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_agent, 0);
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_agent, 0);
+

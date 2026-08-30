@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
@@ -10,22 +7,12 @@ use crate::api::connect::generated::openoxide::api::v1::{
     SearchLogsRequest, StreamTargetRequest,
 };
 use crate::services::deployment::{
-    CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter,
-    DeploymentService as AppDeploymentService, DockerLogOptions, LogSearchOptions,
+    CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DockerLogOptions,
+    LogSearchOptions,
 };
 
 use super::helper::*;
-
-pub struct DeploymentController {
-    service: Arc<AppDeploymentService>,
-}
-
-#[singleton]
-impl DeploymentController {
-    pub fn new(service: Arc<AppDeploymentService>) -> Self {
-        Self { service }
-    }
-}
+use super::init::DeploymentController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl DeploymentService for DeploymentController {

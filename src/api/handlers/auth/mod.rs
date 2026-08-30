@@ -1,1 +1,5 @@
-pub mod auth;
+mod controller;
+mod helper;
+mod init;
+
+pub use init::AuthController;
