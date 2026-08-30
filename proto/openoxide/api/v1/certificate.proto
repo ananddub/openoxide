@@ -2,14 +2,14 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service CertificateOperationsService {
+
+service CertificateService {
   rpc ListCertificates(ResourceQuery) returns (ResourceListResponse);
   rpc GetCertificate(ResourceRequest) returns (ResourceResponse);
   rpc CreateCertificate(ResourceRequest) returns (ResourceResponse);
   rpc UpdateCertificate(ResourceRequest) returns (ResourceResponse);
   rpc DeleteCertificate(ResourceRequest) returns (Empty);
-  rpc ListDependencies(ResourceRequest) returns (ResourceListResponse);
+  rpc IssueCertificate(ResourceRequest) returns (OperationResult);
   rpc RenewCertificate(ResourceRequest) returns (OperationResult);
-  rpc ListRenewals(ResourceRequest) returns (ResourceListResponse);
+  rpc ValidateCertificate(ResourceRequest) returns (OperationResult);
 }

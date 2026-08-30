@@ -2,17 +2,17 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service TraefikOperationsService {
+
+service TraefikService {
   rpc ListFiles(ResourceQuery) returns (ResourceListResponse);
-  rpc Tree(ResourceQuery) returns (ResourceListResponse);
-  rpc GetContent(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateContent(ResourceRequest) returns (OperationResult);
+  rpc GetFileTree(ResourceQuery) returns (ResourceListResponse);
+  rpc GetFileContent(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateFileContent(ResourceRequest) returns (OperationResult);
   rpc Health(Empty) returns (OperationResult);
-  rpc RequestStatus(Empty) returns (OperationResult);
+  rpc GetRequestStatus(Empty) returns (OperationResult);
   rpc ToggleRequests(ResourceRequest) returns (OperationResult);
-  rpc Logs(ResourceQuery) returns (ResourceListResponse);
-  rpc Version(Empty) returns (ResourceResponse);
+  rpc GetRequestLogs(ResourceQuery) returns (ResourceListResponse);
+  rpc GetVersion(Empty) returns (ResourceResponse);
   rpc UpdateVersion(ResourceRequest) returns (OperationResult);
   rpc RenderMiddleware(ResourceRequest) returns (ResourceResponse);
 }

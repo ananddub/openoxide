@@ -2,20 +2,34 @@
 // @generated from file openoxide/api/v1/compose.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
+import type {
+  GenFile,
+  GenMessage,
+  GenService,
+} from "@bufbuild/protobuf/codegenv2";
+import {
+  fileDesc,
+  messageDesc,
+  serviceDesc,
+} from "@bufbuild/protobuf/codegenv2";
+import type {
+  EmptySchema,
+  ResourceListResponseSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
-import type { ResourceListResponseSchema, ResourceResponseSchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
 import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/compose.proto.
  */
-export const file_openoxide_api_v1_compose: GenFile = /*@__PURE__*/
-  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL2NvbXBvc2UucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi4QIKB0NvbXBvc2USCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEhYKDmVudmlyb25tZW50X2lkGAQgASgDEhYKCXNlcnZlcl9pZBgFIAEoA0gBiAEBEg4KBnN0YXR1cxgGIAEoCRIYCgtzb3VyY2VfdHlwZRgHIAEoCUgCiAEBEhcKCnJlcG9zaXRvcnkYCCABKAlIA4gBARITCgZicmFuY2gYCSABKAlIBIgBARIZCgxjb21wb3NlX2ZpbGUYCiABKAlIBYgBARISCgpjcmVhdGVkX2F0GAsgASgDEhIKCnVwZGF0ZWRfYXQYDCABKANCDgoMX2Rlc2NyaXB0aW9uQgwKCl9zZXJ2ZXJfaWRCDgoMX3NvdXJjZV90eXBlQg0KC19yZXBvc2l0b3J5QgkKB19icmFuY2hCDwoNX2NvbXBvc2VfZmlsZSIoChFHZXRDb21wb3NlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI2ChNMaXN0Q29tcG9zZXNSZXF1ZXN0Eh8KDmVudmlyb25tZW50X2lkGAEgASgDQge6SAQiAiAAIkMKFExpc3RDb21wb3Nlc1Jlc3BvbnNlEisKCGNvbXBvc2VzGAEgAygLMhkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlIs0BChRDcmVhdGVDb21wb3NlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEhgKC2Rlc2NyaXB0aW9uGAIgASgJSACIAQESHwoOZW52aXJvbm1lbnRfaWQYAyABKANCB7pIBCICIAASFgoJc2VydmVyX2lkGAQgASgDSAGIAQESGQoMY29tcG9zZV9maWxlGAUgASgJSAKIAQFCDgoMX2Rlc2NyaXB0aW9uQgwKCl9zZXJ2ZXJfaWRCDwoNX2NvbXBvc2VfZmlsZSLYAQoUVXBkYXRlQ29tcG9zZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASEQoEbmFtZRgCIAEoCUgAiAEBEhgKC2Rlc2NyaXB0aW9uGAMgASgJSAGIAQESGQoMY29tcG9zZV9maWxlGAQgASgJSAKIAQESFgoJc2VydmVyX2lkGAUgASgDSAOIAQESEwoLbmV0d29ya19pZHMYBiADKAlCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uQg8KDV9jb21wb3NlX2ZpbGVCDAoKX3NlcnZlcl9pZCIrChREZWxldGVDb21wb3NlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIuChdDb21wb3NlT3BlcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJRChBDb21wb3NlT3BlcmF0aW9uEioKB2NvbXBvc2UYASABKAsyGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USEQoJb3BlcmF0aW9uGAIgASgJItUBChdTZXRDb21wb3NlU291cmNlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgpyZXBvc2l0b3J5GAIgASgJQge6SARyAhABEhYKBW93bmVyGAMgASgJQge6SARyAhABEhMKBmJyYW5jaBgEIAEoCUgAiAEBEhcKCmJ1aWxkX3BhdGgYBSABKAlIAYgBARIYCgtwcm92aWRlcl9pZBgGIAEoA0gCiAEBQgkKB19icmFuY2hCDQoLX2J1aWxkX3BhdGhCDgoMX3Byb3ZpZGVyX2lkIm4KE1NldFJhd1NvdXJjZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHAoHY29udGVudBgCIAEoCUILukgIcgYQARiAgEASFgoJZmlsZV9uYW1lGAMgASgJSACIAQFCDAoKX2ZpbGVfbmFtZSJfChRVcGxvYWRDb21wb3NlUmVxdWVzdBIdCgpjb21wb3NlX2lkGAEgASgDQge6SAQiAiAASAASHQoFY2h1bmsYAiABKAxCDLpICXoHEAEYgICAAkgAQgkKB3BheWxvYWQiUQoSTW92ZUNvbXBvc2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiYKFXRhcmdldF9lbnZpcm9ubWVudF9pZBgCIAEoA0IHukgEIgIgACIkChNDb21wb3NlV2ViaG9va1Rva2VuEg0KBXRva2VuGAEgASgJIiQKE0NvbXBvc2VEZXBlbmRlbmNpZXMSDQoFaXRlbXMYASADKAkiNQoVUHJldmlld0NvbXBvc2VSZXF1ZXN0EhwKB2NvbnRlbnQYASABKAlCC7pICHIGEAEYgIBAIjMKDkNvbXBvc2VQcmV2aWV3Eg8KB2NvbnRlbnQYASABKAkSEAoIc2VydmljZXMYAiADKAkicAoWSW5zdGFsbFRlbXBsYXRlUmVxdWVzdBIZCgh0ZW1wbGF0ZRgBIAEoCUIHukgEcgIQARIfCg5lbnZpcm9ubWVudF9pZBgCIAEoA0IHukgEIgIgABIRCgRuYW1lGAMgASgJSACIAQFCBwoFX25hbWUiRAoURXhwb3J0Q29tcG9zZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASFwoPaW5jbHVkZV9zZWNyZXRzGAIgASgIIiAKDUNvbXBvc2VFeHBvcnQSDwoHYXJjaGl2ZRgBIAEoCSJWChRJbXBvcnRDb21wb3NlUmVxdWVzdBIfCg5lbnZpcm9ubWVudF9pZBgBIAEoA0IHukgEIgIgABIdCgdhcmNoaXZlGAIgASgJQgy6SAlyBxABGICAgAUiSwoWU2VydmljZU11dGF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIcCghzZXJ2aWNlcxgCIAMoCUIKukgHkgEECAEQZCKqAQodVXBkYXRlQ29tcG9zZVJlc291cmNlc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGQoMbWVtb3J5X2xpbWl0GAIgASgJSACIAQESFgoJY3B1X2xpbWl0GAMgASgJSAGIAQESFQoIcmVwbGljYXMYBCABKANIAogBAUIPCg1fbWVtb3J5X2xpbWl0QgwKCl9jcHVfbGltaXRCCwoJX3JlcGxpY2FzIqUCChNDb21wb3NlTW91bnRSZXF1ZXN0EhsKCmNvbXBvc2VfaWQYASABKANCB7pIBCICIAASGAoCaWQYAiABKANCB7pIBCICIABIAIgBARIbCgptb3VudF90eXBlGAMgASgJQge6SARyAhABEhYKCWhvc3RfcGF0aBgEIAEoCUgBiAEBEhgKC3ZvbHVtZV9uYW1lGAUgASgJSAKIAQESFgoJZmlsZV9wYXRoGAYgASgJSAOIAQESFAoHY29udGVudBgHIAEoCUgEiAEBEhsKCm1vdW50X3BhdGgYCCABKAlCB7pIBHICEAFCBQoDX2lkQgwKCl9ob3N0X3BhdGhCDgoMX3ZvbHVtZV9uYW1lQgwKCl9maWxlX3BhdGhCCgoIX2NvbnRlbnQijgEKE0NvbXBvc2VQYXRjaFJlcXVlc3QSGwoKY29tcG9zZV9pZBgBIAEoA0IHukgEIgIgABIYCgJpZBgCIAEoA0IHukgEIgIgAEgAiAEBEhsKCnBhdGNoX3R5cGUYAyABKAlCB7pIBHICEAESHAoHcGF5bG9hZBgEIAEoCUILukgIcgYQARiAgEBCBQoDX2lkMrcaCg5Db21wb3NlU2VydmljZRJMCgpHZXRDb21wb3NlEiMub3Blbm94aWRlLmFwaS52MS5HZXRDb21wb3NlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJdCgxMaXN0Q29tcG9zZXMSJS5vcGVub3hpZGUuYXBpLnYxLkxpc3RDb21wb3Nlc1JlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkxpc3RDb21wb3Nlc1Jlc3BvbnNlElIKDUNyZWF0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUNvbXBvc2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElIKDVVwZGF0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUNvbXBvc2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElAKDURlbGV0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZUNvbXBvc2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCg9TZXRHaXRodWJTb3VyY2USKS5vcGVub3hpZGUuYXBpLnYxLlNldENvbXBvc2VTb3VyY2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElcKD1NldEdpdGxhYlNvdXJjZRIpLm9wZW5veGlkZS5hcGkudjEuU2V0Q29tcG9zZVNvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWgoSU2V0Qml0YnVja2V0U291cmNlEikub3Blbm94aWRlLmFwaS52MS5TZXRDb21wb3NlU291cmNlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJWCg5TZXRHaXRlYVNvdXJjZRIpLm9wZW5veGlkZS5hcGkudjEuU2V0Q29tcG9zZVNvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWgoSU2V0Q3VzdG9tR2l0U291cmNlEikub3Blbm94aWRlLmFwaS52MS5TZXRDb21wb3NlU291cmNlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJQCgxTZXRSYXdTb3VyY2USJS5vcGVub3hpZGUuYXBpLnYxLlNldFJhd1NvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USUwoMVXBsb2FkU291cmNlEiYub3Blbm94aWRlLmFwaS52MS5VcGxvYWRDb21wb3NlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZSgBElcKBkRlcGxveRIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb24SWQoIUmVkZXBsb3kSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uElcKBlJlbG9hZBIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb24SVgoFU3RhcnQSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uElUKBFN0b3ASKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uEkwKBkNhbmNlbBIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KC01vdmVDb21wb3NlEiQub3Blbm94aWRlLmFwaS52MS5Nb3ZlQ29tcG9zZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USZgoSUm90YXRlV2ViaG9va1Rva2VuEikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVdlYmhvb2tUb2tlbhJkChBMaXN0RGVwZW5kZW5jaWVzEikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZURlcGVuZGVuY2llcxJbCg5QcmV2aWV3Q29tcG9zZRInLm9wZW5veGlkZS5hcGkudjEuUHJldmlld0NvbXBvc2VSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5Db21wb3NlUHJldmlldxJWCg9JbnN0YWxsVGVtcGxhdGUSKC5vcGVub3hpZGUuYXBpLnYxLkluc3RhbGxUZW1wbGF0ZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWAoNRXhwb3J0Q29tcG9zZRImLm9wZW5veGlkZS5hcGkudjEuRXhwb3J0Q29tcG9zZVJlcXVlc3QaHy5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VFeHBvcnQSUgoNSW1wb3J0Q29tcG9zZRImLm9wZW5veGlkZS5hcGkudjEuSW1wb3J0Q29tcG9zZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USUwoOUmVtb3ZlU2VydmljZXMSKC5vcGVub3hpZGUuYXBpLnYxLlNlcnZpY2VNdXRhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5El0KD1VwZGF0ZVJlc291cmNlcxIvLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlQ29tcG9zZVJlc291cmNlc1JlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USXAoWQ2xlYXJEZXBsb3ltZW50SGlzdG9yeRIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElwKFkNsZWFudXBEZXBsb3ltZW50UXVldWUSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJZChNGb3JjZUtpbGxEZXBsb3ltZW50Eikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoKTGlzdE1vdW50cxIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU1vdW50UmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoLQ3JlYXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWAoLVXBkYXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTQoLRGVsZXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElwKC0xpc3RQYXRjaGVzEiUub3Blbm94aWRlLmFwaS52MS5Db21wb3NlUGF0Y2hSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJYCgtDcmVhdGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJYCgtVcGRhdGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJNCgtEZWxldGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common, file_openoxide_api_v1_platform, file_buf_validate_validate]);
+export const file_openoxide_api_v1_compose: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch5vcGVub3hpZGUvYXBpL3YxL2NvbXBvc2UucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi4QIKB0NvbXBvc2USCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEhYKDmVudmlyb25tZW50X2lkGAQgASgDEhYKCXNlcnZlcl9pZBgFIAEoA0gBiAEBEg4KBnN0YXR1cxgGIAEoCRIYCgtzb3VyY2VfdHlwZRgHIAEoCUgCiAEBEhcKCnJlcG9zaXRvcnkYCCABKAlIA4gBARITCgZicmFuY2gYCSABKAlIBIgBARIZCgxjb21wb3NlX2ZpbGUYCiABKAlIBYgBARISCgpjcmVhdGVkX2F0GAsgASgDEhIKCnVwZGF0ZWRfYXQYDCABKANCDgoMX2Rlc2NyaXB0aW9uQgwKCl9zZXJ2ZXJfaWRCDgoMX3NvdXJjZV90eXBlQg0KC19yZXBvc2l0b3J5QgkKB19icmFuY2hCDwoNX2NvbXBvc2VfZmlsZSIoChFHZXRDb21wb3NlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI2ChNMaXN0Q29tcG9zZXNSZXF1ZXN0Eh8KDmVudmlyb25tZW50X2lkGAEgASgDQge6SAQiAiAAIkMKFExpc3RDb21wb3Nlc1Jlc3BvbnNlEisKCGNvbXBvc2VzGAEgAygLMhkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlIs0BChRDcmVhdGVDb21wb3NlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEhgKC2Rlc2NyaXB0aW9uGAIgASgJSACIAQESHwoOZW52aXJvbm1lbnRfaWQYAyABKANCB7pIBCICIAASFgoJc2VydmVyX2lkGAQgASgDSAGIAQESGQoMY29tcG9zZV9maWxlGAUgASgJSAKIAQFCDgoMX2Rlc2NyaXB0aW9uQgwKCl9zZXJ2ZXJfaWRCDwoNX2NvbXBvc2VfZmlsZSLYAQoUVXBkYXRlQ29tcG9zZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASEQoEbmFtZRgCIAEoCUgAiAEBEhgKC2Rlc2NyaXB0aW9uGAMgASgJSAGIAQESGQoMY29tcG9zZV9maWxlGAQgASgJSAKIAQESFgoJc2VydmVyX2lkGAUgASgDSAOIAQESEwoLbmV0d29ya19pZHMYBiADKAlCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uQg8KDV9jb21wb3NlX2ZpbGVCDAoKX3NlcnZlcl9pZCIrChREZWxldGVDb21wb3NlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIuChdDb21wb3NlT3BlcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJRChBDb21wb3NlT3BlcmF0aW9uEioKB2NvbXBvc2UYASABKAsyGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USEQoJb3BlcmF0aW9uGAIgASgJItUBChdTZXRDb21wb3NlU291cmNlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgpyZXBvc2l0b3J5GAIgASgJQge6SARyAhABEhYKBW93bmVyGAMgASgJQge6SARyAhABEhMKBmJyYW5jaBgEIAEoCUgAiAEBEhcKCmJ1aWxkX3BhdGgYBSABKAlIAYgBARIYCgtwcm92aWRlcl9pZBgGIAEoA0gCiAEBQgkKB19icmFuY2hCDQoLX2J1aWxkX3BhdGhCDgoMX3Byb3ZpZGVyX2lkIm4KE1NldFJhd1NvdXJjZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHAoHY29udGVudBgCIAEoCUILukgIcgYQARiAgEASFgoJZmlsZV9uYW1lGAMgASgJSACIAQFCDAoKX2ZpbGVfbmFtZSJfChRVcGxvYWRDb21wb3NlUmVxdWVzdBIdCgpjb21wb3NlX2lkGAEgASgDQge6SAQiAiAASAASHQoFY2h1bmsYAiABKAxCDLpICXoHEAEYgICAAkgAQgkKB3BheWxvYWQiUQoSTW92ZUNvbXBvc2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiYKFXRhcmdldF9lbnZpcm9ubWVudF9pZBgCIAEoA0IHukgEIgIgACIkChNDb21wb3NlV2ViaG9va1Rva2VuEg0KBXRva2VuGAEgASgJIiQKE0NvbXBvc2VEZXBlbmRlbmNpZXMSDQoFaXRlbXMYASADKAkiNQoVUHJldmlld0NvbXBvc2VSZXF1ZXN0EhwKB2NvbnRlbnQYASABKAlCC7pICHIGEAEYgIBAIjMKDkNvbXBvc2VQcmV2aWV3Eg8KB2NvbnRlbnQYASABKAkSEAoIc2VydmljZXMYAiADKAkicAoWSW5zdGFsbFRlbXBsYXRlUmVxdWVzdBIZCgh0ZW1wbGF0ZRgBIAEoCUIHukgEcgIQARIfCg5lbnZpcm9ubWVudF9pZBgCIAEoA0IHukgEIgIgABIRCgRuYW1lGAMgASgJSACIAQFCBwoFX25hbWUiRAoURXhwb3J0Q29tcG9zZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASFwoPaW5jbHVkZV9zZWNyZXRzGAIgASgIIiAKDUNvbXBvc2VFeHBvcnQSDwoHYXJjaGl2ZRgBIAEoCSJWChRJbXBvcnRDb21wb3NlUmVxdWVzdBIfCg5lbnZpcm9ubWVudF9pZBgBIAEoA0IHukgEIgIgABIdCgdhcmNoaXZlGAIgASgJQgy6SAlyBxABGICAgAUiSwoWU2VydmljZU11dGF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIcCghzZXJ2aWNlcxgCIAMoCUIKukgHkgEECAEQZCKqAQodVXBkYXRlQ29tcG9zZVJlc291cmNlc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGQoMbWVtb3J5X2xpbWl0GAIgASgJSACIAQESFgoJY3B1X2xpbWl0GAMgASgJSAGIAQESFQoIcmVwbGljYXMYBCABKANIAogBAUIPCg1fbWVtb3J5X2xpbWl0QgwKCl9jcHVfbGltaXRCCwoJX3JlcGxpY2FzIqUCChNDb21wb3NlTW91bnRSZXF1ZXN0EhsKCmNvbXBvc2VfaWQYASABKANCB7pIBCICIAASGAoCaWQYAiABKANCB7pIBCICIABIAIgBARIbCgptb3VudF90eXBlGAMgASgJQge6SARyAhABEhYKCWhvc3RfcGF0aBgEIAEoCUgBiAEBEhgKC3ZvbHVtZV9uYW1lGAUgASgJSAKIAQESFgoJZmlsZV9wYXRoGAYgASgJSAOIAQESFAoHY29udGVudBgHIAEoCUgEiAEBEhsKCm1vdW50X3BhdGgYCCABKAlCB7pIBHICEAFCBQoDX2lkQgwKCl9ob3N0X3BhdGhCDgoMX3ZvbHVtZV9uYW1lQgwKCl9maWxlX3BhdGhCCgoIX2NvbnRlbnQijgEKE0NvbXBvc2VQYXRjaFJlcXVlc3QSGwoKY29tcG9zZV9pZBgBIAEoA0IHukgEIgIgABIYCgJpZBgCIAEoA0IHukgEIgIgAEgAiAEBEhsKCnBhdGNoX3R5cGUYAyABKAlCB7pIBHICEAESHAoHcGF5bG9hZBgEIAEoCUILukgIcgYQARiAgEBCBQoDX2lkMrcaCg5Db21wb3NlU2VydmljZRJMCgpHZXRDb21wb3NlEiMub3Blbm94aWRlLmFwaS52MS5HZXRDb21wb3NlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJdCgxMaXN0Q29tcG9zZXMSJS5vcGVub3hpZGUuYXBpLnYxLkxpc3RDb21wb3Nlc1JlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkxpc3RDb21wb3Nlc1Jlc3BvbnNlElIKDUNyZWF0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUNvbXBvc2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElIKDVVwZGF0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUNvbXBvc2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElAKDURlbGV0ZUNvbXBvc2USJi5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZUNvbXBvc2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCg9TZXRHaXRodWJTb3VyY2USKS5vcGVub3hpZGUuYXBpLnYxLlNldENvbXBvc2VTb3VyY2VSZXF1ZXN0Ghkub3Blbm94aWRlLmFwaS52MS5Db21wb3NlElcKD1NldEdpdGxhYlNvdXJjZRIpLm9wZW5veGlkZS5hcGkudjEuU2V0Q29tcG9zZVNvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWgoSU2V0Qml0YnVja2V0U291cmNlEikub3Blbm94aWRlLmFwaS52MS5TZXRDb21wb3NlU291cmNlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJWCg5TZXRHaXRlYVNvdXJjZRIpLm9wZW5veGlkZS5hcGkudjEuU2V0Q29tcG9zZVNvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWgoSU2V0Q3VzdG9tR2l0U291cmNlEikub3Blbm94aWRlLmFwaS52MS5TZXRDb21wb3NlU291cmNlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZRJQCgxTZXRSYXdTb3VyY2USJS5vcGVub3hpZGUuYXBpLnYxLlNldFJhd1NvdXJjZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USUwoMVXBsb2FkU291cmNlEiYub3Blbm94aWRlLmFwaS52MS5VcGxvYWRDb21wb3NlUmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZSgBElcKBkRlcGxveRIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb24SWQoIUmVkZXBsb3kSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uElcKBlJlbG9hZBIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb24SVgoFU3RhcnQSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uElUKBFN0b3ASKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uEkwKBkNhbmNlbBIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KC01vdmVDb21wb3NlEiQub3Blbm94aWRlLmFwaS52MS5Nb3ZlQ29tcG9zZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USZgoSUm90YXRlV2ViaG9va1Rva2VuEikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVdlYmhvb2tUb2tlbhJkChBMaXN0RGVwZW5kZW5jaWVzEikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZURlcGVuZGVuY2llcxJbCg5QcmV2aWV3Q29tcG9zZRInLm9wZW5veGlkZS5hcGkudjEuUHJldmlld0NvbXBvc2VSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5Db21wb3NlUHJldmlldxJWCg9JbnN0YWxsVGVtcGxhdGUSKC5vcGVub3hpZGUuYXBpLnYxLkluc3RhbGxUZW1wbGF0ZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USWAoNRXhwb3J0Q29tcG9zZRImLm9wZW5veGlkZS5hcGkudjEuRXhwb3J0Q29tcG9zZVJlcXVlc3QaHy5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VFeHBvcnQSUgoNSW1wb3J0Q29tcG9zZRImLm9wZW5veGlkZS5hcGkudjEuSW1wb3J0Q29tcG9zZVJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USUwoOUmVtb3ZlU2VydmljZXMSKC5vcGVub3hpZGUuYXBpLnYxLlNlcnZpY2VNdXRhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5El0KD1VwZGF0ZVJlc291cmNlcxIvLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlQ29tcG9zZVJlc291cmNlc1JlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2USXAoWQ2xlYXJEZXBsb3ltZW50SGlzdG9yeRIpLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU9wZXJhdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElwKFkNsZWFudXBEZXBsb3ltZW50UXVldWUSKS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VPcGVyYXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJZChNGb3JjZUtpbGxEZXBsb3ltZW50Eikub3Blbm94aWRlLmFwaS52MS5Db21wb3NlT3BlcmF0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoKTGlzdE1vdW50cxIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZU1vdW50UmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoLQ3JlYXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWAoLVXBkYXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTQoLRGVsZXRlTW91bnQSJS5vcGVub3hpZGUuYXBpLnYxLkNvbXBvc2VNb3VudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElwKC0xpc3RQYXRjaGVzEiUub3Blbm94aWRlLmFwaS52MS5Db21wb3NlUGF0Y2hSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJYCgtDcmVhdGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJYCgtVcGRhdGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJNCgtEZWxldGVQYXRjaBIlLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZVBhdGNoUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw",
+    [file_openoxide_api_v1_common, file_buf_validate_validate],
+  );
 
 /**
  * @generated from message openoxide.api.v1.Compose
@@ -86,171 +100,186 @@ export type Compose = Message<"openoxide.api.v1.Compose"> & {
  * Describes the message openoxide.api.v1.Compose.
  * Use `create(ComposeSchema)` to create a new message.
  */
-export const ComposeSchema: GenMessage<Compose> = /*@__PURE__*/
+export const ComposeSchema: GenMessage<Compose> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 0);
 
 /**
  * @generated from message openoxide.api.v1.GetComposeRequest
  */
-export type GetComposeRequest = Message<"openoxide.api.v1.GetComposeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetComposeRequest =
+  Message<"openoxide.api.v1.GetComposeRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.GetComposeRequest.
  * Use `create(GetComposeRequestSchema)` to create a new message.
  */
-export const GetComposeRequestSchema: GenMessage<GetComposeRequest> = /*@__PURE__*/
+export const GetComposeRequestSchema: GenMessage<GetComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListComposesRequest
  */
-export type ListComposesRequest = Message<"openoxide.api.v1.ListComposesRequest"> & {
-  /**
-   * @generated from field: int64 environment_id = 1;
-   */
-  environmentId: bigint;
-};
+export type ListComposesRequest =
+  Message<"openoxide.api.v1.ListComposesRequest"> & {
+    /**
+     * @generated from field: int64 environment_id = 1;
+     */
+    environmentId: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ListComposesRequest.
  * Use `create(ListComposesRequestSchema)` to create a new message.
  */
-export const ListComposesRequestSchema: GenMessage<ListComposesRequest> = /*@__PURE__*/
+export const ListComposesRequestSchema: GenMessage<ListComposesRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListComposesResponse
  */
-export type ListComposesResponse = Message<"openoxide.api.v1.ListComposesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Compose composes = 1;
-   */
-  composes: Compose[];
-};
+export type ListComposesResponse =
+  Message<"openoxide.api.v1.ListComposesResponse"> & {
+    /**
+     * @generated from field: repeated openoxide.api.v1.Compose composes = 1;
+     */
+    composes: Compose[];
+  };
 
 /**
  * Describes the message openoxide.api.v1.ListComposesResponse.
  * Use `create(ListComposesResponseSchema)` to create a new message.
  */
-export const ListComposesResponseSchema: GenMessage<ListComposesResponse> = /*@__PURE__*/
+export const ListComposesResponseSchema: GenMessage<ListComposesResponse> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 3);
 
 /**
  * @generated from message openoxide.api.v1.CreateComposeRequest
  */
-export type CreateComposeRequest = Message<"openoxide.api.v1.CreateComposeRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateComposeRequest =
+  Message<"openoxide.api.v1.CreateComposeRequest"> & {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
 
-  /**
-   * @generated from field: optional string description = 2;
-   */
-  description?: string | undefined;
+    /**
+     * @generated from field: optional string description = 2;
+     */
+    description?: string | undefined;
 
-  /**
-   * @generated from field: int64 environment_id = 3;
-   */
-  environmentId: bigint;
+    /**
+     * @generated from field: int64 environment_id = 3;
+     */
+    environmentId: bigint;
 
-  /**
-   * @generated from field: optional int64 server_id = 4;
-   */
-  serverId?: bigint | undefined;
+    /**
+     * @generated from field: optional int64 server_id = 4;
+     */
+    serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string compose_file = 5;
-   */
-  composeFile?: string | undefined;
-};
+    /**
+     * @generated from field: optional string compose_file = 5;
+     */
+    composeFile?: string | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.CreateComposeRequest.
  * Use `create(CreateComposeRequestSchema)` to create a new message.
  */
-export const CreateComposeRequestSchema: GenMessage<CreateComposeRequest> = /*@__PURE__*/
+export const CreateComposeRequestSchema: GenMessage<CreateComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 4);
 
 /**
  * @generated from message openoxide.api.v1.UpdateComposeRequest
  */
-export type UpdateComposeRequest = Message<"openoxide.api.v1.UpdateComposeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateComposeRequest =
+  Message<"openoxide.api.v1.UpdateComposeRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+    /**
+     * @generated from field: optional string name = 2;
+     */
+    name?: string | undefined;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+    /**
+     * @generated from field: optional string description = 3;
+     */
+    description?: string | undefined;
 
-  /**
-   * @generated from field: optional string compose_file = 4;
-   */
-  composeFile?: string | undefined;
+    /**
+     * @generated from field: optional string compose_file = 4;
+     */
+    composeFile?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 5;
-   */
-  serverId?: bigint | undefined;
+    /**
+     * @generated from field: optional int64 server_id = 5;
+     */
+    serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: repeated string network_ids = 6;
-   */
-  networkIds: string[];
-};
+    /**
+     * @generated from field: repeated string network_ids = 6;
+     */
+    networkIds: string[];
+  };
 
 /**
  * Describes the message openoxide.api.v1.UpdateComposeRequest.
  * Use `create(UpdateComposeRequestSchema)` to create a new message.
  */
-export const UpdateComposeRequestSchema: GenMessage<UpdateComposeRequest> = /*@__PURE__*/
+export const UpdateComposeRequestSchema: GenMessage<UpdateComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 5);
 
 /**
  * @generated from message openoxide.api.v1.DeleteComposeRequest
  */
-export type DeleteComposeRequest = Message<"openoxide.api.v1.DeleteComposeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteComposeRequest =
+  Message<"openoxide.api.v1.DeleteComposeRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.DeleteComposeRequest.
  * Use `create(DeleteComposeRequestSchema)` to create a new message.
  */
-export const DeleteComposeRequestSchema: GenMessage<DeleteComposeRequest> = /*@__PURE__*/
+export const DeleteComposeRequestSchema: GenMessage<DeleteComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 6);
 
 /**
  * @generated from message openoxide.api.v1.ComposeOperationRequest
  */
-export type ComposeOperationRequest = Message<"openoxide.api.v1.ComposeOperationRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ComposeOperationRequest =
+  Message<"openoxide.api.v1.ComposeOperationRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ComposeOperationRequest.
  * Use `create(ComposeOperationRequestSchema)` to create a new message.
  */
-export const ComposeOperationRequestSchema: GenMessage<ComposeOperationRequest> = /*@__PURE__*/
+export const ComposeOperationRequestSchema: GenMessage<ComposeOperationRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 7);
 
 /**
@@ -272,178 +301,196 @@ export type ComposeOperation = Message<"openoxide.api.v1.ComposeOperation"> & {
  * Describes the message openoxide.api.v1.ComposeOperation.
  * Use `create(ComposeOperationSchema)` to create a new message.
  */
-export const ComposeOperationSchema: GenMessage<ComposeOperation> = /*@__PURE__*/
+export const ComposeOperationSchema: GenMessage<ComposeOperation> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 8);
 
 /**
  * @generated from message openoxide.api.v1.SetComposeSourceRequest
  */
-export type SetComposeSourceRequest = Message<"openoxide.api.v1.SetComposeSourceRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type SetComposeSourceRequest =
+  Message<"openoxide.api.v1.SetComposeSourceRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: string repository = 2;
-   */
-  repository: string;
+    /**
+     * @generated from field: string repository = 2;
+     */
+    repository: string;
 
-  /**
-   * @generated from field: string owner = 3;
-   */
-  owner: string;
+    /**
+     * @generated from field: string owner = 3;
+     */
+    owner: string;
 
-  /**
-   * @generated from field: optional string branch = 4;
-   */
-  branch?: string | undefined;
+    /**
+     * @generated from field: optional string branch = 4;
+     */
+    branch?: string | undefined;
 
-  /**
-   * @generated from field: optional string build_path = 5;
-   */
-  buildPath?: string | undefined;
+    /**
+     * @generated from field: optional string build_path = 5;
+     */
+    buildPath?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 provider_id = 6;
-   */
-  providerId?: bigint | undefined;
-};
+    /**
+     * @generated from field: optional int64 provider_id = 6;
+     */
+    providerId?: bigint | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.SetComposeSourceRequest.
  * Use `create(SetComposeSourceRequestSchema)` to create a new message.
  */
-export const SetComposeSourceRequestSchema: GenMessage<SetComposeSourceRequest> = /*@__PURE__*/
+export const SetComposeSourceRequestSchema: GenMessage<SetComposeSourceRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 9);
 
 /**
  * @generated from message openoxide.api.v1.SetRawSourceRequest
  */
-export type SetRawSourceRequest = Message<"openoxide.api.v1.SetRawSourceRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type SetRawSourceRequest =
+  Message<"openoxide.api.v1.SetRawSourceRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: string content = 2;
-   */
-  content: string;
+    /**
+     * @generated from field: string content = 2;
+     */
+    content: string;
 
-  /**
-   * @generated from field: optional string file_name = 3;
-   */
-  fileName?: string | undefined;
-};
+    /**
+     * @generated from field: optional string file_name = 3;
+     */
+    fileName?: string | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.SetRawSourceRequest.
  * Use `create(SetRawSourceRequestSchema)` to create a new message.
  */
-export const SetRawSourceRequestSchema: GenMessage<SetRawSourceRequest> = /*@__PURE__*/
+export const SetRawSourceRequestSchema: GenMessage<SetRawSourceRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 10);
 
 /**
  * @generated from message openoxide.api.v1.UploadComposeRequest
  */
-export type UploadComposeRequest = Message<"openoxide.api.v1.UploadComposeRequest"> & {
-  /**
-   * @generated from oneof openoxide.api.v1.UploadComposeRequest.payload
-   */
-  payload: {
+export type UploadComposeRequest =
+  Message<"openoxide.api.v1.UploadComposeRequest"> & {
     /**
-     * @generated from field: int64 compose_id = 1;
+     * @generated from oneof openoxide.api.v1.UploadComposeRequest.payload
      */
-    value: bigint;
-    case: "composeId";
-  } | {
-    /**
-     * @generated from field: bytes chunk = 2;
-     */
-    value: Uint8Array;
-    case: "chunk";
-  } | { case: undefined; value?: undefined };
-};
+    payload:
+      | {
+          /**
+           * @generated from field: int64 compose_id = 1;
+           */
+          value: bigint;
+          case: "composeId";
+        }
+      | {
+          /**
+           * @generated from field: bytes chunk = 2;
+           */
+          value: Uint8Array;
+          case: "chunk";
+        }
+      | { case: undefined; value?: undefined };
+  };
 
 /**
  * Describes the message openoxide.api.v1.UploadComposeRequest.
  * Use `create(UploadComposeRequestSchema)` to create a new message.
  */
-export const UploadComposeRequestSchema: GenMessage<UploadComposeRequest> = /*@__PURE__*/
+export const UploadComposeRequestSchema: GenMessage<UploadComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 11);
 
 /**
  * @generated from message openoxide.api.v1.MoveComposeRequest
  */
-export type MoveComposeRequest = Message<"openoxide.api.v1.MoveComposeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type MoveComposeRequest =
+  Message<"openoxide.api.v1.MoveComposeRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: int64 target_environment_id = 2;
-   */
-  targetEnvironmentId: bigint;
-};
+    /**
+     * @generated from field: int64 target_environment_id = 2;
+     */
+    targetEnvironmentId: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.MoveComposeRequest.
  * Use `create(MoveComposeRequestSchema)` to create a new message.
  */
-export const MoveComposeRequestSchema: GenMessage<MoveComposeRequest> = /*@__PURE__*/
+export const MoveComposeRequestSchema: GenMessage<MoveComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 12);
 
 /**
  * @generated from message openoxide.api.v1.ComposeWebhookToken
  */
-export type ComposeWebhookToken = Message<"openoxide.api.v1.ComposeWebhookToken"> & {
-  /**
-   * @generated from field: string token = 1;
-   */
-  token: string;
-};
+export type ComposeWebhookToken =
+  Message<"openoxide.api.v1.ComposeWebhookToken"> & {
+    /**
+     * @generated from field: string token = 1;
+     */
+    token: string;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ComposeWebhookToken.
  * Use `create(ComposeWebhookTokenSchema)` to create a new message.
  */
-export const ComposeWebhookTokenSchema: GenMessage<ComposeWebhookToken> = /*@__PURE__*/
+export const ComposeWebhookTokenSchema: GenMessage<ComposeWebhookToken> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 13);
 
 /**
  * @generated from message openoxide.api.v1.ComposeDependencies
  */
-export type ComposeDependencies = Message<"openoxide.api.v1.ComposeDependencies"> & {
-  /**
-   * @generated from field: repeated string items = 1;
-   */
-  items: string[];
-};
+export type ComposeDependencies =
+  Message<"openoxide.api.v1.ComposeDependencies"> & {
+    /**
+     * @generated from field: repeated string items = 1;
+     */
+    items: string[];
+  };
 
 /**
  * Describes the message openoxide.api.v1.ComposeDependencies.
  * Use `create(ComposeDependenciesSchema)` to create a new message.
  */
-export const ComposeDependenciesSchema: GenMessage<ComposeDependencies> = /*@__PURE__*/
+export const ComposeDependenciesSchema: GenMessage<ComposeDependencies> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 14);
 
 /**
  * @generated from message openoxide.api.v1.PreviewComposeRequest
  */
-export type PreviewComposeRequest = Message<"openoxide.api.v1.PreviewComposeRequest"> & {
-  /**
-   * @generated from field: string content = 1;
-   */
-  content: string;
-};
+export type PreviewComposeRequest =
+  Message<"openoxide.api.v1.PreviewComposeRequest"> & {
+    /**
+     * @generated from field: string content = 1;
+     */
+    content: string;
+  };
 
 /**
  * Describes the message openoxide.api.v1.PreviewComposeRequest.
  * Use `create(PreviewComposeRequestSchema)` to create a new message.
  */
-export const PreviewComposeRequestSchema: GenMessage<PreviewComposeRequest> = /*@__PURE__*/
+export const PreviewComposeRequestSchema: GenMessage<PreviewComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 15);
 
 /**
@@ -465,56 +512,61 @@ export type ComposePreview = Message<"openoxide.api.v1.ComposePreview"> & {
  * Describes the message openoxide.api.v1.ComposePreview.
  * Use `create(ComposePreviewSchema)` to create a new message.
  */
-export const ComposePreviewSchema: GenMessage<ComposePreview> = /*@__PURE__*/
+export const ComposePreviewSchema: GenMessage<ComposePreview> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 16);
 
 /**
  * @generated from message openoxide.api.v1.InstallTemplateRequest
  */
-export type InstallTemplateRequest = Message<"openoxide.api.v1.InstallTemplateRequest"> & {
-  /**
-   * @generated from field: string template = 1;
-   */
-  template: string;
+export type InstallTemplateRequest =
+  Message<"openoxide.api.v1.InstallTemplateRequest"> & {
+    /**
+     * @generated from field: string template = 1;
+     */
+    template: string;
 
-  /**
-   * @generated from field: int64 environment_id = 2;
-   */
-  environmentId: bigint;
+    /**
+     * @generated from field: int64 environment_id = 2;
+     */
+    environmentId: bigint;
 
-  /**
-   * @generated from field: optional string name = 3;
-   */
-  name?: string | undefined;
-};
+    /**
+     * @generated from field: optional string name = 3;
+     */
+    name?: string | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.InstallTemplateRequest.
  * Use `create(InstallTemplateRequestSchema)` to create a new message.
  */
-export const InstallTemplateRequestSchema: GenMessage<InstallTemplateRequest> = /*@__PURE__*/
+export const InstallTemplateRequestSchema: GenMessage<InstallTemplateRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 17);
 
 /**
  * @generated from message openoxide.api.v1.ExportComposeRequest
  */
-export type ExportComposeRequest = Message<"openoxide.api.v1.ExportComposeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ExportComposeRequest =
+  Message<"openoxide.api.v1.ExportComposeRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: bool include_secrets = 2;
-   */
-  includeSecrets: boolean;
-};
+    /**
+     * @generated from field: bool include_secrets = 2;
+     */
+    includeSecrets: boolean;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ExportComposeRequest.
  * Use `create(ExportComposeRequestSchema)` to create a new message.
  */
-export const ExportComposeRequestSchema: GenMessage<ExportComposeRequest> = /*@__PURE__*/
+export const ExportComposeRequestSchema: GenMessage<ExportComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 18);
 
 /**
@@ -531,167 +583,178 @@ export type ComposeExport = Message<"openoxide.api.v1.ComposeExport"> & {
  * Describes the message openoxide.api.v1.ComposeExport.
  * Use `create(ComposeExportSchema)` to create a new message.
  */
-export const ComposeExportSchema: GenMessage<ComposeExport> = /*@__PURE__*/
+export const ComposeExportSchema: GenMessage<ComposeExport> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 19);
 
 /**
  * @generated from message openoxide.api.v1.ImportComposeRequest
  */
-export type ImportComposeRequest = Message<"openoxide.api.v1.ImportComposeRequest"> & {
-  /**
-   * @generated from field: int64 environment_id = 1;
-   */
-  environmentId: bigint;
+export type ImportComposeRequest =
+  Message<"openoxide.api.v1.ImportComposeRequest"> & {
+    /**
+     * @generated from field: int64 environment_id = 1;
+     */
+    environmentId: bigint;
 
-  /**
-   * @generated from field: string archive = 2;
-   */
-  archive: string;
-};
+    /**
+     * @generated from field: string archive = 2;
+     */
+    archive: string;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ImportComposeRequest.
  * Use `create(ImportComposeRequestSchema)` to create a new message.
  */
-export const ImportComposeRequestSchema: GenMessage<ImportComposeRequest> = /*@__PURE__*/
+export const ImportComposeRequestSchema: GenMessage<ImportComposeRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 20);
 
 /**
  * @generated from message openoxide.api.v1.ServiceMutationRequest
  */
-export type ServiceMutationRequest = Message<"openoxide.api.v1.ServiceMutationRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ServiceMutationRequest =
+  Message<"openoxide.api.v1.ServiceMutationRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: repeated string services = 2;
-   */
-  services: string[];
-};
+    /**
+     * @generated from field: repeated string services = 2;
+     */
+    services: string[];
+  };
 
 /**
  * Describes the message openoxide.api.v1.ServiceMutationRequest.
  * Use `create(ServiceMutationRequestSchema)` to create a new message.
  */
-export const ServiceMutationRequestSchema: GenMessage<ServiceMutationRequest> = /*@__PURE__*/
+export const ServiceMutationRequestSchema: GenMessage<ServiceMutationRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 21);
 
 /**
  * @generated from message openoxide.api.v1.UpdateComposeResourcesRequest
  */
-export type UpdateComposeResourcesRequest = Message<"openoxide.api.v1.UpdateComposeResourcesRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateComposeResourcesRequest =
+  Message<"openoxide.api.v1.UpdateComposeResourcesRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: optional string memory_limit = 2;
-   */
-  memoryLimit?: string | undefined;
+    /**
+     * @generated from field: optional string memory_limit = 2;
+     */
+    memoryLimit?: string | undefined;
 
-  /**
-   * @generated from field: optional string cpu_limit = 3;
-   */
-  cpuLimit?: string | undefined;
+    /**
+     * @generated from field: optional string cpu_limit = 3;
+     */
+    cpuLimit?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 replicas = 4;
-   */
-  replicas?: bigint | undefined;
-};
+    /**
+     * @generated from field: optional int64 replicas = 4;
+     */
+    replicas?: bigint | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.UpdateComposeResourcesRequest.
  * Use `create(UpdateComposeResourcesRequestSchema)` to create a new message.
  */
-export const UpdateComposeResourcesRequestSchema: GenMessage<UpdateComposeResourcesRequest> = /*@__PURE__*/
+export const UpdateComposeResourcesRequestSchema: GenMessage<UpdateComposeResourcesRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 22);
 
 /**
  * @generated from message openoxide.api.v1.ComposeMountRequest
  */
-export type ComposeMountRequest = Message<"openoxide.api.v1.ComposeMountRequest"> & {
-  /**
-   * @generated from field: int64 compose_id = 1;
-   */
-  composeId: bigint;
+export type ComposeMountRequest =
+  Message<"openoxide.api.v1.ComposeMountRequest"> & {
+    /**
+     * @generated from field: int64 compose_id = 1;
+     */
+    composeId: bigint;
 
-  /**
-   * @generated from field: optional int64 id = 2;
-   */
-  id?: bigint | undefined;
+    /**
+     * @generated from field: optional int64 id = 2;
+     */
+    id?: bigint | undefined;
 
-  /**
-   * @generated from field: string mount_type = 3;
-   */
-  mountType: string;
+    /**
+     * @generated from field: string mount_type = 3;
+     */
+    mountType: string;
 
-  /**
-   * @generated from field: optional string host_path = 4;
-   */
-  hostPath?: string | undefined;
+    /**
+     * @generated from field: optional string host_path = 4;
+     */
+    hostPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string volume_name = 5;
-   */
-  volumeName?: string | undefined;
+    /**
+     * @generated from field: optional string volume_name = 5;
+     */
+    volumeName?: string | undefined;
 
-  /**
-   * @generated from field: optional string file_path = 6;
-   */
-  filePath?: string | undefined;
+    /**
+     * @generated from field: optional string file_path = 6;
+     */
+    filePath?: string | undefined;
 
-  /**
-   * @generated from field: optional string content = 7;
-   */
-  content?: string | undefined;
+    /**
+     * @generated from field: optional string content = 7;
+     */
+    content?: string | undefined;
 
-  /**
-   * @generated from field: string mount_path = 8;
-   */
-  mountPath: string;
-};
+    /**
+     * @generated from field: string mount_path = 8;
+     */
+    mountPath: string;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ComposeMountRequest.
  * Use `create(ComposeMountRequestSchema)` to create a new message.
  */
-export const ComposeMountRequestSchema: GenMessage<ComposeMountRequest> = /*@__PURE__*/
+export const ComposeMountRequestSchema: GenMessage<ComposeMountRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 23);
 
 /**
  * @generated from message openoxide.api.v1.ComposePatchRequest
  */
-export type ComposePatchRequest = Message<"openoxide.api.v1.ComposePatchRequest"> & {
-  /**
-   * @generated from field: int64 compose_id = 1;
-   */
-  composeId: bigint;
+export type ComposePatchRequest =
+  Message<"openoxide.api.v1.ComposePatchRequest"> & {
+    /**
+     * @generated from field: int64 compose_id = 1;
+     */
+    composeId: bigint;
 
-  /**
-   * @generated from field: optional int64 id = 2;
-   */
-  id?: bigint | undefined;
+    /**
+     * @generated from field: optional int64 id = 2;
+     */
+    id?: bigint | undefined;
 
-  /**
-   * @generated from field: string patch_type = 3;
-   */
-  patchType: string;
+    /**
+     * @generated from field: string patch_type = 3;
+     */
+    patchType: string;
 
-  /**
-   * @generated from field: string payload = 4;
-   */
-  payload: string;
-};
+    /**
+     * @generated from field: string payload = 4;
+     */
+    payload: string;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ComposePatchRequest.
  * Use `create(ComposePatchRequestSchema)` to create a new message.
  */
-export const ComposePatchRequestSchema: GenMessage<ComposePatchRequest> = /*@__PURE__*/
+export const ComposePatchRequestSchema: GenMessage<ComposePatchRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_compose, 24);
 
 /**
@@ -705,7 +768,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof GetComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ListComposes
    */
@@ -713,7 +776,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ListComposesRequestSchema;
     output: typeof ListComposesResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.CreateCompose
    */
@@ -721,7 +784,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof CreateComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.UpdateCompose
    */
@@ -729,7 +792,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof UpdateComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.DeleteCompose
    */
@@ -737,7 +800,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof DeleteComposeRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetGithubSource
    */
@@ -745,7 +808,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetComposeSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetGitlabSource
    */
@@ -753,7 +816,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetComposeSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetBitbucketSource
    */
@@ -761,7 +824,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetComposeSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetGiteaSource
    */
@@ -769,7 +832,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetComposeSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetCustomGitSource
    */
@@ -777,7 +840,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetComposeSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.SetRawSource
    */
@@ -785,7 +848,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof SetRawSourceRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.UploadSource
    */
@@ -793,7 +856,7 @@ export const ComposeService: GenService<{
     methodKind: "client_streaming";
     input: typeof UploadComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Deploy
    */
@@ -801,7 +864,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeOperationSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Redeploy
    */
@@ -809,7 +872,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeOperationSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Reload
    */
@@ -817,7 +880,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeOperationSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Start
    */
@@ -825,7 +888,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeOperationSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Stop
    */
@@ -833,7 +896,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeOperationSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.Cancel
    */
@@ -841,7 +904,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.MoveCompose
    */
@@ -849,7 +912,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof MoveComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.RotateWebhookToken
    */
@@ -857,7 +920,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeWebhookTokenSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ListDependencies
    */
@@ -865,7 +928,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof ComposeDependenciesSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.PreviewCompose
    */
@@ -873,7 +936,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof PreviewComposeRequestSchema;
     output: typeof ComposePreviewSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.InstallTemplate
    */
@@ -881,7 +944,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof InstallTemplateRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ExportCompose
    */
@@ -889,7 +952,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ExportComposeRequestSchema;
     output: typeof ComposeExportSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ImportCompose
    */
@@ -897,7 +960,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ImportComposeRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.RemoveServices
    */
@@ -905,7 +968,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ServiceMutationRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.UpdateResources
    */
@@ -913,7 +976,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof UpdateComposeResourcesRequestSchema;
     output: typeof ComposeSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ClearDeploymentHistory
    */
@@ -921,7 +984,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.CleanupDeploymentQueue
    */
@@ -929,7 +992,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ForceKillDeployment
    */
@@ -937,7 +1000,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeOperationRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ListMounts
    */
@@ -945,7 +1008,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeMountRequestSchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.CreateMount
    */
@@ -953,7 +1016,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeMountRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.UpdateMount
    */
@@ -961,7 +1024,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeMountRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.DeleteMount
    */
@@ -969,7 +1032,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposeMountRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.ListPatches
    */
@@ -977,7 +1040,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposePatchRequestSchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.CreatePatch
    */
@@ -985,7 +1048,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposePatchRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.UpdatePatch
    */
@@ -993,7 +1056,7 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposePatchRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ComposeService.DeletePatch
    */
@@ -1001,7 +1064,5 @@ export const ComposeService: GenService<{
     methodKind: "unary";
     input: typeof ComposePatchRequestSchema;
     output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_compose, 0);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_compose, 0);

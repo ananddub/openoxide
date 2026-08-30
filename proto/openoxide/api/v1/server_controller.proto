@@ -1,0 +1,14 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service ServerControllerService {
+  rpc TestDirectConnection(ResourceRequest) returns (OperationResult);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc Audit(ResourceRequest) returns (OperationResult);
+  rpc Setup(ResourceRequest) returns (OperationResult);
+  rpc StreamSetupLogs(StreamQuery) returns (stream ResourceResponse);
+  rpc ListSessions(ResourceQuery) returns (ResourceListResponse);
+  rpc DeleteSession(ResourceRequest) returns (Empty);
+}

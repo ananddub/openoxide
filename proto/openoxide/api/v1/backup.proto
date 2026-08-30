@@ -2,32 +2,14 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service BackupOperationsService {
-  rpc RunComposeBackup(ResourceRequest) returns (OperationResult);
-  rpc RunPanelBackup(ResourceRequest) returns (OperationResult);
-  rpc StageRestore(ResourceRequest) returns (OperationResult);
-  rpc GetRestoreStatus(ResourceRequest) returns (ResourceResponse);
-  rpc StreamRestoreEvents(StreamQuery) returns (stream ResourceResponse);
-  rpc RollbackRestore(ResourceRequest) returns (OperationResult);
-  rpc ListFiles(ResourceQuery) returns (ResourceListResponse);
-  rpc DownloadFile(ResourceRequest) returns (ResourceResponse);
-  rpc PreviewRetention(ResourceRequest) returns (ResourceResponse);
-  rpc VerifyFiles(ResourceRequest) returns (OperationResult);
-  rpc ListExecutions(ResourceQuery) returns (ResourceListResponse);
-  rpc RetryExecution(ResourceRequest) returns (OperationResult);
-  rpc ListDatabaseBackups(ResourceQuery) returns (ResourceListResponse);
-  rpc GetDatabaseBackup(ResourceRequest) returns (ResourceResponse);
-  rpc CreateDatabaseBackup(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateDatabaseBackup(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteDatabaseBackup(ResourceRequest) returns (Empty);
-  rpc RunDatabaseBackup(ResourceRequest) returns (OperationResult);
-  rpc ListVolumeBackups(ResourceQuery) returns (ResourceListResponse);
-  rpc GetVolumeBackup(ResourceRequest) returns (ResourceResponse);
-  rpc CreateVolumeBackup(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateVolumeBackup(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteVolumeBackup(ResourceRequest) returns (Empty);
-  rpc RunVolumeBackup(ResourceRequest) returns (OperationResult);
-  rpc RestoreDatabase(ResourceRequest) returns (OperationResult);
-  rpc RestoreVolume(ResourceRequest) returns (OperationResult);
+
+service BackupService {
+  rpc ListBackups(ResourceQuery) returns (ResourceListResponse);
+  rpc GetBackup(ResourceRequest) returns (ResourceResponse);
+  rpc CreateBackup(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateBackup(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteBackup(ResourceRequest) returns (Empty);
+  rpc RunBackup(ResourceRequest) returns (OperationResult);
+  rpc RestoreBackup(ResourceRequest) returns (OperationResult);
+  rpc ValidateDestination(ResourceRequest) returns (OperationResult);
 }

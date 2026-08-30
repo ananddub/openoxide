@@ -1,7 +1,0 @@
-CREATE TABLE notif_ntfy (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	server_url TEXT NOT NULL,
-	topic TEXT NOT NULL,
-	access_token TEXT,
-	priority INTEGER NOT NULL DEFAULT 3
-) STRICT;

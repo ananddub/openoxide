@@ -4,79 +4,24 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
+import type {
+  OperationResultSchema,
+  ResourceListResponseSchema,
+  ResourceQuerySchema,
+  ResourceRequestSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
-import type { OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema, StreamQuerySchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
 
 /**
  * Describes the file openoxide/api/v1/server_management.proto.
  */
-export const file_openoxide_api_v1_server_management: GenFile = /*@__PURE__*/
-  fileDesc("CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9tYW5hZ2VtZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMusEChdTZXJ2ZXJDb250cm9sbGVyU2VydmljZRJcChRUZXN0RGlyZWN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVgoOVGVzdENvbm5lY3Rpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0Ek0KBUF1ZGl0EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJNCgVTZXR1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVgoPU3RyZWFtU2V0dXBMb2dzEh0ub3Blbm94aWRlLmFwaS52MS5TdHJlYW1RdWVyeRoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZTABElcKDExpc3RTZXNzaW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USSwoNRGVsZXRlU2Vzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eTKhBgoXU2VydmVyTWFuYWdlbWVudFNlcnZpY2USVgoNR2V0TWFuYWdlbWVudBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEFVwZGF0ZU1hbmFnZW1lbnQSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJTCgtSZXBhaXJBdWRpdBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVAoMQ29uZmlndXJlR3B1EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpSdW5DbGVhbnVwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJdChJMaXN0Q2xlYW51cEhpc3RvcnkSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlEk8KB1VwZ3JhZGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0Ek4KBkJhY2t1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVAoLRGlhZ25vc3RpY3MSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZTLmBwoTUmVtb3RlU2VydmVyU2VydmljZRJcChFMaXN0UmVtb3RlU2VydmVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0UmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlUmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlUmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoIQWN0aXZhdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElIKCkRlYWN0aXZhdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDlRlc3RDb25uZWN0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJQChJEZWxldGVSZW1vdGVTZXJ2ZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoTTWlncmF0ZURlcGVuZGVuY2llcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVQoMR2V0TWlncmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRUm9sbGJhY2tNaWdyYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0Mv0FChtTZXJ2ZXJQcml2YXRlTmV0d29ya1NlcnZpY2USUwoKR2V0TmV0d29yaxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElYKDVVwZGF0ZU5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJLCg1EZWxldGVOZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek0KBVNldHVwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJOCgZIZWFsdGgSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0Ek4KBlJlcGFpchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTwoHUmVTZXR1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUgoKUm90YXRlS2V5cxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUAoIVGVhcmRvd24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM", [file_openoxide_api_v1_common, file_openoxide_api_v1_platform]);
-
-/**
- * @generated from service openoxide.api.v1.ServerControllerService
- */
-export const ServerControllerService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
-   */
-  testDirectConnection: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
-   */
-  testConnection: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.Audit
-   */
-  audit: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.Setup
-   */
-  setup: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.StreamSetupLogs
-   */
-  streamSetupLogs: {
-    methodKind: "server_streaming";
-    input: typeof StreamQuerySchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.ListSessions
-   */
-  listSessions: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerControllerService.DeleteSession
-   */
-  deleteSession: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_server_management, 0);
+export const file_openoxide_api_v1_server_management: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9tYW5hZ2VtZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMqEGChdTZXJ2ZXJNYW5hZ2VtZW50U2VydmljZRJWCg1HZXRNYW5hZ2VtZW50EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoQVXBkYXRlTWFuYWdlbWVudBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElMKC1JlcGFpckF1ZGl0EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJUCgxDb25maWd1cmVHcHUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElIKClJ1bkNsZWFudXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0El0KEkxpc3RDbGVhbnVwSGlzdG9yeRIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoHVXBncmFkZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoGQmFja3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJUCgtEaWFnbm9zdGljcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM",
+    [file_openoxide_api_v1_common],
+  );
 
 /**
  * @generated from service openoxide.api.v1.ServerManagementService
@@ -89,7 +34,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
    */
@@ -97,7 +42,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
    */
@@ -105,7 +50,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.ConfigureGpu
    */
@@ -113,7 +58,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.RunCleanup
    */
@@ -121,7 +66,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
    */
@@ -129,7 +74,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade
    */
@@ -137,7 +82,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.Backup
    */
@@ -145,7 +90,7 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ServerManagementService.Diagnostics
    */
@@ -153,181 +98,5 @@ export const ServerManagementService: GenService<{
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_server_management, 1);
-
-/**
- * @generated from service openoxide.api.v1.RemoteServerService
- */
-export const RemoteServerService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
-   */
-  listRemoteServers: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
-   */
-  getRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
-   */
-  createRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
-   */
-  updateRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
-   */
-  activate: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
-   */
-  deactivate: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
-   */
-  testConnection: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
-   */
-  deleteRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
-   */
-  migrateDependencies: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
-   */
-  getMigration: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
-   */
-  rollbackMigration: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_server_management, 2);
-
-/**
- * @generated from service openoxide.api.v1.ServerPrivateNetworkService
- */
-export const ServerPrivateNetworkService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.GetNetwork
-   */
-  getNetwork: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.UpdateNetwork
-   */
-  updateNetwork: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.DeleteNetwork
-   */
-  deleteNetwork: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Setup
-   */
-  setup: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Health
-   */
-  health: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Repair
-   */
-  repair: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.ReSetup
-   */
-  reSetup: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.RotateKeys
-   */
-  rotateKeys: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Teardown
-   */
-  teardown: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_server_management, 3);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_server_management, 0);

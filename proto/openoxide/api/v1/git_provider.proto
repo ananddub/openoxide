@@ -1,0 +1,31 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service GitProviderService {
+  rpc ListGitProviders(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGitProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGithubProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGitlabProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGiteaProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGithubProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGitlabProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGiteaProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteGitProvider(ResourceRequest) returns (Empty);
+  rpc TestGitProvider(ResourceRequest) returns (OperationResult);
+  rpc RotateWebhookSecret(ResourceRequest) returns (ResourceResponse);
+  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
+  rpc ListBranches(ResourceRequest) returns (ResourceListResponse);
+  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
+  rpc Authorize(ResourceRequest) returns (ResourceResponse);
+  rpc OAuthCallback(ResourceRequest) returns (ResourceResponse);
+  rpc Disconnect(ResourceRequest) returns (Empty);
+  rpc GetCollaboratorPermission(ResourceRequest) returns (OperationResult);
+  rpc GetWebhookStatus(ResourceRequest) returns (OperationResult);
+  rpc InstallWebhook(ResourceRequest) returns (OperationResult);
+  rpc RecreateWebhook(ResourceRequest) returns (OperationResult);
+  rpc DeleteWebhook(ResourceRequest) returns (Empty);
+}

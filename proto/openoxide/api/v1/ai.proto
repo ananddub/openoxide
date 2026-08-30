@@ -1,0 +1,22 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service AiService {
+  rpc ListSettings(ResourceQuery) returns (ResourceListResponse);
+  rpc GetSettings(ResourceRequest) returns (ResourceResponse);
+  rpc CreateSettings(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteSettings(ResourceRequest) returns (Empty);
+  rpc ListModels(ResourceRequest) returns (ResourceListResponse);
+  rpc TestSettings(ResourceRequest) returns (OperationResult);
+  rpc DiscoverModels(ResourceRequest) returns (ResourceListResponse);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc ListGenerations(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGeneration(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGeneration(ResourceRequest) returns (ResourceResponse);
+  rpc ReviewGeneration(ResourceRequest) returns (OperationResult);
+  rpc DeployGeneration(ResourceRequest) returns (OperationResult);
+  rpc AnalyzeLogs(ResourceRequest) returns (ResourceResponse);
+}

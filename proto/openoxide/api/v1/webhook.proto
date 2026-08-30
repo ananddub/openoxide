@@ -1,0 +1,13 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service WebhookService {
+  rpc ListWebhooks(ResourceQuery) returns (ResourceListResponse);
+  rpc GetWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc CreateWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateWebhook(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteWebhook(ResourceRequest) returns (Empty);
+  rpc TestWebhook(ResourceRequest) returns (OperationResult);
+}

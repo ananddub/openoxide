@@ -4,157 +4,92 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
+import type {
+  EmptySchema,
+  OperationResultSchema,
+  ResourceListResponseSchema,
+  ResourceQuerySchema,
+  ResourceRequestSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
-import type { OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema, StreamQuerySchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
 
 /**
  * Describes the file openoxide/api/v1/schedule.proto.
  */
-export const file_openoxide_api_v1_schedule: GenFile = /*@__PURE__*/
-  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3NjaGVkdWxlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMrAMChlTY2hlZHVsZU9wZXJhdGlvbnNTZXJ2aWNlElQKC0dldFNjaGVkdWxlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USYwoYTGlzdEFwcGxpY2F0aW9uU2NoZWR1bGVzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJfChRMaXN0Q29tcG9zZVNjaGVkdWxlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USYAoVTGlzdERhdGFiYXNlU2NoZWR1bGVzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJeChNMaXN0U2VydmVyU2NoZWR1bGVzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJkChlMaXN0T3JnYW5pemF0aW9uU2NoZWR1bGVzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJXCg5DcmVhdGVTY2hlZHVsZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVNjaGVkdWxlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTAoORGVsZXRlU2NoZWR1bGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVwoPVHJpZ2dlclNjaGVkdWxlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJZChBHZXRSdW50aW1lUG9saWN5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USXAoTVXBkYXRlUnVudGltZVBvbGljeRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKDkxpc3RFeGVjdXRpb25zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJUCgdHZXRMb2dzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElEKClN0cmVhbUxvZ3MSHS5vcGVub3hpZGUuYXBpLnYxLlN0cmVhbVF1ZXJ5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlMAESXQoQR2V0RXhlY3V0aW9uTG9ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJaChNTdHJlYW1FeGVjdXRpb25Mb2dzEh0ub3Blbm94aWRlLmFwaS52MS5TdHJlYW1RdWVyeRoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZTABYgZwcm90bzM", [file_openoxide_api_v1_common, file_openoxide_api_v1_platform]);
+export const file_openoxide_api_v1_schedule: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch9vcGVub3hpZGUvYXBpL3YxL3NjaGVkdWxlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMsUFCg9TY2hlZHVsZVNlcnZpY2USWAoNTGlzdFNjaGVkdWxlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVAoLR2V0U2NoZWR1bGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJXCg5DcmVhdGVTY2hlZHVsZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDlVwZGF0ZVNjaGVkdWxlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTAoORGVsZXRlU2NoZWR1bGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSUwoLUnVuU2NoZWR1bGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElUKDVBhdXNlU2NoZWR1bGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDlJlc3VtZVNjaGVkdWxlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z",
+    [file_openoxide_api_v1_common],
+  );
 
 /**
- * @generated from service openoxide.api.v1.ScheduleOperationsService
+ * @generated from service openoxide.api.v1.ScheduleService
  */
-export const ScheduleOperationsService: GenService<{
+export const ScheduleService: GenService<{
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetSchedule
+   * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
+   */
+  listSchedules: {
+    methodKind: "unary";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  };
+  /**
+   * @generated from rpc openoxide.api.v1.ScheduleService.GetSchedule
    */
   getSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListApplicationSchedules
-   */
-  listApplicationSchedules: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListComposeSchedules
-   */
-  listComposeSchedules: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListDatabaseSchedules
-   */
-  listDatabaseSchedules: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListServerSchedules
-   */
-  listServerSchedules: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListOrganizationSchedules
-   */
-  listOrganizationSchedules: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.CreateSchedule
+   * @generated from rpc openoxide.api.v1.ScheduleService.CreateSchedule
    */
   createSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.UpdateSchedule
+   * @generated from rpc openoxide.api.v1.ScheduleService.UpdateSchedule
    */
   updateSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.DeleteSchedule
+   * @generated from rpc openoxide.api.v1.ScheduleService.DeleteSchedule
    */
   deleteSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.TriggerSchedule
+   * @generated from rpc openoxide.api.v1.ScheduleService.RunSchedule
    */
-  triggerSchedule: {
+  runSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetRuntimePolicy
+   * @generated from rpc openoxide.api.v1.ScheduleService.PauseSchedule
    */
-  getRuntimePolicy: {
+  pauseSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
+    output: typeof OperationResultSchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.UpdateRuntimePolicy
+   * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
    */
-  updateRuntimePolicy: {
+  resumeSchedule: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListExecutions
-   */
-  listExecutions: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetLogs
-   */
-  getLogs: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.StreamLogs
-   */
-  streamLogs: {
-    methodKind: "server_streaming";
-    input: typeof StreamQuerySchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetExecutionLogs
-   */
-  getExecutionLogs: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleOperationsService.StreamExecutionLogs
-   */
-  streamExecutionLogs: {
-    methodKind: "server_streaming";
-    input: typeof StreamQuerySchema;
-    output: typeof ResourceResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_schedule, 0);
-
+    output: typeof OperationResultSchema;
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_schedule, 0);

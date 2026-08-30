@@ -1,9 +1,10 @@
 syntax = "proto3";
 package openoxide.api.v1;
 
-import "openoxide/api/v1/platform.proto";
-service OverviewOperationsService {
-  rpc ListOrganizationServices(ResourceQuery) returns (ResourceListResponse);
-  rpc ListOrganizationDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc ListOrganizationBackups(ResourceQuery) returns (ResourceListResponse);
+import "openoxide/api/v1/common.proto";
+
+service OverviewService {
+  rpc ListServices(ResourceQuery) returns (ResourceListResponse);
+  rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
+  rpc ListBackups(ResourceQuery) returns (ResourceListResponse);
 }

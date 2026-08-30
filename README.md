@@ -164,7 +164,7 @@ OpenOxide uses SQLite through SQLx.
 For typed React live hooks and automatic refresh after committed SQLite writes, see [Typed realtime endpoints](docs/realtime.md).
 
 - Runtime migrations live in `db/migrations` and must remain append-only after release.
-- `db/schema` represents the current expected schema.
+- `.flash/schema` is the current expected schema; `db/schema` mirrors it for atlas.
 - Compile-time SQLx macros use the database configured by `DATABASE_URL`.
 - Generated models live in `src/db/models`.
 - Generated and handwritten repositories live in `src/db/repository`.
@@ -424,7 +424,7 @@ These conventions keep the codebase maintainable:
 - Use `crates/os` for reusable operating-system and command behavior.
 - Never assemble user-controlled shell command fragments directly.
 - Prefer compile-time checked SQLx macros for static queries.
-- Keep runtime migrations append-only and keep `db/schema` synchronized with the current schema.
+- Keep runtime migrations append-only and keep `db/schema` mirroring `.flash/schema` (the source of truth).
 - Keep background entry points together under `src/utils/background`.
 - Preserve API serialization compatibility when replacing strings with enums.
 - Add focused tests for validation, builders, state transitions, rollback, retry, and reconciliation logic.

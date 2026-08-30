@@ -1,0 +1,21 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service GlobalOperationsService {
+  rpc UploadContainerFile(stream ResourceRequest) returns (OperationResult);
+  rpc DownloadContainerFile(ResourceRequest) returns (ResourceResponse);
+  rpc ListContainers(ResourceQuery) returns (ResourceListResponse);
+  rpc ListImages(ResourceQuery) returns (ResourceListResponse);
+  rpc ListNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc ListVolumes(ResourceQuery) returns (ResourceListResponse);
+  rpc InspectContainer(ResourceRequest) returns (ResourceResponse);
+  rpc InspectImage(ResourceRequest) returns (ResourceResponse);
+  rpc InspectNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc InspectVolume(ResourceRequest) returns (ResourceResponse);
+  rpc ContainerAction(ResourceRequest) returns (OperationResult);
+  rpc DeleteContainer(ResourceRequest) returns (Empty);
+  rpc DiskUsage(ResourceQuery) returns (ResourceResponse);
+  rpc Prune(ResourceRequest) returns (OperationResult);
+}

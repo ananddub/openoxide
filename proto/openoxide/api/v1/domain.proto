@@ -2,13 +2,13 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service DomainOperationsService {
+
+service DomainService {
   rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
   rpc GetDomain(ResourceRequest) returns (ResourceResponse);
-  rpc ListApplicationDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc ListComposeDomains(ResourceQuery) returns (ResourceListResponse);
   rpc CreateDomain(ResourceRequest) returns (ResourceResponse);
   rpc UpdateDomain(ResourceRequest) returns (ResourceResponse);
   rpc DeleteDomain(ResourceRequest) returns (Empty);
+  rpc AttachDomain(ResourceRequest) returns (OperationResult);
+  rpc DetachDomain(ResourceRequest) returns (Empty);
 }

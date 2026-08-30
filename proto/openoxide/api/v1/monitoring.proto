@@ -2,19 +2,11 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service MonitoringOperationsService {
-  rpc GetLocalMetrics(Empty) returns (ResourceResponse);
-  rpc GetServerMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc GetContainerMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc GetContainerStates(ResourceRequest) returns (ResourceListResponse);
-  rpc CreateAgentToken(ResourceRequest) returns (ResourceResponse);
-  rpc GetAgentStatus(ResourceRequest) returns (OperationResult);
-  rpc RestartAgent(ResourceRequest) returns (OperationResult);
-  rpc ReinstallAgent(ResourceRequest) returns (OperationResult);
-  rpc ExportServerMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc GetPrometheusMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc CreateMaintenanceWindow(ResourceRequest) returns (ResourceResponse);
-  rpc ListMaintenanceWindows(ResourceQuery) returns (ResourceListResponse);
-  rpc DeleteMaintenanceWindow(ResourceRequest) returns (Empty);
+
+service MonitoringService {
+  rpc GetOverview(ResourceRequest) returns (ResourceResponse);
+  rpc GetMetrics(ResourceRequest) returns (ResourceResponse);
+  rpc StreamMetrics(StreamQuery) returns (stream ResourceResponse);
+  rpc StreamContainerEvents(StreamQuery) returns (stream ResourceResponse);
+  rpc GetContainerState(ResourceRequest) returns (ResourceResponse);
 }

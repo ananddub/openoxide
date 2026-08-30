@@ -1,0 +1,17 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service RegistryService {
+  rpc ListRegistries(ResourceQuery) returns (ResourceListResponse);
+  rpc GetRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc CreateRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteRegistry(ResourceRequest) returns (Empty);
+  rpc TestRegistry(ResourceRequest) returns (OperationResult);
+  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
+  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
+  rpc RotateCredentials(ResourceRequest) returns (OperationResult);
+  rpc GetUsage(ResourceRequest) returns (ResourceResponse);
+}

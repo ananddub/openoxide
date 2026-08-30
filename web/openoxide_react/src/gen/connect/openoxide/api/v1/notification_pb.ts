@@ -4,109 +4,76 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
+import type {
+  EmptySchema,
+  OperationResultSchema,
+  ResourceListResponseSchema,
+  ResourceQuerySchema,
+  ResourceRequestSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
-import type { OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
 
 /**
  * Describes the file openoxide/api/v1/notification.proto.
  */
-export const file_openoxide_api_v1_notification: GenFile = /*@__PURE__*/
-  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MTL5BwodTm90aWZpY2F0aW9uT3BlcmF0aW9uc1NlcnZpY2USXgoTTGlzdERlbGl2ZXJ5SGlzdG9yeRIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoNQ3JlYXRlQmluZGluZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDExpc3RCaW5kaW5ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USSwoNRGVsZXRlQmluZGluZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJcChFMaXN0Tm90aWZpY2F0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USXAoTUmVwbGFjZU5vdGlmaWNhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElAKEkRlbGV0ZU5vdGlmaWNhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJYChBUZXN0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common, file_openoxide_api_v1_platform]);
+export const file_openoxide_api_v1_notification: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKzBAoTTm90aWZpY2F0aW9uU2VydmljZRJcChFMaXN0Tm90aWZpY2F0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoSRGVsZXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKEFRlc3ROb3RpZmljYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM",
+    [file_openoxide_api_v1_common],
+  );
 
 /**
- * @generated from service openoxide.api.v1.NotificationOperationsService
+ * @generated from service openoxide.api.v1.NotificationService
  */
-export const NotificationOperationsService: GenService<{
+export const NotificationService: GenService<{
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListDeliveryHistory
-   */
-  listDeliveryHistory: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.CreateBinding
-   */
-  createBinding: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListBindings
-   */
-  listBindings: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.DeleteBinding
-   */
-  deleteBinding: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListNotifications
+   * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
    */
   listNotifications: {
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.GetNotification
+   * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
    */
   getNotification: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.CreateNotification
+   * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
    */
   createNotification: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.UpdateNotification
+   * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
    */
   updateNotification: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.ReplaceNotification
-   */
-  replaceNotification: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.DeleteNotification
+   * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
    */
   deleteNotification: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.NotificationOperationsService.TestNotification
+   * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
    */
   testNotification: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_notification, 0);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_notification, 0);

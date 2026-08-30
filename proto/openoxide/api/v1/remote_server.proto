@@ -1,0 +1,18 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service RemoteServerService {
+  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
+  rpc GetRemoteServer(ResourceRequest) returns (ResourceResponse);
+  rpc CreateRemoteServer(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRemoteServer(ResourceRequest) returns (ResourceResponse);
+  rpc Activate(ResourceRequest) returns (OperationResult);
+  rpc Deactivate(ResourceRequest) returns (OperationResult);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc DeleteRemoteServer(ResourceRequest) returns (Empty);
+  rpc MigrateDependencies(ResourceRequest) returns (OperationResult);
+  rpc GetMigration(ResourceRequest) returns (ResourceResponse);
+  rpc RollbackMigration(ResourceRequest) returns (OperationResult);
+}

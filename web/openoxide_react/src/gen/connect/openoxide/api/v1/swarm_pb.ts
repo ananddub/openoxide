@@ -4,91 +4,99 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { OperationResultSchema, ResourceListResponseSchema, ResourceRequestSchema, ResourceResponseSchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
+import type {
+  EmptySchema,
+  ResourceListResponseSchema,
+  ResourceQuerySchema,
+  ResourceRequestSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
 
 /**
  * Describes the file openoxide/api/v1/swarm.proto.
  */
-export const file_openoxide_api_v1_swarm: GenFile = /*@__PURE__*/
-  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL3N3YXJtLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMpEGChZTd2FybU9wZXJhdGlvbnNTZXJ2aWNlEk0KBEluZm8SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJWCg1HZXRKb2luVG9rZW5zEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVgoJTGlzdE5vZGVzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElMKC1Byb21vdGVOb2RlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpEZW1vdGVOb2RlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJeChZVcGRhdGVOb2RlQXZhaWxhYmlsaXR5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpSZW1vdmVOb2RlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJNCgVMZWF2ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTAoESm9pbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHRiBnByb3RvMw", [file_openoxide_api_v1_platform]);
+export const file_openoxide_api_v1_swarm: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "ChxvcGVub3hpZGUvYXBpL3YxL3N3YXJtLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMpkGCgxTd2FybVNlcnZpY2USVAoLR2V0U2V0dGluZ3MSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJXCg5VcGRhdGVTZXR0aW5ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDExpc3ROZXR3b3JrcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoNQ3JlYXRlTmV0d29yaxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElYKDVVwZGF0ZU5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJLCg1EZWxldGVOZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElcKDExpc3RTZXJ2aWNlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUwoKR2V0U2VydmljZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElYKDVVwZGF0ZVNlcnZpY2USIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZWIGcHJvdG8z",
+    [file_openoxide_api_v1_common],
+  );
 
 /**
- * @generated from service openoxide.api.v1.SwarmOperationsService
+ * @generated from service openoxide.api.v1.SwarmService
  */
-export const SwarmOperationsService: GenService<{
+export const SwarmService: GenService<{
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.Info
+   * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
    */
-  info: {
+  getSettings: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.GetJoinTokens
+   * @generated from rpc openoxide.api.v1.SwarmService.UpdateSettings
    */
-  getJoinTokens: {
+  updateSettings: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.ListNodes
+   * @generated from rpc openoxide.api.v1.SwarmService.ListNetworks
    */
-  listNodes: {
+  listNetworks: {
     methodKind: "unary";
-    input: typeof ResourceRequestSchema;
+    input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.PromoteNode
+   * @generated from rpc openoxide.api.v1.SwarmService.CreateNetwork
    */
-  promoteNode: {
+  createNetwork: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
+    output: typeof ResourceResponseSchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.DemoteNode
+   * @generated from rpc openoxide.api.v1.SwarmService.UpdateNetwork
    */
-  demoteNode: {
+  updateNetwork: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
+    output: typeof ResourceResponseSchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.UpdateNodeAvailability
+   * @generated from rpc openoxide.api.v1.SwarmService.DeleteNetwork
    */
-  updateNodeAvailability: {
+  deleteNetwork: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
+    output: typeof EmptySchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.RemoveNode
+   * @generated from rpc openoxide.api.v1.SwarmService.ListServices
    */
-  removeNode: {
+  listServices: {
+    methodKind: "unary";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  };
+  /**
+   * @generated from rpc openoxide.api.v1.SwarmService.GetService
+   */
+  getService: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
+    output: typeof ResourceResponseSchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.Leave
+   * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
    */
-  leave: {
+  updateService: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmOperationsService.Join
-   */
-  join: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_swarm, 0);
-
+    output: typeof ResourceResponseSchema;
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_swarm, 0);

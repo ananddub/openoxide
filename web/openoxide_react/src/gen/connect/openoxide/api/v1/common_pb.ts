@@ -4,25 +4,30 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/common.proto.
  */
-export const file_openoxide_api_v1_common: GenFile = /*@__PURE__*/
-  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL2NvbW1vbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIHCgVFbXB0eSK8AQoEVXNlchIKCgJpZBgBIAEoAxISCgVlbWFpbBgCIAEoCUgAiAEBEhcKCmZpcnN0X25hbWUYAyABKAlIAYgBARIWCglsYXN0X25hbWUYBCABKAlIAogBARIOCgZhdmF0YXIYBSABKAkSEQoEcm9sZRgGIAEoCUgDiAEBEhAKCGdyb3VwX2lkGAcgASgDQggKBl9lbWFpbEINCgtfZmlyc3RfbmFtZUIMCgpfbGFzdF9uYW1lQgcKBV9yb2xlIjgKCVRva2VuUGFpchIUCgxhY2Nlc3NfdG9rZW4YASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCWIGcHJvdG8z");
+export const file_openoxide_api_v1_common: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch1vcGVub3hpZGUvYXBpL3YxL2NvbW1vbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIHCgVFbXB0eSK8AQoEVXNlchIKCgJpZBgBIAEoAxISCgVlbWFpbBgCIAEoCUgAiAEBEhcKCmZpcnN0X25hbWUYAyABKAlIAYgBARIWCglsYXN0X25hbWUYBCABKAlIAogBARIOCgZhdmF0YXIYBSABKAkSEQoEcm9sZRgGIAEoCUgDiAEBEhAKCGdyb3VwX2lkGAcgASgDQggKBl9lbWFpbEINCgtfZmlyc3RfbmFtZUIMCgpfbGFzdF9uYW1lQgcKBV9yb2xlIjgKCVRva2VuUGFpchIUCgxhY2Nlc3NfdG9rZW4YASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCSK2AQoPUmVzb3VyY2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAigAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAMgASgDQge6SAQiAiAASAGIAQESGgoHcGF5bG9hZBgEIAEoCUIJukgGcgQYgIBAQhIKEF9vcmdhbml6YXRpb25faWRCEQoPX2Vudmlyb25tZW50X2lkIj0KEFJlc291cmNlUmVzcG9uc2USCgoCaWQYASABKAMSDAoEa2luZBgCIAEoCRIPCgdwYXlsb2FkGAMgASgJIkkKFFJlc291cmNlTGlzdFJlc3BvbnNlEjEKBWl0ZW1zGAEgAygLMiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlIv4BCg1SZXNvdXJjZVF1ZXJ5EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAASAGIAQESHAoFcXVlcnkYAyABKAlCCLpIBXIDGOgHSAKIAQESHgoFbGltaXQYBCABKANCCrpIByIFGOgHKAFIA4gBARIcCgZvZmZzZXQYBSABKANCB7pIBCICKABIBIgBAUISChBfb3JnYW5pemF0aW9uX2lkQhEKD19lbnZpcm9ubWVudF9pZEIICgZfcXVlcnlCCAoGX2xpbWl0QgkKB19vZmZzZXQieQoPT3BlcmF0aW9uUmVzdWx0Eg8KB3N1Y2Nlc3MYASABKAgSEQoJb3BlcmF0aW9uGAIgASgJEhQKB21lc3NhZ2UYAyABKAlIAIgBARIUCgdwYXlsb2FkGAQgASgJSAGIAQFCCgoIX21lc3NhZ2VCCgoIX3BheWxvYWQiTAoLU3RyZWFtUXVlcnkSEwoCaWQYASABKANCB7pIBCICIAASHQoGZmlsdGVyGAIgASgJQgi6SAVyAxjoB0gAiAEBQgkKB19maWx0ZXJiBnByb3RvMw",
+    [file_buf_validate_validate],
+  );
 
 /**
  * @generated from message openoxide.api.v1.Empty
  */
-export type Empty = Message<"openoxide.api.v1.Empty"> & {
-};
+export type Empty = Message<"openoxide.api.v1.Empty"> & {};
 
 /**
  * Describes the message openoxide.api.v1.Empty.
  * Use `create(EmptySchema)` to create a new message.
  */
-export const EmptySchema: GenMessage<Empty> = /*@__PURE__*/
+export const EmptySchema: GenMessage<Empty> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 0);
 
 /**
@@ -69,7 +74,8 @@ export type User = Message<"openoxide.api.v1.User"> & {
  * Describes the message openoxide.api.v1.User.
  * Use `create(UserSchema)` to create a new message.
  */
-export const UserSchema: GenMessage<User> = /*@__PURE__*/
+export const UserSchema: GenMessage<User> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 1);
 
 /**
@@ -91,6 +97,183 @@ export type TokenPair = Message<"openoxide.api.v1.TokenPair"> & {
  * Describes the message openoxide.api.v1.TokenPair.
  * Use `create(TokenPairSchema)` to create a new message.
  */
-export const TokenPairSchema: GenMessage<TokenPair> = /*@__PURE__*/
+export const TokenPairSchema: GenMessage<TokenPair> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_common, 2);
 
+/**
+ * Control-plane envelope payloads. Domain JSON stays validated inside
+ * `payload` while resource identifiers and operation names stay strongly typed.
+ *
+ * @generated from message openoxide.api.v1.ResourceRequest
+ */
+export type ResourceRequest = Message<"openoxide.api.v1.ResourceRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 environment_id = 3;
+   */
+  environmentId?: bigint | undefined;
+
+  /**
+   * @generated from field: string payload = 4;
+   */
+  payload: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ResourceRequest.
+ * Use `create(ResourceRequestSchema)` to create a new message.
+ */
+export const ResourceRequestSchema: GenMessage<ResourceRequest> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 3);
+
+/**
+ * @generated from message openoxide.api.v1.ResourceResponse
+ */
+export type ResourceResponse = Message<"openoxide.api.v1.ResourceResponse"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string payload = 3;
+   */
+  payload: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ResourceResponse.
+ * Use `create(ResourceResponseSchema)` to create a new message.
+ */
+export const ResourceResponseSchema: GenMessage<ResourceResponse> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 4);
+
+/**
+ * @generated from message openoxide.api.v1.ResourceListResponse
+ */
+export type ResourceListResponse =
+  Message<"openoxide.api.v1.ResourceListResponse"> & {
+    /**
+     * @generated from field: repeated openoxide.api.v1.ResourceResponse items = 1;
+     */
+    items: ResourceResponse[];
+  };
+
+/**
+ * Describes the message openoxide.api.v1.ResourceListResponse.
+ * Use `create(ResourceListResponseSchema)` to create a new message.
+ */
+export const ResourceListResponseSchema: GenMessage<ResourceListResponse> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 5);
+
+/**
+ * @generated from message openoxide.api.v1.ResourceQuery
+ */
+export type ResourceQuery = Message<"openoxide.api.v1.ResourceQuery"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 environment_id = 2;
+   */
+  environmentId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string query = 3;
+   */
+  query?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 4;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 5;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ResourceQuery.
+ * Use `create(ResourceQuerySchema)` to create a new message.
+ */
+export const ResourceQuerySchema: GenMessage<ResourceQuery> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 6);
+
+/**
+ * @generated from message openoxide.api.v1.OperationResult
+ */
+export type OperationResult = Message<"openoxide.api.v1.OperationResult"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string operation = 2;
+   */
+  operation: string;
+
+  /**
+   * @generated from field: optional string message = 3;
+   */
+  message?: string | undefined;
+
+  /**
+   * @generated from field: optional string payload = 4;
+   */
+  payload?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OperationResult.
+ * Use `create(OperationResultSchema)` to create a new message.
+ */
+export const OperationResultSchema: GenMessage<OperationResult> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 7);
+
+/**
+ * @generated from message openoxide.api.v1.StreamQuery
+ */
+export type StreamQuery = Message<"openoxide.api.v1.StreamQuery"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string filter = 2;
+   */
+  filter?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.StreamQuery.
+ * Use `create(StreamQuerySchema)` to create a new message.
+ */
+export const StreamQuerySchema: GenMessage<StreamQuery> =
+  /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_common, 8);

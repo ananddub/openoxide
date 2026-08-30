@@ -1,0 +1,16 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service ServerPrivateNetworkService {
+  rpc GetNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteNetwork(ResourceRequest) returns (Empty);
+  rpc Setup(ResourceRequest) returns (OperationResult);
+  rpc Health(ResourceRequest) returns (OperationResult);
+  rpc Repair(ResourceRequest) returns (OperationResult);
+  rpc ReSetup(ResourceRequest) returns (OperationResult);
+  rpc RotateKeys(ResourceRequest) returns (OperationResult);
+  rpc Teardown(ResourceRequest) returns (OperationResult);
+}

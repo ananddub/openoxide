@@ -1,0 +1,23 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+service ScheduleOperationsService {
+  rpc GetSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc ListApplicationSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc ListComposeSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc ListDatabaseSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc ListServerSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc ListOrganizationSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc CreateSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateSchedule(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteSchedule(ResourceRequest) returns (Empty);
+  rpc TriggerSchedule(ResourceRequest) returns (OperationResult);
+  rpc GetRuntimePolicy(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateRuntimePolicy(ResourceRequest) returns (ResourceResponse);
+  rpc ListExecutions(ResourceQuery) returns (ResourceListResponse);
+  rpc GetLogs(ResourceRequest) returns (ResourceListResponse);
+  rpc StreamLogs(StreamQuery) returns (stream ResourceResponse);
+  rpc GetExecutionLogs(ResourceRequest) returns (ResourceListResponse);
+  rpc StreamExecutionLogs(StreamQuery) returns (stream ResourceResponse);
+}

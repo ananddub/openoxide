@@ -2,16 +2,7 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
-service ServerControllerService {
-  rpc TestDirectConnection(ResourceRequest) returns (OperationResult);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc Audit(ResourceRequest) returns (OperationResult);
-  rpc Setup(ResourceRequest) returns (OperationResult);
-  rpc StreamSetupLogs(StreamQuery) returns (stream ResourceResponse);
-  rpc ListSessions(ResourceQuery) returns (ResourceListResponse);
-  rpc DeleteSession(ResourceRequest) returns (Empty);
-}
+
 service ServerManagementService {
   rpc GetManagement(ResourceRequest) returns (ResourceResponse);
   rpc UpdateManagement(ResourceRequest) returns (ResourceResponse);
@@ -22,28 +13,4 @@ service ServerManagementService {
   rpc Upgrade(ResourceRequest) returns (OperationResult);
   rpc Backup(ResourceRequest) returns (OperationResult);
   rpc Diagnostics(ResourceRequest) returns (ResourceResponse);
-}
-service RemoteServerService {
-  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
-  rpc GetRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc CreateRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc Activate(ResourceRequest) returns (OperationResult);
-  rpc Deactivate(ResourceRequest) returns (OperationResult);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc DeleteRemoteServer(ResourceRequest) returns (Empty);
-  rpc MigrateDependencies(ResourceRequest) returns (OperationResult);
-  rpc GetMigration(ResourceRequest) returns (ResourceResponse);
-  rpc RollbackMigration(ResourceRequest) returns (OperationResult);
-}
-service ServerPrivateNetworkService {
-  rpc GetNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteNetwork(ResourceRequest) returns (Empty);
-  rpc Setup(ResourceRequest) returns (OperationResult);
-  rpc Health(ResourceRequest) returns (OperationResult);
-  rpc Repair(ResourceRequest) returns (OperationResult);
-  rpc ReSetup(ResourceRequest) returns (OperationResult);
-  rpc RotateKeys(ResourceRequest) returns (OperationResult);
-  rpc Teardown(ResourceRequest) returns (OperationResult);
 }

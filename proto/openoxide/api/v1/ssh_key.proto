@@ -1,0 +1,15 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service SshKeyService {
+  rpc ListKeys(ResourceQuery) returns (ResourceListResponse);
+  rpc GetKey(ResourceRequest) returns (ResourceResponse);
+  rpc CreateKey(ResourceRequest) returns (ResourceResponse);
+  rpc GenerateKey(ResourceRequest) returns (ResourceResponse);
+  rpc GeneratePair(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateKey(ResourceRequest) returns (ResourceResponse);
+  rpc MarkUsed(ResourceRequest) returns (OperationResult);
+  rpc DeleteKey(ResourceRequest) returns (Empty);
+}

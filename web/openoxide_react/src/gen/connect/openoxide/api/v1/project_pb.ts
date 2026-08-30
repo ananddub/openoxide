@@ -2,8 +2,16 @@
 // @generated from file openoxide/api/v1/project.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type {
+  GenFile,
+  GenMessage,
+  GenService,
+} from "@bufbuild/protobuf/codegenv2";
+import {
+  fileDesc,
+  messageDesc,
+  serviceDesc,
+} from "@bufbuild/protobuf/codegenv2";
 import type { EmptySchema } from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
 import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
@@ -12,8 +20,12 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file openoxide/api/v1/project.proto.
  */
-export const file_openoxide_api_v1_project: GenFile = /*@__PURE__*/
-  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL3Byb2plY3QucHJvdG8SEG9wZW5veGlkZS5hcGkudjEitgEKB1Byb2plY3QSEwoCaWQYASABKANCB7pIBCICIAASDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgEIAEoCRIXCg9vcmdhbml6YXRpb25faWQYBSABKAMSEgoKY3JlYXRlZF9hdBgGIAEoAxISCgp1cGRhdGVkX2F0GAcgASgDQg4KDF9kZXNjcmlwdGlvbiIfChFHZXRQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoAyI3ChNMaXN0UHJvamVjdHNSZXF1ZXN0EiAKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgACJDChRMaXN0UHJvamVjdHNSZXNwb25zZRIrCghwcm9qZWN0cxgBIAMoCzIZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdCKbAQoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIYCgtkZXNjcmlwdGlvbhgCIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgDIAEoCRIgCg9vcmdhbml6YXRpb25faWQYBCABKANCB7pIBCICIABCDgoMX2Rlc2NyaXB0aW9uIq8BChRVcGRhdGVQcm9qZWN0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIRCgRuYW1lGAIgASgJSACIAQESGAoLZGVzY3JpcHRpb24YAyABKAlIAYgBARIiChVlbnZpcm9ubWVudF92YXJpYWJsZXMYBCABKAlIAogBAUIHCgVfbmFtZUIOCgxfZGVzY3JpcHRpb25CGAoWX2Vudmlyb25tZW50X3ZhcmlhYmxlcyIrChREZWxldGVQcm9qZWN0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgADK3AwoOUHJvamVjdFNlcnZpY2USTAoKR2V0UHJvamVjdBIjLm9wZW5veGlkZS5hcGkudjEuR2V0UHJvamVjdFJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLlByb2plY3QSXQoMTGlzdFByb2plY3RzEiUub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdHNSZXNwb25zZRJSCg1DcmVhdGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdBJSCg1VcGRhdGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5VcGRhdGVQcm9qZWN0UmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdBJQCg1EZWxldGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5EZWxldGVQcm9qZWN0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_project: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "Ch5vcGVub3hpZGUvYXBpL3YxL3Byb2plY3QucHJvdG8SEG9wZW5veGlkZS5hcGkudjEitgEKB1Byb2plY3QSEwoCaWQYASABKANCB7pIBCICIAASDAoEbmFtZRgCIAEoCRIYCgtkZXNjcmlwdGlvbhgDIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgEIAEoCRIXCg9vcmdhbml6YXRpb25faWQYBSABKAMSEgoKY3JlYXRlZF9hdBgGIAEoAxISCgp1cGRhdGVkX2F0GAcgASgDQg4KDF9kZXNjcmlwdGlvbiIfChFHZXRQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoAyI3ChNMaXN0UHJvamVjdHNSZXF1ZXN0EiAKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgACJDChRMaXN0UHJvamVjdHNSZXNwb25zZRIrCghwcm9qZWN0cxgBIAMoCzIZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdCKbAQoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIYCgtkZXNjcmlwdGlvbhgCIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgDIAEoCRIgCg9vcmdhbml6YXRpb25faWQYBCABKANCB7pIBCICIABCDgoMX2Rlc2NyaXB0aW9uIq8BChRVcGRhdGVQcm9qZWN0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIRCgRuYW1lGAIgASgJSACIAQESGAoLZGVzY3JpcHRpb24YAyABKAlIAYgBARIiChVlbnZpcm9ubWVudF92YXJpYWJsZXMYBCABKAlIAogBAUIHCgVfbmFtZUIOCgxfZGVzY3JpcHRpb25CGAoWX2Vudmlyb25tZW50X3ZhcmlhYmxlcyIrChREZWxldGVQcm9qZWN0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgADK3AwoOUHJvamVjdFNlcnZpY2USTAoKR2V0UHJvamVjdBIjLm9wZW5veGlkZS5hcGkudjEuR2V0UHJvamVjdFJlcXVlc3QaGS5vcGVub3hpZGUuYXBpLnYxLlByb2plY3QSXQoMTGlzdFByb2plY3RzEiUub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdHNSZXNwb25zZRJSCg1DcmVhdGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdBJSCg1VcGRhdGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5VcGRhdGVQcm9qZWN0UmVxdWVzdBoZLm9wZW5veGlkZS5hcGkudjEuUHJvamVjdBJQCg1EZWxldGVQcm9qZWN0EiYub3Blbm94aWRlLmFwaS52MS5EZWxldGVQcm9qZWN0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw",
+    [file_openoxide_api_v1_common, file_buf_validate_validate],
+  );
 
 /**
  * @generated from message openoxide.api.v1.Project
@@ -59,139 +71,152 @@ export type Project = Message<"openoxide.api.v1.Project"> & {
  * Describes the message openoxide.api.v1.Project.
  * Use `create(ProjectSchema)` to create a new message.
  */
-export const ProjectSchema: GenMessage<Project> = /*@__PURE__*/
+export const ProjectSchema: GenMessage<Project> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 0);
 
 /**
  * @generated from message openoxide.api.v1.GetProjectRequest
  */
-export type GetProjectRequest = Message<"openoxide.api.v1.GetProjectRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetProjectRequest =
+  Message<"openoxide.api.v1.GetProjectRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.GetProjectRequest.
  * Use `create(GetProjectRequestSchema)` to create a new message.
  */
-export const GetProjectRequestSchema: GenMessage<GetProjectRequest> = /*@__PURE__*/
+export const GetProjectRequestSchema: GenMessage<GetProjectRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListProjectsRequest
  */
-export type ListProjectsRequest = Message<"openoxide.api.v1.ListProjectsRequest"> & {
-  /**
-   * @generated from field: int64 organization_id = 1;
-   */
-  organizationId: bigint;
-};
+export type ListProjectsRequest =
+  Message<"openoxide.api.v1.ListProjectsRequest"> & {
+    /**
+     * @generated from field: int64 organization_id = 1;
+     */
+    organizationId: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.ListProjectsRequest.
  * Use `create(ListProjectsRequestSchema)` to create a new message.
  */
-export const ListProjectsRequestSchema: GenMessage<ListProjectsRequest> = /*@__PURE__*/
+export const ListProjectsRequestSchema: GenMessage<ListProjectsRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListProjectsResponse
  */
-export type ListProjectsResponse = Message<"openoxide.api.v1.ListProjectsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Project projects = 1;
-   */
-  projects: Project[];
-};
+export type ListProjectsResponse =
+  Message<"openoxide.api.v1.ListProjectsResponse"> & {
+    /**
+     * @generated from field: repeated openoxide.api.v1.Project projects = 1;
+     */
+    projects: Project[];
+  };
 
 /**
  * Describes the message openoxide.api.v1.ListProjectsResponse.
  * Use `create(ListProjectsResponseSchema)` to create a new message.
  */
-export const ListProjectsResponseSchema: GenMessage<ListProjectsResponse> = /*@__PURE__*/
+export const ListProjectsResponseSchema: GenMessage<ListProjectsResponse> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 3);
 
 /**
  * @generated from message openoxide.api.v1.CreateProjectRequest
  */
-export type CreateProjectRequest = Message<"openoxide.api.v1.CreateProjectRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateProjectRequest =
+  Message<"openoxide.api.v1.CreateProjectRequest"> & {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
 
-  /**
-   * @generated from field: optional string description = 2;
-   */
-  description?: string | undefined;
+    /**
+     * @generated from field: optional string description = 2;
+     */
+    description?: string | undefined;
 
-  /**
-   * @generated from field: string environment_variables = 3;
-   */
-  environmentVariables: string;
+    /**
+     * @generated from field: string environment_variables = 3;
+     */
+    environmentVariables: string;
 
-  /**
-   * @generated from field: int64 organization_id = 4;
-   */
-  organizationId: bigint;
-};
+    /**
+     * @generated from field: int64 organization_id = 4;
+     */
+    organizationId: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.CreateProjectRequest.
  * Use `create(CreateProjectRequestSchema)` to create a new message.
  */
-export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> = /*@__PURE__*/
+export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 4);
 
 /**
  * @generated from message openoxide.api.v1.UpdateProjectRequest
  */
-export type UpdateProjectRequest = Message<"openoxide.api.v1.UpdateProjectRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateProjectRequest =
+  Message<"openoxide.api.v1.UpdateProjectRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+    /**
+     * @generated from field: optional string name = 2;
+     */
+    name?: string | undefined;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+    /**
+     * @generated from field: optional string description = 3;
+     */
+    description?: string | undefined;
 
-  /**
-   * @generated from field: optional string environment_variables = 4;
-   */
-  environmentVariables?: string | undefined;
-};
+    /**
+     * @generated from field: optional string environment_variables = 4;
+     */
+    environmentVariables?: string | undefined;
+  };
 
 /**
  * Describes the message openoxide.api.v1.UpdateProjectRequest.
  * Use `create(UpdateProjectRequestSchema)` to create a new message.
  */
-export const UpdateProjectRequestSchema: GenMessage<UpdateProjectRequest> = /*@__PURE__*/
+export const UpdateProjectRequestSchema: GenMessage<UpdateProjectRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 5);
 
 /**
  * @generated from message openoxide.api.v1.DeleteProjectRequest
  */
-export type DeleteProjectRequest = Message<"openoxide.api.v1.DeleteProjectRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteProjectRequest =
+  Message<"openoxide.api.v1.DeleteProjectRequest"> & {
+    /**
+     * @generated from field: int64 id = 1;
+     */
+    id: bigint;
+  };
 
 /**
  * Describes the message openoxide.api.v1.DeleteProjectRequest.
  * Use `create(DeleteProjectRequestSchema)` to create a new message.
  */
-export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> = /*@__PURE__*/
+export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> =
+  /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_project, 6);
 
 /**
@@ -205,7 +230,7 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof GetProjectRequestSchema;
     output: typeof ProjectSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ProjectService.ListProjects
    */
@@ -213,7 +238,7 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof ListProjectsRequestSchema;
     output: typeof ListProjectsResponseSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ProjectService.CreateProject
    */
@@ -221,7 +246,7 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof CreateProjectRequestSchema;
     output: typeof ProjectSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ProjectService.UpdateProject
    */
@@ -229,7 +254,7 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof UpdateProjectRequestSchema;
     output: typeof ProjectSchema;
-  },
+  };
   /**
    * @generated from rpc openoxide.api.v1.ProjectService.DeleteProject
    */
@@ -237,7 +262,5 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof DeleteProjectRequestSchema;
     output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_project, 0);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_project, 0);

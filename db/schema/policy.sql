@@ -1,0 +1,5 @@
+CREATE TABLE policy (
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+);

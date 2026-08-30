@@ -4,85 +4,92 @@
 
 import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
+import type {
+  EmptySchema,
+  OperationResultSchema,
+  ResourceListResponseSchema,
+  ResourceQuerySchema,
+  ResourceRequestSchema,
+  ResourceResponseSchema,
+} from "./common_pb";
 import { file_openoxide_api_v1_common } from "./common_pb";
-import type { OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./platform_pb";
-import { file_openoxide_api_v1_platform } from "./platform_pb";
 
 /**
  * Describes the file openoxide/api/v1/certificate.proto.
  */
-export const file_openoxide_api_v1_certificate: GenFile = /*@__PURE__*/
-  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2NlcnRpZmljYXRlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMvEFChxDZXJ0aWZpY2F0ZU9wZXJhdGlvbnNTZXJ2aWNlElsKEExpc3RDZXJ0aWZpY2F0ZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElcKDkdldENlcnRpZmljYXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWgoRQ3JlYXRlQ2VydGlmaWNhdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJaChFVcGRhdGVDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEk8KEURlbGV0ZUNlcnRpZmljYXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5El0KEExpc3REZXBlbmRlbmNpZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoQUmVuZXdDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWQoMTGlzdFJlbmV3YWxzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common, file_openoxide_api_v1_platform]);
+export const file_openoxide_api_v1_certificate: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "CiJvcGVub3hpZGUvYXBpL3YxL2NlcnRpZmljYXRlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMuQFChJDZXJ0aWZpY2F0ZVNlcnZpY2USWwoQTGlzdENlcnRpZmljYXRlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVwoOR2V0Q2VydGlmaWNhdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJaChFDcmVhdGVDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEloKEVVwZGF0ZUNlcnRpZmljYXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTwoRRGVsZXRlQ2VydGlmaWNhdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWAoQSXNzdWVDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWAoQUmVuZXdDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWwoTVmFsaWRhdGVDZXJ0aWZpY2F0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHRiBnByb3RvMw",
+    [file_openoxide_api_v1_common],
+  );
 
 /**
- * @generated from service openoxide.api.v1.CertificateOperationsService
+ * @generated from service openoxide.api.v1.CertificateService
  */
-export const CertificateOperationsService: GenService<{
+export const CertificateService: GenService<{
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListCertificates
+   * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
    */
   listCertificates: {
     methodKind: "unary";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.GetCertificate
+   * @generated from rpc openoxide.api.v1.CertificateService.GetCertificate
    */
   getCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.CreateCertificate
+   * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
    */
   createCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.UpdateCertificate
+   * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
    */
   updateCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.DeleteCertificate
+   * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
    */
   deleteCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof EmptySchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListDependencies
+   * @generated from rpc openoxide.api.v1.CertificateService.IssueCertificate
    */
-  listDependencies: {
+  issueCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof ResourceListResponseSchema;
-  },
+    output: typeof OperationResultSchema;
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.RenewCertificate
+   * @generated from rpc openoxide.api.v1.CertificateService.RenewCertificate
    */
   renewCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
     output: typeof OperationResultSchema;
-  },
+  };
   /**
-   * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListRenewals
+   * @generated from rpc openoxide.api.v1.CertificateService.ValidateCertificate
    */
-  listRenewals: {
+  validateCertificate: {
     methodKind: "unary";
     input: typeof ResourceRequestSchema;
-    output: typeof ResourceListResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_certificate, 0);
-
+    output: typeof OperationResultSchema;
+  };
+}> = /*@__PURE__*/ serviceDesc(file_openoxide_api_v1_certificate, 0);

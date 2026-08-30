@@ -1,0 +1,17 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service VaultService {
+  rpc ListProviders(ResourceQuery) returns (ResourceListResponse);
+  rpc GetProvider(ResourceRequest) returns (ResourceResponse);
+  rpc CreateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateProvider(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteProvider(ResourceRequest) returns (Empty);
+  rpc TestProvider(ResourceRequest) returns (OperationResult);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc ListSecrets(ResourceRequest) returns (ResourceListResponse);
+  rpc ListAssignments(ResourceRequest) returns (ResourceListResponse);
+  rpc UpdateAssignments(ResourceRequest) returns (OperationResult);
+}

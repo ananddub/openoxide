@@ -1,0 +1,13 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service DestinationService {
+  rpc ListDestinations(ResourceQuery) returns (ResourceListResponse);
+  rpc GetDestination(ResourceRequest) returns (ResourceResponse);
+  rpc CreateDestination(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateDestination(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteDestination(ResourceRequest) returns (Empty);
+  rpc TestDestination(ResourceRequest) returns (OperationResult);
+}

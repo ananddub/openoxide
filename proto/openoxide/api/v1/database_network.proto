@@ -1,0 +1,14 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service DatabaseNetworkService {
+  rpc ListNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc ListServerNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc GetNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc CreateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteNetwork(ResourceRequest) returns (Empty);
+  rpc ListDependencies(ResourceRequest) returns (ResourceListResponse);
+}

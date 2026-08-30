@@ -1,0 +1,9 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service AuditService {
+  rpc ListAuditLogs(ResourceQuery) returns (ResourceListResponse);
+  rpc ExportAuditLogs(ResourceQuery) returns (ResourceResponse);
+}

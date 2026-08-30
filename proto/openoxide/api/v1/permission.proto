@@ -1,0 +1,28 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service PermissionService {
+  rpc ListPermissions(ResourceQuery) returns (ResourceListResponse);
+  rpc GetPermission(ResourceRequest) returns (ResourceResponse);
+  rpc CreatePermission(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePermission(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePermission(ResourceRequest) returns (Empty);
+  rpc ListGroups(ResourceQuery) returns (ResourceListResponse);
+  rpc GetGroup(ResourceRequest) returns (ResourceResponse);
+  rpc CreateGroup(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateGroup(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteGroup(ResourceRequest) returns (Empty);
+  rpc ListPolicies(ResourceQuery) returns (ResourceListResponse);
+  rpc AssignMemberGroup(ResourceRequest) returns (OperationResult);
+  rpc ListMembers(ResourceQuery) returns (ResourceListResponse);
+  rpc AddMember(ResourceRequest) returns (OperationResult);
+  rpc UpdateMemberRole(ResourceRequest) returns (OperationResult);
+  rpc RemoveMember(ResourceRequest) returns (Empty);
+  rpc ListInvites(ResourceQuery) returns (ResourceListResponse);
+  rpc CreateInvite(ResourceRequest) returns (ResourceResponse);
+  rpc AcceptInvite(ResourceRequest) returns (OperationResult);
+  rpc CancelInvite(ResourceRequest) returns (Empty);
+  rpc ReplaceUserPolicies(ResourceRequest) returns (OperationResult);
+}

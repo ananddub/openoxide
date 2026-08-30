@@ -3,7 +3,6 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
-import "openoxide/api/v1/platform.proto";
 import "buf/validate/validate.proto";
 
 service ApplicationService {

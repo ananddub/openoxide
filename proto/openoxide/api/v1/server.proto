@@ -1,0 +1,24 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+service ServerService {
+  rpc ListServers(ResourceQuery) returns (ResourceListResponse);
+  rpc GetServer(ResourceRequest) returns (ResourceResponse);
+  rpc CreateServer(ResourceRequest) returns (ResourceResponse);
+  rpc UpdateServer(ResourceRequest) returns (ResourceResponse);
+  rpc DeleteServer(ResourceRequest) returns (Empty);
+  rpc TestConnection(ResourceRequest) returns (OperationResult);
+  rpc SetupServer(ResourceRequest) returns (OperationResult);
+  rpc StartServer(ResourceRequest) returns (OperationResult);
+  rpc StopServer(ResourceRequest) returns (OperationResult);
+  rpc RestartServer(ResourceRequest) returns (OperationResult);
+  rpc RemoveServer(ResourceRequest) returns (Empty);
+  rpc GetServerErrors(ResourceRequest) returns (ResourceListResponse);
+  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
+  rpc ListPrivateNetworks(ResourceQuery) returns (ResourceListResponse);
+  rpc CreatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc UpdatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
+  rpc DeletePrivateNetwork(ResourceRequest) returns (Empty);
+}

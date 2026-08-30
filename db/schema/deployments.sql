@@ -1,0 +1,19 @@
+CREATE TABLE deployments (
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL,
+    state TEXT NOT NULL,
+    log_path TEXT NOT NULL,
+    pid TEXT,
+    error_message TEXT,
+    operation TEXT,
+    is_preview_deployment BIGINT NOT NULL,
+    started_at BIGINT,
+    last_state_at BIGINT,
+    finished_at BIGINT,
+    service_id BIGINT REFERENCES services(id) ON DELETE CASCADE,
+    server_id BIGINT,
+    created_at BIGINT NOT NULL,
+    database_kind TEXT
+);

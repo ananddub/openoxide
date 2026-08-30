@@ -77,11 +77,6 @@ gen-mod:
         add_if_missing "src/lib.rs" "$name"
     done < <(find src -mindepth 1 -maxdepth 1 -type d | sort)
 
-# Generate typed sqlx query methods from db/queries/*.sql → src/db/queries/
-query-gen:
-    bash scripts/query-gen.sh
-
-
 run:
     cargo run --bin openoxide
 
