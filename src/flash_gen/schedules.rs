@@ -4,204 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-    pub schedule_action: String,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesListByApplicationRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesListByComposeRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesListByServerRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesListByOrganizationRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesListEnabledRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesCreateAndReturnRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesUpdateAndReturnRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SchedulesSetEnabledRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct CreateScheduleParams {
     pub name: String,
     pub description: String,
@@ -274,23 +76,7 @@ pub struct SchedulesUpdateParams {
     pub id: i64,
 }
 
-pub struct SchedulesCreateAndReturnParams {
-    pub name: String,
-    pub description: String,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: String,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: String,
-    pub timezone: String,
-    pub enabled: i64,
-    pub service_id: i64,
-    pub server_id: i64,
-    pub organization_id: i64,
-}
+pub type SchedulesCreateAndReturnParams = CreateScheduleParams;
 
 pub struct SchedulesUpdateAndReturnParams {
     pub name: String,
@@ -483,8 +269,8 @@ impl Queries {
     /// SchedulesGetAll
     pub async fn schedules_get_all(
         &self,
-    ) -> Result<Vec<SchedulesGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesGetAllRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name AS name, description AS description, cron_expression AS cron_expression, app_name AS app_name, service_name AS service_name, shell_type AS shell_type, schedule_type AS schedule_type, command AS command, script AS script, timezone AS timezone, enabled AS enabled, service_id AS service_id, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, schedule_action AS schedule_action FROM schedules;"
         )
         .fetch_all(&self.pool)
@@ -583,8 +369,8 @@ impl Queries {
     pub async fn schedules_list_by_application(
         &self,
         service_id: i64,
-    ) -> Result<Vec<SchedulesListByApplicationRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesListByApplicationRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(service_id)
@@ -596,8 +382,8 @@ impl Queries {
     pub async fn schedules_list_by_compose(
         &self,
         service_id: i64,
-    ) -> Result<Vec<SchedulesListByComposeRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesListByComposeRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(service_id)
@@ -609,8 +395,8 @@ impl Queries {
     pub async fn schedules_list_by_server(
         &self,
         server_id: i64,
-    ) -> Result<Vec<SchedulesListByServerRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesListByServerRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE server_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(server_id)
@@ -622,8 +408,8 @@ impl Queries {
     pub async fn schedules_list_by_organization(
         &self,
         organization_id: i64,
-    ) -> Result<Vec<SchedulesListByOrganizationRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesListByOrganizationRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(organization_id)
@@ -634,8 +420,8 @@ impl Queries {
     /// SchedulesListEnabled
     pub async fn schedules_list_enabled(
         &self,
-    ) -> Result<Vec<SchedulesListEnabledRow>, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesListEnabledRow>(
+    ) -> Result<Vec<Schedules>, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE enabled = 1 ORDER BY created_at DESC, id DESC;"
         )
         .fetch_all(&self.pool)
@@ -646,8 +432,8 @@ impl Queries {
     pub async fn schedules_create_and_return(
         &self,
         params: &SchedulesCreateAndReturnParams,
-    ) -> Result<SchedulesCreateAndReturnRow, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesCreateAndReturnRow>(
+    ) -> Result<Schedules, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "INSERT INTO schedules (name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
@@ -673,8 +459,8 @@ impl Queries {
     pub async fn schedules_update_and_return(
         &self,
         params: &SchedulesUpdateAndReturnParams,
-    ) -> Result<SchedulesUpdateAndReturnRow, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesUpdateAndReturnRow>(
+    ) -> Result<Schedules, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "UPDATE schedules SET name = ?, description = ?, cron_expression = ?, app_name = ?, service_name = ?, shell_type = ?, schedule_type = ?, schedule_action = ?, command = ?, script = ?, timezone = ?, enabled = ?, service_id = ?, server_id = ?, organization_id = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
@@ -702,8 +488,8 @@ impl Queries {
         &self,
         enabled: i64,
         id: i64,
-    ) -> Result<SchedulesSetEnabledRow, sqlx::Error> {
-        sqlx::query_as::<_, SchedulesSetEnabledRow>(
+    ) -> Result<Schedules, sqlx::Error> {
+        sqlx::query_as::<_, Schedules>(
             "UPDATE schedules SET enabled = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(enabled)

@@ -10,12 +10,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
 use crate::core::cache::{AppStateCache, CacheEnum, CacheKey};
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::backups::{
-    BackupsGetAllRow, BackupsUpdateParams, CreateBackupParams, CreateVolumeBackupParams,
+    BackupsUpdateParams, CreateBackupParams, CreateVolumeBackupParams,
 };
 use crate::flash_gen::models::{Backups, BackupExecutions, VolumeBackups};
-use crate::flash_gen::volume_backups::{
-    VolumeBackupsGetAllRow, VolumeBackupsGetByIdRow, VolumeBackupsUpdateParams,
-};
+use crate::flash_gen::volume_backups::VolumeBackupsUpdateParams;
 use crate::services::{
     backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
     schedule::ScheduleService,
@@ -847,29 +845,6 @@ impl From<Backups> for BackupResponseDto {
     }
 }
 
-impl From<BackupsGetAllRow> for Backups {
-    fn from(value: BackupsGetAllRow) -> Self {
-        Self {
-            id: value.id,
-            app_name: value.app_name,
-            schedule: value.schedule,
-            enabled: value.enabled,
-            database_name: value.database_name,
-            prefix: value.prefix,
-            service_name: value.service_name,
-            keep_latest_count: value.keep_latest_count,
-            backup_type: value.backup_type,
-            database_type: value.database_type,
-            metadata: value.metadata,
-            service_id: value.service_id,
-            destination_id: value.destination_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
-    }
-}
-
 #[derive(Debug, Deserialize)]
 struct CreateVolumeBackupDto {
     pub name: String,
@@ -944,48 +919,3 @@ impl From<VolumeBackups> for VolumeBackupResponseDto {
     }
 }
 
-impl From<VolumeBackupsGetAllRow> for VolumeBackups {
-    fn from(value: VolumeBackupsGetAllRow) -> Self {
-        Self {
-            id: value.id,
-            name: value.name,
-            volume_name: value.volume_name,
-            prefix: value.prefix,
-            service_type: value.service_type,
-            app_name: value.app_name,
-            service_name: value.service_name,
-            turn_off: value.turn_off,
-            cron_expression: value.cron_expression,
-            keep_latest_count: value.keep_latest_count,
-            enabled: value.enabled,
-            service_id: value.service_id,
-            destination_id: value.destination_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
-    }
-}
-
-impl From<VolumeBackupsGetByIdRow> for VolumeBackups {
-    fn from(value: VolumeBackupsGetByIdRow) -> Self {
-        Self {
-            id: value.id,
-            name: value.name,
-            volume_name: value.volume_name,
-            prefix: value.prefix,
-            service_type: value.service_type,
-            app_name: value.app_name,
-            service_name: value.service_name,
-            turn_off: value.turn_off,
-            cron_expression: value.cron_expression,
-            keep_latest_count: value.keep_latest_count,
-            enabled: value.enabled,
-            service_id: value.service_id,
-            destination_id: value.destination_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
-    }
-}

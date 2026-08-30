@@ -7,7 +7,6 @@ use crate::{
     },
     flash_gen::personal_access_tokens::{
         PersonalAccessTokensCreateParams, PersonalAccessTokensCreateRow,
-        PersonalAccessTokensListRow,
     },
     utils::jwt::claim::{Claims, TokenType},
 };
@@ -107,21 +106,6 @@ impl AuthService {
 
 impl From<PersonalAccessTokensCreateRow> for PersonalAccessToken {
     fn from(row: PersonalAccessTokensCreateRow) -> Self {
-        Self {
-            id: row.id,
-            name: row.name,
-            token_prefix: row.token_prefix,
-            expires_at: row.expires_at,
-            last_used_at: row.last_used_at,
-            revoked_at: row.revoked_at,
-            created_at: row.created_at,
-            ..Default::default()
-        }
-    }
-}
-
-impl From<PersonalAccessTokensListRow> for PersonalAccessToken {
-    fn from(row: PersonalAccessTokensListRow) -> Self {
         Self {
             id: row.id,
             name: row.name,

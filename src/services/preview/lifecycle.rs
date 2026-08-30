@@ -282,9 +282,6 @@ macro_rules! impl_matching_target_row {
 }
 
 impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets1Row);
-impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets2Row);
-impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets3Row);
-impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets4Row);
 
 fn is_close_action(action: &str) -> bool {
     matches!(

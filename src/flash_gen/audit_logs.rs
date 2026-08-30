@@ -4,21 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct AuditLogsGetAllRow {
-    pub id: i64,
-    pub user_email: String,
-    pub user_role: String,
-    pub action: String,
-    pub resource_type: String,
-    pub resource_id: Option<String>,
-    pub resource_name: Option<String>,
-    pub metadata: Option<String>,
-    pub organization_id: Option<i64>,
-    pub user_id: Option<i64>,
-    pub created_at: i64,
-}
-
 pub struct AuditLogsListByOrganizationParams {
     pub organization_id: i64,
     pub limit: i64,
@@ -122,8 +107,8 @@ impl Queries {
     /// AuditLogsGetAll
     pub async fn audit_logs_get_all(
         &self,
-    ) -> Result<Vec<AuditLogsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, AuditLogsGetAllRow>(
+    ) -> Result<Vec<AuditLogs>, sqlx::Error> {
+        sqlx::query_as::<_, AuditLogs>(
             "SELECT id AS id, user_email AS user_email, user_role AS user_role, action AS action, resource_type AS resource_type, resource_id AS resource_id, resource_name AS resource_name, metadata AS metadata, organization_id AS organization_id, user_id AS user_id, created_at AS created_at FROM audit_logs;"
         )
         .fetch_all(&self.pool)

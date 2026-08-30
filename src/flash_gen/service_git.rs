@@ -10,23 +10,11 @@ pub struct FindServicesByGithubRepoRow {
     pub watch_paths: Option<String>,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct FindServicesByGitlabRepoRow {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
+pub type FindServicesByGitlabRepoRow = FindServicesByGithubRepoRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct FindServicesByGiteaRepoRow {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
+pub type FindServicesByGiteaRepoRow = FindServicesByGithubRepoRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct FindServicesByBitbucketRepoRow {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
+pub type FindServicesByBitbucketRepoRow = FindServicesByGithubRepoRow;
 
 pub struct CreateServiceGitParams {
     pub service_id: i64,

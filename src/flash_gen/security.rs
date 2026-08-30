@@ -3,21 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::network::CreateSecurityParams;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SecurityGetAllRow {
-    pub id: i64,
-    pub username: String,
-    pub password: String,
-    pub service_id: i64,
-    pub created_at: i64,
-}
-
-pub struct SecurityCreateForApplicationParams {
-    pub username: String,
-    pub password: String,
-    pub service_id: i64,
-}
+pub type SecurityCreateForApplicationParams = CreateSecurityParams;
 
 pub struct SecurityUpdateForApplicationParams {
     pub username: String,
@@ -45,8 +33,8 @@ impl Queries {
     /// SecurityGetAll
     pub async fn security_get_all(
         &self,
-    ) -> Result<Vec<SecurityGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, SecurityGetAllRow>(
+    ) -> Result<Vec<Security>, sqlx::Error> {
+        sqlx::query_as::<_, Security>(
             "SELECT id AS id, username AS username, password AS password, service_id AS service_id, created_at AS created_at FROM security;"
         )
         .fetch_all(&self.pool)

@@ -1,11 +1,6 @@
 use serde::Serialize;
 
-use crate::flash_gen::preview_deployments::{
-    PreviewDeploymentsFindByPreviewApplicationRow, PreviewDeploymentsFindForPullRequestRow,
-    PreviewDeploymentsFindOpenForEventRow, PreviewDeploymentsGetByIdRow,
-    PreviewDeploymentsList1Row, PreviewDeploymentsList2Row,
-    PreviewDeploymentsListOpenForBaseApplicationRow,
-};
+use crate::flash_gen::models::PreviewDeployments;
 
 #[derive(Debug, Clone, Serialize, ts_rs::TS)]
 pub struct PreviewDeploymentView {
@@ -60,13 +55,7 @@ macro_rules! impl_view_from_row {
     };
 }
 
-impl_view_from_row!(PreviewDeploymentsList1Row);
-impl_view_from_row!(PreviewDeploymentsList2Row);
-impl_view_from_row!(PreviewDeploymentsGetByIdRow);
-impl_view_from_row!(PreviewDeploymentsListOpenForBaseApplicationRow);
-impl_view_from_row!(PreviewDeploymentsFindByPreviewApplicationRow);
-impl_view_from_row!(PreviewDeploymentsFindForPullRequestRow);
-impl_view_from_row!(PreviewDeploymentsFindOpenForEventRow);
+impl_view_from_row!(PreviewDeployments);
 
 /// The generated queries bind nullable TEXT columns as non-Option strings, so
 /// a stored NULL round-trips as `Some("")`. Empty strings are folded back to

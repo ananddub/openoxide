@@ -3,21 +3,7 @@
 
 use super::models::*;
 use super::db::Queries;
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DestinationsGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub provider: String,
-    pub access_key: String,
-    pub secret_access_key: String,
-    pub bucket: String,
-    pub region: String,
-    pub endpoint: String,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+use super::backups::UpdateDestinationParams;
 
 pub struct DestinationsCreateAndReturnParams {
     pub name: String,
@@ -32,23 +18,14 @@ pub struct DestinationsCreateAndReturnParams {
     pub updated_at: i64,
 }
 
-pub struct DestinationsUpdateAndReturnParams {
-    pub name: String,
-    pub provider: String,
-    pub access_key: String,
-    pub secret_access_key: String,
-    pub bucket: String,
-    pub region: String,
-    pub endpoint: String,
-    pub id: i64,
-}
+pub type DestinationsUpdateAndReturnParams = UpdateDestinationParams;
 
 impl Queries {
     /// DestinationsGetAll
     pub async fn destinations_get_all(
         &self,
-    ) -> Result<Vec<DestinationsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, DestinationsGetAllRow>(
+    ) -> Result<Vec<Destinations>, sqlx::Error> {
+        sqlx::query_as::<_, Destinations>(
             "SELECT * FROM destinations;"
         )
         .fetch_all(&self.pool)

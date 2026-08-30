@@ -19,18 +19,7 @@ pub struct JwtTokensGetAllRow {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct JwtTokensGetByIdRow {
-    pub id: i64,
-    pub jti: String,
-    pub role: String,
-    pub user_id: i64,
-    pub is_blacklist: Option<i64>,
-    pub blacklist_at: Option<i64>,
-    pub expired_at: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type JwtTokensGetByIdRow = JwtTokensGetAllRow;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct JwtTokensListSessionsRow {

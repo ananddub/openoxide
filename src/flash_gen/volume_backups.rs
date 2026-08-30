@@ -4,46 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct VolumeBackupsGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub volume_name: String,
-    pub prefix: String,
-    pub service_type: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub turn_off: i64,
-    pub cron_expression: String,
-    pub keep_latest_count: Option<i64>,
-    pub enabled: i64,
-    pub destination_id: i64,
-    pub organization_id: i64,
-    pub service_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct VolumeBackupsGetByIdRow {
-    pub id: i64,
-    pub name: String,
-    pub volume_name: String,
-    pub prefix: String,
-    pub service_type: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub turn_off: i64,
-    pub cron_expression: String,
-    pub keep_latest_count: Option<i64>,
-    pub enabled: i64,
-    pub destination_id: i64,
-    pub organization_id: i64,
-    pub service_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct VolumeBackupsCreateParams {
     pub name: String,
     pub volume_name: String,
@@ -85,8 +45,8 @@ impl Queries {
     /// VolumeBackupsGetAll
     pub async fn volume_backups_get_all(
         &self,
-    ) -> Result<Vec<VolumeBackupsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, VolumeBackupsGetAllRow>(
+    ) -> Result<Vec<VolumeBackups>, sqlx::Error> {
+        sqlx::query_as::<_, VolumeBackups>(
             "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups;"
         )
         .fetch_all(&self.pool)
@@ -97,8 +57,8 @@ impl Queries {
     pub async fn volume_backups_get_by_id(
         &self,
         id: i64,
-    ) -> Result<VolumeBackupsGetByIdRow, sqlx::Error> {
-        sqlx::query_as::<_, VolumeBackupsGetByIdRow>(
+    ) -> Result<VolumeBackups, sqlx::Error> {
+        sqlx::query_as::<_, VolumeBackups>(
             "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups WHERE id = ?;"
         )
         .bind(id)

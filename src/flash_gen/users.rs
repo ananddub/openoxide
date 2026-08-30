@@ -3,6 +3,7 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::two_factor::TwoFactorCreateParams;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct UsersGetAllRow {
@@ -24,65 +25,11 @@ pub struct UsersGetAllRow {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct UsersGetByIdRow {
-    pub id: i64,
-    pub email: Option<String>,
-    pub last_name: Option<String>,
-    pub first_name: Option<String>,
-    pub avatar: String,
-    pub role: Option<String>,
-    pub about_me: Option<String>,
-    pub password: String,
-    pub is_email_verify: Option<i64>,
-    pub email_verify_at: Option<i64>,
-    pub two_factor_enable: Option<i64>,
-    pub is_registered: i64,
-    pub added_by: Option<i64>,
-    pub group_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type UsersGetByIdRow = UsersGetAllRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct UsersCreateOwnerAndReturnRow {
-    pub id: i64,
-    pub email: Option<String>,
-    pub last_name: Option<String>,
-    pub first_name: Option<String>,
-    pub avatar: String,
-    pub role: Option<String>,
-    pub about_me: Option<String>,
-    pub password: String,
-    pub is_email_verify: Option<i64>,
-    pub email_verify_at: Option<i64>,
-    pub two_factor_enable: Option<i64>,
-    pub is_registered: i64,
-    pub added_by: Option<i64>,
-    pub group_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type UsersCreateOwnerAndReturnRow = UsersGetAllRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct UsersGetByEmailRow {
-    pub id: i64,
-    pub email: Option<String>,
-    pub last_name: Option<String>,
-    pub first_name: Option<String>,
-    pub avatar: String,
-    pub role: Option<String>,
-    pub about_me: Option<String>,
-    pub password: String,
-    pub is_email_verify: Option<i64>,
-    pub email_verify_at: Option<i64>,
-    pub two_factor_enable: Option<i64>,
-    pub is_registered: i64,
-    pub added_by: Option<i64>,
-    pub group_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type UsersGetByEmailRow = UsersGetAllRow;
 
 pub struct CreateUserParams {
     pub email: String,
@@ -104,17 +51,9 @@ pub struct UpdateUserParams {
     pub id: i64,
 }
 
-pub struct CreateTwoFactorParams {
-    pub secret: String,
-    pub backup_codes: String,
-    pub user_id: i64,
-}
+pub type CreateTwoFactorParams = TwoFactorCreateParams;
 
-pub struct UpdateTwoFactorParams {
-    pub secret: String,
-    pub backup_codes: String,
-    pub user_id: i64,
-}
+pub type UpdateTwoFactorParams = TwoFactorCreateParams;
 
 pub struct CreateJwtTokenParams {
     pub jti: String,

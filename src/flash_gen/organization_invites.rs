@@ -4,20 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct OrganizationInvitesGetAllRow {
-    pub id: i64,
-    pub email: String,
-    pub role: Option<String>,
-    pub status: Option<String>,
-    pub token: String,
-    pub group_id: i64,
-    pub organization_id: i64,
-    pub invited_by: i64,
-    pub expired_at: i64,
-    pub created_at: i64,
-}
-
 pub struct OrganizationInvitesCreateParams {
     pub email: String,
     pub role: String,
@@ -47,8 +33,8 @@ impl Queries {
     /// OrganizationInvitesGetAll
     pub async fn organization_invites_get_all(
         &self,
-    ) -> Result<Vec<OrganizationInvitesGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, OrganizationInvitesGetAllRow>(
+    ) -> Result<Vec<OrganizationInvites>, sqlx::Error> {
+        sqlx::query_as::<_, OrganizationInvites>(
             "SELECT id AS id, email AS email, role AS role, status AS status, token AS token, group_id AS group_id, organization_id AS organization_id, invited_by AS invited_by, expired_at AS expired_at, created_at AS created_at FROM organization_invites;"
         )
         .fetch_all(&self.pool)

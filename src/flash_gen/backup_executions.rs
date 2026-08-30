@@ -20,21 +20,7 @@ pub struct BackupExecutionsListRow {
     pub finished_at: Option<i64>,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct BackupExecutionsGetRow {
-    pub id: i64,
-    pub backup_kind: String,
-    pub operation: String,
-    pub backup_id: Option<i64>,
-    pub status: String,
-    pub object_key: Option<String>,
-    pub checksum_sha256: String,
-    pub size_bytes: Option<i64>,
-    pub attempt: i64,
-    pub error: Option<String>,
-    pub started_at: i64,
-    pub finished_at: Option<i64>,
-}
+pub type BackupExecutionsGetRow = BackupExecutionsListRow;
 
 pub struct BackupExecutionsNextAttemptParams {
     pub backup_kind: String,

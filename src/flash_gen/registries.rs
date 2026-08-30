@@ -5,19 +5,6 @@ use super::models::*;
 use super::db::Queries;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct RegistriesGetAllRow {
-    pub id: i64,
-    pub registry_name: String,
-    pub image_prefix: Option<String>,
-    pub username: String,
-    pub password: String,
-    pub registry_url: String,
-    pub registry_type: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct RegistriesUsageReferencesRow {
     pub resource_id: Option<i64>,
     pub resource_name: String,
@@ -58,8 +45,8 @@ impl Queries {
     /// RegistriesGetAll
     pub async fn registries_get_all(
         &self,
-    ) -> Result<Vec<RegistriesGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, RegistriesGetAllRow>(
+    ) -> Result<Vec<Registries>, sqlx::Error> {
+        sqlx::query_as::<_, Registries>(
             "SELECT id AS id, registry_name AS registry_name, image_prefix AS image_prefix, username AS username, password AS password, registry_url AS registry_url, registry_type AS registry_type, created_at AS created_at, updated_at AS updated_at FROM registries;"
         )
         .fetch_all(&self.pool)

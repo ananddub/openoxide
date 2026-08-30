@@ -3,52 +3,16 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::compose_extra::ComposePatchCreateParams;
+use super::compose_extra::ComposePatchUpdateParams;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PatchesGetAllRow {
-    pub id: i64,
-    pub patch_type: String,
-    pub file_path: String,
-    pub enabled: i64,
-    pub content: String,
-    pub service_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type PatchesCreateForComposeParams = ComposePatchCreateParams;
 
-pub struct PatchesCreateForComposeParams {
-    pub patch_type: String,
-    pub file_path: String,
-    pub enabled: i64,
-    pub content: String,
-    pub service_id: i64,
-}
+pub type PatchesUpdateForComposeParams = ComposePatchUpdateParams;
 
-pub struct PatchesUpdateForComposeParams {
-    pub patch_type: String,
-    pub file_path: String,
-    pub enabled: i64,
-    pub content: String,
-    pub id: i64,
-    pub service_id: i64,
-}
+pub type PatchesCreateForApplicationParams = ComposePatchCreateParams;
 
-pub struct PatchesCreateForApplicationParams {
-    pub patch_type: String,
-    pub file_path: String,
-    pub enabled: i64,
-    pub content: String,
-    pub service_id: i64,
-}
-
-pub struct PatchesUpdateForApplicationParams {
-    pub patch_type: String,
-    pub file_path: String,
-    pub enabled: i64,
-    pub content: String,
-    pub id: i64,
-    pub service_id: i64,
-}
+pub type PatchesUpdateForApplicationParams = ComposePatchUpdateParams;
 
 pub struct PatchesCreateParams {
     pub patch_type: String,
@@ -75,8 +39,8 @@ impl Queries {
     /// PatchesGetAll
     pub async fn patches_get_all(
         &self,
-    ) -> Result<Vec<PatchesGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, PatchesGetAllRow>(
+    ) -> Result<Vec<Patches>, sqlx::Error> {
+        sqlx::query_as::<_, Patches>(
             "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches;"
         )
         .fetch_all(&self.pool)

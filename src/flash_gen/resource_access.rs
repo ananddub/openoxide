@@ -11,19 +11,9 @@ pub struct ResourceAccessCheckAccessParams {
     pub resource_id: i64,
 }
 
-pub struct ResourceAccessGrantAccessParams {
-    pub user_id: i64,
-    pub org_id: i64,
-    pub resource_type: String,
-    pub resource_id: i64,
-}
+pub type ResourceAccessGrantAccessParams = ResourceAccessCheckAccessParams;
 
-pub struct ResourceAccessRevokeAccessParams {
-    pub user_id: i64,
-    pub org_id: i64,
-    pub resource_type: String,
-    pub resource_id: i64,
-}
+pub type ResourceAccessRevokeAccessParams = ResourceAccessCheckAccessParams;
 
 impl Queries {
     /// ResourceAccessCheckAccess

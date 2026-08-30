@@ -4,13 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ProjectTagsGetAllRow {
-    pub id: i64,
-    pub project_id: i64,
-    pub tag_id: i64,
-}
-
 pub struct ProjectTagsUpdateParams {
     pub project_id: i64,
     pub tag_id: i64,
@@ -21,8 +14,8 @@ impl Queries {
     /// ProjectTagsGetAll
     pub async fn project_tags_get_all(
         &self,
-    ) -> Result<Vec<ProjectTagsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, ProjectTagsGetAllRow>(
+    ) -> Result<Vec<ProjectTags>, sqlx::Error> {
+        sqlx::query_as::<_, ProjectTags>(
             "SELECT id AS id, project_id AS project_id, tag_id AS tag_id FROM project_tags;"
         )
         .fetch_all(&self.pool)

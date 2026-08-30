@@ -3,27 +3,12 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::compose_extra::ComposeMountCreateParams;
+use super::compose_extra::ComposeMountUpdateParams;
 
-pub struct MountCreateForApplicationParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub service_id: i64,
-}
+pub type MountCreateForApplicationParams = ComposeMountCreateParams;
 
-pub struct MountUpdateForApplicationParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub id: i64,
-    pub service_id: i64,
-}
+pub type MountUpdateForApplicationParams = ComposeMountUpdateParams;
 
 pub struct MountCreateComposeFileParams {
     pub file_path: String,
@@ -31,47 +16,13 @@ pub struct MountCreateComposeFileParams {
     pub service_id: i64,
 }
 
-pub struct MountCreateForDatabaseParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub service_id: i64,
-}
+pub type MountCreateForDatabaseParams = ComposeMountCreateParams;
 
-pub struct MountUpdateForDatabaseParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub id: i64,
-    pub service_id: i64,
-}
+pub type MountUpdateForDatabaseParams = ComposeMountUpdateParams;
 
-pub struct MountCreateForComposeParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub service_id: i64,
-}
+pub type MountCreateForComposeParams = ComposeMountCreateParams;
 
-pub struct MountUpdateForComposeParams {
-    pub mount_type: String,
-    pub host_path: String,
-    pub volume_name: String,
-    pub file_path: String,
-    pub content: String,
-    pub mount_path: String,
-    pub id: i64,
-    pub service_id: i64,
-}
+pub type MountUpdateForComposeParams = ComposeMountUpdateParams;
 
 impl Queries {
     /// MountFetchForDatabase

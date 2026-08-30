@@ -3,6 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::organization::OrganizationCreateInTransactionParams;
+use super::organization_members::OrganizationMembersUpdateRoleParams;
+use super::organization::OrganizationUpdateAndReturnParams;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct ListMembersByOrgRow {
@@ -20,31 +23,13 @@ pub struct ListMembersByOrgRow {
     pub user_role: Option<String>,
 }
 
-pub struct CreateOrganizationParams {
-    pub name: String,
-    pub logo: String,
-    pub slug: String,
-    pub owner_id: i64,
-}
+pub type CreateOrganizationParams = OrganizationCreateInTransactionParams;
 
-pub struct UpdateOrganizationParams {
-    pub name: String,
-    pub logo: String,
-    pub slug: String,
-    pub id: i64,
-}
+pub type UpdateOrganizationParams = OrganizationUpdateAndReturnParams;
 
-pub struct AddMemberParams {
-    pub role: String,
-    pub user_id: i64,
-    pub organization_id: i64,
-}
+pub type AddMemberParams = OrganizationMembersUpdateRoleParams;
 
-pub struct UpdateMemberRoleParams {
-    pub role: String,
-    pub user_id: i64,
-    pub organization_id: i64,
-}
+pub type UpdateMemberRoleParams = OrganizationMembersUpdateRoleParams;
 
 pub struct CreateInviteParams {
     pub email: String,

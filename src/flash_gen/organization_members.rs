@@ -26,25 +26,9 @@ pub struct OrganizationMembersListWithUserForOrganizationRow {
     pub avatar: String,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct OrganizationMembersGetAllRow {
-    pub id: i64,
-    pub role: Option<String>,
-    pub user_id: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type OrganizationMembersGetAllRow = OrganizationMembersListForOrganizationRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct OrganizationMembersGetByIdRow {
-    pub id: i64,
-    pub role: Option<String>,
-    pub user_id: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type OrganizationMembersGetByIdRow = OrganizationMembersListForOrganizationRow;
 
 pub struct OrganizationMembersUpdateRoleParams {
     pub role: String,
@@ -69,11 +53,7 @@ pub struct OrganizationMembersUpdateParams {
     pub id: i64,
 }
 
-pub struct OrganizationMembersAddMemberInTransactionParams {
-    pub role: String,
-    pub user_id: i64,
-    pub organization_id: i64,
-}
+pub type OrganizationMembersAddMemberInTransactionParams = OrganizationMembersUpdateRoleParams;
 
 pub struct OrganizationMembersAddMemberWithGroupInTransactionParams {
     pub role: String,
@@ -82,12 +62,7 @@ pub struct OrganizationMembersAddMemberWithGroupInTransactionParams {
     pub group_id: i64,
 }
 
-pub struct OrganizationMembersAddMemberWithGroupParams {
-    pub role: String,
-    pub user_id: i64,
-    pub organization_id: i64,
-    pub group_id: i64,
-}
+pub type OrganizationMembersAddMemberWithGroupParams = OrganizationMembersAddMemberWithGroupInTransactionParams;
 
 impl Queries {
     /// OrganizationMembersFirstOrganizationId

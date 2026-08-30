@@ -16,29 +16,9 @@ pub struct PersonalAccessTokensCreateRow {
     pub created_at: i64,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PersonalAccessTokensListRow {
-    pub id: i64,
-    pub user_id: i64,
-    pub name: String,
-    pub token_prefix: String,
-    pub expires_at: Option<i64>,
-    pub last_used_at: Option<i64>,
-    pub revoked_at: Option<i64>,
-    pub created_at: i64,
-}
+pub type PersonalAccessTokensListRow = PersonalAccessTokensCreateRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PersonalAccessTokensAuthenticate1Row {
-    pub id: i64,
-    pub user_id: i64,
-    pub name: String,
-    pub token_prefix: String,
-    pub expires_at: Option<i64>,
-    pub last_used_at: Option<i64>,
-    pub revoked_at: Option<i64>,
-    pub created_at: i64,
-}
+pub type PersonalAccessTokensAuthenticate1Row = PersonalAccessTokensCreateRow;
 
 pub struct PersonalAccessTokensCreateParams {
     pub user_id: i64,

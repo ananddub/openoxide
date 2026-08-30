@@ -4,19 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct AiSettingsGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub api_url: String,
-    pub api_key: String,
-    pub model: String,
-    pub is_enabled: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct AiSettingsCreateParams {
     pub name: String,
     pub api_url: String,
@@ -44,8 +31,8 @@ impl Queries {
     /// AiSettingsGetAll
     pub async fn ai_settings_get_all(
         &self,
-    ) -> Result<Vec<AiSettingsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, AiSettingsGetAllRow>(
+    ) -> Result<Vec<AiSettings>, sqlx::Error> {
+        sqlx::query_as::<_, AiSettings>(
             "SELECT id AS id, name AS name, api_url AS api_url, api_key AS api_key, model AS model, is_enabled AS is_enabled, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM ai_settings;"
         )
         .fetch_all(&self.pool)

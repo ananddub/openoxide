@@ -4,18 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SshKeysGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub private_key: String,
-    pub public_key: String,
-    pub last_used_at: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct SshKeysCreateParams {
     pub name: String,
     pub description: String,
@@ -58,8 +46,8 @@ impl Queries {
     /// SshKeysGetAll
     pub async fn ssh_keys_get_all(
         &self,
-    ) -> Result<Vec<SshKeysGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, SshKeysGetAllRow>(
+    ) -> Result<Vec<SshKeys>, sqlx::Error> {
+        sqlx::query_as::<_, SshKeys>(
             "SELECT id AS id, name AS name, description AS description, private_key AS private_key, public_key AS public_key, last_used_at AS last_used_at, created_at AS created_at, updated_at AS updated_at FROM ssh_keys;"
         )
         .fetch_all(&self.pool)

@@ -4,18 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct EnvironmentsGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub env_var: String,
-    pub is_default: i64,
-    pub project_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct EnvironmentsCreateParams {
     pub name: String,
     pub description: String,
@@ -37,15 +25,7 @@ pub struct EnvironmentsUpdateParams {
     pub id: i64,
 }
 
-pub struct EnvironmentsCreateInTransactionParams {
-    pub name: String,
-    pub description: String,
-    pub env_var: String,
-    pub is_default: i64,
-    pub project_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type EnvironmentsCreateInTransactionParams = EnvironmentsCreateParams;
 
 pub struct EnvironmentsUpdateInTransactionParams {
     pub name: String,
@@ -59,8 +39,8 @@ impl Queries {
     /// EnvironmentsGetAll
     pub async fn environments_get_all(
         &self,
-    ) -> Result<Vec<EnvironmentsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, EnvironmentsGetAllRow>(
+    ) -> Result<Vec<Environments>, sqlx::Error> {
+        sqlx::query_as::<_, Environments>(
             "SELECT id AS id, name AS name, description AS description, env_var AS env_var, is_default AS is_default, project_id AS project_id, created_at AS created_at, updated_at AS updated_at FROM environments;"
         )
         .fetch_all(&self.pool)

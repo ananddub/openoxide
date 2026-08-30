@@ -3,12 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::email_verification_tokens::EmailVerificationTokensIssue2Params;
 
-pub struct PasswordResetTokensIssue2Params {
-    pub user_id: i64,
-    pub token_hash: String,
-    pub expires_at: i64,
-}
+pub type PasswordResetTokensIssue2Params = EmailVerificationTokensIssue2Params;
 
 impl Queries {
     /// PasswordResetTokensIssue1

@@ -4,14 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct TwoFactorGetAllRow {
-    pub id: i64,
-    pub secret: String,
-    pub backup_codes: String,
-    pub user_id: i64,
-}
-
 pub struct TwoFactorCreateParams {
     pub secret: String,
     pub backup_codes: String,
@@ -25,11 +17,7 @@ pub struct TwoFactorUpdateParams {
     pub id: i64,
 }
 
-pub struct TwoFactorUpsertParams {
-    pub secret: String,
-    pub backup_codes: String,
-    pub user_id: i64,
-}
+pub type TwoFactorUpsertParams = TwoFactorCreateParams;
 
 pub struct TwoFactorConsumeRecoveryCodeParams {
     pub backup_codes: String,
@@ -41,8 +29,8 @@ impl Queries {
     /// TwoFactorGetAll
     pub async fn two_factor_get_all(
         &self,
-    ) -> Result<Vec<TwoFactorGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, TwoFactorGetAllRow>(
+    ) -> Result<Vec<TwoFactor>, sqlx::Error> {
+        sqlx::query_as::<_, TwoFactor>(
             "SELECT id AS id, secret AS secret, backup_codes AS backup_codes, user_id AS user_id FROM two_factor;"
         )
         .fetch_all(&self.pool)

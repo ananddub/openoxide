@@ -226,7 +226,7 @@ impl RegistryService for RegistryController {
 // ── Helper DTOs for deserializing ResourceRequest payloads ────────────
 
 use crate::flash_gen::models::Registries;
-use crate::flash_gen::registries::{RegistriesGetAllRow, RegistriesUsageReferencesRow};
+use crate::flash_gen::registries::RegistriesUsageReferencesRow;
 
 #[derive(Debug, serde::Deserialize)]
 struct RegistryTagsQuery {
@@ -287,22 +287,6 @@ struct RegistryResponseDto {
     registry_type: String,
     created_at: i64,
     updated_at: i64,
-}
-
-impl From<RegistriesGetAllRow> for RegistryResponseDto {
-    fn from(val: RegistriesGetAllRow) -> Self {
-        Self {
-            id: val.id.to_string(),
-            registry_name: val.registry_name,
-            image_prefix: val.image_prefix,
-            username: val.username,
-            password: val.password,
-            registry_url: val.registry_url,
-            registry_type: val.registry_type,
-            created_at: val.created_at,
-            updated_at: val.updated_at,
-        }
-    }
 }
 
 impl From<Registries> for RegistryResponseDto {

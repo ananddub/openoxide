@@ -4,26 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct BackupsGetAllRow {
-    pub id: i64,
-    pub app_name: String,
-    pub schedule: String,
-    pub enabled: i64,
-    pub database_name: String,
-    pub prefix: String,
-    pub service_name: Option<String>,
-    pub keep_latest_count: Option<i64>,
-    pub backup_type: String,
-    pub database_type: Option<String>,
-    pub metadata: Option<String>,
-    pub service_id: Option<i64>,
-    pub destination_id: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct CreateDestinationParams {
     pub name: String,
     pub provider: String,
@@ -492,8 +472,8 @@ impl Queries {
     /// BackupsGetAll
     pub async fn backups_get_all(
         &self,
-    ) -> Result<Vec<BackupsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, BackupsGetAllRow>(
+    ) -> Result<Vec<Backups>, sqlx::Error> {
+        sqlx::query_as::<_, Backups>(
             "SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, service_id AS service_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups;"
         )
         .fetch_all(&self.pool)

@@ -4,22 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct SettingsGetAllRow {
-    pub id: i64,
-    pub server_ip: Option<String>,
-    pub certificate_type: String,
-    pub custom_cert_resolver: Option<String>,
-    pub https: i64,
-    pub host: Option<String>,
-    pub lets_encrypt_email: Option<String>,
-    pub enable_docker_cleanup: i64,
-    pub log_cleanup_cron: Option<String>,
-    pub metrics_config: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct UpsertSettingsParams {
     pub server_ip: String,
     pub certificate_type: String,
@@ -255,8 +239,8 @@ impl Queries {
     /// SettingsGetAll
     pub async fn settings_get_all(
         &self,
-    ) -> Result<Vec<SettingsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, SettingsGetAllRow>(
+    ) -> Result<Vec<Settings>, sqlx::Error> {
+        sqlx::query_as::<_, Settings>(
             "SELECT id AS id, server_ip AS server_ip, certificate_type AS certificate_type, custom_cert_resolver AS custom_cert_resolver, https AS https, host AS host, lets_encrypt_email AS lets_encrypt_email, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, metrics_config AS metrics_config, created_at AS created_at, updated_at AS updated_at FROM settings;"
         )
         .fetch_all(&self.pool)

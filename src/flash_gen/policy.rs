@@ -4,13 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PolicyGetAllRow {
-    pub id: i64,
-    pub action: String,
-    pub created_at: i64,
-}
-
 pub struct PolicyUpdateParams {
     pub action: String,
     pub created_at: i64,
@@ -21,8 +14,8 @@ impl Queries {
     /// PolicyGetAll
     pub async fn policy_get_all(
         &self,
-    ) -> Result<Vec<PolicyGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, PolicyGetAllRow>(
+    ) -> Result<Vec<Policy>, sqlx::Error> {
+        sqlx::query_as::<_, Policy>(
             "SELECT id AS id, action AS action, created_at AS created_at FROM policy;"
         )
         .fetch_all(&self.pool)

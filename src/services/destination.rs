@@ -7,10 +7,7 @@ use serde::Deserialize;
 use crate::{
     db::queries::FlashQueries,
     flash_gen::{
-        destinations::{
-            DestinationsCreateAndReturnParams, DestinationsGetAllRow,
-            DestinationsUpdateAndReturnParams,
-        },
+        destinations::{DestinationsCreateAndReturnParams, DestinationsUpdateAndReturnParams},
         models::Destinations,
     },
     utils::rclone::{RcloneBuilder, RcloneCommand},
@@ -90,22 +87,6 @@ impl DestinationsProviderEnum {
     }
 }
 
-fn row_to_model(row: DestinationsGetAllRow) -> Destinations {
-    Destinations {
-        id: row.id,
-        name: row.name,
-        provider: row.provider,
-        access_key: row.access_key,
-        secret_access_key: row.secret_access_key,
-        bucket: row.bucket,
-        region: row.region,
-        endpoint: row.endpoint,
-        organization_id: row.organization_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
 pub struct DestinationService {
     queries: Arc<FlashQueries>,
 }
@@ -122,8 +103,7 @@ impl DestinationService {
     }
 
     pub async fn list(&self) -> sqlx::Result<Vec<Destinations>> {
-        let rows = self.queries.destinations_get_all().await?;
-        Ok(rows.into_iter().map(row_to_model).collect())
+        self.queries.destinations_get_all().await
     }
 
     pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destinations> {

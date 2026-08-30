@@ -4,16 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct RollbacksGetAllRow {
-    pub id: i64,
-    pub deployment_id: i64,
-    pub version: i64,
-    pub image: Option<String>,
-    pub full_context: Option<String>,
-    pub created_at: i64,
-}
-
 pub struct RollbacksCreateParams {
     pub deployment_id: i64,
     pub version: i64,
@@ -35,8 +25,8 @@ impl Queries {
     /// RollbacksGetAll
     pub async fn rollbacks_get_all(
         &self,
-    ) -> Result<Vec<RollbacksGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, RollbacksGetAllRow>(
+    ) -> Result<Vec<Rollbacks>, sqlx::Error> {
+        sqlx::query_as::<_, Rollbacks>(
             "SELECT id AS id, deployment_id AS deployment_id, version AS version, image AS image, full_context AS full_context, created_at AS created_at FROM rollbacks;"
         )
         .fetch_all(&self.pool)

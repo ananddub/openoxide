@@ -12,13 +12,7 @@ pub struct GroupsGetAllRow {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct GroupsGetByIdRow {
-    pub id: i64,
-    pub name: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type GroupsGetByIdRow = GroupsGetAllRow;
 
 pub struct GroupsCreateParams {
     pub name: String,

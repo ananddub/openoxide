@@ -3,25 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::network::CreatePortParams;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PortsGetAllRow {
-    pub id: i64,
-    pub published_port: i64,
-    pub target_port: i64,
-    pub protocol: String,
-    pub publish_mode: String,
-    pub service_id: i64,
-    pub created_at: i64,
-}
-
-pub struct PortsCreateForApplicationParams {
-    pub published_port: i64,
-    pub target_port: i64,
-    pub protocol: String,
-    pub publish_mode: String,
-    pub service_id: i64,
-}
+pub type PortsCreateForApplicationParams = CreatePortParams;
 
 pub struct PortsUpdateForApplicationParams {
     pub published_port: i64,
@@ -55,8 +39,8 @@ impl Queries {
     /// PortsGetAll
     pub async fn ports_get_all(
         &self,
-    ) -> Result<Vec<PortsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, PortsGetAllRow>(
+    ) -> Result<Vec<Ports>, sqlx::Error> {
+        sqlx::query_as::<_, Ports>(
             "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, service_id AS service_id, created_at AS created_at FROM ports;"
         )
         .fetch_all(&self.pool)

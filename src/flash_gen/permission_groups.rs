@@ -4,16 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ListGroupsForOrganizationRow {
-    pub id: i64,
-    pub name: String,
-    pub is_system: i64,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct PermissionGroupsUpdateGroupNameParams {
     pub name: String,
     pub id: i64,
@@ -91,8 +81,8 @@ impl Queries {
     pub async fn list_groups_for_organization(
         &self,
         organization_id: i64,
-    ) -> Result<Vec<ListGroupsForOrganizationRow>, sqlx::Error> {
-        sqlx::query_as::<_, ListGroupsForOrganizationRow>(
+    ) -> Result<Vec<Groups>, sqlx::Error> {
+        sqlx::query_as::<_, Groups>(
             "SELECT id AS id, name AS name, is_system != 0 AS is_system, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM groups WHERE organization_id IS NULL OR organization_id = ? ORDER BY is_system DESC, name;"
         )
         .bind(organization_id)

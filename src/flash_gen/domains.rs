@@ -4,26 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DomainsGetAllRow {
-    pub id: i64,
-    pub host: String,
-    pub https: i64,
-    pub port: Option<i64>,
-    pub path: Option<String>,
-    pub internal_path: Option<String>,
-    pub custom_entrypoint: Option<String>,
-    pub service_name: Option<String>,
-    pub custom_cert_resolver: Option<String>,
-    pub strip_path: i64,
-    pub middlewares: String,
-    pub domain_type: String,
-    pub certificate_type: String,
-    pub service_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct DomainsRouteInUseExcludingParams {
     pub host: String,
     pub path: String,
@@ -145,8 +125,8 @@ impl Queries {
     /// DomainsGetAll
     pub async fn domains_get_all(
         &self,
-    ) -> Result<Vec<DomainsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, DomainsGetAllRow>(
+    ) -> Result<Vec<Domains>, sqlx::Error> {
+        sqlx::query_as::<_, Domains>(
             "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM domains;"
         )
         .fetch_all(&self.pool)

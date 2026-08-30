@@ -3,6 +3,7 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::domains::DomainsCreateParams;
 
 pub struct PrevEnvCloneServiceParams {
     pub name: String,
@@ -58,23 +59,7 @@ pub struct PrevEnvSetBitbucketSourceParams {
     pub service_id: i64,
 }
 
-pub struct PrevEnvCreateDomainParams {
-    pub host: String,
-    pub https: i64,
-    pub port: i64,
-    pub path: String,
-    pub internal_path: String,
-    pub custom_entrypoint: String,
-    pub service_name: String,
-    pub custom_cert_resolver: String,
-    pub strip_path: i64,
-    pub middlewares: String,
-    pub domain_type: String,
-    pub certificate_type: String,
-    pub service_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type PrevEnvCreateDomainParams = DomainsCreateParams;
 
 impl Queries {
     /// PrevEnvCloneService

@@ -4,14 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct GroupPolicyGetAllRow {
-    pub id: i64,
-    pub group_id: i64,
-    pub policy_id: i64,
-    pub created_at: i64,
-}
-
 pub struct GroupPolicyCreateParams {
     pub group_id: i64,
     pub policy_id: i64,
@@ -29,8 +21,8 @@ impl Queries {
     /// GroupPolicyGetAll
     pub async fn group_policy_get_all(
         &self,
-    ) -> Result<Vec<GroupPolicyGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, GroupPolicyGetAllRow>(
+    ) -> Result<Vec<GroupPolicy>, sqlx::Error> {
+        sqlx::query_as::<_, GroupPolicy>(
             "SELECT id AS id, group_id AS group_id, policy_id AS policy_id, created_at AS created_at FROM group_policy;"
         )
         .fetch_all(&self.pool)

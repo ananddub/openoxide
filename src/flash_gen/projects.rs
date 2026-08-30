@@ -4,17 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ProjectsGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub env_var: String,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct CreateProjectParams {
     pub name: String,
     pub description: String,
@@ -37,12 +26,7 @@ pub struct CreateEnvironmentParams {
     pub project_id: i64,
 }
 
-pub struct UpdateEnvironmentParams {
-    pub name: String,
-    pub description: String,
-    pub env_var: String,
-    pub id: i64,
-}
+pub type UpdateEnvironmentParams = UpdateProjectParams;
 
 pub struct CreateTagParams {
     pub name: String,
@@ -69,21 +53,9 @@ pub struct ProjectsUpdateParams {
     pub id: i64,
 }
 
-pub struct ProjectsCreateInTransactionParams {
-    pub name: String,
-    pub description: String,
-    pub env_var: String,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type ProjectsCreateInTransactionParams = ProjectsCreateParams;
 
-pub struct ProjectsUpdateAndReturnParams {
-    pub name: String,
-    pub description: String,
-    pub env_var: String,
-    pub id: i64,
-}
+pub type ProjectsUpdateAndReturnParams = UpdateProjectParams;
 
 impl Queries {
     /// GetProjectByID
@@ -376,8 +348,8 @@ impl Queries {
     /// ProjectsGetAll
     pub async fn projects_get_all(
         &self,
-    ) -> Result<Vec<ProjectsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, ProjectsGetAllRow>(
+    ) -> Result<Vec<Projects>, sqlx::Error> {
+        sqlx::query_as::<_, Projects>(
             "SELECT id AS id, name AS name, description AS description, env_var AS env_var, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM projects;"
         )
         .fetch_all(&self.pool)

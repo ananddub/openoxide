@@ -5,167 +5,6 @@ use super::models::*;
 use super::db::Queries;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsList1Row {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsList2Row {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsGetByIdRow {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsListOpenForBaseApplicationRow {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsFindByPreviewApplicationRow {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsFindForPullRequestRow {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsFindOpenForEventRow {
-    pub id: i64,
-    pub base_service_id: i64,
-    pub preview_service_id: Option<i64>,
-    pub provider_type: String,
-    pub provider_id: i64,
-    pub owner: String,
-    pub repository: String,
-    pub pull_request_number: String,
-    pub source_branch: String,
-    pub source_owner: Option<String>,
-    pub source_repository: Option<String>,
-    pub target_branch: String,
-    pub commit_sha: Option<String>,
-    pub author: Option<String>,
-    pub status: String,
-    pub domain: String,
-    pub last_deployment_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsMatchingTargets1Row {
     pub base_service_id: i64,
     pub provider_id: i64,
@@ -173,29 +12,11 @@ pub struct PreviewDeploymentsMatchingTargets1Row {
     pub require_collaborator_permissions: Option<i64>,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsMatchingTargets2Row {
-    pub base_service_id: i64,
-    pub provider_id: i64,
-    pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: Option<i64>,
-}
+pub type PreviewDeploymentsMatchingTargets2Row = PreviewDeploymentsMatchingTargets1Row;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsMatchingTargets3Row {
-    pub base_service_id: i64,
-    pub provider_id: i64,
-    pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: Option<i64>,
-}
+pub type PreviewDeploymentsMatchingTargets3Row = PreviewDeploymentsMatchingTargets1Row;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct PreviewDeploymentsMatchingTargets4Row {
-    pub base_service_id: i64,
-    pub provider_id: i64,
-    pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: Option<i64>,
-}
+pub type PreviewDeploymentsMatchingTargets4Row = PreviewDeploymentsMatchingTargets1Row;
 
 pub struct PreviewDeploymentsFindForPullRequestParams {
     pub base_service_id: i64,
@@ -278,8 +99,8 @@ impl Queries {
     /// PreviewDeploymentsList1
     pub async fn preview_deployments_list1(
         &self,
-    ) -> Result<Vec<PreviewDeploymentsList1Row>, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsList1Row>(
+    ) -> Result<Vec<PreviewDeployments>, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE status != 'CLOSED' ORDER BY created_at DESC;"
         )
         .fetch_all(&self.pool)
@@ -289,8 +110,8 @@ impl Queries {
     /// PreviewDeploymentsList2
     pub async fn preview_deployments_list2(
         &self,
-    ) -> Result<Vec<PreviewDeploymentsList2Row>, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsList2Row>(
+    ) -> Result<Vec<PreviewDeployments>, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments ORDER BY created_at DESC;"
         )
         .fetch_all(&self.pool)
@@ -301,8 +122,8 @@ impl Queries {
     pub async fn preview_deployments_get_by_id(
         &self,
         id: i64,
-    ) -> Result<PreviewDeploymentsGetByIdRow, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsGetByIdRow>(
+    ) -> Result<PreviewDeployments, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE id = ?;"
         )
         .bind(id)
@@ -314,8 +135,8 @@ impl Queries {
     pub async fn preview_deployments_list_open_for_base_application(
         &self,
         base_service_id: i64,
-    ) -> Result<Vec<PreviewDeploymentsListOpenForBaseApplicationRow>, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsListOpenForBaseApplicationRow>(
+    ) -> Result<Vec<PreviewDeployments>, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_service_id = ? AND status != 'CLOSED' ORDER BY created_at;"
         )
         .bind(base_service_id)
@@ -327,8 +148,8 @@ impl Queries {
     pub async fn preview_deployments_find_by_preview_application(
         &self,
         preview_service_id: i64,
-    ) -> Result<PreviewDeploymentsFindByPreviewApplicationRow, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsFindByPreviewApplicationRow>(
+    ) -> Result<PreviewDeployments, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE preview_service_id = ?;"
         )
         .bind(preview_service_id)
@@ -340,8 +161,8 @@ impl Queries {
     pub async fn preview_deployments_find_for_pull_request(
         &self,
         params: &PreviewDeploymentsFindForPullRequestParams,
-    ) -> Result<PreviewDeploymentsFindForPullRequestRow, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsFindForPullRequestRow>(
+    ) -> Result<PreviewDeployments, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_service_id = ? AND provider_type = ? AND pull_request_number = ?;"
         )
         .bind(&params.base_service_id)
@@ -355,8 +176,8 @@ impl Queries {
     pub async fn preview_deployments_find_open_for_event(
         &self,
         params: &PreviewDeploymentsFindOpenForEventParams,
-    ) -> Result<Vec<PreviewDeploymentsFindOpenForEventRow>, sqlx::Error> {
-        sqlx::query_as::<_, PreviewDeploymentsFindOpenForEventRow>(
+    ) -> Result<Vec<PreviewDeployments>, sqlx::Error> {
+        sqlx::query_as::<_, PreviewDeployments>(
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE provider_type = ? AND lower(owner) = lower(?) AND lower(repository) = lower(?) AND pull_request_number = ? AND status != 'CLOSED';"
         )
         .bind(&params.provider_type)

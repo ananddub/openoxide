@@ -3,6 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::compose_extra::ComposeQueueDeploymentNoServerParams;
+use super::compose_extra::ComposeQueueDeploymentWithServerParams;
+use super::database_extra::DbCreateQueuedDatabaseDeploymentForServerParams;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct DeploymentsRunningForApplicationRow {
@@ -11,33 +14,7 @@ pub struct DeploymentsRunningForApplicationRow {
     pub pid: Option<String>,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DeploymentsRunningForComposeRow {
-    pub id: i64,
-    pub server_id: Option<i64>,
-    pub pid: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DeploymentsGetAllRow {
-    pub id: i64,
-    pub title: String,
-    pub description: Option<String>,
-    pub status: String,
-    pub state: String,
-    pub log_path: String,
-    pub pid: Option<String>,
-    pub error_message: Option<String>,
-    pub operation: Option<String>,
-    pub is_preview_deployment: i64,
-    pub started_at: Option<i64>,
-    pub last_state_at: Option<i64>,
-    pub finished_at: Option<i64>,
-    pub service_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub created_at: i64,
-    pub database_kind: Option<String>,
-}
+pub type DeploymentsRunningForComposeRow = DeploymentsRunningForApplicationRow;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct DeploymentsGetCancelInfoRow {
@@ -45,19 +22,9 @@ pub struct DeploymentsGetCancelInfoRow {
     pub status: String,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DeploymentsGetRunningRemoteJobsRow {
-    pub id: i64,
-    pub server_id: Option<i64>,
-    pub pid: Option<String>,
-}
+pub type DeploymentsGetRunningRemoteJobsRow = DeploymentsRunningForApplicationRow;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct DeploymentsGetRecoveredRemoteJobsRow {
-    pub id: i64,
-    pub server_id: Option<i64>,
-    pub pid: Option<String>,
-}
+pub type DeploymentsGetRecoveredRemoteJobsRow = DeploymentsRunningForApplicationRow;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct DeploymentsGetQueuedDeploymentsGroupedRow {
@@ -145,14 +112,7 @@ pub struct DeploymentsUpdateParams {
     pub id: i64,
 }
 
-pub struct DeploymentsCreateQueuedDeploymentParams {
-    pub title: String,
-    pub description: String,
-    pub log_path: String,
-    pub operation: String,
-    pub service_id: i64,
-    pub server_id: i64,
-}
+pub type DeploymentsCreateQueuedDeploymentParams = ComposeQueueDeploymentWithServerParams;
 
 pub struct DeploymentsUpdateStateIfRunningWithErrorParams {
     pub state: String,
@@ -167,12 +127,7 @@ pub struct DeploymentsUpdateFinalStatusParams {
     pub id: i64,
 }
 
-pub struct DeploymentsFinalizeWithResource1Params {
-    pub status: String,
-    pub state: String,
-    pub error_message: String,
-    pub id: i64,
-}
+pub type DeploymentsFinalizeWithResource1Params = DeploymentsUpdateFinalStatusParams;
 
 pub struct DeploymentsFinalizeWithResource3Params {
     pub app_status: String,
@@ -180,30 +135,11 @@ pub struct DeploymentsFinalizeWithResource3Params {
     pub id: i64,
 }
 
-pub struct DeploymentsFinalizeWithResource4Params {
-    pub app_status: String,
-    pub last_error: String,
-    pub id: i64,
-}
+pub type DeploymentsFinalizeWithResource4Params = DeploymentsFinalizeWithResource3Params;
 
-pub struct DeploymentsCreateQueuedComposeDeploymentParams {
-    pub title: String,
-    pub description: String,
-    pub log_path: String,
-    pub operation: String,
-    pub service_id: i64,
-    pub server_id: i64,
-}
+pub type DeploymentsCreateQueuedComposeDeploymentParams = ComposeQueueDeploymentWithServerParams;
 
-pub struct DeploymentsCreateQueuedDatabaseDeploymentParams {
-    pub title: String,
-    pub description: String,
-    pub log_path: String,
-    pub operation: String,
-    pub service_id: i64,
-    pub database_kind: String,
-    pub server_id: i64,
-}
+pub type DeploymentsCreateQueuedDatabaseDeploymentParams = DbCreateQueuedDatabaseDeploymentForServerParams;
 
 pub struct DeploymentsListFilteredParams {
     pub status: String,
@@ -214,22 +150,9 @@ pub struct DeploymentsListFilteredParams {
     pub offset: i64,
 }
 
-pub struct AppCoreQueueDeploymentWithServerParams {
-    pub title: String,
-    pub description: String,
-    pub log_path: String,
-    pub operation: String,
-    pub service_id: i64,
-    pub server_id: i64,
-}
+pub type AppCoreQueueDeploymentWithServerParams = ComposeQueueDeploymentWithServerParams;
 
-pub struct AppCoreQueueDeploymentNoServerParams {
-    pub title: String,
-    pub description: String,
-    pub log_path: String,
-    pub operation: String,
-    pub service_id: i64,
-}
+pub type AppCoreQueueDeploymentNoServerParams = ComposeQueueDeploymentNoServerParams;
 
 impl Queries {
     /// GetDeploymentByID
@@ -497,8 +420,8 @@ impl Queries {
     /// DeploymentsGetAll
     pub async fn deployments_get_all(
         &self,
-    ) -> Result<Vec<DeploymentsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, DeploymentsGetAllRow>(
+    ) -> Result<Vec<Deployments>, sqlx::Error> {
+        sqlx::query_as::<_, Deployments>(
             "SELECT id AS id, title AS title, description AS description, status AS status, state AS state, log_path AS log_path, pid AS pid, error_message AS error_message, operation AS operation, is_preview_deployment AS is_preview_deployment, started_at AS started_at, last_state_at AS last_state_at, finished_at AS finished_at, service_id AS service_id, server_id AS server_id, created_at AS created_at, database_kind AS database_kind FROM deployments;"
         )
         .fetch_all(&self.pool)

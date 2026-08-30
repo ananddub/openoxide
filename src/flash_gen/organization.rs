@@ -4,17 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct OrganizationGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub logo: Option<String>,
-    pub slug: String,
-    pub owner_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct OrganizationCreateParams {
     pub name: String,
     pub logo: String,
@@ -52,8 +41,8 @@ impl Queries {
     /// OrganizationGetAll
     pub async fn organization_get_all(
         &self,
-    ) -> Result<Vec<OrganizationGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, OrganizationGetAllRow>(
+    ) -> Result<Vec<Organization>, sqlx::Error> {
+        sqlx::query_as::<_, Organization>(
             "SELECT id AS id, name AS name, logo AS logo, slug AS slug, owner_id AS owner_id, created_at AS created_at, updated_at AS updated_at FROM organization;"
         )
         .fetch_all(&self.pool)

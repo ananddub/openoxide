@@ -34,7 +34,7 @@ pub enum CacheEnum {
     ServersList(Vec<crate::flash_gen::models::Servers>),
     SshKeysList(Vec<crate::flash_gen::models::SshKeys>),
     DestinationsList(Vec<crate::flash_gen::models::Destinations>),
-    RegistriesList(Vec<crate::flash_gen::registries::RegistriesGetAllRow>),
+    RegistriesList(Vec<crate::flash_gen::models::Registries>),
     VolumeBackups(Vec<crate::flash_gen::models::VolumeBackups>),
     SwarmInfo(SwarmInfo),
     SwarmNodes(Vec<NodeInspect>),

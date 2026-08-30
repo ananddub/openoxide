@@ -5,28 +5,6 @@ use super::models::*;
 use super::db::Queries;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ServersGetAllRow {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub ip_address: String,
-    pub port: i64,
-    pub username: String,
-    pub app_name: String,
-    pub server_status: String,
-    pub server_type: String,
-    pub enable_docker_cleanup: i64,
-    pub log_cleanup_cron: Option<String>,
-    pub command: String,
-    pub metrics_config: String,
-    pub ssh_key_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-    pub build_memory_limit: Option<String>,
-    pub build_cpu_limit: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct ServersGetSshCredentialsRow {
     pub public_ip: String,
     pub private_ip: Option<String>,
@@ -85,11 +63,7 @@ pub struct ServersRollbackApplicationServersParams {
     pub server_id2: i64,
 }
 
-pub struct ServersRollbackComposeServersParams {
-    pub server_id: i64,
-    pub id: i64,
-    pub server_id2: i64,
-}
+pub type ServersRollbackComposeServersParams = ServersRollbackApplicationServersParams;
 
 pub struct ServersRollbackBuildAssignmentsParams {
     pub build_server_id: i64,
@@ -97,17 +71,9 @@ pub struct ServersRollbackBuildAssignmentsParams {
     pub build_server_id2: i64,
 }
 
-pub struct ServersRollbackCertificatesParams {
-    pub server_id: i64,
-    pub id: i64,
-    pub server_id2: i64,
-}
+pub type ServersRollbackCertificatesParams = ServersRollbackApplicationServersParams;
 
-pub struct ServersRollbackSchedulesParams {
-    pub server_id: i64,
-    pub id: i64,
-    pub server_id2: i64,
-}
+pub type ServersRollbackSchedulesParams = ServersRollbackApplicationServersParams;
 
 pub struct ServersCreateParams {
     pub name: String,
@@ -673,8 +639,8 @@ impl Queries {
     /// ServersGetAll
     pub async fn servers_get_all(
         &self,
-    ) -> Result<Vec<ServersGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, ServersGetAllRow>(
+    ) -> Result<Vec<Servers>, sqlx::Error> {
+        sqlx::query_as::<_, Servers>(
             "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;"
         )
         .fetch_all(&self.pool)

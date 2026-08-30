@@ -9,8 +9,7 @@ use crate::{
         models::ServerPrivateNetworks,
         server_private_networks::{
             ServerPrivateNetworksAcquireOperationParams, ServerPrivateNetworksFinishRotationParams,
-            ServerPrivateNetworksGetRow, ServerPrivateNetworksInsertParams,
-            ServerPrivateNetworksListManagedRow, ServerPrivateNetworksRenewOperationParams,
+            ServerPrivateNetworksInsertParams, ServerPrivateNetworksRenewOperationParams,
             ServerPrivateNetworksSetHealthHandshakeParams, ServerPrivateNetworksSetHealthParams,
             ServerPrivateNetworksSetRuntimeFullParams, ServerPrivateNetworksSetRuntimeStatusHandshakeParams,
             ServerPrivateNetworksSetRuntimeStatusKeyParams, ServerPrivateNetworksUpdateConfigParams,
@@ -775,7 +774,7 @@ impl ServerPrivateNetworkService {
             )
             .await?
             .into_iter()
-            .map(Into::into)
+            .map(normalize_model)
             .collect())
     }
 
@@ -1060,70 +1059,33 @@ fn clean_port(value: Option<i64>) -> Option<i64> {
     value.filter(|value| *value != 0)
 }
 
-impl From<ServerPrivateNetworksGetRow> for ServerPrivateNetworks {
-    fn from(row: ServerPrivateNetworksGetRow) -> Self {
-        Self {
-            server_id: row.server_id,
-            connection_mode: row.connection_mode,
-            provider: clean_str(row.provider),
-            private_host: clean_str(row.private_host),
-            tunnel_address: clean_str(row.tunnel_address),
-            public_key: clean_str(row.public_key),
-            endpoint: clean_str(row.endpoint),
-            listen_port: clean_port(row.listen_port),
-            persistent_keepalive: clean_port(row.persistent_keepalive),
-            status: row.status,
-            last_handshake_at: row.last_handshake_at,
-            config_version: row.config_version,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-            dns_name: clean_str(row.dns_name),
-            routes: row.routes,
-            health_status: row.health_status,
-            health_error: clean_str(row.health_error),
-            last_health_check_at: row.last_health_check_at,
-            consecutive_failures: row.consecutive_failures,
-            operation: row.operation,
-            operation_lease_until: row.operation_lease_until,
-            config_hash: clean_str(row.config_hash),
-            rotation_state: row.rotation_state,
-        }
+fn normalize_model(row: ServerPrivateNetworks) -> ServerPrivateNetworks {
+    ServerPrivateNetworks {
+        server_id: row.server_id,
+        connection_mode: row.connection_mode,
+        provider: clean_str(row.provider),
+        private_host: clean_str(row.private_host),
+        tunnel_address: clean_str(row.tunnel_address),
+        public_key: clean_str(row.public_key),
+        endpoint: clean_str(row.endpoint),
+        listen_port: clean_port(row.listen_port),
+        persistent_keepalive: clean_port(row.persistent_keepalive),
+        status: row.status,
+        last_handshake_at: row.last_handshake_at,
+        config_version: row.config_version,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        dns_name: clean_str(row.dns_name),
+        routes: row.routes,
+        health_status: row.health_status,
+        health_error: clean_str(row.health_error),
+        last_health_check_at: row.last_health_check_at,
+        consecutive_failures: row.consecutive_failures,
+        operation: row.operation,
+        operation_lease_until: row.operation_lease_until,
+        config_hash: clean_str(row.config_hash),
+        rotation_state: row.rotation_state,
     }
-}
-
-impl From<ServerPrivateNetworksListManagedRow> for ServerPrivateNetworks {
-    fn from(row: ServerPrivateNetworksListManagedRow) -> Self {
-        Self {
-            server_id: row.server_id,
-            connection_mode: row.connection_mode,
-            provider: clean_str(row.provider),
-            private_host: clean_str(row.private_host),
-            tunnel_address: clean_str(row.tunnel_address),
-            public_key: clean_str(row.public_key),
-            endpoint: clean_str(row.endpoint),
-            listen_port: clean_port(row.listen_port),
-            persistent_keepalive: clean_port(row.persistent_keepalive),
-            status: row.status,
-            last_handshake_at: row.last_handshake_at,
-            config_version: row.config_version,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-            dns_name: clean_str(row.dns_name),
-            routes: row.routes,
-            health_status: row.health_status,
-            health_error: clean_str(row.health_error),
-            last_health_check_at: row.last_health_check_at,
-            consecutive_failures: row.consecutive_failures,
-            operation: row.operation,
-            operation_lease_until: row.operation_lease_until,
-            config_hash: clean_str(row.config_hash),
-            rotation_state: row.rotation_state,
-        }
-    }
-}
-
-fn normalize_model(row: ServerPrivateNetworksGetRow) -> ServerPrivateNetworks {
-    row.into()
 }
 
 fn direct_network(server_id: i64) -> ServerPrivateNetworkDto {

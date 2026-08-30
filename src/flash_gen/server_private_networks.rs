@@ -4,90 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ServerPrivateNetworksGetRow {
-    pub server_id: i64,
-    pub connection_mode: String,
-    pub provider: Option<String>,
-    pub private_host: Option<String>,
-    pub tunnel_address: Option<String>,
-    pub public_key: Option<String>,
-    pub endpoint: Option<String>,
-    pub listen_port: Option<i64>,
-    pub persistent_keepalive: Option<i64>,
-    pub status: String,
-    pub last_handshake_at: Option<i64>,
-    pub config_version: i64,
-    pub dns_name: Option<String>,
-    pub routes: String,
-    pub health_status: String,
-    pub health_error: Option<String>,
-    pub last_health_check_at: Option<i64>,
-    pub consecutive_failures: i64,
-    pub operation: Option<String>,
-    pub operation_lease_until: Option<i64>,
-    pub config_hash: Option<String>,
-    pub rotation_state: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ServerPrivateNetworksListManagedRow {
-    pub server_id: i64,
-    pub connection_mode: String,
-    pub provider: Option<String>,
-    pub private_host: Option<String>,
-    pub tunnel_address: Option<String>,
-    pub public_key: Option<String>,
-    pub endpoint: Option<String>,
-    pub listen_port: Option<i64>,
-    pub persistent_keepalive: Option<i64>,
-    pub status: String,
-    pub last_handshake_at: Option<i64>,
-    pub config_version: i64,
-    pub dns_name: Option<String>,
-    pub routes: String,
-    pub health_status: String,
-    pub health_error: Option<String>,
-    pub last_health_check_at: Option<i64>,
-    pub consecutive_failures: i64,
-    pub operation: Option<String>,
-    pub operation_lease_until: Option<i64>,
-    pub config_hash: Option<String>,
-    pub rotation_state: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ServerPrivateNetworksListDnsEnabledRow {
-    pub server_id: i64,
-    pub connection_mode: String,
-    pub provider: Option<String>,
-    pub private_host: Option<String>,
-    pub tunnel_address: Option<String>,
-    pub public_key: Option<String>,
-    pub endpoint: Option<String>,
-    pub listen_port: Option<i64>,
-    pub persistent_keepalive: Option<i64>,
-    pub status: String,
-    pub last_handshake_at: Option<i64>,
-    pub config_version: i64,
-    pub dns_name: Option<String>,
-    pub routes: String,
-    pub health_status: String,
-    pub health_error: Option<String>,
-    pub last_health_check_at: Option<i64>,
-    pub consecutive_failures: i64,
-    pub operation: Option<String>,
-    pub operation_lease_until: Option<i64>,
-    pub config_hash: Option<String>,
-    pub rotation_state: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
 pub struct ServerPrivateNetworksInsertParams {
     pub server_id: i64,
     pub connection_mode: String,
@@ -176,8 +92,8 @@ impl Queries {
     pub async fn server_private_networks_get(
         &self,
         server_id: i64,
-    ) -> Result<ServerPrivateNetworksGetRow, sqlx::Error> {
-        sqlx::query_as::<_, ServerPrivateNetworksGetRow>(
+    ) -> Result<ServerPrivateNetworks, sqlx::Error> {
+        sqlx::query_as::<_, ServerPrivateNetworks>(
             "SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE server_id = ?;"
         )
         .bind(server_id)
@@ -190,8 +106,8 @@ impl Queries {
         &self,
         connection_mode: &str,
         status: &str,
-    ) -> Result<Vec<ServerPrivateNetworksListManagedRow>, sqlx::Error> {
-        sqlx::query_as::<_, ServerPrivateNetworksListManagedRow>(
+    ) -> Result<Vec<ServerPrivateNetworks>, sqlx::Error> {
+        sqlx::query_as::<_, ServerPrivateNetworks>(
             "SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE connection_mode = ? AND status != ?;"
         )
         .bind(connection_mode)
@@ -204,8 +120,8 @@ impl Queries {
     pub async fn server_private_networks_list_dns_enabled(
         &self,
         status: &str,
-    ) -> Result<Vec<ServerPrivateNetworksListDnsEnabledRow>, sqlx::Error> {
-        sqlx::query_as::<_, ServerPrivateNetworksListDnsEnabledRow>(
+    ) -> Result<Vec<ServerPrivateNetworks>, sqlx::Error> {
+        sqlx::query_as::<_, ServerPrivateNetworks>(
             "SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE dns_name IS NOT NULL AND dns_name != '' AND status = ? ORDER BY dns_name;"
         )
         .bind(status)

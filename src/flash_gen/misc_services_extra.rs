@@ -3,17 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::ai_settings::AiSettingsCreateParams;
 
-pub struct MiscSvcAiSettingsCreateReturnIdParams {
-    pub name: String,
-    pub api_url: String,
-    pub api_key: String,
-    pub model: String,
-    pub is_enabled: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+pub type MiscSvcAiSettingsCreateReturnIdParams = AiSettingsCreateParams;
 
 impl Queries {
     /// MiscSvcAiSettingsCreateReturnId

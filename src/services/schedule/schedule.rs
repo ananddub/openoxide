@@ -137,17 +137,17 @@ impl ScheduleService {
 
     pub async fn list_by_application(&self, application_id: i64) -> sqlx::Result<Vec<Schedules>> {
         let rows = self.queries.schedules_list_by_application(application_id).await?;
-        Ok(rows.into_iter().map(schedule_from_parts).collect())
+        Ok(rows)
     }
 
     pub async fn list_by_compose(&self, compose_id: i64) -> sqlx::Result<Vec<Schedules>> {
         let rows = self.queries.schedules_list_by_compose(compose_id).await?;
-        Ok(rows.into_iter().map(schedule_from_parts).collect())
+        Ok(rows)
     }
 
     pub async fn list_by_server(&self, server_id: i64) -> sqlx::Result<Vec<Schedules>> {
         let rows = self.queries.schedules_list_by_server(server_id).await?;
-        Ok(rows.into_iter().map(schedule_from_parts).collect())
+        Ok(rows)
     }
 
     pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Schedules>> {
@@ -155,12 +155,12 @@ impl ScheduleService {
             .queries
             .schedules_list_by_organization(organization_id)
             .await?;
-        Ok(rows.into_iter().map(schedule_from_parts).collect())
+        Ok(rows)
     }
 
     pub async fn list_enabled(&self) -> sqlx::Result<Vec<Schedules>> {
         let rows = self.queries.schedules_list_enabled().await?;
-        Ok(rows.into_iter().map(schedule_from_parts).collect())
+        Ok(rows)
     }
 
     pub async fn create(&self, input: CreateScheduleDto) -> sqlx::Result<Schedules> {
@@ -220,7 +220,7 @@ impl ScheduleService {
                 organization_id: input.organization_id.unwrap_or(0),
             })
             .await?;
-        Ok(schedule_from_parts(row))
+        Ok(row)
     }
 
     pub async fn patch(&self, id: i64, input: PatchScheduleDto) -> sqlx::Result<Schedules> {
@@ -282,7 +282,7 @@ impl ScheduleService {
                 id,
             })
             .await?;
-        Ok(schedule_from_parts(row))
+        Ok(row)
     }
 
     pub async fn set_enabled(&self, id: i64, enabled: bool) -> sqlx::Result<Schedules> {
@@ -290,7 +290,7 @@ impl ScheduleService {
             .queries
             .schedules_set_enabled(i64::from(enabled), id)
             .await?;
-        Ok(schedule_from_parts(row))
+        Ok(row)
     }
 
     pub async fn restore_database_backup(&self, id: i64, backup_file: &str) -> sqlx::Result<()> {
@@ -1463,122 +1463,6 @@ fn database_dumper_for(
     }
 }
 
-fn schedule_from_parts<R>(row: R) -> Schedules
-where
-    R: ScheduleFields,
-{
-    Schedules {
-        id: row.id(),
-        name: row.name(),
-        description: row.description(),
-        cron_expression: row.cron_expression(),
-        app_name: row.app_name(),
-        service_name: row.service_name(),
-        shell_type: row.shell_type(),
-        schedule_type: row.schedule_type(),
-        schedule_action: row.schedule_action(),
-        command: row.command(),
-        script: row.script(),
-        timezone: row.timezone(),
-        enabled: row.enabled(),
-        service_id: row.service_id(),
-        server_id: row.server_id(),
-        organization_id: row.organization_id(),
-        created_at: row.created_at(),
-        updated_at: row.updated_at(),
-    }
-}
-
-trait ScheduleFields {
-    fn id(&self) -> i64;
-    fn name(&self) -> String;
-    fn description(&self) -> Option<String>;
-    fn cron_expression(&self) -> String;
-    fn app_name(&self) -> String;
-    fn service_name(&self) -> Option<String>;
-    fn shell_type(&self) -> String;
-    fn schedule_type(&self) -> String;
-    fn schedule_action(&self) -> String;
-    fn command(&self) -> String;
-    fn script(&self) -> Option<String>;
-    fn timezone(&self) -> Option<String>;
-    fn enabled(&self) -> i64;
-    fn service_id(&self) -> Option<i64>;
-    fn server_id(&self) -> Option<i64>;
-    fn organization_id(&self) -> Option<i64>;
-    fn created_at(&self) -> i64;
-    fn updated_at(&self) -> i64;
-}
-
-macro_rules! impl_schedule_fields {
-    ($ty:ty) => {
-        impl ScheduleFields for $ty {
-            fn id(&self) -> i64 {
-                self.id
-            }
-            fn name(&self) -> String {
-                self.name.clone()
-            }
-            fn description(&self) -> Option<String> {
-                self.description.clone()
-            }
-            fn cron_expression(&self) -> String {
-                self.cron_expression.clone()
-            }
-            fn app_name(&self) -> String {
-                self.app_name.clone()
-            }
-            fn service_name(&self) -> Option<String> {
-                self.service_name.clone()
-            }
-            fn shell_type(&self) -> String {
-                self.shell_type.clone()
-            }
-            fn schedule_type(&self) -> String {
-                self.schedule_type.clone()
-            }
-            fn schedule_action(&self) -> String {
-                self.schedule_action.clone()
-            }
-            fn command(&self) -> String {
-                self.command.clone()
-            }
-            fn script(&self) -> Option<String> {
-                self.script.clone()
-            }
-            fn timezone(&self) -> Option<String> {
-                self.timezone.clone()
-            }
-            fn enabled(&self) -> i64 {
-                self.enabled
-            }
-            fn service_id(&self) -> Option<i64> {
-                self.service_id
-            }
-            fn server_id(&self) -> Option<i64> {
-                self.server_id
-            }
-            fn organization_id(&self) -> Option<i64> {
-                self.organization_id
-            }
-            fn created_at(&self) -> i64 {
-                self.created_at
-            }
-            fn updated_at(&self) -> i64 {
-                self.updated_at
-            }
-        }
-    };
-}
-
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByApplicationRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByComposeRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByServerRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByOrganizationRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListEnabledRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesCreateAndReturnRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesUpdateAndReturnRow);
-impl_schedule_fields!(crate::flash_gen::schedules::SchedulesSetEnabledRow);
 
 pub(crate) fn validate_backup_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();

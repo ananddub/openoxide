@@ -1,8 +1,7 @@
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::models::Registries;
 use crate::flash_gen::registries::{
-    RegistriesCreateParams, RegistriesGetAllRow, RegistriesUpdateParams,
-    RegistriesUsageReferencesParams,
+    RegistriesCreateParams, RegistriesUpdateParams, RegistriesUsageReferencesParams,
 };
 use auto_di::singleton;
 use serde::Deserialize;
@@ -54,7 +53,7 @@ impl RegistryService {
         self.queries.registries_get_by_id(id).await
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<RegistriesGetAllRow>> {
+    pub async fn list(&self) -> sqlx::Result<Vec<Registries>> {
         self.queries.registries_get_all().await
     }
 

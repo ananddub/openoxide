@@ -3,13 +3,14 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::compose_extra::ComposeCreateServiceNoServerParams;
+use super::compose_extra::ComposeCreateServiceWithServerParams;
+use super::service_compose::ComposeGetDeploymentContextRow;
+use super::compose_extra::ComposeMoveToEnvironmentParams;
+use super::deployments::DeploymentsFinalizeWithResource3Params;
+use super::servers::ServersRollbackApplicationServersParams;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct ServicesGetDeploymentContextRow {
-    pub environment_id: i64,
-    pub project_id: i64,
-    pub server_id: Option<i64>,
-}
+pub type ServicesGetDeploymentContextRow = ComposeGetDeploymentContextRow;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct ServicesGetServerIdAndNameRow {
@@ -107,11 +108,7 @@ pub struct CreateServiceSimpleParams {
     pub server_id: i64,
 }
 
-pub struct UpdateServiceStatusWithErrorParams {
-    pub app_status: String,
-    pub last_error: String,
-    pub id: i64,
-}
+pub type UpdateServiceStatusWithErrorParams = DeploymentsFinalizeWithResource3Params;
 
 pub struct UpdateServiceResourcesParams {
     pub memory_reservation: String,
@@ -128,11 +125,7 @@ pub struct UpdateServiceCommandParams {
     pub id: i64,
 }
 
-pub struct UpdateServiceServerIfMatchParams {
-    pub server_id: i64,
-    pub id: i64,
-    pub server_id2: i64,
-}
+pub type UpdateServiceServerIfMatchParams = ServersRollbackApplicationServersParams;
 
 pub struct UpdateServiceNetworksParams {
     pub network_ids: String,
@@ -155,35 +148,13 @@ pub struct UpdateServiceSwarmConfigParams {
     pub id: i64,
 }
 
-pub struct ServicesMoveToEnvironmentInSameOrganizationParams {
-    pub environment_id: i64,
-    pub id: i64,
-    pub id2: i64,
-}
+pub type ServicesMoveToEnvironmentInSameOrganizationParams = ComposeMoveToEnvironmentParams;
 
-pub struct ServicesPatchResourceConfigParams {
-    pub memory_reservation: String,
-    pub memory_limit: String,
-    pub cpu_reservation: String,
-    pub cpu_limit: String,
-    pub replicas: i64,
-    pub id: i64,
-}
+pub type ServicesPatchResourceConfigParams = UpdateServiceResourcesParams;
 
-pub struct AppCoreCreateApplicationWithServerParams {
-    pub name: String,
-    pub app_name: String,
-    pub description: String,
-    pub environment_id: i64,
-    pub server_id: i64,
-}
+pub type AppCoreCreateApplicationWithServerParams = ComposeCreateServiceWithServerParams;
 
-pub struct AppCoreCreateApplicationNoServerParams {
-    pub name: String,
-    pub app_name: String,
-    pub description: String,
-    pub environment_id: i64,
-}
+pub type AppCoreCreateApplicationNoServerParams = ComposeCreateServiceNoServerParams;
 
 pub struct AppCorePatchApplicationParams {
     pub name: String,

@@ -3,22 +3,12 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::server_infra_extra::SrvInfFinishCleanupParams;
+use super::server_infra_extra::SrvInfManagementUpdateParams;
 
-pub struct ServerManagementUpdateParams {
-    pub maintenance_mode: i64,
-    pub maintenance_message: String,
-    pub labels: String,
-    pub cleanup_policy: String,
-    pub gpu_enabled: i64,
-    pub server_id: i64,
-}
+pub type ServerManagementUpdateParams = SrvInfManagementUpdateParams;
 
-pub struct ServerManagementFinishCleanupParams {
-    pub status: String,
-    pub stdout: String,
-    pub stderr: String,
-    pub id: i64,
-}
+pub type ServerManagementFinishCleanupParams = SrvInfFinishCleanupParams;
 
 impl Queries {
     /// ServerManagementGetOrCreate1

@@ -84,7 +84,6 @@
       "ai_generations"
     ],
     ".flash/queries/ai_settings.sql": [
-      "ai_settings;",
       "ai_settings"
     ],
     ".flash/queries/alert_rule.sql": [
@@ -98,8 +97,7 @@
       "application_middlewares"
     ],
     ".flash/queries/audit_logs.sql": [
-      "audit_logs",
-      "audit_logs;"
+      "audit_logs"
     ],
     ".flash/queries/background_policies.sql": [
       "background_policies"
@@ -110,8 +108,7 @@
     ".flash/queries/backups.sql": [
       "destinations",
       "backups",
-      "volume_backups",
-      "backups;"
+      "volume_backups"
     ],
     ".flash/queries/certificate_renewals.sql": [
       "certificate_renewals"
@@ -135,63 +132,56 @@
       "database_networks"
     ],
     ".flash/queries/deployments.sql": [
-      "services",
-      "preview_deployments",
       "deployments",
-      "deployments;"
+      "services",
+      "preview_deployments"
     ],
     ".flash/queries/destinations.sql": [
-      "destinations;",
       "destinations"
     ],
     ".flash/queries/dns_providers.sql": [
       "dns_providers"
     ],
     ".flash/queries/domains.sql": [
-      "domains",
-      "domains;"
+      "domains"
     ],
     ".flash/queries/domains_patches_mounts.sql": [
-      "mounts",
       "domains",
-      "patches"
+      "patches",
+      "mounts"
     ],
     ".flash/queries/email_verification_tokens.sql": [
       "email_verification_tokens",
       "users"
     ],
     ".flash/queries/environments.sql": [
-      "environments;",
       "environments"
     ],
     ".flash/queries/git_providers.sql": [
       "git_providers"
     ],
     ".flash/queries/group_policy.sql": [
-      "group_policy;",
       "group_policy"
     ],
     ".flash/queries/groups.sql": [
-      "groups;",
-      "perms",
       "groups",
       "policy",
       "p",
-      "group_policy"
+      "group_policy",
+      "perms"
     ],
     ".flash/queries/health_report.sql": [
       "health_reports"
     ],
     ".flash/queries/jwt_tokens.sql": [
-      "jwt_tokens;",
       "jwt_tokens"
     ],
     ".flash/queries/misc_services_extra.sql": [
       "ai_settings"
     ],
     ".flash/queries/monitoring_agents.sql": [
-      "monitoring_agents",
-      "services"
+      "services",
+      "monitoring_agents"
     ],
     ".flash/queries/monitoring_lifecycle.sql": [
       "monitoring_policy",
@@ -202,28 +192,25 @@
       "mounts"
     ],
     ".flash/queries/network.sql": [
-      "redirects",
       "ports",
-      "security"
+      "security",
+      "redirects"
     ],
     ".flash/queries/notification_delivery.sql": [
-      "notification_resource_bindings",
-      "notification_delivery_attempts"
+      "notification_delivery_attempts",
+      "notification_resource_bindings"
     ],
     ".flash/queries/notifications.sql": [
       "notifications"
     ],
     ".flash/queries/organization.sql": [
-      "organization;",
       "organization"
     ],
     ".flash/queries/organization_invites.sql": [
-      "organization_invites;",
       "organization_invites"
     ],
     ".flash/queries/organization_members.sql": [
-      "organization_members",
-      "organization_members;"
+      "organization_members"
     ],
     ".flash/queries/organizations.sql": [
       "organization",
@@ -232,10 +219,10 @@
       "organization_invites"
     ],
     ".flash/queries/overview.sql": [
-      "services",
-      "domains",
       "backups",
-      "volume_backups"
+      "volume_backups",
+      "services",
+      "domains"
     ],
     ".flash/queries/password_reset_tokens.sql": [
       "password_reset_tokens",
@@ -243,31 +230,28 @@
       "jwt_tokens"
     ],
     ".flash/queries/patches.sql": [
-      "patches",
-      "patches;"
+      "patches"
     ],
     ".flash/queries/permission_groups.sql": [
+      "organization_members",
+      "user_policy",
       "groups",
       "policy",
-      "group_policy",
-      "organization_members",
-      "user_policy"
+      "group_policy"
     ],
     ".flash/queries/personal_access_tokens.sql": [
       "personal_access_tokens"
     ],
     ".flash/queries/policy.sql": [
-      "policy;",
       "policy"
     ],
     ".flash/queries/ports.sql": [
-      "ports;",
       "ports"
     ],
     ".flash/queries/preview_deployments.sql": [
+      "preview_deployments",
       "services",
-      "deployments",
-      "preview_deployments"
+      "deployments"
     ],
     ".flash/queries/preview_env_extra.sql": [
       "services",
@@ -276,11 +260,9 @@
       "domains"
     ],
     ".flash/queries/project_tags.sql": [
-      "project_tags;",
       "project_tags"
     ],
     ".flash/queries/projects.sql": [
-      "projects;",
       "projects",
       "environments",
       "tags",
@@ -288,9 +270,8 @@
       "project_tags"
     ],
     ".flash/queries/registries.sql": [
-      "service_application",
-      "registries;",
-      "registries"
+      "registries",
+      "service_application"
     ],
     ".flash/queries/resource_access.sql": [
       "resource_access"
@@ -301,7 +282,6 @@
       "service_compose"
     ],
     ".flash/queries/rollbacks.sql": [
-      "rollbacks;",
       "rollbacks"
     ],
     ".flash/queries/schedule_runtime.sql": [
@@ -310,11 +290,9 @@
       "schedule_executions"
     ],
     ".flash/queries/schedules.sql": [
-      "schedules",
-      "schedules;"
+      "schedules"
     ],
     ".flash/queries/security.sql": [
-      "security;",
       "security"
     ],
     ".flash/queries/server_infra_extra.sql": [
@@ -322,8 +300,8 @@
       "server_cleanup_executions"
     ],
     ".flash/queries/server_management.sql": [
-      "server_management",
-      "server_cleanup_executions"
+      "server_cleanup_executions",
+      "server_management"
     ],
     ".flash/queries/server_migrations.sql": [
       "server_migrations"
@@ -332,21 +310,20 @@
       "server_private_networks"
     ],
     ".flash/queries/servers.sql": [
-      "schedules",
-      "servers;",
       "servers",
       "services",
       "service_application",
-      "certificates"
+      "certificates",
+      "schedules"
     ],
     ".flash/queries/service_application.sql": [
-      "services",
-      "service_application"
+      "service_application",
+      "services"
     ],
     ".flash/queries/service_compose.sql": [
-      "service_compose",
       "services",
-      "service_git"
+      "service_git",
+      "service_compose"
     ],
     ".flash/queries/service_database.sql": [
       "service_database",
@@ -360,43 +337,37 @@
       "services"
     ],
     ".flash/queries/settings.sql": [
-      "settings",
       "ai_settings",
-      "settings;"
+      "settings"
     ],
     ".flash/queries/ssh_keys.sql": [
       "ssh_keys",
       "servers",
-      "service_git",
-      "ssh_keys;"
+      "service_git"
     ],
     ".flash/queries/ssh_keys_registries.sql": [
       "ssh_keys",
       "registries"
     ],
     ".flash/queries/tags.sql": [
-      "tags;",
       "tags",
       "project_tags"
     ],
     ".flash/queries/two_factor.sql": [
-      "two_factor;",
       "two_factor"
     ],
     ".flash/queries/user_policy.sql": [
       "user_policy"
     ],
     ".flash/queries/users.sql": [
-      "jwt_tokens",
-      "users;",
       "users",
-      "two_factor"
+      "two_factor",
+      "jwt_tokens"
     ],
     ".flash/queries/vault_providers.sql": [
       "vault_providers"
     ],
     ".flash/queries/volume_backups.sql": [
-      "volume_backups;",
       "volume_backups"
     ],
     ".flash/queries/webhooks.sql": [
@@ -404,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-08-30T12:25:01.147205025+05:30",
+  "last_generation": "2026-08-30T13:01:04.18956932+05:30",
   "OutDir": "src/flash_gen"
 }

@@ -3,13 +3,9 @@
 
 use super::models::*;
 use super::db::Queries;
+use super::permission_groups::PermissionGroupsInsertUserPolicyParams;
 
-pub struct UserPolicyUpsertParams {
-    pub user_id: i64,
-    pub org_id: i64,
-    pub policy_id: i64,
-    pub effect: String,
-}
+pub type UserPolicyUpsertParams = PermissionGroupsInsertUserPolicyParams;
 
 pub struct UserPolicyDeleteParams {
     pub user_id: i64,
