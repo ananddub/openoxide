@@ -112,32 +112,32 @@ pub struct SetCustomGitSourceParams {
 pub struct FindServicesByGithubRepoParams {
     pub service_type: String,
     pub trigger_type: String,
-    pub param3: String,
-    pub param4: String,
+    pub repository: String,
+    pub owner: String,
     pub branch: String,
 }
 
 pub struct FindServicesByGitlabRepoParams {
     pub service_type: String,
     pub trigger_type: String,
-    pub param3: String,
-    pub param4: String,
+    pub gitlab_repository: String,
+    pub gitlab_owner: String,
     pub gitlab_branch: String,
 }
 
 pub struct FindServicesByGiteaRepoParams {
     pub service_type: String,
     pub trigger_type: String,
-    pub param3: String,
-    pub param4: String,
+    pub gitea_repository: String,
+    pub gitea_owner: String,
     pub gitea_branch: String,
 }
 
 pub struct FindServicesByBitbucketRepoParams {
     pub service_type: String,
     pub trigger_type: String,
-    pub param3: String,
-    pub param4: String,
+    pub bitbucket_repository: String,
+    pub bitbucket_owner: String,
     pub bitbucket_branch: String,
 }
 
@@ -356,8 +356,8 @@ impl Queries {
         )
         .bind(&params.service_type)
         .bind(&params.trigger_type)
-        .bind(&params.param3)
-        .bind(&params.param4)
+        .bind(&params.repository)
+        .bind(&params.owner)
         .bind(&params.branch)
         .fetch_all(&self.pool)
         .await
@@ -373,8 +373,8 @@ impl Queries {
         )
         .bind(&params.service_type)
         .bind(&params.trigger_type)
-        .bind(&params.param3)
-        .bind(&params.param4)
+        .bind(&params.gitlab_repository)
+        .bind(&params.gitlab_owner)
         .bind(&params.gitlab_branch)
         .fetch_all(&self.pool)
         .await
@@ -390,8 +390,8 @@ impl Queries {
         )
         .bind(&params.service_type)
         .bind(&params.trigger_type)
-        .bind(&params.param3)
-        .bind(&params.param4)
+        .bind(&params.gitea_repository)
+        .bind(&params.gitea_owner)
         .bind(&params.gitea_branch)
         .fetch_all(&self.pool)
         .await
@@ -407,8 +407,8 @@ impl Queries {
         )
         .bind(&params.service_type)
         .bind(&params.trigger_type)
-        .bind(&params.param3)
-        .bind(&params.param4)
+        .bind(&params.bitbucket_repository)
+        .bind(&params.bitbucket_owner)
         .bind(&params.bitbucket_branch)
         .fetch_all(&self.pool)
         .await

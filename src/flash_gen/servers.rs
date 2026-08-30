@@ -647,12 +647,12 @@ impl Queries {
     /// ServersListMigratedApplications
     pub async fn servers_list_migrated_applications(
         &self,
-        param1: &str,
+        id_list: &str,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM services WHERE service_type = 'APPLICATION' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;"
         )
-        .bind(param1)
+        .bind(id_list)
         .fetch_all(&self.pool)
         .await
     }
@@ -660,12 +660,12 @@ impl Queries {
     /// ServersListMigratedCompose
     pub async fn servers_list_migrated_compose(
         &self,
-        param1: &str,
+        id_list: &str,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT id AS id FROM services WHERE service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;"
         )
-        .bind(param1)
+        .bind(id_list)
         .fetch_all(&self.pool)
         .await
     }

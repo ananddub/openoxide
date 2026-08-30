@@ -11,7 +11,7 @@ pub struct NotificationsFindForUserRow {
 }
 
 pub struct NotificationsFindForUserParams {
-    pub param1: String,
+    pub user_id: i64,
     pub notification_type: String,
     pub owner_id: i64,
 }
@@ -111,7 +111,7 @@ impl Queries {
         sqlx::query_as::<_, NotificationsFindForUserRow>(
             "SELECT n.id AS id, n.config_json AS config_json FROM notifications n JOIN organization o ON o.id = n.organization_id LEFT JOIN organization_members m ON m.organization_id = o.id AND m.user_id = ? WHERE n.notification_type = ? AND (o.owner_id = ? OR m.user_id IS NOT NULL) ORDER BY n.id LIMIT 1;"
         )
-        .bind(&params.param1)
+        .bind(&params.user_id)
         .bind(&params.notification_type)
         .bind(&params.owner_id)
         .fetch_one(&self.pool)

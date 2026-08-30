@@ -399,7 +399,7 @@ pub(crate) async fn notification_configs_for_user(
 ) -> Result<(Option<EmailConfig>, Option<ResendConfig>), sqlx::Error> {
     let email = match queries
         .notifications_find_for_user(&NotificationsFindForUserParams {
-            param1: user_id.to_string(),
+            user_id,
             notification_type: "EMAIL".into(),
             owner_id: user_id,
         })
@@ -411,7 +411,7 @@ pub(crate) async fn notification_configs_for_user(
     };
     let resend = match queries
         .notifications_find_for_user(&NotificationsFindForUserParams {
-            param1: user_id.to_string(),
+            user_id,
             notification_type: "RESEND".into(),
             owner_id: user_id,
         })

@@ -954,7 +954,7 @@ impl ServerPrivateNetworkService {
                         health_status: status_str.to_owned(),
                         health_error: error.unwrap_or_default().to_owned(),
                         last_handshake_at,
-                        param4: status_str.to_owned(),
+                        healthy: status_str.to_owned(),
                         server_id,
                     },
                 )
@@ -964,7 +964,7 @@ impl ServerPrivateNetworkService {
                 .server_private_networks_set_health(&ServerPrivateNetworksSetHealthParams {
                     health_status: status_str.to_owned(),
                     health_error: error.unwrap_or_default().to_owned(),
-                    param3: status_str.to_owned(),
+                    healthy: status_str.to_owned(),
                     server_id,
                 })
                 .await

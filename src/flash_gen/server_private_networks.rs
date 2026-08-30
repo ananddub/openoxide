@@ -153,7 +153,7 @@ pub struct ServerPrivateNetworksRenewOperationParams {
 pub struct ServerPrivateNetworksSetHealthParams {
     pub health_status: String,
     pub health_error: String,
-    pub param3: String,
+    pub healthy: String,
     pub server_id: i64,
 }
 
@@ -161,7 +161,7 @@ pub struct ServerPrivateNetworksSetHealthHandshakeParams {
     pub health_status: String,
     pub health_error: String,
     pub last_handshake_at: i64,
-    pub param4: String,
+    pub healthy: String,
     pub server_id: i64,
 }
 
@@ -413,7 +413,7 @@ impl Queries {
         )
         .bind(&params.health_status)
         .bind(&params.health_error)
-        .bind(&params.param3)
+        .bind(&params.healthy)
         .bind(&params.server_id)
         .execute(&self.pool)
         .await?;
@@ -431,7 +431,7 @@ impl Queries {
         .bind(&params.health_status)
         .bind(&params.health_error)
         .bind(&params.last_handshake_at)
-        .bind(&params.param4)
+        .bind(&params.healthy)
         .bind(&params.server_id)
         .execute(&self.pool)
         .await?;

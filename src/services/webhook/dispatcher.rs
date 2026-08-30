@@ -165,8 +165,8 @@ impl WebhookDispatcher {
                 .find_services_by_github_repo(&FindServicesByGithubRepoParams {
                     service_type: service_type.to_string(),
                     trigger_type: trigger.to_string(),
-                    param3: event.repository.clone(),
-                    param4: event.owner.clone(),
+                    repository: event.repository.clone(),
+                    owner: event.owner.clone(),
                     branch: event.branch.clone(),
                 })
                 .await?
@@ -178,8 +178,8 @@ impl WebhookDispatcher {
                 .find_services_by_gitlab_repo(&FindServicesByGitlabRepoParams {
                     service_type: service_type.to_string(),
                     trigger_type: trigger.to_string(),
-                    param3: event.repository.clone(),
-                    param4: event.owner.clone(),
+                    gitlab_repository: event.repository.clone(),
+                    gitlab_owner: event.owner.clone(),
                     gitlab_branch: event.branch.clone(),
                 })
                 .await?
@@ -191,8 +191,8 @@ impl WebhookDispatcher {
                 .find_services_by_gitea_repo(&FindServicesByGiteaRepoParams {
                     service_type: service_type.to_string(),
                     trigger_type: trigger.to_string(),
-                    param3: event.repository.clone(),
-                    param4: event.owner.clone(),
+                    gitea_repository: event.repository.clone(),
+                    gitea_owner: event.owner.clone(),
                     gitea_branch: event.branch.clone(),
                 })
                 .await?
@@ -204,8 +204,8 @@ impl WebhookDispatcher {
                 .find_services_by_bitbucket_repo(&FindServicesByBitbucketRepoParams {
                     service_type: service_type.to_string(),
                     trigger_type: trigger.to_string(),
-                    param3: event.repository.clone(),
-                    param4: event.owner.clone(),
+                    bitbucket_repository: event.repository.clone(),
+                    bitbucket_owner: event.owner.clone(),
                     bitbucket_branch: event.branch.clone(),
                 })
                 .await?

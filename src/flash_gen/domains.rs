@@ -132,12 +132,12 @@ impl Queries {
     /// DomainsHostInUse
     pub async fn domains_host_in_use(
         &self,
-        param1: &str,
+        host: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT COUNT(*) AS count FROM domains WHERE lower(host) = lower(?);"
         )
-        .bind(param1)
+        .bind(host)
         .fetch_one(&self.pool)
         .await
     }

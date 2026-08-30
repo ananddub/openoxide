@@ -307,12 +307,12 @@ impl Queries {
     /// DbNetworkDependencyApplications
     pub async fn db_network_dependency_applications(
         &self,
-        param1: &str,
+        json_value: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT COUNT(*) AS count FROM services CROSS JOIN json_each(services.network_ids) WHERE services.service_type = 'APPLICATION' AND CAST(json_each.value AS TEXT) = ?;"
         )
-        .bind(param1)
+        .bind(json_value)
         .fetch_one(&self.pool)
         .await
     }
@@ -320,12 +320,12 @@ impl Queries {
     /// DbNetworkDependencyComposeServices
     pub async fn db_network_dependency_compose_services(
         &self,
-        param1: &str,
+        json_value: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT COUNT(DISTINCT sc.service_id) AS count FROM service_compose sc CROSS JOIN json_tree(sc.service_networks) WHERE CAST(json_tree.value AS TEXT) = ?;"
         )
-        .bind(param1)
+        .bind(json_value)
         .fetch_one(&self.pool)
         .await
     }
@@ -333,12 +333,12 @@ impl Queries {
     /// DbNetworkDependencyDatabases
     pub async fn db_network_dependency_databases(
         &self,
-        param1: &str,
+        json_value: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT COUNT(*) AS count FROM services CROSS JOIN json_each(services.network_ids) WHERE services.service_type = 'DATABASE' AND CAST(json_each.value AS TEXT) = ?;"
         )
-        .bind(param1)
+        .bind(json_value)
         .fetch_one(&self.pool)
         .await
     }

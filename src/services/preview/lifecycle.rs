@@ -25,8 +25,8 @@ impl PreviewDeploymentService {
                 .queries
                 .preview_deployments_find_open_for_event(&PreviewDeploymentsFindOpenForEventParams {
                     provider_type: event.provider.as_str().to_string(),
-                    param2: event.owner.clone(),
-                    param3: event.repository.clone(),
+                    owner: event.owner.clone(),
+                    repository: event.repository.clone(),
                     pull_request_number: event.number.clone(),
                 })
                 .await
@@ -194,8 +194,8 @@ impl PreviewDeploymentService {
                 let rows = self
                     .queries
                     .preview_deployments_matching_targets1(&PreviewDeploymentsMatchingTargets1Params {
-                        param1: repository.to_string(),
-                        param2: owner.to_string(),
+                        repository: repository.to_string(),
+                        owner: owner.to_string(),
                         branch: target_branch.to_string(),
                     })
                     .await
@@ -206,8 +206,8 @@ impl PreviewDeploymentService {
                 let rows = self
                     .queries
                     .preview_deployments_matching_targets2(&PreviewDeploymentsMatchingTargets2Params {
-                        param1: repository.to_string(),
-                        param2: owner.to_string(),
+                        gitlab_repository: repository.to_string(),
+                        gitlab_owner: owner.to_string(),
                         gitlab_branch: target_branch.to_string(),
                     })
                     .await
@@ -218,8 +218,8 @@ impl PreviewDeploymentService {
                 let rows = self
                     .queries
                     .preview_deployments_matching_targets3(&PreviewDeploymentsMatchingTargets3Params {
-                        param1: repository.to_string(),
-                        param2: owner.to_string(),
+                        gitea_repository: repository.to_string(),
+                        gitea_owner: owner.to_string(),
                         gitea_branch: target_branch.to_string(),
                     })
                     .await
@@ -230,8 +230,8 @@ impl PreviewDeploymentService {
                 let rows = self
                     .queries
                     .preview_deployments_matching_targets4(&PreviewDeploymentsMatchingTargets4Params {
-                        param1: repository.to_string(),
-                        param2: owner.to_string(),
+                        bitbucket_repository: repository.to_string(),
+                        bitbucket_owner: owner.to_string(),
                         bitbucket_branch: target_branch.to_string(),
                     })
                     .await

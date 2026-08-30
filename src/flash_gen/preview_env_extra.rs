@@ -5,19 +5,19 @@ use super::models::*;
 use super::db::Queries;
 
 pub struct PrevEnvCloneServiceParams {
-    pub param1: String,
-    pub param2: String,
-    pub param3: String,
-    pub param4: String,
-    pub param5: String,
+    pub name: String,
+    pub app_name: String,
+    pub env_var: String,
+    pub created_at: i64,
+    pub updated_at: i64,
     pub id: i64,
 }
 
 pub struct PrevEnvCloneServiceGitParams {
-    pub param1: String,
-    pub param2: String,
-    pub param3: String,
     pub service_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub service_id2: i64,
 }
 
 pub struct PrevEnvSyncServiceParams {
@@ -85,11 +85,11 @@ impl Queries {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "INSERT INTO services ( service_type, name, app_name, description, icon, app_status, last_error, env_var, command, args, refresh_token, docker_image, memory_reservation, memory_limit, cpu_reservation, cpu_limit, replicas, health_check_swarm, restart_policy_swarm, placement_swarm, update_config_swarm, rollback_config_swarm, mode_swarm, labels_swarm, network_swarm, endpoint_spec_swarm, ulimits_swarm, stop_grace_period_swarm, network_ids, detach_rustploy_network, environment_id, server_id, created_at, updated_at ) SELECT base.service_type, ?, ?, base.description, base.icon, 'IDLE', base.last_error, ?, base.command, base.args, base.refresh_token, base.docker_image, base.memory_reservation, base.memory_limit, base.cpu_reservation, base.cpu_limit, base.replicas, base.health_check_swarm, base.restart_policy_swarm, base.placement_swarm, base.update_config_swarm, base.rollback_config_swarm, base.mode_swarm, COALESCE(sa.preview_labels, base.labels_swarm), base.network_swarm, base.endpoint_spec_swarm, base.ulimits_swarm, base.stop_grace_period_swarm, base.network_ids, base.detach_rustploy_network, base.environment_id, base.server_id, CAST(? AS BIGINT), CAST(? AS BIGINT) FROM services base JOIN service_application sa ON sa.service_id = base.id WHERE base.id = ? RETURNING id AS id;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
-        .bind(&params.param3)
-        .bind(&params.param4)
-        .bind(&params.param5)
+        .bind(&params.name)
+        .bind(&params.app_name)
+        .bind(&params.env_var)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
         .bind(&params.id)
         .fetch_one(&self.pool)
         .await
@@ -103,10 +103,10 @@ impl Queries {
         sqlx::query(
             "INSERT INTO service_git ( service_id, source_type, trigger_type, auto_deploy, watch_paths, enable_submodules, repository, owner, branch, gitlab_project_id, gitlab_repository, gitlab_owner, gitlab_branch, gitlab_build_path, gitlab_path_namespace, gitea_repository, gitea_owner, gitea_branch, gitea_build_path, bitbucket_repository, bitbucket_repository_slug, bitbucket_owner, bitbucket_branch, bitbucket_build_path, custom_git_url, custom_git_branch, custom_git_build_path, custom_git_ssh_key_id, github_provider_id, gitlab_provider_id, gitea_provider_id, bitbucket_provider_id, created_at, updated_at ) SELECT CAST(? AS BIGINT), source_type, trigger_type, 0, watch_paths, enable_submodules, repository, owner, branch, gitlab_project_id, gitlab_repository, gitlab_owner, gitlab_branch, gitlab_build_path, gitlab_path_namespace, gitea_repository, gitea_owner, gitea_branch, gitea_build_path, bitbucket_repository, bitbucket_repository_slug, bitbucket_owner, bitbucket_branch, bitbucket_build_path, custom_git_url, custom_git_branch, custom_git_build_path, custom_git_ssh_key_id, github_provider_id, gitlab_provider_id, gitea_provider_id, bitbucket_provider_id, CAST(? AS BIGINT), CAST(? AS BIGINT) FROM service_git WHERE service_id = ?;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
-        .bind(&params.param3)
         .bind(&params.service_id)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
+        .bind(&params.service_id2)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -115,14 +115,14 @@ impl Queries {
     /// PrevEnvCloneServiceApplication
     pub async fn prev_env_clone_service_application(
         &self,
-        param1: &str,
         service_id: i64,
+        service_id2: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO service_application ( service_id, build_type, build_args, build_secrets, dockerfile, docker_context_path, docker_build_stage, publish_directory, is_static_spa, create_env_file, railpack_version, heroku_version, build_path, clean_cache, drop_build_path, docker_username, docker_password, registry_url, build_server_id, registry_id, rollback_registry_id, build_registry_id, rollback_active, preview_env, preview_build_args, preview_build_secrets, preview_labels, preview_wildcard, preview_port, preview_https, preview_path, preview_certificate_type, preview_custom_cert_resolver, preview_limit, is_preview_deployments_active, preview_require_collaborator_permissions ) SELECT CAST(? AS BIGINT), build_type, COALESCE(preview_build_args, build_args), COALESCE(preview_build_secrets, build_secrets), dockerfile, docker_context_path, docker_build_stage, publish_directory, is_static_spa, create_env_file, railpack_version, heroku_version, build_path, clean_cache, drop_build_path, docker_username, docker_password, registry_url, build_server_id, registry_id, rollback_registry_id, build_registry_id, rollback_active, preview_env, preview_build_args, preview_build_secrets, preview_labels, preview_wildcard, preview_port, preview_https, preview_path, preview_certificate_type, preview_custom_cert_resolver, preview_limit, 0, 0 FROM service_application WHERE service_id = ?;"
         )
-        .bind(param1)
         .bind(service_id)
+        .bind(service_id2)
         .execute(&self.pool)
         .await?;
         Ok(())

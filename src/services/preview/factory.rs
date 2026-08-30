@@ -252,13 +252,11 @@ impl PreviewDeploymentService {
         let preview_service_id = self
             .queries
             .prev_env_clone_service(&PrevEnvCloneServiceParams {
-                param1: name,
-                param2: app_name.to_string(),
-                param3: env_var,
-                // Bound as text and cast to BIGINT inside the query: the
-                // generator cannot infer integer parameters in INSERT..SELECT.
-                param4: now.to_string(),
-                param5: now.to_string(),
+                name,
+                app_name: app_name.to_string(),
+                env_var,
+                created_at: now,
+                updated_at: now,
                 id: base.id,
             })
             .await
@@ -266,10 +264,10 @@ impl PreviewDeploymentService {
         if let Err(error) = self
             .queries
             .prev_env_clone_service_git(&PrevEnvCloneServiceGitParams {
-                param1: preview_service_id.to_string(),
-                param2: now.to_string(),
-                param3: now.to_string(),
-                service_id: base.id,
+                service_id: preview_service_id,
+                created_at: now,
+                updated_at: now,
+                service_id2: base.id,
             })
             .await
         {
@@ -278,7 +276,7 @@ impl PreviewDeploymentService {
         }
         if let Err(error) = self
             .queries
-            .prev_env_clone_service_application(&preview_service_id.to_string(), base.id)
+            .prev_env_clone_service_application(preview_service_id, base.id)
             .await
         {
             let _ = self.queries.delete_service(preview_service_id).await;

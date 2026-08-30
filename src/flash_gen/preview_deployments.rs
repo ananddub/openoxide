@@ -205,32 +205,32 @@ pub struct PreviewDeploymentsFindForPullRequestParams {
 
 pub struct PreviewDeploymentsFindOpenForEventParams {
     pub provider_type: String,
-    pub param2: String,
-    pub param3: String,
+    pub owner: String,
+    pub repository: String,
     pub pull_request_number: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets1Params {
-    pub param1: String,
-    pub param2: String,
+    pub repository: String,
+    pub owner: String,
     pub branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets2Params {
-    pub param1: String,
-    pub param2: String,
+    pub gitlab_repository: String,
+    pub gitlab_owner: String,
     pub gitlab_branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets3Params {
-    pub param1: String,
-    pub param2: String,
+    pub gitea_repository: String,
+    pub gitea_owner: String,
     pub gitea_branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets4Params {
-    pub param1: String,
-    pub param2: String,
+    pub bitbucket_repository: String,
+    pub bitbucket_owner: String,
     pub bitbucket_branch: String,
 }
 
@@ -360,8 +360,8 @@ impl Queries {
             "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE provider_type = ? AND lower(owner) = lower(?) AND lower(repository) = lower(?) AND pull_request_number = ? AND status != 'CLOSED';"
         )
         .bind(&params.provider_type)
-        .bind(&params.param2)
-        .bind(&params.param3)
+        .bind(&params.owner)
+        .bind(&params.repository)
         .bind(&params.pull_request_number)
         .fetch_all(&self.pool)
         .await
@@ -375,8 +375,8 @@ impl Queries {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets1Row>(
             "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.github_provider_id WHERE g.source_type = 'GITHUB' AND sa.is_preview_deployments_active = 1 AND lower(g.repository) = lower(?) AND lower(g.owner) = lower(?) AND g.branch = ?;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
+        .bind(&params.repository)
+        .bind(&params.owner)
         .bind(&params.branch)
         .fetch_all(&self.pool)
         .await
@@ -390,8 +390,8 @@ impl Queries {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets2Row>(
             "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.gitlab_provider_id WHERE g.source_type = 'GITLAB' AND sa.is_preview_deployments_active = 1 AND lower(g.gitlab_repository) = lower(?) AND lower(g.gitlab_owner) = lower(?) AND g.gitlab_branch = ?;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
+        .bind(&params.gitlab_repository)
+        .bind(&params.gitlab_owner)
         .bind(&params.gitlab_branch)
         .fetch_all(&self.pool)
         .await
@@ -405,8 +405,8 @@ impl Queries {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets3Row>(
             "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.gitea_provider_id WHERE g.source_type = 'GITEA' AND sa.is_preview_deployments_active = 1 AND lower(g.gitea_repository) = lower(?) AND lower(g.gitea_owner) = lower(?) AND g.gitea_branch = ?;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
+        .bind(&params.gitea_repository)
+        .bind(&params.gitea_owner)
         .bind(&params.gitea_branch)
         .fetch_all(&self.pool)
         .await
@@ -420,8 +420,8 @@ impl Queries {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets4Row>(
             "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.bitbucket_provider_id WHERE g.source_type = 'BITBUCKET' AND sa.is_preview_deployments_active = 1 AND lower(g.bitbucket_repository) = lower(?) AND lower(g.bitbucket_owner) = lower(?) AND g.bitbucket_branch = ?;"
         )
-        .bind(&params.param1)
-        .bind(&params.param2)
+        .bind(&params.bitbucket_repository)
+        .bind(&params.bitbucket_owner)
         .bind(&params.bitbucket_branch)
         .fetch_all(&self.pool)
         .await
