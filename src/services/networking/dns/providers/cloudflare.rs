@@ -1,10 +1,10 @@
-use super::{
+use super::super::{
     DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
     UpsertDnsRecordDto, extract_credential_field,
 };
 
 impl DnsService {
-    pub(super) async fn test_cloudflare_token(
+    pub(in crate::services::networking::dns) async fn test_cloudflare_token(
         &self,
         credentials_json: &str,
     ) -> Result<DnsTestResultDto, DnsServiceError> {
@@ -30,7 +30,7 @@ impl DnsService {
         })
     }
 
-    pub(super) async fn list_cloudflare_zones(
+    pub(in crate::services::networking::dns) async fn list_cloudflare_zones(
         &self,
         credentials_json: &str,
     ) -> Result<Vec<DnsZoneDto>, DnsServiceError> {
@@ -60,7 +60,7 @@ impl DnsService {
         Ok(zones)
     }
 
-    pub(super) async fn list_cloudflare_records(
+    pub(in crate::services::networking::dns) async fn list_cloudflare_records(
         &self,
         credentials_json: &str,
         zone_id: &str,
@@ -97,7 +97,7 @@ impl DnsService {
         Ok(records)
     }
 
-    pub(super) async fn upsert_cloudflare_record(
+    pub(in crate::services::networking::dns) async fn upsert_cloudflare_record(
         &self,
         credentials_json: &str,
         body: &UpsertDnsRecordDto,
@@ -159,7 +159,7 @@ impl DnsService {
         })
     }
 
-    pub(super) async fn delete_cloudflare_record(
+    pub(in crate::services::networking::dns) async fn delete_cloudflare_record(
         &self,
         credentials_json: &str,
         zone_id: &str,

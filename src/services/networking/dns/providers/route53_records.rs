@@ -1,4 +1,4 @@
-use super::{DnsRecordDto, DnsService, DnsServiceError, UpsertDnsRecordDto};
+use super::super::{DnsRecordDto, DnsService, DnsServiceError, UpsertDnsRecordDto};
 use aws_sdk_route53::types::{
     Change, ChangeAction, ChangeBatch, ResourceRecord, ResourceRecordSet, RrType,
 };
@@ -32,7 +32,7 @@ impl DnsService {
             .map_err(|e| DnsServiceError::ProviderError(e.to_string()))
     }
 
-    pub(super) async fn upsert_route53_record(
+    pub(in crate::services::networking::dns) async fn upsert_route53_record(
         &self,
         credentials_json: &str,
         body: &UpsertDnsRecordDto,
@@ -65,7 +65,7 @@ impl DnsService {
         })
     }
 
-    pub(super) async fn delete_route53_record(
+    pub(in crate::services::networking::dns) async fn delete_route53_record(
         &self,
         credentials_json: &str,
         zone_id: &str,

@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
     extract_credential_field,
 };
@@ -6,7 +6,7 @@ use aws_credential_types::Credentials;
 use aws_sdk_route53::{Client as Route53Client, types::RrType};
 
 impl DnsService {
-    pub(super) fn route53_client(credentials_json: &str) -> Result<Route53Client, DnsServiceError> {
+    pub(in crate::services::networking::dns) fn route53_client(credentials_json: &str) -> Result<Route53Client, DnsServiceError> {
         let access_key = extract_credential_field(credentials_json, "accessKeyId");
         let secret_key = extract_credential_field(credentials_json, "secretAccessKey");
         if access_key.is_empty() || secret_key.is_empty() {
@@ -23,7 +23,7 @@ impl DnsService {
         Ok(Route53Client::from_conf(config))
     }
 
-    pub(super) async fn test_route53(
+    pub(in crate::services::networking::dns) async fn test_route53(
         &self,
         credentials_json: &str,
     ) -> Result<DnsTestResultDto, DnsServiceError> {
@@ -41,7 +41,7 @@ impl DnsService {
         })
     }
 
-    pub(super) async fn list_route53_zones(
+    pub(in crate::services::networking::dns) async fn list_route53_zones(
         &self,
         credentials_json: &str,
     ) -> Result<Vec<DnsZoneDto>, DnsServiceError> {
@@ -75,7 +75,7 @@ impl DnsService {
         Ok(zones)
     }
 
-    pub(super) async fn list_route53_records(
+    pub(in crate::services::networking::dns) async fn list_route53_records(
         &self,
         credentials_json: &str,
         zone_id: &str,

@@ -1,7 +1,7 @@
-use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
+use super::super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
 
 impl VaultService {
-    pub(super) async fn scaleway_secrets(
+    pub(in crate::services::integrations::vault) async fn scaleway_secrets(
         &self,
         config: Option<&str>,
     ) -> Result<Vec<String>, VaultServiceError> {
@@ -42,7 +42,7 @@ impl VaultService {
             .filter_map(|x| x["name"].as_str().map(str::to_string))
             .collect())
     }
-    pub(super) async fn fetch_scaleway_secret(
+    pub(in crate::services::integrations::vault) async fn fetch_scaleway_secret(
         &self,
         config: Option<&str>,
         name: &str,
@@ -91,7 +91,7 @@ impl VaultService {
         )
         .map_err(|e| VaultServiceError::ProviderError(e.to_string()))
     }
-    pub(super) async fn test_scaleway(
+    pub(in crate::services::integrations::vault) async fn test_scaleway(
         &self,
         config: Option<&str>,
     ) -> Result<VaultTestResultDto, VaultServiceError> {
@@ -101,7 +101,7 @@ impl VaultService {
             message: "Scaleway Secret Manager verified successfully".into(),
         })
     }
-    pub(super) async fn list_scaleway(
+    pub(in crate::services::integrations::vault) async fn list_scaleway(
         &self,
         config: Option<&str>,
     ) -> Result<VaultSecretListDto, VaultServiceError> {

@@ -1,8 +1,8 @@
-use super::{DnsService, DnsServiceError};
+use super::super::{DnsService, DnsServiceError};
 use serde::de::DeserializeOwned;
 
 impl DnsService {
-    pub(super) async fn cloudflare_result<T: DeserializeOwned>(
+    pub(in crate::services::networking::dns) async fn cloudflare_result<T: DeserializeOwned>(
         &self,
         response: reqwest::Response,
         operation: &str,

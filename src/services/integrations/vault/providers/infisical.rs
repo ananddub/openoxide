@@ -1,7 +1,7 @@
-use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
+use super::super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
 
 impl VaultService {
-    pub(super) async fn infisical_config(
+    pub(in crate::services::integrations::vault) async fn infisical_config(
         &self,
         config_json: Option<&str>,
     ) -> Result<serde_json::Value, VaultServiceError> {
@@ -26,7 +26,7 @@ impl VaultService {
         Ok(value)
     }
 
-    pub(super) async fn infisical_secrets(
+    pub(in crate::services::integrations::vault) async fn infisical_secrets(
         &self,
         config_json: Option<&str>,
     ) -> Result<serde_json::Map<String, serde_json::Value>, VaultServiceError> {
@@ -81,7 +81,7 @@ impl VaultService {
         Ok(out)
     }
 
-    pub(super) async fn fetch_infisical_secret(
+    pub(in crate::services::integrations::vault) async fn fetch_infisical_secret(
         &self,
         config: Option<&str>,
         name: &str,
@@ -94,7 +94,7 @@ impl VaultService {
                 VaultServiceError::ProviderError(format!("Infisical: secret '{name}' not found"))
             })
     }
-    pub(super) async fn test_infisical(
+    pub(in crate::services::integrations::vault) async fn test_infisical(
         &self,
         config: Option<&str>,
     ) -> Result<VaultTestResultDto, VaultServiceError> {
@@ -104,7 +104,7 @@ impl VaultService {
             message: "Infisical: credentials verified successfully".into(),
         })
     }
-    pub(super) async fn list_infisical(
+    pub(in crate::services::integrations::vault) async fn list_infisical(
         &self,
         config: Option<&str>,
     ) -> Result<VaultSecretListDto, VaultServiceError> {

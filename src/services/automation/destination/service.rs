@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 use os::string_enum;
-use serde::Deserialize;
+
+use super::types::{CreateDestinationDto, PatchDestinationDto};
 
 use crate::{
     db::queries::FlashQueries,
@@ -12,29 +13,6 @@ use crate::{
     },
     utils::rclone::{RcloneBuilder, RcloneCommand},
 };
-
-#[derive(Debug, Deserialize)]
-pub struct CreateDestinationDto {
-    pub name: String,
-    pub provider: String,
-    pub access_key: String,
-    pub secret_access_key: String,
-    pub bucket: String,
-    pub region: String,
-    pub endpoint: String,
-    pub organization_id: i64,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PatchDestinationDto {
-    pub name: Option<String>,
-    pub provider: Option<String>,
-    pub access_key: Option<String>,
-    pub secret_access_key: Option<String>,
-    pub bucket: Option<String>,
-    pub region: Option<String>,
-    pub endpoint: Option<String>,
-}
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

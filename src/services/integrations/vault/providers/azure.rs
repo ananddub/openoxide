@@ -1,7 +1,7 @@
-use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
+use super::super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
 
 impl VaultService {
-    pub(super) async fn azure_token(
+    pub(in crate::services::integrations::vault) async fn azure_token(
         &self,
         config: Option<&str>,
     ) -> Result<(serde_json::Value, String), VaultServiceError> {
@@ -32,7 +32,7 @@ impl VaultService {
         }
         Ok((c, data["access_token"].as_str().unwrap_or("").to_string()))
     }
-    pub(super) async fn azure_secrets(
+    pub(in crate::services::integrations::vault) async fn azure_secrets(
         &self,
         config: Option<&str>,
     ) -> Result<Vec<String>, VaultServiceError> {
@@ -61,7 +61,7 @@ impl VaultService {
             })
             .collect())
     }
-    pub(super) async fn fetch_azure_secret(
+    pub(in crate::services::integrations::vault) async fn fetch_azure_secret(
         &self,
         config: Option<&str>,
         name: &str,
@@ -82,7 +82,7 @@ impl VaultService {
         }
         Ok(d["value"].as_str().unwrap_or("").to_string())
     }
-    pub(super) async fn test_azure(
+    pub(in crate::services::integrations::vault) async fn test_azure(
         &self,
         config: Option<&str>,
     ) -> Result<VaultTestResultDto, VaultServiceError> {
@@ -92,7 +92,7 @@ impl VaultService {
             message: "Azure Key Vault verified successfully".into(),
         })
     }
-    pub(super) async fn list_azure(
+    pub(in crate::services::integrations::vault) async fn list_azure(
         &self,
         config: Option<&str>,
     ) -> Result<VaultSecretListDto, VaultServiceError> {

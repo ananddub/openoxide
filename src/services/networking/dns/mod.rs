@@ -10,11 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
-mod cloudflare;
-mod cloudflare_response;
+mod providers;
+use providers::{cloudflare, cloudflare_response, route53, route53_records};
 mod dispatch;
-mod route53;
-mod route53_records;
 mod validation;
 
 string_enum! {

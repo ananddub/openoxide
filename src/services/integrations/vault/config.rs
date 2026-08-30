@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-pub(crate) fn field(raw: Option<&str>, key: &str) -> Option<String> {
+pub fn field(raw: Option<&str>, key: &str) -> Option<String> {
     raw.and_then(|value| serde_json::from_str::<Value>(value).ok())
         .and_then(|value| {
             value[key]
@@ -11,7 +11,7 @@ pub(crate) fn field(raw: Option<&str>, key: &str) -> Option<String> {
         })
 }
 
-pub(crate) fn encode_path(path: &str) -> String {
+pub fn encode_path(path: &str) -> String {
     path.split('/')
         .map(|segment| urlencoding::encode(segment).into_owned())
         .collect::<Vec<_>>()

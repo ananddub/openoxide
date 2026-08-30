@@ -1,10 +1,10 @@
-use super::{
+use super::super::{
     VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, config_field,
     encode_path,
 };
 
 impl VaultService {
-    pub(super) async fn fetch_hashicorp_secret(
+    pub(in crate::services::integrations::vault) async fn fetch_hashicorp_secret(
         &self,
         api_url: &str,
         auth_token: &str,
@@ -58,7 +58,7 @@ impl VaultService {
             .unwrap_or_else(|| value.to_string()))
     }
 
-    pub(super) async fn test_hashicorp_credentials(
+    pub(in crate::services::integrations::vault) async fn test_hashicorp_credentials(
         &self,
         api_url: &str,
         auth_token: &str,
@@ -98,7 +98,7 @@ impl VaultService {
         }
     }
 
-    pub(super) async fn list_hashicorp_secrets(
+    pub(in crate::services::integrations::vault) async fn list_hashicorp_secrets(
         &self,
         api_url: &str,
         auth_token: &str,

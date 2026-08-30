@@ -1,7 +1,7 @@
-use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, config_field};
+use super::super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, config_field};
 
 impl VaultService {
-    pub(super) async fn fetch_doppler_secret(
+    pub(in crate::services::integrations::vault) async fn fetch_doppler_secret(
         &self,
         auth_token: &str,
         config_json: Option<&str>,
@@ -21,7 +21,7 @@ impl VaultService {
             })
     }
 
-    pub(super) async fn test_doppler_credentials(
+    pub(in crate::services::integrations::vault) async fn test_doppler_credentials(
         &self,
         auth_token: &str,
         config_json: Option<&str>,
@@ -43,7 +43,7 @@ impl VaultService {
         })
     }
 
-    pub(super) async fn list_doppler_secrets(
+    pub(in crate::services::integrations::vault) async fn list_doppler_secrets(
         &self,
         auth_token: &str,
         config_json: Option<&str>,
@@ -56,7 +56,7 @@ impl VaultService {
         })
     }
 
-    pub(super) async fn download_doppler_secrets(
+    pub(in crate::services::integrations::vault) async fn download_doppler_secrets(
         &self,
         auth_token: &str,
         config_json: Option<&str>,
