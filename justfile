@@ -82,27 +82,6 @@ query-gen:
     bash scripts/query-gen.sh
 
 
-# Generate Rust models from the SQLite database (queries live in .flash/queries → flash gen)
-db-gen:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    DB_URL="${DATABASE_URL:-sqlite:///run/media/das/SSD/Devloper/rustploy/data/db.sqlite3}"
-
-    echo ">> Generating entities from $DB_URL ..."
-    sqlx-gen generate entities \
-        -u "$DB_URL" \
-        -o src/db/models \
-        -x _sqlx_migrations
-
-    echo ">> Patching derives: removing Eq from files with f32/f64 fields ..."
-    grep -rl "f64\|f32" src/db/models/ | xargs sed -i 's/, Eq,/, /g; s/, Eq)/)/g; s/(Eq, /(/g'
-
-    echo ">> Suppressing warnings in generated files ..."
-    mod="src/db/models/mod.rs"
-    grep -qx '#![allow(warnings)]' "$mod" || sed -i '1s/^/#![allow(warnings)]\n/' "$mod"
-
-    echo ">> Done!"
-
 run:
     cargo run --bin openoxide
 

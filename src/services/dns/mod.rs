@@ -1,4 +1,3 @@
-use crate::db::models::dns_providers::DnsProvider;
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{
     dns_providers::{DnsProvidersCreateParams, DnsProvidersUpdateParams},
@@ -128,11 +127,7 @@ impl DnsService {
             .queries
             .dns_providers_list_by_organization(organization_id)
             .await?;
-        Ok(providers
-            .into_iter()
-            .map(dns_provider_from_model)
-            .map(Self::into_dto)
-            .collect())
+        Ok(providers.into_iter().map(Self::into_dto).collect())
     }
 
     pub async fn get_provider(
@@ -141,9 +136,7 @@ impl DnsService {
         organization_id: i64,
     ) -> Result<DnsProviderDto, DnsServiceError> {
         let provider = match self.queries.dns_providers_get_by_id(id).await {
-            Ok(provider) if provider.organization_id == organization_id => {
-                dns_provider_from_model(provider)
-            }
+            Ok(provider) if provider.organization_id == organization_id => provider,
             Ok(_) | Err(sqlx::Error::RowNotFound) => return Err(DnsServiceError::NotFound),
             Err(error) => return Err(error.into()),
         };
@@ -157,28 +150,19 @@ impl DnsService {
     ) -> Result<DnsProviderDto, DnsServiceError> {
         Self::validate_provider_config(body.provider_type, &body.credentials_json)?;
         let now = chrono::Utc::now().timestamp();
-        let provider = DnsProvider {
-            id: 0,
-            name: body.name,
-            provider_type: body.provider_type.as_str().to_string(),
-            credentials_json: body.credentials_json,
-            organization_id,
-            created_at: now,
-            updated_at: now,
-        };
 
         self.queries
             .dns_providers_create(&DnsProvidersCreateParams {
-                name: provider.name.clone(),
-                provider_type: provider.provider_type.clone(),
-                credentials_json: provider.credentials_json.clone(),
-                organization_id: provider.organization_id,
-                created_at: provider.created_at,
-                updated_at: provider.updated_at,
+                name: body.name,
+                provider_type: body.provider_type.as_str().to_string(),
+                credentials_json: body.credentials_json,
+                organization_id,
+                created_at: now,
+                updated_at: now,
             })
             .await?;
         let id = self.queries.dns_providers_get_last_insert_rowid().await?;
-        let created = dns_provider_from_model(self.queries.dns_providers_get_by_id(id).await?);
+        let created = self.queries.dns_providers_get_by_id(id).await?;
         Ok(Self::into_dto(created))
     }
 
@@ -189,9 +173,7 @@ impl DnsService {
         body: UpdateDnsProviderDto,
     ) -> Result<DnsProviderDto, DnsServiceError> {
         let mut existing = match self.queries.dns_providers_get_by_id(id).await {
-            Ok(provider) if provider.organization_id == organization_id => {
-                dns_provider_from_model(provider)
-            }
+            Ok(provider) if provider.organization_id == organization_id => provider,
             Ok(_) | Err(sqlx::Error::RowNotFound) => return Err(DnsServiceError::NotFound),
             Err(error) => return Err(error.into()),
         };
@@ -241,17 +223,15 @@ impl DnsService {
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<DnsProvider, DnsServiceError> {
+    ) -> Result<DnsProviders, DnsServiceError> {
         match self.queries.dns_providers_get_by_id(id).await {
-            Ok(provider) if provider.organization_id == organization_id => {
-                Ok(dns_provider_from_model(provider))
-            }
+            Ok(provider) if provider.organization_id == organization_id => Ok(provider),
             Ok(_) | Err(sqlx::Error::RowNotFound) => Err(DnsServiceError::NotFound),
             Err(error) => Err(error.into()),
         }
     }
 
-    fn into_dto(p: DnsProvider) -> DnsProviderDto {
+    fn into_dto(p: DnsProviders) -> DnsProviderDto {
         let p_type: DnsProviderType = p
             .provider_type
             .parse()
@@ -266,18 +246,6 @@ impl DnsService {
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
-    }
-}
-
-fn dns_provider_from_model(provider: DnsProviders) -> DnsProvider {
-    DnsProvider {
-        id: provider.id,
-        name: provider.name,
-        provider_type: provider.provider_type,
-        credentials_json: provider.credentials_json,
-        organization_id: provider.organization_id,
-        created_at: provider.created_at,
-        updated_at: provider.updated_at,
     }
 }
 

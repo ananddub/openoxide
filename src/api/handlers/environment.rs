@@ -22,7 +22,7 @@ impl EnvironmentController {
     }
 }
 
-fn env_to_proto(e: crate::db::models::environments::Environment) -> EnvironmentProto {
+fn env_to_proto(e: crate::flash_gen::models::Environments) -> EnvironmentProto {
     EnvironmentProto {
         id: e.id,
         name: e.name,

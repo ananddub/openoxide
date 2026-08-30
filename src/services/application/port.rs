@@ -4,7 +4,6 @@ use auto_di::singleton;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::models::ports::Port,
     db::queries::FlashQueries,
     flash_gen::models::Ports,
     flash_gen::ports::{PortsCreateForApplicationParams, PortsUpdateForApplicationParams},
@@ -65,8 +64,8 @@ pub struct ApplicationPortResponseDto {
     pub created_at: i64,
 }
 
-impl From<Port> for ApplicationPortResponseDto {
-    fn from(value: Port) -> Self {
+impl From<Ports> for ApplicationPortResponseDto {
+    fn from(value: Ports) -> Self {
         Self {
             id: value.id,
             published_port: value.published_port,
@@ -76,18 +75,6 @@ impl From<Port> for ApplicationPortResponseDto {
             application_id: value.service_id,
             created_at: value.created_at,
         }
-    }
-}
-
-fn to_model(row: Ports) -> Port {
-    Port {
-        id: row.id,
-        published_port: row.published_port,
-        target_port: row.target_port,
-        protocol: row.protocol,
-        publish_mode: row.publish_mode,
-        service_id: row.service_id,
-        created_at: row.created_at,
     }
 }
 
@@ -108,22 +95,16 @@ impl PortService {
             .map(|_| ())
     }
 
-    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Port>> {
+    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Ports>> {
         self.ensure_application(application_id).await?;
-        Ok(self
-            .queries
-            .ports_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(to_model)
-            .collect())
+        self.queries.ports_list_by_application(application_id).await
     }
 
     pub async fn create(
         &self,
         application_id: i64,
         input: UpsertApplicationPortDto,
-    ) -> sqlx::Result<Port> {
+    ) -> sqlx::Result<Ports> {
         self.ensure_application(application_id).await?;
         let input = input.normalize().map_err(sqlx::Error::Protocol)?;
         let params = PortsCreateForApplicationParams {
@@ -133,9 +114,7 @@ impl PortService {
             publish_mode: input.publish_mode.as_str().to_owned(),
             service_id: application_id,
         };
-        Ok(to_model(
-            self.queries.ports_create_for_application(&params).await?,
-        ))
+        self.queries.ports_create_for_application(&params).await
     }
 
     pub async fn update(
@@ -143,7 +122,7 @@ impl PortService {
         application_id: i64,
         id: i64,
         input: UpsertApplicationPortDto,
-    ) -> sqlx::Result<Port> {
+    ) -> sqlx::Result<Ports> {
         self.ensure_application(application_id).await?;
         let input = input.normalize().map_err(sqlx::Error::Protocol)?;
         let params = PortsUpdateForApplicationParams {
@@ -154,9 +133,7 @@ impl PortService {
             id,
             service_id: application_id,
         };
-        Ok(to_model(
-            self.queries.ports_update_for_application(&params).await?,
-        ))
+        self.queries.ports_update_for_application(&params).await
     }
 
     pub async fn delete(&self, application_id: i64, id: i64) -> sqlx::Result<bool> {

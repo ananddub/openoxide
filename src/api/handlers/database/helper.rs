@@ -62,7 +62,7 @@ pub fn record_to_proto(record: crate::services::database::DatabaseRecord) -> Dat
     }
 }
 
-pub fn mount_to_proto(mount: crate::db::models::mounts::Mount) -> MountProto {
+pub fn mount_to_proto(mount: crate::flash_gen::models::Mounts) -> MountProto {
     MountProto {
         id: mount.id,
         mount_type: mount.mount_type,

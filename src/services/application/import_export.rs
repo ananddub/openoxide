@@ -5,17 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::cache::{AppStateCache, CacheEnum, CacheKey},
-    db::models::{
-        application_middlewares::ApplicationMiddleware, domains::Domain, mounts::Mount,
-        patches::Patch, ports::Port, redirects::Redirect, security::Security,
-    },
     db::queries::FlashQueries,
     flash_gen::{
         application_middlewares::ApplicationMiddlewaresCreateParams, models,
         mount::MountCreateForApplicationParams, patches::PatchesCreateParams,
         ports::PortsCreateParams, security::SecurityCreateParams,
     },
-    services::application::{ApplicationRecord, queries::generate_app_name},
+    services::application::{queries::generate_app_name, redirect::Redirect, ApplicationRecord},
 };
 
 const APPLICATION_EXPORT_SCHEMA_VERSION: u32 = 1;
@@ -34,13 +30,13 @@ pub struct ApplicationExportBundleDto {
     pub application: models::Services,
     pub service_application: models::ServiceApplication,
     pub service_git: Option<models::ServiceGit>,
-    pub domains: Vec<Domain>,
-    pub ports: Vec<Port>,
-    pub mounts: Vec<Mount>,
+    pub domains: Vec<models::Domains>,
+    pub ports: Vec<models::Ports>,
+    pub mounts: Vec<models::Mounts>,
     pub redirects: Vec<Redirect>,
-    pub security: Vec<Security>,
-    pub patches: Vec<Patch>,
-    pub middlewares: Vec<ApplicationMiddleware>,
+    pub security: Vec<models::Security>,
+    pub patches: Vec<models::Patches>,
+    pub middlewares: Vec<models::ApplicationMiddlewares>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -58,88 +54,25 @@ fn non_empty(value: Option<String>) -> Option<String> {
     value.filter(|value| !value.is_empty())
 }
 
-fn domain_from_row(row: models::Domains) -> Domain {
-    Domain {
-        id: row.id,
-        host: row.host,
-        https: row.https,
+fn normalize_domain(row: models::Domains) -> models::Domains {
+    models::Domains {
         port: row.port.filter(|port| *port != 0),
         path: non_empty(row.path),
         internal_path: non_empty(row.internal_path),
         custom_entrypoint: non_empty(row.custom_entrypoint),
         service_name: non_empty(row.service_name),
         custom_cert_resolver: non_empty(row.custom_cert_resolver),
-        strip_path: row.strip_path,
-        middlewares: row.middlewares,
-        domain_type: row.domain_type,
-        certificate_type: row.certificate_type,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+        ..row
     }
 }
 
-fn port_from_row(row: models::Ports) -> Port {
-    Port {
-        id: row.id,
-        published_port: row.published_port,
-        target_port: row.target_port,
-        protocol: row.protocol,
-        publish_mode: row.publish_mode,
-        service_id: row.service_id,
-        created_at: row.created_at,
-    }
-}
-
-fn mount_from_row(row: models::Mounts) -> Mount {
-    Mount {
-        id: row.id,
-        mount_type: row.mount_type,
-        service_type: row.service_type,
+fn normalize_mount(row: models::Mounts) -> models::Mounts {
+    models::Mounts {
         host_path: non_empty(row.host_path),
         volume_name: non_empty(row.volume_name),
         file_path: non_empty(row.file_path),
         content: non_empty(row.content),
-        mount_path: row.mount_path,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
-fn security_from_row(row: models::Security) -> Security {
-    Security {
-        id: row.id,
-        username: row.username,
-        password: row.password,
-        service_id: row.service_id,
-        created_at: row.created_at,
-    }
-}
-
-fn patch_from_row(row: models::Patches) -> Patch {
-    Patch {
-        id: row.id,
-        patch_type: row.patch_type,
-        file_path: row.file_path,
-        enabled: row.enabled,
-        content: row.content,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
-fn middleware_from_row(row: models::ApplicationMiddlewares) -> ApplicationMiddleware {
-    ApplicationMiddleware {
-        id: row.id,
-        service_id: row.service_id,
-        name: row.name,
-        middleware_type: row.middleware_type,
-        enabled: row.enabled,
-        config: row.config,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+        ..row
     }
 }
 
@@ -177,44 +110,23 @@ impl ApplicationTransferService {
             .domains_list_by_application_raw(application_id)
             .await?
             .into_iter()
-            .map(domain_from_row)
+            .map(normalize_domain)
             .collect();
-        let ports = self
-            .queries
-            .ports_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(port_from_row)
-            .collect();
+        let ports = self.queries.ports_list_by_application(application_id).await?;
         let mounts = self
             .queries
             .mount_fetch_for_application(application_id)
             .await?
             .into_iter()
-            .map(mount_from_row)
+            .map(normalize_mount)
             .collect();
         let redirects = self.list_redirects(application_id).await?;
-        let mut security = self
-            .queries
-            .security_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(security_from_row)
-            .collect::<Vec<_>>();
-        let patches = self
-            .queries
-            .patches_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(patch_from_row)
-            .collect();
+        let mut security = self.queries.security_list_by_application(application_id).await?;
+        let patches = self.queries.patches_list_by_application(application_id).await?;
         let middlewares = self
             .queries
             .application_middlewares_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(middleware_from_row)
-            .collect();
+            .await?;
 
         application.refresh_token = None;
         if !include_secrets {

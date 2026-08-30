@@ -4,30 +4,11 @@ use auto_di::singleton;
 
 use crate::{
     api::connect::generated::openoxide::api::v1::{CreateMountRequest, UpdateMountRequest},
-    db::models::mounts::Mount,
     db::queries::FlashQueries,
     flash_gen::models::Mounts,
     flash_gen::mount::{MountCreateForDatabaseParams, MountUpdateForDatabaseParams},
     services::database::{DatabaseKind, DatabaseService},
 };
-
-impl From<Mounts> for Mount {
-    fn from(row: Mounts) -> Self {
-        Self {
-            id: row.id,
-            mount_type: row.mount_type,
-            service_type: row.service_type,
-            host_path: row.host_path,
-            volume_name: row.volume_name,
-            file_path: row.file_path,
-            content: row.content,
-            mount_path: row.mount_path,
-            service_id: row.service_id,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-        }
-    }
-}
 
 struct NormalizedMount {
     mount_type: crate::utils::builder::spec::MountType,
@@ -53,15 +34,9 @@ impl DatabaseMountService {
         self.databases.get_by_id(kind, id).await.map(|_| ())
     }
 
-    pub async fn list(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<Vec<Mount>> {
+    pub async fn list(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<Vec<Mounts>> {
         self.ensure_database(kind, id).await?;
-        Ok(self
-            .queries
-            .mount_fetch_for_database(id)
-            .await?
-            .into_iter()
-            .map(Mount::from)
-            .collect())
+        self.queries.mount_fetch_for_database(id).await
     }
 
     pub async fn create(
@@ -69,7 +44,7 @@ impl DatabaseMountService {
         kind: DatabaseKind,
         id: i64,
         input: CreateMountRequest,
-    ) -> sqlx::Result<Mount> {
+    ) -> sqlx::Result<Mounts> {
         self.ensure_database(kind, id).await?;
         let input = normalize_mount(
             &input.mount_type,
@@ -89,11 +64,7 @@ impl DatabaseMountService {
             mount_path: input.mount_path,
             service_id: id,
         };
-        Ok(self
-            .queries
-            .mount_create_for_database(&params)
-            .await?
-            .into())
+        self.queries.mount_create_for_database(&params).await
     }
 
     pub async fn update(
@@ -102,7 +73,7 @@ impl DatabaseMountService {
         database_id: i64,
         id: i64,
         input: UpdateMountRequest,
-    ) -> sqlx::Result<Mount> {
+    ) -> sqlx::Result<Mounts> {
         self.ensure_database(kind, database_id).await?;
         let input = normalize_mount(
             &input.mount_type,
@@ -123,11 +94,7 @@ impl DatabaseMountService {
             id,
             service_id: database_id,
         };
-        Ok(self
-            .queries
-            .mount_update_for_database(&params)
-            .await?
-            .into())
+        self.queries.mount_update_for_database(&params).await
     }
 
     pub async fn delete(

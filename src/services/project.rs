@@ -6,28 +6,13 @@ use crate::{
     api::connect::generated::openoxide::api::v1::{
         CreateProjectRequest, UpdateProjectRequest,
     },
-    db::{
-        models::projects::Project,
-        queries::FlashQueries,
-    },
+    db::queries::FlashQueries,
     flash_gen::{
         environments::EnvironmentsCreateInTransactionParams,
         models::Projects,
         projects::{ProjectsCreateInTransactionParams, ProjectsUpdateAndReturnParams},
     },
 };
-
-fn to_model(row: Projects) -> Project {
-    Project {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        env_var: row.env_var,
-        organization_id: row.organization_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
 
 pub struct ProjectService {
     queries: Arc<FlashQueries>,
@@ -39,20 +24,17 @@ impl ProjectService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Project> {
-        let row = self.queries.projects_get_by_id(id).await?;
-        Ok(to_model(row))
+    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Projects> {
+        self.queries.projects_get_by_id(id).await
     }
 
-    pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Project>> {
-        let rows = self
-            .queries
+    pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Projects>> {
+        self.queries
             .projects_list_by_organization(organization_id)
-            .await?;
-        Ok(rows.into_iter().map(to_model).collect())
+            .await
     }
 
-    pub async fn create(&self, input: CreateProjectRequest) -> sqlx::Result<Project> {
+    pub async fn create(&self, input: CreateProjectRequest) -> sqlx::Result<Projects> {
         let now = chrono::Utc::now().timestamp();
         let project = self
             .queries
@@ -78,25 +60,23 @@ impl ProjectService {
             })
             .await?;
 
-        Ok(to_model(project))
+        Ok(project)
     }
 
-    pub async fn update(&self, id: i64, input: UpdateProjectRequest) -> sqlx::Result<Project> {
+    pub async fn update(&self, id: i64, input: UpdateProjectRequest) -> sqlx::Result<Projects> {
         let current = self.get_by_id(id).await?;
         let name = input.name.unwrap_or(current.name);
         let description = input.description.or(current.description).unwrap_or_default();
         let env_var = input.environment_variables.unwrap_or(current.env_var);
 
-        let row = self
-            .queries
+        self.queries
             .projects_update_and_return(&ProjectsUpdateAndReturnParams {
                 name,
                 description,
                 env_var,
                 id,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {

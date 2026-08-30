@@ -3436,7 +3436,6 @@ dependencies = [
  "sha2 0.10.9",
  "socketioxide",
  "sqlx",
- "sqlx-gen",
  "ssh-key 0.7.0-rc.11",
  "tempfile",
  "thiserror 2.0.18",
@@ -5386,21 +5385,6 @@ dependencies = [
  "url",
  "uuid",
 ]
-
-[[package]]
-name = "sqlx-gen"
-version = "0.5.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "569a375d373332ae445b825cff8f7ca88f4ce511df0c41d410914edb9902ae0e"
-dependencies = [
- "sqlx-gen-macros",
-]
-
-[[package]]
-name = "sqlx-gen-macros"
-version = "0.5.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7be818746a7c9fcc304595bff7fee395a0020cf0181c698e468ffc96c8e6a8a4"
 
 [[package]]
 name = "sqlx-macros"

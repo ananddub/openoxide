@@ -7,10 +7,9 @@ use crate::{
     api::connect::generated::openoxide::api::v1::{
         CreateOrganizationRequest, UpdateOrganizationRequest,
     },
-    db::models::organization::Organization,
     db::queries::FlashQueries,
     flash_gen::{
-        models::Organization as OrganizationModel,
+        models::Organization,
         organization_members::OrganizationMembersAddMemberInTransactionParams,
         organizations::{CreateOrganizationParams, UpdateOrganizationParams},
     },
@@ -28,20 +27,11 @@ impl OrganizationService {
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Organization> {
-        self.queries
-            .get_organization_by_i_d(id)
-            .await
-            .map(organization_from_model)
+        self.queries.get_organization_by_i_d(id).await
     }
 
     pub async fn list_by_owner(&self, owner_id: i64) -> sqlx::Result<Vec<Organization>> {
-        Ok(self
-            .queries
-            .list_organizations_by_owner(owner_id)
-            .await?
-            .into_iter()
-            .map(organization_from_model)
-            .collect())
+        self.queries.list_organizations_by_owner(owner_id).await
     }
 
     pub async fn create(
@@ -64,8 +54,7 @@ impl OrganizationService {
                 slug,
                 owner_id,
             })
-            .await
-            .map(organization_from_model)?;
+            .await?;
 
         self.queries
             .organization_members_add_member_in_transaction(
@@ -103,7 +92,6 @@ impl OrganizationService {
                 id,
             })
             .await
-            .map(organization_from_model)
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
@@ -146,18 +134,6 @@ impl OrganizationService {
                 .await?;
         }
         Ok(admin)
-    }
-}
-
-fn organization_from_model(organization: OrganizationModel) -> Organization {
-    Organization {
-        id: organization.id,
-        name: organization.name,
-        logo: organization.logo,
-        slug: organization.slug,
-        owner_id: organization.owner_id,
-        created_at: organization.created_at,
-        updated_at: organization.updated_at,
     }
 }
 

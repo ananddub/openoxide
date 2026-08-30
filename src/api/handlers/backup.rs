@@ -8,15 +8,11 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse, StreamQuery,
 };
 use crate::core::cache::{AppStateCache, CacheEnum, CacheKey};
-use crate::db::models::{
-    backup_executions::BackupExecution, backups::Backup, volume_backups::VolumeBackup,
-};
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::backups::{
     BackupsGetAllRow, BackupsUpdateParams, CreateBackupParams, CreateVolumeBackupParams,
 };
-use crate::flash_gen::models::Backups as GenBackup;
-use crate::flash_gen::models::VolumeBackups as GenVolumeBackup;
+use crate::flash_gen::models::{Backups, BackupExecutions, VolumeBackups};
 use crate::flash_gen::volume_backups::{
     VolumeBackupsGetAllRow, VolumeBackupsGetByIdRow, VolumeBackupsUpdateParams,
 };
@@ -307,7 +303,7 @@ impl BackupOperationsService for BackupController {
         request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         let limit = request.limit.unwrap_or(100).clamp(1, 500);
-        let items: Vec<BackupExecution> = sqlx::query_as(
+        let items: Vec<BackupExecutions> = sqlx::query_as(
             "SELECT * FROM backup_executions ORDER BY started_at DESC, id DESC LIMIT ?",
         )
         .bind(limit)
@@ -373,7 +369,7 @@ impl BackupOperationsService for BackupController {
         _request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         let rows = self.queries.backups_get_all().await.map_err(map_error)?;
-        let items = rows.into_iter().map(|row| BackupResponseDto::from(Backup::from(row))).map(db_backup_to_resource).collect();
+        let items = rows.into_iter().map(|row| BackupResponseDto::from(Backups::from(row))).map(db_backup_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
@@ -384,7 +380,7 @@ impl BackupOperationsService for BackupController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let item = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
-        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(item))))
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(item)))
     }
 
     #[permission(Database, CanCreate)]
@@ -415,7 +411,7 @@ impl BackupOperationsService for BackupController {
             organization_id: org_id,
         }).await.map_err(map_error)?;
         refresh_schedule_runner().await;
-        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(created))))
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(created)))
     }
 
     #[permission(Database, CanCreate)]
@@ -426,7 +422,7 @@ impl BackupOperationsService for BackupController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: PatchBackupDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let mut item = Backup::from(self.queries.backups_get_by_id(request.id).await.map_err(map_error)?);
+        let mut item = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
         if let Some(v) = dto.app_name { item.app_name = v; }
         if let Some(v) = dto.schedule { item.schedule = v; }
         if let Some(v) = dto.database_name { item.database_name = v; }
@@ -458,7 +454,7 @@ impl BackupOperationsService for BackupController {
         }).await.map_err(map_error)?;
         refresh_schedule_runner().await;
         let updated = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
-        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(updated))))
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(updated)))
     }
 
     #[permission(Database, CanDelete)]
@@ -497,7 +493,7 @@ impl BackupOperationsService for BackupController {
             return Response::ok(ResourceListResponse { items, ..Default::default() });
         }
         let rows = self.queries.volume_backups_get_all().await.map_err(map_error)?;
-        let items: Vec<VolumeBackup> = rows.into_iter().map(VolumeBackup::from).collect();
+        let items: Vec<VolumeBackups> = rows.into_iter().map(VolumeBackups::from).collect();
         self.cache.insert(CacheKey::VolumeBackups, CacheEnum::VolumeBackups(items.clone())).await;
         let items = items.into_iter().map(VolumeBackupResponseDto::from).map(volume_backup_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
@@ -510,7 +506,7 @@ impl BackupOperationsService for BackupController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let item = self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?;
-        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(item))))
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackups::from(item))))
     }
 
     #[permission(Database, CanCreate)]
@@ -544,7 +540,7 @@ impl BackupOperationsService for BackupController {
         }).await.map_err(map_error)?;
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
         refresh_schedule_runner().await;
-        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(created))))
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(created)))
     }
 
     #[permission(Database, CanCreate)]
@@ -555,7 +551,7 @@ impl BackupOperationsService for BackupController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: PatchVolumeBackupDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let mut item = VolumeBackup::from(self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?);
+        let mut item = VolumeBackups::from(self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?);
         if let Some(v) = dto.name { item.name = v; }
         if let Some(v) = dto.volume_name { item.volume_name = v; }
         if let Some(v) = dto.prefix { item.prefix = v; }
@@ -588,7 +584,7 @@ impl BackupOperationsService for BackupController {
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
         refresh_schedule_runner().await;
         let updated = self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?;
-        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(updated))))
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackups::from(updated))))
     }
 
     #[permission(Database, CanDelete)]
@@ -749,8 +745,8 @@ struct BackupExecutionResponseDto {
     pub finished_at: Option<i64>,
 }
 
-impl From<BackupExecution> for BackupExecutionResponseDto {
-    fn from(value: BackupExecution) -> Self {
+impl From<BackupExecutions> for BackupExecutionResponseDto {
+    fn from(value: BackupExecutions) -> Self {
         Self {
             id: value.id,
             backup_kind: crate::services::backup::types::BackupKind::from_str(
@@ -828,8 +824,8 @@ struct BackupResponseDto {
     pub updated_at: i64,
 }
 
-impl From<Backup> for BackupResponseDto {
-    fn from(value: Backup) -> Self {
+impl From<Backups> for BackupResponseDto {
+    fn from(value: Backups) -> Self {
         Self {
             id: value.id,
             app_name: value.app_name,
@@ -851,30 +847,7 @@ impl From<Backup> for BackupResponseDto {
     }
 }
 
-impl From<GenBackup> for Backup {
-    fn from(value: GenBackup) -> Self {
-        Self {
-            id: value.id,
-            app_name: value.app_name,
-            schedule: value.schedule,
-            enabled: value.enabled,
-            database_name: value.database_name,
-            prefix: value.prefix,
-            service_name: value.service_name,
-            keep_latest_count: value.keep_latest_count,
-            backup_type: value.backup_type,
-            database_type: value.database_type,
-            metadata: value.metadata,
-            service_id: value.service_id,
-            destination_id: value.destination_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
-    }
-}
-
-impl From<BackupsGetAllRow> for Backup {
+impl From<BackupsGetAllRow> for Backups {
     fn from(value: BackupsGetAllRow) -> Self {
         Self {
             id: value.id,
@@ -948,8 +921,8 @@ struct VolumeBackupResponseDto {
     pub updated_at: i64,
 }
 
-impl From<VolumeBackup> for VolumeBackupResponseDto {
-    fn from(value: VolumeBackup) -> Self {
+impl From<VolumeBackups> for VolumeBackupResponseDto {
+    fn from(value: VolumeBackups) -> Self {
         Self {
             id: value.id,
             name: value.name,
@@ -971,30 +944,7 @@ impl From<VolumeBackup> for VolumeBackupResponseDto {
     }
 }
 
-impl From<GenVolumeBackup> for VolumeBackup {
-    fn from(value: GenVolumeBackup) -> Self {
-        Self {
-            id: value.id,
-            name: value.name,
-            volume_name: value.volume_name,
-            prefix: value.prefix,
-            service_type: value.service_type,
-            app_name: value.app_name,
-            service_name: value.service_name,
-            turn_off: value.turn_off,
-            cron_expression: value.cron_expression,
-            keep_latest_count: value.keep_latest_count,
-            enabled: value.enabled,
-            service_id: value.service_id,
-            destination_id: value.destination_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
-    }
-}
-
-impl From<VolumeBackupsGetAllRow> for VolumeBackup {
+impl From<VolumeBackupsGetAllRow> for VolumeBackups {
     fn from(value: VolumeBackupsGetAllRow) -> Self {
         Self {
             id: value.id,
@@ -1017,7 +967,7 @@ impl From<VolumeBackupsGetAllRow> for VolumeBackup {
     }
 }
 
-impl From<VolumeBackupsGetByIdRow> for VolumeBackup {
+impl From<VolumeBackupsGetByIdRow> for VolumeBackups {
     fn from(value: VolumeBackupsGetByIdRow) -> Self {
         Self {
             id: value.id,

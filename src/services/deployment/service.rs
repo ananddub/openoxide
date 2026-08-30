@@ -4,34 +4,9 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use super::types::{CancelDeploymentResult, DeploymentListFilter};
-use crate::db::models::deployments::Deployment;
 use crate::db::queries::FlashQueries;
-use crate::flash_gen::models::Deployments as GenDeployment;
+use crate::flash_gen::models::Deployments;
 use crate::utils::builder::custom_type::IdType;
-
-impl From<GenDeployment> for Deployment {
-    fn from(value: GenDeployment) -> Self {
-        Self {
-            id: value.id,
-            title: value.title,
-            description: value.description,
-            status: value.status,
-            state: value.state,
-            log_path: value.log_path,
-            pid: value.pid,
-            error_message: value.error_message,
-            operation: value.operation,
-            is_preview_deployment: value.is_preview_deployment,
-            started_at: value.started_at,
-            last_state_at: value.last_state_at,
-            finished_at: value.finished_at,
-            service_id: value.service_id,
-            server_id: value.server_id,
-            created_at: value.created_at,
-            database_kind: value.database_kind,
-        }
-    }
-}
 
 pub struct DeploymentService {
     db: Arc<SqlitePool>,
@@ -48,12 +23,11 @@ impl DeploymentService {
         Self { db, queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Deployment> {
-        let row = self.queries.get_deployment_by_i_d(id).await?;
-        Ok(row.into())
+    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Deployments> {
+        self.queries.get_deployment_by_i_d(id).await
     }
 
-    pub async fn list(&self, filter: DeploymentListFilter) -> sqlx::Result<Vec<Deployment>> {
+    pub async fn list(&self, filter: DeploymentListFilter) -> sqlx::Result<Vec<Deployments>> {
         let status = normalize_filter_text(filter.status);
         let state = normalize_filter_text(filter.state);
         let limit = filter.limit.clamp(1, 200);
@@ -63,7 +37,7 @@ impl DeploymentService {
             .or(filter.compose_id)
             .or(filter.database_id);
 
-        let rows: Vec<GenDeployment> = if let Some(service_id) = service_id {
+        let rows: Vec<Deployments> = if let Some(service_id) = service_id {
             self.queries.list_deployments_by_application(service_id).await?
         } else if let Some(server_id) = filter.server_id {
             self.queries.list_deployments_by_server(server_id).await?
@@ -71,7 +45,7 @@ impl DeploymentService {
             self.queries.list_recent_deployments(limit + offset).await?
         };
 
-        let mut rows: Vec<GenDeployment> = rows
+        let mut rows: Vec<Deployments> = rows
             .into_iter()
             .filter(|row| status.as_deref().is_none_or(|value| row.status == value))
             .filter(|row| state.as_deref().is_none_or(|value| row.state == value))
@@ -82,10 +56,10 @@ impl DeploymentService {
             .skip(offset as usize)
             .take(limit as usize)
             .collect();
-        Ok(rows.into_iter().map(Into::into).collect())
+        Ok(rows)
     }
 
-    pub async fn list_running(&self, limit: i64, offset: i64) -> sqlx::Result<Vec<Deployment>> {
+    pub async fn list_running(&self, limit: i64, offset: i64) -> sqlx::Result<Vec<Deployments>> {
         self.list(DeploymentListFilter {
             status: Some("RUNNING".into()),
             limit,
@@ -157,8 +131,8 @@ impl DeploymentService {
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<bool> {
-        let deployment: Deployment = match self.queries.get_deployment_by_i_d(id).await {
-            Ok(row) => row.into(),
+        let deployment = match self.queries.get_deployment_by_i_d(id).await {
+            Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => return Ok(false),
             Err(error) => return Err(error),
         };
@@ -193,7 +167,7 @@ impl DeploymentService {
                     .queries
                     .list_deployments_by_application(service_id)
                     .await?;
-                let targets: Vec<GenDeployment> = rows
+                let targets: Vec<Deployments> = rows
                     .into_iter()
                     .filter(|row| is_finished(row))
                     .filter(|row| server_filter.is_none_or(|value| row.server_id == Some(value)))
@@ -209,7 +183,7 @@ impl DeploymentService {
             }
             (None, Some(server_id)) => {
                 let rows = self.queries.list_deployments_by_server(server_id).await?;
-                let targets: Vec<GenDeployment> =
+                let targets: Vec<Deployments> =
                     rows.into_iter().filter(|row| is_finished(row)).collect();
                 let paths = targets
                     .iter()
@@ -244,7 +218,7 @@ impl DeploymentService {
     }
 }
 
-fn is_finished(deployment: &GenDeployment) -> bool {
+fn is_finished(deployment: &Deployments) -> bool {
     deployment.status != "QUEUED" && deployment.status != "RUNNING"
 }
 

@@ -5,7 +5,6 @@ use std::{collections::HashSet, sync::Arc};
 
 use auto_di::singleton;
 
-use crate::db::models::organization_invites::OrganizationInvite;
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{
     audit_logs::AuditLogsCreateParams,
@@ -141,15 +140,12 @@ impl PermissionGroupService {
     pub async fn list_invites(
         &self,
         organization_id: i64,
-    ) -> Result<Vec<OrganizationInvite>, PermissionGroupError> {
+    ) -> Result<Vec<OrganizationInvites>, PermissionGroupError> {
         self.queries.organization_invites_purge_expired().await?;
         Ok(self
             .queries
             .organization_invites_list_pending_for_organization(organization_id)
-            .await?
-            .into_iter()
-            .map(invite_from_model)
-            .collect())
+            .await?)
     }
 
     pub async fn create_invite(
@@ -857,21 +853,6 @@ impl PermissionGroupService {
             ));
         }
         Ok(())
-    }
-}
-
-fn invite_from_model(invite: OrganizationInvites) -> OrganizationInvite {
-    OrganizationInvite {
-        id: invite.id,
-        email: invite.email,
-        role: invite.role,
-        status: invite.status,
-        token: invite.token,
-        group_id: invite.group_id,
-        organization_id: invite.organization_id,
-        invited_by: invite.invited_by,
-        expired_at: invite.expired_at,
-        created_at: invite.created_at,
     }
 }
 

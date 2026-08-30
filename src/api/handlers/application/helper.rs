@@ -111,7 +111,7 @@ pub fn middleware_to_resource(
     }
 }
 
-pub fn mount_to_resource(value: crate::db::models::mounts::Mount) -> ResourceResponse {
+pub fn mount_to_resource(value: crate::flash_gen::models::Mounts) -> ResourceResponse {
     let dto = crate::services::application::mount::ApplicationMountResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
@@ -122,7 +122,7 @@ pub fn mount_to_resource(value: crate::db::models::mounts::Mount) -> ResourceRes
     }
 }
 
-pub fn patch_to_resource(value: crate::db::models::patches::Patch) -> ResourceResponse {
+pub fn patch_to_resource(value: crate::flash_gen::models::Patches) -> ResourceResponse {
     let dto = crate::services::application::patch::ApplicationPatchResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
@@ -133,7 +133,7 @@ pub fn patch_to_resource(value: crate::db::models::patches::Patch) -> ResourceRe
     }
 }
 
-pub fn port_to_resource(value: crate::db::models::ports::Port) -> ResourceResponse {
+pub fn port_to_resource(value: crate::flash_gen::models::Ports) -> ResourceResponse {
     let dto = crate::services::application::port::ApplicationPortResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
     ResourceResponse {
@@ -144,7 +144,7 @@ pub fn port_to_resource(value: crate::db::models::ports::Port) -> ResourceRespon
     }
 }
 
-pub fn redirect_to_resource(value: crate::db::models::redirects::Redirect) -> ResourceResponse {
+pub fn redirect_to_resource(value: crate::services::application::redirect::Redirect) -> ResourceResponse {
     let dto =
         crate::services::application::redirect::ApplicationRedirectResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();
@@ -156,7 +156,7 @@ pub fn redirect_to_resource(value: crate::db::models::redirects::Redirect) -> Re
     }
 }
 
-pub fn security_to_resource(value: crate::db::models::security::Security) -> ResourceResponse {
+pub fn security_to_resource(value: crate::flash_gen::models::Security) -> ResourceResponse {
     let dto =
         crate::services::application::security::ApplicationSecurityResponseDto::from(value);
     let payload = serde_json::to_string(&dto).unwrap_or_default();

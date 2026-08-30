@@ -5,7 +5,6 @@ use serde::Deserialize;
 
 use crate::{
     core::cache::{AppStateCache, CacheKey},
-    db::models::database_networks::DatabaseNetwork,
     db::queries::FlashQueries,
     flash_gen::models::{DatabaseNetworks, Services},
     flash_gen::services::UpdateServiceNetworksParams,
@@ -15,19 +14,6 @@ use crate::{
 pub struct UpdateApplicationNetworksDto {
     pub network_ids: Vec<i64>,
     pub detach_rustploy_network: bool,
-}
-
-fn to_model(row: DatabaseNetworks) -> DatabaseNetwork {
-    DatabaseNetwork {
-        id: row.id,
-        name: row.name,
-        docker_network_name: row.docker_network_name,
-        description: row.description,
-        external: row.external,
-        server_id: row.server_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
 }
 
 pub struct ApplicationNetworkService {
@@ -47,15 +33,15 @@ impl ApplicationNetworkService {
             .await
     }
 
-    async fn network_by_id(&self, id: i64) -> sqlx::Result<Option<DatabaseNetwork>> {
+    async fn network_by_id(&self, id: i64) -> sqlx::Result<Option<DatabaseNetworks>> {
         match self.queries.database_networks_get_by_id(id).await {
-            Ok(row) => Ok(Some(to_model(row))),
+            Ok(row) => Ok(Some(row)),
             Err(sqlx::Error::RowNotFound) => Ok(None),
             Err(error) => Err(error),
         }
     }
 
-    pub async fn get(&self, application_id: i64) -> sqlx::Result<(bool, Vec<DatabaseNetwork>)> {
+    pub async fn get(&self, application_id: i64) -> sqlx::Result<(bool, Vec<DatabaseNetworks>)> {
         let app = self.get_application(application_id).await?;
         let ids = parse_ids(&app.network_ids)?;
         let mut resolved = Vec::with_capacity(ids.len());
@@ -71,7 +57,7 @@ impl ApplicationNetworkService {
         &self,
         application_id: i64,
         input: UpdateApplicationNetworksDto,
-    ) -> sqlx::Result<(bool, Vec<DatabaseNetwork>)> {
+    ) -> sqlx::Result<(bool, Vec<DatabaseNetworks>)> {
         let app = self.get_application(application_id).await?;
         let unique: BTreeSet<i64> = input.network_ids.into_iter().collect();
         let mut resolved = Vec::with_capacity(unique.len());

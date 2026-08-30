@@ -32,7 +32,6 @@ ts-rs = { version = "12.0.1", features = ["serde-compat", "serde-json-impl", "ch
 serde_yaml = "0.9"
 validator = { version = "0.20", features = ["derive"] }
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "sqlite-preupdate-hook", "macros", "migrate", "chrono", "uuid", "json"] }
-sqlx-gen = { version = "0.5.8", default-features = false }
 chrono = { version = "0.4.45", features = ["serde"] }
 chrono-tz = "0.10.4"
 argon2 = { version = "0.6.0-rc.8", features = ["getrandom"] }

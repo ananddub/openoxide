@@ -3,12 +3,27 @@ use std::sync::Arc;
 use auto_di::singleton;
 use serde::{Deserialize, Serialize};
 
-use crate::{db::models::redirects::Redirect, db::queries::FlashQueries};
+use crate::db::queries::FlashQueries;
 
 /// Raw SQL is required for redirects because the FlashORM schema parser
 /// silently drops the `unique_config_key` column, making it unusable in
 /// generated queries and models. These statements preserve the exact SQL
 /// semantics of the deleted `RedirectRepository`.
+
+/// Local row shape for the `redirects` table. It lives here instead of
+/// `flash_gen::models` because the generator drops `unique_config_key`, so
+/// no generated `Redirects` model can represent this table.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Redirect {
+    pub id: i64,
+    pub regex: String,
+    pub replacement: String,
+    pub permanent: i64,
+    pub unique_config_key: Option<i64>,
+    pub service_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct UpsertApplicationRedirectDto {

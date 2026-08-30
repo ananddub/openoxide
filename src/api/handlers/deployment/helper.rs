@@ -2,7 +2,7 @@ use connectrpc::{ConnectError, ErrorCode};
 use serde::Deserialize;
 
 use crate::api::connect::generated::openoxide::api::v1::DeploymentEvent;
-use crate::db::models::deployments::Deployment;
+use crate::flash_gen::models::Deployments;
 use crate::services::deployment::DockerLogOptions;
 use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
 
@@ -24,7 +24,7 @@ pub fn map_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn deployment_to_proto(dto: &Deployment) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
+pub fn deployment_to_proto(dto: &Deployments) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
     crate::api::connect::generated::openoxide::api::v1::Deployment {
         id: dto.id,
         resource_type: dto.title.clone(),

@@ -5,12 +5,12 @@ use os::string_enum;
 use serde::Deserialize;
 
 use crate::{
-    db::{
-        models::destinations::Destination,
-        queries::FlashQueries,
-    },
+    db::queries::FlashQueries,
     flash_gen::{
-        destinations::{DestinationsCreateAndReturnParams, DestinationsUpdateAndReturnParams, DestinationsGetAllRow},
+        destinations::{
+            DestinationsCreateAndReturnParams, DestinationsGetAllRow,
+            DestinationsUpdateAndReturnParams,
+        },
         models::Destinations,
     },
     utils::rclone::{RcloneBuilder, RcloneCommand},
@@ -90,24 +90,8 @@ impl DestinationsProviderEnum {
     }
 }
 
-fn to_model(row: Destinations) -> Destination {
-    Destination {
-        id: row.id,
-        name: row.name,
-        provider: row.provider,
-        access_key: row.access_key,
-        secret_access_key: row.secret_access_key,
-        bucket: row.bucket,
-        region: row.region,
-        endpoint: row.endpoint,
-        organization_id: row.organization_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
-fn row_to_model(row: DestinationsGetAllRow) -> Destination {
-    Destination {
+fn row_to_model(row: DestinationsGetAllRow) -> Destinations {
+    Destinations {
         id: row.id,
         name: row.name,
         provider: row.provider,
@@ -132,23 +116,21 @@ impl DestinationService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: &str) -> sqlx::Result<Destination> {
+    pub async fn get_by_id(&self, id: &str) -> sqlx::Result<Destinations> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        let row = self.queries.destinations_get_by_id(id_i64).await?;
-        Ok(to_model(row))
+        self.queries.destinations_get_by_id(id_i64).await
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Destination>> {
+    pub async fn list(&self) -> sqlx::Result<Vec<Destinations>> {
         let rows = self.queries.destinations_get_all().await?;
         Ok(rows.into_iter().map(row_to_model).collect())
     }
 
-    pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destination> {
+    pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destinations> {
         let provider = DestinationsProviderEnum::from_preset(&input.provider)
             .as_str()
             .to_string();
-        let row = self
-            .queries
+        self.queries
             .destinations_create_and_return(&DestinationsCreateAndReturnParams {
                 name: input.name,
                 provider,
@@ -163,11 +145,10 @@ impl DestinationService {
                 created_at: 0,
                 updated_at: 0,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
-    pub async fn patch(&self, id: &str, input: PatchDestinationDto) -> sqlx::Result<Destination> {
+    pub async fn patch(&self, id: &str, input: PatchDestinationDto) -> sqlx::Result<Destinations> {
         let mut current = self.get_by_id(id).await?;
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
 
@@ -195,8 +176,7 @@ impl DestinationService {
             current.endpoint = v;
         }
 
-        let row = self
-            .queries
+        self.queries
             .destinations_update_and_return(&DestinationsUpdateAndReturnParams {
                 name: current.name,
                 provider: current.provider,
@@ -207,8 +187,7 @@ impl DestinationService {
                 endpoint: current.endpoint,
                 id: id_i64,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
     pub async fn delete(&self, id: &str) -> sqlx::Result<()> {

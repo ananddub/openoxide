@@ -23,7 +23,7 @@ impl ProjectController {
     }
 }
 
-fn project_to_proto(p: crate::db::models::projects::Project) -> ProjectProto {
+fn project_to_proto(p: crate::flash_gen::models::Projects) -> ProjectProto {
     ProjectProto {
         id: p.id,
         name: p.name,

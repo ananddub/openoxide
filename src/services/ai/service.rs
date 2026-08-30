@@ -2,10 +2,7 @@ use auto_di::singleton;
 use std::sync::Arc;
 
 use crate::{
-    db::{
-        models::{ai_generations::AiGeneration, ai_settings::AiSetting},
-        queries::FlashQueries,
-    },
+    db::queries::FlashQueries,
     flash_gen::{
         ai_generations::{
             AiGenerationsCreateParams, AiGenerationsMarkDeployedParams, AiGenerationsReviewParams,
@@ -59,7 +56,7 @@ impl AiService {
             .await
             .map_err(db_error)?
             .into_iter()
-            .map(|row| setting_view(ai_setting_from_model(row)))
+            .map(setting_view)
             .collect())
     }
 
@@ -78,7 +75,7 @@ impl AiService {
     ) -> Result<AiSettingView, String> {
         validate_setting(&input.name, &input.api_url, &input.model)?;
         let now = chrono::Utc::now().timestamp();
-        let item = AiSetting {
+        let item = AiSettings {
             id: 0,
             name: input.name.trim().to_string(),
             api_url: normalize_url(&input.api_url),
@@ -117,7 +114,7 @@ impl AiService {
         let api_url = input.api_url.unwrap_or(current.api_url);
         let model = input.model.unwrap_or(current.model);
         validate_setting(&name, &api_url, &model)?;
-        let item = AiSetting {
+        let item = AiSettings {
             id,
             name: name.trim().to_string(),
             api_url: normalize_url(&api_url),
@@ -241,7 +238,7 @@ impl AiService {
             })
             .await
             .map_err(db_error)?;
-        generation_view(ai_generation_from_model(generation))
+        generation_view(generation)
     }
 
     pub async fn get_generation(
@@ -254,7 +251,7 @@ impl AiService {
             .ai_generations_get_for_organization(id, organization_id)
             .await
         {
-            Ok(row) => ai_generation_from_model(row),
+            Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => {
                 return Err("AI generation not found".to_string())
             }
@@ -273,7 +270,7 @@ impl AiService {
             .await
             .map_err(db_error)?
             .into_iter()
-            .map(|row| generation_view(ai_generation_from_model(row)))
+            .map(generation_view)
             .collect()
     }
 
@@ -295,7 +292,7 @@ impl AiService {
             })
             .await
         {
-            Ok(row) => ai_generation_from_model(row),
+            Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => {
                 return Err("AI generation not found or already deployed".to_string())
             }
@@ -408,7 +405,7 @@ impl AiService {
             })
             .await
         {
-            Ok(row) => ai_generation_from_model(row),
+            Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => {
                 return Err("AI generation deployment state changed concurrently".to_string())
             }
@@ -527,19 +524,19 @@ impl AiService {
         Ok(())
     }
 
-    async fn setting(&self, id: i64, organization_id: i64) -> Result<AiSetting, String> {
+    async fn setting(&self, id: i64, organization_id: i64) -> Result<AiSettings, String> {
         match self
             .queries
             .ai_settings_get_for_organization(id, organization_id)
             .await
         {
-            Ok(row) => Ok(ai_setting_from_model(row)),
+            Ok(row) => Ok(row),
             Err(sqlx::Error::RowNotFound) => Err("AI setting not found".into()),
             Err(error) => Err(db_error(error)),
         }
     }
 
-    async fn enabled_setting(&self, id: i64, organization_id: i64) -> Result<AiSetting, String> {
+    async fn enabled_setting(&self, id: i64, organization_id: i64) -> Result<AiSettings, String> {
         let setting = self.setting(id, organization_id).await?;
         if setting.is_enabled == 0 {
             return Err("AI setting is disabled".into());
@@ -569,36 +566,7 @@ impl AiService {
     }
 }
 
-fn ai_setting_from_model(row: AiSettings) -> AiSetting {
-    AiSetting {
-        id: row.id,
-        name: row.name,
-        api_url: row.api_url,
-        api_key: row.api_key,
-        model: row.model,
-        is_enabled: row.is_enabled,
-        organization_id: row.organization_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
-fn ai_generation_from_model(row: AiGenerations) -> AiGeneration {
-    AiGeneration {
-        id: row.id,
-        ai_setting_id: row.ai_setting_id,
-        organization_id: row.organization_id,
-        created_by: row.created_by,
-        prompt: row.prompt,
-        output_json: row.output_json,
-        status: row.status,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
-
-fn provider_config(setting: &AiSetting) -> AiProviderConfig {
+fn provider_config(setting: &AiSettings) -> AiProviderConfig {
     AiProviderConfig {
         api_url: setting.api_url.clone(),
         api_key: setting.api_key.clone(),
@@ -606,7 +574,7 @@ fn provider_config(setting: &AiSetting) -> AiProviderConfig {
     }
 }
 
-fn setting_view(setting: AiSetting) -> AiSettingView {
+fn setting_view(setting: AiSettings) -> AiSettingView {
     let provider = match AiProviderKind::detect(&setting.api_url) {
         AiProviderKind::OpenAi => "openai",
         AiProviderKind::Anthropic => "anthropic",
@@ -628,7 +596,7 @@ fn setting_view(setting: AiSetting) -> AiSettingView {
     }
 }
 
-fn generation_view(generation: AiGeneration) -> Result<AiGenerationView, String> {
+fn generation_view(generation: AiGenerations) -> Result<AiGenerationView, String> {
     let output = serde_json::from_str(&generation.output_json)
         .map_err(|error| format!("stored AI generation is invalid: {error}"))?;
     Ok(AiGenerationView {

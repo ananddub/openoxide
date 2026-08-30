@@ -4,7 +4,6 @@ use auto_di::singleton;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::models::mounts::Mount,
     db::queries::FlashQueries,
     flash_gen::models::Mounts,
     flash_gen::mount::{MountCreateForApplicationParams, MountUpdateForApplicationParams},
@@ -34,8 +33,8 @@ pub struct ApplicationMountResponseDto {
     pub updated_at: i64,
 }
 
-impl From<Mount> for ApplicationMountResponseDto {
-    fn from(value: Mount) -> Self {
+impl From<Mounts> for ApplicationMountResponseDto {
+    fn from(value: Mounts) -> Self {
         Self {
             id: value.id,
             mount_type: value.mount_type,
@@ -58,19 +57,13 @@ fn non_empty(value: Option<String>) -> Option<String> {
     value.filter(|value| !value.is_empty())
 }
 
-fn to_model(row: Mounts) -> Mount {
-    Mount {
-        id: row.id,
-        mount_type: row.mount_type,
-        service_type: row.service_type,
+fn normalize_row(row: Mounts) -> Mounts {
+    Mounts {
         host_path: non_empty(row.host_path),
         volume_name: non_empty(row.volume_name),
         file_path: non_empty(row.file_path),
         content: non_empty(row.content),
-        mount_path: row.mount_path,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+        ..row
     }
 }
 
@@ -91,14 +84,14 @@ impl MountService {
             .map(|_| ())
     }
 
-    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Mount>> {
+    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Mounts>> {
         self.ensure_application(application_id).await?;
         Ok(self
             .queries
             .mount_fetch_for_application(application_id)
             .await?
             .into_iter()
-            .map(to_model)
+            .map(normalize_row)
             .collect())
     }
 
@@ -106,7 +99,7 @@ impl MountService {
         &self,
         application_id: i64,
         input: UpsertApplicationMountDto,
-    ) -> sqlx::Result<Mount> {
+    ) -> sqlx::Result<Mounts> {
         self.ensure_application(application_id).await?;
         let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
         let params = MountCreateForApplicationParams {
@@ -118,7 +111,7 @@ impl MountService {
             mount_path: input.mount_path,
             service_id: application_id,
         };
-        Ok(to_model(
+        Ok(normalize_row(
             self.queries.mount_create_for_application(&params).await?,
         ))
     }
@@ -128,7 +121,7 @@ impl MountService {
         application_id: i64,
         id: i64,
         input: UpsertApplicationMountDto,
-    ) -> sqlx::Result<Mount> {
+    ) -> sqlx::Result<Mounts> {
         self.ensure_application(application_id).await?;
         let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
         let params = MountUpdateForApplicationParams {
@@ -141,7 +134,7 @@ impl MountService {
             id,
             service_id: application_id,
         };
-        Ok(to_model(
+        Ok(normalize_row(
             self.queries.mount_update_for_application(&params).await?,
         ))
     }

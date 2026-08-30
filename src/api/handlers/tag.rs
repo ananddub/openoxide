@@ -165,8 +165,8 @@ struct TagDto {
     created_at: i64,
 }
 
-impl From<crate::db::models::tags::Tag> for TagDto {
-    fn from(t: crate::db::models::tags::Tag) -> Self {
+impl From<crate::flash_gen::models::Tags> for TagDto {
+    fn from(t: crate::flash_gen::models::Tags) -> Self {
         Self {
             id: t.id,
             name: t.name,

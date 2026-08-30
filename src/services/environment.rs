@@ -6,28 +6,12 @@ use crate::{
     api::connect::generated::openoxide::api::v1::{
         CreateEnvironmentRequest, UpdateEnvironmentRequest,
     },
-    db::{
-        models::environments::Environment,
-        queries::FlashQueries,
-    },
+    db::queries::FlashQueries,
     flash_gen::{
         environments::{EnvironmentsCreateInTransactionParams, EnvironmentsUpdateInTransactionParams},
         models::Environments,
     },
 };
-
-fn to_model(row: Environments) -> Environment {
-    Environment {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        env_var: row.env_var,
-        is_default: row.is_default,
-        project_id: row.project_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    }
-}
 
 pub struct EnvironmentService {
     queries: Arc<FlashQueries>,
@@ -39,17 +23,15 @@ impl EnvironmentService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Environment> {
-        let row = self.queries.environments_get_by_id(id).await?;
-        Ok(to_model(row))
+    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Environments> {
+        self.queries.environments_get_by_id(id).await
     }
 
-    pub async fn list_by_project(&self, project_id: i64) -> sqlx::Result<Vec<Environment>> {
-        let rows = self.queries.environments_list_by_project(project_id).await?;
-        Ok(rows.into_iter().map(to_model).collect())
+    pub async fn list_by_project(&self, project_id: i64) -> sqlx::Result<Vec<Environments>> {
+        self.queries.environments_list_by_project(project_id).await
     }
 
-    pub async fn create(&self, input: CreateEnvironmentRequest) -> sqlx::Result<Environment> {
+    pub async fn create(&self, input: CreateEnvironmentRequest) -> sqlx::Result<Environments> {
         let count = self
             .queries
             .environments_count_by_project(input.project_id)
@@ -61,8 +43,7 @@ impl EnvironmentService {
         }
 
         let now = chrono::Utc::now().timestamp();
-        let row = self
-            .queries
+        self.queries
             .environments_create_in_transaction(&EnvironmentsCreateInTransactionParams {
                 name: input.name,
                 description: input.description.unwrap_or_default(),
@@ -72,11 +53,10 @@ impl EnvironmentService {
                 created_at: now,
                 updated_at: now,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
-    pub async fn update(&self, id: i64, input: UpdateEnvironmentRequest) -> sqlx::Result<Environment> {
+    pub async fn update(&self, id: i64, input: UpdateEnvironmentRequest) -> sqlx::Result<Environments> {
         let current = self.get_by_id(id).await?;
 
         if input.is_default == Some(true) {
@@ -96,8 +76,7 @@ impl EnvironmentService {
             None => current.is_default,
         };
 
-        let row = self
-            .queries
+        self.queries
             .environments_update_in_transaction(&EnvironmentsUpdateInTransactionParams {
                 name,
                 description,
@@ -105,15 +84,13 @@ impl EnvironmentService {
                 is_default,
                 id,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
-    pub async fn set_default(&self, id: i64) -> sqlx::Result<Environment> {
+    pub async fn set_default(&self, id: i64) -> sqlx::Result<Environments> {
         let current = self.get_by_id(id).await?;
         self.clear_default(current.project_id).await?;
-        let row = self
-            .queries
+        self.queries
             .environments_update_in_transaction(&EnvironmentsUpdateInTransactionParams {
                 name: current.name,
                 description: current.description.unwrap_or_default(),
@@ -121,8 +98,7 @@ impl EnvironmentService {
                 is_default: 1,
                 id,
             })
-            .await?;
-        Ok(to_model(row))
+            .await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {

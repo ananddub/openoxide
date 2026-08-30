@@ -173,7 +173,7 @@ impl DestinationService for DestinationController {
 
 // ── Helper DTOs for deserializing ResourceRequest payloads ────────────
 
-use crate::db::models::destinations::Destination;
+use crate::flash_gen::models::Destinations;
 
 #[derive(Debug, serde::Deserialize)]
 struct TestDestinationDto {
@@ -200,8 +200,8 @@ struct DestinationResponseDto {
     updated_at: i64,
 }
 
-impl From<Destination> for DestinationResponseDto {
-    fn from(val: Destination) -> Self {
+impl From<Destinations> for DestinationResponseDto {
+    fn from(val: Destinations) -> Self {
         Self {
             id: val.id.to_string(),
             name: val.name,

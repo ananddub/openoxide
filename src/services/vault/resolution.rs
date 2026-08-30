@@ -1,5 +1,5 @@
-use super::{VaultProviderType, VaultService, VaultServiceError, providers, vault_provider_from_model};
-use crate::db::models::vault_providers::VaultProvider;
+use super::{VaultProviderType, VaultService, VaultServiceError, providers};
+use crate::flash_gen::models::VaultProviders;
 use std::collections::HashMap;
 
 impl VaultService {
@@ -16,10 +16,8 @@ impl VaultService {
         let providers = self
             .queries
             .vault_providers_list_by_organization(organization_id)
-            .await?
-            .into_iter()
-            .map(vault_provider_from_model);
-        let mut provider_map: HashMap<String, VaultProvider> = HashMap::new();
+            .await?;
+        let mut provider_map: HashMap<String, VaultProviders> = HashMap::new();
         for p in providers {
             provider_map.insert(p.name.clone(), p);
         }

@@ -438,8 +438,8 @@ struct AcceptOrganizationInviteDto {
     token: String,
 }
 
-impl From<crate::db::models::organization_invites::OrganizationInvite> for OrganizationInviteDto {
-    fn from(value: crate::db::models::organization_invites::OrganizationInvite) -> Self {
+impl From<crate::flash_gen::models::OrganizationInvites> for OrganizationInviteDto {
+    fn from(value: crate::flash_gen::models::OrganizationInvites) -> Self {
         Self {
             id: value.id,
             email: value.email,

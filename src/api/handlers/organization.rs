@@ -22,7 +22,7 @@ impl OrganizationController {
     }
 }
 
-fn org_to_proto(org: crate::db::models::organization::Organization) -> OrganizationProto {
+fn org_to_proto(org: crate::flash_gen::models::Organization) -> OrganizationProto {
     OrganizationProto {
         id: org.id,
         name: org.name,

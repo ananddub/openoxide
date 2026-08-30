@@ -8,7 +8,6 @@ use os::string_enum;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::models::patches::Patch,
     db::queries::FlashQueries,
     flash_gen::models::Patches,
     flash_gen::patches::{PatchesCreateForApplicationParams, PatchesUpdateForApplicationParams},
@@ -46,8 +45,8 @@ pub struct ApplicationPatchResponseDto {
     pub updated_at: i64,
 }
 
-impl From<Patch> for ApplicationPatchResponseDto {
-    fn from(value: Patch) -> Self {
+impl From<Patches> for ApplicationPatchResponseDto {
+    fn from(value: Patches) -> Self {
         Self {
             id: value.id,
             patch_type: value.patch_type,
@@ -58,19 +57,6 @@ impl From<Patch> for ApplicationPatchResponseDto {
             created_at: value.created_at,
             updated_at: value.updated_at,
         }
-    }
-}
-
-fn to_model(row: Patches) -> Patch {
-    Patch {
-        id: row.id,
-        patch_type: row.patch_type,
-        file_path: row.file_path,
-        enabled: row.enabled,
-        content: row.content,
-        service_id: row.service_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
     }
 }
 
@@ -91,22 +77,16 @@ impl PatchService {
             .map(|_| ())
     }
 
-    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Patch>> {
+    pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Patches>> {
         self.ensure_application(application_id).await?;
-        Ok(self
-            .queries
-            .patches_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(to_model)
-            .collect())
+        self.queries.patches_list_by_application(application_id).await
     }
 
     pub async fn create(
         &self,
         application_id: i64,
         input: UpsertApplicationPatchDto,
-    ) -> sqlx::Result<Patch> {
+    ) -> sqlx::Result<Patches> {
         self.ensure_application(application_id).await?;
         let input = normalize_patch(input).map_err(sqlx::Error::Protocol)?;
         let params = PatchesCreateForApplicationParams {
@@ -116,11 +96,9 @@ impl PatchService {
             content: input.content,
             service_id: application_id,
         };
-        Ok(to_model(
-            self.queries
-                .patches_create_for_application(&params)
-                .await?,
-        ))
+        self.queries
+            .patches_create_for_application(&params)
+            .await
     }
 
     pub async fn update(
@@ -128,7 +106,7 @@ impl PatchService {
         application_id: i64,
         id: i64,
         input: UpsertApplicationPatchDto,
-    ) -> sqlx::Result<Patch> {
+    ) -> sqlx::Result<Patches> {
         self.ensure_application(application_id).await?;
         let input = normalize_patch(input).map_err(sqlx::Error::Protocol)?;
         let params = PatchesUpdateForApplicationParams {
@@ -139,11 +117,9 @@ impl PatchService {
             id,
             service_id: application_id,
         };
-        Ok(to_model(
-            self.queries
-                .patches_update_for_application(&params)
-                .await?,
-        ))
+        self.queries
+            .patches_update_for_application(&params)
+            .await
     }
 
     pub async fn delete(&self, application_id: i64, id: i64) -> sqlx::Result<bool> {

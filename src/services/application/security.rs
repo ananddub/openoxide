@@ -4,7 +4,8 @@ use auto_di::singleton;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::models::security::Security, db::queries::FlashQueries, flash_gen::models,
+    db::queries::FlashQueries,
+    flash_gen::models::Security,
     flash_gen::security::{SecurityCreateForApplicationParams, SecurityUpdateForApplicationParams},
 };
 
@@ -34,16 +35,6 @@ impl From<Security> for ApplicationSecurityResponseDto {
     }
 }
 
-fn to_model(row: models::Security) -> Security {
-    Security {
-        id: row.id,
-        username: row.username,
-        password: row.password,
-        service_id: row.service_id,
-        created_at: row.created_at,
-    }
-}
-
 pub struct SecurityService {
     queries: Arc<FlashQueries>,
 }
@@ -60,13 +51,7 @@ impl SecurityService {
     }
     pub async fn list(&self, app: i64) -> sqlx::Result<Vec<Security>> {
         self.ensure_app(app).await?;
-        Ok(self
-            .queries
-            .security_list_by_application(app)
-            .await?
-            .into_iter()
-            .map(to_model)
-            .collect())
+        self.queries.security_list_by_application(app).await
     }
     pub async fn create(
         &self,
@@ -82,9 +67,7 @@ impl SecurityService {
             password,
             service_id: app,
         };
-        Ok(to_model(
-            self.queries.security_create_for_application(&params).await?,
-        ))
+        self.queries.security_create_for_application(&params).await
     }
     pub async fn update(
         &self,
@@ -102,9 +85,7 @@ impl SecurityService {
             id,
             service_id: app,
         };
-        Ok(to_model(
-            self.queries.security_update_for_application(&params).await?,
-        ))
+        self.queries.security_update_for_application(&params).await
     }
     pub async fn delete(&self, app: i64, id: i64) -> sqlx::Result<bool> {
         self.ensure_app(app).await?;

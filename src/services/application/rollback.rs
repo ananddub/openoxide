@@ -178,22 +178,11 @@ impl ApplicationService {
     pub async fn list_rollbacks(
         &self,
         application_id: i64,
-    ) -> sqlx::Result<Vec<crate::db::models::rollbacks::Rollback>> {
+    ) -> sqlx::Result<Vec<crate::flash_gen::models::Rollbacks>> {
         self.get_by_id(application_id).await?;
-        Ok(self
-            .queries
+        self.queries
             .rollbacks_list_by_application(application_id)
-            .await?
-            .into_iter()
-            .map(|r| crate::db::models::rollbacks::Rollback {
-                id: r.id,
-                deployment_id: r.deployment_id,
-                version: r.version,
-                image: r.image,
-                full_context: r.full_context,
-                created_at: r.created_at,
-            })
-            .collect())
+            .await
     }
 
     pub async fn delete_rollback(

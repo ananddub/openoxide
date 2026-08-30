@@ -156,7 +156,7 @@ impl SshKeyService for SshKeyController {
 
 // ── Helper DTOs for deserializing ResourceRequest payloads ────────────
 
-use crate::db::models::ssh_keys::SshKey;
+use crate::flash_gen::models::SshKeys;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -195,8 +195,8 @@ struct SshKeyResponseDto {
     updated_at: i64,
 }
 
-impl From<SshKey> for SshKeyResponseDto {
-    fn from(value: SshKey) -> Self {
+impl From<SshKeys> for SshKeyResponseDto {
+    fn from(value: SshKeys) -> Self {
         let has_priv = !value.private_key.is_empty();
         let priv_key = if has_priv {
             Some(value.private_key)
