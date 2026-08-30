@@ -110,7 +110,7 @@ SELECT id AS id, name, description, env_var, organization_id, created_at, update
                FROM projects WHERE organization_id = ? ORDER BY created_at DESC, id DESC;
 
 -- name: ProjectsCreateInTransaction :one
-INSERT INTO projects (name, description, env_var, organization_id) VALUES (?, ?, ?, ?)
+INSERT INTO projects (name, description, env_var, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
                RETURNING id AS id, name, description, env_var, organization_id, created_at, updated_at;
 
 -- name: ProjectsUpdateAndReturn :one

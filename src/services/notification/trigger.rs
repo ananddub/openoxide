@@ -1,4 +1,4 @@
-use crate::db::models::notifications::Notification;
+use crate::flash_gen::models::Notifications as Notification;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -9,21 +9,25 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "jwt_tokens")]
 pub struct JwtToken {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub jti: String,
-    #[sqlx_gen(sql_type = "jwt_tokens_role_enum")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub role: String,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub user_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub is_blacklist: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub blacklist_at: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub expired_at: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub session_id: Option<String>,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub token_kind: Option<String>,
 }

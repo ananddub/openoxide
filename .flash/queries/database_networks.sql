@@ -1,14 +1,20 @@
--- Extracted from src/db/repository/database_networks.rs. Do not edit repository SQL directly.
+-- Database networks (shared docker networks for managed databases).
 
 -- name: DatabaseNetworksList :many
 SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at
                FROM database_networks
                ORDER BY name ASC, id ASC;
 
+-- name: DatabaseNetworksListGlobal :many
+SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at
+               FROM database_networks
+               WHERE server_id IS NULL
+               ORDER BY name ASC, id ASC;
+
 -- name: DatabaseNetworksListByServer :many
 SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at
                FROM database_networks
-               WHERE (? IS NULL AND server_id IS NULL) OR server_id = ?
+               WHERE server_id = ?
                ORDER BY name ASC, id ASC;
 
 -- name: DatabaseNetworksGetById :one
@@ -16,17 +22,34 @@ SELECT id, name, docker_network_name, description, external, server_id, created_
                FROM database_networks
                WHERE id = ?;
 
--- name: DatabaseNetworksCreate :exec
+-- name: DatabaseNetworksCreateGlobal :one
 INSERT INTO database_networks (name, docker_network_name, description, external, server_id)
-               VALUES (?, ?, ?, ?, ?);
+               VALUES (?, ?, ?, ?, NULL)
+               RETURNING id;
 
--- name: DatabaseNetworksUpdate :exec
+-- name: DatabaseNetworksCreateForServer :one
+INSERT INTO database_networks (name, docker_network_name, description, external, server_id)
+               VALUES (?, ?, ?, ?, ?)
+               RETURNING id;
+
+-- name: DatabaseNetworksUpdateGlobal :exec
 UPDATE database_networks
-               SET name = COALESCE(?, name),
-                   docker_network_name = COALESCE(?, docker_network_name),
-                   description = COALESCE(?, description),
-                   external = COALESCE(?, external),
-                   server_id = COALESCE(?, server_id)
+               SET name = ?,
+                   docker_network_name = ?,
+                   description = ?,
+                   external = ?,
+                   server_id = NULL,
+                   updated_at = unixepoch()
+               WHERE id = ?;
+
+-- name: DatabaseNetworksUpdateForServer :exec
+UPDATE database_networks
+               SET name = ?,
+                   docker_network_name = ?,
+                   description = ?,
+                   external = ?,
+                   server_id = ?,
+                   updated_at = unixepoch()
                WHERE id = ?;
 
 -- name: DatabaseNetworksDelete :exec

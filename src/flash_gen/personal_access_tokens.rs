@@ -85,7 +85,7 @@ impl Queries {
         token_hash: &str,
     ) -> Result<PersonalAccessTokensAuthenticate1Row, sqlx::Error> {
         sqlx::query_as::<_, PersonalAccessTokensAuthenticate1Row>(
-            "SELECT id AS id, user_id AS user_id, name AS name, token_prefix AS token_prefix, expires_at, last_used_at, revoked_at, created_at AS created_at FROM personal_access_tokens WHERE token_hash = ? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP);"
+            "SELECT id AS id, user_id AS user_id, name AS name, token_prefix AS token_prefix, expires_at, last_used_at, revoked_at, created_at AS created_at FROM personal_access_tokens WHERE token_hash = ? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > unixepoch());"
         )
         .bind(token_hash)
         .fetch_one(&self.pool)
@@ -98,7 +98,7 @@ impl Queries {
         id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE personal_access_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE personal_access_tokens SET last_used_at = unixepoch() WHERE id = ?;"
         )
         .bind(id)
         .execute(&self.pool)
@@ -113,7 +113,7 @@ impl Queries {
         user_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE personal_access_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND revoked_at IS NULL;"
+            "UPDATE personal_access_tokens SET revoked_at = unixepoch() WHERE id = ? AND user_id = ? AND revoked_at IS NULL;"
         )
         .bind(id)
         .bind(user_id)

@@ -1,6 +1,6 @@
 CREATE TABLE schedule_execution_locks (
-    schedule_id INTEGER NOT NULL PRIMARY KEY,
+    schedule_id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     owner_id TEXT NOT NULL,
-    acquired_at INTEGER NOT NULL,
-    expires_at INTEGER NOT NULL
+    acquired_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL
 );

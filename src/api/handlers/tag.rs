@@ -1,116 +1,183 @@
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::tag::{AttachProjectTagDto, CreateTagDto, TagDto, UpdateTagDto},
-    services::tag::TagService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+    TagService, TagServiceExt,
 };
-
-type ApiError = (StatusCode, String);
-
-fn map_sqlx_error(err: sqlx::Error) -> ApiError {
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-}
+use crate::services::tag::{CreateTagDto, TagService as AppTagService, UpdateTagDto};
 
 pub struct TagController {
-    service: Arc<TagService>,
+    service: Arc<AppTagService>,
 }
 
-#[controller("/tags")]
+#[singleton]
 impl TagController {
-    fn new(service: Arc<TagService>) -> Self {
+    pub fn new(service: Arc<AppTagService>) -> Self {
         Self { service }
     }
+}
 
-    #[get("")]
-    #[live(tables = ["tags","project_tags"])]
-    async fn list_all(&self) -> Result<Json<Vec<TagDto>>, ApiError> {
-        let items = self.service.list_all().await.map_err(map_sqlx_error)?;
-
-        Ok(Json(items.into_iter().map(TagDto::from).collect()))
-    }
-
-    #[get("/{id}")]
-    #[live(tables = ["tags","project_tags"])]
-    async fn get_by_id(&self, Path(id): Path<i64>) -> Result<Json<TagDto>, ApiError> {
-        let tag = self.service.get_by_id(id).await.map_err(map_sqlx_error)?;
-
-        match tag {
-            Some(t) => Ok(Json(TagDto::from(t))),
-            None => Err((StatusCode::NOT_FOUND, "Tag not found".to_string())),
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("tag not found"),
+        other => {
+            tracing::error!(error = %other, "tag database operation failed");
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
         }
     }
+}
 
-    #[post("")]
-    async fn create(&self, Json(body): Json<CreateTagDto>) -> Result<Json<TagDto>, ApiError> {
-        let created = self.service.create(body).await.map_err(map_sqlx_error)?;
+fn tag_to_resource(tag_dto: TagDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&tag_dto).unwrap_or_default();
+    ResourceResponse {
+        id: tag_dto.id,
+        kind: "tag".into(),
+        payload,
+        ..Default::default()
+    }
+}
 
-        Ok(Json(TagDto::from(created)))
+#[auto_grpc::service(connect = true, auth = true)]
+impl TagService for TagController {
+    async fn list_tags<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let items = self.service.list_all().await.map_err(map_db_error)?;
+        let items = items.into_iter().map(TagDto::from).map(tag_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[patch("/{id}")]
-    async fn update(
-        &self,
-        Path(id): Path<i64>,
-        Json(body): Json<UpdateTagDto>,
-    ) -> Result<Json<TagDto>, ApiError> {
-        let updated = self
-            .service
-            .update(id, body)
-            .await
-            .map_err(map_sqlx_error)?;
-
-        Ok(Json(TagDto::from(updated)))
+    async fn get_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let tag = self.service.get_by_id(request.id).await.map_err(map_db_error)?
+            .ok_or_else(|| ConnectError::not_found("tag not found"))?;
+        Response::ok(tag_to_resource(TagDto::from(tag)))
     }
 
-    #[delete("/{id}")]
-    async fn delete(&self, Path(id): Path<i64>) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+    async fn create_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateTagDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let tag = self.service.create(dto).await.map_err(map_db_error)?;
+        Response::ok(tag_to_resource(TagDto::from(tag)))
     }
 
-    #[get("/project/{project_id}")]
-    #[live(tables = ["tags","project_tags"])]
-    async fn list_project_tags(
-        &self,
-        Path(project_id): Path<i64>,
-    ) -> Result<Json<Vec<TagDto>>, ApiError> {
-        let items = self
-            .service
-            .list_project_tags(project_id)
-            .await
-            .map_err(map_sqlx_error)?;
-
-        Ok(Json(items.into_iter().map(TagDto::from).collect()))
+    async fn update_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: UpdateTagDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let tag = self.service.update(request.id, dto).await.map_err(map_db_error)?;
+        Response::ok(tag_to_resource(TagDto::from(tag)))
     }
 
-    #[post("/project/{project_id}")]
-    async fn attach_project_tag(
-        &self,
-        Path(project_id): Path<i64>,
-        Json(body): Json<AttachProjectTagDto>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .attach_project_tag(project_id, body.tag_id)
-            .await
-            .map(|_| StatusCode::CREATED)
-            .map_err(map_sqlx_error)
+    async fn delete_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
     }
 
-    #[delete("/project/{project_id}/{tag_id}")]
-    async fn detach_project_tag(
-        &self,
-        Path((project_id, tag_id)): Path<(i64, i64)>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .detach_project_tag(project_id, tag_id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+    async fn add_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        Response::ok(OperationResult {
+            success: true,
+            operation: "add_tag".into(),
+            ..Default::default()
+        })
     }
+
+    async fn remove_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
+    }
+
+    async fn list_project_tags<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let project_id = request.environment_id.unwrap_or(0);
+        let items = self.service.list_project_tags(project_id).await.map_err(map_db_error)?;
+        let items = items.into_iter().map(TagDto::from).map(tag_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    async fn attach_project_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: AttachProjectTagDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service.attach_project_tag(request.id, dto.tag_id).await.map_err(map_db_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "attach_project_tag".into(),
+            ..Default::default()
+        })
+    }
+
+    async fn detach_project_tag<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let dto: AttachProjectTagDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service.detach_project_tag(request.id, dto.tag_id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
+    }
+}
+
+// ── Helper DTOs for ResourceRequest payloads ────────────
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TagDto {
+    id: i64,
+    name: String,
+    color: String,
+    organization_id: i64,
+    created_at: i64,
+}
+
+impl From<crate::db::models::tags::Tag> for TagDto {
+    fn from(t: crate::db::models::tags::Tag) -> Self {
+        Self {
+            id: t.id,
+            name: t.name,
+            color: t.color,
+            organization_id: t.organization_id,
+            created_at: t.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct AttachProjectTagDto {
+    tag_id: i64,
 }

@@ -9,11 +9,11 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "group_policy")]
 pub struct GroupPolicy {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub group_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub policy_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
 }

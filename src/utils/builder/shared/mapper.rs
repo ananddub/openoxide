@@ -1,10 +1,10 @@
-use crate::db::models::{domains::Domain, mounts::Mount};
+use crate::flash_gen::models::{Domains, Mounts};
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::spec::{DomainSpec, MountKind, MountSpec, MountType};
 
-pub fn domain(d: Domain) -> Result<DomainSpec, AdapterError> {
+pub fn domain(d: Domains) -> Result<DomainSpec, AdapterError> {
     Ok(DomainSpec {
-        key: d.id.unwrap_or_default().to_string(),
+        key: d.id.to_string(),
         host: d.host,
         https: d.https != 0,
         port: u16::try_from(d.port.unwrap_or(3000)).map_err(|_| AdapterError::InvalidField {
@@ -22,7 +22,7 @@ pub fn domain(d: Domain) -> Result<DomainSpec, AdapterError> {
     })
 }
 
-pub fn mount_spec(m: Mount, base_path: &str) -> Result<MountSpec, AdapterError> {
+pub fn mount_spec(m: Mounts, base_path: &str) -> Result<MountSpec, AdapterError> {
     let mount_type = MountType::from(m.mount_type.as_str());
     let is_file = mount_type == MountType::File;
     let kind = match mount_type {
@@ -35,7 +35,7 @@ pub fn mount_spec(m: Mount, base_path: &str) -> Result<MountSpec, AdapterError> 
             .volume_name
             .ok_or(AdapterError::MissingField("volume_name"))?,
         MountKind::Bind => m.host_path.ok_or(AdapterError::MissingField("host_path"))?,
-        MountKind::File => format!("{}/{}", base_path, m.id.unwrap_or_default()),
+        MountKind::File => format!("{}/{}", base_path, m.id),
     };
     Ok(MountSpec {
         kind,

@@ -9,13 +9,10 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "mounts")]
 pub struct Mount {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
-    #[sqlx_gen(sql_type = "mounts_mount_type_enum", column_default = "'VOLUME'")]
+    pub id: i64,
+    #[sqlx_gen(sql_type = "TEXT")]
     pub mount_type: String,
-    #[sqlx_gen(
-        sql_type = "mounts_service_type_enum",
-        column_default = "'APPLICATION'"
-    )]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub service_type: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub host_path: Option<String>,
@@ -28,23 +25,9 @@ pub struct Mount {
     #[sqlx_gen(sql_type = "TEXT")]
     pub mount_path: String,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub postgres_id: Option<i64>,
+    pub service_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub mysql_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mariadb_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mongo_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub redis_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub libsql_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

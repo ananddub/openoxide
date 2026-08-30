@@ -1,34 +1,39 @@
-use crate::db::models::mounts::Mount;
-use crate::repository::LibsqlRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::models::Mounts;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
-    UpdateConfig,
+    DeployResources, DeploySpec, EngineConfig, Limits, RestartPolicy, StackFile, StackMount,
+    StackService, UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
 
 pub async fn build_libsql_stack(
     db_id: i64,
-    mounts: &[Mount],
+    mounts: &[Mounts],
 ) -> ExecResult<(String, String, String)> {
-    let repo =
-        auto_di::resolve::<LibsqlRepository>()
-            .await
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: format!("Failed to resolve LibsqlRepository: {}", e),
-            })?;
-    let db = repo
-        .get_details(db_id)
+    let q = auto_di::resolve::<FlashQueries>()
+        .await
+        .map_err(|e| ExecError::CommandFailed {
+            code: None,
+            stderr: format!("Failed to resolve FlashQueries: {}", e),
+        })?;
+    let db = q
+        .database_get_by_id(db_id)
         .await
         .map_err(|e| ExecError::CommandFailed {
             code: None,
             stderr: format!("Failed to fetch libsql db: {}", e),
         })?;
+    let engine = EngineConfig::parse(db.engine_config.as_deref().unwrap_or(""));
+    let database_user = db.db_user.clone().unwrap_or_default();
+    let database_password = db.db_password.clone().unwrap_or_default();
+    let docker_image = db.docker_image.clone().unwrap_or_default();
+    let command_row = (!db.command.trim().is_empty()).then(|| db.command.clone());
+    let enable_namespaces = engine.flag("enable_namespaces");
 
     // Parse command and args
     let command: Option<Vec<String>>;
-    if let Some(c) = &db.command {
+    if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
             if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
@@ -38,7 +43,7 @@ pub async fn build_libsql_stack(
         command = Some(full);
     } else {
         let mut final_command = "sqld --db-path iku.db --http-listen-addr 0.0.0.0:8080 --grpc-listen-addr 0.0.0.0:5001 --admin-listen-addr 0.0.0.0:5000".to_string();
-        if db.enable_namespaces != 0 {
+        if enable_namespaces != 0 {
             final_command.push_str(" --enable-namespaces");
         }
         command = Some(vec!["/bin/sh".to_string(), "-c".to_string(), final_command]);
@@ -52,22 +57,22 @@ pub async fn build_libsql_stack(
     .await
     .unwrap_or_default();
 
-    let sqld_node = db.sqld_node.to_ascii_lowercase();
+    let sqld_node = engine.string("sqld_node").to_ascii_lowercase();
     resolved_env.insert("SQLD_NODE".to_string(), sqld_node.clone());
     resolved_env.insert(
         "SQLD_HTTP_AUTH".to_string(),
         format!(
             "basic:{}",
-            base64_encode(format!("{}:{}", db.database_user, db.database_password).as_bytes())
+            base64_encode(format!("{}:{}", database_user, database_password).as_bytes())
         ),
     );
     if sqld_node == "replica" {
-        if let Some(url) = &db.sqld_primary_url {
-            resolved_env.insert("SQLD_PRIMARY_URL".to_string(), url.clone());
+        if let Some(url) = engine.opt_string("sqld_primary_url") {
+            resolved_env.insert("SQLD_PRIMARY_URL".to_string(), url);
         }
-        resolved_env.insert("SQLD_AUTH_TOKEN".to_string(), db.database_password.clone());
+        resolved_env.insert("SQLD_AUTH_TOKEN".to_string(), database_password.clone());
     }
-    if db.enable_namespaces != 0 {
+    if enable_namespaces != 0 {
         resolved_env.insert("SQLD_ENABLE_NAMESPACES".to_string(), "true".to_string());
     }
 
@@ -103,10 +108,10 @@ pub async fn build_libsql_stack(
     if let Some(port) = db.external_port {
         ports.push(format!("{}:8080", port));
     }
-    if let Some(port) = db.external_grpc_port {
+    if let Some(port) = engine.opt_int("external_grpc_port") {
         ports.push(format!("{}:5001", port));
     }
-    if let Some(port) = db.external_admin_port {
+    if let Some(port) = engine.opt_int("external_admin_port") {
         ports.push(format!("{}:5000", port));
     }
     let (service_networks, mut networks) =
@@ -117,7 +122,7 @@ pub async fn build_libsql_stack(
         .await?;
 
     let mut service = StackService {
-        image: db.docker_image.clone(),
+        image: docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
@@ -205,7 +210,7 @@ pub async fn build_libsql_stack(
         stderr: format!("Failed to generate libsql yaml: {}", e),
     })?;
 
-    Ok((db.app_name, db.docker_image, yaml))
+    Ok((db.app_name, docker_image, yaml))
 }
 
 fn base64_encode(data: &[u8]) -> String {

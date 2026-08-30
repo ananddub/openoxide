@@ -1,69 +1,69 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::dto::server::{ServerManagementDto, UpdateServerManagementDto},
-    repository::{ServerManagementRepository, ServerRepository},
+    db::queries::FlashQueries,
+    flash_gen::{models::ServerManagement, server_infra_extra::SrvInfManagementUpdateParams},
 };
 
 pub struct ServerManagementService {
-    servers: Arc<ServerRepository>,
-    management: Arc<ServerManagementRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl ServerManagementService {
-    fn new(servers: Arc<ServerRepository>, management: Arc<ServerManagementRepository>) -> Self {
-        Self {
-            servers,
-            management,
-        }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get(&self, server_id: i64) -> sqlx::Result<ServerManagementDto> {
-        self.servers
-            .get_by_id(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
-        map(self.management.get_or_create(server_id).await?)
+        self.queries.servers_get_by_id(server_id).await?;
+        map(self.get_or_create(server_id).await?)
     }
 
     pub async fn update(
         &self,
         server_id: i64,
-        input: UpdateServerManagementDto,
+        payload: &str,
     ) -> sqlx::Result<ServerManagementDto> {
-        self.servers
-            .get_by_id(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let input: UpdateServerManagementDto = serde_json::from_str(payload)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        self.queries.servers_get_by_id(server_id).await?;
         validate_labels(&input.labels)?;
         let labels = serde_json::to_string(&input.labels)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         let policy = serde_json::to_string(&input.cleanup_policy)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        self.get_or_create(server_id).await?;
         map(self
-            .management
-            .update(
+            .queries
+            .srv_inf_management_update(&SrvInfManagementUpdateParams {
                 server_id,
-                i64::from(input.maintenance_mode),
-                input.maintenance_message.as_deref(),
-                &labels,
-                &policy,
-                i64::from(input.gpu_enabled),
-            )
+                maintenance_mode: i64::from(input.maintenance_mode),
+                maintenance_message: input.maintenance_message.unwrap_or_default(),
+                labels,
+                cleanup_policy: policy,
+                gpu_enabled: i64::from(input.gpu_enabled),
+            })
             .await?)
+    }
+
+    async fn get_or_create(&self, server_id: i64) -> sqlx::Result<ServerManagement> {
+        self.queries.server_management_get_or_create1(server_id).await?;
+        self.queries
+            .server_management_get_or_create2(server_id)
+            .await
     }
 }
 
-fn map(
-    value: crate::db::models::server_management::ServerManagement,
-) -> sqlx::Result<ServerManagementDto> {
+fn map(value: ServerManagement) -> sqlx::Result<ServerManagementDto> {
     Ok(ServerManagementDto {
         server_id: value.server_id,
         maintenance_mode: value.maintenance_mode != 0,
-        maintenance_message: value.maintenance_message,
+        // Flash binds nullable columns as non-Option; "" is the NULL encoding.
+        maintenance_message: value.maintenance_message.filter(|v| !v.is_empty()),
         labels: serde_json::from_str(&value.labels)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
         cleanup_policy: serde_json::from_str(&value.cleanup_policy)
@@ -88,4 +88,47 @@ fn validate_labels(labels: &BTreeMap<String, String>) -> sqlx::Result<()> {
         }
     }
     Ok(())
+}
+
+// ── JSON payload contract (moved from the retired api::dto layer) ──────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerCleanupPolicyDto {
+    pub containers: bool,
+    pub images: bool,
+    pub networks: bool,
+    pub volumes: bool,
+    pub packages: bool,
+}
+
+impl Default for ServerCleanupPolicyDto {
+    fn default() -> Self {
+        Self {
+            containers: true,
+            images: true,
+            networks: true,
+            volumes: false,
+            packages: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateServerManagementDto {
+    pub maintenance_mode: bool,
+    pub maintenance_message: Option<String>,
+    pub labels: BTreeMap<String, String>,
+    pub cleanup_policy: ServerCleanupPolicyDto,
+    pub gpu_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ServerManagementDto {
+    pub server_id: i64,
+    pub maintenance_mode: bool,
+    pub maintenance_message: Option<String>,
+    pub labels: BTreeMap<String, String>,
+    pub cleanup_policy: ServerCleanupPolicyDto,
+    pub gpu_enabled: bool,
+    pub updated_at: i64,
 }

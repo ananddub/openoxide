@@ -2,61 +2,87 @@
 
 -- name: MountFetchForDatabase :many
 SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path,
-               postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id,
+               service_id,
                created_at, updated_at
                FROM mounts
-               WHERE postgres_id = ? OR mysql_id = ? OR mariadb_id = ? OR mongo_id = ? OR redis_id = ? OR libsql_id = ?;
+               WHERE service_id = ?;
 
 -- name: MountFetchForApplication :many
 SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path,
-               postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id,
+               service_id,
                created_at, updated_at
                FROM mounts
-               WHERE application_id = ?
+               WHERE service_id = ?
                ORDER BY id;
 
 -- name: MountGetForApplication :one
 SELECT id, mount_type, service_type, host_path, volume_name, file_path, content,
-                      mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id,
-                      libsql_id, compose_id, application_id, created_at, updated_at
-               FROM mounts WHERE id = ? AND application_id = ?;
+                      mount_path, service_id, created_at, updated_at
+               FROM mounts WHERE id = ? AND service_id = ?;
 
--- name: MountCreateForApplication :exec
+-- name: MountCreateForApplication :one
 INSERT INTO mounts
                (mount_type, service_type, host_path, volume_name, file_path, content,
-                mount_path, application_id)
-               VALUES (?, 'APPLICATION', ?, ?, ?, ?, ?, ?);
+                mount_path, service_id)
+               VALUES (?, 'APPLICATION', ?, ?, ?, ?, ?, ?)
+               RETURNING id, mount_type, service_type, host_path, volume_name, file_path,
+                         content, mount_path, service_id, created_at, updated_at;
 
--- name: MountUpdateForApplication :exec
+-- name: MountUpdateForApplication :one
 UPDATE mounts
                SET mount_type = ?, service_type = 'APPLICATION', host_path = ?,
                    volume_name = ?, file_path = ?, content = ?, mount_path = ?
-               WHERE id = ? AND application_id = ?;
+               WHERE id = ? AND service_id = ?
+               RETURNING id, mount_type, service_type, host_path, volume_name, file_path,
+                         content, mount_path, service_id, created_at, updated_at;
 
--- name: MountDeleteForApplication :exec
-DELETE FROM mounts WHERE id = ? AND application_id = ?;
+-- name: MountDeleteForApplication :one
+DELETE FROM mounts WHERE id = ? AND service_id = ? RETURNING id;
 
 -- name: MountFetchForCompose :many
 SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path,
-               postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id,
+               service_id,
                created_at, updated_at
                FROM mounts
-               WHERE compose_id = ?
+               WHERE service_id = ?
                ORDER BY id;
 
 -- name: MountCreateComposeFile :exec
 INSERT INTO mounts
-               (mount_type, service_type, file_path, content, mount_path, compose_id)
+               (mount_type, service_type, file_path, content, mount_path, service_id)
                VALUES ('FILE', 'COMPOSE', ?, ?, '', ?);
 
 -- name: MountGetForCompose :one
-SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE id = ? AND compose_id = ?;
+SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE id = ? AND service_id = ?;
+
+-- Database mounts (unified: keyed by service_id, no per-engine columns).
+
+-- name: MountGetForDatabase :one
+SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at
+FROM mounts WHERE id = ? AND service_id = ?;
+
+-- name: MountCreateForDatabase :one
+INSERT INTO mounts
+               (mount_type, service_type, host_path, volume_name, file_path, content,
+                mount_path, service_id)
+               VALUES (?, 'DATABASE', ?, ?, ?, ?, ?, ?)
+               RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;
+
+-- name: MountUpdateForDatabase :one
+UPDATE mounts
+               SET mount_type = ?, service_type = 'DATABASE', host_path = ?,
+                   volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = unixepoch()
+               WHERE id = ? AND service_id = ?
+               RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;
+
+-- name: MountDeleteForDatabase :exec
+DELETE FROM mounts WHERE id = ? AND service_id = ?;
 
 -- name: MountCreateForCompose :exec
-INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, compose_id) VALUES (?, 'COMPOSE', ?, ?, ?, ?, ?, ?);
+INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id) VALUES (?, 'COMPOSE', ?, ?, ?, ?, ?, ?);
 
 -- name: MountUpdateForCompose :exec
-UPDATE mounts SET mount_type = ?, service_type = 'COMPOSE', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND compose_id = ?;
+UPDATE mounts SET mount_type = ?, service_type = 'COMPOSE', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND service_id = ?;
 
 -- name: MountDeleteForCompose :exec
-DELETE FROM mounts WHERE id = ? AND compose_id = ?;
+DELETE FROM mounts WHERE id = ? AND service_id = ?;

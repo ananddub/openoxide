@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "two_factor")]
 pub struct TwoFactor {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub secret: String,
     #[sqlx_gen(sql_type = "TEXT")]

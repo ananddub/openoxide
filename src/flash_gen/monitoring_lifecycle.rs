@@ -30,9 +30,16 @@ pub struct MonitoringLifecycleCreateWindowParams {
     pub reason: String,
 }
 
+pub struct MonitoringLifecycleCreateGlobalWindowParams {
+    pub organization_id: i64,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub reason: String,
+}
+
 impl Queries {
-    /// MonitoringLifecyclePolicy1
-    pub async fn monitoring_lifecycle_policy1(
+    /// MonitoringLifecycleEnsurePolicy
+    pub async fn monitoring_lifecycle_ensure_policy(
         &self,
         organization_id: i64,
     ) -> Result<(), sqlx::Error> {
@@ -45,8 +52,8 @@ impl Queries {
         Ok(())
     }
 
-    /// MonitoringLifecyclePolicy2
-    pub async fn monitoring_lifecycle_policy2(
+    /// MonitoringLifecyclePolicy
+    pub async fn monitoring_lifecycle_policy(
         &self,
         organization_id: i64,
     ) -> Result<MonitoringPolicy, sqlx::Error> {
@@ -62,66 +69,78 @@ impl Queries {
     pub async fn monitoring_lifecycle_update_policy(
         &self,
         params: &MonitoringLifecycleUpdatePolicyParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO monitoring_policy (organization_id, desired_agent_version, retention_days, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(organization_id) DO UPDATE SET desired_agent_version=excluded.desired_agent_version, retention_days=excluded.retention_days, updated_at=excluded.updated_at;"
+    ) -> Result<MonitoringPolicy, sqlx::Error> {
+        sqlx::query_as::<_, MonitoringPolicy>(
+            "INSERT INTO monitoring_policy (organization_id, desired_agent_version, retention_days, updated_at) VALUES (?, ?, ?, unixepoch()) ON CONFLICT(organization_id) DO UPDATE SET desired_agent_version=excluded.desired_agent_version, retention_days=excluded.retention_days, updated_at=excluded.updated_at RETURNING organization_id AS organization_id, desired_agent_version, retention_days AS retention_days, updated_at AS updated_at;"
         )
         .bind(&params.organization_id)
         .bind(&params.desired_agent_version)
         .bind(&params.retention_days)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MonitoringLifecycleAcknowledgeEvent
     pub async fn monitoring_lifecycle_acknowledge_event(
         &self,
         params: &MonitoringLifecycleAcknowledgeEventParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE alert_events SET acknowledged_at=CURRENT_TIMESTAMP, acknowledged_by=? WHERE id=? AND organization_id=?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE alert_events SET acknowledged_at=unixepoch(), acknowledged_by=? WHERE id=? AND organization_id=? RETURNING id;"
         )
         .bind(&params.acknowledged_by)
         .bind(&params.id)
         .bind(&params.organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MonitoringLifecycleSilenceEvent
     pub async fn monitoring_lifecycle_silence_event(
         &self,
         params: &MonitoringLifecycleSilenceEventParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE alert_events SET silenced_until=? WHERE id=? AND organization_id=?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE alert_events SET silenced_until=? WHERE id=? AND organization_id=? RETURNING id;"
         )
         .bind(&params.silenced_until)
         .bind(&params.id)
         .bind(&params.organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MonitoringLifecycleCreateWindow
     pub async fn monitoring_lifecycle_create_window(
         &self,
         params: &MonitoringLifecycleCreateWindowParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO monitoring_maintenance_windows (organization_id, server_id, starts_at, ends_at, reason) VALUES (?, ?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO monitoring_maintenance_windows (organization_id, server_id, starts_at, ends_at, reason) VALUES (?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.organization_id)
         .bind(&params.server_id)
         .bind(&params.starts_at)
         .bind(&params.ends_at)
         .bind(&params.reason)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// MonitoringLifecycleCreateGlobalWindow
+    pub async fn monitoring_lifecycle_create_global_window(
+        &self,
+        params: &MonitoringLifecycleCreateGlobalWindowParams,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO monitoring_maintenance_windows (organization_id, server_id, starts_at, ends_at, reason) VALUES (?, NULL, ?, ?, ?) RETURNING id;"
+        )
+        .bind(&params.organization_id)
+        .bind(&params.starts_at)
+        .bind(&params.ends_at)
+        .bind(&params.reason)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MonitoringLifecycleListWindows
@@ -142,25 +161,24 @@ impl Queries {
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM monitoring_maintenance_windows WHERE id=? AND organization_id=?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM monitoring_maintenance_windows WHERE id=? AND organization_id=? RETURNING id;"
         )
         .bind(id)
         .bind(organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MonitoringLifecycleIsInMaintenance
     pub async fn monitoring_lifecycle_is_in_maintenance(
         &self,
-        organization_id: &str,
-        server_id: &str,
-    ) -> Result<bool, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, bool>(
-            "SELECT EXISTS(SELECT 1 FROM monitoring_maintenance_windows WHERE organization_id=? AND (server_id IS NULL OR server_id=?) AND starts_at <= CURRENT_TIMESTAMP AND ends_at > CURRENT_TIMESTAMP);"
+        organization_id: i64,
+        server_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT COUNT(*) AS hit FROM monitoring_maintenance_windows WHERE organization_id=? AND (server_id IS NULL OR server_id=?) AND starts_at <= unixepoch() AND ends_at > unixepoch();"
         )
         .bind(organization_id)
         .bind(server_id)

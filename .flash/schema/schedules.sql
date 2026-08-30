@@ -1,5 +1,5 @@
 CREATE TABLE schedules (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
     cron_expression TEXT NOT NULL,
@@ -10,12 +10,13 @@ CREATE TABLE schedules (
     command TEXT NOT NULL,
     script TEXT,
     timezone TEXT,
-    enabled INTEGER NOT NULL,
-    application_id INTEGER,
-    compose_id INTEGER,
-    server_id INTEGER,
-    organization_id INTEGER,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
+    enabled BIGINT NOT NULL,
+    service_id BIGINT REFERENCES services(id) ON DELETE CASCADE,
+    server_id BIGINT,
+    organization_id BIGINT,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
     schedule_action TEXT NOT NULL
 );
+
+CREATE INDEX idx_schedules_service_id ON schedules(service_id);

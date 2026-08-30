@@ -1,15 +1,25 @@
 use auto_di::resolve;
 
 use crate::{
-    db::models::applications::Application,
-    repository::{NewPreviewDeployment, PreviewTarget},
+    flash_gen::preview_deployments::{
+        PreviewDeploymentsCreateParams, PreviewDeploymentsFindForPullRequestParams,
+        PreviewDeploymentsReopenParams, PreviewDeploymentsUpdateSourceParams,
+    },
+    flash_gen::preview_env_extra::{
+        PrevEnvCloneServiceGitParams, PrevEnvCloneServiceParams, PrevEnvCreateDomainParams,
+        PrevEnvSetBitbucketSourceParams, PrevEnvSetGiteaSourceParams, PrevEnvSetGitlabSourceParams,
+        PrevEnvSetGithubSourceParams, PrevEnvSyncServiceParams,
+    },
     services::{
-        application::{ApplicationOperation, ApplicationService},
+        application::{ApplicationOperation, ApplicationRecord, ApplicationService},
         webhook::{GitProviderKind, PullRequestEvent},
     },
 };
 
-use super::{PreviewDeploymentOutcome, PreviewDeploymentService};
+use super::{
+    types::{NewPreviewDeployment, PreviewTarget},
+    PreviewDeploymentOutcome, PreviewDeploymentService,
+};
 
 impl PreviewDeploymentService {
     pub(super) async fn deploy_target(
@@ -18,107 +28,138 @@ impl PreviewDeploymentService {
         event: &PullRequestEvent,
     ) -> Result<(PreviewDeploymentOutcome, bool), String> {
         let provider = event.provider.as_str();
-        let existing = self
-            .previews
-            .find_for_pull_request(target.base_application_id, provider, &event.number)
+        let existing = match self
+            .queries
+            .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
+                base_service_id: target.base_service_id,
+                provider_type: provider.to_string(),
+                pull_request_number: event.number.clone(),
+            })
+            .await
+        {
+            Ok(row) => Some(row),
+            Err(sqlx::Error::RowNotFound) => None,
+            Err(error) => return Err(error.to_string()),
+        };
+        let applications = resolve::<ApplicationService>()
             .await
             .map_err(|error| error.to_string())?;
-        let base = self
-            .applications
-            .get_by_id(target.base_application_id)
+        let base = applications
+            .load_record(target.base_service_id)
             .await
             .map_err(|error| error.to_string())?
             .ok_or("Base application not found")?;
 
-        let (preview_id, preview_application_id, created) = if let Some(existing) = existing {
-            let Some(preview_application_id) = existing.preview_application_id else {
-                let (preview_application_id, domain) =
+        let (preview_id, preview_service_id, created) = if let Some(existing) = existing {
+            let Some(preview_service_id) = existing.preview_service_id else {
+                let (preview_service_id, domain) =
                     self.create_preview_resources(&base, event).await?;
                 if let Err(error) = self
-                    .previews
-                    .reopen(
-                        existing.id,
-                        preview_application_id,
-                        &event.source_branch,
-                        event.source_owner.as_deref(),
-                        event.source_repository.as_deref(),
-                        &event.target_branch,
-                        event.commit.as_deref(),
-                        event.author.as_deref(),
-                        &domain,
-                    )
+                    .queries
+                    .preview_deployments_reopen(&PreviewDeploymentsReopenParams {
+                        preview_service_id,
+                        source_branch: event.source_branch.clone(),
+                        source_owner: event.source_owner.clone().unwrap_or_default(),
+                        source_repository: event.source_repository.clone().unwrap_or_default(),
+                        target_branch: event.target_branch.clone(),
+                        commit_sha: event.commit.clone().unwrap_or_default(),
+                        author: event.author.clone().unwrap_or_default(),
+                        domain,
+                        id: existing.id,
+                    })
                     .await
                 {
-                    let _ = self.applications.delete(preview_application_id).await;
+                    let _ = self.queries.delete_service(preview_service_id).await;
                     return Err(error.to_string());
                 }
                 return self
-                    .queue_preview(existing.id, preview_application_id, true)
+                    .queue_preview(existing.id, preview_service_id, true)
                     .await;
             };
-            let current = self
-                .applications
-                .get_by_id(preview_application_id)
+            let current = applications
+                .load_record(preview_service_id)
                 .await
                 .map_err(|error| error.to_string())?
                 .ok_or("Preview application not found")?;
-            let clone = preview_application(&base, event, current.app_name, current.created_at)?;
-            self.applications
-                .update(preview_application_id, &clone)
+            self.sync_preview_resources(
+                &base,
+                event,
+                preview_service_id,
+                current.app_name.clone(),
+                current.created_at,
+            )
+            .await?;
+            self.queries
+                .preview_deployments_update_source(&PreviewDeploymentsUpdateSourceParams {
+                    source_branch: event.source_branch.clone(),
+                    source_owner: event.source_owner.clone().unwrap_or_default(),
+                    source_repository: event.source_repository.clone().unwrap_or_default(),
+                    commit_sha: event.commit.clone().unwrap_or_default(),
+                    author: event.author.clone().unwrap_or_default(),
+                    id: existing.id,
+                })
                 .await
                 .map_err(|error| error.to_string())?;
-            self.previews
-                .update_source(
-                    existing.id,
-                    &event.source_branch,
-                    event.source_owner.as_deref(),
-                    event.source_repository.as_deref(),
-                    event.commit.as_deref(),
-                    event.author.as_deref(),
-                )
-                .await
-                .map_err(|error| error.to_string())?;
-            (existing.id, preview_application_id, false)
+            (existing.id, preview_service_id, false)
         } else {
-            let (preview_application_id, domain) =
+            let (preview_service_id, domain) =
                 self.create_preview_resources(&base, event).await?;
+            let new = NewPreviewDeployment {
+                base_service_id: target.base_service_id,
+                preview_service_id,
+                provider_type: provider,
+                provider_id: target.provider_id,
+                owner: &event.owner,
+                repository: &event.repository,
+                pull_request_number: &event.number,
+                source_branch: &event.source_branch,
+                source_owner: event.source_owner.as_deref(),
+                source_repository: event.source_repository.as_deref(),
+                target_branch: &event.target_branch,
+                commit_sha: event.commit.as_deref(),
+                author: event.author.as_deref(),
+                domain: &domain,
+            };
+            let now = chrono::Utc::now().timestamp();
             let preview_id = match self
-                .previews
-                .create(NewPreviewDeployment {
-                    base_application_id: target.base_application_id,
-                    preview_application_id,
-                    provider_type: provider,
-                    provider_id: target.provider_id,
-                    owner: &event.owner,
-                    repository: &event.repository,
-                    pull_request_number: &event.number,
-                    source_branch: &event.source_branch,
-                    source_owner: event.source_owner.as_deref(),
-                    source_repository: event.source_repository.as_deref(),
-                    target_branch: &event.target_branch,
-                    commit_sha: event.commit.as_deref(),
-                    author: event.author.as_deref(),
-                    domain: &domain,
+                .queries
+                .preview_deployments_create(&PreviewDeploymentsCreateParams {
+                    base_service_id: new.base_service_id,
+                    preview_service_id: new.preview_service_id,
+                    provider_type: new.provider_type.to_string(),
+                    provider_id: new.provider_id,
+                    owner: new.owner.to_string(),
+                    repository: new.repository.to_string(),
+                    pull_request_number: new.pull_request_number.to_string(),
+                    source_branch: new.source_branch.to_string(),
+                    source_owner: new.source_owner.unwrap_or_default().to_string(),
+                    source_repository: new.source_repository.unwrap_or_default().to_string(),
+                    target_branch: new.target_branch.to_string(),
+                    commit_sha: new.commit_sha.unwrap_or_default().to_string(),
+                    author: new.author.unwrap_or_default().to_string(),
+                    domain: new.domain.to_string(),
+                    created_at: now,
+                    updated_at: now,
                 })
                 .await
             {
                 Ok(id) => id,
                 Err(error) => {
-                    let _ = self.applications.delete(preview_application_id).await;
+                    let _ = self.queries.delete_service(preview_service_id).await;
                     return Err(error.to_string());
                 }
             };
-            (preview_id, preview_application_id, true)
+            (preview_id, preview_service_id, true)
         };
 
-        self.queue_preview(preview_id, preview_application_id, created)
+        self.queue_preview(preview_id, preview_service_id, created)
             .await
     }
 
     async fn queue_preview(
         &self,
         preview_id: i64,
-        preview_application_id: i64,
+        preview_service_id: i64,
         created: bool,
     ) -> Result<(PreviewDeploymentOutcome, bool), String> {
         let application_service = resolve::<ApplicationService>()
@@ -126,7 +167,7 @@ impl PreviewDeploymentService {
             .map_err(|error| error.to_string())?;
         let deployment = match application_service
             .run_operation(
-                preview_application_id,
+                preview_service_id,
                 if created {
                     ApplicationOperation::Deploy
                 } else {
@@ -138,7 +179,10 @@ impl PreviewDeploymentService {
             Ok(deployment) => deployment,
             Err(error) => {
                 if !error.to_string().contains("already queued or running") {
-                    let _ = self.previews.set_status(preview_id, "ERROR").await;
+                    let _ = self
+                        .queries
+                        .preview_deployments_set_status("ERROR", preview_id)
+                        .await;
                 }
                 return Err(error.to_string());
             }
@@ -146,8 +190,12 @@ impl PreviewDeploymentService {
         let deployment_id = deployment
             .deployment_id
             .ok_or("Preview deployment was not queued")?;
-        self.previews
-            .link_deployment(preview_id, deployment_id)
+        self.queries
+            .preview_deployments_link_deployment1(deployment_id)
+            .await
+            .map_err(|error| error.to_string())?;
+        self.queries
+            .preview_deployments_link_deployment2(deployment_id, preview_id)
             .await
             .map_err(|error| error.to_string())?;
         Ok((
@@ -164,138 +212,214 @@ impl PreviewDeploymentService {
 
     async fn create_preview_resources(
         &self,
-        base: &Application,
+        base: &ApplicationRecord,
         event: &PullRequestEvent,
     ) -> Result<(i64, String), String> {
         let app_name = preview_app_name(&base.app_name, &event.number);
-        let clone = preview_application(base, event, app_name, chrono::Utc::now().timestamp())?;
         let domain = preview_domain(base, &event.number)?;
         if self
-            .domains
-            .host_in_use(&domain)
+            .queries
+            .domains_host_in_use(&domain)
             .await
             .map_err(|error| error.to_string())?
+            > 0
         {
             return Err(format!("Preview domain is already in use: {domain}"));
         }
-        let preview_application_id = self
-            .applications
-            .create(&clone)
+        let preview_service_id = self
+            .clone_preview_service(base, event, &app_name)
+            .await?;
+        if let Err(error) = self.create_preview_domain(base, &domain, preview_service_id).await {
+            let _ = self.queries.delete_service(preview_service_id).await;
+            return Err(error);
+        }
+        Ok((preview_service_id, domain))
+    }
+
+    /// Clones the base (services, service_git, service_application) rows into a
+    /// fresh preview service and overrides the pull-request source fields.
+    async fn clone_preview_service(
+        &self,
+        base: &ApplicationRecord,
+        event: &PullRequestEvent,
+        app_name: &str,
+    ) -> Result<i64, String> {
+        let now = chrono::Utc::now().timestamp();
+        let name = format!("{} · PR #{}", base.name, event.number);
+        let env_var =
+            merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
+                .unwrap_or_default();
+        let preview_service_id = self
+            .queries
+            .prev_env_clone_service(&PrevEnvCloneServiceParams {
+                param1: name,
+                param2: app_name.to_string(),
+                param3: env_var,
+                // Bound as text and cast to BIGINT inside the query: the
+                // generator cannot infer integer parameters in INSERT..SELECT.
+                param4: now.to_string(),
+                param5: now.to_string(),
+                id: base.id,
+            })
             .await
             .map_err(|error| error.to_string())?;
         if let Err(error) = self
-            .domains
-            .create_and_return(
-                domain.clone(),
-                base.preview_https,
-                base.preview_port.or(Some(3000)),
-                base.preview_path.clone().or(Some("/".into())),
-                Some("/".into()),
-                None,
-                None,
-                base.preview_custom_cert_resolver.clone(),
-                0,
-                "[]".into(),
-                "APPLICATION".into(),
-                base.preview_certificate_type.clone(),
-                Some(preview_application_id),
-                None,
-            )
+            .queries
+            .prev_env_clone_service_git(&PrevEnvCloneServiceGitParams {
+                param1: preview_service_id.to_string(),
+                param2: now.to_string(),
+                param3: now.to_string(),
+                service_id: base.id,
+            })
             .await
         {
-            let _ = self.applications.delete(preview_application_id).await;
+            let _ = self.queries.delete_service(preview_service_id).await;
             return Err(error.to_string());
         }
-        Ok((preview_application_id, domain))
+        if let Err(error) = self
+            .queries
+            .prev_env_clone_service_application(&preview_service_id.to_string(), base.id)
+            .await
+        {
+            let _ = self.queries.delete_service(preview_service_id).await;
+            return Err(error.to_string());
+        }
+        if let Err(error) = self.set_preview_source(preview_service_id, event).await {
+            let _ = self.queries.delete_service(preview_service_id).await;
+            return Err(error.to_string());
+        }
+        Ok(preview_service_id)
     }
-}
 
-fn preview_application(
-    base: &Application,
-    event: &PullRequestEvent,
-    app_name: String,
-    created_at: i64,
-) -> Result<Application, String> {
-    let mut preview = base.clone();
-    preview.id = None;
-    preview.name = format!("{} · PR #{}", base.name, event.number);
-    preview.app_name = app_name;
-    preview.app_status = "IDLE".into();
-    preview.auto_deploy = Some(0);
-    preview.env_var = merge_environment(base.env_var.as_deref(), base.preview_env.as_deref());
-    preview.build_args = base.preview_build_args.clone().or(base.build_args.clone());
-    preview.build_secrets = base
-        .preview_build_secrets
-        .clone()
-        .or(base.build_secrets.clone());
-    preview.labels_swarm = base.preview_labels.clone().or(base.labels_swarm.clone());
-    preview.is_preview_deployments_active = 0;
-    preview.preview_require_collaborator_permissions = 0;
-    preview.created_at = created_at;
-    preview.updated_at = chrono::Utc::now().timestamp();
-    match event.provider {
-        GitProviderKind::Github => {
-            preview.owner = Some(
-                event
-                    .source_owner
-                    .clone()
-                    .unwrap_or_else(|| event.owner.clone()),
-            );
-            preview.repository = Some(
-                event
-                    .source_repository
-                    .clone()
-                    .unwrap_or_else(|| event.repository.clone()),
-            );
-            preview.branch = Some(event.source_branch.clone());
-        }
-        GitProviderKind::Gitlab => {
-            preview.gitlab_owner = Some(
-                event
-                    .source_owner
-                    .clone()
-                    .unwrap_or_else(|| event.owner.clone()),
-            );
-            preview.gitlab_repository = Some(
-                event
-                    .source_repository
-                    .clone()
-                    .unwrap_or_else(|| event.repository.clone()),
-            );
-            preview.gitlab_branch = Some(event.source_branch.clone());
-        }
-        GitProviderKind::Gitea => {
-            preview.gitea_owner = Some(
-                event
-                    .source_owner
-                    .clone()
-                    .unwrap_or_else(|| event.owner.clone()),
-            );
-            preview.gitea_repository = Some(
-                event
-                    .source_repository
-                    .clone()
-                    .unwrap_or_else(|| event.repository.clone()),
-            );
-            preview.gitea_branch = Some(event.source_branch.clone());
-        }
-        GitProviderKind::Bitbucket => {
-            preview.bitbucket_owner = Some(
-                event
-                    .source_owner
-                    .clone()
-                    .unwrap_or_else(|| event.owner.clone()),
-            );
-            preview.bitbucket_repository = Some(
-                event
-                    .source_repository
-                    .clone()
-                    .unwrap_or_else(|| event.repository.clone()),
-            );
-            preview.bitbucket_branch = Some(event.source_branch.clone());
+    /// Re-syncs an existing preview service with the current base configuration
+    /// before redeploying, mirroring the old "update the cloned application row"
+    /// behaviour on the unified services/service_git/service_application schema.
+    async fn sync_preview_resources(
+        &self,
+        base: &ApplicationRecord,
+        event: &PullRequestEvent,
+        preview_service_id: i64,
+        app_name: String,
+        created_at: i64,
+    ) -> Result<(), String> {
+        let name = format!("{} · PR #{}", base.name, event.number);
+        let env_var =
+            merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
+                .unwrap_or_default();
+        self.queries
+            .prev_env_sync_service(&PrevEnvSyncServiceParams {
+                name,
+                app_name,
+                env_var,
+                created_at,
+                updated_at: chrono::Utc::now().timestamp(),
+                id: preview_service_id,
+                id2: base.id,
+            })
+            .await
+            .map_err(|error| error.to_string())?;
+        self.queries
+            .prev_env_sync_service_git(preview_service_id, base.id)
+            .await
+            .map_err(|error| error.to_string())?;
+        self.queries
+            .prev_env_sync_service_application(preview_service_id, base.id)
+            .await
+            .map_err(|error| error.to_string())?;
+        self.set_preview_source(preview_service_id, event)
+            .await
+            .map_err(|error| error.to_string())
+    }
+
+    async fn set_preview_source(
+        &self,
+        preview_service_id: i64,
+        event: &PullRequestEvent,
+    ) -> Result<(), sqlx::Error> {
+        let owner = event
+            .source_owner
+            .clone()
+            .unwrap_or_else(|| event.owner.clone());
+        let repository = event
+            .source_repository
+            .clone()
+            .unwrap_or_else(|| event.repository.clone());
+        match event.provider {
+            GitProviderKind::Github => {
+                self.queries
+                    .prev_env_set_github_source(&PrevEnvSetGithubSourceParams {
+                        repository,
+                        owner,
+                        branch: event.source_branch.clone(),
+                        service_id: preview_service_id,
+                    })
+                    .await
+            }
+            GitProviderKind::Gitlab => {
+                self.queries
+                    .prev_env_set_gitlab_source(&PrevEnvSetGitlabSourceParams {
+                        gitlab_repository: repository,
+                        gitlab_owner: owner,
+                        gitlab_branch: event.source_branch.clone(),
+                        service_id: preview_service_id,
+                    })
+                    .await
+            }
+            GitProviderKind::Gitea => {
+                self.queries
+                    .prev_env_set_gitea_source(&PrevEnvSetGiteaSourceParams {
+                        gitea_repository: repository,
+                        gitea_owner: owner,
+                        gitea_branch: event.source_branch.clone(),
+                        service_id: preview_service_id,
+                    })
+                    .await
+            }
+            GitProviderKind::Bitbucket => {
+                self.queries
+                    .prev_env_set_bitbucket_source(&PrevEnvSetBitbucketSourceParams {
+                        bitbucket_repository: repository,
+                        bitbucket_owner: owner,
+                        bitbucket_branch: event.source_branch.clone(),
+                        service_id: preview_service_id,
+                    })
+                    .await
+            }
         }
     }
-    Ok(preview)
+
+    async fn create_preview_domain(
+        &self,
+        base: &ApplicationRecord,
+        domain: &str,
+        preview_service_id: i64,
+    ) -> Result<(), String> {
+        let now = chrono::Utc::now().timestamp();
+        self.queries
+            .prev_env_create_domain(&PrevEnvCreateDomainParams {
+                host: domain.to_string(),
+                https: i64::from(base.preview_https),
+                port: base.preview_port.unwrap_or(3000),
+                path: base.preview_path.clone().unwrap_or_else(|| "/".into()),
+                internal_path: "/".into(),
+                custom_entrypoint: String::new(),
+                service_name: String::new(),
+                custom_cert_resolver: base
+                    .preview_custom_cert_resolver
+                    .clone()
+                    .unwrap_or_default(),
+                strip_path: 0,
+                middlewares: "[]".into(),
+                domain_type: "APPLICATION".into(),
+                certificate_type: base.preview_certificate_type.clone(),
+                service_id: preview_service_id,
+                created_at: now,
+                updated_at: now,
+            })
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
 }
 
 fn merge_environment(base: Option<&str>, preview: Option<&str>) -> Option<String> {
@@ -321,7 +445,7 @@ fn preview_app_name(base: &str, number: &str) -> String {
     .to_owned()
 }
 
-fn preview_domain(base: &Application, number: &str) -> Result<String, String> {
+fn preview_domain(base: &ApplicationRecord, number: &str) -> Result<String, String> {
     let wildcard = base
         .preview_wildcard
         .as_deref()

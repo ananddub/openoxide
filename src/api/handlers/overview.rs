@@ -1,73 +1,110 @@
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::overview::{OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto},
-    core::middleware::permission::{CanRead, Project, RequirePermission},
-    services::overview::OverviewService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    ResourceListResponse, ResourceQuery, ResourceResponse,
+    OverviewOperationsService, OverviewOperationsServiceExt,
 };
-
-type ApiError = (StatusCode, String);
+use crate::services::overview::OverviewService;
 
 pub struct OverviewController {
     service: Arc<OverviewService>,
 }
 
-#[controller("/overview")]
+#[singleton]
 impl OverviewController {
-    fn new(service: Arc<OverviewService>) -> Self {
+    pub fn new(service: Arc<OverviewService>) -> Self {
         Self { service }
-    }
-
-    #[get("/services/organization/{organization_id}")]
-    #[live(tables = ["applications", "compose_projects", "postgres_dbs", "mysql_dbs", "mariadb_dbs", "mongo_dbs", "redis_dbs", "libsql_dbs", "servers"])]
-    async fn services(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<Vec<OverviewServiceItemDto>>, ApiError> {
-        self.service
-            .get_all_services(organization_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/domains/organization/{organization_id}")]
-    #[live(tables = ["domains"])]
-    async fn domains(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<Vec<OverviewDomainItemDto>>, ApiError> {
-        self.service
-            .get_all_domains(organization_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/backups/organization/{organization_id}")]
-    #[live(tables = ["database_backups", "volume_backups"])]
-    async fn backups(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<Vec<OverviewBackupItemDto>>, ApiError> {
-        self.service
-            .get_all_backups(organization_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
     }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    tracing::error!(error = %error, "overview database operation failed");
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "overview database operation failed".into(),
-    )
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    tracing::error!(error = %err, "overview database operation failed");
+    ConnectError::new(ErrorCode::Internal, "overview database operation failed")
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl OverviewOperationsService for OverviewController {
+    #[permission(Project, CanRead)]
+    async fn list_organization_services<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let items = self
+            .service
+            .get_all_services(organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let items = items
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: dto.id,
+                    kind: "overview_service".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Project, CanRead)]
+    async fn list_organization_domains<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let items = self
+            .service
+            .get_all_domains(organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let items = items
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: dto.id,
+                    kind: "overview_domain".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Project, CanRead)]
+    async fn list_organization_backups<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let items = self
+            .service
+            .get_all_backups(organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let items = items
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: dto.id,
+                    kind: "overview_backup".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
 }

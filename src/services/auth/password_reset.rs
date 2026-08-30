@@ -1,26 +1,30 @@
 use getrandom::fill;
 use sha2::{Digest, Sha256};
 
-use crate::services::notification::{
-    NotificationMessage, email::send_email_to, senders::send_resend_to,
+use crate::{
+    flash_gen::password_reset_tokens::PasswordResetTokensIssue2Params,
+    services::notification::{NotificationMessage, email::send_email_to, senders::send_resend_to},
 };
 
-use super::{AuthError, AuthService, hash_password};
+use super::{AuthError, AuthService, hash_password, notification_configs_for_user};
 
 impl AuthService {
     pub async fn request_password_reset(&self, email: &str) -> Result<(), AuthError> {
         let email = email.trim().to_lowercase();
-        let Some(user) = self.repo_user.get_by_email(&email).await? else {
-            return Ok(());
+        let user = match self.queries.get_user_by_email(&email).await {
+            Ok(user) => user,
+            Err(sqlx::Error::RowNotFound) => return Ok(()),
+            Err(error) => return Err(error.into()),
         };
-        let user_id = user.id.ok_or(AuthError::Internal)?;
+        let user_id = user.id;
         let token = random_token()?;
-        self.repo_password_reset
-            .issue(
+        self.queries.password_reset_tokens_issue1(user_id).await?;
+        self.queries
+            .password_reset_tokens_issue2(&PasswordResetTokensIssue2Params {
                 user_id,
-                &hash_token(&token),
-                chrono::Utc::now().timestamp() + 30 * 60,
-            )
+                token_hash: hash_token(&token),
+                expires_at: chrono::Utc::now().timestamp() + 30 * 60,
+            })
             .await?;
 
         let action = std::env::var("OPENOXIDE_PUBLIC_URL")
@@ -40,11 +44,13 @@ impl AuthService {
             ),
         );
 
-        if let Some(config) = self.repo_notif_email.find_for_user(user_id).await? {
+        let (email_config, resend_config) =
+            notification_configs_for_user(&self.queries, user_id).await?;
+        if let Some(config) = email_config {
             if let Err(error) = send_email_to(&config, &email, &message).await {
                 tracing::warn!(user_id, error = %error, "password reset SMTP delivery failed");
             }
-        } else if let Some(config) = self.repo_notif_resend.find_for_user(user_id).await? {
+        } else if let Some(config) = resend_config {
             if let Err(error) =
                 send_resend_to(&reqwest::Client::new(), &config, &email, &message).await
             {
@@ -61,13 +67,21 @@ impl AuthService {
 
     pub async fn reset_password(&self, token: &str, password: String) -> Result<(), AuthError> {
         let password_hash = hash_password(password).await?;
-        if !self
-            .repo_password_reset
-            .complete(&hash_token(token), &password_hash)
-            .await?
+        let user_id = match self
+            .queries
+            .password_reset_tokens_complete1(&hash_token(token))
+            .await
         {
-            return Err(AuthError::InvalidResetToken);
-        }
+            Ok(user_id) => user_id,
+            Err(sqlx::Error::RowNotFound) => return Err(AuthError::InvalidResetToken),
+            Err(error) => return Err(error.into()),
+        };
+        self.queries
+            .password_reset_tokens_complete2(&password_hash, user_id)
+            .await?;
+        self.queries
+            .password_reset_tokens_complete3(user_id)
+            .await?;
         Ok(())
     }
 }

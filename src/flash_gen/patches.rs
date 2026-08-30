@@ -11,8 +11,7 @@ pub struct PatchesGetAllRow {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -22,7 +21,7 @@ pub struct PatchesCreateForComposeParams {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PatchesUpdateForComposeParams {
@@ -31,7 +30,7 @@ pub struct PatchesUpdateForComposeParams {
     pub enabled: i64,
     pub content: String,
     pub id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PatchesCreateForApplicationParams {
@@ -39,7 +38,7 @@ pub struct PatchesCreateForApplicationParams {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PatchesUpdateForApplicationParams {
@@ -48,7 +47,7 @@ pub struct PatchesUpdateForApplicationParams {
     pub enabled: i64,
     pub content: String,
     pub id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PatchesCreateParams {
@@ -56,8 +55,7 @@ pub struct PatchesCreateParams {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -67,8 +65,7 @@ pub struct PatchesUpdateParams {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
     pub id: i64,
@@ -80,7 +77,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<PatchesGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, PatchesGetAllRow>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches;"
         )
         .fetch_all(&self.pool)
         .await
@@ -92,7 +89,7 @@ impl Queries {
         id: i64,
     ) -> Result<Patches, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ?;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -102,12 +99,12 @@ impl Queries {
     /// PatchesListByApplication
     pub async fn patches_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Patches>, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE application_id = ? ORDER BY file_path, id;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE service_id = ? ORDER BY file_path, id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -115,12 +112,12 @@ impl Queries {
     /// PatchesListByCompose
     pub async fn patches_list_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Patches>, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE compose_id = ? ORDER BY file_path, id;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE service_id = ? ORDER BY file_path, id;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -129,13 +126,13 @@ impl Queries {
     pub async fn patches_get_for_compose(
         &self,
         id: i64,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Patches, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ? AND compose_id = ?;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -146,13 +143,13 @@ impl Queries {
         params: &PatchesCreateForComposeParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO patches (patch_type, file_path, enabled, content, compose_id) VALUES (?, ?, ?, ?, ?);"
+            "INSERT INTO patches (patch_type, file_path, enabled, content, service_id) VALUES (?, ?, ?, ?, ?);"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -164,14 +161,14 @@ impl Queries {
         params: &PatchesUpdateForComposeParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ? WHERE id = ? AND compose_id = ?;"
+            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ? WHERE id = ? AND service_id = ?;"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
         .bind(&params.id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -181,13 +178,13 @@ impl Queries {
     pub async fn patches_delete_for_compose(
         &self,
         id: i64,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM patches WHERE id = ? AND compose_id = ?;"
+            "DELETE FROM patches WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(compose_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -197,13 +194,13 @@ impl Queries {
     pub async fn patches_get_for_application(
         &self,
         id: i64,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Patches, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ? AND application_id = ?;"
+            "SELECT id AS id, patch_type AS patch_type, file_path AS file_path, enabled AS enabled, content AS content, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM patches WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(application_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -212,53 +209,50 @@ impl Queries {
     pub async fn patches_create_for_application(
         &self,
         params: &PatchesCreateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO patches (patch_type, file_path, enabled, content, application_id) VALUES (?, ?, ?, ?, ?);"
+    ) -> Result<Patches, sqlx::Error> {
+        sqlx::query_as::<_, Patches>(
+            "INSERT INTO patches (patch_type, file_path, enabled, content, service_id) VALUES (?, ?, ?, ?, ?) RETURNING id, patch_type, file_path, enabled, content, service_id, created_at, updated_at;"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PatchesUpdateForApplication
     pub async fn patches_update_for_application(
         &self,
         params: &PatchesUpdateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ? WHERE id = ? AND application_id = ?;"
+    ) -> Result<Patches, sqlx::Error> {
+        sqlx::query_as::<_, Patches>(
+            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ? WHERE id = ? AND service_id = ? RETURNING id, patch_type, file_path, enabled, content, service_id, created_at, updated_at;"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
         .bind(&params.id)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PatchesDeleteForApplication
     pub async fn patches_delete_for_application(
         &self,
         id: i64,
-        application_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM patches WHERE id = ? AND application_id = ?;"
+        service_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM patches WHERE id = ? AND service_id = ? RETURNING id;"
         )
         .bind(id)
-        .bind(application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PatchesCreate
@@ -267,14 +261,13 @@ impl Queries {
         params: &PatchesCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO patches (patch_type, file_path, enabled, content, application_id, compose_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO patches (patch_type, file_path, enabled, content, service_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .execute(&self.pool)
@@ -288,14 +281,13 @@ impl Queries {
         params: &PatchesUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ?, application_id = ?, compose_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE patches SET patch_type = ?, file_path = ?, enabled = ?, content = ?, service_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .bind(&params.id)

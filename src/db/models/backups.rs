@@ -9,12 +9,12 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "backups")]
 pub struct Backup {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub app_name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub schedule: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enabled: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub database_name: String,
@@ -24,32 +24,20 @@ pub struct Backup {
     pub service_name: Option<String>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub keep_latest_count: Option<i64>,
-    #[sqlx_gen(sql_type = "backups_backup_type_enum", column_default = "'DATABASE'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub backup_type: String,
-    #[sqlx_gen(sql_type = "backups_database_type_enum")]
-    pub database_type: String,
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub database_type: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub metadata: Option<String>,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub postgres_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mysql_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mariadb_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mongo_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub redis_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub libsql_id: Option<i64>,
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub destination_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

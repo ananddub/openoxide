@@ -1,5 +1,7 @@
-use super::{VaultService, VaultServiceError, config_field, encode_path};
-use crate::api::dto::vault::{VaultSecretListDto, VaultTestResultDto};
+use super::{
+    VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, config_field,
+    encode_path,
+};
 
 impl VaultService {
     pub(super) async fn fetch_hashicorp_secret(

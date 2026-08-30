@@ -6,7 +6,7 @@ pub struct GlobalSearchOptions {
     pub resource_type: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct GlobalResourceDto {
     pub resource_type: String,
     pub id: String,
@@ -14,25 +14,25 @@ pub struct GlobalResourceDto {
     pub status: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
 pub enum BulkDeploymentAction {
     Cancel,
 }
 
-#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct BulkDeploymentRequest {
     pub action: BulkDeploymentAction,
     pub deployment_ids: Vec<i64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct BulkDeploymentResult {
     pub deployment_id: i64,
     pub success: bool,
     pub message: String,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
 pub enum BulkResourceKind {
     Application,
     Compose,
@@ -40,7 +40,7 @@ pub enum BulkResourceKind {
     Server,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, poem_openapi::Enum)]
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
 pub enum BulkResourceAction {
     Start,
     Stop,
@@ -49,27 +49,27 @@ pub enum BulkResourceAction {
     Cleanup,
 }
 
-#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct BulkResourceItem {
     pub id: i64,
     pub database_kind: Option<crate::services::database::DatabaseKind>,
 }
 
-#[derive(Debug, Clone, serde::Deserialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct BulkResourceRequest {
     pub resource_kind: BulkResourceKind,
     pub action: BulkResourceAction,
     pub items: Vec<BulkResourceItem>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct BulkResourceResult {
     pub id: i64,
     pub success: bool,
     pub message: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ServerDependencyView {
     pub server_id: i64,
     pub applications: i64,

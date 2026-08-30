@@ -1,86 +1,91 @@
-use crate::{
-    api::dto::system::{ConfigTestDto, DependencyStatusDto, SystemHealthDto},
-    core::{
-        config::Config,
-        middleware::permission::{CanRead, CanWrite, Organization, RequirePermission},
-    },
-    utils::docker::DockerCli,
-};
-use auto_route::controller;
-use axum::Json;
-use sqlx::SqlitePool;
 use std::sync::Arc;
+
+use auto_di::singleton;
+use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
+use sqlx::SqlitePool;
+
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, SystemService, SystemServiceExt,
+};
+use crate::core::config::Config;
+use crate::utils::docker::DockerCli;
 
 pub struct SystemController {
     db: Arc<SqlitePool>,
     config: Arc<Config>,
 }
 
-#[controller("/system")]
+#[singleton]
 impl SystemController {
-    fn new(db: Arc<SqlitePool>, config: Arc<Config>) -> Self {
+    pub fn new(db: Arc<SqlitePool>, config: Arc<Config>) -> Self {
         Self { db, config }
     }
+}
 
-    #[get("/health")]
-    async fn health(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Organization, CanRead>,
-    ) -> Json<SystemHealthDto> {
-        let database = match sqlx::query_scalar::<_, i64>("SELECT 1")
+#[auto_grpc::service(connect = true, auth = true)]
+impl SystemService for SystemController {
+    #[permission(Organization, CanRead)]
+    async fn health<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let database_healthy = match sqlx::query_scalar::<_, i64>("SELECT 1")
             .fetch_one(self.db.as_ref())
             .await
         {
-            Ok(_) => DependencyStatusDto {
-                name: "database".into(),
-                healthy: true,
-                detail: "SQLite query succeeded".into(),
-            },
-            Err(e) => DependencyStatusDto {
-                name: "database".into(),
-                healthy: false,
-                detail: e.to_string(),
-            },
+            Ok(_) => true,
+            Err(e) => {
+                tracing::error!(error = %e, "database health check failed");
+                false
+            }
         };
-        let docker = match crate::services::compose::remote::agent_executor_for(None).await {
+
+        let docker_healthy = match crate::services::compose::remote::agent_executor_for(None).await
+        {
             Ok(executor) => match DockerCli::from_executor(executor)
                 .system()
                 .info()
                 .run()
                 .await
             {
-                Ok(_) => DependencyStatusDto {
-                    name: "docker".into(),
-                    healthy: true,
-                    detail: "Docker reachable through local Agent".into(),
-                },
-                Err(error) => DependencyStatusDto {
-                    name: "docker".into(),
-                    healthy: false,
-                    detail: error.to_string(),
-                },
+                Ok(_) => true,
+                Err(error) => {
+                    tracing::error!(error = %error, "docker health check failed");
+                    false
+                }
             },
-            Err(error) => DependencyStatusDto {
-                name: "docker".into(),
-                healthy: false,
-                detail: error,
-            },
+            Err(error) => {
+                tracing::error!(error = %error, "docker agent unavailable");
+                false
+            }
         };
-        let dependencies = vec![database, docker];
-        Json(SystemHealthDto {
-            healthy: dependencies.iter().all(|d| d.healthy),
-            dependencies,
-            timestamp: chrono::Utc::now().timestamp(),
+
+        let healthy = database_healthy && docker_healthy;
+        let mut messages: Vec<String> = Vec::new();
+        if !database_healthy {
+            messages.push("database: unhealthy".into());
+        }
+        if !docker_healthy {
+            messages.push("docker: unreachable".into());
+        }
+
+        Response::ok(OperationResult {
+            success: healthy,
+            operation: "health".into(),
+            message: if healthy { Some("all dependencies healthy".into()) } else { Some(messages.join(", ")) },
+            ..Default::default()
         })
     }
 
-    #[get("/config/test")]
-    async fn config_test(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
-    ) -> Json<ConfigTestDto> {
-        let mut errors = Vec::new();
-        let mut warnings = Vec::new();
+    #[permission(Organization, CanWrite)]
+    async fn test_config<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let mut errors: Vec<String> = Vec::new();
+        let mut warnings: Vec<String> = Vec::new();
         if self.config.secret_key == "your_secret_key_here" || self.config.secret_key.len() < 32 {
             errors.push("SECRET_KEY must be changed and contain at least 32 characters".into());
         }
@@ -90,10 +95,20 @@ impl SystemController {
         if self.config.host.trim().is_empty() {
             errors.push("HOST cannot be empty".into());
         }
-        Json(ConfigTestDto {
-            valid: errors.is_empty(),
-            errors,
-            warnings,
+
+        let mut details: Vec<String> = Vec::new();
+        if !errors.is_empty() {
+            details.push(format!("errors: {}", errors.join("; ")));
+        }
+        if !warnings.is_empty() {
+            details.push(format!("warnings: {}", warnings.join("; ")));
+        }
+
+        Response::ok(OperationResult {
+            success: errors.is_empty(),
+            operation: "test_config".into(),
+            message: if details.is_empty() { Some("configuration is valid".into()) } else { Some(details.join(", ")) },
+            ..Default::default()
         })
     }
 }

@@ -1,3 +1,4 @@
+use crate::flash_gen::deployments::DeploymentsUpdateFinalStatusParams;
 use crate::utils::builder::queue::deployment_log::DeploymentLog;
 use crate::utils::builder::spec::ApplicationSpec;
 use crate::utils::docker::DockerCli;
@@ -22,8 +23,8 @@ impl ApplicationService {
     ) -> sqlx::Result<ApplicationRollbackTriggerResult> {
         let application = self.get_by_id(application_id).await?;
         if self
-            .repo_deploy
-            .has_running_deployment(application_id)
+            .queries
+            .deployments_has_running_deployment(&application_id.to_string())
             .await?
         {
             return Err(sqlx::Error::Protocol(
@@ -31,11 +32,20 @@ impl ApplicationService {
             ));
         }
 
-        let rollback = self
-            .repo_rollback
-            .get_for_application(rollback_id, application_id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol(format!("rollback {} not found", rollback_id)))?;
+        let rollback = match self
+            .queries
+            .rollbacks_get_for_application(rollback_id, application_id)
+            .await
+        {
+            Ok(rollback) => rollback,
+            Err(sqlx::Error::RowNotFound) => {
+                return Err(sqlx::Error::Protocol(format!(
+                    "rollback {} not found",
+                    rollback_id
+                )));
+            }
+            Err(error) => return Err(error),
+        };
 
         let rollback_image = rollback
             .image
@@ -54,22 +64,24 @@ impl ApplicationService {
             }
         };
 
-        let deployment_id = self
-            .repo_deploy
-            .create_running_deployment(
-                "Application rollback",
-                Some(&format!(
-                    "Rollback {} to version {}",
-                    application.name, rollback.version
-                )),
-                "ROLLBACK",
-                application_id,
-                application.server_id,
-            )
-            .await?;
+        // The generated create has no RETURNING id; the deployment id drives
+        // every follow-up call, so this stays raw SQL.
+        let deployment_id = sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, started_at, last_state_at) VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, unixepoch(), unixepoch()) RETURNING id;",
+        )
+        .bind("Application rollback")
+        .bind(format!(
+            "Rollback {} to version {}",
+            application.name, rollback.version
+        ))
+        .bind("ROLLBACK")
+        .bind(application_id)
+        .bind(application.server_id)
+        .fetch_one(&self.queries.pool)
+        .await?;
         let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
-        self.repo_deploy
-            .update_log_path(deployment_id, &log_path)
+        self.queries
+            .deployments_update_log_path(&log_path, deployment_id)
             .await?;
         let mut log = DeploymentLog::open(deployment_id).await.ok();
         if let Some(log) = log.as_mut() {
@@ -114,8 +126,13 @@ impl ApplicationService {
                 if let Some(log) = log.as_mut() {
                     let _ = log.write_line(&format!("[DONE] {message}")).await;
                 }
-                self.repo_deploy
-                    .update_final_status(deployment_id, "DONE", None)
+                self.queries
+                    .deployments_update_final_status(&DeploymentsUpdateFinalStatusParams {
+                        status: "DONE".to_owned(),
+                        state: "DONE".to_owned(),
+                        error_message: String::new(),
+                        id: deployment_id,
+                    })
                     .await?;
                 tracing::info!(
                     deployment_id,
@@ -136,8 +153,13 @@ impl ApplicationService {
                 if let Some(log) = log.as_mut() {
                     let _ = log.write_line(&format!("[ERROR] {error}")).await;
                 }
-                self.repo_deploy
-                    .update_final_status(deployment_id, "ERROR", Some(&error))
+                self.queries
+                    .deployments_update_final_status(&DeploymentsUpdateFinalStatusParams {
+                        status: "ERROR".to_owned(),
+                        state: "ERROR".to_owned(),
+                        error_message: error.clone(),
+                        id: deployment_id,
+                    })
                     .await?;
                 tracing::error!(
                     deployment_id,
@@ -158,7 +180,20 @@ impl ApplicationService {
         application_id: i64,
     ) -> sqlx::Result<Vec<crate::db::models::rollbacks::Rollback>> {
         self.get_by_id(application_id).await?;
-        self.repo_rollback.list_by_application(application_id).await
+        Ok(self
+            .queries
+            .rollbacks_list_by_application(application_id)
+            .await?
+            .into_iter()
+            .map(|r| crate::db::models::rollbacks::Rollback {
+                id: r.id,
+                deployment_id: r.deployment_id,
+                version: r.version,
+                image: r.image,
+                full_context: r.full_context,
+                created_at: r.created_at,
+            })
+            .collect())
     }
 
     pub async fn delete_rollback(
@@ -167,8 +202,16 @@ impl ApplicationService {
         rollback_id: i64,
     ) -> sqlx::Result<bool> {
         self.get_by_id(application_id).await?;
-        self.repo_rollback
-            .delete_for_application(rollback_id, application_id)
-            .await
+        // The generated delete returns (); the bool the caller expects is the
+        // affected count, so this stays raw SQL.
+        let affected = sqlx::query(
+            "DELETE FROM rollbacks WHERE id = ? AND deployment_id IN ( SELECT id FROM deployments WHERE service_id = ? );",
+        )
+        .bind(rollback_id)
+        .bind(application_id)
+        .execute(&self.queries.pool)
+        .await?
+        .rows_affected();
+        Ok(affected > 0)
     }
 }

@@ -1,80 +1,91 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
-use sqlx::SqlitePool;
 
 use crate::{
-    api::dto::environment::{CreateEnvironmentDto, PatchEnvironmentDto},
-    db::models::environments::Environment,
-    repository::EnvironmentRepository,
+    api::connect::generated::openoxide::api::v1::{
+        CreateEnvironmentRequest, UpdateEnvironmentRequest,
+    },
+    db::{
+        models::environments::Environment,
+        queries::FlashQueries,
+    },
+    flash_gen::{
+        environments::{EnvironmentsCreateInTransactionParams, EnvironmentsUpdateInTransactionParams},
+        models::Environments,
+    },
 };
 
+fn to_model(row: Environments) -> Environment {
+    Environment {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        env_var: row.env_var,
+        is_default: row.is_default,
+        project_id: row.project_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
 pub struct EnvironmentService {
-    db: Arc<SqlitePool>,
-    repo_env: Arc<EnvironmentRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl EnvironmentService {
-    fn new(db: Arc<SqlitePool>, repo_env: Arc<EnvironmentRepository>) -> Self {
-        Self { db, repo_env }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Environment> {
-        self.repo_env
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let row = self.queries.environments_get_by_id(id).await?;
+        Ok(to_model(row))
     }
 
     pub async fn list_by_project(&self, project_id: i64) -> sqlx::Result<Vec<Environment>> {
-        self.repo_env.list_by_project(project_id).await
+        let rows = self.queries.environments_list_by_project(project_id).await?;
+        Ok(rows.into_iter().map(to_model).collect())
     }
 
-    pub async fn create(&self, input: CreateEnvironmentDto) -> sqlx::Result<Environment> {
-        let mut tx = self.db.begin().await?;
+    pub async fn create(&self, input: CreateEnvironmentRequest) -> sqlx::Result<Environment> {
         let count = self
-            .repo_env
-            .count_by_project(&mut tx, input.project_id)
+            .queries
+            .environments_count_by_project(input.project_id)
             .await?;
         let make_default = input.is_default || count == 0;
 
         if make_default {
-            self.repo_env
-                .clear_default(&mut tx, input.project_id)
-                .await?;
+            self.clear_default(input.project_id).await?;
         }
 
-        let is_default = i64::from(make_default);
-        let environment = self
-            .repo_env
-            .create_in_transaction(
-                &mut tx,
-                input.name,
-                input.description,
-                input.env_var,
-                is_default,
-                input.project_id,
-            )
+        let now = chrono::Utc::now().timestamp();
+        let row = self
+            .queries
+            .environments_create_in_transaction(&EnvironmentsCreateInTransactionParams {
+                name: input.name,
+                description: input.description.unwrap_or_default(),
+                env_var: input.environment_variables,
+                is_default: i64::from(make_default),
+                project_id: input.project_id,
+                created_at: now,
+                updated_at: now,
+            })
             .await?;
-
-        tx.commit().await?;
-        Ok(environment)
+        Ok(to_model(row))
     }
 
-    pub async fn update(&self, id: i64, input: PatchEnvironmentDto) -> sqlx::Result<Environment> {
-        let mut tx = self.db.begin().await?;
-        let current = self.repo_env.get_in_transaction(&mut tx, id).await?;
+    pub async fn update(&self, id: i64, input: UpdateEnvironmentRequest) -> sqlx::Result<Environment> {
+        let current = self.get_by_id(id).await?;
 
         if input.is_default == Some(true) {
-            self.repo_env
-                .clear_default(&mut tx, current.project_id)
-                .await?;
+            self.clear_default(current.project_id).await?;
         }
 
         let name = input.name.unwrap_or(current.name);
-        let description = input.description.or(current.description);
-        let env_var = input.env_var.unwrap_or(current.env_var);
+        let description = input.description.or(current.description).unwrap_or_default();
+        let env_var = input.environment_variables.unwrap_or(current.env_var);
         let is_default = match input.is_default {
             Some(false) if current.is_default != 0 => {
                 return Err(sqlx::Error::Protocol(
@@ -85,49 +96,50 @@ impl EnvironmentService {
             None => current.is_default,
         };
 
-        let environment = self
-            .repo_env
-            .update_in_transaction(&mut tx, id, name, description, env_var, is_default)
+        let row = self
+            .queries
+            .environments_update_in_transaction(&EnvironmentsUpdateInTransactionParams {
+                name,
+                description,
+                env_var,
+                is_default,
+                id,
+            })
             .await?;
-
-        tx.commit().await?;
-        Ok(environment)
+        Ok(to_model(row))
     }
 
     pub async fn set_default(&self, id: i64) -> sqlx::Result<Environment> {
-        let mut tx = self.db.begin().await?;
-        let current = self.repo_env.get_in_transaction(&mut tx, id).await?;
-        self.repo_env
-            .clear_default(&mut tx, current.project_id)
-            .await?;
-        let environment = self
-            .repo_env
-            .update_in_transaction(
-                &mut tx,
+        let current = self.get_by_id(id).await?;
+        self.clear_default(current.project_id).await?;
+        let row = self
+            .queries
+            .environments_update_in_transaction(&EnvironmentsUpdateInTransactionParams {
+                name: current.name,
+                description: current.description.unwrap_or_default(),
+                env_var: current.env_var,
+                is_default: 1,
                 id,
-                current.name,
-                current.description,
-                current.env_var,
-                1,
-            )
+            })
             .await?;
-        tx.commit().await?;
-        Ok(environment)
+        Ok(to_model(row))
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        let mut tx = self.db.begin().await?;
-        let current = self.repo_env.get_in_transaction(&mut tx, id).await?;
-        self.repo_env.delete_in_transaction(&mut tx, id).await?;
+        let current = self.get_by_id(id).await?;
+        self.queries.environments_delete_in_transaction(id).await?;
 
         if current.is_default != 0 {
-            self.repo_env
-                .promote_oldest_to_default(&mut tx, current.project_id)
+            self.queries
+                .environments_promote_oldest_to_default(current.project_id)
                 .await?;
         }
 
-        tx.commit().await?;
         Ok(())
+    }
+
+    async fn clear_default(&self, project_id: i64) -> sqlx::Result<()> {
+        self.queries.environments_clear_default(project_id).await
     }
 }
 
@@ -162,20 +174,19 @@ mod tests {
             .await
             .unwrap();
 
-        let db = Arc::new(pool);
         EnvironmentService {
-            db: db.clone(),
-            repo_env: Arc::new(EnvironmentRepository::new(db.clone())),
+            queries: Arc::new(FlashQueries::new(Arc::new(pool))),
         }
     }
 
-    fn create_input(name: &str, is_default: bool) -> CreateEnvironmentDto {
-        CreateEnvironmentDto {
+    fn create_input(name: &str, is_default: bool) -> CreateEnvironmentRequest {
+        CreateEnvironmentRequest {
             name: name.into(),
             description: None,
-            env_var: String::new(),
+            environment_variables: String::new(),
             is_default,
             project_id: 1,
+            ..Default::default()
         }
     }
 
@@ -208,14 +219,11 @@ mod tests {
             .create(create_input("production", false))
             .await
             .unwrap();
-        let second = service
-            .create(create_input("preview", false))
-            .await
-            .unwrap();
+        let second = service.create(create_input("preview", false)).await.unwrap();
 
-        service.delete(first.id.unwrap()).await.unwrap();
+        service.delete(first.id).await.unwrap();
 
-        let remaining = service.get_by_id(second.id.unwrap()).await.unwrap();
+        let remaining = service.get_by_id(second.id).await.unwrap();
         assert_eq!(remaining.is_default, 1);
     }
 
@@ -223,24 +231,26 @@ mod tests {
     async fn patch_changes_only_supplied_fields() {
         let service = service().await;
         let environment = service
-            .create(CreateEnvironmentDto {
+            .create(CreateEnvironmentRequest {
                 name: "production".into(),
                 description: Some("Primary".into()),
-                env_var: "PORT=3000".into(),
+                environment_variables: "PORT=3000".into(),
                 is_default: false,
                 project_id: 1,
+                ..Default::default()
             })
             .await
             .unwrap();
 
         let patched = service
             .update(
-                environment.id.unwrap(),
-                PatchEnvironmentDto {
+                environment.id,
+                UpdateEnvironmentRequest {
                     name: Some("prod".into()),
                     description: None,
-                    env_var: None,
+                    environment_variables: None,
                     is_default: None,
+                    ..Default::default()
                 },
             )
             .await

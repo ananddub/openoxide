@@ -9,19 +9,19 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "redirects")]
 pub struct Redirect {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub regex: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub replacement: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub permanent: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub unique_config_key: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    pub service_id: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

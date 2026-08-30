@@ -1,6 +1,6 @@
 CREATE TABLE monitoring_policy (
-    organization_id INTEGER NOT NULL PRIMARY KEY,
+    organization_id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     desired_agent_version TEXT,
-    retention_days INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    retention_days BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );

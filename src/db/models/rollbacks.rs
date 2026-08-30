@@ -9,15 +9,15 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "rollbacks")]
 pub struct Rollback {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub deployment_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub version: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub image: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub full_context: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
 }

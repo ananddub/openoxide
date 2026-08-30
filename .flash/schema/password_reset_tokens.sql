@@ -1,8 +1,8 @@
 CREATE TABLE password_reset_tokens (
-    id INTEGER NOT NULL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id BIGINT NOT NULL,
     token_hash TEXT NOT NULL,
-    expires_at INTEGER NOT NULL,
-    used_at INTEGER,
-    created_at INTEGER NOT NULL
+    expires_at BIGINT NOT NULL,
+    used_at BIGINT,
+    created_at BIGINT NOT NULL
 );

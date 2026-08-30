@@ -9,18 +9,17 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "organization_members")]
 pub struct OrganizationMember {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
-    #[sqlx_gen(
-        sql_type = "organization_members_role_enum",
-        column_default = "'MEMBER'"
-    )]
+    pub id: i64,
+    #[sqlx_gen(sql_type = "TEXT")]
     pub role: Option<String>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub user_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s','now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s','now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub group_id: Option<i64>,
 }

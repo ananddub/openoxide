@@ -1,5 +1,4 @@
 mod controller;
-mod error;
 mod management;
 mod private_network;
 mod remote;

@@ -6,8 +6,6 @@ license = "Apache-2.0"
 
 [workspace]
 members = [
-    "crates/auto/route_macros",
-    "crates/auto/route",
     "crates/auto/socket_macros",
     "crates/auto/socket",
     "crates/auto/grpc",
@@ -23,19 +21,16 @@ tokio = { version = "1", features = ["full"] }
 
 auto-di = "0.6.0"
 async-trait = "0.1"
-auto_route = { version = "0.2.1", path = "crates/auto/route" }
 auto_grpc = { path = "crates/auto/grpc", default-features = false, features = ["connect"] }
 sh_macros = { path = "crates/sh_macros" }
 os = { path = "crates/os" }
 auto_socket = { version = "0.1.0", path = "crates/auto/socket" }
 serde = { version = "1.0", features = ["derive"] }
-axum-extra = { version = "0.12.6", features = ["typed-header"] }
 serde_json = "1.0"
 urlencoding = "2.1"
 ts-rs = { version = "12.0.1", features = ["serde-compat", "serde-json-impl", "chrono-impl", "uuid-impl"] }
 serde_yaml = "0.9"
 validator = { version = "0.20", features = ["derive"] }
-axum = { version = "0.8.9", features = ["multipart", "macros"] }
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "sqlite-preupdate-hook", "macros", "migrate", "chrono", "uuid", "json"] }
 sqlx-gen = { version = "0.5.8", default-features = false }
 chrono = { version = "0.4.45", features = ["serde"] }
@@ -57,8 +52,6 @@ sha2 = "0.10"
 hmac = "0.12"
 dashmap = "6.2.1"
 dotenvy = "0.15.7"
-poem-openapi = "5.1.16"
-tower-http = { version = "0.7", features = ["cors"] }
 futures = "0.3.32"
 thiserror = "2.0.18"
 tempfile = "3.27.0"

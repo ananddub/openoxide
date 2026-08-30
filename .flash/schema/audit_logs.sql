@@ -1,5 +1,5 @@
 CREATE TABLE audit_logs (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     user_email TEXT NOT NULL,
     user_role TEXT NOT NULL,
     action TEXT NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE audit_logs (
     resource_id TEXT,
     resource_name TEXT,
     metadata TEXT,
-    organization_id INTEGER,
-    user_id INTEGER,
-    created_at INTEGER NOT NULL
+    organization_id BIGINT,
+    user_id BIGINT,
+    created_at BIGINT NOT NULL
 );

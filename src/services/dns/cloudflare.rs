@@ -1,5 +1,7 @@
-use super::{DnsService, DnsServiceError, extract_credential_field};
-use crate::api::dto::dns::{DnsRecordDto, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto};
+use super::{
+    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
+    UpsertDnsRecordDto, extract_credential_field,
+};
 
 impl DnsService {
     pub(super) async fn test_cloudflare_token(

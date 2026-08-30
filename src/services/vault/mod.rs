@@ -1,7 +1,3 @@
-use crate::api::dto::vault::{
-    CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto, VaultProviderDto,
-    VaultProviderType,
-};
 use crate::db::models::vault_providers::VaultProvider;
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{
@@ -9,7 +5,9 @@ use crate::flash_gen::{
     vault_providers::{VaultProvidersCreateParams, VaultProvidersUpdateParams},
 };
 use auto_di::singleton;
+use os::string_enum;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -23,6 +21,75 @@ mod providers;
 mod resolution;
 mod scaleway;
 use config::{encode_path, field as config_field};
+
+string_enum! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum VaultProviderType {
+        default = Hashicorp;
+
+        Hashicorp => "HASHICORP",
+        Infisical => "INFISICAL",
+        Doppler => "DOPPLER",
+        Aws => "AWS",
+        Scaleway => "SCALEWAY",
+        Azure => "AZURE",
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct VaultProviderDto {
+    pub id: i64,
+    pub name: String,
+    pub provider_type: VaultProviderType,
+    pub api_url: String,
+    pub auth_token: String,
+    pub namespace: Option<String>,
+    pub config_json: Option<String>,
+    pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub assignments: Vec<VaultProviderAssignmentDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VaultProviderAssignmentDto {
+    pub project_id: i64,
+    pub environment_ids: Vec<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateVaultProviderDto {
+    pub name: String,
+    pub provider_type: VaultProviderType,
+    pub api_url: String,
+    pub auth_token: String,
+    pub namespace: Option<String>,
+    pub config_json: Option<String>,
+    #[serde(default)]
+    pub assignments: Vec<VaultProviderAssignmentDto>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateVaultProviderDto {
+    pub name: Option<String>,
+    pub api_url: Option<String>,
+    pub auth_token: Option<String>,
+    pub namespace: Option<String>,
+    pub config_json: Option<String>,
+    pub assignments: Option<Vec<VaultProviderAssignmentDto>>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VaultTestResultDto {
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VaultSecretListDto {
+    pub secrets: Vec<String>,
+}
 
 pub const VAULT_MASK_TOKEN: &str = "••••••••";
 
@@ -85,7 +152,7 @@ impl VaultService {
         let now = chrono::Utc::now().timestamp();
         let config_json = Self::merge_assignments(body.config_json, &body.assignments);
         let provider = VaultProvider {
-            id: None,
+            id: 0,
             name: body.name,
             provider_type: body.provider_type.as_str().to_string(),
             api_url: body.api_url.trim_end_matches('/').to_string(),
@@ -204,7 +271,7 @@ impl VaultService {
             .unwrap_or(VaultProviderType::Hashicorp);
 
         VaultProviderDto {
-            id: p.id.unwrap_or_default(),
+            id: p.id,
             name: p.name,
             provider_type: p_type,
             api_url: p.api_url,
@@ -257,8 +324,8 @@ fn vault_create_params(provider: &VaultProvider) -> VaultProvidersCreateParams {
         provider_type: provider.provider_type.clone(),
         api_url: provider.api_url.clone(),
         auth_token: provider.auth_token.clone(),
-        namespace: provider.namespace.clone(),
-        config_json: provider.config_json.clone(),
+        namespace: provider.namespace.clone().unwrap_or_default(),
+        config_json: provider.config_json.clone().unwrap_or_default(),
         organization_id: provider.organization_id,
         created_at: provider.created_at,
         updated_at: provider.updated_at,
@@ -271,8 +338,8 @@ fn vault_update_params(id: i64, provider: &VaultProvider) -> VaultProvidersUpdat
         provider_type: provider.provider_type.clone(),
         api_url: provider.api_url.clone(),
         auth_token: provider.auth_token.clone(),
-        namespace: provider.namespace.clone(),
-        config_json: provider.config_json.clone(),
+        namespace: provider.namespace.clone().unwrap_or_default(),
+        config_json: provider.config_json.clone().unwrap_or_default(),
         updated_at: provider.updated_at,
         id,
         organization_id: provider.organization_id,
@@ -281,7 +348,7 @@ fn vault_update_params(id: i64, provider: &VaultProvider) -> VaultProvidersUpdat
 
 fn vault_provider_from_model(provider: VaultProviders) -> VaultProvider {
     VaultProvider {
-        id: Some(provider.id),
+        id: provider.id,
         name: provider.name,
         provider_type: provider.provider_type,
         api_url: provider.api_url,

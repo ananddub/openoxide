@@ -17,7 +17,7 @@ impl DeploymentService {
         let needle = options.query.map(|value| value.to_ascii_lowercase());
         let mut results = Vec::new();
         for deployment in deployments {
-            let Some(id) = deployment.id else { continue };
+            let id = deployment.id;
             let Ok(content) = tokio::fs::read_to_string(&deployment.log_path).await else {
                 continue;
             };
@@ -131,7 +131,7 @@ impl DeploymentService {
         let log_path_str = deployment.log_path.clone();
 
         let (sender, receiver) = mpsc::channel(100);
-        let repo_deploy = self.repo_deploy.clone();
+        let queries = self.queries.clone();
 
         tokio::spawn(async move {
             let log_path = std::path::Path::new(&log_path_str);
@@ -201,10 +201,9 @@ impl DeploymentService {
             };
 
             loop {
-                let status = repo_deploy
-                    .get_status(deployment_id)
+                let status = queries
+                    .deployments_get_status(deployment_id)
                     .await
-                    .unwrap_or_default()
                     .unwrap_or_default();
 
                 let is_finished = status != "RUNNING" && status != "QUEUED";
@@ -266,10 +265,9 @@ impl DeploymentService {
         application_id: i64,
     ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
         let deployment_id = self
-            .repo_deploy
-            .get_latest_application_deployment_id(application_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+            .queries
+            .deployments_get_latest_application_deployment_id(application_id)
+            .await?;
 
         self.stream_deployment_log(deployment_id).await
     }
@@ -279,10 +277,9 @@ impl DeploymentService {
         compose_id: i64,
     ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
         let deployment_id = self
-            .repo_deploy
-            .get_latest_compose_deployment_id(compose_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+            .queries
+            .deployments_get_latest_compose_deployment_id(compose_id)
+            .await?;
 
         self.stream_deployment_log(deployment_id).await
     }
@@ -292,10 +289,9 @@ impl DeploymentService {
         database_id: i64,
     ) -> sqlx::Result<tokio::sync::mpsc::Receiver<String>> {
         let deployment_id = self
-            .repo_deploy
-            .get_latest_database_deployment_id(database_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+            .queries
+            .deployments_get_latest_database_deployment_id(database_id)
+            .await?;
 
         self.stream_deployment_log(deployment_id).await
     }

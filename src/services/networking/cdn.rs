@@ -1,6 +1,42 @@
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 
-use crate::api::dto::networking::{CdnPurgeDto, CdnPurgeResponseDto};
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CdnProvider {
+    Cloudflare,
+    Fastly,
+    Bunny,
+}
+impl CdnProvider {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Cloudflare => "cloudflare",
+            Self::Fastly => "fastly",
+            Self::Bunny => "bunny",
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CdnPurgeDto {
+    pub provider: CdnProvider,
+    pub api_token: String,
+    pub zone_id: Option<String>,
+    pub service_id: Option<String>,
+    pub pull_zone_id: Option<i64>,
+    pub purge_all: bool,
+    pub urls: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CdnPurgeResponseDto {
+    pub provider: String,
+    pub success: bool,
+    pub status: u16,
+    pub request_id: Option<String>,
+    pub message: String,
+}
 
 pub struct CdnPurgeService {
     client: reqwest::Client,
@@ -17,9 +53,9 @@ impl CdnPurgeService {
     pub async fn purge(&self, input: CdnPurgeDto) -> Result<CdnPurgeResponseDto, String> {
         validate_urls(&input.urls)?;
         match input.provider {
-            crate::api::dto::networking::CdnProvider::Cloudflare => self.cloudflare(input).await,
-            crate::api::dto::networking::CdnProvider::Fastly => self.fastly(input).await,
-            crate::api::dto::networking::CdnProvider::Bunny => self.bunny(input).await,
+            CdnProvider::Cloudflare => self.cloudflare(input).await,
+            CdnProvider::Fastly => self.fastly(input).await,
+            CdnProvider::Bunny => self.bunny(input).await,
         }
     }
 

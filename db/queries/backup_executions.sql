@@ -10,7 +10,7 @@ INSERT INTO backup_executions
 
 -- name: BackupExecutionsSucceed :exec
 UPDATE backup_executions
-SET status = 'SUCCEEDED', checksum_sha256 = ?, size_bytes = ?,
+SET status = 'SUCCEEDED', sha256_checksum = ?, size_bytes = ?,
                    finished_at = strftime('%s', 'now')
                WHERE id = ?;
 
@@ -21,7 +21,7 @@ UPDATE backup_executions
 
 -- name: BackupExecutionsList :many
 SELECT id AS id, backup_kind, operation, backup_id, status,
-                      object_key, checksum_sha256, size_bytes, attempt, error,
+                      object_key, sha256_checksum, size_bytes, attempt, error,
                       started_at, finished_at
                FROM backup_executions
                WHERE (? IS NULL OR backup_kind = ?)
@@ -30,6 +30,6 @@ SELECT id AS id, backup_kind, operation, backup_id, status,
 
 -- name: BackupExecutionsGet :one
 SELECT id AS id, backup_kind, operation, backup_id, status,
-                      object_key, checksum_sha256, size_bytes, attempt, error,
+                      object_key, sha256_checksum, size_bytes, attempt, error,
                       started_at, finished_at
                FROM backup_executions WHERE id = ?;

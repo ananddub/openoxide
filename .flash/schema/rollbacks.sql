@@ -1,8 +1,8 @@
 CREATE TABLE rollbacks (
-    id INTEGER NOT NULL PRIMARY KEY,
-    deployment_id INTEGER NOT NULL,
-    version INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    deployment_id BIGINT NOT NULL,
+    version BIGINT NOT NULL,
     image TEXT,
     full_context TEXT,
-    created_at INTEGER NOT NULL
+    created_at BIGINT NOT NULL
 );

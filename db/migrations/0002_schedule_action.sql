@@ -1,3 +1,0 @@
-ALTER TABLE schedules
-ADD COLUMN schedule_action TEXT NOT NULL DEFAULT 'EXEC'
-CHECK (schedule_action IN ('EXEC', 'DEPLOY', 'REDEPLOY', 'REBUILD', 'RELOAD', 'START', 'STOP'));

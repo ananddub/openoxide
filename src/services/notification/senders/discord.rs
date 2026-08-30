@@ -1,16 +1,14 @@
 use super::webhook::post_webhook;
-use crate::{
-    db::models::notif_discord::NotifDiscord, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::DiscordConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_discord(
     client: &Client,
-    cfg: &NotifDiscord,
+    cfg: &DiscordConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
-    let payload = if cfg.decoration == 0 {
+    let payload = if !cfg.decoration {
         json!({ "content": msg.to_plain_text() })
     } else {
         let mut embed = json!({

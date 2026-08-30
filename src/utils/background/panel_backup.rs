@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::repository::BackgroundPolicyRepository;
+use crate::db::queries::FlashQueries;
 use crate::services::backup::PanelBackupService;
 
-pub fn start(service: Arc<PanelBackupService>, policies: Arc<BackgroundPolicyRepository>) {
+pub fn start(service: Arc<PanelBackupService>, queries: Arc<FlashQueries>) {
     tokio::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
@@ -11,12 +11,12 @@ pub fn start(service: Arc<PanelBackupService>, policies: Arc<BackgroundPolicyRep
         let mut last_run_minute = None;
         loop {
             ticker.tick().await;
-            let Ok(policy) = policies.get().await else {
+            let Ok(policy) = queries.background_policies_get().await else {
                 continue;
             };
             let now = chrono::Utc::now();
             let minute = now.timestamp() / 60;
-            if !policy.panel_backup_enabled
+            if policy.panel_backup_enabled == 0
                 || last_run_minute == Some(minute)
                 || !super::policy::cron_due(&policy.panel_backup_cron, now)
             {

@@ -4,49 +4,50 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use crate::{
-    api::dto::organization::{CreateOrganizationDto, PatchOrganizationDto},
+    api::connect::generated::openoxide::api::v1::{
+        CreateOrganizationRequest, UpdateOrganizationRequest,
+    },
     db::models::organization::Organization,
-    repository::{OrganizationMemberRepository, OrganizationRepository, PermissionGroupRepository},
+    db::queries::FlashQueries,
+    flash_gen::{
+        models::Organization as OrganizationModel,
+        organization_members::OrganizationMembersAddMemberInTransactionParams,
+        organizations::{CreateOrganizationParams, UpdateOrganizationParams},
+    },
 };
 
 pub struct OrganizationService {
     db: Arc<SqlitePool>,
-    repo_org: Arc<OrganizationRepository>,
-    repo_member: Arc<OrganizationMemberRepository>,
-    repo_permissions: Arc<PermissionGroupRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl OrganizationService {
-    fn new(
-        db: Arc<SqlitePool>,
-        repo_org: Arc<OrganizationRepository>,
-        repo_member: Arc<OrganizationMemberRepository>,
-        repo_permissions: Arc<PermissionGroupRepository>,
-    ) -> Self {
-        Self {
-            db,
-            repo_org,
-            repo_member,
-            repo_permissions,
-        }
+    fn new(db: Arc<SqlitePool>, queries: Arc<FlashQueries>) -> Self {
+        Self { db, queries }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Organization> {
-        self.repo_org
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        self.queries
+            .get_organization_by_i_d(id)
+            .await
+            .map(organization_from_model)
     }
 
     pub async fn list_by_owner(&self, owner_id: i64) -> sqlx::Result<Vec<Organization>> {
-        self.repo_org.list_by_owner(owner_id).await
+        Ok(self
+            .queries
+            .list_organizations_by_owner(owner_id)
+            .await?
+            .into_iter()
+            .map(organization_from_model)
+            .collect())
     }
 
     pub async fn create(
         &self,
         owner_id: i64,
-        input: CreateOrganizationDto,
+        input: CreateOrganizationRequest,
     ) -> sqlx::Result<Organization> {
         let slug = normalize_slug(input.slug.as_deref().unwrap_or(&input.name));
         if slug.is_empty() {
@@ -55,27 +56,32 @@ impl OrganizationService {
             ));
         }
 
-        let mut tx = self.db.begin().await?;
         let organization = self
-            .repo_org
-            .create_in_transaction(&mut tx, input.name, input.logo, slug, owner_id)
+            .queries
+            .create_organization(&CreateOrganizationParams {
+                name: input.name,
+                logo: input.logo.unwrap_or_default(),
+                slug,
+                owner_id,
+            })
+            .await
+            .map(organization_from_model)?;
+
+        self.queries
+            .organization_members_add_member_in_transaction(
+                &OrganizationMembersAddMemberInTransactionParams {
+                    role: "ADMIN".into(),
+                    user_id: owner_id,
+                    organization_id: organization.id,
+                },
+            )
             .await?;
 
-        let org_id = organization
-            .id
-            .ok_or_else(|| sqlx::Error::Protocol("missing organization id".into()))?;
-        self.repo_member
-            .add_member_in_transaction(&mut tx, "ADMIN", owner_id, org_id)
-            .await?;
-
-        tx.commit().await?;
-        self.repo_permissions
-            .seed_organization_defaults(org_id)
-            .await?;
+        self.seed_organization_defaults(organization.id).await?;
         Ok(organization)
     }
 
-    pub async fn update(&self, id: i64, input: PatchOrganizationDto) -> sqlx::Result<Organization> {
+    pub async fn update(&self, id: i64, input: UpdateOrganizationRequest) -> sqlx::Result<Organization> {
         let current = self.get_by_id(id).await?;
         let name = input.name.unwrap_or(current.name);
         let logo = input.logo.or(current.logo);
@@ -89,12 +95,69 @@ impl OrganizationService {
             ));
         }
 
-        self.repo_org.update_and_return(id, name, logo, slug).await
+        self.queries
+            .update_organization(&UpdateOrganizationParams {
+                name,
+                logo: logo.unwrap_or_default(),
+                slug,
+                id,
+            })
+            .await
+            .map(organization_from_model)
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        self.repo_org.delete(id).await
+        self.queries.delete_organization(id).await
+    }
+
+    async fn seed_organization_defaults(&self, organization_id: i64) -> sqlx::Result<i64> {
+        let hit = self
+            .queries
+            .permission_groups_admin_group_exists(organization_id)
+            .await?;
+        if hit > 0 {
+            if let Some(existing) = self
+                .queries
+                .list_groups_for_organization(organization_id)
+                .await?
+                .into_iter()
+                .find(|group| group.name == "Organization Admin")
+            {
+                return Ok(existing.id);
+            }
+        }
+        let admin = self
+            .queries
+            .permission_groups_insert_admin_group(organization_id)
+            .await?;
+        let policies = self.queries.list_policies().await?;
+        let crud_policy_ids = policies
+            .into_iter()
+            .filter(|policy| {
+                [":read", ":create", ":update", ":delete"]
+                    .iter()
+                    .any(|suffix| policy.action.ends_with(suffix))
+            })
+            .map(|policy| policy.id);
+        for policy_id in crud_policy_ids {
+            self.queries
+                .permission_groups_add_policy_to_group(&admin.to_string(), &policy_id.to_string())
+                .await?;
+        }
+        Ok(admin)
+    }
+}
+
+fn organization_from_model(organization: OrganizationModel) -> Organization {
+    Organization {
+        id: organization.id,
+        name: organization.name,
+        logo: organization.logo,
+        slug: organization.slug,
+        owner_id: organization.owner_id,
+        created_at: organization.created_at,
+        updated_at: organization.updated_at,
     }
 }
 
@@ -141,10 +204,10 @@ mod tests {
             .await
             .unwrap();
         sqlx::query("CREATE TABLE organization (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, logo TEXT, slug TEXT NOT NULL UNIQUE, owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-        sqlx::query("CREATE TABLE organization_members (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT DEFAULT 'MEMBER', user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE organization_members (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT DEFAULT 'MEMBER', user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, organization_id INTEGER NOT NULL REFERENCES organization(id) ON DELETE CASCADE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), group_id INTEGER) STRICT").execute(&pool).await.unwrap();
         sqlx::query("CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, is_system INTEGER NOT NULL DEFAULT 0, organization_id INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')), updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
-        sqlx::query("CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL UNIQUE) STRICT").execute(&pool).await.unwrap();
-        sqlx::query("CREATE TABLE group_policy (group_id INTEGER NOT NULL, policy_id INTEGER NOT NULL, UNIQUE(group_id, policy_id)) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))) STRICT").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE group_policy (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, policy_id INTEGER NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()), UNIQUE(group_id, policy_id)) STRICT").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO users (id) VALUES (7)")
             .execute(&pool)
             .await
@@ -153,18 +216,17 @@ mod tests {
         let db = Arc::new(pool);
         let service = OrganizationService {
             db: db.clone(),
-            repo_org: Arc::new(OrganizationRepository::new(db.clone())),
-            repo_member: Arc::new(OrganizationMemberRepository::new(db.clone())),
-            repo_permissions: Arc::new(PermissionGroupRepository::new(db.clone())),
+            queries: Arc::new(FlashQueries::new(db.clone())),
         };
 
         let organization = service
             .create(
                 7,
-                CreateOrganizationDto {
+                CreateOrganizationRequest {
                     name: "My Cool Team".into(),
                     logo: None,
                     slug: None,
+                    ..Default::default()
                 },
             )
             .await

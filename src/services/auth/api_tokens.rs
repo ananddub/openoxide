@@ -2,8 +2,13 @@ use getrandom::fill;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    api::dto::auth::{CreatedPersonalAccessTokenDto, PersonalAccessTokenDto},
-    repository::PersonalAccessTokenRow,
+    api::connect::generated::openoxide::api::v1::{
+        CreatedPersonalAccessToken, PersonalAccessToken,
+    },
+    flash_gen::personal_access_tokens::{
+        PersonalAccessTokensCreateParams, PersonalAccessTokensCreateRow,
+        PersonalAccessTokensListRow,
+    },
     utils::jwt::claim::{Claims, TokenType},
 };
 
@@ -16,7 +21,7 @@ impl AuthService {
         name: String,
         password: String,
         expires_at: Option<i64>,
-    ) -> Result<CreatedPersonalAccessTokenDto, AuthError> {
+    ) -> Result<CreatedPersonalAccessToken, AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         verify_password(password, user.password.clone()).await?;
         if expires_at.is_some_and(|value| value <= chrono::Utc::now().timestamp()) {
@@ -27,28 +32,29 @@ impl AuthService {
         let token = generate_token()?;
         let prefix = token.chars().take(15).collect::<String>();
         let row = self
-            .repo_api_token
-            .create(
+            .queries
+            .personal_access_tokens_create(&PersonalAccessTokensCreateParams {
                 user_id,
-                name.trim(),
-                &prefix,
-                &hash_token(&token),
-                expires_at,
-            )
+                name: name.trim().to_string(),
+                token_prefix: prefix,
+                token_hash: hash_token(&token),
+                expires_at: expires_at.unwrap_or(i64::MAX),
+            })
             .await?;
-        Ok(CreatedPersonalAccessTokenDto {
+        Ok(CreatedPersonalAccessToken {
             token,
-            details: row.into(),
+            details: ::buffa::MessageField::some(row.into()),
+            ..Default::default()
         })
     }
 
     pub async fn list_personal_access_tokens(
         &self,
         user_id: i64,
-    ) -> Result<Vec<PersonalAccessTokenDto>, AuthError> {
+    ) -> Result<Vec<PersonalAccessToken>, AuthError> {
         Ok(self
-            .repo_api_token
-            .list(user_id)
+            .queries
+            .personal_access_tokens_list(user_id)
             .await?
             .into_iter()
             .map(Into::into)
@@ -60,21 +66,33 @@ impl AuthService {
         user_id: i64,
         id: i64,
     ) -> Result<bool, AuthError> {
-        self.repo_api_token
-            .revoke(user_id, id)
-            .await
-            .map_err(Into::into)
+        let tokens = self.queries.personal_access_tokens_list(user_id).await?;
+        if !tokens
+            .iter()
+            .any(|token| token.id == id && token.revoked_at.is_none())
+        {
+            return Ok(false);
+        }
+        self.queries
+            .personal_access_tokens_revoke(id, user_id)
+            .await?;
+        Ok(true)
     }
 
     pub(super) async fn validate_personal_access_token(
         &self,
         token: &str,
     ) -> Result<Claims, AuthError> {
-        let row = self
-            .repo_api_token
-            .authenticate(&hash_token(token))
-            .await?
-            .ok_or(AuthError::InvalidToken)?;
+        let row = match self
+            .queries
+            .personal_access_tokens_authenticate1(&hash_token(token))
+            .await
+        {
+            Ok(row) => row,
+            Err(sqlx::Error::RowNotFound) => return Err(AuthError::InvalidToken),
+            Err(error) => return Err(error.into()),
+        };
+        self.queries.personal_access_tokens_authenticate2(row.id).await?;
         let user = self.get_user_by_id(row.user_id).await?;
         Ok(Claims {
             sub: row.user_id.to_string(),
@@ -87,8 +105,8 @@ impl AuthService {
     }
 }
 
-impl From<PersonalAccessTokenRow> for PersonalAccessTokenDto {
-    fn from(row: PersonalAccessTokenRow) -> Self {
+impl From<PersonalAccessTokensCreateRow> for PersonalAccessToken {
+    fn from(row: PersonalAccessTokensCreateRow) -> Self {
         Self {
             id: row.id,
             name: row.name,
@@ -97,6 +115,22 @@ impl From<PersonalAccessTokenRow> for PersonalAccessTokenDto {
             last_used_at: row.last_used_at,
             revoked_at: row.revoked_at,
             created_at: row.created_at,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<PersonalAccessTokensListRow> for PersonalAccessToken {
+    fn from(row: PersonalAccessTokensListRow) -> Self {
+        Self {
+            id: row.id,
+            name: row.name,
+            token_prefix: row.token_prefix,
+            expires_at: row.expires_at,
+            last_used_at: row.last_used_at,
+            revoked_at: row.revoked_at,
+            created_at: row.created_at,
+            ..Default::default()
         }
     }
 }

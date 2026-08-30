@@ -1,14 +1,14 @@
 CREATE TABLE backup_executions (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     backup_kind TEXT NOT NULL,
     operation TEXT NOT NULL,
-    backup_id INTEGER,
+    backup_id BIGINT,
     status TEXT NOT NULL,
     object_key TEXT,
-    checksum_sha256 TEXT,
-    size_bytes INTEGER,
-    attempt INTEGER NOT NULL,
+    sha256_checksum TEXT,
+    size_bytes BIGINT,
+    attempt BIGINT NOT NULL,
     error TEXT,
-    started_at INTEGER NOT NULL,
-    finished_at INTEGER
+    started_at BIGINT NOT NULL,
+    finished_at BIGINT
 );

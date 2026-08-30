@@ -105,33 +105,26 @@ impl ScheduleRunner {
 
         let schedules = self
             .service
-            .repo_schedule
             .list_enabled()
             .await
             .map_err(|error| format!("could not load enabled schedules: {error}"))?;
         for s in &schedules {
-            if let Some(id) = s.id {
-                enabled_keys.insert(format!("schedule:{id}"));
-            }
+            enabled_keys.insert(format!("schedule:{}", s.id));
         }
 
         let db_backups = self
             .service
-            .repo_backup
-            .get_all()
+            .list_backups()
             .await
             .map_err(|error| format!("could not load database backups: {error}"))?;
         let db_backups: Vec<_> = db_backups.into_iter().filter(|b| b.enabled == 1).collect();
         for b in &db_backups {
-            if let Some(id) = b.id {
-                enabled_keys.insert(format!("db_backup:{id}"));
-            }
+            enabled_keys.insert(format!("db_backup:{}", b.id));
         }
 
         let vol_backups = self
             .service
-            .repo_volume_backup
-            .get_all()
+            .list_volume_backups()
             .await
             .map_err(|error| format!("could not load volume backups: {error}"))?;
         let vol_backups: Vec<_> = vol_backups
@@ -139,9 +132,7 @@ impl ScheduleRunner {
             .filter(|backup| backup.enabled == 1 && volume_backup_has_valid_resource(backup))
             .collect();
         for b in &vol_backups {
-            if let Some(id) = b.id {
-                enabled_keys.insert(format!("vol_backup:{id}"));
-            }
+            enabled_keys.insert(format!("vol_backup:{}", b.id));
         }
 
         let stale_jobs = self
@@ -167,9 +158,7 @@ impl ScheduleRunner {
             .collect::<HashMap<_, _>>();
 
         for schedule in schedules {
-            let Some(schedule_id) = schedule.id else {
-                continue;
-            };
+            let schedule_id = schedule.id;
             let key = format!("schedule:{schedule_id}");
             let cron_expression = normalize_cron_expression(&schedule.cron_expression);
             let timezone_name = schedule.timezone.as_deref().unwrap_or("UTC");
@@ -254,9 +243,7 @@ impl ScheduleRunner {
         }
 
         for backup in db_backups {
-            let Some(backup_id) = backup.id else {
-                continue;
-            };
+            let backup_id = backup.id;
             let key = format!("db_backup:{backup_id}");
             let cron_expression = normalize_cron_expression(&backup.schedule);
             let should_replace = current.get(&key).is_none_or(|registered| {
@@ -281,8 +268,7 @@ impl ScheduleRunner {
                 let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
                     let enabled = service
-                        .repo_backup
-                        .get_by_id(backup_id)
+                        .get_backup(backup_id)
                         .await
                         .ok()
                         .flatten()
@@ -360,9 +346,7 @@ impl ScheduleRunner {
         }
 
         for backup in vol_backups {
-            let Some(backup_id) = backup.id else {
-                continue;
-            };
+            let backup_id = backup.id;
             let key = format!("vol_backup:{backup_id}");
             let cron_expression = normalize_cron_expression(&backup.cron_expression);
             let should_replace = current.get(&key).is_none_or(|registered| {
@@ -387,8 +371,7 @@ impl ScheduleRunner {
                 let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
                     let current = service
-                        .repo_volume_backup
-                        .get_by_id(backup_id)
+                        .get_volume_backup(backup_id)
                         .await
                         .ok()
                         .flatten();

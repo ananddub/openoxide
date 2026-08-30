@@ -1,14 +1,43 @@
-use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
-use crate::{
-    api::dto::destination::{CreateDestinationDto, PatchDestinationDto},
-    db::models::destinations::Destination,
-    repository::destinations::DestinationRepository,
-};
-use auto_di::singleton;
-use os::string_enum;
 use std::sync::Arc;
 
-use crate::db::models::types::DestinationsProviderEnum;
+use auto_di::singleton;
+use os::string_enum;
+use serde::Deserialize;
+
+use crate::{
+    db::{
+        models::destinations::Destination,
+        queries::FlashQueries,
+    },
+    flash_gen::{
+        destinations::{DestinationsCreateAndReturnParams, DestinationsUpdateAndReturnParams, DestinationsGetAllRow},
+        models::Destinations,
+    },
+    utils::rclone::{RcloneBuilder, RcloneCommand},
+};
+
+#[derive(Debug, Deserialize)]
+pub struct CreateDestinationDto {
+    pub name: String,
+    pub provider: String,
+    pub access_key: String,
+    pub secret_access_key: String,
+    pub bucket: String,
+    pub region: String,
+    pub endpoint: String,
+    pub organization_id: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchDestinationDto {
+    pub name: Option<String>,
+    pub provider: Option<String>,
+    pub access_key: Option<String>,
+    pub secret_access_key: Option<String>,
+    pub bucket: Option<String>,
+    pub region: Option<String>,
+    pub endpoint: Option<String>,
+}
 
 string_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +58,22 @@ string_enum! {
     }
 }
 
+// Replacement for the removed `db::models::types::DestinationsProviderEnum`.
+// Values are the canonical database strings; serde is unused here because the
+// public service API exchanges plain provider strings.
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum DestinationsProviderEnum {
+        default = S3;
+
+        S3 => "S3",
+        R2 => "R2",
+        Backblaze => "BACKBLAZE",
+        Gcs => "GCS",
+        DoSpaces => "DO_SPACES",
+    }
+}
+
 impl DestinationsProviderEnum {
     pub fn from_preset(s: &str) -> Self {
         match DestinationProviderPreset::from(s) {
@@ -43,61 +88,83 @@ impl DestinationsProviderEnum {
             DestinationProviderPreset::S3 => Self::S3,
         }
     }
+}
 
-    pub fn as_db_str(&self) -> &'static str {
-        match self {
-            Self::S3 => "S3",
-            Self::R2 => "R2",
-            Self::Backblaze => "BACKBLAZE",
-            Self::Gcs => "GCS",
-            Self::DoSpaces => "DO_SPACES",
-        }
+fn to_model(row: Destinations) -> Destination {
+    Destination {
+        id: row.id,
+        name: row.name,
+        provider: row.provider,
+        access_key: row.access_key,
+        secret_access_key: row.secret_access_key,
+        bucket: row.bucket,
+        region: row.region,
+        endpoint: row.endpoint,
+        organization_id: row.organization_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
+fn row_to_model(row: DestinationsGetAllRow) -> Destination {
+    Destination {
+        id: row.id,
+        name: row.name,
+        provider: row.provider,
+        access_key: row.access_key,
+        secret_access_key: row.secret_access_key,
+        bucket: row.bucket,
+        region: row.region,
+        endpoint: row.endpoint,
+        organization_id: row.organization_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
     }
 }
 
 pub struct DestinationService {
-    repo_dest: Arc<DestinationRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl DestinationService {
-    fn new(repo_dest: Arc<DestinationRepository>) -> Self {
-        Self { repo_dest }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get_by_id(&self, id: &str) -> sqlx::Result<Destination> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        self.repo_dest
-            .get_by_id(id_i64)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let row = self.queries.destinations_get_by_id(id_i64).await?;
+        Ok(to_model(row))
     }
 
     pub async fn list(&self) -> sqlx::Result<Vec<Destination>> {
-        self.repo_dest.get_all().await
+        let rows = self.queries.destinations_get_all().await?;
+        Ok(rows.into_iter().map(row_to_model).collect())
     }
 
     pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destination> {
-        let item = Destination {
-            id: None,
-            name: input.name,
-            provider: DestinationsProviderEnum::from_preset(&input.provider)
-                .as_db_str()
-                .to_string(),
-            access_key: input.access_key,
-            secret_access_key: input.secret_access_key,
-            bucket: input.bucket,
-            region: input.region,
-            endpoint: input.endpoint,
-            organization_id: input.organization_id,
-            created_at: 0,
-            updated_at: 0,
-        };
-        let new_id = self.repo_dest.create(&item).await?;
-        self.repo_dest
-            .get_by_id(new_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let provider = DestinationsProviderEnum::from_preset(&input.provider)
+            .as_str()
+            .to_string();
+        let row = self
+            .queries
+            .destinations_create_and_return(&DestinationsCreateAndReturnParams {
+                name: input.name,
+                provider,
+                access_key: input.access_key,
+                secret_access_key: input.secret_access_key,
+                bucket: input.bucket,
+                region: input.region,
+                endpoint: input.endpoint,
+                organization_id: input.organization_id,
+                // The old repository insert persisted the service-supplied
+                // zero-initialized timestamps.
+                created_at: 0,
+                updated_at: 0,
+            })
+            .await?;
+        Ok(to_model(row))
     }
 
     pub async fn patch(&self, id: &str, input: PatchDestinationDto) -> sqlx::Result<Destination> {
@@ -109,7 +176,7 @@ impl DestinationService {
         }
         if let Some(v) = input.provider {
             current.provider = DestinationsProviderEnum::from_preset(&v)
-                .as_db_str()
+                .as_str()
                 .to_string();
         }
         if let Some(v) = input.access_key {
@@ -128,20 +195,26 @@ impl DestinationService {
             current.endpoint = v;
         }
 
-        self.repo_dest.update(id_i64, &current).await?;
-        self.repo_dest
-            .get_by_id(id_i64)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let row = self
+            .queries
+            .destinations_update_and_return(&DestinationsUpdateAndReturnParams {
+                name: current.name,
+                provider: current.provider,
+                access_key: current.access_key,
+                secret_access_key: current.secret_access_key,
+                bucket: current.bucket,
+                region: current.region,
+                endpoint: current.endpoint,
+                id: id_i64,
+            })
+            .await?;
+        Ok(to_model(row))
     }
 
     pub async fn delete(&self, id: &str) -> sqlx::Result<()> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        self.repo_dest
-            .get_by_id(id_i64)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
-        self.repo_dest.delete(id_i64).await
+        self.get_by_id(id).await?;
+        self.queries.destinations_delete(id_i64).await
     }
 
     pub async fn test_connection(&self, id: &str) -> Result<(), String> {

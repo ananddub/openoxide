@@ -104,10 +104,10 @@ impl BuilderQueue {
             .unwrap_or(100)
             .max(1);
 
-        let repo = auto_di::resolve::<crate::repository::DeploymentRepository>()
+        let q = auto_di::resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        let queued = repo.get_queued_count().await?;
+        let queued = q.deployments_get_queued_count().await?;
 
         if queued >= max_size {
             return Err(sqlx::Error::Protocol(format!(
@@ -118,11 +118,15 @@ impl BuilderQueue {
     }
 
     pub async fn cancel_queued_application(&self, application_id: i64) -> sqlx::Result<bool> {
-        let repo = auto_di::resolve::<crate::repository::DeploymentRepository>()
+        let q = auto_di::resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        let ids = repo.get_queued_ids_for_application(application_id).await?;
-        let cancelled = repo.cancel_queued_for_application(application_id).await?;
+        let ids = q
+            .deployments_get_queued_ids_for_application(application_id)
+            .await?;
+        q.deployments_cancel_queued_for_application(application_id)
+            .await?;
+        let cancelled = !ids.is_empty();
 
         if cancelled {
             self.cache
@@ -140,11 +144,12 @@ impl BuilderQueue {
     }
 
     pub async fn cancel_queued_compose(&self, compose_id: i64) -> sqlx::Result<bool> {
-        let repo = auto_di::resolve::<crate::repository::DeploymentRepository>()
+        let q = auto_di::resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        let ids = repo.get_queued_ids_for_compose(compose_id).await?;
-        let cancelled = repo.cancel_queued_for_compose(compose_id).await?;
+        let ids = q.deployments_get_queued_ids_for_compose(compose_id).await?;
+        q.deployments_cancel_queued_for_compose(compose_id).await?;
+        let cancelled = !ids.is_empty();
 
         if cancelled {
             self.cache.invalidate(&CacheKey::Compose(compose_id)).await;
@@ -160,11 +165,15 @@ impl BuilderQueue {
     }
 
     pub async fn cancel_queued_database(&self, database_id: i64) -> sqlx::Result<bool> {
-        let repo = auto_di::resolve::<crate::repository::DeploymentRepository>()
+        let q = auto_di::resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-        let ids = repo.get_queued_ids_for_database(database_id).await?;
-        let cancelled = repo.cancel_queued_for_database(database_id).await?;
+        let ids = q
+            .deployments_get_queued_ids_for_database(database_id)
+            .await?;
+        q.deployments_cancel_queued_for_database(database_id)
+            .await?;
+        let cancelled = !ids.is_empty();
 
         if cancelled {
             self.cache
@@ -193,40 +202,33 @@ impl BuilderQueue {
     async fn recover_stale_deployments(&self) {
         self.cleanup_stale_remote_jobs().await;
 
-        let repo = match auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-            Ok(r) => r,
+        let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
             Err(e) => {
-                tracing::error!(error = %e, "builder queue: could not resolve DeploymentRepository");
+                tracing::error!(error = %e, "builder queue: could not resolve FlashQueries");
                 return;
             }
         };
 
-        if let Err(e) = repo.mark_interrupted_as_recovered().await {
+        if let Err(e) = q.deployments_mark_interrupted_as_recovered().await {
             tracing::error!(error = %e, "builder queue: could not recover stale deployments");
         }
 
-        if let Err(e) = repo.recover_stale_application_statuses().await {
+        // One pass over `services` covers applications, compose and databases.
+        if let Err(e) = q.deployments_recover_stale_application_statuses().await {
             tracing::error!(error = %e, "builder queue: could not recover stale application statuses");
-        }
-
-        if let Err(e) = repo.recover_stale_compose_statuses().await {
-            tracing::error!(error = %e, "builder queue: could not recover stale compose statuses");
-        }
-
-        if let Err(e) = repo.recover_stale_database_statuses().await {
-            tracing::error!(error = %e, "builder queue: could not recover stale database status");
         }
     }
 
     async fn cleanup_stale_remote_jobs(&self) {
-        let repo = match auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-            Ok(r) => r,
+        let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
             Err(e) => {
-                tracing::error!(error = %e, "builder queue: could not resolve DeploymentRepository");
+                tracing::error!(error = %e, "builder queue: could not resolve FlashQueries");
                 return;
             }
         };
-        let rows = match repo.get_running_remote_jobs().await {
+        let rows = match q.deployments_get_running_remote_jobs().await {
             Ok(rows) => rows,
             Err(e) => {
                 tracing::error!(error = %e, "builder queue: could not load stale remote jobs");
@@ -234,22 +236,24 @@ impl BuilderQueue {
             }
         };
 
-        for (deployment_id, server_id, pid_file) in rows {
-            self.kill_remote_pid(deployment_id, server_id, &pid_file, "startup")
-                .await;
+        for row in rows {
+            if let (Some(server_id), Some(pid_file)) = (row.server_id, row.pid.clone()) {
+                self.kill_remote_pid(row.id, server_id, &pid_file, "startup")
+                    .await;
+            }
         }
     }
 
     async fn retry_stale_remote_cleanup(self: Arc<Self>) {
         for attempt in 1..=20 {
-            let repo = match auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-                Ok(r) => r,
+            let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+                Ok(q) => q,
                 Err(e) => {
-                    tracing::error!(error = %e, "builder queue: could not resolve DeploymentRepository");
+                    tracing::error!(error = %e, "builder queue: could not resolve FlashQueries");
                     return;
                 }
             };
-            let rows = match repo.get_recovered_remote_jobs().await {
+            let rows = match q.deployments_get_recovered_remote_jobs().await {
                 Ok(rows) => rows,
                 Err(e) => {
                     tracing::error!(error = %e, "builder queue: could not load recovered remote jobs");
@@ -262,15 +266,19 @@ impl BuilderQueue {
             }
 
             let mut pending = 0usize;
-            for (deployment_id, server_id, pid_file) in rows {
-                let killed = self
-                    .kill_remote_pid(
-                        deployment_id,
-                        server_id,
-                        &pid_file,
-                        &format!("retry-{attempt}"),
-                    )
-                    .await;
+            for row in rows {
+                let killed = match (row.server_id, row.pid.clone()) {
+                    (Some(server_id), Some(pid_file)) => {
+                        self.kill_remote_pid(
+                            row.id,
+                            server_id,
+                            &pid_file,
+                            &format!("retry-{attempt}"),
+                        )
+                        .await
+                    }
+                    _ => false,
+                };
                 if !killed {
                     pending += 1;
                 }
@@ -293,10 +301,8 @@ impl BuilderQueue {
         match crate::services::compose::remote::agent_executor(server_id).await {
             Ok(executor) => match executor.kill_pid_file(pid_file).await {
                 Ok(()) => {
-                    if let Ok(repo) =
-                        auto_di::resolve::<crate::repository::DeploymentRepository>().await
-                    {
-                        repo.set_pid_null(deployment_id).await.ok();
+                    if let Ok(q) = auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+                        q.deployments_set_pid_null(deployment_id).await.ok();
                     }
                     tracing::warn!(
                         deployment_id,
@@ -333,14 +339,14 @@ impl BuilderQueue {
     }
 
     async fn dispatch_available(self: &Arc<Self>) {
-        let repo = match auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-            Ok(r) => r,
+        let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
             Err(e) => {
-                tracing::error!(error = %e, "builder queue: could not resolve DeploymentRepository");
+                tracing::error!(error = %e, "builder queue: could not resolve FlashQueries");
                 return;
             }
         };
-        let queued = match repo.get_queued_deployments_grouped().await {
+        let queued = match q.deployments_get_queued_deployments_grouped().await {
             Ok(rows) => rows,
             Err(e) => {
                 tracing::error!(error = %e, "builder queue: could not load queued deployments");
@@ -348,8 +354,9 @@ impl BuilderQueue {
             }
         };
 
-        for (deployment_id, server_id) in queued {
-            let sem = self.semaphore_for(server_id);
+        for row in queued {
+            let deployment_id = row.id;
+            let sem = self.semaphore_for(row.server_id);
 
             // Non-blocking — skip if this server is at capacity.
             let Ok(permit) = sem.try_acquire_owned() else {
@@ -357,16 +364,25 @@ impl BuilderQueue {
             };
 
             // Atomically claim this specific deployment.
-            let row = repo.claim_queued_deployment(deployment_id).await;
+            let claim = q.deployments_claim_queued_deployment(deployment_id).await;
 
-            match row {
-                Ok(Some(claim)) => {
+            match claim {
+                Ok(claim) => {
                     let dep_id: i64 = claim.id;
-                    let application_id: Option<i64> = claim.application_id;
-                    let compose_id: Option<i64> = claim.compose_id;
-                    let database_id: Option<i64> = claim.database_id;
+                    let service_id: Option<i64> = claim.service_id;
                     let database_kind: Option<String> = claim.database_kind;
                     let operation: String = claim.operation.unwrap_or_else(|| "deploy".into());
+
+                    let service_type: Option<String> = match service_id {
+                        Some(sid) => q.deployments_claim_service_type(sid).await.ok(),
+                        None => None,
+                    };
+                    let (application_id, compose_id, database_id) = match service_type.as_deref()
+                    {
+                        Some("COMPOSE") => (None, service_id, None),
+                        Some("DATABASE") => (None, None, service_id),
+                        _ => (service_id, None, None),
+                    };
 
                     let q = Arc::clone(self);
 
@@ -386,21 +402,32 @@ impl BuilderQueue {
                                 deployment_id = dep_id,
                                 "builder queue worker panicked"
                             );
-                            if let Ok(repo) =
-                                auto_di::resolve::<crate::repository::DeploymentRepository>().await
+                            let service_id = application_id.or(compose_id).or(database_id);
+                            if let Ok(fq) =
+                                auto_di::resolve::<crate::db::queries::FlashQueries>().await
                             {
-                                let _ = repo
-                                    .finalize_with_resource(
-                                        dep_id,
-                                        "ERROR",
-                                        Some("builder worker panicked"),
-                                        application_id,
-                                        compose_id,
-                                        database_id,
-                                        database_kind.as_deref(),
-                                        "ERROR",
+                                let _ = fq
+                                    .deployments_finalize_with_resource1(
+                                        &crate::flash_gen::deployments::DeploymentsFinalizeWithResource1Params {
+                                            status: "ERROR".into(),
+                                            state: "ERROR".into(),
+                                            error_message: "builder worker panicked".into(),
+                                            id: dep_id,
+                                        },
                                     )
                                     .await;
+                                if let Some(sid) = service_id {
+                                    let _ = fq
+                                        .deployments_finalize_with_resource3(
+                                            &crate::flash_gen::deployments::DeploymentsFinalizeWithResource3Params {
+                                                app_status: "ERROR".into(),
+                                                last_error: "builder worker panicked".into(),
+                                                id: sid,
+                                            },
+                                        )
+                                        .await;
+                                }
+                                let _ = fq.deployments_finalize_with_resource6(dep_id).await;
                             }
                             if let Some(id) = application_id {
                                 q.cache.invalidate(&CacheKey::Application(id)).await;
@@ -417,7 +444,7 @@ impl BuilderQueue {
                         q.notify();
                     });
                 }
-                Ok(None) => {
+                Err(sqlx::Error::RowNotFound) => {
                     // Already claimed by someone else — release permit.
                     drop(permit);
                 }

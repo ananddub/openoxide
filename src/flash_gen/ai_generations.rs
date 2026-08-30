@@ -19,7 +19,7 @@ pub struct AiGenerationsReviewParams {
 }
 
 pub struct AiGenerationsMarkDeployedParams {
-    pub compose_id: i64,
+    pub service_id: i64,
     pub id: i64,
     pub organization_id: i64,
 }
@@ -31,7 +31,7 @@ impl Queries {
         params: &AiGenerationsCreateParams,
     ) -> Result<AiGenerations, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "INSERT INTO ai_generations (ai_setting_id, organization_id, created_by, prompt, output_json) VALUES (?, ?, ?, ?, ?) RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, compose_id, created_at, updated_at;"
+            "INSERT INTO ai_generations (ai_setting_id, organization_id, created_by, prompt, output_json) VALUES (?, ?, ?, ?, ?) RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at;"
         )
         .bind(&params.ai_setting_id)
         .bind(&params.organization_id)
@@ -49,7 +49,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<AiGenerations, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "SELECT id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, compose_id, created_at, updated_at FROM ai_generations WHERE id = ? AND organization_id = ?;"
+            "SELECT id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at FROM ai_generations WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
         .bind(organization_id)
@@ -64,7 +64,7 @@ impl Queries {
         limit: i64,
     ) -> Result<Vec<AiGenerations>, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "SELECT id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, compose_id, created_at, updated_at FROM ai_generations WHERE organization_id = ? ORDER BY created_at DESC, id DESC LIMIT ?;"
+            "SELECT id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at FROM ai_generations WHERE organization_id = ? ORDER BY created_at DESC, id DESC LIMIT ?;"
         )
         .bind(organization_id)
         .bind(limit)
@@ -78,7 +78,7 @@ impl Queries {
         params: &AiGenerationsReviewParams,
     ) -> Result<AiGenerations, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "UPDATE ai_generations SET output_json = ?, status = 'REVIEWED' WHERE id = ? AND organization_id = ? AND status != 'DEPLOYED' RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, compose_id, created_at, updated_at;"
+            "UPDATE ai_generations SET output_json = ?, status = 'REVIEWED' WHERE id = ? AND organization_id = ? AND status != 'DEPLOYED' RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at;"
         )
         .bind(&params.output_json)
         .bind(&params.id)
@@ -93,9 +93,9 @@ impl Queries {
         params: &AiGenerationsMarkDeployedParams,
     ) -> Result<AiGenerations, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "UPDATE ai_generations SET status = 'DEPLOYED', compose_id = ? WHERE id = ? AND organization_id = ? AND status = 'DEPLOYING' RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, compose_id, created_at, updated_at;"
+            "UPDATE ai_generations SET status = 'DEPLOYED', service_id = ? WHERE id = ? AND organization_id = ? AND status = 'DEPLOYING' RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at;"
         )
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.id)
         .bind(&params.organization_id)
         .fetch_one(&self.pool)
@@ -107,15 +107,14 @@ impl Queries {
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE ai_generations SET status = 'DEPLOYING' WHERE id = ? AND organization_id = ? AND status = 'REVIEWED';"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE ai_generations SET status = 'DEPLOYING' WHERE id = ? AND organization_id = ? AND status = 'REVIEWED' RETURNING id AS id;"
         )
         .bind(id)
         .bind(organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// AiGenerationsReleaseDeploy

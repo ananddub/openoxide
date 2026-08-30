@@ -4,35 +4,24 @@ mod lifecycle;
 mod queries;
 mod types;
 
-use auto_di::singleton;
-use sqlx::SqlitePool;
 use std::sync::Arc;
 
-use crate::repository::{ApplicationRepository, DomainRepository, PreviewDeploymentRepository};
+use auto_di::singleton;
+
+use crate::db::queries::FlashQueries;
 
 pub use types::{PreviewDeploymentOutcome, PreviewDeploymentView, PreviewLifecycleOutcome};
 
 pub struct PreviewDeploymentService {
-    pub(super) db: Arc<SqlitePool>,
-    pub(super) previews: Arc<PreviewDeploymentRepository>,
-    pub(super) applications: Arc<ApplicationRepository>,
-    pub(super) domains: Arc<DomainRepository>,
+    pub(super) queries: Arc<FlashQueries>,
     pub(super) lifecycle_lock: tokio::sync::Mutex<()>,
 }
 
 #[singleton]
 impl PreviewDeploymentService {
-    fn new(
-        db: Arc<SqlitePool>,
-        previews: Arc<PreviewDeploymentRepository>,
-        applications: Arc<ApplicationRepository>,
-        domains: Arc<DomainRepository>,
-    ) -> Self {
+    fn new(queries: Arc<FlashQueries>) -> Self {
         Self {
-            db,
-            previews,
-            applications,
-            domains,
+            queries,
             lifecycle_lock: tokio::sync::Mutex::new(()),
         }
     }

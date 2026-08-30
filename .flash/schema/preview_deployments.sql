@@ -1,9 +1,9 @@
 CREATE TABLE preview_deployments (
-    id INTEGER NOT NULL PRIMARY KEY,
-    base_application_id INTEGER NOT NULL,
-    preview_application_id INTEGER,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    base_service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    preview_service_id BIGINT REFERENCES services(id) ON DELETE SET NULL,
     provider_type TEXT NOT NULL,
-    provider_id INTEGER NOT NULL,
+    provider_id BIGINT NOT NULL,
     owner TEXT NOT NULL,
     repository TEXT NOT NULL,
     pull_request_number TEXT NOT NULL,
@@ -13,9 +13,12 @@ CREATE TABLE preview_deployments (
     author TEXT,
     status TEXT NOT NULL,
     domain TEXT NOT NULL,
-    last_deployment_id INTEGER,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
+    last_deployment_id BIGINT REFERENCES deployments(id) ON DELETE SET NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
     source_owner TEXT,
     source_repository TEXT
 );
+
+CREATE INDEX idx_preview_deployments_base_service_id ON preview_deployments(base_service_id);
+CREATE INDEX idx_preview_deployments_preview_service_id ON preview_deployments(preview_service_id);

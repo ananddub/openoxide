@@ -1,13 +1,12 @@
-use crate::{
-    db::models::notif_gotify::NotifGotify,
-    services::notification::{guard::validate_webhook_url, message::NotificationMessage},
+use crate::services::notification::{
+    guard::validate_webhook_url, loader::GotifyConfig, message::NotificationMessage,
 };
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_gotify(
     client: &Client,
-    cfg: &NotifGotify,
+    cfg: &GotifyConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let base = cfg.server_url.trim_end_matches('/');

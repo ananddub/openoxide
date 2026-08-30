@@ -8,11 +8,11 @@ use sqlx_gen::SqlxGen;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::FromRow, SqlxGen)]
 #[sqlx_gen(kind = "table", schema = "main", table = "destinations")]
 pub struct Destination {
-    #[sqlx_gen(primary_key, sql_type = "destinations_id_enum")]
-    pub id: Option<String>,
+    #[sqlx_gen(primary_key, sql_type = "INTEGER")]
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
-    #[sqlx_gen(sql_type = "destinations_provider_enum", column_default = "'S3'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub provider: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub access_key: String,
@@ -26,8 +26,8 @@ pub struct Destination {
     pub endpoint: String,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

@@ -5,7 +5,7 @@ use super::models::*;
 use super::db::Queries;
 
 pub struct ApplicationMiddlewaresCreateParams {
-    pub application_id: i64,
+    pub service_id: i64,
     pub name: String,
     pub middleware_type: String,
     pub enabled: i64,
@@ -18,19 +18,19 @@ pub struct ApplicationMiddlewaresUpdateParams {
     pub enabled: i64,
     pub config: String,
     pub id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 impl Queries {
     /// ApplicationMiddlewaresListByApplication
     pub async fn application_middlewares_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<ApplicationMiddlewares>, sqlx::Error> {
         sqlx::query_as::<_, ApplicationMiddlewares>(
-            "SELECT id AS id, application_id AS application_id, name AS name, middleware_type AS middleware_type, enabled AS enabled, config AS config, created_at AS created_at, updated_at AS updated_at FROM application_middlewares WHERE application_id = ? ORDER BY name, id;"
+            "SELECT id AS id, service_id AS service_id, name AS name, middleware_type AS middleware_type, enabled AS enabled, config AS config, created_at AS created_at, updated_at AS updated_at FROM application_middlewares WHERE service_id = ? ORDER BY name, id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -39,13 +39,13 @@ impl Queries {
     pub async fn application_middlewares_get_for_application(
         &self,
         id: i64,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<ApplicationMiddlewares, sqlx::Error> {
         sqlx::query_as::<_, ApplicationMiddlewares>(
-            "SELECT id AS id, application_id AS application_id, name AS name, middleware_type AS middleware_type, enabled AS enabled, config AS config, created_at AS created_at, updated_at AS updated_at FROM application_middlewares WHERE id = ? AND application_id = ?;"
+            "SELECT id AS id, service_id AS service_id, name AS name, middleware_type AS middleware_type, enabled AS enabled, config AS config, created_at AS created_at, updated_at AS updated_at FROM application_middlewares WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(application_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -54,53 +54,50 @@ impl Queries {
     pub async fn application_middlewares_create(
         &self,
         params: &ApplicationMiddlewaresCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO application_middlewares (application_id, name, middleware_type, enabled, config) VALUES (?, ?, ?, ?, ?);"
+    ) -> Result<ApplicationMiddlewares, sqlx::Error> {
+        sqlx::query_as::<_, ApplicationMiddlewares>(
+            "INSERT INTO application_middlewares (service_id, name, middleware_type, enabled, config) VALUES (?, ?, ?, ?, ?) RETURNING id, service_id, name, middleware_type, enabled, config, created_at, updated_at;"
         )
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .bind(&params.name)
         .bind(&params.middleware_type)
         .bind(&params.enabled)
         .bind(&params.config)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// ApplicationMiddlewaresUpdate
     pub async fn application_middlewares_update(
         &self,
         params: &ApplicationMiddlewaresUpdateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE application_middlewares SET name = ?, middleware_type = ?, enabled = ?, config = ? WHERE id = ? AND application_id = ?;"
+    ) -> Result<ApplicationMiddlewares, sqlx::Error> {
+        sqlx::query_as::<_, ApplicationMiddlewares>(
+            "UPDATE application_middlewares SET name = ?, middleware_type = ?, enabled = ?, config = ? WHERE id = ? AND service_id = ? RETURNING id, service_id, name, middleware_type, enabled, config, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.middleware_type)
         .bind(&params.enabled)
         .bind(&params.config)
         .bind(&params.id)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// ApplicationMiddlewaresDelete
     pub async fn application_middlewares_delete(
         &self,
         id: i64,
-        application_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM application_middlewares WHERE id = ? AND application_id = ?;"
+        service_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM application_middlewares WHERE id = ? AND service_id = ? RETURNING id;"
         )
         .bind(id)
-        .bind(application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
 }

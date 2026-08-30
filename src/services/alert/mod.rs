@@ -16,7 +16,7 @@ pub use event_state::AlertEventState;
 pub use metric::MetricKind;
 pub use operator::Operator;
 pub use reading::{FiredAlert, TargetReading};
-pub use rule::ParsedRule;
+pub use rule::{AlertRule, ParsedRule};
 pub use rule_state::RuleState;
 pub use sample::{MetricSample, SampleWindow};
 pub use service::AlertService;

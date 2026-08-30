@@ -1,38 +1,105 @@
 use std::{path::Path, sync::Arc};
 
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::dto::application::mount::UpsertApplicationMountDto,
     db::models::mounts::Mount,
-    repository::{ApplicationRepository, MountRepository},
+    db::queries::FlashQueries,
+    flash_gen::models::Mounts,
+    flash_gen::mount::{MountCreateForApplicationParams, MountUpdateForApplicationParams},
 };
 
+#[derive(Debug, Deserialize)]
+pub struct UpsertApplicationMountDto {
+    pub mount_type: crate::utils::builder::spec::MountType,
+    pub host_path: Option<String>,
+    pub volume_name: Option<String>,
+    pub file_path: Option<String>,
+    pub content: Option<String>,
+    pub mount_path: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ApplicationMountResponseDto {
+    pub id: i64,
+    pub mount_type: String,
+    pub host_path: Option<String>,
+    pub volume_name: Option<String>,
+    pub file_path: Option<String>,
+    pub content: Option<String>,
+    pub mount_path: String,
+    pub application_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl From<Mount> for ApplicationMountResponseDto {
+    fn from(value: Mount) -> Self {
+        Self {
+            id: value.id,
+            mount_type: value.mount_type,
+            host_path: value.host_path,
+            volume_name: value.volume_name,
+            file_path: value.file_path,
+            content: value.content,
+            mount_path: value.mount_path,
+            application_id: value.service_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+/// Flash bind parameters are non-optional for nullable columns, so `None` is
+/// written as `""`; normalize empty strings back to `None` on read to preserve
+/// the previous repository semantics.
+fn non_empty(value: Option<String>) -> Option<String> {
+    value.filter(|value| !value.is_empty())
+}
+
+fn to_model(row: Mounts) -> Mount {
+    Mount {
+        id: row.id,
+        mount_type: row.mount_type,
+        service_type: row.service_type,
+        host_path: non_empty(row.host_path),
+        volume_name: non_empty(row.volume_name),
+        file_path: non_empty(row.file_path),
+        content: non_empty(row.content),
+        mount_path: row.mount_path,
+        service_id: row.service_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
 pub struct MountService {
-    applications: Arc<ApplicationRepository>,
-    mounts: Arc<MountRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl MountService {
-    fn new(applications: Arc<ApplicationRepository>, mounts: Arc<MountRepository>) -> Self {
-        Self {
-            applications,
-            mounts,
-        }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     async fn ensure_application(&self, id: i64) -> sqlx::Result<()> {
-        self.applications
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        self.queries
+            .app_sub_get_application_by_i_d(id)
+            .await
             .map(|_| ())
     }
 
     pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Mount>> {
         self.ensure_application(application_id).await?;
-        self.mounts.fetch_for_application(application_id).await
+        Ok(self
+            .queries
+            .mount_fetch_for_application(application_id)
+            .await?
+            .into_iter()
+            .map(to_model)
+            .collect())
     }
 
     pub async fn create(
@@ -42,17 +109,18 @@ impl MountService {
     ) -> sqlx::Result<Mount> {
         self.ensure_application(application_id).await?;
         let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
-        self.mounts
-            .create_for_application(
-                application_id,
-                input.mount_type.as_str(),
-                input.host_path.as_deref(),
-                input.volume_name.as_deref(),
-                input.file_path.as_deref(),
-                input.content.as_deref(),
-                &input.mount_path,
-            )
-            .await
+        let params = MountCreateForApplicationParams {
+            mount_type: input.mount_type.as_str().to_owned(),
+            host_path: input.host_path.unwrap_or_default(),
+            volume_name: input.volume_name.unwrap_or_default(),
+            file_path: input.file_path.unwrap_or_default(),
+            content: input.content.unwrap_or_default(),
+            mount_path: input.mount_path,
+            service_id: application_id,
+        };
+        Ok(to_model(
+            self.queries.mount_create_for_application(&params).await?,
+        ))
     }
 
     pub async fn update(
@@ -63,24 +131,32 @@ impl MountService {
     ) -> sqlx::Result<Mount> {
         self.ensure_application(application_id).await?;
         let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
-        self.mounts
-            .update_for_application(
-                id,
-                application_id,
-                input.mount_type.as_str(),
-                input.host_path.as_deref(),
-                input.volume_name.as_deref(),
-                input.file_path.as_deref(),
-                input.content.as_deref(),
-                &input.mount_path,
-            )
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let params = MountUpdateForApplicationParams {
+            mount_type: input.mount_type.as_str().to_owned(),
+            host_path: input.host_path.unwrap_or_default(),
+            volume_name: input.volume_name.unwrap_or_default(),
+            file_path: input.file_path.unwrap_or_default(),
+            content: input.content.unwrap_or_default(),
+            mount_path: input.mount_path,
+            id,
+            service_id: application_id,
+        };
+        Ok(to_model(
+            self.queries.mount_update_for_application(&params).await?,
+        ))
     }
 
     pub async fn delete(&self, application_id: i64, id: i64) -> sqlx::Result<bool> {
         self.ensure_application(application_id).await?;
-        self.mounts.delete_for_application(id, application_id).await
+        match self
+            .queries
+            .mount_delete_for_application(id, application_id)
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error),
+        }
     }
 }
 
@@ -93,7 +169,7 @@ fn normalize_mount(
     }
 
     match input.mount_type {
-        crate::api::dto::application::mount::ApplicationMountType::Bind => {
+        crate::utils::builder::spec::MountType::Bind => {
             let host_path = input
                 .host_path
                 .as_deref()
@@ -108,7 +184,7 @@ fn normalize_mount(
             input.file_path = None;
             input.content = None;
         }
-        crate::api::dto::application::mount::ApplicationMountType::Volume => {
+        crate::utils::builder::spec::MountType::Volume => {
             let name = input
                 .volume_name
                 .as_deref()
@@ -120,7 +196,7 @@ fn normalize_mount(
             input.file_path = None;
             input.content = None;
         }
-        crate::api::dto::application::mount::ApplicationMountType::File => {
+        crate::utils::builder::spec::MountType::File => {
             if input.content.is_none() {
                 return Err("content is required for FILE mounts".into());
             }
@@ -138,7 +214,7 @@ mod tests {
     #[test]
     fn rejects_relative_bind_paths() {
         let input = UpsertApplicationMountDto {
-            mount_type: crate::api::dto::application::mount::ApplicationMountType::Bind,
+            mount_type: crate::utils::builder::spec::MountType::Bind,
             host_path: Some("data".into()),
             volume_name: None,
             file_path: None,

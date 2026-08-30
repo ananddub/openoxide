@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
-use sqlx::SqlitePool;
 
 use super::{
     BulkDeploymentAction, BulkDeploymentRequest, BulkDeploymentResult, BulkResourceAction,
@@ -9,20 +8,19 @@ use super::{
     GlobalSearchOptions, ServerDependencyView,
 };
 use crate::{
-    repository::ServerRepository,
+    db::queries::FlashQueries,
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService},
         database::{DatabaseOperation, DatabaseService},
         deployment::{CancelDeploymentResult, DeploymentService},
-        server::ServerCleanupService,
+        server::{ServerCleanupService, ServerDependencyCounts},
     },
 };
 
 pub struct GlobalOperationsService {
-    db: Arc<SqlitePool>,
+    queries: Arc<FlashQueries>,
     deployments: Arc<DeploymentService>,
-    servers: Arc<ServerRepository>,
     applications: Arc<ApplicationService>,
     compose: Arc<ComposeService>,
     databases: Arc<DatabaseService>,
@@ -32,18 +30,16 @@ pub struct GlobalOperationsService {
 #[singleton]
 impl GlobalOperationsService {
     fn new(
-        db: Arc<SqlitePool>,
+        queries: Arc<FlashQueries>,
         deployments: Arc<DeploymentService>,
-        servers: Arc<ServerRepository>,
         applications: Arc<ApplicationService>,
         compose: Arc<ComposeService>,
         databases: Arc<DatabaseService>,
         cleanup: Arc<ServerCleanupService>,
     ) -> Self {
         Self {
-            db,
+            queries,
             deployments,
-            servers,
             applications,
             compose,
             databases,
@@ -184,11 +180,8 @@ impl GlobalOperationsService {
     }
 
     pub async fn server_dependencies(&self, server_id: i64) -> sqlx::Result<ServerDependencyView> {
-        self.servers
-            .get_by_id(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
-        let value = self.servers.dependency_counts(server_id).await?;
+        self.queries.servers_get_by_id(server_id).await?;
+        let value = self.dependency_counts(server_id).await?;
         Ok(ServerDependencyView {
             server_id,
             applications: value.applications,
@@ -198,6 +191,20 @@ impl GlobalOperationsService {
             certificates: value.certificates,
             schedules: value.schedules,
             safe_to_delete: value.total() == 0,
+        })
+    }
+
+    async fn dependency_counts(&self, server_id: i64) -> sqlx::Result<ServerDependencyCounts> {
+        Ok(ServerDependencyCounts {
+            applications: self.queries.servers_count_applications(server_id).await?,
+            build_assignments: self
+                .queries
+                .servers_count_build_assignments(server_id)
+                .await?,
+            compose_projects: self.queries.servers_count_compose_projects(server_id).await?,
+            databases: self.queries.servers_count_databases(server_id).await?,
+            certificates: self.queries.servers_count_certificates(server_id).await?,
+            schedules: self.queries.servers_count_schedules(server_id).await?,
         })
     }
 
@@ -236,7 +243,7 @@ impl GlobalOperationsService {
         .bind(resource_type.as_deref())
         .bind(options.limit)
         .bind(options.offset)
-        .fetch_all(self.db.as_ref())
+        .fetch_all(&self.queries.pool)
         .await?;
         Ok(rows
             .into_iter()
@@ -250,7 +257,7 @@ impl GlobalOperationsService {
     }
 
     pub async fn cleanup_deployment_queue(&self) -> sqlx::Result<u64> {
-        let result = sqlx::query!("UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = strftime('%s', 'now'), last_state_at = strftime('%s', 'now') WHERE status = 'QUEUED'").execute(self.db.as_ref()).await?;
+        let result = sqlx::query!("UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = strftime('%s', 'now'), last_state_at = strftime('%s', 'now') WHERE status = 'QUEUED'").execute(&self.queries.pool).await?;
         Ok(result.rows_affected())
     }
 }

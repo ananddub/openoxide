@@ -8,7 +8,7 @@ pub struct CreateRedirectParams {
     pub regex: String,
     pub replacement: String,
     pub permanent: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct UpdateRedirectParams {
@@ -16,7 +16,6 @@ pub struct UpdateRedirectParams {
     pub replacement: String,
     pub permanent: i64,
     pub id: i64,
-    pub replacement2: String,
 }
 
 pub struct CreatePortParams {
@@ -24,13 +23,13 @@ pub struct CreatePortParams {
     pub target_port: i64,
     pub protocol: String,
     pub publish_mode: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct CreateSecurityParams {
     pub username: String,
     pub password: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 impl Queries {
@@ -50,12 +49,12 @@ impl Queries {
     /// ListRedirectsByApplication
     pub async fn list_redirects_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Redirects>, sqlx::Error> {
         sqlx::query_as::<_, Redirects>(
-            "SELECT * FROM redirects WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM redirects WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -66,12 +65,12 @@ impl Queries {
         params: &CreateRedirectParams,
     ) -> Result<Redirects, sqlx::Error> {
         sqlx::query_as::<_, Redirects>(
-            "INSERT INTO redirects (regex, replacement, permanent, application_id) VALUES (?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO redirects (regex, replacement, permanent, service_id) VALUES (?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.regex)
         .bind(&params.replacement)
         .bind(&params.permanent)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -82,13 +81,12 @@ impl Queries {
         params: &UpdateRedirectParams,
     ) -> Result<Redirects, sqlx::Error> {
         sqlx::query_as::<_, Redirects>(
-            "UPDATE redirects SET regex = ?, replacement = ?, permanent = ? = ? WHERE id = ? RETURNING *;"
+            "UPDATE redirects SET regex = ?, replacement = ?, permanent = ? WHERE id = ? RETURNING *;"
         )
         .bind(&params.regex)
         .bind(&params.replacement)
         .bind(&params.permanent)
         .bind(&params.id)
-        .bind(&params.replacement2)
         .fetch_one(&self.pool)
         .await
     }
@@ -110,12 +108,12 @@ impl Queries {
     /// DeleteRedirectsByApplication
     pub async fn delete_redirects_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM redirects WHERE application_id = ?;"
+            "DELETE FROM redirects WHERE service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -137,12 +135,12 @@ impl Queries {
     /// ListPortsByApplication
     pub async fn list_ports_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Ports>, sqlx::Error> {
         sqlx::query_as::<_, Ports>(
-            "SELECT * FROM ports WHERE application_id = ? ORDER BY published_port ASC;"
+            "SELECT * FROM ports WHERE service_id = ? ORDER BY published_port ASC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -153,13 +151,13 @@ impl Queries {
         params: &CreatePortParams,
     ) -> Result<Ports, sqlx::Error> {
         sqlx::query_as::<_, Ports>(
-            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id) VALUES (?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, service_id) VALUES (?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.published_port)
         .bind(&params.target_port)
         .bind(&params.protocol)
         .bind(&params.publish_mode)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -181,12 +179,12 @@ impl Queries {
     /// DeletePortsByApplication
     pub async fn delete_ports_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM ports WHERE application_id = ?;"
+            "DELETE FROM ports WHERE service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -208,12 +206,12 @@ impl Queries {
     /// ListSecurityByApplication
     pub async fn list_security_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Security>, sqlx::Error> {
         sqlx::query_as::<_, Security>(
-            "SELECT * FROM security WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM security WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -224,11 +222,11 @@ impl Queries {
         params: &CreateSecurityParams,
     ) -> Result<Security, sqlx::Error> {
         sqlx::query_as::<_, Security>(
-            "INSERT INTO security (username, password, application_id) VALUES (?, ?, ?) RETURNING *;"
+            "INSERT INTO security (username, password, service_id) VALUES (?, ?, ?) RETURNING *;"
         )
         .bind(&params.username)
         .bind(&params.password)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -266,12 +264,12 @@ impl Queries {
     /// DeleteSecurityByApplication
     pub async fn delete_security_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM security WHERE application_id = ?;"
+            "DELETE FROM security WHERE service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())

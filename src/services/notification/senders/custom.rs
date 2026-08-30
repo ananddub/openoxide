@@ -1,16 +1,15 @@
-use crate::{
-    db::models::notif_custom::NotifCustom,
-    services::notification::{guard::validate_webhook_url, message::NotificationMessage},
+use crate::services::notification::{
+    guard::validate_webhook_url, loader::CustomConfig, message::NotificationMessage,
 };
 use reqwest::Client;
 use serde_json::{Value, json};
 
 pub async fn send_custom(
     client: &Client,
-    cfg: &NotifCustom,
+    cfg: &CustomConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
-    validate_webhook_url(&cfg.endpoint)?;
+    validate_webhook_url(&cfg.url)?;
 
     let payload = json!({
         "title": msg.title,
@@ -23,7 +22,7 @@ pub async fn send_custom(
             .collect::<Vec<_>>(),
     });
 
-    let mut request = client.post(&cfg.endpoint).json(&payload);
+    let mut request = client.post(&cfg.url).json(&payload);
 
     if let Some(raw) = cfg.headers.as_deref().filter(|h| !h.trim().is_empty()) {
         match serde_json::from_str::<Value>(raw) {

@@ -1,171 +1,218 @@
-use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Server};
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::ssh_key::{CreateSshKeyDto, GenerateSshKeyDto, PatchSshKeyDto, SshKeyResponseDto},
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::ssh_key::SshKeyService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+    SshKeyService, SshKeyServiceExt,
+};
+use crate::services::ssh_key::{
+    CreateSshKeyDto, PatchSshKeyDto, SshKeyService as AppSshKeyService,
 };
 
-type ApiError = (StatusCode, String);
-
 pub struct SshKeyController {
-    service: Arc<SshKeyService>,
+    service: Arc<AppSshKeyService>,
 }
 
-#[controller("/ssh-keys")]
+#[singleton]
 impl SshKeyController {
-    fn new(service: Arc<SshKeyService>) -> Self {
+    pub fn new(service: Arc<AppSshKeyService>) -> Self {
         Self { service }
     }
-
-    #[get]
-    #[live(table = "ssh_keys")]
-    async fn list(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-    ) -> Result<Json<Vec<SshKeyResponseDto>>, ApiError> {
-        let items = self.service.list().await.map_err(map_sqlx_error)?;
-        tracing::info!(
-            source = "database",
-            count = items.len(),
-            ids = ?items.iter().filter_map(|item| item.id).collect::<Vec<_>>(),
-            "ssh key list resolved"
-        );
-        Ok(Json(
-            items.into_iter().map(SshKeyResponseDto::from).collect(),
-        ))
-    }
-
-    #[get("/{id}")]
-    #[live(table = "ssh_keys")]
-    async fn get(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<SshKeyResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(SshKeyResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        ValidatedJson(body): ValidatedJson<CreateSshKeyDto>,
-    ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        let created = self
-            .service
-            .create(body)
-            .await
-            .map(SshKeyResponseDto::from)
-            .map(|key| (StatusCode::CREATED, Json(key)))
-            .map_err(map_sqlx_error)?;
-
-        Ok(created)
-    }
-
-    #[post("/generate")]
-    async fn generate(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        ValidatedJson(body): ValidatedJson<GenerateSshKeyDto>,
-    ) -> Result<(StatusCode, Json<SshKeyResponseDto>), ApiError> {
-        let generated = self
-            .service
-            .generate(body.name, body.description, &body.key_type)
-            .await
-            .map(SshKeyResponseDto::from)
-            .map(|key| (StatusCode::CREATED, Json(key)))
-            .map_err(map_sqlx_error)?;
-
-        Ok(generated)
-    }
-
-    #[post("/generate-pair")]
-    async fn generate_pair(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        Json(body): Json<crate::api::dto::ssh_key::GeneratePairRequestDto>,
-    ) -> Result<Json<crate::api::dto::ssh_key::GeneratePairResponseDto>, ApiError> {
-        let (private_key, public_key) = crate::utils::ssh::generate_keypair(&body.key_type)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Ok(Json(crate::api::dto::ssh_key::GeneratePairResponseDto {
-            private_key,
-            public_key,
-        }))
-    }
-
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchSshKeyDto>,
-    ) -> Result<Json<SshKeyResponseDto>, ApiError> {
-        let updated = self
-            .service
-            .patch(id, body)
-            .await
-            .map(SshKeyResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)?;
-
-        Ok(updated)
-    }
-
-    #[post("/{id}/mark-used")]
-    async fn mark_used(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<SshKeyResponseDto>, ApiError> {
-        self.service
-            .mark_used(id)
-            .await
-            .map(SshKeyResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanDelete>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service.delete(id).await.map_err(map_sqlx_error)?;
-
-        Ok(StatusCode::NO_CONTENT)
-    }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "ssh key not found".into()),
-        sqlx::Error::Protocol(msg) => (StatusCode::BAD_REQUEST, msg),
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("ssh key not found"),
+        sqlx::Error::Protocol(msg) => ConnectError::invalid_argument(msg.clone()),
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (
-                StatusCode::BAD_REQUEST,
-                "Cannot delete SSH Key: It is currently assigned to active servers or git repositories.".into(),
-            )
+        sqlx::Error::Database(e) if e.is_foreign_key_violation() => {
+            ConnectError::new(ErrorCode::FailedPrecondition,
+                "Cannot delete SSH Key: It is currently assigned to active servers or git repositories.")
         }
         other => {
             tracing::error!(error = %other, "ssh key database operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
+        }
+    }
+}
+
+fn key_to_resource(dto: SshKeyResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "ssh_key".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl SshKeyService for SshKeyController {
+    #[permission(Server, CanRead)]
+    async fn list_keys<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let items = self.service.list().await.map_err(map_db_error)?;
+        let items = items.into_iter().map(SshKeyResponseDto::from).map(key_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn get_key<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let key = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn create_key<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateSshKeyDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let key = self.service.create(dto).await.map_err(map_db_error)?;
+        Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn generate_key<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: GenerateSshKeyDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let key = self.service.generate(dto.name, dto.description, &dto.key_type)
+            .await.map_err(map_db_error)?;
+        Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
+    }
+
+    async fn generate_pair<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: GeneratePairRequestDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let (private_key, public_key) = crate::utils::ssh::generate_keypair(&dto.key_type)
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        let resp = GeneratePairResponseDto { private_key, public_key };
+        let payload = serde_json::to_string(&resp).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "ssh_key_pair".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn update_key<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: PatchSshKeyDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let key = self.service.patch(request.id, dto).await.map_err(map_db_error)?;
+        Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn mark_used<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        self.service.mark_used(request.id).await.map_err(map_db_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "mark_used".into(),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanDelete)]
+    async fn delete_key<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
+    }
+}
+
+// ── Helper DTOs for deserializing ResourceRequest payloads ────────────
+
+use crate::db::models::ssh_keys::SshKey;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize)]
+struct GenerateSshKeyDto {
+    name: String,
+    description: Option<String>,
+    key_type: String, // "ed25519" or "rsa"
+}
+
+#[derive(Debug, Deserialize)]
+struct GeneratePairRequestDto {
+    #[serde(default = "default_key_type")]
+    key_type: String, // "ed25519" or "rsa"
+}
+
+fn default_key_type() -> String {
+    "ed25519".into()
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct GeneratePairResponseDto {
+    private_key: String,
+    public_key: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct SshKeyResponseDto {
+    id: i64,
+    name: String,
+    description: Option<String>,
+    public_key: String,
+    private_key: Option<String>,
+    has_private_key: bool,
+    last_used_at: Option<i64>,
+    created_at: i64,
+    updated_at: i64,
+}
+
+impl From<SshKey> for SshKeyResponseDto {
+    fn from(value: SshKey) -> Self {
+        let has_priv = !value.private_key.is_empty();
+        let priv_key = if has_priv {
+            Some(value.private_key)
+        } else {
+            None
+        };
+        Self {
+            id: value.id,
+            name: value.name,
+            description: value.description,
+            public_key: value.public_key,
+            private_key: priv_key,
+            has_private_key: has_priv,
+            last_used_at: value.last_used_at,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
         }
     }
 }

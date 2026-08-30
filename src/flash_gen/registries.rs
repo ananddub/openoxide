@@ -19,8 +19,8 @@ pub struct RegistriesGetAllRow {
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct RegistriesUsageReferencesRow {
-    pub resource_id: Option<String>,
-    pub resource_name: Option<String>,
+    pub resource_id: Option<i64>,
+    pub resource_name: String,
     pub resource_type: String,
     pub usage_kind: String,
 }
@@ -83,9 +83,9 @@ impl Queries {
     pub async fn registries_create(
         &self,
         params: &RegistriesCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO registries (registry_name, image_prefix, username, password, registry_url, registry_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO registries (registry_name, image_prefix, username, password, registry_url, registry_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.registry_name)
         .bind(&params.image_prefix)
@@ -95,9 +95,8 @@ impl Queries {
         .bind(&params.registry_type)
         .bind(&params.created_at)
         .bind(&params.updated_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// RegistriesUpdate
@@ -142,7 +141,7 @@ impl Queries {
         params: &RegistriesUsageReferencesParams,
     ) -> Result<Vec<RegistriesUsageReferencesRow>, sqlx::Error> {
         sqlx::query_as::<_, RegistriesUsageReferencesRow>(
-            "SELECT id AS resource_id, name AS resource_name, 'APPLICATION' AS resource_type, 'DEPLOY' AS usage_kind FROM applications WHERE registry_id=? UNION ALL SELECT id AS resource_id, name AS resource_name, 'APPLICATION' AS resource_type, 'ROLLBACK' AS usage_kind FROM applications WHERE rollback_registry_id=? UNION ALL SELECT id AS resource_id, name AS resource_name, 'APPLICATION' AS resource_type, 'BUILD' AS usage_kind FROM applications WHERE build_registry_id=?;"
+            "SELECT sa.service_id AS resource_id, s.name AS resource_name, 'APPLICATION' AS resource_type, 'DEPLOY' AS usage_kind FROM service_application sa JOIN services s ON s.id = sa.service_id WHERE sa.registry_id = ? UNION ALL SELECT sa.service_id AS resource_id, s.name AS resource_name, 'APPLICATION' AS resource_type, 'ROLLBACK' AS usage_kind FROM service_application sa JOIN services s ON s.id = sa.service_id WHERE sa.rollback_registry_id = ? UNION ALL SELECT sa.service_id AS resource_id, s.name AS resource_name, 'APPLICATION' AS resource_type, 'BUILD' AS usage_kind FROM service_application sa JOIN services s ON s.id = sa.service_id WHERE sa.build_registry_id = ?;"
         )
         .bind(&params.registry_id)
         .bind(&params.rollback_registry_id)

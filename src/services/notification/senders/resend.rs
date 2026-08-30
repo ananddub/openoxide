@@ -1,16 +1,18 @@
-use super::parse::parse_addresses;
-use crate::{
-    db::models::notif_resend::NotifResend, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::ResendConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_resend(
     client: &Client,
-    cfg: &NotifResend,
+    cfg: &ResendConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
-    let to = parse_addresses(&cfg.to_addresses);
+    let to: Vec<&str> = cfg
+        .to_addresses
+        .iter()
+        .map(|a| a.trim())
+        .filter(|a| !a.is_empty())
+        .collect();
     if to.is_empty() {
         return Err("resend notification has no recipients".to_string());
     }
@@ -39,11 +41,11 @@ pub async fn send_resend(
 
 pub async fn send_resend_to(
     client: &Client,
-    cfg: &NotifResend,
+    cfg: &ResendConfig,
     recipient: &str,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let mut targeted = cfg.clone();
-    targeted.to_addresses = serde_json::to_string(&[recipient]).map_err(|e| e.to_string())?;
+    targeted.to_addresses = vec![recipient.to_owned()];
     send_resend(client, &targeted, msg).await
 }

@@ -68,8 +68,8 @@ impl GitProviderService {
     }
 
     pub(super) async fn webhook_secret(&self, id: i64) -> Result<String, String> {
-        self.providers
-            .webhook_secret(id)
+        self.queries
+            .git_providers_get_webhook_secret(id)
             .await
             .map_err(|error| error.to_string())?
             .filter(|value| !value.is_empty())
@@ -80,38 +80,14 @@ impl GitProviderService {
         use crate::utils::provider::GitProviderType;
         let provider = self.get(id).await.map_err(|error| error.to_string())?;
         let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
-        let (kind, child_id) = match provider_kind {
-            Some(GitProviderType::Github) => ("github", self.github_item(id).await?.id),
-            Some(GitProviderType::Gitlab) => (
-                "gitlab",
-                self.gitlab
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .and_then(|item| item.id),
-            ),
-            Some(GitProviderType::Gitea) => (
-                "gitea",
-                self.gitea
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .and_then(|item| item.id),
-            ),
-            Some(GitProviderType::Bitbucket) => (
-                "bitbucket",
-                self.bitbucket
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .and_then(|item| item.id),
-            ),
+        let kind = match provider_kind {
+            Some(GitProviderType::Github) => "github",
+            Some(GitProviderType::Gitlab) => "gitlab",
+            Some(GitProviderType::Gitea) => "gitea",
+            Some(GitProviderType::Bitbucket) => "bitbucket",
             None => return Err("Unsupported Git provider".into()),
         };
-        let expected = format!(
-            "/public/webhooks/{kind}/{}",
-            child_id.ok_or("Provider configuration not found")?
-        );
+        let expected = format!("/public/webhooks/{kind}/{id}");
         callback_url
             .trim_end_matches('/')
             .ends_with(&expected)

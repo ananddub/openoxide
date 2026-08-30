@@ -3,9 +3,8 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! strict_runtime_enum {
     ($name:ident { $($variant:ident => $value:literal),+ $(,)? }) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
         #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-        #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
         pub enum $name { $($variant),+ }
         impl $name {
             pub const fn as_str(self) -> &'static str { match self { $(Self::$variant => $value),+ } }

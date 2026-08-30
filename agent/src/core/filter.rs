@@ -150,8 +150,11 @@ mod tests {
 
     #[test]
     fn parses_comma_separated_patterns() {
-        assert_eq!(parse_patterns("web, db ,redis"), vec!["web", "db", "redis"]);
-        assert!(parse_patterns("").is_empty());
-        assert!(parse_patterns("  ,  , ").is_empty());
+        assert_eq!(
+            ContainerFilter::parse_patterns("web, db ,redis"),
+            vec!["web", "db", "redis"]
+        );
+        assert!(ContainerFilter::parse_patterns("").is_empty());
+        assert!(ContainerFilter::parse_patterns("  ,  , ").is_empty());
     }
 }

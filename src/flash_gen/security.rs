@@ -9,34 +9,34 @@ pub struct SecurityGetAllRow {
     pub id: i64,
     pub username: String,
     pub password: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
 }
 
 pub struct SecurityCreateForApplicationParams {
     pub username: String,
     pub password: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct SecurityUpdateForApplicationParams {
     pub username: String,
     pub password: String,
     pub id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct SecurityCreateParams {
     pub username: String,
     pub password: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
 }
 
 pub struct SecurityUpdateParams {
     pub username: String,
     pub password: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub id: i64,
 }
@@ -47,7 +47,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<SecurityGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, SecurityGetAllRow>(
-            "SELECT id AS id, username AS username, password AS password, application_id AS application_id, created_at AS created_at FROM security;"
+            "SELECT id AS id, username AS username, password AS password, service_id AS service_id, created_at AS created_at FROM security;"
         )
         .fetch_all(&self.pool)
         .await
@@ -59,7 +59,7 @@ impl Queries {
         id: i64,
     ) -> Result<Security, sqlx::Error> {
         sqlx::query_as::<_, Security>(
-            "SELECT id AS id, username AS username, password AS password, application_id AS application_id, created_at AS created_at FROM security WHERE id = ?;"
+            "SELECT id AS id, username AS username, password AS password, service_id AS service_id, created_at AS created_at FROM security WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -69,12 +69,12 @@ impl Queries {
     /// SecurityListByApplication
     pub async fn security_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Security>, sqlx::Error> {
         sqlx::query_as::<_, Security>(
-            "SELECT id AS id, username AS username, password AS password, application_id AS application_id, created_at AS created_at FROM security WHERE application_id = ? ORDER BY id;"
+            "SELECT id AS id, username AS username, password AS password, service_id AS service_id, created_at AS created_at FROM security WHERE service_id = ? ORDER BY id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -83,49 +83,46 @@ impl Queries {
     pub async fn security_create_for_application(
         &self,
         params: &SecurityCreateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO security (username, password, application_id) VALUES (?, ?, ?);"
+    ) -> Result<Security, sqlx::Error> {
+        sqlx::query_as::<_, Security>(
+            "INSERT INTO security (username, password, service_id) VALUES (?, ?, ?) RETURNING id, username, password, service_id, created_at;"
         )
         .bind(&params.username)
         .bind(&params.password)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// SecurityUpdateForApplication
     pub async fn security_update_for_application(
         &self,
         params: &SecurityUpdateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE security SET username = ?, password = ? WHERE id = ? AND application_id = ?;"
+    ) -> Result<Security, sqlx::Error> {
+        sqlx::query_as::<_, Security>(
+            "UPDATE security SET username = ?, password = ? WHERE id = ? AND service_id = ? RETURNING id, username, password, service_id, created_at;"
         )
         .bind(&params.username)
         .bind(&params.password)
         .bind(&params.id)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// SecurityDeleteForApplication
     pub async fn security_delete_for_application(
         &self,
         id: i64,
-        application_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM security WHERE id = ? AND application_id = ?;"
+        service_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM security WHERE id = ? AND service_id = ? RETURNING id;"
         )
         .bind(id)
-        .bind(application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// SecurityCreate
@@ -134,11 +131,11 @@ impl Queries {
         params: &SecurityCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO security (username, password, application_id, created_at) VALUES (?, ?, ?, ?);"
+            "INSERT INTO security (username, password, service_id, created_at) VALUES (?, ?, ?, ?);"
         )
         .bind(&params.username)
         .bind(&params.password)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .execute(&self.pool)
         .await?;
@@ -151,11 +148,11 @@ impl Queries {
         params: &SecurityUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE security SET username = ?, password = ?, application_id = ?, created_at = ? WHERE id = ?;"
+            "UPDATE security SET username = ?, password = ?, service_id = ?, created_at = ? WHERE id = ?;"
         )
         .bind(&params.username)
         .bind(&params.password)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.id)
         .execute(&self.pool)

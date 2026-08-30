@@ -9,59 +9,41 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "notifications")]
 pub struct Notification {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
-    #[sqlx_gen(sql_type = "notifications_notification_type_enum")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub notification_type: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'{}'")]
+    pub config_json: String,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_app_deploy: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_app_build_error: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_database_backup: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_volume_backup: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
-    pub on_panel_restart: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
-    pub on_docker_cleanup: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
-    pub on_server_threshold: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_panel_backup: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub on_panel_restart: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub on_docker_cleanup: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub on_server_threshold: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub on_server_migration: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub on_security_alert: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_schedule_success: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub on_schedule_failure: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub slack_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub telegram_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub discord_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub email_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub resend_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub gotify_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub ntfy_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mattermost_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub custom_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub lark_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub pushover_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub teams_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

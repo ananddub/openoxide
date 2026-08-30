@@ -1,5 +1,4 @@
-use super::{message::NotificationMessage, senders::parse_addresses};
-use crate::db::models::notif_email::NotifEmail;
+use super::{loader::EmailConfig, message::NotificationMessage};
 use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
     message::{MultiPart, SinglePart, header::ContentType},
@@ -9,8 +8,13 @@ use lettre::{
     },
 };
 
-pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(), String> {
-    let recipients = parse_addresses(&cfg.to_addresses);
+pub async fn send_email(cfg: &EmailConfig, msg: &NotificationMessage) -> Result<(), String> {
+    let recipients: Vec<&str> = cfg
+        .to_addresses
+        .iter()
+        .map(|a| a.trim())
+        .filter(|a| !a.is_empty())
+        .collect();
     if recipients.is_empty() {
         return Err("email notification has no recipients".to_string());
     }
@@ -74,11 +78,11 @@ pub async fn send_email(cfg: &NotifEmail, msg: &NotificationMessage) -> Result<(
 }
 
 pub async fn send_email_to(
-    cfg: &NotifEmail,
+    cfg: &EmailConfig,
     recipient: &str,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let mut targeted = cfg.clone();
-    targeted.to_addresses = serde_json::to_string(&[recipient]).map_err(|e| e.to_string())?;
+    targeted.to_addresses = vec![recipient.to_owned()];
     send_email(&targeted, msg).await
 }

@@ -9,27 +9,27 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "settings")]
 pub struct Setting {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub server_ip: Option<String>,
-    #[sqlx_gen(sql_type = "settings_certificate_type_enum", column_default = "'NONE'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub certificate_type: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub custom_cert_resolver: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub https: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub host: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub lets_encrypt_email: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enable_docker_cleanup: i64,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'0 0 * * *'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub log_cleanup_cron: Option<String>,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "''")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub metrics_config: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

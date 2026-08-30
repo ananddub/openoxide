@@ -1,10 +1,10 @@
 CREATE TABLE server_cleanup_executions (
-    id INTEGER NOT NULL PRIMARY KEY,
-    server_id INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    server_id BIGINT NOT NULL,
     status TEXT NOT NULL,
     policy TEXT NOT NULL,
     stdout TEXT,
     stderr TEXT,
-    started_at INTEGER NOT NULL,
-    finished_at INTEGER
+    started_at BIGINT NOT NULL,
+    finished_at BIGINT
 );

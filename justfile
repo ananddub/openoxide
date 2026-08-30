@@ -81,15 +81,12 @@ gen-mod:
 query-gen:
     bash scripts/query-gen.sh
 
-# Extract static SQL from repository methods into Flash named queries.
-repository-query-gen:
-    node scripts/extract-repository-queries.mjs
 
-# Generate Rust models + CRUD repositories from the SQLite database
+# Generate Rust models from the SQLite database (queries live in .flash/queries → flash gen)
 db-gen:
     #!/usr/bin/env bash
     set -euo pipefail
-    DB_URL="${DATABASE_URL:-sqlite:///run/media/das/SSD/Devloper/openoxide/data/db.sqlite3}"
+    DB_URL="${DATABASE_URL:-sqlite:///run/media/das/SSD/Devloper/rustploy/data/db.sqlite3}"
 
     echo ">> Generating entities from $DB_URL ..."
     sqlx-gen generate entities \
@@ -101,25 +98,8 @@ db-gen:
     grep -rl "f64\|f32" src/db/models/ | xargs sed -i 's/, Eq,/, /g; s/, Eq)/)/g; s/(Eq, /(/g'
 
     echo ">> Suppressing warnings in generated files ..."
-    for dir in src/db/models src/db/repository; do
-        mod="$dir/mod.rs"
-        grep -qx '#![allow(warnings)]' "$mod" || sed -i '1s/^/#![allow(warnings)]\n/' "$mod"
-    done
-
-    echo ">> Generating CRUD repositories ..."
-    for f in src/db/models/*.rs; do
-        name="$(basename "$f")"
-        [[ "$name" == "mod.rs" || "$name" == "types.rs" ]] && continue
-        sqlx-gen generate crud \
-            -f "$f" \
-            -d sqlite \
-            -m '*' \
-            -o src/db/repository
-    done
-
-    echo ">> Fixing import paths in generated repositories ..."
-    sed -i 's/crate::models::/crate::db::models::/g' src/db/repository/*.rs
-    sed -i 's/query_as::<\([^>]*\)>(\&sql)/query_as::<\1>(sqlx::AssertSqlSafe(\&*sql))/g' src/db/repository/*.rs
+    mod="src/db/models/mod.rs"
+    grep -qx '#![allow(warnings)]' "$mod" || sed -i '1s/^/#![allow(warnings)]\n/' "$mod"
 
     echo ">> Done!"
 
@@ -136,18 +116,6 @@ todo-react:
 # Run the React frontend dev server
 web:
     cd web/openoxide_react && bun run dev
-
-# Generate typed React live hooks/declarations from Rust #[live] endpoints
-live-gen:
-    nix develop -c node crates/auto/vite/src/generate.js \
-        web/openoxide_react \
-        ../../Cargo.toml \
-        src/openoxide-live.generated.d.ts \
-        openoxide-live-manifest
-
-# Generate all frontend code produced from the Rust backend
-web-gen: live-gen
-    cd web/openoxide_react && bun run gen:routes
 
 dev:
     sudo pkill openoxide || true

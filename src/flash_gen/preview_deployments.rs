@@ -7,8 +7,8 @@ use super::db::Queries;
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsList1Row {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -30,8 +30,8 @@ pub struct PreviewDeploymentsList1Row {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsList2Row {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -53,8 +53,8 @@ pub struct PreviewDeploymentsList2Row {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsGetByIdRow {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -76,8 +76,8 @@ pub struct PreviewDeploymentsGetByIdRow {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsListOpenForBaseApplicationRow {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -99,8 +99,8 @@ pub struct PreviewDeploymentsListOpenForBaseApplicationRow {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsFindByPreviewApplicationRow {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -122,8 +122,8 @@ pub struct PreviewDeploymentsFindByPreviewApplicationRow {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsFindForPullRequestRow {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -145,8 +145,8 @@ pub struct PreviewDeploymentsFindForPullRequestRow {
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsFindOpenForEventRow {
     pub id: i64,
-    pub base_application_id: i64,
-    pub preview_application_id: Option<i64>,
+    pub base_service_id: i64,
+    pub preview_service_id: Option<i64>,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -167,76 +167,76 @@ pub struct PreviewDeploymentsFindOpenForEventRow {
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsMatchingTargets1Row {
-    pub base_application_id: i64,
-    pub provider_id: Option<i64>,
+    pub base_service_id: i64,
+    pub provider_id: i64,
     pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: String,
+    pub require_collaborator_permissions: Option<i64>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsMatchingTargets2Row {
-    pub base_application_id: i64,
-    pub provider_id: Option<i64>,
+    pub base_service_id: i64,
+    pub provider_id: i64,
     pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: String,
+    pub require_collaborator_permissions: Option<i64>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsMatchingTargets3Row {
-    pub base_application_id: i64,
-    pub provider_id: Option<i64>,
+    pub base_service_id: i64,
+    pub provider_id: i64,
     pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: String,
+    pub require_collaborator_permissions: Option<i64>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct PreviewDeploymentsMatchingTargets4Row {
-    pub base_application_id: i64,
-    pub provider_id: Option<i64>,
+    pub base_service_id: i64,
+    pub provider_id: i64,
     pub preview_limit: Option<i64>,
-    pub require_collaborator_permissions: String,
+    pub require_collaborator_permissions: Option<i64>,
 }
 
 pub struct PreviewDeploymentsFindForPullRequestParams {
-    pub base_application_id: i64,
+    pub base_service_id: i64,
     pub provider_type: String,
     pub pull_request_number: String,
 }
 
 pub struct PreviewDeploymentsFindOpenForEventParams {
     pub provider_type: String,
-    pub owner: String,
-    pub repository: String,
+    pub param2: String,
+    pub param3: String,
     pub pull_request_number: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets1Params {
-    pub repository: String,
-    pub owner: String,
+    pub param1: String,
+    pub param2: String,
     pub branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets2Params {
-    pub gitlab_repository: String,
-    pub gitlab_owner: String,
+    pub param1: String,
+    pub param2: String,
     pub gitlab_branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets3Params {
-    pub gitea_repository: String,
-    pub gitea_owner: String,
+    pub param1: String,
+    pub param2: String,
     pub gitea_branch: String,
 }
 
 pub struct PreviewDeploymentsMatchingTargets4Params {
-    pub bitbucket_repository: String,
-    pub bitbucket_owner: String,
+    pub param1: String,
+    pub param2: String,
     pub bitbucket_branch: String,
 }
 
 pub struct PreviewDeploymentsCreateParams {
-    pub base_application_id: i64,
-    pub preview_application_id: i64,
+    pub base_service_id: i64,
+    pub preview_service_id: i64,
     pub provider_type: String,
     pub provider_id: i64,
     pub owner: String,
@@ -249,6 +249,8 @@ pub struct PreviewDeploymentsCreateParams {
     pub commit_sha: String,
     pub author: String,
     pub domain: String,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 pub struct PreviewDeploymentsUpdateSourceParams {
@@ -261,7 +263,7 @@ pub struct PreviewDeploymentsUpdateSourceParams {
 }
 
 pub struct PreviewDeploymentsReopenParams {
-    pub preview_application_id: i64,
+    pub preview_service_id: i64,
     pub source_branch: String,
     pub source_owner: String,
     pub source_repository: String,
@@ -278,7 +280,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<PreviewDeploymentsList1Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsList1Row>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE status != 'CLOSED' ORDER BY created_at DESC;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE status != 'CLOSED' ORDER BY created_at DESC;"
         )
         .fetch_all(&self.pool)
         .await
@@ -289,7 +291,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<PreviewDeploymentsList2Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsList2Row>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments ORDER BY created_at DESC;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments ORDER BY created_at DESC;"
         )
         .fetch_all(&self.pool)
         .await
@@ -301,7 +303,7 @@ impl Queries {
         id: i64,
     ) -> Result<PreviewDeploymentsGetByIdRow, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsGetByIdRow>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE id = ?;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -311,12 +313,12 @@ impl Queries {
     /// PreviewDeploymentsListOpenForBaseApplication
     pub async fn preview_deployments_list_open_for_base_application(
         &self,
-        base_application_id: i64,
+        base_service_id: i64,
     ) -> Result<Vec<PreviewDeploymentsListOpenForBaseApplicationRow>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsListOpenForBaseApplicationRow>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_application_id = ? AND status != 'CLOSED' ORDER BY created_at;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_service_id = ? AND status != 'CLOSED' ORDER BY created_at;"
         )
-        .bind(base_application_id)
+        .bind(base_service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -324,12 +326,12 @@ impl Queries {
     /// PreviewDeploymentsFindByPreviewApplication
     pub async fn preview_deployments_find_by_preview_application(
         &self,
-        preview_application_id: i64,
+        preview_service_id: i64,
     ) -> Result<PreviewDeploymentsFindByPreviewApplicationRow, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsFindByPreviewApplicationRow>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE preview_application_id = ?;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE preview_service_id = ?;"
         )
-        .bind(preview_application_id)
+        .bind(preview_service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -340,9 +342,9 @@ impl Queries {
         params: &PreviewDeploymentsFindForPullRequestParams,
     ) -> Result<PreviewDeploymentsFindForPullRequestRow, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsFindForPullRequestRow>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_application_id = ? AND provider_type = ? AND pull_request_number = ?;"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE base_service_id = ? AND provider_type = ? AND pull_request_number = ?;"
         )
-        .bind(&params.base_application_id)
+        .bind(&params.base_service_id)
         .bind(&params.provider_type)
         .bind(&params.pull_request_number)
         .fetch_one(&self.pool)
@@ -355,11 +357,11 @@ impl Queries {
         params: &PreviewDeploymentsFindOpenForEventParams,
     ) -> Result<Vec<PreviewDeploymentsFindOpenForEventRow>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsFindOpenForEventRow>(
-            "SELECT id AS id, base_application_id AS base_application_id, preview_application_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE provider_type = ? AND lower(owner) = lower(?) AND lower(repository) = lower(?) AND pull_request_number = ? AND status != 'CLOSED';"
+            "SELECT id AS id, base_service_id AS base_service_id, preview_service_id, provider_type AS provider_type, provider_id AS provider_id, owner AS owner, repository AS repository, pull_request_number AS pull_request_number, source_branch AS source_branch, source_owner, source_repository, target_branch AS target_branch, commit_sha, author, status AS status, domain AS domain, last_deployment_id, created_at AS created_at, updated_at AS updated_at FROM preview_deployments WHERE provider_type = ? AND lower(owner) = lower(?) AND lower(repository) = lower(?) AND pull_request_number = ? AND status != 'CLOSED';"
         )
         .bind(&params.provider_type)
-        .bind(&params.owner)
-        .bind(&params.repository)
+        .bind(&params.param2)
+        .bind(&params.param3)
         .bind(&params.pull_request_number)
         .fetch_all(&self.pool)
         .await
@@ -371,10 +373,10 @@ impl Queries {
         params: &PreviewDeploymentsMatchingTargets1Params,
     ) -> Result<Vec<PreviewDeploymentsMatchingTargets1Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets1Row>(
-            "SELECT CAST(a.id AS INTEGER) AS base_application_id, gp.id AS provider_id, COALESCE(a.preview_limit, 3) AS preview_limit, a.preview_require_collaborator_permissions != 0 AS require_collaborator_permissions FROM applications a JOIN github_providers p ON p.id = a.github_provider_id JOIN git_providers gp ON gp.id = p.git_provider_id WHERE a.source_type = 'GITHUB' AND a.is_preview_deployments_active = 1 AND lower(a.repository) = lower(?) AND lower(a.owner) = lower(?) AND a.branch = ?;"
+            "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.github_provider_id WHERE g.source_type = 'GITHUB' AND sa.is_preview_deployments_active = 1 AND lower(g.repository) = lower(?) AND lower(g.owner) = lower(?) AND g.branch = ?;"
         )
-        .bind(&params.repository)
-        .bind(&params.owner)
+        .bind(&params.param1)
+        .bind(&params.param2)
         .bind(&params.branch)
         .fetch_all(&self.pool)
         .await
@@ -386,10 +388,10 @@ impl Queries {
         params: &PreviewDeploymentsMatchingTargets2Params,
     ) -> Result<Vec<PreviewDeploymentsMatchingTargets2Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets2Row>(
-            "SELECT CAST(a.id AS INTEGER) AS base_application_id, gp.id AS provider_id, COALESCE(a.preview_limit, 3) AS preview_limit, a.preview_require_collaborator_permissions != 0 AS require_collaborator_permissions FROM applications a JOIN gitlab_providers p ON p.id = a.gitlab_provider_id JOIN git_providers gp ON gp.id = p.git_provider_id WHERE a.source_type = 'GITLAB' AND a.is_preview_deployments_active = 1 AND lower(a.gitlab_repository) = lower(?) AND lower(a.gitlab_owner) = lower(?) AND a.gitlab_branch = ?;"
+            "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.gitlab_provider_id WHERE g.source_type = 'GITLAB' AND sa.is_preview_deployments_active = 1 AND lower(g.gitlab_repository) = lower(?) AND lower(g.gitlab_owner) = lower(?) AND g.gitlab_branch = ?;"
         )
-        .bind(&params.gitlab_repository)
-        .bind(&params.gitlab_owner)
+        .bind(&params.param1)
+        .bind(&params.param2)
         .bind(&params.gitlab_branch)
         .fetch_all(&self.pool)
         .await
@@ -401,10 +403,10 @@ impl Queries {
         params: &PreviewDeploymentsMatchingTargets3Params,
     ) -> Result<Vec<PreviewDeploymentsMatchingTargets3Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets3Row>(
-            "SELECT CAST(a.id AS INTEGER) AS base_application_id, gp.id AS provider_id, COALESCE(a.preview_limit, 3) AS preview_limit, a.preview_require_collaborator_permissions != 0 AS require_collaborator_permissions FROM applications a JOIN gitea_providers p ON p.id = a.gitea_provider_id JOIN git_providers gp ON gp.id = p.git_provider_id WHERE a.source_type = 'GITEA' AND a.is_preview_deployments_active = 1 AND lower(a.gitea_repository) = lower(?) AND lower(a.gitea_owner) = lower(?) AND a.gitea_branch = ?;"
+            "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.gitea_provider_id WHERE g.source_type = 'GITEA' AND sa.is_preview_deployments_active = 1 AND lower(g.gitea_repository) = lower(?) AND lower(g.gitea_owner) = lower(?) AND g.gitea_branch = ?;"
         )
-        .bind(&params.gitea_repository)
-        .bind(&params.gitea_owner)
+        .bind(&params.param1)
+        .bind(&params.param2)
         .bind(&params.gitea_branch)
         .fetch_all(&self.pool)
         .await
@@ -416,10 +418,10 @@ impl Queries {
         params: &PreviewDeploymentsMatchingTargets4Params,
     ) -> Result<Vec<PreviewDeploymentsMatchingTargets4Row>, sqlx::Error> {
         sqlx::query_as::<_, PreviewDeploymentsMatchingTargets4Row>(
-            "SELECT CAST(a.id AS INTEGER) AS base_application_id, gp.id AS provider_id, COALESCE(a.preview_limit, 3) AS preview_limit, a.preview_require_collaborator_permissions != 0 AS require_collaborator_permissions FROM applications a JOIN bitbucket_providers p ON p.id = a.bitbucket_provider_id JOIN git_providers gp ON gp.id = p.git_provider_id WHERE a.source_type = 'BITBUCKET' AND a.is_preview_deployments_active = 1 AND lower(a.bitbucket_repository) = lower(?) AND lower(a.bitbucket_owner) = lower(?) AND a.bitbucket_branch = ?;"
+            "SELECT CAST(s.id AS BIGINT) AS base_service_id, CAST(gp.id AS BIGINT) AS provider_id, CAST(COALESCE(sa.preview_limit, 3) AS BIGINT) AS preview_limit, sa.preview_require_collaborator_permissions AS require_collaborator_permissions FROM services s JOIN service_git g ON g.service_id = s.id JOIN service_application sa ON sa.service_id = s.id JOIN git_providers gp ON gp.id = g.bitbucket_provider_id WHERE g.source_type = 'BITBUCKET' AND sa.is_preview_deployments_active = 1 AND lower(g.bitbucket_repository) = lower(?) AND lower(g.bitbucket_owner) = lower(?) AND g.bitbucket_branch = ?;"
         )
-        .bind(&params.bitbucket_repository)
-        .bind(&params.bitbucket_owner)
+        .bind(&params.param1)
+        .bind(&params.param2)
         .bind(&params.bitbucket_branch)
         .fetch_all(&self.pool)
         .await
@@ -428,12 +430,12 @@ impl Queries {
     /// PreviewDeploymentsActiveCount
     pub async fn preview_deployments_active_count(
         &self,
-        base_application_id: i64,
+        base_service_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) AS count FROM preview_deployments WHERE base_application_id = ? AND status != 'CLOSED';"
+            "SELECT COUNT(*) AS count FROM preview_deployments WHERE base_service_id = ? AND status != 'CLOSED';"
         )
-        .bind(base_application_id)
+        .bind(base_service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -442,12 +444,12 @@ impl Queries {
     pub async fn preview_deployments_create(
         &self,
         params: &PreviewDeploymentsCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO preview_deployments (base_application_id, preview_application_id, provider_type, provider_id, owner, repository, pull_request_number, source_branch, source_owner, source_repository, target_branch, commit_sha, author, status, domain) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'QUEUED', ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO preview_deployments (base_service_id, preview_service_id, provider_type, provider_id, owner, repository, pull_request_number, source_branch, source_owner, source_repository, target_branch, commit_sha, author, status, domain, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'QUEUED', ?, ?, ?) RETURNING id AS id;"
         )
-        .bind(&params.base_application_id)
-        .bind(&params.preview_application_id)
+        .bind(&params.base_service_id)
+        .bind(&params.preview_service_id)
         .bind(&params.provider_type)
         .bind(&params.provider_id)
         .bind(&params.owner)
@@ -460,9 +462,10 @@ impl Queries {
         .bind(&params.commit_sha)
         .bind(&params.author)
         .bind(&params.domain)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PreviewDeploymentsUpdateSource
@@ -471,7 +474,7 @@ impl Queries {
         params: &PreviewDeploymentsUpdateSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE preview_deployments SET source_branch = ?, source_owner = ?, source_repository = ?, commit_sha = ?, author = ?, status = 'QUEUED', updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE preview_deployments SET source_branch = ?, source_owner = ?, source_repository = ?, commit_sha = ?, author = ?, status = 'QUEUED', updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(&params.source_branch)
         .bind(&params.source_owner)
@@ -490,9 +493,9 @@ impl Queries {
         params: &PreviewDeploymentsReopenParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE preview_deployments SET preview_application_id = ?, source_branch = ?, source_owner = ?, source_repository = ?, target_branch = ?, commit_sha = ?, author = ?, domain = ?, last_deployment_id = NULL, status = 'QUEUED', updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE preview_deployments SET preview_service_id = ?, source_branch = ?, source_owner = ?, source_repository = ?, target_branch = ?, commit_sha = ?, author = ?, domain = ?, last_deployment_id = NULL, status = 'QUEUED', updated_at = unixepoch() WHERE id = ?;"
         )
-        .bind(&params.preview_application_id)
+        .bind(&params.preview_service_id)
         .bind(&params.source_branch)
         .bind(&params.source_owner)
         .bind(&params.source_repository)
@@ -510,14 +513,13 @@ impl Queries {
     pub async fn preview_deployments_link_deployment1(
         &self,
         id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE deployments SET is_preview_deployment = 1 WHERE id = ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE deployments SET is_preview_deployment = 1 WHERE id = ? RETURNING id AS id;"
         )
         .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PreviewDeploymentsLinkDeployment2
@@ -525,15 +527,14 @@ impl Queries {
         &self,
         last_deployment_id: i64,
         id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE preview_deployments SET last_deployment_id = ?, status = 'QUEUED', updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE preview_deployments SET last_deployment_id = ?, status = 'QUEUED', updated_at = unixepoch() WHERE id = ? RETURNING id AS id;"
         )
         .bind(last_deployment_id)
         .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PreviewDeploymentsSetStatus
@@ -543,7 +544,7 @@ impl Queries {
         id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE preview_deployments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE preview_deployments SET status = ?, updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(status)
         .bind(id)
@@ -558,7 +559,7 @@ impl Queries {
         id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE preview_deployments SET preview_application_id = NULL, status = 'CLOSED', updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE preview_deployments SET preview_service_id = NULL, status = 'CLOSED', updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(id)
         .execute(&self.pool)

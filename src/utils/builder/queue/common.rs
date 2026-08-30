@@ -75,10 +75,10 @@ impl BuilderQueue {
             tracing::error!(deployment_id, error = %err, "builder queue: job failed with error");
         }
 
-        let repo = match resolve::<crate::repository::DeploymentRepository>().await {
-            Ok(r) => r,
+        let q = match resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
             Err(e) => {
-                tracing::error!(error = %e, "builder queue: could not resolve DeploymentRepository");
+                tracing::error!(error = %e, "builder queue: could not resolve FlashQueries");
                 return;
             }
         };
@@ -87,11 +87,10 @@ impl BuilderQueue {
         // A disconnected stream can contain the word "cancel" while the user
         // never requested cancellation. The persisted lifecycle state is the
         // source of truth for this decision.
-        let cancel_requested = repo
-            .get_status(deployment_id)
+        let cancel_requested = q
+            .deployments_get_status(deployment_id)
             .await
             .ok()
-            .flatten()
             .is_some_and(|status| matches!(status.as_str(), "CANCELLING" | "CANCELLED"));
         let final_status = if succeeded {
             "DONE"
@@ -114,20 +113,18 @@ impl BuilderQueue {
             ComposeStatus::Error.as_str()
         };
 
-        if let Err(e) = repo
-            .finalize_with_resource(
+        if let Err(e) = self
+            .finalize_deployment(
+                &q,
                 deployment_id,
                 final_status,
                 error_message.as_deref(),
-                application_id,
-                compose_id,
-                database_id,
-                database_kind.as_deref(),
+                application_id.or(compose_id).or(database_id),
                 target_status,
             )
             .await
         {
-            tracing::error!(deployment_id, error = %e, "builder queue: could not atomically persist deployment outcome");
+            tracing::error!(deployment_id, error = %e, "builder queue: could not persist deployment outcome");
         }
 
         if let Some(app_id) = application_id {
@@ -257,6 +254,49 @@ impl BuilderQueue {
             .await;
     }
 
+    /// Persists the deployment outcome plus the owning service's app status
+    /// and any preview deployment pointing at it. Runs as independent updates
+    /// rather than one transaction — a partial write is preferable to losing
+    /// the outcome entirely.
+    #[allow(clippy::too_many_arguments)]
+    async fn finalize_deployment(
+        &self,
+        q: &std::sync::Arc<crate::db::queries::FlashQueries>,
+        deployment_id: i64,
+        deployment_status: &str,
+        error_message: Option<&str>,
+        service_id: Option<i64>,
+        resource_status: &str,
+    ) -> Result<(), sqlx::Error> {
+        use crate::flash_gen::deployments::{
+            DeploymentsFinalizeWithResource1Params, DeploymentsFinalizeWithResource3Params,
+        };
+
+        q.deployments_finalize_with_resource1(&DeploymentsFinalizeWithResource1Params {
+            status: deployment_status.to_string(),
+            state: deployment_status.to_string(),
+            error_message: error_message.unwrap_or_default().to_string(),
+            id: deployment_id,
+        })
+        .await?;
+
+        if let Some(service_id) = service_id {
+            q.deployments_finalize_with_resource3(&DeploymentsFinalizeWithResource3Params {
+                app_status: resource_status.to_string(),
+                last_error: error_message.unwrap_or_default().to_string(),
+                id: service_id,
+            })
+            .await?;
+        }
+
+        if deployment_status == "DONE" {
+            q.deployments_finalize_preview_done(deployment_id).await?;
+        } else {
+            q.deployments_finalize_with_resource6(deployment_id).await?;
+        }
+        Ok(())
+    }
+
     /// Owning organization of whichever resource this deployment targeted.
     async fn deployment_organization_id(
         &self,
@@ -265,16 +305,17 @@ impl BuilderQueue {
         database_id: Option<i64>,
         database_kind: Option<&str>,
     ) -> Option<i64> {
-        let repo = resolve::<crate::repository::DeploymentRepository>()
+        let q = resolve::<crate::db::queries::FlashQueries>()
             .await
             .ok()?;
 
         let lookup = if let Some(app_id) = application_id {
-            repo.application_organization_id(app_id).await
+            q.deployments_application_organization_id(app_id).await
         } else if let Some(cmp_id) = compose_id {
-            repo.compose_organization_id(cmp_id).await
-        } else if let (Some(db_id), Some(kind)) = (database_id, database_kind) {
-            repo.database_organization_id(db_id, kind).await
+            q.deployments_compose_organization_id(cmp_id).await
+        } else if let Some(db_id) = database_id {
+            let _ = database_kind;
+            q.deployments_application_organization_id(db_id).await
         } else {
             return None;
         };
@@ -298,37 +339,24 @@ impl BuilderQueue {
         database_id: Option<i64>,
         database_kind: Option<&str>,
     ) -> (&'static str, String) {
+        let q = match resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
+            Err(_) => return ("Deployment", "unknown".to_string()),
+        };
+
         if let Some(app_id) = application_id {
-            let name = match resolve::<crate::repository::ApplicationRepository>().await {
-                Ok(repo) => repo
-                    .get_by_id(app_id)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|app| app.name),
-                Err(_) => None,
-            };
+            let name = q.services_get_app_name(app_id).await.ok();
             return ("Application", name.unwrap_or_else(|| app_id.to_string()));
         }
 
         if let Some(cmp_id) = compose_id {
-            let name = match resolve::<crate::repository::ComposeProjectRepository>().await {
-                Ok(repo) => repo
-                    .get_by_id(cmp_id)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|compose| compose.name),
-                Err(_) => None,
-            };
+            let name = q.services_get_app_name(cmp_id).await.ok();
             return ("Compose", name.unwrap_or_else(|| cmp_id.to_string()));
         }
 
-        if let (Some(db_id), Some(kind)) = (database_id, database_kind) {
-            let name = match resolve::<crate::repository::DeploymentRepository>().await {
-                Ok(repo) => repo.get_database_app_name(db_id, kind).await.ok(),
-                Err(_) => None,
-            };
+        if let Some(db_id) = database_id {
+            let _ = database_kind;
+            let name = q.services_get_app_name(db_id).await.ok();
             return ("Database", name.unwrap_or_else(|| db_id.to_string()));
         }
 

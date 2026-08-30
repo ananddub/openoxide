@@ -30,7 +30,7 @@ pub struct ServersGetAllRow {
 pub struct ServersGetSshCredentialsRow {
     pub public_ip: String,
     pub private_ip: Option<String>,
-    pub private_status: String,
+    pub private_status: Option<String>,
     pub connection_mode: Option<String>,
     pub port: i64,
     pub username: String,
@@ -79,31 +79,31 @@ pub struct UpdateServerParams {
     pub id: i64,
 }
 
-pub struct ServersRollbackMigratedResources1Params {
+pub struct ServersRollbackApplicationServersParams {
     pub server_id: i64,
     pub id: i64,
     pub server_id2: i64,
 }
 
-pub struct ServersRollbackMigratedResources2Params {
+pub struct ServersRollbackComposeServersParams {
     pub server_id: i64,
     pub id: i64,
     pub server_id2: i64,
 }
 
-pub struct ServersRollbackMigratedResources3Params {
+pub struct ServersRollbackBuildAssignmentsParams {
     pub build_server_id: i64,
-    pub id: i64,
+    pub service_id: i64,
     pub build_server_id2: i64,
 }
 
-pub struct ServersRollbackMigratedResources4Params {
+pub struct ServersRollbackCertificatesParams {
     pub server_id: i64,
     pub id: i64,
     pub server_id2: i64,
 }
 
-pub struct ServersRollbackMigratedResources5Params {
+pub struct ServersRollbackSchedulesParams {
     pub server_id: i64,
     pub id: i64,
     pub server_id2: i64,
@@ -341,14 +341,14 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigrateDependencies1
-    pub async fn servers_migrate_dependencies1(
+    /// ServersMigrateApplicationServers
+    pub async fn servers_migrate_application_servers(
         &self,
         server_id: i64,
         server_id2: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE applications SET server_id = ? WHERE server_id = ?;"
+            "UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'APPLICATION';"
         )
         .bind(server_id)
         .bind(server_id2)
@@ -357,14 +357,14 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigrateDependencies2
-    pub async fn servers_migrate_dependencies2(
+    /// ServersMigrateBuildAssignments
+    pub async fn servers_migrate_build_assignments(
         &self,
         build_server_id: i64,
         build_server_id2: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE applications SET build_server_id = ? WHERE build_server_id = ?;"
+            "UPDATE service_application SET build_server_id = ? WHERE build_server_id = ?;"
         )
         .bind(build_server_id)
         .bind(build_server_id2)
@@ -373,14 +373,14 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigrateDependencies3
-    pub async fn servers_migrate_dependencies3(
+    /// ServersMigrateComposeServers
+    pub async fn servers_migrate_compose_servers(
         &self,
         server_id: i64,
         server_id2: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE compose_projects SET server_id = ? WHERE server_id = ?;"
+            "UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'COMPOSE';"
         )
         .bind(server_id)
         .bind(server_id2)
@@ -389,8 +389,8 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigrateDependencies4
-    pub async fn servers_migrate_dependencies4(
+    /// ServersMigrateCertificates
+    pub async fn servers_migrate_certificates(
         &self,
         server_id: i64,
         server_id2: i64,
@@ -405,8 +405,8 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigrateDependencies5
-    pub async fn servers_migrate_dependencies5(
+    /// ServersMigrateSchedules
+    pub async fn servers_migrate_schedules(
         &self,
         server_id: i64,
         server_id2: i64,
@@ -421,47 +421,47 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersMigratableResourceIds1
-    pub async fn servers_migratable_resource_ids1(
+    /// ServersMigratableApplicationIds
+    pub async fn servers_migratable_application_ids(
         &self,
         server_id: i64,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT id AS id FROM applications WHERE server_id = ? ORDER BY id;"
+            "SELECT id AS id FROM services WHERE server_id = ? AND service_type = 'APPLICATION' ORDER BY id;"
         )
         .bind(server_id)
         .fetch_all(&self.pool)
         .await
     }
 
-    /// ServersMigratableResourceIds2
-    pub async fn servers_migratable_resource_ids2(
+    /// ServersMigratableComposeIds
+    pub async fn servers_migratable_compose_ids(
         &self,
         server_id: i64,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT id AS id FROM compose_projects WHERE server_id = ? ORDER BY id;"
+            "SELECT id AS id FROM services WHERE server_id = ? AND service_type = 'COMPOSE' ORDER BY id;"
         )
         .bind(server_id)
         .fetch_all(&self.pool)
         .await
     }
 
-    /// ServersMigratableResourceIds3
-    pub async fn servers_migratable_resource_ids3(
+    /// ServersMigratableBuildServiceIds
+    pub async fn servers_migratable_build_service_ids(
         &self,
         build_server_id: i64,
     ) -> Result<Vec<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT id AS id FROM applications WHERE build_server_id = ? ORDER BY id;"
+            "SELECT service_id AS id FROM service_application WHERE build_server_id = ? ORDER BY service_id;"
         )
         .bind(build_server_id)
         .fetch_all(&self.pool)
         .await
     }
 
-    /// ServersMigratableResourceIds4
-    pub async fn servers_migratable_resource_ids4(
+    /// ServersMigratableCertificateIds
+    pub async fn servers_migratable_certificate_ids(
         &self,
         server_id: i64,
     ) -> Result<Vec<i64>, sqlx::Error> {
@@ -473,8 +473,8 @@ impl Queries {
         .await
     }
 
-    /// ServersMigratableResourceIds5
-    pub async fn servers_migratable_resource_ids5(
+    /// ServersMigratableScheduleIds
+    pub async fn servers_migratable_schedule_ids(
         &self,
         server_id: i64,
     ) -> Result<Vec<i64>, sqlx::Error> {
@@ -486,13 +486,13 @@ impl Queries {
         .await
     }
 
-    /// ServersRollbackMigratedResources1
-    pub async fn servers_rollback_migrated_resources1(
+    /// ServersRollbackApplicationServers
+    pub async fn servers_rollback_application_servers(
         &self,
-        params: &ServersRollbackMigratedResources1Params,
+        params: &ServersRollbackApplicationServersParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE applications SET server_id = ? WHERE id = ? AND server_id = ?;"
+            "UPDATE services SET server_id = ? WHERE id = ? AND server_id = ? AND service_type = 'APPLICATION';"
         )
         .bind(&params.server_id)
         .bind(&params.id)
@@ -502,13 +502,13 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersRollbackMigratedResources2
-    pub async fn servers_rollback_migrated_resources2(
+    /// ServersRollbackComposeServers
+    pub async fn servers_rollback_compose_servers(
         &self,
-        params: &ServersRollbackMigratedResources2Params,
+        params: &ServersRollbackComposeServersParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE compose_projects SET server_id = ? WHERE id = ? AND server_id = ?;"
+            "UPDATE services SET server_id = ? WHERE id = ? AND server_id = ? AND service_type = 'COMPOSE';"
         )
         .bind(&params.server_id)
         .bind(&params.id)
@@ -518,26 +518,26 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersRollbackMigratedResources3
-    pub async fn servers_rollback_migrated_resources3(
+    /// ServersRollbackBuildAssignments
+    pub async fn servers_rollback_build_assignments(
         &self,
-        params: &ServersRollbackMigratedResources3Params,
+        params: &ServersRollbackBuildAssignmentsParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE applications SET build_server_id = ? WHERE id = ? AND build_server_id = ?;"
+            "UPDATE service_application SET build_server_id = ? WHERE service_id = ? AND build_server_id = ?;"
         )
         .bind(&params.build_server_id)
-        .bind(&params.id)
+        .bind(&params.service_id)
         .bind(&params.build_server_id2)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    /// ServersRollbackMigratedResources4
-    pub async fn servers_rollback_migrated_resources4(
+    /// ServersRollbackCertificates
+    pub async fn servers_rollback_certificates(
         &self,
-        params: &ServersRollbackMigratedResources4Params,
+        params: &ServersRollbackCertificatesParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE certificates SET server_id = ? WHERE id = ? AND server_id = ?;"
@@ -550,10 +550,10 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersRollbackMigratedResources5
-    pub async fn servers_rollback_migrated_resources5(
+    /// ServersRollbackSchedules
+    pub async fn servers_rollback_schedules(
         &self,
-        params: &ServersRollbackMigratedResources5Params,
+        params: &ServersRollbackSchedulesParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE schedules SET server_id = ? WHERE id = ? AND server_id = ?;"
@@ -566,125 +566,60 @@ impl Queries {
         Ok(())
     }
 
-    /// ServersDependencyCounts1
-    pub async fn servers_dependency_counts1(
+    /// ServersCountApplications
+    pub async fn servers_count_applications(
         &self,
         server_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM applications WHERE server_id = ?;"
+            "SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'APPLICATION';"
         )
         .bind(server_id)
         .fetch_one(&self.pool)
         .await
     }
 
-    /// ServersDependencyCounts2
-    pub async fn servers_dependency_counts2(
+    /// ServersCountBuildAssignments
+    pub async fn servers_count_build_assignments(
         &self,
         build_server_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM applications WHERE build_server_id = ?;"
+            "SELECT COUNT(*) FROM service_application WHERE build_server_id = ?;"
         )
         .bind(build_server_id)
         .fetch_one(&self.pool)
         .await
     }
 
-    /// ServersDependencyCounts3
-    pub async fn servers_dependency_counts3(
+    /// ServersCountComposeProjects
+    pub async fn servers_count_compose_projects(
         &self,
         server_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM compose_projects WHERE server_id = ?;"
+            "SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'COMPOSE';"
         )
         .bind(server_id)
         .fetch_one(&self.pool)
         .await
     }
 
-    /// ServersDependencyCounts4
-    pub async fn servers_dependency_counts4(
+    /// ServersCountDatabases
+    pub async fn servers_count_databases(
         &self,
         server_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM postgres_dbs WHERE server_id = ?;"
+            "SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'DATABASE';"
         )
         .bind(server_id)
         .fetch_one(&self.pool)
         .await
     }
 
-    /// ServersDependencyCounts5
-    pub async fn servers_dependency_counts5(
-        &self,
-        server_id: i64,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM mysql_dbs WHERE server_id = ?;"
-        )
-        .bind(server_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// ServersDependencyCounts6
-    pub async fn servers_dependency_counts6(
-        &self,
-        server_id: i64,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM mariadb_dbs WHERE server_id = ?;"
-        )
-        .bind(server_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// ServersDependencyCounts7
-    pub async fn servers_dependency_counts7(
-        &self,
-        server_id: i64,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM mongo_dbs WHERE server_id = ?;"
-        )
-        .bind(server_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// ServersDependencyCounts8
-    pub async fn servers_dependency_counts8(
-        &self,
-        server_id: i64,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM redis_dbs WHERE server_id = ?;"
-        )
-        .bind(server_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// ServersDependencyCounts9
-    pub async fn servers_dependency_counts9(
-        &self,
-        server_id: i64,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM libsql_dbs WHERE server_id = ?;"
-        )
-        .bind(server_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// ServersDependencyCounts10
-    pub async fn servers_dependency_counts10(
+    /// ServersCountCertificates
+    pub async fn servers_count_certificates(
         &self,
         server_id: i64,
     ) -> Result<i64, sqlx::Error> {
@@ -696,8 +631,8 @@ impl Queries {
         .await
     }
 
-    /// ServersDependencyCounts11
-    pub async fn servers_dependency_counts11(
+    /// ServersCountSchedules
+    pub async fn servers_count_schedules(
         &self,
         server_id: i64,
     ) -> Result<i64, sqlx::Error> {
@@ -706,6 +641,32 @@ impl Queries {
         )
         .bind(server_id)
         .fetch_one(&self.pool)
+        .await
+    }
+
+    /// ServersListMigratedApplications
+    pub async fn servers_list_migrated_applications(
+        &self,
+        param1: &str,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT id AS id FROM services WHERE service_type = 'APPLICATION' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;"
+        )
+        .bind(param1)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ServersListMigratedCompose
+    pub async fn servers_list_migrated_compose(
+        &self,
+        param1: &str,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT id AS id FROM services WHERE service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;"
+        )
+        .bind(param1)
+        .fetch_all(&self.pool)
         .await
     }
 
@@ -814,7 +775,7 @@ impl Queries {
         id: i64,
     ) -> Result<ServersGetSshCredentialsRow, sqlx::Error> {
         sqlx::query_as::<_, ServersGetSshCredentialsRow>(
-            "SELECT s.ip_address AS public_ip, n.private_host AS private_ip, n.status AS private_status, n.connection_mode AS connection_mode, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?;"
+            "SELECT s.ip_address AS public_ip, n.private_host AS private_ip, COALESCE(n.status, '') AS private_status, n.connection_mode AS connection_mode, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)

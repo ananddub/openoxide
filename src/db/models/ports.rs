@@ -9,17 +9,17 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "ports")]
 pub struct Port {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub published_port: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub target_port: i64,
-    #[sqlx_gen(sql_type = "ports_protocol_enum", column_default = "'TCP'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub protocol: String,
-    #[sqlx_gen(sql_type = "ports_publish_mode_enum", column_default = "'HOST'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub publish_mode: String,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    pub service_id: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
 }

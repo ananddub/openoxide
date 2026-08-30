@@ -1,5 +1,5 @@
 CREATE TABLE project_tags (
-    id INTEGER NOT NULL PRIMARY KEY,
-    project_id INTEGER NOT NULL,
-    tag_id INTEGER NOT NULL
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    project_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL
 );

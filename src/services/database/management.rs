@@ -1,15 +1,132 @@
 use crate::{
-    api::dto::database::{
-        DatabaseConnectionDto, DatabaseCredentialRotationDto, DatabaseExportBundleDto,
-        DatabaseValidationDto, ImportDatabaseDto, PostgresAdvancedConfigDto,
-        PostgresAdvancedConfigResponseDto,
-    },
     core::cache::CacheKey,
     services::database::{DatabaseKind, DatabaseService},
     utils::docker::query::{ContainerFilter, filter::ContainerStatus},
 };
+use os::string_enum;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+
+use super::crud::{CreateDatabaseDto, PatchDatabaseDto, parse_json_string_vec};
+
+string_enum! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum PostgresReplicationRole {
+        default = Standalone;
+
+        Standalone => "STANDALONE",
+        Primary => "PRIMARY",
+        Replica => "REPLICA",
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DatabaseConnectionDto {
+    pub kind: crate::services::database::DatabaseKind,
+    pub host: String,
+    pub port: i64,
+    pub database: Option<String>,
+    pub username: Option<String>,
+    pub password: String,
+    pub internal_url: String,
+    pub external_url: Option<String>,
+    pub server_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DatabaseCredentialRotationDto {
+    pub password: String,
+    pub redeploy_required: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DatabaseValidationDto {
+    pub valid: bool,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ImportDatabaseDto {
+    pub archive: String,
+    pub environment_id: i64,
+    pub server_id: Option<i64>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostgresAdvancedConfigDto {
+    pub settings: BTreeMap<String, String>,
+    pub replication_role: PostgresReplicationRole,
+    pub primary_host: Option<String>,
+    pub primary_port: Option<i64>,
+    pub replication_user: Option<String>,
+    pub replication_password: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PostgresAdvancedConfigResponseDto {
+    pub settings: BTreeMap<String, String>,
+    pub replication_role: PostgresReplicationRole,
+    pub primary_host: Option<String>,
+    pub primary_port: Option<i64>,
+    pub replication_user: Option<String>,
+    pub replication_password_configured: bool,
+    pub redeploy_required: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseExportBundleDto {
+    pub schema_version: u32,
+    pub exported_at: i64,
+    pub secrets_included: bool,
+    pub kind: crate::services::database::DatabaseKind,
+    pub name: String,
+    pub description: Option<String>,
+    pub docker_image: String,
+    pub database_name: Option<String>,
+    pub database_user: Option<String>,
+    pub database_password: Option<String>,
+    pub external_port: Option<i64>,
+    pub env_var: Option<String>,
+    pub memory_reservation: Option<String>,
+    pub memory_limit: Option<String>,
+    pub cpu_reservation: Option<String>,
+    pub cpu_limit: Option<String>,
+    pub replicas: i64,
+    pub network_ids: Vec<String>,
+    pub detach_rustploy_network: i64,
+}
+
+#[derive(Debug, Clone)]
+struct EngineCredentials {
+    app_name: String,
+    username: Option<String>,
+    password: String,
+    database_name: Option<String>,
+    external_port: Option<i64>,
+    server_id: Option<i64>,
+}
 
 impl DatabaseService {
+    async fn engine_credentials(
+        &self,
+        kind: DatabaseKind,
+        id: i64,
+    ) -> sqlx::Result<EngineCredentials> {
+        let _ = kind;
+        let row = self.queries.database_management_credentials(id).await?;
+        Ok(EngineCredentials {
+            app_name: row.app_name,
+            username: row.db_user,
+            password: row.db_password.unwrap_or_default(),
+            database_name: row.db_name,
+            external_port: row.external_port,
+            server_id: row.server_id,
+        })
+    }
+
     pub async fn export(
         &self,
         kind: DatabaseKind,
@@ -17,7 +134,7 @@ impl DatabaseService {
         include_secrets: bool,
     ) -> sqlx::Result<DatabaseExportBundleDto> {
         let record = self.get_by_id(kind, id).await?;
-        let credentials = self.repo_management.credentials(kind, id).await?;
+        let credentials = self.engine_credentials(kind, id).await?;
         Ok(DatabaseExportBundleDto {
             schema_version: 1,
             exported_at: chrono::Utc::now().timestamp(),
@@ -36,7 +153,7 @@ impl DatabaseService {
             cpu_reservation: record.cpu_reservation,
             cpu_limit: record.cpu_limit,
             replicas: record.replicas,
-            network_ids: crate::api::dto::database::parse_json_string_vec(&record.network_ids),
+            network_ids: parse_json_string_vec(&record.network_ids),
             detach_rustploy_network: record.detach_rustploy_network,
         })
     }
@@ -53,7 +170,7 @@ impl DatabaseService {
         let created = self
             .create(
                 bundle.kind,
-                crate::api::dto::database::CreateDatabaseDto {
+                CreateDatabaseDto {
                     name: input.name.unwrap_or(bundle.name),
                     description: bundle.description,
                     environment_id: input.environment_id,
@@ -88,13 +205,14 @@ impl DatabaseService {
                 .patch(
                     bundle.kind,
                     created.id,
-                    crate::api::dto::database::PatchDatabaseDto {
+                    PatchDatabaseDto {
                         name: None,
                         description: None,
                         docker_image: None,
                         database_name: None,
                         database_user: None,
                         database_password: None,
+                        database_root_password: None,
                         external_port: None,
                         external_grpc_port: None,
                         external_admin_port: None,
@@ -107,6 +225,10 @@ impl DatabaseService {
                         cpu_limit: bundle.cpu_limit,
                         replicas: Some(bundle.replicas),
                         server_id: None,
+                        replica_sets: None,
+                        sqld_node: None,
+                        sqld_primary_url: None,
+                        enable_namespaces: None,
                         network_ids: None,
                         detach_rustploy_network: None,
                     },
@@ -120,18 +242,41 @@ impl DatabaseService {
         &self,
         id: i64,
     ) -> sqlx::Result<PostgresAdvancedConfigResponseDto> {
-        let value = self.repo_postgres.get_details(id).await?;
-        Ok(PostgresAdvancedConfigResponseDto {
-            settings: serde_json::from_str(&value.postgres_config)
+        let row = self.queries.database_get_by_id(id).await?;
+        let config: serde_json::Value = row
+            .engine_config
+            .as_deref()
+            .and_then(|value| serde_json::from_str(value).ok())
+            .unwrap_or(serde_json::Value::Null);
+        let settings_value = config.get("postgres_config").cloned().unwrap_or_default();
+        let settings_value = match settings_value {
+            serde_json::Value::String(inner) => serde_json::from_str::<serde_json::Value>(&inner)
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
-            replication_role: crate::api::dto::database::PostgresReplicationRole::from_str(
-                &value.replication_role,
+            other => other,
+        };
+        Ok(PostgresAdvancedConfigResponseDto {
+            settings: serde_json::from_value(settings_value)
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
+            replication_role: PostgresReplicationRole::from_str(
+                config
+                    .get("replication_role")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("STANDALONE"),
             )
             .ok_or_else(|| sqlx::Error::Protocol("invalid replication role".into()))?,
-            primary_host: value.primary_host,
-            primary_port: value.primary_port,
-            replication_user: value.replication_user,
-            replication_password_configured: value.replication_password.is_some(),
+            primary_host: config
+                .get("primary_host")
+                .and_then(|value| value.as_str())
+                .map(str::to_string),
+            primary_port: config.get("primary_port").and_then(|value| value.as_i64()),
+            replication_user: config
+                .get("replication_user")
+                .and_then(|value| value.as_str())
+                .map(str::to_string),
+            replication_password_configured: config
+                .get("replication_password")
+                .and_then(|value| value.as_str())
+                .is_some(),
             redeploy_required: true,
         })
     }
@@ -144,10 +289,7 @@ impl DatabaseService {
         self.get_by_id(DatabaseKind::Postgres, id).await?;
         validate_postgres_settings(&input.settings)?;
         let role = input.replication_role;
-        if matches!(
-            role,
-            crate::api::dto::database::PostgresReplicationRole::Replica
-        ) && (input
+        if matches!(role, PostgresReplicationRole::Replica) && (input
             .primary_host
             .as_deref()
             .unwrap_or("")
@@ -165,23 +307,32 @@ impl DatabaseService {
                 "replica requires primary_host, replication_user and a 16+ character replication_password".into(),
             ));
         }
-        let config = serde_json::to_string(&input.settings)
+        let config = serde_json::to_value(&input.settings)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        if !self
-            .repo_postgres
-            .update_advanced_config(
-                id,
-                &config,
-                role.as_str(),
-                input.primary_host.as_deref(),
-                input.primary_port,
-                input.replication_user.as_deref(),
-                input.replication_password.as_deref(),
-            )
-            .await?
-        {
-            return Err(sqlx::Error::RowNotFound);
+        let row = self.queries.database_get_by_id(id).await?;
+        let mut engine: serde_json::Map<String, serde_json::Value> = row
+            .engine_config
+            .as_deref()
+            .and_then(|value| serde_json::from_str(value).ok())
+            .unwrap_or_default();
+        engine.insert("postgres_config".into(), config);
+        engine.insert("replication_role".into(), serde_json::json!(role.as_str()));
+        if let Some(value) = &input.primary_host {
+            engine.insert("primary_host".into(), serde_json::json!(value));
         }
+        if let Some(value) = input.primary_port {
+            engine.insert("primary_port".into(), serde_json::json!(value));
+        }
+        if let Some(value) = &input.replication_user {
+            engine.insert("replication_user".into(), serde_json::json!(value));
+        }
+        if let Some(value) = &input.replication_password {
+            engine.insert("replication_password".into(), serde_json::json!(value));
+        }
+        let serialized = serde_json::Value::Object(engine).to_string();
+        self.queries
+            .update_database_engine_config(&serialized, id)
+            .await?;
         self.cache.invalidate(&CacheKey::Database(id)).await;
         self.get_postgres_advanced_config(id).await
     }
@@ -191,7 +342,7 @@ impl DatabaseService {
         kind: DatabaseKind,
         id: i64,
     ) -> sqlx::Result<DatabaseConnectionDto> {
-        let value = self.repo_management.credentials(kind, id).await?;
+        let value = self.engine_credentials(kind, id).await?;
         let port = default_port(kind);
         let host = format!("{}_db", value.app_name);
         let internal_url = connection_url(
@@ -238,7 +389,7 @@ impl DatabaseService {
                 "database password must contain at least 16 characters".into(),
             ));
         }
-        let current = self.repo_management.credentials(kind, id).await?;
+        let current = self.engine_credentials(kind, id).await?;
         let live_changed = if crate::services::database::types::DatabaseRuntimeStatus::from_str(
             record.app_status.as_str(),
         )
@@ -250,10 +401,10 @@ impl DatabaseService {
         } else {
             false
         };
-        if !self
-            .repo_management
-            .rotate_password(kind, id, &password)
-            .await?
+        if let Err(error) = self
+            .queries
+            .database_management_rotate_password(&password, id)
+            .await
         {
             if live_changed {
                 let mut rollback = current.clone();
@@ -262,7 +413,7 @@ impl DatabaseService {
                     .apply_live_password(kind, &rollback, &current.password)
                     .await;
             }
-            return Err(sqlx::Error::RowNotFound);
+            return Err(error);
         }
         self.cache.invalidate(&CacheKey::Database(id)).await;
         Ok(DatabaseCredentialRotationDto {
@@ -274,7 +425,7 @@ impl DatabaseService {
     async fn apply_live_password(
         &self,
         kind: DatabaseKind,
-        current: &crate::repository::database_management::DatabaseCredentials,
+        current: &EngineCredentials,
         password: &str,
     ) -> sqlx::Result<()> {
         if kind == DatabaseKind::Libsql {

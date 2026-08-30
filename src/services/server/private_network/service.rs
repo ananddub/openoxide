@@ -1,24 +1,31 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::dto::server::{
-        PrivateNetworkHealthDto, PrivateNetworkHealthStatusDto, PrivateNetworkRotationStateDto,
-        PrivateNetworkStatusDto, ServerConnectionModeDto, ServerPrivateNetworkDto,
-        UpdatePrivateNetworkDto,
+    db::queries::FlashQueries,
+    flash_gen::{
+        models::ServerPrivateNetworks,
+        server_private_networks::{
+            ServerPrivateNetworksAcquireOperationParams, ServerPrivateNetworksFinishRotationParams,
+            ServerPrivateNetworksGetRow, ServerPrivateNetworksInsertParams,
+            ServerPrivateNetworksListManagedRow, ServerPrivateNetworksRenewOperationParams,
+            ServerPrivateNetworksSetHealthHandshakeParams, ServerPrivateNetworksSetHealthParams,
+            ServerPrivateNetworksSetRuntimeFullParams, ServerPrivateNetworksSetRuntimeStatusHandshakeParams,
+            ServerPrivateNetworksSetRuntimeStatusKeyParams, ServerPrivateNetworksUpdateConfigParams,
+        },
     },
-    db::models::server_private_networks::{
-        PrivateNetworkConnectionMode, PrivateNetworkHealthStatus, PrivateNetworkOperation,
-        PrivateNetworkStatus,
-    },
-    repository::{ServerPrivateNetworkRepository, ServerRepository},
     utils::exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},
 };
 
 use super::{
     addressing::{interface_name, panel_host, tunnel_addresses},
     backend::{KernelWireGuardBackend, ManagedWireGuardBackend, WireGuardInstallPlan},
+    enums::{
+        PrivateNetworkConnectionMode, PrivateNetworkHealthStatus, PrivateNetworkOperation,
+        PrivateNetworkProvider, PrivateNetworkRotationState, PrivateNetworkStatus,
+    },
     mapping::{connection_mode, health_dto, map_network, provider},
     retry::RetryPolicy,
     validation::validate,
@@ -30,20 +37,18 @@ const STALE_HANDSHAKE_SECONDS: i64 = 180;
 const AUTO_REPAIR_FAILURE_THRESHOLD: i64 = 3;
 
 pub struct ServerPrivateNetworkService {
-    servers: Arc<ServerRepository>,
-    networks: Arc<ServerPrivateNetworkRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl ServerPrivateNetworkService {
-    fn new(servers: Arc<ServerRepository>, networks: Arc<ServerPrivateNetworkRepository>) -> Self {
-        Self { servers, networks }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get(&self, server_id: i64) -> sqlx::Result<Option<ServerPrivateNetworkDto>> {
         self.assert_server(server_id).await?;
-        self.networks
-            .get(server_id)
+        self.networks_get(server_id)
             .await?
             .map(map_network)
             .transpose()
@@ -61,7 +66,7 @@ impl ServerPrivateNetworkService {
                 .await?;
         }
         if input.connection_mode == ServerConnectionModeDto::DirectSsh {
-            self.networks.disable(server_id).await?;
+            self.networks_disable(server_id).await?;
             return Ok(direct_network(server_id));
         }
         let status = if input.connection_mode == ServerConnectionModeDto::ExternalPrivateNetwork {
@@ -75,8 +80,7 @@ impl ServerPrivateNetworkService {
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         let dns_name = input.dns_name.as_deref().map(str::to_ascii_lowercase);
         let network = map_network(
-            self.networks
-                .upsert(
+            self.networks_upsert(
                     server_id,
                     connection_mode(input.connection_mode),
                     input.provider.map(provider),
@@ -109,7 +113,7 @@ impl ServerPrivateNetworkService {
             .await;
 
         if let Ok(executor) =
-            crate::services::compose::remote::remote_executor(self.servers.pool(), server_id).await
+            crate::services::compose::remote::remote_executor(&self.queries.pool, server_id).await
         {
             let remote_exec = CommandExecutor::Remote(executor);
             let remote_os = crate::utils::os::OsCli::new(&remote_exec);
@@ -120,7 +124,7 @@ impl ServerPrivateNetworkService {
                 .await;
         }
 
-        self.networks.disable(server_id).await
+        self.networks_disable(server_id).await
     }
 
     pub async fn setup_transport(&self, server_id: i64) -> sqlx::Result<ServerPrivateNetworkDto> {
@@ -152,8 +156,7 @@ impl ServerPrivateNetworkService {
             let backend = KernelWireGuardBackend::new(&local, &remote);
             let interface = interface_name(server_id);
             let _ = backend.teardown(&interface).await;
-            self.networks
-                .set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
+            self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
                 .await?;
             self.setup_locked(server_id).await
         })
@@ -165,14 +168,13 @@ impl ServerPrivateNetworkService {
         server_id: i64,
     ) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.require_managed_wireguard(server_id).await?;
-        let _ = self.networks.force_release_operation(server_id).await;
+        let _ = self.networks_force_release_operation(server_id).await;
         self.with_operation(server_id, PrivateNetworkOperation::Setup, async {
             let (local, remote) = self.executors(server_id).await?;
             let backend = KernelWireGuardBackend::new(&local, &remote);
             let interface = interface_name(server_id);
             let _ = backend.teardown(&interface).await;
-            self.networks
-                .set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
+            self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
                 .await?;
             self.setup_locked(server_id).await
         })
@@ -182,7 +184,7 @@ impl ServerPrivateNetworkService {
     pub async fn rotate_wireguard(&self, server_id: i64) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.require_managed_wireguard(server_id).await?;
         self.with_operation(server_id, PrivateNetworkOperation::Rotate, async {
-            self.networks.begin_rotation(server_id).await?;
+            self.networks_begin_rotation(server_id).await?;
             let result = async {
                 let network = self.get_model(server_id).await?;
                 let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
@@ -212,8 +214,7 @@ impl ServerPrivateNetworkService {
                     })
                     .await?;
                 self.verify_private_ssh(server_id, &remote_host).await?;
-                self.networks
-                    .set_runtime_state(
+                self.networks_set_runtime_state(
                         server_id,
                         PrivateNetworkStatus::Active,
                         Some(&public_key),
@@ -228,11 +229,11 @@ impl ServerPrivateNetworkService {
                     let public_key = network.public_key.as_deref().ok_or_else(|| {
                         sqlx::Error::Protocol("rotation produced no public key".into())
                     })?;
-                    self.networks.finish_rotation(server_id, public_key).await?;
+                    self.networks_finish_rotation(server_id, public_key).await?;
                     self.get_required(server_id).await
                 }
                 Err(error) => {
-                    self.networks.fail_rotation(server_id).await?;
+                    self.networks_fail_rotation(server_id).await?;
                     Err(error)
                 }
             }
@@ -303,8 +304,7 @@ impl ServerPrivateNetworkService {
         } else {
             (PrivateNetworkHealthStatus::Healthy, None)
         };
-        self.networks
-            .set_health(server_id, status, error.as_deref(), kernel.latest_handshake)
+        self.networks_set_health(server_id, status, error.as_deref(), kernel.latest_handshake)
             .await?;
         Ok(PrivateNetworkHealthDto {
             status: health_dto(status),
@@ -317,7 +317,7 @@ impl ServerPrivateNetworkService {
     }
 
     pub async fn check_all_health(&self) {
-        let networks = match self.networks.list_managed().await {
+        let networks = match self.networks_list_managed().await {
             Ok(networks) => networks,
             Err(error) => {
                 tracing::warn!(%error, "could not list managed WireGuard networks");
@@ -344,9 +344,7 @@ impl ServerPrivateNetworkService {
                             Ok(PrivateNetworkStatus::Failed)
                         )
                     {
-                        if let Err(error) = self
-                            .networks
-                            .set_runtime_state(
+                        if let Err(error) = self.networks_set_runtime_state(
                                 network.server_id,
                                 PrivateNetworkStatus::Active,
                                 refreshed.public_key.as_deref(),
@@ -370,14 +368,14 @@ impl ServerPrivateNetworkService {
         if PrivateNetworkConnectionMode::try_from(network.connection_mode.as_str())?
             == PrivateNetworkConnectionMode::ExternalPrivateNetwork
         {
-            return self.networks.disable(server_id).await;
+            return self.networks_disable(server_id).await;
         }
         self.with_operation(server_id, PrivateNetworkOperation::Teardown, async {
             let (local, remote) = self.executors(server_id).await?;
             KernelWireGuardBackend::new(&local, &remote)
                 .teardown(&interface_name(server_id))
                 .await?;
-            self.networks.disable(server_id).await?;
+            self.networks_disable(server_id).await?;
             Ok(())
         })
         .await
@@ -399,10 +397,10 @@ impl ServerPrivateNetworkService {
         }
         let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
         let remote_ip = self
-            .servers
-            .get_by_id(server_id)
-            .await?
-            .map(|s| s.ip_address)
+            .queries
+            .servers_get_by_id(server_id)
+            .await
+            .map(|server| server.ip_address)
             .unwrap_or_default();
         let port = network
             .listen_port
@@ -471,16 +469,14 @@ impl ServerPrivateNetworkService {
                         return Err(sqlx::Error::Protocol(message));
                     }
                 };
-                self.networks
-                    .set_runtime_state(
+                self.networks_set_runtime_state(
                         server_id,
                         PrivateNetworkStatus::Active,
                         Some(&public_key),
                         health.latest_handshake,
                     )
                     .await?;
-                self.networks
-                    .set_health(
+                self.networks_set_health(
                         server_id,
                         PrivateNetworkHealthStatus::Healthy,
                         None,
@@ -503,11 +499,9 @@ impl ServerPrivateNetworkService {
         public_key: Option<&str>,
         message: &str,
     ) -> sqlx::Result<()> {
-        self.networks
-            .set_runtime_state(server_id, PrivateNetworkStatus::Failed, public_key, None)
+        self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Failed, public_key, None)
             .await?;
-        self.networks
-            .set_health(
+        self.networks_set_health(
                 server_id,
                 PrivateNetworkHealthStatus::Unreachable,
                 Some(message),
@@ -530,12 +524,11 @@ impl ServerPrivateNetworkService {
 
     async fn verify_external_transport(
         &self,
-        network: &crate::db::models::server_private_networks::ServerPrivateNetwork,
+        network: &ServerPrivateNetworks,
     ) -> sqlx::Result<()> {
         let host = required(network.private_host.as_deref(), "private_host")?;
         self.verify_private_ssh(network.server_id, host).await?;
-        self.networks
-            .set_health(
+        self.networks_set_health(
                 network.server_id,
                 PrivateNetworkHealthStatus::Healthy,
                 None,
@@ -546,7 +539,7 @@ impl ServerPrivateNetworkService {
 
     async fn external_health(
         &self,
-        network: &crate::db::models::server_private_networks::ServerPrivateNetwork,
+        network: &ServerPrivateNetworks,
     ) -> sqlx::Result<PrivateNetworkHealthDto> {
         let now = chrono::Utc::now().timestamp();
         let reachable = match network.private_host.as_deref() {
@@ -560,8 +553,7 @@ impl ServerPrivateNetworkService {
                 Some(error.to_string()),
             ),
         };
-        self.networks
-            .set_health(network.server_id, status, error.as_deref(), None)
+        self.networks_set_health(network.server_id, status, error.as_deref(), None)
             .await?;
         Ok(PrivateNetworkHealthDto {
             status: health_dto(status),
@@ -580,8 +572,7 @@ impl ServerPrivateNetworkService {
         future: impl std::future::Future<Output = sqlx::Result<T>>,
     ) -> sqlx::Result<T> {
         if !self
-            .networks
-            .acquire_operation(server_id, operation, OPERATION_LEASE_SECONDS)
+            .networks_acquire_operation(server_id, operation, OPERATION_LEASE_SECONDS)
             .await?
         {
             return Err(sqlx::Error::Protocol(
@@ -597,7 +588,7 @@ impl ServerPrivateNetworkService {
             tokio::select! {
                 result = &mut future => break result,
                 _ = heartbeat.tick() => {
-                    match self.networks.renew_operation(server_id, operation, OPERATION_LEASE_SECONDS).await {
+                    match self.networks_renew_operation(server_id, operation, OPERATION_LEASE_SECONDS).await {
                         Ok(true) => {}
                         Ok(false) => {
                             break Err(sqlx::Error::Protocol(
@@ -611,7 +602,7 @@ impl ServerPrivateNetworkService {
                 }
             }
         };
-        let release = self.networks.release_operation(server_id, operation).await;
+        let release = self.networks_release_operation(server_id, operation).await;
         match (result, release) {
             (Err(error), _) => Err(error),
             (Ok(_), Err(error)) => Err(error),
@@ -632,16 +623,16 @@ impl ServerPrivateNetworkService {
     async fn get_model(
         &self,
         server_id: i64,
-    ) -> sqlx::Result<crate::db::models::server_private_networks::ServerPrivateNetwork> {
-        if let Some(existing) = self.networks.get(server_id).await? {
+    ) -> sqlx::Result<ServerPrivateNetworks> {
+        if let Some(existing) = self.networks_get(server_id).await? {
             Ok(existing)
         } else {
             self.assert_server(server_id).await?;
             let tunnel_ip = format!("10.77.{server_id}.1/24");
-            let default_network = self.networks.upsert(
+            let default_network = self.networks_upsert(
                 server_id,
-                crate::db::models::server_private_networks::PrivateNetworkConnectionMode::ManagedWireguard,
-                Some(crate::db::models::server_private_networks::PrivateNetworkProvider::Wireguard),
+                PrivateNetworkConnectionMode::ManagedWireguard,
+                Some(PrivateNetworkProvider::Wireguard),
                 None,
                 Some(&tunnel_ip),
                 None,
@@ -650,7 +641,7 @@ impl ServerPrivateNetworkService {
                 Some(20),
                 None,
                 "[]",
-                crate::db::models::server_private_networks::PrivateNetworkStatus::Configuring,
+                PrivateNetworkStatus::Configuring,
             ).await?;
             Ok(default_network)
         }
@@ -662,7 +653,7 @@ impl ServerPrivateNetworkService {
         input: &UpdatePrivateNetworkDto,
     ) -> sqlx::Result<()> {
         let tunnel = input.tunnel_address.as_deref();
-        for network in self.networks.list_managed().await? {
+        for network in self.networks_list_managed().await? {
             if network.server_id == server_id {
                 continue;
             }
@@ -679,8 +670,7 @@ impl ServerPrivateNetworkService {
 
     async fn remove_orphaned_local_interfaces(&self, local: &CommandExecutor) -> sqlx::Result<()> {
         let active = self
-            .networks
-            .list_managed()
+            .networks_list_managed()
             .await?
             .into_iter()
             .map(|network| interface_name(network.server_id))
@@ -710,19 +700,14 @@ impl ServerPrivateNetworkService {
     }
 
     async fn assert_server(&self, server_id: i64) -> sqlx::Result<()> {
-        self.servers
-            .get_by_id(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(|_| ())
+        self.queries.servers_get_by_id(server_id).await.map(|_| ())
     }
 
     async fn verify_private_ssh(&self, server_id: i64, host: &str) -> sqlx::Result<()> {
-        let (_, port, username, private_key, public_key) = self
-            .servers
-            .get_direct_ssh_credentials(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let (_, port, username, private_key, public_key) =
+            crate::services::server::direct_ssh_credentials(&self.queries, server_id)
+                .await?
+                .ok_or(sqlx::Error::RowNotFound)?;
         let port = port
             .try_into()
             .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))?;
@@ -757,11 +742,10 @@ impl ServerPrivateNetworkService {
     }
 
     async fn direct_executor(&self, server_id: i64) -> sqlx::Result<RemoteExecutor> {
-        let (host, port, username, private_key, public_key) = self
-            .servers
-            .get_direct_ssh_credentials(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let (host, port, username, private_key, public_key) =
+            crate::services::server::direct_ssh_credentials(&self.queries, server_id)
+                .await?
+                .ok_or(sqlx::Error::RowNotFound)?;
         Ok(RemoteExecutor::new(
             host,
             port.try_into()
@@ -772,6 +756,251 @@ impl ServerPrivateNetworkService {
             SshAuth::key_pair(private_key, public_key),
             SshHostKey::InsecureAcceptAny,
         ))
+    }
+
+    async fn networks_get(&self, server_id: i64) -> sqlx::Result<Option<ServerPrivateNetworks>> {
+        match self.queries.server_private_networks_get(server_id).await {
+            Ok(row) => Ok(Some(normalize_model(row))),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    async fn networks_list_managed(&self) -> sqlx::Result<Vec<ServerPrivateNetworks>> {
+        Ok(self
+            .queries
+            .server_private_networks_list_managed(
+                PrivateNetworkConnectionMode::ManagedWireguard.as_str(),
+                PrivateNetworkStatus::Disabled.as_str(),
+            )
+            .await?
+            .into_iter()
+            .map(Into::into)
+            .collect())
+    }
+
+    async fn networks_disable(&self, server_id: i64) -> sqlx::Result<()> {
+        self.queries.server_private_networks_disable(server_id).await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn networks_upsert(
+        &self,
+        server_id: i64,
+        mode: PrivateNetworkConnectionMode,
+        provider: Option<PrivateNetworkProvider>,
+        private_host: Option<&str>,
+        tunnel_address: Option<&str>,
+        public_key: Option<&str>,
+        endpoint: Option<&str>,
+        listen_port: Option<i64>,
+        persistent_keepalive: Option<i64>,
+        dns_name: Option<&str>,
+        routes: &str,
+        status: PrivateNetworkStatus,
+    ) -> sqlx::Result<ServerPrivateNetworks> {
+        if self.networks_get(server_id).await?.is_some() {
+            self.queries
+                .server_private_networks_update_config(&ServerPrivateNetworksUpdateConfigParams {
+                    connection_mode: mode.as_str().to_owned(),
+                    provider: provider.map(|value| value.as_str()).unwrap_or_default().to_owned(),
+                    private_host: private_host.unwrap_or_default().to_owned(),
+                    tunnel_address: tunnel_address.unwrap_or_default().to_owned(),
+                    public_key: public_key.unwrap_or_default().to_owned(),
+                    endpoint: endpoint.unwrap_or_default().to_owned(),
+                    listen_port: listen_port.unwrap_or_default(),
+                    persistent_keepalive: persistent_keepalive.unwrap_or_default(),
+                    dns_name: dns_name.unwrap_or_default().to_owned(),
+                    routes: routes.to_owned(),
+                    status: status.as_str().to_owned(),
+                    server_id,
+                })
+                .await?;
+        } else {
+            self.queries
+                .server_private_networks_insert(&ServerPrivateNetworksInsertParams {
+                    server_id,
+                    connection_mode: mode.as_str().to_owned(),
+                    provider: provider.map(|value| value.as_str()).unwrap_or_default().to_owned(),
+                    private_host: private_host.unwrap_or_default().to_owned(),
+                    tunnel_address: tunnel_address.unwrap_or_default().to_owned(),
+                    public_key: public_key.unwrap_or_default().to_owned(),
+                    endpoint: endpoint.unwrap_or_default().to_owned(),
+                    listen_port: listen_port.unwrap_or_default(),
+                    persistent_keepalive: persistent_keepalive.unwrap_or_default(),
+                    dns_name: dns_name.unwrap_or_default().to_owned(),
+                    routes: routes.to_owned(),
+                    status: status.as_str().to_owned(),
+                })
+                .await?;
+        }
+        Ok(normalize_model(
+            self.queries.server_private_networks_get(server_id).await?,
+        ))
+    }
+
+    async fn networks_set_runtime_state(
+        &self,
+        server_id: i64,
+        status: PrivateNetworkStatus,
+        public_key: Option<&str>,
+        last_handshake_at: Option<i64>,
+    ) -> sqlx::Result<()> {
+        match (public_key, last_handshake_at) {
+            (None, None) => {
+                self.queries
+                    .server_private_networks_set_runtime_status(status.as_str(), server_id)
+                    .await
+            }
+            (Some(public_key), None) => {
+                self.queries
+                    .server_private_networks_set_runtime_status_key(
+                        &ServerPrivateNetworksSetRuntimeStatusKeyParams {
+                            status: status.as_str().to_owned(),
+                            public_key: public_key.to_owned(),
+                            server_id,
+                        },
+                    )
+                    .await
+            }
+            (None, Some(last_handshake_at)) => {
+                self.queries
+                    .server_private_networks_set_runtime_status_handshake(
+                        &ServerPrivateNetworksSetRuntimeStatusHandshakeParams {
+                            status: status.as_str().to_owned(),
+                            last_handshake_at,
+                            server_id,
+                        },
+                    )
+                    .await
+            }
+            (Some(public_key), Some(last_handshake_at)) => {
+                self.queries
+                    .server_private_networks_set_runtime_full(&ServerPrivateNetworksSetRuntimeFullParams {
+                        status: status.as_str().to_owned(),
+                        public_key: public_key.to_owned(),
+                        last_handshake_at,
+                        server_id,
+                    })
+                    .await
+            }
+        }
+    }
+
+    async fn networks_acquire_operation(
+        &self,
+        server_id: i64,
+        operation: PrivateNetworkOperation,
+        lease_seconds: i64,
+    ) -> sqlx::Result<bool> {
+        let lease_until = chrono::Utc::now().timestamp() + lease_seconds;
+        Ok(self
+            .queries
+            .server_private_networks_acquire_operation(&ServerPrivateNetworksAcquireOperationParams {
+                operation: operation.as_str().to_owned(),
+                operation_lease_until: lease_until,
+                server_id,
+                operation_lease_until2: lease_until,
+            })
+            .await
+            .is_ok())
+    }
+
+    async fn networks_release_operation(
+        &self,
+        server_id: i64,
+        operation: PrivateNetworkOperation,
+    ) -> sqlx::Result<()> {
+        self.queries
+            .server_private_networks_release_operation(server_id, operation.as_str())
+            .await
+    }
+
+    async fn networks_force_release_operation(&self, server_id: i64) -> sqlx::Result<()> {
+        self.queries
+            .server_private_networks_force_release_operation(server_id)
+            .await
+    }
+
+    async fn networks_renew_operation(
+        &self,
+        server_id: i64,
+        operation: PrivateNetworkOperation,
+        lease_seconds: i64,
+    ) -> sqlx::Result<bool> {
+        Ok(self
+            .queries
+            .server_private_networks_renew_operation(&ServerPrivateNetworksRenewOperationParams {
+                operation_lease_until: chrono::Utc::now().timestamp() + lease_seconds,
+                server_id,
+                operation: operation.as_str().to_owned(),
+            })
+            .await
+            .is_ok())
+    }
+
+    async fn networks_set_health(
+        &self,
+        server_id: i64,
+        status: PrivateNetworkHealthStatus,
+        error: Option<&str>,
+        last_handshake_at: Option<i64>,
+    ) -> sqlx::Result<()> {
+        let status_str = status.as_str();
+        if let Some(last_handshake_at) = last_handshake_at {
+            self.queries
+                .server_private_networks_set_health_handshake(
+                    &ServerPrivateNetworksSetHealthHandshakeParams {
+                        health_status: status_str.to_owned(),
+                        health_error: error.unwrap_or_default().to_owned(),
+                        last_handshake_at,
+                        param4: status_str.to_owned(),
+                        server_id,
+                    },
+                )
+                .await
+        } else {
+            self.queries
+                .server_private_networks_set_health(&ServerPrivateNetworksSetHealthParams {
+                    health_status: status_str.to_owned(),
+                    health_error: error.unwrap_or_default().to_owned(),
+                    param3: status_str.to_owned(),
+                    server_id,
+                })
+                .await
+        }
+    }
+
+    async fn networks_begin_rotation(&self, server_id: i64) -> sqlx::Result<()> {
+        self.queries
+            .server_private_networks_begin_rotation(
+                PrivateNetworkRotationState::Rotating.as_str(),
+                server_id,
+            )
+            .await
+    }
+
+    async fn networks_finish_rotation(
+        &self,
+        server_id: i64,
+        public_key: &str,
+    ) -> sqlx::Result<()> {
+        self.queries
+            .server_private_networks_finish_rotation(&ServerPrivateNetworksFinishRotationParams {
+                public_key: public_key.to_owned(),
+                rotation_state: PrivateNetworkRotationState::Idle.as_str().to_owned(),
+                server_id,
+            })
+            .await
+    }
+
+    async fn networks_fail_rotation(&self, server_id: i64) -> sqlx::Result<()> {
+        self.queries
+            .server_private_networks_fail_rotation(
+                PrivateNetworkRotationState::Failed.as_str(),
+                server_id,
+            )
+            .await
     }
 }
 
@@ -820,6 +1049,83 @@ fn required<'a>(value: Option<&'a str>, field: &str) -> sqlx::Result<&'a str> {
     value.ok_or_else(|| sqlx::Error::Protocol(format!("{field} is required")))
 }
 
+// The flash generator emits non-optional bind parameters for nullable
+// columns, so absent values are stored as '' / 0. Normalizing them back to
+// None on read keeps the service-layer Option semantics of the old model.
+fn clean_str(value: Option<String>) -> Option<String> {
+    value.filter(|value| !value.is_empty())
+}
+
+fn clean_port(value: Option<i64>) -> Option<i64> {
+    value.filter(|value| *value != 0)
+}
+
+impl From<ServerPrivateNetworksGetRow> for ServerPrivateNetworks {
+    fn from(row: ServerPrivateNetworksGetRow) -> Self {
+        Self {
+            server_id: row.server_id,
+            connection_mode: row.connection_mode,
+            provider: clean_str(row.provider),
+            private_host: clean_str(row.private_host),
+            tunnel_address: clean_str(row.tunnel_address),
+            public_key: clean_str(row.public_key),
+            endpoint: clean_str(row.endpoint),
+            listen_port: clean_port(row.listen_port),
+            persistent_keepalive: clean_port(row.persistent_keepalive),
+            status: row.status,
+            last_handshake_at: row.last_handshake_at,
+            config_version: row.config_version,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            dns_name: clean_str(row.dns_name),
+            routes: row.routes,
+            health_status: row.health_status,
+            health_error: clean_str(row.health_error),
+            last_health_check_at: row.last_health_check_at,
+            consecutive_failures: row.consecutive_failures,
+            operation: row.operation,
+            operation_lease_until: row.operation_lease_until,
+            config_hash: clean_str(row.config_hash),
+            rotation_state: row.rotation_state,
+        }
+    }
+}
+
+impl From<ServerPrivateNetworksListManagedRow> for ServerPrivateNetworks {
+    fn from(row: ServerPrivateNetworksListManagedRow) -> Self {
+        Self {
+            server_id: row.server_id,
+            connection_mode: row.connection_mode,
+            provider: clean_str(row.provider),
+            private_host: clean_str(row.private_host),
+            tunnel_address: clean_str(row.tunnel_address),
+            public_key: clean_str(row.public_key),
+            endpoint: clean_str(row.endpoint),
+            listen_port: clean_port(row.listen_port),
+            persistent_keepalive: clean_port(row.persistent_keepalive),
+            status: row.status,
+            last_handshake_at: row.last_handshake_at,
+            config_version: row.config_version,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            dns_name: clean_str(row.dns_name),
+            routes: row.routes,
+            health_status: row.health_status,
+            health_error: clean_str(row.health_error),
+            last_health_check_at: row.last_health_check_at,
+            consecutive_failures: row.consecutive_failures,
+            operation: row.operation,
+            operation_lease_until: row.operation_lease_until,
+            config_hash: clean_str(row.config_hash),
+            rotation_state: row.rotation_state,
+        }
+    }
+}
+
+fn normalize_model(row: ServerPrivateNetworksGetRow) -> ServerPrivateNetworks {
+    row.into()
+}
+
 fn direct_network(server_id: i64) -> ServerPrivateNetworkDto {
     ServerPrivateNetworkDto {
         server_id,
@@ -845,12 +1151,121 @@ fn direct_network(server_id: i64) -> ServerPrivateNetworkDto {
     }
 }
 
+// ── JSON payload contract (moved from the retired api::dto layer) ──────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ServerConnectionModeDto {
+    DirectSsh,
+    ManagedWireguard,
+    ExternalPrivateNetwork,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkProviderDto {
+    Wireguard,
+    Tailscale,
+    Zerotier,
+    Netbird,
+    Custom,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkStatusDto {
+    Disabled,
+    Configuring,
+    Active,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkHealthStatusDto {
+    Unknown,
+    Healthy,
+    Degraded,
+    Unreachable,
+    ConfigDrift,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PrivateNetworkRotationStateDto {
+    Idle,
+    Rotating,
+    RollingBack,
+    Failed,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdatePrivateNetworkDto {
+    pub connection_mode: ServerConnectionModeDto,
+    pub provider: Option<PrivateNetworkProviderDto>,
+    pub private_host: Option<String>,
+    pub tunnel_address: Option<String>,
+    pub public_key: Option<String>,
+    pub endpoint: Option<String>,
+    pub listen_port: Option<u16>,
+    pub persistent_keepalive: Option<u16>,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ServerPrivateNetworkDto {
+    pub server_id: i64,
+    pub connection_mode: ServerConnectionModeDto,
+    pub provider: Option<PrivateNetworkProviderDto>,
+    pub private_host: Option<String>,
+    pub tunnel_address: Option<String>,
+    pub public_key: Option<String>,
+    pub endpoint: Option<String>,
+    pub listen_port: Option<u16>,
+    pub persistent_keepalive: Option<u16>,
+    pub status: PrivateNetworkStatusDto,
+    pub last_handshake_at: Option<i64>,
+    pub config_version: i64,
+    pub dns_name: Option<String>,
+    pub routes: Vec<String>,
+    pub health_status: PrivateNetworkHealthStatusDto,
+    pub health_error: Option<String>,
+    pub last_health_check_at: Option<i64>,
+    pub consecutive_failures: i64,
+    pub rotation_state: PrivateNetworkRotationStateDto,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PrivateNetworkHealthDto {
+    pub status: PrivateNetworkHealthStatusDto,
+    pub interface_exists: bool,
+    pub private_ssh_reachable: bool,
+    pub latest_handshake_at: Option<i64>,
+    pub checked_at: i64,
+    pub error: Option<String>,
+}
+
+impl ServerPrivateNetworkService {
+    /// Deserializes an `UpdatePrivateNetworkDto` from a generic
+    /// `ResourceRequest` payload. Kept as an associated function so the
+    /// ConnectRPC handler can surface serde failures as `invalid_argument`
+    /// before any database work starts.
+    pub fn parse_update_payload(
+        payload: &str,
+    ) -> Result<UpdatePrivateNetworkDto, serde_json::Error> {
+        serde_json::from_str(payload)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::api::dto::server::PrivateNetworkHealthStatusDto;
+    use super::{
+        PrivateNetworkHealthStatusDto, PrivateNetworkStatusDto, ServerConnectionModeDto,
+        UpdatePrivateNetworkDto, orphaned_managed_interfaces, should_auto_repair,
+    };
     use std::collections::HashSet;
-
-    use super::{orphaned_managed_interfaces, should_auto_repair};
 
     #[test]
     fn removes_only_openoxide_interfaces_without_database_owners() {
@@ -879,5 +1294,34 @@ mod tests {
             PrivateNetworkHealthStatusDto::Healthy,
             10
         ));
+    }
+
+    #[test]
+    fn accepts_frontend_enum_casing() {
+        let input: UpdatePrivateNetworkDto = serde_json::from_value(serde_json::json!({
+            "connection_mode": "MANAGED_WIREGUARD",
+            "provider": "WIREGUARD",
+            "private_host": "10.77.2.2",
+            "tunnel_address": "10.77.2.0/24",
+            "public_key": null,
+            "endpoint": "panel.example.com:51820",
+            "listen_port": 51820,
+            "persistent_keepalive": 25,
+            "dns_name": null,
+            "routes": []
+        }))
+        .unwrap();
+        assert_eq!(
+            input.connection_mode,
+            ServerConnectionModeDto::ManagedWireguard
+        );
+    }
+
+    #[test]
+    fn serializes_response_enums_for_frontend() {
+        assert_eq!(
+            serde_json::to_string(&PrivateNetworkStatusDto::Configuring).unwrap(),
+            "\"CONFIGURING\""
+        );
     }
 }

@@ -1,6 +1,6 @@
 CREATE TABLE two_factor (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     secret TEXT NOT NULL,
     backup_codes TEXT NOT NULL,
-    user_id INTEGER NOT NULL
+    user_id BIGINT NOT NULL
 );

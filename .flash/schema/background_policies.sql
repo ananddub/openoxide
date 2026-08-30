@@ -1,9 +1,9 @@
 CREATE TABLE background_policies (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     panel_backup_cron TEXT NOT NULL,
     log_cleanup_cron TEXT NOT NULL,
-    log_retention_days INTEGER NOT NULL,
-    panel_backup_enabled INTEGER NOT NULL,
-    log_cleanup_enabled INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    log_retention_days BIGINT NOT NULL,
+    panel_backup_enabled BIGINT NOT NULL,
+    log_cleanup_enabled BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );

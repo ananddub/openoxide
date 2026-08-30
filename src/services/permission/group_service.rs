@@ -1,28 +1,80 @@
 use getrandom::fill;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{collections::HashSet, sync::Arc};
 
 use auto_di::singleton;
 
-use crate::{
-    api::dto::permission::{
-        CreateOrganizationInviteDto, PermissionGroupDto, PermissionPolicyDto,
-        ReplaceUserPoliciesDto, SavePermissionGroupDto,
+use crate::db::models::organization_invites::OrganizationInvite;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::{
+    audit_logs::AuditLogsCreateParams,
+    groups::GroupsGetUserFinalPermissionsParams,
+    models::OrganizationInvites,
+    organization_invites::OrganizationInvitesCreateParams,
+    organization_members::{
+        OrganizationMembersAddMemberWithGroupParams,
+        OrganizationMembersListWithUserForOrganizationRow, OrganizationMembersUpdateRoleParams,
     },
-    db::{
-        models::audit_logs::AuditLog,
-        models::organization_invites::OrganizationInvite,
-        repository::{
-            AuditLogRepository, NotifEmailRepository, NotifResendRepository,
-            OrganizationInviteRepository, OrganizationMemberRepository, PermissionGroupRepository,
-            UserRepository,
-        },
+    permission_groups::{
+        PermissionGroupsAssignGroupParams, PermissionGroupsInsertUserPolicyParams,
+        PermissionGroupsUpdateGroupNameParams,
     },
+    users::UsersCreateParams,
 };
 
 use super::{PermissionService, UserRole};
+use crate::services::auth::{hash_password, notification_configs_for_user};
 use crate::services::notification::senders::send_resend_to;
 use crate::services::notification::{email::send_email_to, message::NotificationMessage};
+
+#[derive(Debug, Deserialize)]
+pub struct SavePermissionGroupDto {
+    pub name: String,
+    pub actions: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PermissionGroupDto {
+    pub id: i64,
+    pub name: String,
+    pub is_system: bool,
+    pub organization_id: Option<i64>,
+    pub actions: Vec<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PermissionPolicyDto {
+    pub id: i64,
+    pub action: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UserPolicyEntryDto {
+    pub policy_id: i64,
+    pub effect: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReplaceUserPoliciesDto {
+    pub policies: Vec<UserPolicyEntryDto>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddOrganizationMemberDto {
+    pub email: String,
+    pub password: Option<String>,
+    pub role: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateOrganizationInviteDto {
+    pub email: String,
+    pub role: String,
+    pub group_id: i64,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum PermissionGroupError {
@@ -37,37 +89,16 @@ pub enum PermissionGroupError {
 }
 
 pub struct PermissionGroupService {
-    repository: Arc<PermissionGroupRepository>,
-    member_repository: Arc<OrganizationMemberRepository>,
+    queries: Arc<FlashQueries>,
     permission_service: Arc<PermissionService>,
-    invite_repository: Arc<OrganizationInviteRepository>,
-    user_repository: Arc<UserRepository>,
-    audit_repository: Arc<AuditLogRepository>,
-    email_repository: Arc<NotifEmailRepository>,
-    resend_repository: Arc<NotifResendRepository>,
 }
 
 #[singleton]
 impl PermissionGroupService {
-    pub fn new(
-        repository: Arc<PermissionGroupRepository>,
-        member_repository: Arc<OrganizationMemberRepository>,
-        permission_service: Arc<PermissionService>,
-        invite_repository: Arc<OrganizationInviteRepository>,
-        user_repository: Arc<UserRepository>,
-        audit_repository: Arc<AuditLogRepository>,
-        email_repository: Arc<NotifEmailRepository>,
-        resend_repository: Arc<NotifResendRepository>,
-    ) -> Self {
+    pub fn new(queries: Arc<FlashQueries>, permission_service: Arc<PermissionService>) -> Self {
         Self {
-            repository,
-            member_repository,
+            queries,
             permission_service,
-            invite_repository,
-            user_repository,
-            audit_repository,
-            email_repository,
-            resend_repository,
         }
     }
 
@@ -80,32 +111,29 @@ impl PermissionGroupService {
         id: Option<String>,
         metadata: Option<String>,
     ) {
-        let user = self
-            .user_repository
-            .get_by_id(actor_id)
+        let user = self.queries.get_user_by_i_d(actor_id).await.ok();
+        if let Err(error) = self
+            .queries
+            .audit_logs_create(&AuditLogsCreateParams {
+                user_email: user
+                    .as_ref()
+                    .and_then(|u| u.email.clone())
+                    .unwrap_or_default(),
+                user_role: user
+                    .as_ref()
+                    .and_then(|u| u.role.clone())
+                    .unwrap_or_else(|| "MEMBER".into()),
+                action: action.into(),
+                resource_type: resource.into(),
+                resource_id: id.unwrap_or_default(),
+                resource_name: String::new(),
+                metadata: metadata.unwrap_or_default(),
+                organization_id,
+                user_id: actor_id,
+                created_at: chrono::Utc::now().timestamp(),
+            })
             .await
-            .ok()
-            .flatten();
-        let item = AuditLog {
-            id: None,
-            user_email: user
-                .as_ref()
-                .and_then(|u| u.email.clone())
-                .unwrap_or_default(),
-            user_role: user
-                .as_ref()
-                .and_then(|u| u.role.clone())
-                .unwrap_or_else(|| "MEMBER".into()),
-            action: action.into(),
-            resource_type: resource.into(),
-            resource_id: id,
-            resource_name: None,
-            metadata,
-            organization_id: Some(organization_id),
-            user_id: Some(actor_id),
-            created_at: chrono::Utc::now().timestamp(),
-        };
-        if let Err(error) = self.audit_repository.create(&item).await {
+        {
             tracing::warn!(%error, action, "could not write permission audit event");
         }
     }
@@ -114,11 +142,14 @@ impl PermissionGroupService {
         &self,
         organization_id: i64,
     ) -> Result<Vec<OrganizationInvite>, PermissionGroupError> {
-        self.invite_repository.purge_expired().await?;
+        self.queries.organization_invites_purge_expired().await?;
         Ok(self
-            .invite_repository
-            .list_pending_for_organization(organization_id)
-            .await?)
+            .queries
+            .organization_invites_list_pending_for_organization(organization_id)
+            .await?
+            .into_iter()
+            .map(invite_from_model)
+            .collect())
     }
 
     pub async fn create_invite(
@@ -143,7 +174,7 @@ impl PermissionGroupService {
             ));
         }
         if !self.actor_is_privileged(actor_id, organization_id).await? {
-            let actions = self.repository.group_actions(body.group_id).await?;
+            let actions = self.queries.group_actions(body.group_id).await?;
             self.ensure_subset(actor_id, organization_id, &actions)
                 .await?;
         }
@@ -152,20 +183,21 @@ impl PermissionGroupService {
             .map_err(|_| PermissionGroupError::Invalid("could not generate invite token".into()))?;
         let token = bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
         let token_hash = hash_token(&token);
-        let item = OrganizationInvite {
-            id: None,
-            email,
-            role: Some(role),
-            status: Some("PENDING".into()),
-            token: token_hash,
-            group_id: body.group_id,
-            organization_id,
-            invited_by: actor_id,
-            expired_at: chrono::Utc::now().timestamp() + 7 * 86400,
-            created_at: chrono::Utc::now().timestamp(),
-        };
-        self.invite_repository.create(&item).await?;
-        self.send_invite_email(&item.email, &token, organization_id, actor_id)
+        let now = chrono::Utc::now().timestamp();
+        self.queries
+            .organization_invites_create(&OrganizationInvitesCreateParams {
+                email: email.clone(),
+                role: role.clone(),
+                status: "PENDING".into(),
+                token: token_hash,
+                group_id: body.group_id,
+                organization_id,
+                invited_by: actor_id,
+                expired_at: now + 7 * 86400,
+                created_at: now,
+            })
+            .await?;
+        self.send_invite_email(&email, &token, organization_id, actor_id)
             .await;
         self.audit(
             actor_id,
@@ -173,7 +205,7 @@ impl PermissionGroupService {
             "INVITE_CREATED",
             "organization_invite",
             None,
-            Some(serde_json::json!({"email": item.email, "role": item.role}).to_string()),
+            Some(serde_json::json!({"email": email, "role": role}).to_string()),
         )
         .await;
         Ok(token)
@@ -197,11 +229,19 @@ impl PermissionGroupService {
                 "You have been invited to join organization {organization_id}.\n\nAccept this invitation within 7 days:\n{action}"
             ),
         );
-        if let Ok(Some(config)) = self.email_repository.find_for_user(actor_id).await {
+        let (email_config, resend_config) =
+            match notification_configs_for_user(&self.queries, actor_id).await {
+                Ok(configs) => configs,
+                Err(error) => {
+                    tracing::warn!(%error, "could not load invite email providers");
+                    (None, None)
+                }
+            };
+        if let Some(config) = email_config {
             if let Err(error) = send_email_to(&config, email, &message).await {
                 tracing::warn!(%error, "organization invite email delivery failed");
             }
-        } else if let Ok(Some(config)) = self.resend_repository.find_for_user(actor_id).await {
+        } else if let Some(config) = resend_config {
             if let Err(error) =
                 send_resend_to(&reqwest::Client::new(), &config, email, &message).await
             {
@@ -221,20 +261,15 @@ impl PermissionGroupService {
         organization_id: i64,
         invite_id: i64,
     ) -> Result<(), PermissionGroupError> {
-        let invite = self
-            .invite_repository
-            .get_by_id(invite_id)
-            .await?
-            .filter(|i| i.organization_id == organization_id)
-            .ok_or(PermissionGroupError::NotFound)?;
-        if invite.status.as_deref() != Some("PENDING")
-            || !self
-                .invite_repository
-                .set_status(invite_id, "REJECTED")
-                .await?
+        let invite = self.queries.organization_invites_get_by_id(invite_id).await?;
+        if invite.organization_id != organization_id
+            || invite.status.as_deref() != Some("PENDING")
         {
             return Err(PermissionGroupError::NotFound);
         }
+        self.queries
+            .organization_invites_set_status("REJECTED", invite_id)
+            .await?;
         self.audit(
             actor_id,
             organization_id,
@@ -253,15 +288,10 @@ impl PermissionGroupService {
         token: String,
     ) -> Result<(), PermissionGroupError> {
         let invite = self
-            .invite_repository
-            .find_pending_by_token(&hash_token(&token))
-            .await?
-            .ok_or(PermissionGroupError::NotFound)?;
-        let user = self
-            .user_repository
-            .get_by_id(user_id)
-            .await?
-            .ok_or(PermissionGroupError::NotFound)?;
+            .queries
+            .organization_invites_find_pending_by_token(&hash_token(&token))
+            .await?;
+        let user = self.queries.get_user_by_i_d(user_id).await?;
         if user
             .email
             .as_deref()
@@ -274,8 +304,7 @@ impl PermissionGroupService {
             ));
         }
         if self
-            .member_repository
-            .role(user_id, invite.organization_id)
+            .member_role(user_id, invite.organization_id)
             .await?
             .is_some()
         {
@@ -283,23 +312,23 @@ impl PermissionGroupService {
                 "user is already an organization member".into(),
             ));
         }
-        self.member_repository
-            .add_member_with_group(
-                invite.role.as_deref().unwrap_or("MEMBER"),
+        self.queries
+            .organization_members_add_member_with_group(&OrganizationMembersAddMemberWithGroupParams {
+                role: invite.role.clone().unwrap_or_else(|| "MEMBER".into()),
                 user_id,
-                invite.organization_id,
-                invite.group_id,
-            )
+                organization_id: invite.organization_id,
+                group_id: invite.group_id,
+            })
             .await?;
-        self.invite_repository
-            .set_status(invite.id.ok_or(PermissionGroupError::NotFound)?, "ACCEPTED")
+        self.queries
+            .organization_invites_set_status("ACCEPTED", invite.id)
             .await?;
         self.audit(
             user_id,
             invite.organization_id,
             "INVITE_ACCEPTED",
             "organization_invite",
-            invite.id.map(|id| id.to_string()),
+            Some(invite.id.to_string()),
             None,
         )
         .await;
@@ -310,14 +339,17 @@ impl PermissionGroupService {
         &self,
         organization_id: i64,
     ) -> Result<Vec<PermissionGroupDto>, PermissionGroupError> {
-        let groups = self.repository.list_groups(organization_id).await?;
+        let groups = self
+            .queries
+            .list_groups_for_organization(organization_id)
+            .await?;
         let mut result = Vec::with_capacity(groups.len());
         for group in groups {
             result.push(PermissionGroupDto {
-                actions: self.repository.group_actions(group.id).await?,
+                actions: self.queries.group_actions(group.id).await?,
                 id: group.id,
                 name: group.name,
-                is_system: group.is_system,
+                is_system: group.is_system != 0,
                 organization_id: group.organization_id,
                 created_at: group.created_at,
                 updated_at: group.updated_at,
@@ -329,13 +361,10 @@ impl PermissionGroupService {
     pub async fn list_members(
         &self,
         organization_id: i64,
-    ) -> Result<
-        Vec<crate::db::repository::organization_members::OrganizationMemberWithUser>,
-        PermissionGroupError,
-    > {
+    ) -> Result<Vec<OrganizationMembersListWithUserForOrganizationRow>, PermissionGroupError> {
         Ok(self
-            .member_repository
-            .list_with_user_for_organization(organization_id)
+            .queries
+            .organization_members_list_with_user_for_organization(organization_id)
             .await?)
     }
 
@@ -343,7 +372,7 @@ impl PermissionGroupService {
         &self,
         actor_id: i64,
         organization_id: i64,
-        body: crate::api::dto::permission::AddOrganizationMemberDto,
+        body: AddOrganizationMemberDto,
     ) -> Result<(), PermissionGroupError> {
         if !self.actor_is_privileged(actor_id, organization_id).await? {
             return Err(PermissionGroupError::Escalation(
@@ -363,48 +392,55 @@ impl PermissionGroupService {
             ));
         }
 
-        let existing_user = self.user_repository.get_by_email(&email).await?;
-        let user_id = if let Some(u) = existing_user {
-            u.id.ok_or_else(|| PermissionGroupError::Invalid("user has no id".into()))?
-        } else {
-            let password_raw = body.password.unwrap_or_else(|| "ChangeMe123!".to_string());
-            let password_hash = crate::services::auth::hash_password(password_raw)
-                .await
-                .map_err(|_| PermissionGroupError::Invalid("failed to hash password".into()))?;
-            self.user_repository
-                .create(&crate::db::models::users::User {
-                    id: None,
-                    email: Some(email.clone()),
-                    first_name: None,
-                    last_name: None,
-                    avatar: String::new(),
-                    password: password_hash,
-                    role: Some("member".into()),
-                    group_id: 1,
-                    about_me: None,
-                    is_email_verify: Some(1),
-                    email_verify_at: Some(chrono::Utc::now().timestamp()),
-                    two_factor_enable: Some(0),
-                    is_registered: 1,
-                    added_by: None,
-                    created_at: chrono::Utc::now().timestamp(),
-                    updated_at: chrono::Utc::now().timestamp(),
-                })
-                .await?
+        let user_id = match self.queries.get_user_by_email(&email).await {
+            Ok(user) => user.id,
+            Err(sqlx::Error::RowNotFound) => {
+                let password_raw = body.password.unwrap_or_else(|| "ChangeMe123!".to_string());
+                let password_hash = hash_password(password_raw)
+                    .await
+                    .map_err(|_| PermissionGroupError::Invalid("failed to hash password".into()))?;
+                let now = chrono::Utc::now().timestamp();
+                self.queries
+                    .users_create(&UsersCreateParams {
+                        email: email.clone(),
+                        last_name: String::new(),
+                        first_name: String::new(),
+                        avatar: String::new(),
+                        role: "member".into(),
+                        about_me: String::new(),
+                        password: password_hash,
+                        is_email_verify: 1,
+                        email_verify_at: now,
+                        two_factor_enable: 0,
+                        is_registered: 1,
+                        added_by: 0,
+                        group_id: 1,
+                        created_at: now,
+                        updated_at: now,
+                    })
+                    .await?;
+                self.queries.get_user_by_email(&email).await?.id
+            }
+            Err(error) => return Err(error.into()),
         };
 
-        let existing_role = self
-            .member_repository
-            .role(user_id, organization_id)
-            .await?;
-        if existing_role.is_some() {
+        if self
+            .member_role(user_id, organization_id)
+            .await?
+            .is_some()
+        {
             return Err(PermissionGroupError::Invalid(
                 "user is already a member of this organization".into(),
             ));
         }
 
-        self.member_repository
-            .add_member_with_group(&role, user_id, organization_id, 1)
+        self.queries
+            .organization_members_add_member_with_group(&OrganizationMembersAddMemberWithGroupParams {
+                role,
+                user_id,
+                organization_id,
+                group_id: 1,
+            })
             .await?;
         Ok(())
     }
@@ -432,13 +468,20 @@ impl PermissionGroupService {
                 "you cannot demote yourself".into(),
             ));
         }
-        if !self
-            .member_repository
-            .update_role(user_id, organization_id, &role)
+        if self
+            .member_role(user_id, organization_id)
             .await?
+            .is_none()
         {
             return Err(PermissionGroupError::NotFound);
         }
+        self.queries
+            .organization_members_update_role(&OrganizationMembersUpdateRoleParams {
+                role: role.clone(),
+                user_id,
+                organization_id,
+            })
+            .await?;
         self.audit(
             actor_id,
             organization_id,
@@ -467,13 +510,16 @@ impl PermissionGroupService {
                 "you cannot remove yourself".into(),
             ));
         }
-        if !self
-            .member_repository
-            .remove_member(user_id, organization_id)
+        if self
+            .member_role(user_id, organization_id)
             .await?
+            .is_none()
         {
             return Err(PermissionGroupError::NotFound);
         }
+        self.queries
+            .organization_members_remove_member(user_id, organization_id)
+            .await?;
         self.audit(
             actor_id,
             organization_id,
@@ -488,8 +534,8 @@ impl PermissionGroupService {
 
     pub async fn list_policies(&self) -> Result<Vec<PermissionPolicyDto>, PermissionGroupError> {
         Ok(self
-            .repository
-            .all_policies()
+            .queries
+            .list_policies()
             .await?
             .into_iter()
             .map(|policy| PermissionPolicyDto {
@@ -509,9 +555,14 @@ impl PermissionGroupService {
             .validated_policy_ids(actor_id, organization_id, &body.actions)
             .await?;
         let id = self
-            .repository
-            .create_group(organization_id, body.name.trim(), &policy_ids)
+            .queries
+            .permission_groups_create_group(body.name.trim(), organization_id)
             .await?;
+        for policy_id in &policy_ids {
+            self.queries
+                .permission_groups_add_policy_to_group(&id.to_string(), &policy_id.to_string())
+                .await?;
+        }
         self.audit(
             actor_id,
             organization_id,
@@ -534,12 +585,24 @@ impl PermissionGroupService {
         let policy_ids = self
             .validated_policy_ids(actor_id, organization_id, &body.actions)
             .await?;
-        if !self
-            .repository
-            .update_group(organization_id, group_id, body.name.trim(), &policy_ids)
-            .await?
-        {
+        let updated = self
+            .queries
+            .permission_groups_update_group_name(&PermissionGroupsUpdateGroupNameParams {
+                name: body.name.trim().to_string(),
+                id: group_id,
+                organization_id,
+            })
+            .await?;
+        if updated.is_empty() {
             return Err(PermissionGroupError::NotFound);
+        }
+        self.queries
+            .permission_groups_clear_group_policies(group_id)
+            .await?;
+        for policy_id in &policy_ids {
+            self.queries
+                .permission_groups_add_policy_to_group(&group_id.to_string(), &policy_id.to_string())
+                .await?;
         }
         self.audit(
             actor_id,
@@ -559,11 +622,20 @@ impl PermissionGroupService {
         organization_id: i64,
         group_id: i64,
     ) -> Result<(), PermissionGroupError> {
-        if !self
-            .repository
-            .delete_group(organization_id, group_id)
-            .await?
-        {
+        let assigned = self
+            .queries
+            .permission_groups_delete_group_assigned(organization_id, group_id)
+            .await?;
+        if assigned > 0 {
+            return Err(PermissionGroupError::Invalid(
+                "group is protected, missing, or still assigned to members".into(),
+            ));
+        }
+        let deleted = self
+            .queries
+            .permission_groups_delete_group(group_id, organization_id)
+            .await?;
+        if deleted.is_empty() {
             return Err(PermissionGroupError::Invalid(
                 "group is protected, missing, or still assigned to members".into(),
             ));
@@ -589,14 +661,25 @@ impl PermissionGroupService {
     ) -> Result<(), PermissionGroupError> {
         self.ensure_manageable_target(actor_id, user_id, organization_id)
             .await?;
-        let actions = self.repository.group_actions(group_id).await?;
+        let actions = self.queries.group_actions(group_id).await?;
         self.ensure_subset(actor_id, organization_id, &actions)
             .await?;
-        if !self
-            .repository
-            .assign_group(organization_id, user_id, group_id)
-            .await?
-        {
+        let hit = self
+            .queries
+            .permission_groups_valid_group_scope(group_id, organization_id)
+            .await?;
+        if hit == 0 {
+            return Err(PermissionGroupError::NotFound);
+        }
+        let assigned = self
+            .queries
+            .permission_groups_assign_group(&PermissionGroupsAssignGroupParams {
+                group_id,
+                user_id,
+                organization_id,
+            })
+            .await?;
+        if assigned.is_empty() {
             return Err(PermissionGroupError::NotFound);
         }
         self.audit(
@@ -620,7 +703,7 @@ impl PermissionGroupService {
     ) -> Result<(), PermissionGroupError> {
         self.ensure_manageable_target(actor_id, user_id, organization_id)
             .await?;
-        let all = self.repository.all_policies().await?;
+        let all = self.queries.list_policies().await?;
         let by_id = all
             .into_iter()
             .map(|p| (p.id, p.action))
@@ -643,16 +726,25 @@ impl PermissionGroupService {
         }
         self.ensure_subset(actor_id, organization_id, &actions)
             .await?;
-        let borrowed = policies
-            .iter()
-            .map(|(id, effect)| (*id, effect.as_str()))
-            .collect::<Vec<_>>();
-        if !self
-            .repository
-            .replace_user_policies(organization_id, user_id, &borrowed)
-            .await?
-        {
+        let member = self
+            .queries
+            .permission_groups_member_exists(user_id, organization_id)
+            .await?;
+        if member == 0 {
             return Err(PermissionGroupError::NotFound);
+        }
+        self.queries
+            .permission_groups_delete_user_policies(user_id, organization_id)
+            .await?;
+        for (policy_id, effect) in &policies {
+            self.queries
+                .permission_groups_insert_user_policy(&PermissionGroupsInsertUserPolicyParams {
+                    user_id,
+                    org_id: organization_id,
+                    policy_id: *policy_id,
+                    effect: effect.clone(),
+                })
+                .await?;
         }
         self.audit(
             actor_id,
@@ -674,7 +766,7 @@ impl PermissionGroupService {
     ) -> Result<Vec<i64>, PermissionGroupError> {
         self.ensure_subset(actor_id, organization_id, requested)
             .await?;
-        let policies = self.repository.all_policies().await?;
+        let policies = self.queries.list_policies().await?;
         let by_action = policies
             .into_iter()
             .map(|p| (p.action, p.id))
@@ -699,8 +791,13 @@ impl PermissionGroupService {
             return Ok(());
         }
         let effective = self
-            .repository
-            .effective_actions(actor_id, organization_id)
+            .queries
+            .groups_get_user_final_permissions(&GroupsGetUserFinalPermissionsParams {
+                user_id: actor_id.to_string(),
+                org_id: organization_id.to_string(),
+                user_id2: actor_id.to_string(),
+                organization_id: organization_id.to_string(),
+            })
             .await?
             .into_iter()
             .collect::<HashSet<_>>();
@@ -718,10 +815,7 @@ impl PermissionGroupService {
         if self.permission_service.is_platform_owner(actor_id).await? {
             return Ok(true);
         }
-        let role = self
-            .member_repository
-            .role(actor_id, organization_id)
-            .await?;
+        let role = self.member_role(actor_id, organization_id).await?;
         if let Some(r) = role.as_deref() {
             let upper = r.to_uppercase();
             if upper == "ADMIN" || upper == "OWNER" {
@@ -729,6 +823,22 @@ impl PermissionGroupService {
             }
         }
         Ok(false)
+    }
+
+    async fn member_role(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+    ) -> Result<Option<String>, sqlx::Error> {
+        match self
+            .queries
+            .organization_members_role(user_id, organization_id)
+            .await
+        {
+            Ok(role) => Ok(role),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error),
+        }
     }
 
     async fn ensure_manageable_target(
@@ -740,16 +850,28 @@ impl PermissionGroupService {
         if self.actor_is_privileged(actor_id, organization_id).await? {
             return Ok(());
         }
-        let role = self
-            .member_repository
-            .role(user_id, organization_id)
-            .await?;
+        let role = self.member_role(user_id, organization_id).await?;
         if role.as_deref() != Some(UserRole::Member.as_str()) {
             return Err(PermissionGroupError::Escalation(
                 "cannot manage an admin or non-member".into(),
             ));
         }
         Ok(())
+    }
+}
+
+fn invite_from_model(invite: OrganizationInvites) -> OrganizationInvite {
+    OrganizationInvite {
+        id: invite.id,
+        email: invite.email,
+        role: invite.role,
+        status: invite.status,
+        token: invite.token,
+        group_id: invite.group_id,
+        organization_id: invite.organization_id,
+        invited_by: invite.invited_by,
+        expired_at: invite.expired_at,
+        created_at: invite.created_at,
     }
 }
 

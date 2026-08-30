@@ -1,6 +1,7 @@
 use crate::{
-    api::dto::traefik::TraefikWriteFileDto, db::models::certificates::Certificate,
-    services::traefik::TraefikService, utils::os::OsCli,
+    flash_gen::models::Certificates,
+    services::traefik::{TraefikService, TraefikWriteFileDto},
+    utils::os::OsCli,
 };
 
 pub(super) async fn certificate_expiry(certificate: &str) -> Result<i64, String> {
@@ -29,7 +30,7 @@ pub(super) async fn validate_certificate_pair(
         .map_err(|error| error.to_string())
 }
 
-pub(super) async fn write(certificate: &Certificate) -> Result<(), String> {
+pub(super) async fn write(certificate: &Certificates) -> Result<(), String> {
     validate_path(&certificate.certificate_path)?;
 
     let directory = format!("dynamic/certificates/{}", certificate.certificate_path);
@@ -57,7 +58,7 @@ pub(super) async fn write(certificate: &Certificate) -> Result<(), String> {
     Ok(())
 }
 
-pub(super) async fn delete(certificate: &Certificate) -> Result<(), String> {
+pub(super) async fn delete(certificate: &Certificates) -> Result<(), String> {
     validate_path(&certificate.certificate_path)?;
     resolve_traefik()
         .await?

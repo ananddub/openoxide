@@ -39,7 +39,7 @@ impl Queries {
         params: &BackgroundPoliciesUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE background_policies SET panel_backup_cron = ?, log_cleanup_cron = ?, log_retention_days = ?, panel_backup_enabled = ?, log_cleanup_enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1;"
+            "UPDATE background_policies SET panel_backup_cron = ?, log_cleanup_cron = ?, log_retention_days = ?, panel_backup_enabled = ?, log_cleanup_enabled = ?, updated_at = unixepoch() WHERE id = 1;"
         )
         .bind(&params.panel_backup_cron)
         .bind(&params.log_cleanup_cron)

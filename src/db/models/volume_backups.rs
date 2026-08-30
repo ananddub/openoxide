@@ -9,52 +9,35 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "volume_backups")]
 pub struct VolumeBackup {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub volume_name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub prefix: String,
-    #[sqlx_gen(
-        sql_type = "volume_backups_service_type_enum",
-        column_default = "'APPLICATION'"
-    )]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub service_type: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub app_name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub service_name: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub turn_off: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub cron_expression: String,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub keep_latest_count: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enabled: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub destination_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub postgres_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mysql_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mariadb_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub mongo_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub redis_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub libsql_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

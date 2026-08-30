@@ -45,8 +45,8 @@ SELECT id AS id, name AS name, certificate_data AS certificate_data, private_key
 -- name: CertificatesGetById :one
 SELECT id AS id, name AS name, certificate_data AS certificate_data, private_key AS private_key, certificate_path AS certificate_path, auto_renew AS auto_renew, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM certificates WHERE id = ?;
 
--- name: CertificatesCreate :exec
-INSERT INTO certificates (name, certificate_data, private_key, certificate_path, auto_renew, server_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+-- name: CertificatesCreate :one
+INSERT INTO certificates (name, certificate_data, private_key, certificate_path, auto_renew, server_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;
 
 -- name: CertificatesUpdate :exec
 UPDATE certificates SET name = ?, certificate_data = ?, private_key = ?, certificate_path = ?, auto_renew = ?, server_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;

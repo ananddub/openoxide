@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "query_file_checksums": {
+    "queries/test.sql": "781d27a37f4a97c1c35e1750a803e31b73bbca7179227f431617e20303763b14"
+  },
+  "schema_checksum": "c1aa98fbf0f96fa5c248a38a86d42fa1a19cbe2e33bf503288366b89cbc5c724",
+  "config_checksum": "2f33cee92821e61516de081cf1191b19254fad19b63fe2342aefcfe731483dab",
+  "query_table_deps": {
+    "queries/test.sql": [
+      "redirects"
+    ]
+  },
+  "generated_file_checksums": {},
+  "last_generation": "2026-08-30T02:00:20.576995845+05:30",
+  "OutDir": "gen"
+}

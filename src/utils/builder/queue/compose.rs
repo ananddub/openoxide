@@ -33,17 +33,19 @@ impl BuilderQueue {
             .await
             .map_err(|e| BuilderError::Execution(format!("could not load compose config: {e}")))?;
 
-        let compose_repo = resolve::<crate::repository::ComposeProjectRepository>()
+        let q = resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve ComposeProjectRepository: {e}"))
+                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
             })?;
-        let (environment_id, project_id, server_id) = compose_repo
-            .get_deployment_context(compose_id)
+        let ctx = q
+            .compose_get_deployment_context(compose_id)
             .await
             .map_err(|e| {
                 BuilderError::Execution(format!("could not resolve compose context: {e}"))
             })?;
+        let (environment_id, project_id, server_id) =
+            (ctx.environment_id, ctx.project_id, ctx.server_id);
 
         let compose_key = IdType::ComposeId(compose_id);
         let state = resolve::<ApplicationState>().await.map_err(|e| {
@@ -59,13 +61,7 @@ impl BuilderQueue {
             .map_err(BuilderError::Execution)?;
         let executor = {
             let pid_file = deployment_pid_file(deployment_id);
-            let dep_repo = resolve::<crate::repository::DeploymentRepository>()
-                .await
-                .map_err(|e| {
-                    BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}"))
-                })?;
-            dep_repo
-                .set_pid(deployment_id, &pid_file)
+            q.deployments_set_pid(&pid_file, deployment_id)
                 .await
                 .map_err(|e| {
                     BuilderError::Execution(format!(

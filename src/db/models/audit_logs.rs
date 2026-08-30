@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "audit_logs")]
 pub struct AuditLog {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub user_email: String,
     #[sqlx_gen(sql_type = "TEXT")]
@@ -28,6 +28,6 @@ pub struct AuditLog {
     pub organization_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub user_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
 }

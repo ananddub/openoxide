@@ -1,12 +1,10 @@
-use crate::{
-    db::models::notif_pushover::NotifPushover, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::PushoverConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_pushover(
     client: &Client,
-    cfg: &NotifPushover,
+    cfg: &PushoverConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let mut payload = json!({

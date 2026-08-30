@@ -2,9 +2,8 @@ use os::string_enum;
 use serde::{Deserialize, Serialize};
 
 string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum BackupKind {
         default = Database;
         Database => "DATABASE",
@@ -15,9 +14,8 @@ string_enum! {
 }
 
 string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum BackupOperation {
         default = Backup;
         Backup => "BACKUP",
@@ -26,9 +24,8 @@ string_enum! {
 }
 
 string_enum! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-    #[oai(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum BackupExecutionStatus {
         default = Running;
         Running => "RUNNING",

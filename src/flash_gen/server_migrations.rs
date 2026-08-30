@@ -8,17 +8,21 @@ pub struct ServerMigrationsBeginParams {
     pub id: String,
     pub source_server_id: i64,
     pub target_server_id: i64,
-    pub application_ids: String,
-    pub build_application_ids: String,
-    pub compose_ids: String,
+    pub service_ids: String,
+    pub build_service_ids: String,
     pub certificate_ids: String,
     pub schedule_ids: String,
 }
 
-pub struct ServerMigrationsFinishParams {
-    pub status: String,
-    pub queued_applications: i64,
-    pub queued_compose_projects: i64,
+pub struct ServerMigrationsFinishSuccessParams {
+    pub queued_services: i64,
+    pub queued_total: i64,
+    pub id: String,
+}
+
+pub struct ServerMigrationsFinishFailureParams {
+    pub queued_services: i64,
+    pub queued_total: i64,
     pub error: String,
     pub id: String,
 }
@@ -30,14 +34,13 @@ impl Queries {
         params: &ServerMigrationsBeginParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO server_migrations (id, source_server_id, target_server_id, status, application_ids, build_application_ids, compose_ids, certificate_ids, schedule_ids) VALUES (?, ?, ?, 'RUNNING', ?, ?, ?, ?, ?);"
+            "INSERT INTO server_migrations (id, source_server_id, target_server_id, status, service_ids, build_service_ids, certificate_ids, schedule_ids) VALUES (?, ?, ?, 'RUNNING', ?, ?, ?, ?);"
         )
         .bind(&params.id)
         .bind(&params.source_server_id)
         .bind(&params.target_server_id)
-        .bind(&params.application_ids)
-        .bind(&params.build_application_ids)
-        .bind(&params.compose_ids)
+        .bind(&params.service_ids)
+        .bind(&params.build_service_ids)
         .bind(&params.certificate_ids)
         .bind(&params.schedule_ids)
         .execute(&self.pool)
@@ -45,17 +48,32 @@ impl Queries {
         Ok(())
     }
 
-    /// ServerMigrationsFinish
-    pub async fn server_migrations_finish(
+    /// ServerMigrationsFinishSuccess
+    pub async fn server_migrations_finish_success(
         &self,
-        params: &ServerMigrationsFinishParams,
+        params: &ServerMigrationsFinishSuccessParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_migrations SET status = ?, queued_applications = ?, queued_compose_projects = ?, error = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE server_migrations SET status = 'SUCCEEDED', queued_services = ?, queued_total = ?, error = NULL, updated_at = unixepoch() WHERE id = ?;"
         )
-        .bind(&params.status)
-        .bind(&params.queued_applications)
-        .bind(&params.queued_compose_projects)
+        .bind(&params.queued_services)
+        .bind(&params.queued_total)
+        .bind(&params.id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerMigrationsFinishFailure
+    pub async fn server_migrations_finish_failure(
+        &self,
+        params: &ServerMigrationsFinishFailureParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_migrations SET status = 'FAILED', queued_services = ?, queued_total = ?, error = ?, updated_at = unixepoch() WHERE id = ?;"
+        )
+        .bind(&params.queued_services)
+        .bind(&params.queued_total)
         .bind(&params.error)
         .bind(&params.id)
         .execute(&self.pool)
@@ -69,7 +87,7 @@ impl Queries {
         id: &str,
     ) -> Result<ServerMigrations, sqlx::Error> {
         sqlx::query_as::<_, ServerMigrations>(
-            "SELECT id, source_server_id, target_server_id, status, application_ids, build_application_ids, compose_ids, certificate_ids, schedule_ids, queued_applications, queued_compose_projects, error, created_at, updated_at FROM server_migrations WHERE id = ?;"
+            "SELECT id, source_server_id, target_server_id, status, service_ids, build_service_ids, certificate_ids, schedule_ids, queued_services, queued_total, error, created_at, updated_at FROM server_migrations WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -82,7 +100,7 @@ impl Queries {
         id: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_migrations SET status = 'ROLLED_BACK', updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE server_migrations SET status = 'ROLLED_BACK', updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(id)
         .execute(&self.pool)

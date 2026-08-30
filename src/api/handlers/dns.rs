@@ -1,196 +1,270 @@
-use crate::api::dto::dns::{
-    CreateDnsProviderDto, DnsProviderDto, DnsRecordDto, DnsTestResultDto, DnsZoneDto,
-    UpdateDnsProviderDto, UpsertDnsRecordDto,
-};
-use crate::core::middleware::permission::{
-    CanCreate, CanDelete, CanRead, CanUpdate, PermissionOrganization, RequirePermission, Server,
-};
-use crate::core::middleware::validator::ValidatedJson;
-use crate::services::dns::{DnsService, DnsServiceError};
-use auto_route::controller;
-use axum::{Extension, Json, extract::Path, http::StatusCode};
 use std::sync::Arc;
 
-type ApiError = (StatusCode, String);
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+
+use crate::api::connect::generated::openoxide::api::v1::{
+    DnsService, DnsServiceExt, Empty, OperationResult, ResourceListResponse, ResourceQuery,
+    ResourceRequest, ResourceResponse,
+};
+use crate::services::dns::{
+    CreateDnsProviderDto, DnsProviderDto, DnsRecordDto, DnsService as AppDnsService,
+    DnsServiceError, DnsZoneDto, UpdateDnsProviderDto, UpsertDnsRecordDto,
+};
 
 pub struct DnsController {
-    service: Arc<DnsService>,
+    service: Arc<AppDnsService>,
 }
 
-#[controller("/dns-providers")]
+#[singleton]
 impl DnsController {
-    fn new(service: Arc<DnsService>) -> Self {
+    pub fn new(service: Arc<AppDnsService>) -> Self {
         Self { service }
     }
+}
 
-    #[get]
-    #[live(tables = ["dns_providers"])]
-    async fn list(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-    ) -> Result<Json<Vec<DnsProviderDto>>, ApiError> {
-        self.service
-            .list_providers(organization_id)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[get("/{id}")]
-    #[live(tables = ["dns_providers"])]
-    async fn get(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<DnsProviderDto>, ApiError> {
-        self.service
-            .get_provider(id, organization_id)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        ValidatedJson(body): ValidatedJson<CreateDnsProviderDto>,
-    ) -> Result<(StatusCode, Json<DnsProviderDto>), ApiError> {
-        self.service
-            .create_provider(organization_id, body)
-            .await
-            .map(|dto| (StatusCode::CREATED, Json(dto)))
-            .map_err(map_dns_error)
-    }
-
-    #[put("/{id}")]
-    async fn update(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanUpdate>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<UpdateDnsProviderDto>,
-    ) -> Result<Json<DnsProviderDto>, ApiError> {
-        self.service
-            .update_provider(id, organization_id, body)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanDelete>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete_provider(id, organization_id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_dns_error)
-    }
-
-    #[post("/{id}/test")]
-    async fn test(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<DnsTestResultDto>, ApiError> {
-        self.service
-            .test_connection(id, organization_id)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[post("/test-connection")]
-    async fn test_connection(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        ValidatedJson(body): ValidatedJson<CreateDnsProviderDto>,
-    ) -> Result<Json<DnsTestResultDto>, ApiError> {
-        self.service
-            .test_credentials(body.provider_type, &body.credentials_json)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[get("/{id}/zones")]
-    async fn list_zones(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<Vec<DnsZoneDto>>, ApiError> {
-        self.service
-            .list_zones(id, organization_id)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[get("/{id}/zones/{zone_id}/records")]
-    async fn list_records(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanRead>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path((id, zone_id)): Path<(i64, String)>,
-    ) -> Result<Json<Vec<DnsRecordDto>>, ApiError> {
-        self.service
-            .list_records(id, organization_id, &zone_id)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[post("/{id}/records")]
-    async fn upsert_record(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanCreate>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<UpsertDnsRecordDto>,
-    ) -> Result<Json<DnsRecordDto>, ApiError> {
-        self.service
-            .upsert_record(id, organization_id, body)
-            .await
-            .map(Json)
-            .map_err(map_dns_error)
-    }
-
-    #[delete("/{id}/zones/{zone_id}/records/{record_id}")]
-    async fn delete_record(
-        &self,
-        RequirePermission(_, _): RequirePermission<Server, CanDelete>,
-        Extension(PermissionOrganization(organization_id)): Extension<PermissionOrganization>,
-        Path((id, zone_id, record_id)): Path<(i64, String, String)>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete_record(id, organization_id, &zone_id, &record_id)
-            .await
-            .map(|_| StatusCode::NO_CONTENT)
-            .map_err(map_dns_error)
+fn map_dns_error(error: DnsServiceError) -> ConnectError {
+    match error {
+        DnsServiceError::NotFound => ConnectError::not_found("DNS provider not found"),
+        DnsServiceError::Database(e) => match &e {
+            sqlx::Error::RowNotFound => ConnectError::not_found("DNS provider not found"),
+            sqlx::Error::Database(db) if db.is_unique_violation() => {
+                ConnectError::new(ErrorCode::AlreadyExists, db.message())
+            }
+            _ => {
+                tracing::error!(error = %e, "dns database operation failed");
+                ConnectError::new(ErrorCode::Internal, "database operation failed")
+            }
+        },
+        DnsServiceError::Http(e) => {
+            tracing::error!(error = %e, "dns HTTP request failed");
+            ConnectError::new(ErrorCode::Internal, "HTTP request failed")
+        }
+        DnsServiceError::ProviderError(msg) => ConnectError::invalid_argument(msg),
     }
 }
 
-fn map_dns_error(error: DnsServiceError) -> ApiError {
-    match error {
-        DnsServiceError::NotFound => (StatusCode::NOT_FOUND, "DNS provider not found".into()),
-        DnsServiceError::Database(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Database error: {}", e),
-        ),
-        DnsServiceError::Http(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("HTTP error: {}", e),
-        ),
-        DnsServiceError::ProviderError(msg) => (StatusCode::BAD_REQUEST, msg),
+fn provider_to_resource(dto: DnsProviderDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "dns_provider".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+fn zone_to_resource(dto: DnsZoneDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: 0,
+        kind: "dns_zone".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+fn record_to_resource(dto: DnsRecordDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: 0,
+        kind: "dns_record".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl DnsService for DnsController {
+    #[permission(Server, CanRead)]
+    async fn list_providers<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let org_id = _query.organization_id.unwrap_or(0);
+        let items = self.service.list_providers(org_id).await.map_err(map_dns_error)?;
+        let items = items.into_iter().map(provider_to_resource).collect();
+        Response::ok(ResourceListResponse {
+            items,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn get_provider<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let provider = self
+            .service
+            .get_provider(request.id, org_id)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(provider_to_resource(provider))
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn create_provider<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let dto: CreateDnsProviderDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let provider = self
+            .service
+            .create_provider(org_id, dto)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(provider_to_resource(provider))
+    }
+
+    #[permission(Server, CanUpdate)]
+    async fn update_provider<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let dto: UpdateDnsProviderDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let provider = self
+            .service
+            .update_provider(request.id, org_id, dto)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(provider_to_resource(provider))
+    }
+
+    #[permission(Server, CanDelete)]
+    async fn delete_provider<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        self.service
+            .delete_provider(request.id, org_id)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(Empty::default())
+    }
+
+    #[permission(Server, CanRead)]
+    async fn test_provider<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let result = self
+            .service
+            .test_connection(request.id, org_id)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(OperationResult {
+            success: result.success,
+            operation: "test_provider".into(),
+            message: Some(result.message),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn test_connection<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: CreateDnsProviderDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self
+            .service
+            .test_credentials(dto.provider_type, &dto.credentials_json)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(OperationResult {
+            success: result.success,
+            operation: "test_connection".into(),
+            message: Some(result.message),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn list_zones<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let zones = self
+            .service
+            .list_zones(request.id, org_id)
+            .await
+            .map_err(map_dns_error)?;
+        let items = zones.into_iter().map(zone_to_resource).collect();
+        Response::ok(ResourceListResponse {
+            items,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn list_records<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let records = self
+            .service
+            .list_records(request.id, org_id, &dto.zone_id)
+            .await
+            .map_err(map_dns_error)?;
+        let items = records.into_iter().map(record_to_resource).collect();
+        Response::ok(ResourceListResponse {
+            items,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn create_record<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let record = self
+            .service
+            .upsert_record(request.id, org_id, dto)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(record_to_resource(record))
+    }
+
+    #[permission(Server, CanDelete)]
+    async fn delete_record<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let org_id = request.organization_id.unwrap_or(0);
+        let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service
+            .delete_record(request.id, org_id, &dto.zone_id, &dto.name)
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(Empty::default())
     }
 }

@@ -4,10 +4,9 @@ use std::fmt;
 use std::str::FromStr;
 
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum, ts_rs::TS,
+    Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS,
 )]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[oai(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TargetKind {
     Server,
     Application,

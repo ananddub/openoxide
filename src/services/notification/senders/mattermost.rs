@@ -1,14 +1,11 @@
 use super::webhook::post_webhook;
-use crate::{
-    db::models::notif_mattermost::NotifMattermost,
-    services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::MattermostConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_mattermost(
     client: &Client,
-    cfg: &NotifMattermost,
+    cfg: &MattermostConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let mut payload = json!({ "text": msg.to_plain_text() });

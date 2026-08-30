@@ -1,0 +1,12 @@
+version = "2"
+schema_dir = "schema"
+queries = "queries/"
+
+[database]
+provider = "sqlite"
+url_env = "DATABASE_URL"
+
+[gen.rust]
+enabled = true
+out = "gen"
+driver = "sqlx"

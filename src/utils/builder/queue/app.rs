@@ -4,7 +4,6 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     core::config::Config,
-    db::models::rollbacks::Rollback,
     services::{
         application::ApplicationOperation,
         compose::remote::{agent_executor, deployment_pid_file},
@@ -36,17 +35,19 @@ impl BuilderQueue {
             BuilderError::Execution(format!("could not load deployment config: {e}"))
         })?;
 
-        let app_repo = resolve::<crate::repository::ApplicationRepository>()
+        let q = resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve ApplicationRepository: {e}"))
+                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
             })?;
-        let (environment_id, project_id, server_id) = app_repo
-            .get_deployment_context(application_id)
+        let ctx = q
+            .services_get_deployment_context(application_id)
             .await
             .map_err(|e| {
                 BuilderError::Execution(format!("could not resolve deployment context: {e}"))
             })?;
+        let (environment_id, project_id, server_id) =
+            (ctx.environment_id, ctx.project_id, ctx.server_id);
 
         let app_key = IdType::AppId(application_id);
         let state = resolve::<ApplicationState>().await.map_err(|e| {
@@ -66,13 +67,7 @@ impl BuilderQueue {
             .map_err(BuilderError::Execution)?;
         let executor = {
             let pid_file = deployment_pid_file(deployment_id);
-            let dep_repo = resolve::<crate::repository::DeploymentRepository>()
-                .await
-                .map_err(|e| {
-                    BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}"))
-                })?;
-            dep_repo
-                .set_pid(deployment_id, &pid_file)
+            q.deployments_set_pid(&pid_file, deployment_id)
                 .await
                 .map_err(|e| {
                     BuilderError::Execution(format!(
@@ -89,12 +84,7 @@ impl BuilderQueue {
         let mut cpu_limit_str = None;
 
         if let Some(sid) = server_id {
-            let server_repo = resolve::<crate::repository::ServerRepository>()
-                .await
-                .map_err(|e| {
-                    BuilderError::Execution(format!("could not resolve ServerRepository: {e}"))
-                })?;
-            if let Ok(Some(server)) = server_repo.get_by_id(sid).await {
+            if let Ok(server) = q.get_server_by_i_d(sid).await {
                 if let Some(val) = server.build_memory_limit {
                     if !val.trim().is_empty() {
                         mem_limit_str = Some(val);
@@ -199,19 +189,21 @@ impl BuilderQueue {
         spec: &crate::utils::builder::spec::ApplicationSpec,
         executor: &CommandExecutor,
     ) {
-        let rollback_repo = match resolve::<crate::repository::RollbackRepository>().await {
-            Ok(r) => r,
+        use crate::flash_gen::rollbacks::RollbacksCreateParams;
+
+        let q = match resolve::<crate::db::queries::FlashQueries>().await {
+            Ok(q) => q,
             Err(e) => {
-                tracing::warn!(error = %e, "rollback: could not resolve RollbackRepository, skipping snapshot");
+                tracing::warn!(error = %e, "rollback: could not resolve FlashQueries, skipping snapshot");
                 return;
             }
         };
 
-        let version = match rollback_repo
-            .get_next_version_for_application(application_id)
+        let version = match q
+            .rollbacks_get_next_version_for_application(application_id)
             .await
         {
-            Ok(v) => v,
+            Ok(v) => v.unwrap_or(0) + 1,
             Err(e) => {
                 tracing::warn!(error = %e, "rollback: could not determine next version, skipping snapshot");
                 return;
@@ -289,16 +281,16 @@ impl BuilderQueue {
             }
         };
 
-        let rollback = Rollback {
-            id: None,
-            deployment_id,
-            version,
-            image: Some(versioned_image),
-            full_context,
-            created_at: chrono::Utc::now().timestamp(),
-        };
-
-        match rollback_repo.create(&rollback).await {
+        match q
+            .rollbacks_create(&RollbacksCreateParams {
+                deployment_id,
+                version,
+                image: versioned_image,
+                full_context: full_context.unwrap_or_default(),
+                created_at: chrono::Utc::now().timestamp(),
+            })
+            .await
+        {
             Ok(id) => {
                 tracing::info!(
                     rollback_id = id,

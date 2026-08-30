@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "ai_settings")]
 pub struct AiSetting {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
     #[sqlx_gen(sql_type = "TEXT")]
@@ -18,12 +18,12 @@ pub struct AiSetting {
     pub api_key: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub model: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub is_enabled: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

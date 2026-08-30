@@ -1,57 +1,19 @@
+use crate::flash_gen::models::{Domains, Mounts, Patches};
+use crate::flash_gen::service_compose::ComposeGetSpecRowRow;
 use crate::utils::builder::compose::spec::{ComposeRuntime, ComposeSource, ComposeSpec};
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
 use crate::utils::builder::spec::{PatchSpec, RuntimeType, SourceType};
 use crate::utils::git::GitProviderBuilder;
-use crate::{
-    db::models::{domains::Domain, mounts::Mount, patches::Patch},
-    utils::builder::env::generate_env_app,
-    utils::paths::openoxide_paths,
-};
+use crate::utils::builder::env::generate_env_app;
+use crate::utils::paths::openoxide_paths;
 
 pub struct ComposeRowWithRelations {
-    pub compose: ComposeRow,
-    pub domains: Vec<Domain>,
-    pub mounts: Vec<Mount>,
-    pub patches: Vec<Patch>,
+    pub compose: ComposeGetSpecRowRow,
+    pub domains: Vec<Domains>,
+    pub mounts: Vec<Mounts>,
+    pub patches: Vec<Patches>,
     pub service_networks: Vec<crate::utils::builder::compose::spec::ComposeServiceNetworkSpec>,
-}
-
-#[derive(sqlx::FromRow)]
-pub struct ComposeRow {
-    pub app_name: String,
-    pub source_type: String,
-    pub compose_type: String,
-    pub compose_file: String,
-    pub env_var: Option<String>,
-    pub service_networks: String,
-    pub randomize: i64,
-    pub suffix: String,
-    pub isolated_deployment: i64,
-    pub isolated_deployments_volume: i64,
-    pub repository: Option<String>,
-    pub owner: Option<String>,
-    pub branch: Option<String>,
-    pub gitlab_repository: Option<String>,
-    pub gitlab_owner: Option<String>,
-    pub gitlab_branch: Option<String>,
-    pub gitea_repository: Option<String>,
-    pub gitea_branch: Option<String>,
-    pub bitbucket_repository: Option<String>,
-    pub bitbucket_owner: Option<String>,
-    pub bitbucket_branch: Option<String>,
-    pub custom_git_url: Option<String>,
-    pub custom_git_branch: Option<String>,
-    pub custom_git_ssh_key_id: Option<i64>,
-    pub enable_submodules: i64,
-    pub compose_path: String,
-    pub environment_env: String,
-    pub project_env: String,
-    pub github_token: Option<String>,
-    pub gitlab_token: Option<String>,
-    pub bitbucket_token: Option<String>,
-    pub gitea_token: Option<String>,
-    pub ssh_private_key: Option<String>,
 }
 
 impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
@@ -69,12 +31,12 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
             app_name: compose.app_name.clone(),
             stack_name: compose.app_name.clone(),
             source: source(&compose)?,
-            runtime: runtime(&compose.compose_type)?,
+            runtime: runtime(&compose.compose_type.as_deref().unwrap_or(""))?,
             work_directory: paths.compose_source(&compose.app_name),
-            compose_path: if compose.source_type == "RAW" {
+            compose_path: if source_type_str(&compose) == "RAW" {
                 format!("{app_dir}/compose.yml")
             } else {
-                compose.compose_path
+                compose.compose_path.clone().unwrap_or_default()
             },
             rendered_stack_file: format!("{app_dir}/rendered-stack.yml"),
             env_file: format!("{app_dir}/.env"),
@@ -102,20 +64,27 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
                 .map(domain)
                 .collect::<Result<Vec<_>, _>>()?,
             service_networks,
-            randomize: compose.randomize != 0,
-            suffix: compose.suffix,
-            isolated_deployment: compose.isolated_deployment != 0,
-            isolated_deployments_volume: compose.isolated_deployments_volume != 0,
+            randomize: compose.randomize.unwrap_or(0) != 0,
+            suffix: compose.suffix.clone().unwrap_or_default(),
+            isolated_deployment: compose.isolated_deployment.unwrap_or(0) != 0,
+            isolated_deployments_volume: compose.isolated_deployments_volume.unwrap_or(0) != 0,
         })
     }
 }
 
-fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
+fn source_type_str(compose: &ComposeGetSpecRowRow) -> &str {
+    compose.source_type.as_deref().unwrap_or("DROP")
+}
+
+fn source(compose: &ComposeGetSpecRowRow) -> Result<ComposeSource, AdapterError> {
     let branch = |value: &Option<String>| value.clone().unwrap_or_else(|| "main".into());
-    let source_type = SourceType::from(compose.source_type.as_str());
+    let source_type = match source_type_str(compose) {
+        "CUSTOM" => SourceType::Git,
+        other => SourceType::from(other),
+    };
     match source_type {
         SourceType::Raw => Ok(ComposeSource::Raw {
-            content: compose.compose_file.clone(),
+            content: compose.compose_file.clone().unwrap_or_default(),
         }),
         SourceType::Drop => Ok(ComposeSource::Drop),
         _ => {
@@ -143,22 +112,14 @@ fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
             };
 
             let auth = match source_type {
-                SourceType::Github => compose
-                    .github_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitlab => compose
-                    .gitlab_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Bitbucket => compose
-                    .bitbucket_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitea => compose
-                    .gitea_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Github => config_token(&compose.github_config, "private_key")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Gitlab => config_token(&compose.gitlab_config, "access_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Bitbucket => config_token(&compose.bitbucket_config, "api_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Gitea => config_token(&compose.gitea_config, "access_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
                 SourceType::Git => compose
                     .ssh_private_key
                     .as_ref()
@@ -175,11 +136,24 @@ fn source(compose: &ComposeRow) -> Result<ComposeSource, AdapterError> {
             Ok(ComposeSource::Git {
                 url: provider.repository_url(),
                 branch: branch(branch_val),
-                submodules: compose.enable_submodules != 0,
+                submodules: compose.enable_submodules.unwrap_or(0) != 0,
                 protocol,
                 auth,
             })
         }
+    }
+}
+
+/// Extracts a token field from a provider `config_json` payload. A missing or
+/// invalid config yields no token instead of failing the spec load.
+fn config_token(config: &Option<String>, field: &str) -> Option<String> {
+    let json = config.as_deref()?;
+    let value: serde_json::Value = serde_json::from_str(json).ok()?;
+    let token = value.get(field)?.as_str()?.trim();
+    if token.is_empty() {
+        None
+    } else {
+        Some(token.to_string())
     }
 }
 

@@ -2,15 +2,21 @@ use auto_di::singleton;
 use std::sync::Arc;
 
 use crate::{
-    api::dto::{compose::CreateComposeDto, domain::CreateDomainDto},
-    db::models::{ai_generations::AiGeneration, ai_settings::AiSetting},
-    repository::{
-        AiGenerationRepository, AiSettingRepository, DomainRepository, EnvironmentRepository,
-        MountRepository, ProjectRepository,
+    db::{
+        models::{ai_generations::AiGeneration, ai_settings::AiSetting},
+        queries::FlashQueries,
+    },
+    flash_gen::{
+        ai_generations::{
+            AiGenerationsCreateParams, AiGenerationsMarkDeployedParams, AiGenerationsReviewParams,
+        },
+        misc_services_extra::MiscSvcAiSettingsCreateReturnIdParams,
+        models::{AiGenerations, AiSettings},
+        mount::MountCreateComposeFileParams,
     },
     services::{
-        compose::{ComposeOperation, ComposeService},
-        domain::DomainService,
+        compose::{ComposeOperation, ComposeService, crud::CreateComposeDto},
+        domain::{CreateDomainDto, DomainService},
     },
     utils::ai::{AiClient, AiProviderConfig, AiProviderKind},
 };
@@ -25,12 +31,7 @@ use super::{
 };
 
 pub struct AiService {
-    settings: Arc<AiSettingRepository>,
-    generations: Arc<AiGenerationRepository>,
-    environments: Arc<EnvironmentRepository>,
-    projects: Arc<ProjectRepository>,
-    domains: Arc<DomainRepository>,
-    mounts: Arc<MountRepository>,
+    queries: Arc<FlashQueries>,
     compose: Arc<ComposeService>,
     domain: Arc<DomainService>,
     client: AiClient,
@@ -39,22 +40,12 @@ pub struct AiService {
 #[singleton]
 impl AiService {
     fn new(
-        settings: Arc<AiSettingRepository>,
-        generations: Arc<AiGenerationRepository>,
-        environments: Arc<EnvironmentRepository>,
-        projects: Arc<ProjectRepository>,
-        domains: Arc<DomainRepository>,
-        mounts: Arc<MountRepository>,
+        queries: Arc<FlashQueries>,
         compose: Arc<ComposeService>,
         domain: Arc<DomainService>,
     ) -> Self {
         Self {
-            settings,
-            generations,
-            environments,
-            projects,
-            domains,
-            mounts,
+            queries,
             compose,
             domain,
             client: AiClient::default(),
@@ -62,11 +53,14 @@ impl AiService {
     }
 
     pub async fn list_settings(&self, organization_id: i64) -> Result<Vec<AiSettingView>, String> {
-        self.settings
-            .list_by_organization(organization_id)
+        Ok(self
+            .queries
+            .ai_settings_list_by_organization(organization_id)
             .await
-            .map_err(db_error)
-            .map(|items| items.into_iter().map(setting_view).collect())
+            .map_err(db_error)?
+            .into_iter()
+            .map(|row| setting_view(ai_setting_from_model(row)))
+            .collect())
     }
 
     pub async fn get_setting(
@@ -85,7 +79,7 @@ impl AiService {
         validate_setting(&input.name, &input.api_url, &input.model)?;
         let now = chrono::Utc::now().timestamp();
         let item = AiSetting {
-            id: None,
+            id: 0,
             name: input.name.trim().to_string(),
             api_url: normalize_url(&input.api_url),
             api_key: input.api_key,
@@ -95,7 +89,20 @@ impl AiService {
             created_at: now,
             updated_at: now,
         };
-        let id = self.settings.create(&item).await.map_err(db_error)?;
+        let id = self
+            .queries
+            .misc_svc_ai_settings_create_return_id(&MiscSvcAiSettingsCreateReturnIdParams {
+                name: item.name,
+                api_url: item.api_url,
+                api_key: item.api_key,
+                model: item.model,
+                is_enabled: item.is_enabled,
+                organization_id: item.organization_id,
+                created_at: item.created_at,
+                updated_at: item.updated_at,
+            })
+            .await
+            .map_err(db_error)?;
         self.get_setting(id, organization_id).await
     }
 
@@ -111,7 +118,7 @@ impl AiService {
         let model = input.model.unwrap_or(current.model);
         validate_setting(&name, &api_url, &model)?;
         let item = AiSetting {
-            id: Some(id),
+            id,
             name: name.trim().to_string(),
             api_url: normalize_url(&api_url),
             api_key: input.api_key.unwrap_or(current.api_key),
@@ -124,15 +131,33 @@ impl AiService {
             created_at: current.created_at,
             updated_at: chrono::Utc::now().timestamp(),
         };
-        self.settings.update(id, &item).await.map_err(db_error)?;
+        self.queries
+            .ai_settings_update(&crate::flash_gen::ai_settings::AiSettingsUpdateParams {
+                name: item.name.clone(),
+                api_url: item.api_url.clone(),
+                api_key: item.api_key.clone(),
+                model: item.model.clone(),
+                is_enabled: item.is_enabled,
+                organization_id: item.organization_id,
+                created_at: item.created_at,
+                updated_at: item.updated_at,
+                id,
+            })
+            .await
+            .map_err(db_error)?;
         self.get_setting(id, organization_id).await
     }
 
     pub async fn delete_setting(&self, id: i64, organization_id: i64) -> Result<bool, String> {
-        self.settings
-            .delete_for_organization(id, organization_id)
+        match self
+            .queries
+            .misc_svc_ai_settings_delete_for_organization(id, organization_id)
             .await
-            .map_err(db_error)
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(db_error(error)),
+        }
     }
 
     pub async fn discover_models(
@@ -206,17 +231,17 @@ impl AiService {
         let output_json = serde_json::to_string(&output)
             .map_err(|error| format!("could not serialize AI output: {error}"))?;
         let generation = self
-            .generations
-            .create(
+            .queries
+            .ai_generations_create(&AiGenerationsCreateParams {
                 ai_setting_id,
                 organization_id,
-                user_id,
-                request.trim(),
-                &output_json,
-            )
+                created_by: user_id,
+                prompt: request.trim().to_string(),
+                output_json,
+            })
             .await
             .map_err(db_error)?;
-        generation_view(generation)
+        generation_view(ai_generation_from_model(generation))
     }
 
     pub async fn get_generation(
@@ -224,12 +249,17 @@ impl AiService {
         id: i64,
         organization_id: i64,
     ) -> Result<AiGenerationView, String> {
-        let generation = self
-            .generations
-            .get_for_organization(id, organization_id)
+        let generation = match self
+            .queries
+            .ai_generations_get_for_organization(id, organization_id)
             .await
-            .map_err(db_error)?
-            .ok_or_else(|| "AI generation not found".to_string())?;
+        {
+            Ok(row) => ai_generation_from_model(row),
+            Err(sqlx::Error::RowNotFound) => {
+                return Err("AI generation not found".to_string())
+            }
+            Err(error) => return Err(db_error(error)),
+        };
         generation_view(generation)
     }
 
@@ -238,12 +268,13 @@ impl AiService {
         organization_id: i64,
         limit: i64,
     ) -> Result<Vec<AiGenerationView>, String> {
-        let rows = self
-            .generations
-            .list_for_organization(organization_id, limit.clamp(1, 100))
+        self.queries
+            .ai_generations_list_for_organization(organization_id, limit.clamp(1, 100))
             .await
-            .map_err(db_error)?;
-        rows.into_iter().map(generation_view).collect()
+            .map_err(db_error)?
+            .into_iter()
+            .map(|row| generation_view(ai_generation_from_model(row)))
+            .collect()
     }
 
     pub async fn review_generation(
@@ -255,12 +286,21 @@ impl AiService {
         validation::validate_output(&output)?;
         let output_json = serde_json::to_string(&output)
             .map_err(|error| format!("could not serialize AI output: {error}"))?;
-        let generation = self
-            .generations
-            .review(id, organization_id, &output_json)
+        let generation = match self
+            .queries
+            .ai_generations_review(&AiGenerationsReviewParams {
+                output_json,
+                id,
+                organization_id,
+            })
             .await
-            .map_err(db_error)?
-            .ok_or_else(|| "AI generation not found or already deployed".to_string())?;
+        {
+            Ok(row) => ai_generation_from_model(row),
+            Err(sqlx::Error::RowNotFound) => {
+                return Err("AI generation not found or already deployed".to_string())
+            }
+            Err(error) => return Err(db_error(error)),
+        };
         generation_view(generation)
     }
 
@@ -286,21 +326,26 @@ impl AiService {
             .await?;
         for domain in &suggestion.domains {
             if self
-                .domains
-                .host_in_use(&domain.host)
+                .queries
+                .domains_host_in_use(&domain.host)
                 .await
                 .map_err(db_error)?
+                > 0
             {
                 return Err(format!("domain `{}` is already in use", domain.host));
             }
         }
 
-        if !self
-            .generations
-            .claim_for_deploy(id, organization_id)
+        let claimed = match self
+            .queries
+            .ai_generations_claim_for_deploy(id, organization_id)
             .await
-            .map_err(db_error)?
         {
+            Ok(_) => true,
+            Err(sqlx::Error::RowNotFound) => false,
+            Err(error) => return Err(db_error(error)),
+        };
+        if !claimed {
             return Err("AI generation is already deploying or has been deployed".into());
         }
 
@@ -354,12 +399,21 @@ impl AiService {
         } else {
             None
         };
-        let deployed = self
-            .generations
-            .mark_deployed(id, organization_id, compose.id)
+        let deployed = match self
+            .queries
+            .ai_generations_mark_deployed(&AiGenerationsMarkDeployedParams {
+                service_id: compose.id,
+                id,
+                organization_id,
+            })
             .await
-            .map_err(db_error)?
-            .ok_or_else(|| "AI generation deployment state changed concurrently".to_string())?;
+        {
+            Ok(row) => ai_generation_from_model(row),
+            Err(sqlx::Error::RowNotFound) => {
+                return Err("AI generation deployment state changed concurrently".to_string())
+            }
+            Err(error) => return Err(db_error(error)),
+        };
 
         Ok(AiDeploymentResult {
             generation: generation_view(deployed)?,
@@ -388,7 +442,11 @@ impl AiService {
     }
 
     async fn release_deploy(&self, id: i64, organization_id: i64) {
-        if let Err(error) = self.generations.release_deploy(id, organization_id).await {
+        if let Err(error) = self
+            .queries
+            .ai_generations_release_deploy(id, organization_id)
+            .await
+        {
             tracing::error!(
                 id,
                 organization_id,
@@ -413,7 +471,7 @@ impl AiService {
             self.compose
                 .patch(
                     compose_id,
-                    crate::api::dto::compose::PatchComposeDto {
+                    crate::services::compose::crud::PatchComposeDto {
                         name: None,
                         description: None,
                         env_var: Some(env_var),
@@ -457,8 +515,12 @@ impl AiService {
                 .map_err(db_error)?;
         }
         for file in &suggestion.config_files {
-            self.mounts
-                .create_compose_file(compose_id, &file.file_path, &file.content)
+            self.queries
+                .mount_create_compose_file(&MountCreateComposeFileParams {
+                    file_path: file.file_path.clone(),
+                    content: file.content.clone(),
+                    service_id: compose_id,
+                })
                 .await
                 .map_err(db_error)?;
         }
@@ -466,11 +528,15 @@ impl AiService {
     }
 
     async fn setting(&self, id: i64, organization_id: i64) -> Result<AiSetting, String> {
-        self.settings
-            .get_for_organization(id, organization_id)
+        match self
+            .queries
+            .ai_settings_get_for_organization(id, organization_id)
             .await
-            .map_err(db_error)?
-            .ok_or_else(|| "AI setting not found".into())
+        {
+            Ok(row) => Ok(ai_setting_from_model(row)),
+            Err(sqlx::Error::RowNotFound) => Err("AI setting not found".into()),
+            Err(error) => Err(db_error(error)),
+        }
     }
 
     async fn enabled_setting(&self, id: i64, organization_id: i64) -> Result<AiSetting, String> {
@@ -486,22 +552,49 @@ impl AiService {
         environment_id: i64,
         organization_id: i64,
     ) -> Result<(), String> {
-        let environment = self
-            .environments
-            .get_by_id(environment_id)
-            .await
-            .map_err(db_error)?
-            .ok_or_else(|| "environment not found".to_string())?;
-        let project = self
-            .projects
-            .get_by_id(environment.project_id)
-            .await
-            .map_err(db_error)?
-            .ok_or_else(|| "environment project not found".to_string())?;
+        let environment = match self.queries.environments_get_by_id(environment_id).await {
+            Ok(row) => row,
+            Err(sqlx::Error::RowNotFound) => return Err("environment not found".into()),
+            Err(error) => return Err(db_error(error)),
+        };
+        let project = match self.queries.projects_get_by_id(environment.project_id).await {
+            Ok(row) => row,
+            Err(sqlx::Error::RowNotFound) => return Err("environment project not found".into()),
+            Err(error) => return Err(db_error(error)),
+        };
         if project.organization_id != organization_id {
             return Err("environment does not belong to the authenticated organization".into());
         }
         Ok(())
+    }
+}
+
+fn ai_setting_from_model(row: AiSettings) -> AiSetting {
+    AiSetting {
+        id: row.id,
+        name: row.name,
+        api_url: row.api_url,
+        api_key: row.api_key,
+        model: row.model,
+        is_enabled: row.is_enabled,
+        organization_id: row.organization_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
+fn ai_generation_from_model(row: AiGenerations) -> AiGeneration {
+    AiGeneration {
+        id: row.id,
+        ai_setting_id: row.ai_setting_id,
+        organization_id: row.organization_id,
+        created_by: row.created_by,
+        prompt: row.prompt,
+        output_json: row.output_json,
+        status: row.status,
+        service_id: row.service_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
     }
 }
 
@@ -522,7 +615,7 @@ fn setting_view(setting: AiSetting) -> AiSettingView {
         AiProviderKind::OpenAiCompatible => "openai_compatible",
     };
     AiSettingView {
-        id: setting.id.unwrap_or_default(),
+        id: setting.id,
         name: setting.name,
         api_url: setting.api_url,
         model: setting.model,
@@ -546,7 +639,7 @@ fn generation_view(generation: AiGeneration) -> Result<AiGenerationView, String>
         prompt: generation.prompt,
         output,
         status: generation.status,
-        compose_id: generation.compose_id,
+        compose_id: generation.service_id,
         created_at: generation.created_at,
         updated_at: generation.updated_at,
     })

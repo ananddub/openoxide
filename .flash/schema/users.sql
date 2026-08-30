@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     email TEXT,
     last_name TEXT,
     first_name TEXT,
@@ -7,13 +7,13 @@ CREATE TABLE users (
     role TEXT,
     about_me TEXT,
     password TEXT NOT NULL,
-    is_email_verify INTEGER,
-    email_verify_at INTEGER,
-    two_factor_enable INTEGER,
-    is_registered INTEGER NOT NULL,
-    added_by INTEGER,
-    group_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    is_owner INTEGER
+    is_email_verify BIGINT,
+    email_verify_at BIGINT,
+    two_factor_enable BIGINT,
+    is_registered BIGINT NOT NULL,
+    added_by BIGINT,
+    group_id BIGINT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    is_owner BIGINT
 );

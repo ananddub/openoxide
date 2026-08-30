@@ -60,18 +60,17 @@ impl Queries {
     pub async fn rollbacks_create(
         &self,
         params: &RollbacksCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO rollbacks (deployment_id, version, image, full_context, created_at) VALUES (?, ?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO rollbacks (deployment_id, version, image, full_context, created_at) VALUES (?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.deployment_id)
         .bind(&params.version)
         .bind(&params.image)
         .bind(&params.full_context)
         .bind(&params.created_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// RollbacksUpdate
@@ -123,12 +122,12 @@ impl Queries {
     /// RollbacksListByApplication
     pub async fn rollbacks_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Rollbacks>, sqlx::Error> {
         sqlx::query_as::<_, Rollbacks>(
-            "SELECT r.id AS id, r.deployment_id AS deployment_id, r.version AS version, r.image AS image, r.full_context AS full_context, r.created_at AS created_at FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE d.application_id = ? ORDER BY r.version DESC;"
+            "SELECT r.id AS id, r.deployment_id AS deployment_id, r.version AS version, r.image AS image, r.full_context AS full_context, r.created_at AS created_at FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE d.service_id = ? ORDER BY r.version DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -136,12 +135,12 @@ impl Queries {
     /// RollbacksGetNextVersionForApplication
     pub async fn rollbacks_get_next_version_for_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Option<i64>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<i64>>(
-            "SELECT COALESCE(MAX(r.version), 0) AS max_version FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE d.application_id = ?;"
+            "SELECT COALESCE(MAX(r.version), 0) AS max_version FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE d.service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -150,13 +149,13 @@ impl Queries {
     pub async fn rollbacks_get_for_application(
         &self,
         id: i64,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Rollbacks, sqlx::Error> {
         sqlx::query_as::<_, Rollbacks>(
-            "SELECT r.id AS id, r.deployment_id AS deployment_id, r.version AS version, r.image AS image, r.full_context AS full_context, r.created_at AS created_at FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE r.id = ? AND d.application_id = ?;"
+            "SELECT r.id AS id, r.deployment_id AS deployment_id, r.version AS version, r.image AS image, r.full_context AS full_context, r.created_at AS created_at FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE r.id = ? AND d.service_id = ?;"
         )
         .bind(id)
-        .bind(application_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -165,13 +164,13 @@ impl Queries {
     pub async fn rollbacks_delete_for_application(
         &self,
         id: i64,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM rollbacks WHERE id = ? AND deployment_id IN ( SELECT id FROM deployments WHERE application_id = ? );"
+            "DELETE FROM rollbacks WHERE id = ? AND deployment_id IN ( SELECT id FROM deployments WHERE service_id = ? );"
         )
         .bind(id)
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())

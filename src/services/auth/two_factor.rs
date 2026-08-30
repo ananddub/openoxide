@@ -3,8 +3,13 @@ use sha2::{Digest, Sha256};
 use totp_rs::{Algorithm, Secret, TOTP};
 
 use crate::{
-    api::dto::auth::{RecoveryCodesResponseDto, TwoFactorSetupResponseDto, TwoFactorStatusDto},
-    db::models::{two_factor::TwoFactor, users::User},
+    api::connect::generated::openoxide::api::v1::{
+        RecoveryCodes, TwoFactorSetup, TwoFactorStatus,
+    },
+    flash_gen::{
+        models::{TwoFactor, Users},
+        two_factor::{TwoFactorConsumeRecoveryCodeParams, TwoFactorUpsertParams},
+    },
 };
 
 use super::{AuthError, AuthService, verify_password};
@@ -12,16 +17,13 @@ use super::{AuthError, AuthService, verify_password};
 const RECOVERY_CODE_COUNT: usize = 10;
 
 impl AuthService {
-    pub async fn two_factor_status(&self, user_id: i64) -> Result<TwoFactorStatusDto, AuthError> {
+    pub async fn two_factor_status(&self, user_id: i64) -> Result<TwoFactorStatus, AuthError> {
         let user = self.get_user_by_id(user_id).await?;
-        let configured = self
-            .repo_two_factor
-            .get_by_user_id(user_id)
-            .await?
-            .is_some();
-        Ok(TwoFactorStatusDto {
+        let configured = self.stored_second_factor(user_id).await?.is_some();
+        Ok(TwoFactorStatus {
             enabled: user.two_factor_enable.unwrap_or_default() != 0,
             configured,
+            ..Default::default()
         })
     }
 
@@ -29,7 +31,7 @@ impl AuthService {
         &self,
         user_id: i64,
         password: String,
-    ) -> Result<TwoFactorSetupResponseDto, AuthError> {
+    ) -> Result<TwoFactorSetup, AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         verify_password(password, user.password.clone()).await?;
         if user.two_factor_enable.unwrap_or_default() != 0 {
@@ -41,9 +43,8 @@ impl AuthService {
         let secret = Secret::generate_secret().to_encoded().to_string();
         let recovery_codes = generate_recovery_codes()?;
         let backup_codes = encode_recovery_codes(&recovery_codes)?;
-        self.repo_two_factor
-            .upsert(&TwoFactor {
-                id: None,
+        self.queries
+            .two_factor_upsert(&TwoFactorUpsertParams {
                 secret: secret.clone(),
                 backup_codes,
                 user_id,
@@ -52,18 +53,18 @@ impl AuthService {
 
         let email = user.email.as_deref().unwrap_or("user");
         let otpauth_url = totp(&secret, email)?.get_url();
-        Ok(TwoFactorSetupResponseDto {
+        Ok(TwoFactorSetup {
             secret,
             otpauth_url,
             recovery_codes,
+            ..Default::default()
         })
     }
 
     pub async fn enable_two_factor(&self, user_id: i64, code: &str) -> Result<(), AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         let setting = self
-            .repo_two_factor
-            .get_by_user_id(user_id)
+            .stored_second_factor(user_id)
             .await?
             .ok_or_else(|| AuthError::InvalidOperation("two-factor setup is not started".into()))?;
         if !check_totp(
@@ -73,8 +74,8 @@ impl AuthService {
         )? {
             return Err(AuthError::InvalidSecondFactor);
         }
-        self.repo_user.set_two_factor_enabled(user_id, true).await?;
-        self.repo_token.blacklist_all_by_user(user_id).await?;
+        self.queries.users_set_two_factor_enabled(1, user_id).await?;
+        self.queries.jwt_tokens_blacklist_all_by_user(user_id).await?;
         Ok(())
     }
 
@@ -87,17 +88,14 @@ impl AuthService {
         let user = self.get_user_by_id(user_id).await?;
         verify_password(password, user.password.clone()).await?;
         let setting = self
-            .repo_two_factor
-            .get_by_user_id(user_id)
+            .stored_second_factor(user_id)
             .await?
             .ok_or(AuthError::InvalidSecondFactor)?;
         self.verify_stored_second_factor(&user, &setting, code, code)
             .await?;
-        self.repo_two_factor.delete_by_user_id(user_id).await?;
-        self.repo_user
-            .set_two_factor_enabled(user_id, false)
-            .await?;
-        self.repo_token.blacklist_all_by_user(user_id).await?;
+        self.queries.two_factor_delete_by_user_id(user_id).await?;
+        self.queries.users_set_two_factor_enabled(0, user_id).await?;
+        self.queries.jwt_tokens_blacklist_all_by_user(user_id).await?;
         Ok(())
     }
 
@@ -106,27 +104,29 @@ impl AuthService {
         user_id: i64,
         password: String,
         code: &str,
-    ) -> Result<RecoveryCodesResponseDto, AuthError> {
+    ) -> Result<RecoveryCodes, AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         verify_password(password, user.password.clone()).await?;
         let setting = self
-            .repo_two_factor
-            .get_by_user_id(user_id)
+            .stored_second_factor(user_id)
             .await?
             .ok_or(AuthError::InvalidSecondFactor)?;
         self.verify_stored_second_factor(&user, &setting, code, code)
             .await?;
         let recovery_codes = generate_recovery_codes()?;
         let encoded = encode_recovery_codes(&recovery_codes)?;
-        self.repo_two_factor
-            .replace_recovery_codes(user_id, &encoded)
+        self.queries
+            .two_factor_replace_recovery_codes(&encoded, user_id)
             .await?;
-        Ok(RecoveryCodesResponseDto { recovery_codes })
+        Ok(RecoveryCodes {
+            recovery_codes,
+            ..Default::default()
+        })
     }
 
     pub(super) async fn verify_login_second_factor(
         &self,
-        user: &User,
+        user: &Users,
         code: Option<&str>,
         recovery_code: Option<&str>,
     ) -> Result<(), AuthError> {
@@ -137,8 +137,7 @@ impl AuthService {
             return Err(AuthError::TwoFactorRequired);
         }
         let setting = self
-            .repo_two_factor
-            .get_by_user_id(user.id.ok_or(AuthError::Internal)?)
+            .stored_second_factor(user.id)
             .await?
             .ok_or(AuthError::InvalidSecondFactor)?;
         self.verify_stored_second_factor(
@@ -150,9 +149,17 @@ impl AuthService {
         .await
     }
 
+    async fn stored_second_factor(&self, user_id: i64) -> Result<Option<TwoFactor>, AuthError> {
+        match self.queries.two_factor_get_by_user_id(user_id).await {
+            Ok(setting) => Ok(Some(setting)),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error.into()),
+        }
+    }
+
     async fn verify_stored_second_factor(
         &self,
-        user: &User,
+        user: &Users,
         setting: &TwoFactor,
         code: &str,
         recovery_code: &str,
@@ -168,9 +175,8 @@ impl AuthService {
         }
         if !recovery_code.trim().is_empty()
             && self
-                .repo_two_factor
                 .consume_recovery_code(
-                    user.id.ok_or(AuthError::Internal)?,
+                    user.id,
                     &setting.backup_codes,
                     &hash_recovery_code(recovery_code),
                 )
@@ -179,6 +185,32 @@ impl AuthService {
             return Ok(());
         }
         Err(AuthError::InvalidSecondFactor)
+    }
+
+    async fn consume_recovery_code(
+        &self,
+        user_id: i64,
+        backup_codes: &str,
+        code_hash: &str,
+    ) -> Result<bool, AuthError> {
+        let mut codes: Vec<String> = serde_json::from_str(backup_codes).unwrap_or_default();
+        let Some(index) = codes.iter().position(|value| value == code_hash) else {
+            return Ok(false);
+        };
+        codes.remove(index);
+        let updated = serde_json::to_string(&codes).map_err(|_| AuthError::Internal)?;
+        self.queries
+            .two_factor_consume_recovery_code(&TwoFactorConsumeRecoveryCodeParams {
+                backup_codes: updated.clone(),
+                user_id,
+                backup_codes2: backup_codes.to_string(),
+            })
+            .await?;
+        match self.queries.two_factor_get_by_user_id(user_id).await {
+            Ok(setting) => Ok(setting.backup_codes == updated),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error.into()),
+        }
     }
 }
 

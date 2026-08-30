@@ -1,5 +1,4 @@
-use super::{VaultService, VaultServiceError};
-use crate::api::dto::vault::{VaultSecretListDto, VaultTestResultDto};
+use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto};
 
 impl VaultService {
     pub(super) async fn scaleway_secrets(

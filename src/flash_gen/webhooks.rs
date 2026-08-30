@@ -4,110 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingApplications1Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingApplications2Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingApplications3Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingApplications4Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingComposeProjects1Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingComposeProjects2Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingComposeProjects3Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct WebhooksMatchingComposeProjects4Row {
-    pub id: i64,
-    pub watch_paths: Option<String>,
-}
-
-pub struct WebhooksMatchingApplications1Params {
-    pub trigger_type: String,
-    pub repository: String,
-    pub owner: String,
-    pub branch: String,
-}
-
-pub struct WebhooksMatchingApplications2Params {
-    pub trigger_type: String,
-    pub gitlab_repository: String,
-    pub gitlab_owner: String,
-    pub gitlab_branch: String,
-}
-
-pub struct WebhooksMatchingApplications3Params {
-    pub trigger_type: String,
-    pub gitea_repository: String,
-    pub gitea_owner: String,
-    pub gitea_branch: String,
-}
-
-pub struct WebhooksMatchingApplications4Params {
-    pub trigger_type: String,
-    pub bitbucket_repository: String,
-    pub bitbucket_owner: String,
-    pub bitbucket_branch: String,
-}
-
-pub struct WebhooksMatchingComposeProjects1Params {
-    pub trigger_type: String,
-    pub repository: String,
-    pub owner: String,
-    pub branch: String,
-}
-
-pub struct WebhooksMatchingComposeProjects2Params {
-    pub trigger_type: String,
-    pub gitlab_repository: String,
-    pub gitlab_owner: String,
-    pub gitlab_branch: String,
-}
-
-pub struct WebhooksMatchingComposeProjects3Params {
-    pub trigger_type: String,
-    pub gitea_repository: String,
-    pub gitea_owner: String,
-    pub gitea_branch: String,
-}
-
-pub struct WebhooksMatchingComposeProjects4Params {
-    pub trigger_type: String,
-    pub bitbucket_repository: String,
-    pub bitbucket_owner: String,
-    pub bitbucket_branch: String,
-}
-
 impl Queries {
     /// WebhooksCredentialSecret1
     pub async fn webhooks_credential_secret1(
@@ -115,7 +11,7 @@ impl Queries {
         id: i64,
     ) -> Result<Option<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<String>>(
-            "SELECT gp.webhook_secret FROM github_providers p JOIN git_providers gp ON gp.id = p.git_provider_id WHERE p.id = ?;"
+            "SELECT webhook_secret FROM git_providers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -128,7 +24,7 @@ impl Queries {
         id: i64,
     ) -> Result<Option<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<String>>(
-            "SELECT gp.webhook_secret FROM gitlab_providers p JOIN git_providers gp ON gp.id = p.git_provider_id WHERE p.id = ?;"
+            "SELECT webhook_secret FROM git_providers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -141,7 +37,7 @@ impl Queries {
         id: i64,
     ) -> Result<Option<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<String>>(
-            "SELECT gp.webhook_secret FROM gitea_providers p JOIN git_providers gp ON gp.id = p.git_provider_id WHERE p.id = ?;"
+            "SELECT webhook_secret FROM git_providers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -154,138 +50,10 @@ impl Queries {
         id: i64,
     ) -> Result<Option<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<String>>(
-            "SELECT gp.webhook_secret FROM bitbucket_providers p JOIN git_providers gp ON gp.id = p.git_provider_id WHERE p.id = ?;"
+            "SELECT webhook_secret FROM git_providers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingApplications1
-    pub async fn webhooks_matching_applications1(
-        &self,
-        params: &WebhooksMatchingApplications1Params,
-    ) -> Result<Vec<WebhooksMatchingApplications1Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingApplications1Row>(
-            "SELECT id AS id, watch_paths FROM applications WHERE source_type = 'GITHUB' AND auto_deploy = 1 AND trigger_type = ? AND lower(repository) = lower(?) AND lower(owner) = lower(?) AND branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.repository)
-        .bind(&params.owner)
-        .bind(&params.branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingApplications2
-    pub async fn webhooks_matching_applications2(
-        &self,
-        params: &WebhooksMatchingApplications2Params,
-    ) -> Result<Vec<WebhooksMatchingApplications2Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingApplications2Row>(
-            "SELECT id AS id, watch_paths FROM applications WHERE source_type = 'GITLAB' AND auto_deploy = 1 AND trigger_type = ? AND lower(gitlab_repository) = lower(?) AND lower(gitlab_owner) = lower(?) AND gitlab_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.gitlab_repository)
-        .bind(&params.gitlab_owner)
-        .bind(&params.gitlab_branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingApplications3
-    pub async fn webhooks_matching_applications3(
-        &self,
-        params: &WebhooksMatchingApplications3Params,
-    ) -> Result<Vec<WebhooksMatchingApplications3Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingApplications3Row>(
-            "SELECT id AS id, watch_paths FROM applications WHERE source_type = 'GITEA' AND auto_deploy = 1 AND trigger_type = ? AND lower(gitea_repository) = lower(?) AND lower(gitea_owner) = lower(?) AND gitea_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.gitea_repository)
-        .bind(&params.gitea_owner)
-        .bind(&params.gitea_branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingApplications4
-    pub async fn webhooks_matching_applications4(
-        &self,
-        params: &WebhooksMatchingApplications4Params,
-    ) -> Result<Vec<WebhooksMatchingApplications4Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingApplications4Row>(
-            "SELECT id AS id, watch_paths FROM applications WHERE source_type = 'BITBUCKET' AND auto_deploy = 1 AND trigger_type = ? AND lower(bitbucket_repository) = lower(?) AND lower(bitbucket_owner) = lower(?) AND bitbucket_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.bitbucket_repository)
-        .bind(&params.bitbucket_owner)
-        .bind(&params.bitbucket_branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingComposeProjects1
-    pub async fn webhooks_matching_compose_projects1(
-        &self,
-        params: &WebhooksMatchingComposeProjects1Params,
-    ) -> Result<Vec<WebhooksMatchingComposeProjects1Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingComposeProjects1Row>(
-            "SELECT id AS id, watch_paths FROM compose_projects WHERE source_type = 'GITHUB' AND auto_deploy = 1 AND trigger_type = ? AND lower(repository) = lower(?) AND lower(owner) = lower(?) AND branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.repository)
-        .bind(&params.owner)
-        .bind(&params.branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingComposeProjects2
-    pub async fn webhooks_matching_compose_projects2(
-        &self,
-        params: &WebhooksMatchingComposeProjects2Params,
-    ) -> Result<Vec<WebhooksMatchingComposeProjects2Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingComposeProjects2Row>(
-            "SELECT id AS id, watch_paths FROM compose_projects WHERE source_type = 'GITLAB' AND auto_deploy = 1 AND trigger_type = ? AND lower(gitlab_repository) = lower(?) AND lower(gitlab_owner) = lower(?) AND gitlab_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.gitlab_repository)
-        .bind(&params.gitlab_owner)
-        .bind(&params.gitlab_branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingComposeProjects3
-    pub async fn webhooks_matching_compose_projects3(
-        &self,
-        params: &WebhooksMatchingComposeProjects3Params,
-    ) -> Result<Vec<WebhooksMatchingComposeProjects3Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingComposeProjects3Row>(
-            "SELECT id AS id, watch_paths FROM compose_projects WHERE source_type = 'GITEA' AND auto_deploy = 1 AND trigger_type = ? AND lower(gitea_repository) = lower(?) AND lower(gitea_owner) = lower(?) AND gitea_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.gitea_repository)
-        .bind(&params.gitea_owner)
-        .bind(&params.gitea_branch)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// WebhooksMatchingComposeProjects4
-    pub async fn webhooks_matching_compose_projects4(
-        &self,
-        params: &WebhooksMatchingComposeProjects4Params,
-    ) -> Result<Vec<WebhooksMatchingComposeProjects4Row>, sqlx::Error> {
-        sqlx::query_as::<_, WebhooksMatchingComposeProjects4Row>(
-            "SELECT id AS id, watch_paths FROM compose_projects WHERE source_type = 'BITBUCKET' AND auto_deploy = 1 AND trigger_type = ? AND lower(bitbucket_repository) = lower(?) AND lower(bitbucket_owner) = lower(?) AND bitbucket_branch = ?;"
-        )
-        .bind(&params.trigger_type)
-        .bind(&params.bitbucket_repository)
-        .bind(&params.bitbucket_owner)
-        .bind(&params.bitbucket_branch)
-        .fetch_all(&self.pool)
         .await
     }
 

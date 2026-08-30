@@ -1,8 +1,8 @@
 CREATE TABLE user_policy (
-    id INTEGER NOT NULL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    org_id INTEGER NOT NULL,
-    policy_id INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id BIGINT NOT NULL,
+    org_id BIGINT NOT NULL,
+    policy_id BIGINT NOT NULL,
     effect TEXT NOT NULL,
-    created_at INTEGER NOT NULL
+    created_at BIGINT NOT NULL
 );

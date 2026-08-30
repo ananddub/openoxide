@@ -1,12 +1,11 @@
-use crate::{
-    db::models::notif_ntfy::NotifNtfy,
-    services::notification::{guard::validate_webhook_url, message::NotificationMessage},
+use crate::services::notification::{
+    guard::validate_webhook_url, loader::NtfyConfig, message::NotificationMessage,
 };
 use reqwest::Client;
 
 pub async fn send_ntfy(
     client: &Client,
-    cfg: &NotifNtfy,
+    cfg: &NtfyConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let base = cfg.server_url.trim_end_matches('/');

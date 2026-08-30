@@ -1,153 +1,135 @@
-use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Database};
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::database_network::{
-        CreateDatabaseNetworkDto, DatabaseNetworkResponseDto, PatchDatabaseNetworkDto,
-    },
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::database_network::DatabaseNetworkService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    DatabaseNetworkService, DatabaseNetworkServiceExt, Empty, ResourceListResponse,
+    ResourceQuery, ResourceRequest, ResourceResponse,
+};
+use crate::services::database_network::{
+    CreateDatabaseNetworkDto, DatabaseNetworkResponseDto, PatchDatabaseNetworkDto,
+    DatabaseNetworkService as AppDatabaseNetworkService,
 };
 
-type ApiError = (StatusCode, String);
-
 pub struct DatabaseNetworkController {
-    service: Arc<DatabaseNetworkService>,
+    service: Arc<AppDatabaseNetworkService>,
 }
 
-#[controller("/database-networks")]
+#[singleton]
 impl DatabaseNetworkController {
-    fn new(service: Arc<DatabaseNetworkService>) -> Self {
+    pub fn new(service: Arc<AppDatabaseNetworkService>) -> Self {
         Self { service }
     }
+}
 
-    #[get]
-    #[live(table = "database_networks")]
-    async fn list(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-    ) -> Result<Json<Vec<DatabaseNetworkResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(DatabaseNetworkResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/server/{server_id}")]
-    #[live(table = "database_networks")]
-    async fn list_by_server(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<Vec<DatabaseNetworkResponseDto>>, ApiError> {
-        self.service
-            .list_by_server(Some(server_id))
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(DatabaseNetworkResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}")]
-    #[live(table = "database_networks")]
-    async fn get(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<DatabaseNetworkResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(DatabaseNetworkResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        ValidatedJson(body): ValidatedJson<CreateDatabaseNetworkDto>,
-    ) -> Result<(StatusCode, Json<DatabaseNetworkResponseDto>), ApiError> {
-        self.service
-            .create(body)
-            .await
-            .map(DatabaseNetworkResponseDto::from)
-            .map(|network| (StatusCode::CREATED, Json(network)))
-            .map_err(map_sqlx_error)
-    }
-
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchDatabaseNetworkDto>,
-    ) -> Result<Json<DatabaseNetworkResponseDto>, ApiError> {
-        self.service
-            .patch(id, body)
-            .await
-            .map(DatabaseNetworkResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanDelete>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/{id}/dependencies")]
-    #[live(table = "database_networks")]
-    async fn dependencies(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<crate::repository::NetworkDependencyCounts>, ApiError> {
-        self.service
-            .dependencies(id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+fn map_sqlx_error(error: sqlx::Error) -> ConnectError {
+    match &error {
+        sqlx::Error::RowNotFound => ConnectError::not_found("database network not found"),
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
+        }
+        sqlx::Error::Protocol(msg) => ConnectError::new(ErrorCode::AlreadyExists, msg.clone()),
+        other => {
+            tracing::error!(error = %other, "database network operation failed");
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
+        }
     }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "database network not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
-        }
-        sqlx::Error::Protocol(message) => (StatusCode::CONFLICT, message),
-        other => {
-            tracing::error!(error = %other, "database network operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
-        }
+fn network_to_resource(dto: DatabaseNetworkResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "database_network".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl DatabaseNetworkService for DatabaseNetworkController {
+    #[permission(Database, CanRead)]
+    async fn list_networks<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        let items = items.into_iter().map(DatabaseNetworkResponseDto::from).map(network_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Database, CanRead)]
+    async fn list_server_networks<'a>(
+        &'a self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let server_id = query.organization_id.unwrap_or(0);
+        let items = self.service.list_by_server(Some(server_id)).await.map_err(map_sqlx_error)?;
+        let items = items.into_iter().map(DatabaseNetworkResponseDto::from).map(network_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Database, CanRead)]
+    async fn get_network<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let network = self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
+        Response::ok(network_to_resource(DatabaseNetworkResponseDto::from(network)))
+    }
+
+    #[permission(Database, CanCreate)]
+    async fn create_network<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateDatabaseNetworkDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let created = self.service.create(dto).await.map_err(map_sqlx_error)?;
+        Response::ok(network_to_resource(DatabaseNetworkResponseDto::from(created)))
+    }
+
+    #[permission(Database, CanCreate)]
+    async fn update_network<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: PatchDatabaseNetworkDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let updated = self.service.patch(request.id, dto).await.map_err(map_sqlx_error)?;
+        Response::ok(network_to_resource(DatabaseNetworkResponseDto::from(updated)))
+    }
+
+    #[permission(Database, CanDelete)]
+    async fn delete_network<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_sqlx_error)?;
+        Response::ok(Empty::default())
+    }
+
+    #[permission(Database, CanRead)]
+    async fn list_dependencies<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let counts = self.service.dependencies(request.id).await.map_err(map_sqlx_error)?;
+        let payload = serde_json::to_string(&counts).unwrap_or_default();
+        let item = ResourceResponse {
+            id: request.id,
+            kind: "network_dependency_counts".into(),
+            payload,
+            ..Default::default()
+        };
+        Response::ok(ResourceListResponse { items: vec![item], ..Default::default() })
     }
 }

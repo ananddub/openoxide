@@ -2,21 +2,23 @@ use getrandom::fill;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    api::dto::auth::EmailVerificationStatusDto,
+    api::connect::generated::openoxide::api::v1::EmailVerificationStatus,
+    flash_gen::email_verification_tokens::EmailVerificationTokensIssue2Params,
     services::notification::{NotificationMessage, email::send_email_to, senders::send_resend_to},
 };
 
-use super::{AuthError, AuthService};
+use super::{AuthError, AuthService, notification_configs_for_user};
 
 impl AuthService {
     pub async fn email_verification_status(
         &self,
         user_id: i64,
-    ) -> Result<EmailVerificationStatusDto, AuthError> {
+    ) -> Result<EmailVerificationStatus, AuthError> {
         let user = self.get_user_by_id(user_id).await?;
-        Ok(EmailVerificationStatusDto {
+        Ok(EmailVerificationStatus {
             verified: user.is_email_verify.unwrap_or_default() != 0,
             verified_at: user.email_verify_at,
+            ..Default::default()
         })
     }
 
@@ -29,12 +31,15 @@ impl AuthService {
             AuthError::InvalidOperation("account does not have an email address".into())
         })?;
         let token = random_token()?;
-        self.repo_email_verification
-            .issue(
+        self.queries
+            .email_verification_tokens_issue1(user_id)
+            .await?;
+        self.queries
+            .email_verification_tokens_issue2(&EmailVerificationTokensIssue2Params {
                 user_id,
-                &hash_token(&token),
-                chrono::Utc::now().timestamp() + 24 * 60 * 60,
-            )
+                token_hash: hash_token(&token),
+                expires_at: chrono::Utc::now().timestamp() + 24 * 60 * 60,
+            })
             .await?;
         let action = std::env::var("OPENOXIDE_PUBLIC_URL")
             .or_else(|_| std::env::var("RUSTPLOY_PUBLIC_URL"))
@@ -46,11 +51,13 @@ impl AuthService {
             format!("Verify this email address within 24 hours:\n\n{action}"),
         );
 
-        if let Some(config) = self.repo_notif_email.find_for_user(user_id).await? {
+        let (email_config, resend_config) =
+            notification_configs_for_user(&self.queries, user_id).await?;
+        if let Some(config) = email_config {
             if let Err(error) = send_email_to(&config, &email, &message).await {
                 tracing::warn!(user_id, error = %error, "verification SMTP delivery failed");
             }
-        } else if let Some(config) = self.repo_notif_resend.find_for_user(user_id).await? {
+        } else if let Some(config) = resend_config {
             if let Err(error) =
                 send_resend_to(&reqwest::Client::new(), &config, &email, &message).await
             {
@@ -66,13 +73,18 @@ impl AuthService {
     }
 
     pub async fn verify_email(&self, token: &str) -> Result<(), AuthError> {
-        if !self
-            .repo_email_verification
-            .complete(&hash_token(token))
-            .await?
+        let user_id = match self
+            .queries
+            .email_verification_tokens_complete1(&hash_token(token))
+            .await
         {
-            return Err(AuthError::InvalidVerificationToken);
-        }
+            Ok(user_id) => user_id,
+            Err(sqlx::Error::RowNotFound) => return Err(AuthError::InvalidVerificationToken),
+            Err(error) => return Err(error.into()),
+        };
+        self.queries
+            .email_verification_tokens_complete2(user_id)
+            .await?;
         Ok(())
     }
 }

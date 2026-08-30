@@ -54,10 +54,9 @@ SELECT * FROM backups WHERE backup_type = ? AND organization_id = ? ORDER BY cre
 INSERT INTO backups (
     app_name, schedule, enabled, database_name, prefix,
     service_name, keep_latest_count, backup_type, database_type, metadata,
-    compose_id, postgres_id, mysql_id, mariadb_id,
-    mongo_id, redis_id, libsql_id,
+    service_id,
     destination_id, organization_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateBackup :one
@@ -93,16 +92,15 @@ SELECT * FROM volume_backups WHERE app_name = ?;
 SELECT * FROM volume_backups WHERE organization_id = ? ORDER BY created_at DESC;
 
 -- name: ListVolumeBackupsByApplication :many
-SELECT * FROM volume_backups WHERE application_id = ? ORDER BY created_at DESC;
+SELECT * FROM volume_backups WHERE service_id = ? ORDER BY created_at DESC;
 
 -- name: CreateVolumeBackup :one
 INSERT INTO volume_backups (
     name, volume_name, prefix, service_type, app_name,
     service_name, turn_off, cron_expression, keep_latest_count, enabled,
     destination_id, organization_id,
-    application_id, postgres_id, mysql_id, mariadb_id,
-    mongo_id, redis_id, libsql_id, compose_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    service_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateVolumeBackup :one
@@ -127,16 +125,16 @@ DELETE FROM volume_backups WHERE id = ?;
 
 
 -- name: BackupsGetAll :many
-SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, compose_id AS compose_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups;
+SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, service_id AS service_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups;
 
 -- name: BackupsGetById :one
-SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, compose_id AS compose_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups WHERE id = ?;
+SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, service_id AS service_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups WHERE id = ?;
 
 -- name: BackupsCreate :exec
-INSERT INTO backups (app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, compose_id, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, destination_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO backups (app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, service_id, destination_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: BackupsUpdate :exec
-UPDATE backups SET app_name = ?, schedule = ?, enabled = ?, database_name = ?, prefix = ?, service_name = ?, keep_latest_count = ?, backup_type = ?, database_type = ?, metadata = ?, compose_id = ?, postgres_id = ?, mysql_id = ?, mariadb_id = ?, mongo_id = ?, redis_id = ?, libsql_id = ?, destination_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;
+UPDATE backups SET app_name = ?, schedule = ?, enabled = ?, database_name = ?, prefix = ?, service_name = ?, keep_latest_count = ?, backup_type = ?, database_type = ?, metadata = ?, service_id = ?, destination_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;
 
 -- name: BackupsDelete :exec
 DELETE FROM backups WHERE id = ?;

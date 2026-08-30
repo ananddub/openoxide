@@ -13,7 +13,7 @@ SELECT id AS id, name AS name, provider_type AS provider_type, credentials_json 
 INSERT INTO dns_providers (name, provider_type, credentials_json, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: DnsProvidersGetLastInsertRowid :one
-SELECT CAST(last_insert_rowid() AS INTEGER) AS id;
+SELECT CAST(last_insert_rowid() AS BIGINT) AS id;
 
 -- name: DnsProvidersUpdate :exec
 UPDATE dns_providers SET name = ?, provider_type = ?, credentials_json = ?, updated_at = ? WHERE id = ? AND organization_id = ?;

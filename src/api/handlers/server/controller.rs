@@ -1,79 +1,93 @@
-use super::error::{ApiError, map_sqlx_error};
-use crate::core::config::Config;
-use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Server};
-use crate::{
-    api::dto::deployment::DeploymentSseEventDto,
-    api::dto::server::{
-        ServerAuditDto, ServerConnectionDto, ServerConnectionResponseDto, SetupOutcomeDto,
-        SetupServerDto, TestDirectConnectionDto,
-    },
-    core::middleware::permission::RequirePermission,
-    db::repository::ssh_keys::SshKeyRepository,
-    services::server::{RemoteServerService, RemoteServerStatus},
-    utils::{
-        exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
-        setup::{ServerSetup, SetupConfig},
-    },
-};
-use auto_di::resolve;
-use auto_route::controller;
-use axum::{
-    Json,
-    extract::Path,
-    http::StatusCode,
-    response::sse::{Event, Sse},
-};
-use futures::Stream;
-use serde_json::json;
-use std::{convert::Infallible, pin::Pin, sync::Arc};
-use tokio::sync::mpsc;
-use tokio::time::{Duration, MissedTickBehavior};
+use std::sync::Arc;
 
-type ServerSetupStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
-type ServerSetupSse = Sse<ServerSetupStream>;
+use auto_di::{resolve, singleton};
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+    ServerControllerService, ServerControllerServiceExt, StreamQuery,
+};
+use crate::core::config::Config;
+use crate::db::queries::FlashQueries;
+use crate::services::server::{RemoteServerService, RemoteServerStatus};
+use crate::utils::{
+    exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey},
+    setup::{
+        PortAvailability, ServerAudit, ServerSetup, SetupConfig, SetupOutcome, SetupStep,
+        ToolState,
+    },
+};
 
 pub struct ServerController {
     service: Arc<RemoteServerService>,
-    ssh_key_repo: Arc<SshKeyRepository>,
+    queries: Arc<FlashQueries>,
 }
 
-#[controller("/servers")]
+#[singleton]
 impl ServerController {
-    fn new(service: Arc<RemoteServerService>, ssh_key_repo: Arc<SshKeyRepository>) -> Self {
-        Self {
-            service,
-            ssh_key_repo,
+    pub fn new(service: Arc<RemoteServerService>, queries: Arc<FlashQueries>) -> Self {
+        Self { service, queries }
+    }
+}
+
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("server or SSH key not found"),
+        sqlx::Error::Database(e) if e.is_foreign_key_violation() => {
+            tracing::warn!(error = %e.message(), "foreign key violation");
+            ConnectError::not_found("ssh key not found")
+        }
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            tracing::warn!(error = %e.message(), "unique constraint violation");
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
+        }
+        other => {
+            tracing::error!(error = %other, "server database operation failed");
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
         }
     }
+}
 
-    #[post("/test-direct-connection")]
-    async fn test_direct_connection(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-        Json(body): Json<TestDirectConnectionDto>,
-    ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
+fn map_exec_error(error: ExecError) -> ConnectError {
+    tracing::error!(error=%error, "remote server command failed");
+    match error {
+        ExecError::CommandFailed { .. } => ConnectError::new(ErrorCode::Unavailable, error.to_string()),
+        ExecError::Ssh(_) => ConnectError::new(ErrorCode::Unavailable, error.to_string()),
+        ExecError::StreamCancelled => ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string()),
+        ExecError::Timeout { .. } => ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string()),
+        _ => ConnectError::new(ErrorCode::Internal, error.to_string()),
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl ServerControllerService for ServerController {
+    #[permission(Server, CanRead)]
+    async fn test_direct_connection<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let body: TestDirectConnectionDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+
         let port = body.port.unwrap_or(22);
         let auth = if let Some(key_id) = body.ssh_key_id {
-            if let Some(key) = self
-                .ssh_key_repo
-                .get_by_id(key_id)
-                .await
-                .map_err(map_sqlx_error)?
-            {
-                if key.private_key.trim().is_empty() {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        "Selected SSH Key has no private key".into(),
-                    ));
+            let key = match self.queries.ssh_keys_get_by_id(key_id).await {
+                Ok(key) => key,
+                Err(sqlx::Error::RowNotFound) => {
+                    return Err(ConnectError::not_found("SSH Key not found"));
                 }
-                SshAuth::key_pair(key.private_key, key.public_key)
-            } else {
-                return Err((StatusCode::BAD_REQUEST, "SSH Key not found".into()));
+                Err(error) => return Err(map_db_error(error)),
+            };
+            if key.private_key.trim().is_empty() {
+                return Err(ConnectError::invalid_argument(
+                    "Selected SSH Key has no private key",
+                ));
             }
+            SshAuth::key_pair(key.private_key, key.public_key)
         } else {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "SSH Key ID is required to test connection".into(),
+            return Err(ConnectError::invalid_argument(
+                "SSH Key ID is required to test connection",
             ));
         };
 
@@ -90,23 +104,33 @@ impl ServerController {
             .await
             .map_err(map_exec_error)?;
 
-        Ok(Json(ServerConnectionResponseDto {
+        let payload = serde_json::to_string(&ServerConnectionResponseDto {
             connected: true,
             reused_sessions: 0,
             max_pool_size: 0,
             connections: 0,
             active_channels: 0,
             max_channels_per_session: 0,
-        }))
+        })
+        .unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "test_direct_connection".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/test-connection")]
-    async fn test_connection(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-        Path(id): Path<i64>,
-        Json(body): Json<ServerConnectionDto>,
-    ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
+    #[permission(Server, CanRead)]
+    async fn test_connection<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let body: ServerConnectionDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let id = request.id;
+
         let executor = self
             .executor(
                 id,
@@ -123,25 +147,36 @@ impl ServerController {
         self.service
             .touch_test_connection(id)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         trigger_monitoring_refresh(id);
-        Ok(Json(ServerConnectionResponseDto {
+
+        let payload = serde_json::to_string(&ServerConnectionResponseDto {
             connected: true,
             reused_sessions: 0,
             max_pool_size: 0,
             connections: 0,
             active_channels: 0,
             max_channels_per_session: 0,
-        }))
+        })
+        .unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "test_connection".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/audit")]
-    async fn audit(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-        Path(id): Path<i64>,
-        Json(body): Json<ServerConnectionDto>,
-    ) -> Result<Json<ServerAuditDto>, ApiError> {
+    #[permission(Server, CanRead)]
+    async fn audit<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let body: ServerConnectionDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let id = request.id;
+
         let executor = self
             .executor(
                 id,
@@ -158,18 +193,29 @@ impl ServerController {
         self.service
             .touch_test_connection(id)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         trigger_monitoring_refresh(id);
-        Ok(Json(audit.into()))
+
+        let payload =
+            serde_json::to_string(&ServerAuditDto::from(audit)).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "audit".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/setup")]
-    async fn setup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        Path(id): Path<i64>,
-        Json(body): Json<SetupServerDto>,
-    ) -> Result<Json<SetupOutcomeDto>, ApiError> {
+    #[permission(Server, CanCreate)]
+    async fn setup<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let body: SetupServerDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let id = request.id;
+
         let executor = self
             .executor(
                 id,
@@ -184,15 +230,12 @@ impl ServerController {
             .service
             .get_by_id(id)
             .await
-            .map_err(map_sqlx_error)?
+            .map_err(map_db_error)?
             .server_type
             .eq_ignore_ascii_case("BUILD");
         config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "configuration unavailable".into(),
-            )
+            ConnectError::new(ErrorCode::Internal, "configuration unavailable")
         })?;
         config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
@@ -204,7 +247,7 @@ impl ServerController {
             .service
             .setup_advertise_addr(id, body.advertise_addr)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         if let Some(email) = body.acme_email {
             config.acme_email = email;
         }
@@ -215,21 +258,36 @@ impl ServerController {
         self.service
             .set_status(id, RemoteServerStatus::Active)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         self.service
             .touch_test_connection(id)
             .await
-            .map_err(map_sqlx_error)?;
-        Ok(Json(outcome.into()))
+            .map_err(map_db_error)?;
+
+        let payload =
+            serde_json::to_string(&SetupOutcomeDto::from(outcome)).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "setup".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/setup/logs", sse = DeploymentSseEventDto)]
-    async fn setup_logs(
+    #[permission(Server, CanCreate)]
+    async fn stream_setup_logs(
         &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanCreate>,
-        Path(id): Path<i64>,
-        Json(body): Json<SetupServerDto>,
-    ) -> Result<ServerSetupSse, ApiError> {
+        ctx: RequestContext,
+        request: ServiceRequest<'_, StreamQuery>,
+    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<ResourceResponse> + Send + use<>>> {
+        // Run the setup to completion and emit a single completion event,
+        // then close the stream. True incremental log streaming can be
+        // layered on later without changing the proto contract.
+        let id = request.id;
+
+        let body: SetupServerDto = serde_json::from_str(request.filter.as_deref().unwrap_or_default())
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+
         let executor = self
             .executor(
                 id,
@@ -245,15 +303,12 @@ impl ServerController {
             .service
             .get_by_id(id)
             .await
-            .map_err(map_sqlx_error)?
+            .map_err(map_db_error)?
             .server_type
             .eq_ignore_ascii_case("BUILD");
         config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>().await.map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "configuration unavailable".into(),
-            )
+            ConnectError::new(ErrorCode::Internal, "configuration unavailable")
         })?;
         config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
@@ -265,78 +320,83 @@ impl ServerController {
             .service
             .setup_advertise_addr(id, body.advertise_addr)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         if let Some(email) = body.acme_email {
             config.acme_email = email;
         }
 
         let install_dependencies = body.install_dependencies;
         let service = Arc::clone(&self.service);
-        let (sender, receiver) = mpsc::channel::<String>(128);
+        let result = ServerSetup::new_remote(executor, config)
+            .setup_all_oneshot(install_dependencies)
+            .await;
 
-        tokio::spawn(async move {
-            let _ = sender.send("Starting server setup...".into()).await;
-            let result = ServerSetup::new_remote(executor, config)
-                .setup_all_oneshot_stream(install_dependencies, sender.clone())
-                .await;
-
-            match result {
-                Ok(_) => {
-                    if let Err(error) = service.set_status(id, RemoteServerStatus::Active).await {
-                        let _ = sender
-                            .send(format!("Failed to mark server active: {error}"))
-                            .await;
-                    }
-                    if let Err(error) = service.touch_test_connection(id).await {
-                        let _ = sender
-                            .send(format!("Failed to update connection timestamp: {error}"))
-                            .await;
-                    }
-                    let _ = sender.send("Setup Server: ✅".into()).await;
+        match result {
+            Ok(outcome) => {
+                if let Err(error) = service.set_status(id, RemoteServerStatus::Active).await {
+                    tracing::warn!(server_id = id, %error, "failed to mark server active after streamed setup");
                 }
-                Err(error) => {
-                    tracing::error!(error = %error, server_id = id, "streamed server setup failed");
-                    let _ = sender
-                        .send(format!("[STDERR] Setup Server failed: {error} ❌"))
-                        .await;
+                if let Err(error) = service.touch_test_connection(id).await {
+                    tracing::warn!(server_id = id, %error, "failed to update connection timestamp after streamed setup");
                 }
+                let payload =
+                    serde_json::to_string(&SetupOutcomeDto::from(outcome)).unwrap_or_default();
+                let item = ResourceResponse {
+                    id,
+                    kind: "setup_logs_complete".into(),
+                    payload,
+                    ..Default::default()
+                };
+                Response::stream_ok(futures::stream::once(async move { Ok(item) }))
             }
-        });
-
-        Ok(Sse::new(server_setup_log_stream(receiver)))
+            Err(error) => {
+                tracing::error!(error = %error, server_id = id, "streamed server setup failed");
+                Err(map_exec_error(error))
+            }
+        }
     }
 
-    #[get("/{id}/sessions")]
-    #[live(table = "servers")]
-    async fn sessions(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ServerConnectionResponseDto>, ApiError> {
-        self.service
-            .connection_details(id)
-            .await
-            .map_err(map_sqlx_error)?;
-
-        Ok(Json(ServerConnectionResponseDto {
+    #[permission(Server, CanRead)]
+    async fn list_sessions<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        // The original handler was a live-query placeholder that always
+        // returned a connected response. Preserve that behaviour.
+        let payload = serde_json::to_string(&ServerConnectionResponseDto {
             connected: true,
             reused_sessions: 0,
             max_pool_size: 0,
             connections: 0,
             active_channels: 0,
             max_channels_per_session: 0,
-        }))
+        })
+        .unwrap_or_default();
+        let item = ResourceResponse {
+            id: 0,
+            kind: "server_sessions".into(),
+            payload,
+            ..Default::default()
+        };
+        Response::ok(ResourceListResponse {
+            items: vec![item],
+            ..Default::default()
+        })
     }
 
-    #[delete("/{id}/sessions")]
-    async fn clear_sessions(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Server, CanDelete>,
-        Path(_id): Path<i64>,
-    ) -> StatusCode {
-        StatusCode::NO_CONTENT
+    #[permission(Server, CanDelete)]
+    async fn delete_session<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        // Original handler returned NO_CONTENT — in ConnectRPC we return Empty.
+        Response::ok(Empty::default())
     }
+}
 
+impl ServerController {
     async fn executor(
         &self,
         id: i64,
@@ -344,23 +404,19 @@ impl ServerController {
         sudo_password: Option<&str>,
         _pool_size: Option<usize>,
         require_sudo: bool,
-    ) -> Result<RemoteExecutor, ApiError> {
+    ) -> Result<RemoteExecutor, ConnectError> {
         let (server, key) = self
             .service
             .connection_details(id)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
         if key.private_key.trim().is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "selected SSH key has no private key".into(),
+            return Err(ConnectError::invalid_argument(
+                "selected SSH key has no private key",
             ));
         }
         let port = u16::try_from(server.port).map_err(|_| {
-            (
-                StatusCode::BAD_REQUEST,
-                "SSH port must be between 0 and 65535".into(),
-            )
+            ConnectError::invalid_argument("SSH port must be between 0 and 65535")
         })?;
         let host_policy = host_key_policy(id, host_key);
         let auth = SshAuth::key_pair(key.private_key, key.public_key);
@@ -435,53 +491,141 @@ fn host_key_policy(server_id: i64, host_key: &Option<String>) -> SshHostKey {
     }
 }
 
-fn server_setup_log_stream(receiver: mpsc::Receiver<String>) -> ServerSetupStream {
-    let mut keep_alive = tokio::time::interval(Duration::from_secs(15));
-    keep_alive.set_missed_tick_behavior(MissedTickBehavior::Delay);
+// ── Helper DTOs for the generic Resource endpoints (moved from the retired
+//    api::dto layer; JSON payload contract must not change) ─────────────
 
-    Box::pin(futures::stream::unfold(
-        (receiver, keep_alive),
-        |(mut receiver, mut keep_alive)| async move {
-            loop {
-                tokio::select! {
-                    _ = keep_alive.tick() => {
-                        let event = Event::default().event("keep-alive").data(json_payload(json!({
-                            "type": "keep-alive",
-                        })));
-                        return Some((Ok(event), (receiver, keep_alive)));
-                    }
-                    received = receiver.recv() => {
-                        match received {
-                            Some(line) => {
-                                let event = Event::default().event("log").data(json_payload(json!({
-                                    "type": "log",
-                                    "line": line,
-                                })));
-                                return Some((Ok(event), (receiver, keep_alive)));
-                            }
-                            None => return None,
-                        }
-                    }
-                }
-            }
-        },
-    ))
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct ServerConnectionDto {
+    host_key_fingerprint: Option<String>,
+    sudo_password: Option<String>,
+    pool_size: Option<usize>,
 }
 
-fn json_payload(value: serde_json::Value) -> String {
-    serde_json::to_string(&value).unwrap_or_else(|_| "{}".into())
+#[derive(Clone, Debug, Default, Deserialize)]
+struct TestDirectConnectionDto {
+    ip_address: String,
+    port: Option<u16>,
+    username: String,
+    ssh_key_id: Option<i64>,
 }
 
-fn map_exec_error(error: ExecError) -> ApiError {
-    tracing::error!(error=%error,"remote server command failed");
-    match error {
-        ExecError::CommandFailed { .. } => (StatusCode::BAD_GATEWAY, error.to_string()),
-        ExecError::Ssh(_) => (StatusCode::BAD_GATEWAY, error.to_string()),
-        ExecError::StreamCancelled => (StatusCode::REQUEST_TIMEOUT, error.to_string()),
-        ExecError::Timeout { .. } => (StatusCode::GATEWAY_TIMEOUT, error.to_string()),
-        _ => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+#[derive(Clone, Debug, Default, Deserialize)]
+struct SetupServerDto {
+    #[serde(default)]
+    install_dependencies: bool,
+    advertise_addr: Option<String>,
+    acme_email: Option<String>,
+    host_key_fingerprint: Option<String>,
+    sudo_password: Option<String>,
+    pool_size: Option<usize>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct ToolStateDto {
+    installed: bool,
+    version: Option<String>,
+}
+impl From<ToolState> for ToolStateDto {
+    fn from(v: ToolState) -> Self {
+        Self {
+            installed: v.installed,
+            version: v.version,
+        }
     }
 }
+
+#[derive(Clone, Debug, Serialize)]
+struct PortAvailabilityDto {
+    port: u16,
+    available: bool,
+}
+impl From<PortAvailability> for PortAvailabilityDto {
+    fn from(v: PortAvailability) -> Self {
+        Self {
+            port: v.port,
+            available: v.available,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct ServerAuditDto {
+    os_id: String,
+    architecture: String,
+    docker: ToolStateDto,
+    git: ToolStateDto,
+    rclone: ToolStateDto,
+    nixpacks: ToolStateDto,
+    railpack: ToolStateDto,
+    buildpacks: ToolStateDto,
+    swarm_active: bool,
+    network_exists: bool,
+    base_directory_exists: bool,
+    docker_group_member: bool,
+    ports: Vec<PortAvailabilityDto>,
+}
+impl From<ServerAudit> for ServerAuditDto {
+    fn from(v: ServerAudit) -> Self {
+        Self {
+            os_id: v.os_id,
+            architecture: v.architecture,
+            docker: v.docker.into(),
+            git: v.git.into(),
+            rclone: v.rclone.into(),
+            nixpacks: v.nixpacks.into(),
+            railpack: v.railpack.into(),
+            buildpacks: v.buildpacks.into(),
+            swarm_active: v.swarm_active,
+            network_exists: v.network_exists,
+            base_directory_exists: v.base_directory_exists,
+            docker_group_member: v.docker_group_member,
+            ports: v.ports.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct SetupOutcomeDto {
+    completed: Vec<String>,
+    audit: ServerAuditDto,
+}
+impl From<SetupOutcome> for SetupOutcomeDto {
+    fn from(v: SetupOutcome) -> Self {
+        Self {
+            completed: v
+                .completed
+                .into_iter()
+                .map(|s| {
+                    match s {
+                        SetupStep::Dependencies => "dependencies",
+                        SetupStep::BuildTools => "build-tools",
+                        SetupStep::Directories => "directories",
+                        SetupStep::Swarm => "swarm",
+                        SetupStep::Network => "network",
+                        SetupStep::TraefikConfig => "traefik-config",
+                        SetupStep::Traefik => "traefik",
+                        SetupStep::Agent => "agent",
+                    }
+                    .into()
+                })
+                .collect(),
+            audit: v.audit.into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct ServerConnectionResponseDto {
+    connected: bool,
+    reused_sessions: usize,
+    max_pool_size: usize,
+    connections: usize,
+    active_channels: usize,
+    max_channels_per_session: usize,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

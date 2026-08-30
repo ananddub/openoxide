@@ -1,189 +1,284 @@
-use crate::core::middleware::permission::{CanRead, CanWrite, Traefik};
-use auto_route::controller;
-use axum::{Json, extract::Query, http::StatusCode};
 use std::sync::Arc;
 
-use crate::{
-    api::dto::traefik::{
-        StructuredMiddlewareDto, StructuredMiddlewareResponseDto, TraefikFileContentDto,
-        TraefikFileNodeDto, TraefikFileQueryDto, TraefikFileTreeNodeDto, TraefikHealthResponseDto,
-        TraefikRequestsStatusDto, TraefikStatsLogsQueryDto, TraefikStatsLogsResponseDto,
-        TraefikToggleRequestsDto, TraefikVersionDto, TraefikWriteFileDto, UpdateTraefikVersionDto,
-    },
-    core::middleware::permission::RequirePermission,
-    services::traefik::TraefikService,
-};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-type ApiError = (StatusCode, String);
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+    TraefikOperationsService, TraefikOperationsServiceExt,
+};
+use crate::services::traefik::{
+    StructuredMiddlewareDto, TraefikService, TraefikStatsLogsQueryDto, TraefikToggleRequestsDto,
+    TraefikWriteFileDto, UpdateTraefikVersionDto,
+};
 
 pub struct TraefikController {
     service: Arc<TraefikService>,
 }
 
-#[controller("/traefik")]
+#[singleton]
 impl TraefikController {
-    fn new(service: Arc<TraefikService>) -> Self {
+    pub fn new(service: Arc<TraefikService>) -> Self {
         Self { service }
     }
+}
 
-    #[get("/files")]
-    async fn list_files(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<Vec<TraefikFileNodeDto>>, ApiError> {
+fn map_error(error: String) -> ConnectError {
+    ConnectError::new(ErrorCode::Internal, error)
+}
+
+fn map_bad_request(error: String) -> ConnectError {
+    ConnectError::invalid_argument(error)
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl TraefikOperationsService for TraefikController {
+    #[permission(Traefik, CanRead)]
+    async fn list_files<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let server_id = request.organization_id;
         let files = self
             .service
-            .list_files(params.server_id)
+            .list_files(server_id)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-        Ok(Json(files))
+            .map_err(map_error)?;
+        let items = files
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: 0,
+                    kind: "traefik_file".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/files/tree")]
-    async fn list_file_tree(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<Vec<TraefikFileTreeNodeDto>>, ApiError> {
+    #[permission(Traefik, CanRead)]
+    async fn tree<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let server_id = request.organization_id;
         let files = self
             .service
-            .list_file_tree(params.server_id)
+            .list_file_tree(server_id)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-        Ok(Json(files))
+            .map_err(map_error)?;
+        let items = files
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: 0,
+                    kind: "traefik_file_tree".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/files/content")]
-    async fn read_file_content(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<TraefikFileContentDto>, ApiError> {
-        let path = params.path.ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "File 'path' parameter is required".to_string(),
-            )
+    #[permission(Traefik, CanRead)]
+    async fn get_content<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let server_id = request.organization_id;
+        let payload_str = request.payload;
+        let path: Option<String> = serde_json::from_str(payload_str)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let path = path.ok_or_else(|| {
+            ConnectError::invalid_argument("File 'path' parameter is required")
         })?;
-
         let file_content = self
             .service
-            .read_file(params.server_id, &path)
+            .read_file(server_id, &path)
             .await
-            .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
-
-        Ok(Json(file_content))
+            .map_err(map_bad_request)?;
+        let payload = serde_json::to_string(&file_content).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "traefik_file_content".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[put("/files/content")]
-    async fn write_file_content(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
-        Json(body): Json<TraefikWriteFileDto>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .write_file(body)
-            .await
-            .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
-
-        Ok(StatusCode::NO_CONTENT)
+    #[permission(Traefik, CanWrite)]
+    async fn update_content<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: TraefikWriteFileDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service.write_file(dto).await.map_err(map_bad_request)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "update_content".into(),
+            ..Default::default()
+        })
     }
 
-    #[get("/health")]
-    async fn check_health(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<TraefikHealthResponseDto>, ApiError> {
+    #[permission(Traefik, CanRead)]
+    async fn health<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
         let health = self
             .service
-            .check_health(params.server_id)
+            .check_health(None)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-
-        Ok(Json(health))
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&health).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: health.is_healthy,
+            operation: "health".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[get("/requests/status")]
-    async fn get_requests_status(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<TraefikRequestsStatusDto>, ApiError> {
+    #[permission(Traefik, CanRead)]
+    async fn request_status<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
         let status = self
             .service
-            .have_activated_requests(params.server_id)
+            .have_activated_requests(None)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-
-        Ok(Json(status))
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&status).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: status.is_active,
+            operation: "request_status".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/requests/toggle")]
-    async fn toggle_requests(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
-        Json(body): Json<TraefikToggleRequestsDto>,
-    ) -> Result<Json<bool>, ApiError> {
-        let res = self
+    #[permission(Traefik, CanWrite)]
+    async fn toggle_requests<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: TraefikToggleRequestsDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self
             .service
-            .toggle_requests(body)
+            .toggle_requests(dto)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-
-        Ok(Json(res))
+            .map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: result,
+            operation: "toggle_requests".into(),
+            ..Default::default()
+        })
     }
 
-    #[get("/requests/logs")]
-    async fn read_stats_logs(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikStatsLogsQueryDto>,
-    ) -> Result<Json<TraefikStatsLogsResponseDto>, ApiError> {
+    #[permission(Traefik, CanRead)]
+    async fn logs<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let dto: TraefikStatsLogsQueryDto = serde_json::from_str(
+            request.query.as_deref().unwrap_or("{}"),
+        )
+        .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let logs = self
             .service
-            .read_stats_logs(params)
+            .read_stats_logs(dto)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
-
-        Ok(Json(logs))
+            .map_err(map_error)?;
+        let items = logs
+            .items
+            .into_iter()
+            .map(|entry| {
+                let payload = serde_json::to_string(&entry).unwrap_or_default();
+                ResourceResponse {
+                    id: 0,
+                    kind: "traefik_log".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/version")]
-    async fn version(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanRead>,
-        Query(params): Query<TraefikFileQueryDto>,
-    ) -> Result<Json<TraefikVersionDto>, ApiError> {
-        self.service
-            .version(params.server_id)
+    #[permission(Traefik, CanRead)]
+    async fn version<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let version = self
+            .service
+            .version(None)
             .await
-            .map(Json)
-            .map_err(|error| (StatusCode::BAD_GATEWAY, error))
+            .map_err(|error| ConnectError::new(ErrorCode::FailedPrecondition, error))?;
+        let payload = serde_json::to_string(&version).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "traefik_version".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[post("/version")]
-    async fn update_version(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
-        Json(body): Json<UpdateTraefikVersionDto>,
-    ) -> Result<Json<TraefikVersionDto>, ApiError> {
-        self.service
-            .update_version(body)
+    #[permission(Traefik, CanWrite)]
+    async fn update_version<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: UpdateTraefikVersionDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self
+            .service
+            .update_version(dto)
             .await
-            .map(Json)
-            .map_err(|error| (StatusCode::BAD_GATEWAY, error))
+            .map_err(|error| ConnectError::new(ErrorCode::FailedPrecondition, error))?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "update_version".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/middlewares/render")]
-    async fn render_middleware(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Traefik, CanWrite>,
-        Json(body): Json<StructuredMiddlewareDto>,
-    ) -> Result<Json<StructuredMiddlewareResponseDto>, ApiError> {
-        TraefikService::structured_middleware(body)
-            .map(Json)
-            .map_err(|error| (StatusCode::BAD_REQUEST, error))
+    #[permission(Traefik, CanWrite)]
+    async fn render_middleware<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: StructuredMiddlewareDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = TraefikService::structured_middleware(dto)
+            .map_err(|error| ConnectError::invalid_argument(error))?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "traefik_middleware".into(),
+            payload,
+            ..Default::default()
+        })
     }
 }

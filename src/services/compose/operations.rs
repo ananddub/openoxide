@@ -1,10 +1,13 @@
 use auto_di::resolve;
 use sqlx::SqlitePool;
-use std::sync::Arc;
 
 use super::{
     ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, ComposeStatus,
     ComposeType, auto_excuter::compose_new_db,
+};
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::compose_extra::{
+    ComposeQueueDeploymentNoServerParams, ComposeQueueDeploymentWithServerParams,
 };
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
@@ -17,7 +20,10 @@ impl ComposeService {
         id: i64,
         operation: ComposeOperation,
     ) -> sqlx::Result<ComposeOperationResult> {
-        let running_deployment = self.repo_deploy.has_running_compose_deployment(id).await?;
+        let running_deployment = self
+            .queries
+            .deployments_has_running_compose_deployment(&id.to_string())
+            .await?;
         if running_deployment {
             if matches!(operation, ComposeOperation::Stop) {
                 self.cancel_operation(id).await?;
@@ -40,33 +46,47 @@ impl ComposeService {
 
         let compose = self.get_by_id(id).await?;
         if !matches!(operation, ComposeOperation::Stop) {
-            resolve::<crate::repository::ServerManagementRepository>()
-                .await
-                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
-                .assert_deployable(compose.server_id)
-                .await?;
+            assert_deployable(&self.queries, compose.server_id).await?;
         }
 
         let log_path = format!("pending-compose-{}", id);
-        let deployment_id = self
-            .repo_deploy
-            .create_queued_compose_deployment(
-                operation.title().to_string(),
-                Some(format!(
-                    "{} requested for {}",
-                    operation.as_str(),
-                    compose.name
-                )),
-                log_path,
-                operation.as_str().to_string(),
-                id,
-                compose.server_id,
-            )
-            .await?;
+        let description = format!("{} requested for {}", operation.as_str(), compose.name);
+        // The old DeploymentRepository::create_queued_compose_deployment
+        // returned the new row id; the With/NoServer split keeps a NULL
+        // server_id insertable (flash binds are non-Option).
+        let deployment_id = match compose.server_id {
+            Some(server_id) => {
+                self.queries
+                    .compose_queue_deployment_with_server(
+                        &ComposeQueueDeploymentWithServerParams {
+                            title: operation.title().to_string(),
+                            description,
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                            server_id,
+                        },
+                    )
+                    .await?
+            }
+            None => {
+                self.queries
+                    .compose_queue_deployment_no_server(
+                        &ComposeQueueDeploymentNoServerParams {
+                            title: operation.title().to_string(),
+                            description,
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                        },
+                    )
+                    .await?
+            }
+        };
 
         let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
-        self.repo_deploy
-            .update_log_path(deployment_id, &log_path)
+        self.queries
+            .deployments_update_log_path(&log_path, deployment_id)
             .await?;
 
         if let Ok(mut log) =
@@ -90,8 +110,10 @@ impl ComposeService {
             _ => ComposeStatus::Starting,
         };
 
-        let compose = self.repo_compose.update_status(id, status.as_str()).await?;
-        let record: ComposeRecord = compose.into();
+        self.queries
+            .update_service_status(status.as_str(), id)
+            .await?;
+        let record: ComposeRecord = self.load_record(id).await?;
 
         self.cache
             .insert(
@@ -132,7 +154,10 @@ impl ComposeService {
             )
         };
 
-        let _ = self.repo_compose.update_status(id, intermediate).await;
+        let _ = self
+            .queries
+            .update_service_status(intermediate, id)
+            .await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Compose(id))
             .await;
@@ -145,10 +170,13 @@ impl ComposeService {
             state.cancel_by_id(IdType::ComposeId(id));
         }
 
-        let _ = self.repo_deploy.request_cancel_compose_deployment(id).await;
+        let _ = self
+            .queries
+            .deployments_request_cancel_compose_deployment(id)
+            .await;
 
-        let db_ref = self.db.clone();
-        let repo_compose = self.repo_compose.clone();
+        let db_ref = self.queries.pool.clone();
+        let queries = self.queries.clone();
         let cache = self.cache.clone();
         let app_name = compose.app_name.clone();
         let compose_type = compose.compose_type;
@@ -158,7 +186,7 @@ impl ComposeService {
                 tracing::warn!(compose_id = id, error = %e, "could not scale down compose on stop/cancel");
             }
 
-            let _ = repo_compose.update_status(id, final_st).await;
+            let _ = queries.update_service_status(final_st, id).await;
             cache
                 .invalidate(&crate::core::cache::CacheKey::Compose(id))
                 .await;
@@ -168,8 +196,29 @@ impl ComposeService {
     }
 }
 
+/// Replaces the retired `ServerManagementRepository::assert_deployable`:
+/// a missing management row is created on first use, and maintenance mode
+/// blocks the deployment with the stored (or default) message.
+async fn assert_deployable(queries: &FlashQueries, server_id: Option<i64>) -> sqlx::Result<()> {
+    let Some(server_id) = server_id else {
+        return Ok(());
+    };
+    queries.server_management_get_or_create1(server_id).await?;
+    let row = queries.server_management_get_or_create2(server_id).await?;
+    if row.maintenance_mode != 0 {
+        // Flash binds the nullable message column as non-Option; "" is the
+        // NULL encoding.
+        let message = row
+            .maintenance_message
+            .filter(|message| !message.is_empty())
+            .unwrap_or_else(|| "server is in maintenance mode".into());
+        return Err(sqlx::Error::Protocol(message));
+    }
+    Ok(())
+}
+
 async fn scale_down_compose(
-    db: Arc<SqlitePool>,
+    db: SqlitePool,
     compose_id: i64,
     app_name: &str,
     compose_type: ComposeType,

@@ -1,24 +1,32 @@
 use super::{ApplicationRecord, ApplicationService};
-use crate::api::dto::application::{
-    PatchBuildConfigDto, PatchPreviewConfigDto, PatchResourceConfigDto,
+use crate::api::connect::generated::openoxide::api::v1::{
+    UpdateBuildConfigRequest, UpdatePreviewConfigRequest, UpdateResourceConfigRequest,
 };
 use crate::core::cache::CacheKey;
+use crate::flash_gen::service_application::UpdatePreviewConfigParams;
 
 impl ApplicationService {
     pub async fn patch_preview_config(
         &self,
         id: i64,
-        input: PatchPreviewConfigDto,
+        input: UpdatePreviewConfigRequest,
     ) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        if input.active && input.preview_wildcard.as_deref().is_none_or(str::is_empty) {
+        let preview_certificate_type = match input.certificate_type.as_str() {
+            "LETSENCRYPT" => crate::utils::traefik::types::CertificateType::LetsEncrypt,
+            "NONE" => crate::utils::traefik::types::CertificateType::None,
+            _ => crate::utils::traefik::types::CertificateType::None,
+        };
+        let preview_port = input.port.unwrap_or(0);
+        let preview_wildcard = input.wildcard;
+        let preview_custom_cert_resolver = input.custom_cert_resolver;
+        if input.active && preview_wildcard.as_deref().is_none_or(str::is_empty) {
             return Err(sqlx::Error::Protocol(
                 "preview_wildcard is required when preview deployments are active".into(),
             ));
         }
-        if input.preview_certificate_type == crate::utils::traefik::types::CertificateType::Custom
-            && input
-                .preview_custom_cert_resolver
+        if preview_certificate_type == crate::utils::traefik::types::CertificateType::Custom
+            && preview_custom_cert_resolver
                 .as_deref()
                 .is_none_or(str::is_empty)
         {
@@ -26,53 +34,94 @@ impl ApplicationService {
                 "preview_custom_cert_resolver is required for CUSTOM certificates".into(),
             ));
         }
-        self.repo_app
-            .update_preview_config(
-                id,
-                input.preview_env.as_deref(),
-                input.preview_build_args.as_deref(),
-                input.preview_build_secrets.as_deref(),
-                input.preview_labels.as_deref(),
-                input.preview_wildcard.as_deref(),
-                input.preview_port,
-                input.preview_https,
-                &input.preview_path,
-                input.preview_certificate_type.as_str(),
-                input.preview_custom_cert_resolver.as_deref(),
-                input.preview_limit,
-                input.active,
-                input.require_collaborator_permissions,
-            )
+        self.queries
+            .update_preview_config(&UpdatePreviewConfigParams {
+                preview_env: input.preview_env.unwrap_or_default(),
+                preview_build_args: input.build_args.unwrap_or_default(),
+                preview_build_secrets: input.build_secrets.unwrap_or_default(),
+                preview_labels: input.labels.unwrap_or_default(),
+                preview_wildcard: preview_wildcard.unwrap_or_default(),
+                preview_port,
+                preview_https: i64::from(input.https),
+                preview_path: input.path,
+                preview_certificate_type: preview_certificate_type.as_str().to_owned(),
+                preview_custom_cert_resolver: preview_custom_cert_resolver.unwrap_or_default(),
+                preview_limit: input.limit,
+                is_preview_deployments_active: i64::from(input.active),
+                preview_require_collaborator_permissions: i64::from(
+                    input.require_collaborator_permissions,
+                ),
+                service_id: id,
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Application(id)).await;
         Ok(())
     }
+
     pub async fn patch_build_config(
         &self,
         id: i64,
-        input: PatchBuildConfigDto,
+        input: UpdateBuildConfigRequest,
     ) -> sqlx::Result<ApplicationRecord> {
-        self.repo_app
-            .patch_build_config(
-                id,
-                input.build_args,
-                input.build_secrets,
-                input.dockerfile,
-                input.docker_context_path,
-                input.docker_build_stage,
-                input.publish_directory,
-                input.is_static_spa,
-                input.create_env_file,
-                input.railpack_version,
-                input.heroku_version,
-                input.command,
-                input.args,
-                input.build_path,
-                input.clean_cache,
-                input.enable_submodules,
-                input.watch_paths,
+        // COALESCE keep-on-None across both split tables, exactly as the old
+        // repository did — needs nullable binds, so it stays raw SQL.
+        sqlx::query(
+            "UPDATE service_application SET \
+             build_args = COALESCE(?, build_args), \
+             build_secrets = COALESCE(?, build_secrets), \
+             dockerfile = COALESCE(?, dockerfile), \
+             docker_context_path = COALESCE(?, docker_context_path), \
+             docker_build_stage = COALESCE(?, docker_build_stage), \
+             publish_directory = COALESCE(?, publish_directory), \
+             is_static_spa = COALESCE(?, is_static_spa), \
+             railpack_version = COALESCE(?, railpack_version), \
+             heroku_version = COALESCE(?, heroku_version), \
+             build_path = COALESCE(?, build_path), \
+             clean_cache = COALESCE(?, clean_cache) \
+             WHERE service_id = ?;",
+        )
+        .bind(&input.build_args)
+        .bind(&input.build_secrets)
+        .bind(&input.dockerfile)
+        .bind(&input.context_path)
+        .bind(&input.build_stage)
+        .bind(&input.publish_directory)
+        .bind(input.static_spa.map(i64::from))
+        .bind(None::<String>)
+        .bind(None::<String>)
+        .bind(&input.build_path)
+        .bind(input.clean_cache.map(i64::from))
+        .bind(id)
+        .execute(&self.queries.pool)
+        .await?;
+        if input.watch_paths.is_some()
+            || input.enable_submodules.is_some()
+            || input.command.is_some()
+            || input.args.is_some()
+        {
+            sqlx::query(
+                "UPDATE services SET \
+                 command = COALESCE(?, command), \
+                 args = COALESCE(?, args) \
+                 WHERE id = ?;",
             )
+            .bind(&input.command)
+            .bind(&input.args)
+            .bind(id)
+            .execute(&self.queries.pool)
             .await?;
+            sqlx::query(
+                "UPDATE service_git SET \
+                 watch_paths = COALESCE(?, watch_paths), \
+                 enable_submodules = COALESCE(?, enable_submodules) \
+                 WHERE service_id = ?;",
+            )
+            .bind(&input.watch_paths)
+            .bind(input.enable_submodules.map(i64::from))
+            .bind(id)
+            .execute(&self.queries.pool)
+            .await?;
+        }
         self.cache.invalidate(&CacheKey::Application(id)).await;
         self.get_by_id(id).await
     }
@@ -80,18 +129,21 @@ impl ApplicationService {
     pub async fn patch_resource_config(
         &self,
         id: i64,
-        input: PatchResourceConfigDto,
+        input: UpdateResourceConfigRequest,
     ) -> sqlx::Result<ApplicationRecord> {
-        self.repo_app
-            .patch_resource_config(
-                id,
-                input.memory_reservation.clone(),
-                input.memory_limit.clone(),
-                input.cpu_reservation.clone(),
-                input.cpu_limit.clone(),
-                input.replicas,
-            )
-            .await?;
+        // Option binds with NULL-overwrite semantics (as the old repository did);
+        // the generator cannot emit nullable binds, so this stays raw SQL.
+        sqlx::query(
+            "UPDATE services SET memory_reservation = ?, memory_limit = ?, cpu_reservation = ?, cpu_limit = ?, replicas = COALESCE(?, replicas) WHERE id = ?;",
+        )
+        .bind(&input.memory_reservation)
+        .bind(&input.memory_limit)
+        .bind(&input.cpu_reservation)
+        .bind(&input.cpu_limit)
+        .bind(input.replicas)
+        .bind(id)
+        .execute(&self.queries.pool)
+        .await?;
 
         self.cache.invalidate(&CacheKey::Application(id)).await;
         let updated = self.get_by_id(id).await?;
@@ -100,7 +152,7 @@ impl ApplicationService {
         let mem_lim = input.memory_limit;
         let cpu_lim = input.cpu_limit;
         let target_replicas = input.replicas;
-        let db_pool = self.db.clone();
+        let _db_pool = self.db.clone();
 
         tokio::spawn(async move {
             let Ok(executor) =

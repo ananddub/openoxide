@@ -6,16 +6,16 @@
 SELECT * FROM redirects WHERE id = ?;
 
 -- name: ListRedirectsByApplication :many
-SELECT * FROM redirects WHERE application_id = ? ORDER BY created_at DESC;
+SELECT * FROM redirects WHERE service_id = ? ORDER BY created_at DESC;
 
 -- name: CreateRedirect :one
-INSERT INTO redirects (regex, replacement, permanent, application_id)
+INSERT INTO redirects (regex, replacement, permanent, service_id)
 VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateRedirect :one
 UPDATE redirects
-SET regex = ?, replacement = ?, permanent = ? = ?
+SET regex = ?, replacement = ?, permanent = ?
 WHERE id = ?
 RETURNING *;
 
@@ -23,7 +23,7 @@ RETURNING *;
 DELETE FROM redirects WHERE id = ?;
 
 -- name: DeleteRedirectsByApplication :exec
-DELETE FROM redirects WHERE application_id = ?;
+DELETE FROM redirects WHERE service_id = ?;
 
 -- ============================================================
 -- PORTS
@@ -33,10 +33,10 @@ DELETE FROM redirects WHERE application_id = ?;
 SELECT * FROM ports WHERE id = ?;
 
 -- name: ListPortsByApplication :many
-SELECT * FROM ports WHERE application_id = ? ORDER BY published_port ASC;
+SELECT * FROM ports WHERE service_id = ? ORDER BY published_port ASC;
 
 -- name: CreatePort :one
-INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id)
+INSERT INTO ports (published_port, target_port, protocol, publish_mode, service_id)
 VALUES (?, ?, ?, ?, ?)
 RETURNING *;
 
@@ -44,7 +44,7 @@ RETURNING *;
 DELETE FROM ports WHERE id = ?;
 
 -- name: DeletePortsByApplication :exec
-DELETE FROM ports WHERE application_id = ?;
+DELETE FROM ports WHERE service_id = ?;
 
 -- ============================================================
 -- SECURITY (Basic Auth)
@@ -54,10 +54,10 @@ DELETE FROM ports WHERE application_id = ?;
 SELECT * FROM security WHERE id = ?;
 
 -- name: ListSecurityByApplication :many
-SELECT * FROM security WHERE application_id = ? ORDER BY created_at DESC;
+SELECT * FROM security WHERE service_id = ? ORDER BY created_at DESC;
 
 -- name: CreateSecurity :one
-INSERT INTO security (username, password, application_id)
+INSERT INTO security (username, password, service_id)
 VALUES (?, ?, ?)
 RETURNING *;
 
@@ -68,4 +68,4 @@ UPDATE security SET password = ? WHERE id = ?;
 DELETE FROM security WHERE id = ?;
 
 -- name: DeleteSecurityByApplication :exec
-DELETE FROM security WHERE application_id = ?;
+DELETE FROM security WHERE service_id = ?;

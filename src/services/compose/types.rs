@@ -115,46 +115,61 @@ pub struct ComposeOperationResult {
     pub operation: ComposeOperation,
 }
 
-impl From<crate::db::models::compose_projects::ComposeProject> for ComposeRecord {
-    fn from(item: crate::db::models::compose_projects::ComposeProject) -> Self {
+impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::ServiceCompose, Option<crate::flash_gen::models::ServiceGit>)>
+    for ComposeRecord
+{
+    fn from(
+        (service, ext, git): (
+            crate::flash_gen::models::Services,
+            crate::flash_gen::models::ServiceCompose,
+            Option<crate::flash_gen::models::ServiceGit>,
+        ),
+    ) -> Self {
+        let git = git.as_ref();
+        // Flash bind params for nullable TEXT columns are non-Option, so
+        // empty strings round-trip where the old table stored NULL.
+        let normalize = |value: Option<String>| match value {
+            Some(text) if text.is_empty() => None,
+            other => other,
+        };
         Self {
-            id: item
-                .id
-                .as_deref()
-                .and_then(|s| s.parse::<i64>().ok())
-                .unwrap_or(0),
-            name: item.name,
-            app_name: item.app_name,
-            description: item.description,
-            env_var: item.env_var,
-            compose_file: item.compose_file,
-            source_type: item.source_type,
-            compose_type: ComposeType::from_str(&item.compose_type)
+            id: service.id,
+            name: service.name,
+            app_name: service.app_name,
+            description: normalize(service.description),
+            env_var: normalize(service.env_var),
+            compose_file: ext.compose_file,
+            source_type: git
+                .map(|g| g.source_type.clone())
+                .unwrap_or_else(|| "RAW".into()),
+            compose_type: ComposeType::from_str(&ext.compose_type)
                 .unwrap_or(ComposeType::DockerCompose),
-            compose_status: item.compose_status,
-            last_error: item.last_error,
-            trigger_type: item.trigger_type,
-            repository: item.repository,
-            owner: item.owner,
-            branch: item.branch,
-            gitlab_repository: item.gitlab_repository,
-            gitlab_owner: item.gitlab_owner,
-            gitlab_branch: item.gitlab_branch,
-            gitea_repository: item.gitea_repository,
-            gitea_owner: item.gitea_owner,
-            gitea_branch: item.gitea_branch,
-            bitbucket_repository: item.bitbucket_repository,
-            bitbucket_owner: item.bitbucket_owner,
-            bitbucket_branch: item.bitbucket_branch,
-            custom_git_url: item.custom_git_url,
-            custom_git_branch: item.custom_git_branch,
-            command: item.command,
-            compose_path: item.compose_path,
-            service_networks: item.service_networks,
-            environment_id: item.environment_id,
-            server_id: item.server_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
+            compose_status: service.app_status,
+            last_error: service.last_error,
+            trigger_type: git
+                .map(|g| g.trigger_type.clone())
+                .unwrap_or_else(|| "PUSH".into()),
+            repository: git.and_then(|g| normalize(g.repository.clone())),
+            owner: git.and_then(|g| normalize(g.owner.clone())),
+            branch: git.and_then(|g| normalize(g.branch.clone())),
+            gitlab_repository: git.and_then(|g| normalize(g.gitlab_repository.clone())),
+            gitlab_owner: git.and_then(|g| normalize(g.gitlab_owner.clone())),
+            gitlab_branch: git.and_then(|g| normalize(g.gitlab_branch.clone())),
+            gitea_repository: git.and_then(|g| normalize(g.gitea_repository.clone())),
+            gitea_owner: git.and_then(|g| normalize(g.gitea_owner.clone())),
+            gitea_branch: git.and_then(|g| normalize(g.gitea_branch.clone())),
+            bitbucket_repository: git.and_then(|g| normalize(g.bitbucket_repository.clone())),
+            bitbucket_owner: git.and_then(|g| normalize(g.bitbucket_owner.clone())),
+            bitbucket_branch: git.and_then(|g| normalize(g.bitbucket_branch.clone())),
+            custom_git_url: git.and_then(|g| normalize(g.custom_git_url.clone())),
+            custom_git_branch: git.and_then(|g| normalize(g.custom_git_branch.clone())),
+            command: service.command.unwrap_or_default(),
+            compose_path: ext.compose_path,
+            service_networks: ext.service_networks,
+            environment_id: service.environment_id,
+            server_id: service.server_id,
+            created_at: service.created_at,
+            updated_at: service.updated_at,
         }
     }
 }

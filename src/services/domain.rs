@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
-use sqlx::SqlitePool;
+use serde::Deserialize;
 
-use crate::api::dto::domain::{CreateDomainDto, PatchDomainDto};
-use crate::repository::{ApplicationRepository, ComposeProjectRepository, DomainRepository};
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::domains::DomainsRouteInUseExcludingParams;
+use crate::flash_gen::models::Domains;
 use crate::services::compose::ComposeType;
 use crate::utils::builder::application::{
     adapter::ApplicationSpecAdapter, stack::application_traefik_labels,
@@ -12,6 +13,62 @@ use crate::utils::builder::application::{
 use crate::utils::builder::compose::labels::build_compose_service_labels;
 use crate::utils::docker::DockerCli;
 use crate::utils::traefik::types::CertificateType;
+
+#[derive(Debug, Deserialize)]
+pub struct CreateDomainDto {
+    pub host: String,
+    #[serde(default)]
+    pub https: bool,
+    pub port: Option<i64>,
+    #[serde(default = "default_path")]
+    pub path: String,
+    #[serde(default = "default_path")]
+    pub internal_path: String,
+    pub custom_entrypoint: Option<String>,
+    pub service_name: Option<String>,
+    pub custom_cert_resolver: Option<String>,
+    #[serde(default)]
+    pub strip_path: bool,
+    #[serde(default = "default_middlewares")]
+    pub middlewares: String,
+    #[serde(default = "default_domain_type")]
+    pub domain_type: String,
+    #[serde(default = "default_certificate_type")]
+    pub certificate_type: String,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchDomainDto {
+    pub host: Option<String>,
+    pub https: Option<bool>,
+    pub port: Option<i64>,
+    pub path: Option<String>,
+    pub internal_path: Option<String>,
+    pub custom_entrypoint: Option<String>,
+    pub service_name: Option<String>,
+    pub custom_cert_resolver: Option<String>,
+    pub strip_path: Option<bool>,
+    pub middlewares: Option<String>,
+    pub certificate_type: Option<String>,
+}
+
+fn default_path() -> String {
+    "/".into()
+}
+
+fn default_middlewares() -> String {
+    "[]".into()
+}
+
+fn default_domain_type() -> String {
+    "APPLICATION".into()
+}
+
+fn default_certificate_type() -> String {
+    "NONE".into()
+}
 
 #[derive(Debug, Clone)]
 pub struct DomainRecord {
@@ -28,59 +85,75 @@ pub struct DomainRecord {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
+impl From<Domains> for DomainRecord {
+    fn from(v: Domains) -> Self {
+        Self {
+            id: v.id,
+            host: v.host,
+            https: v.https,
+            port: v.port,
+            path: v.path,
+            internal_path: v.internal_path,
+            custom_entrypoint: v.custom_entrypoint,
+            service_name: v.service_name,
+            custom_cert_resolver: v.custom_cert_resolver,
+            strip_path: v.strip_path,
+            middlewares: v.middlewares,
+            domain_type: v.domain_type,
+            certificate_type: v.certificate_type,
+            service_id: v.service_id,
+            created_at: v.created_at,
+            updated_at: v.updated_at,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct DomainService {
-    db: Arc<SqlitePool>,
-    repo_domain: Arc<DomainRepository>,
-    repo_app: Arc<ApplicationRepository>,
-    repo_compose: Arc<ComposeProjectRepository>,
+    queries: Arc<FlashQueries>,
     application_spec: Arc<ApplicationSpecAdapter>,
 }
 
 #[singleton]
 impl DomainService {
     fn new(
-        db: Arc<SqlitePool>,
-        repo_domain: Arc<DomainRepository>,
-        repo_app: Arc<ApplicationRepository>,
-        repo_compose: Arc<ComposeProjectRepository>,
+        queries: Arc<FlashQueries>,
         application_spec: Arc<ApplicationSpecAdapter>,
     ) -> Self {
         Self {
-            db,
-            repo_domain,
-            repo_app,
-            repo_compose,
+            queries,
             application_spec,
         }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<DomainRecord> {
-        self.repo_domain
-            .get_record_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        self.queries
+            .domains_get_record_by_id(id)
+            .await
+            .map(DomainRecord::from)
     }
 
     pub async fn list_by_application(
         &self,
         application_id: i64,
     ) -> sqlx::Result<Vec<DomainRecord>> {
-        self.repo_domain.list_by_application(application_id).await
+        let rows = self.queries.domains_list_by_application(application_id).await?;
+        Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
     pub async fn list_by_compose(&self, compose_id: i64) -> sqlx::Result<Vec<DomainRecord>> {
-        self.repo_domain.list_by_compose(compose_id).await
+        let rows = self.queries.domains_list_by_compose(compose_id).await?;
+        Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
     pub async fn list_all(&self) -> sqlx::Result<Vec<DomainRecord>> {
-        self.repo_domain.list_all().await
+        let rows = self.queries.domains_list_all().await?;
+        Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
     pub async fn create(&self, input: CreateDomainDto) -> sqlx::Result<DomainRecord> {
@@ -107,38 +180,31 @@ impl DomainService {
             (None, Some(_)) => "COMPOSE",
             _ => "APPLICATION",
         };
+        let service_id = input.application_id.or(input.compose_id);
 
         let domain = self
-            .repo_domain
-            .create_and_return(
-                input.host,
-                https,
-                port,
-                Some(input.path),
-                Some(input.internal_path),
-                input.custom_entrypoint,
-                input.service_name,
-                input.custom_cert_resolver,
-                strip_path,
-                input.middlewares,
-                domain_type.to_string(),
-                certificate_type,
-                input.application_id,
-                input.compose_id,
+            .queries
+            .domains_create_and_return(
+                &crate::flash_gen::domains::DomainsCreateAndReturnParams {
+                    host: input.host,
+                    https,
+                    port: port.unwrap_or(3000),
+                    path: input.path,
+                    internal_path: input.internal_path,
+                    custom_entrypoint: input.custom_entrypoint.unwrap_or_default(),
+                    service_name: input.service_name.unwrap_or_default(),
+                    custom_cert_resolver: input.custom_cert_resolver.unwrap_or_default(),
+                    strip_path,
+                    middlewares: input.middlewares,
+                    domain_type: domain_type.to_string(),
+                    certificate_type,
+                    service_id: service_id.unwrap_or(0),
+                },
             )
-            .await?;
+            .await
+            .map(DomainRecord::from)?;
 
-        let this = self.clone();
-        let domain_clone = domain.clone();
-        tokio::spawn(async move {
-            if let Some(app_id) = domain_clone.application_id.filter(|&id| id > 0) {
-                this.apply_application_traefik(app_id).await;
-            }
-            if let Some(compose_id) = domain_clone.compose_id.filter(|&id| id > 0) {
-                this.apply_compose_traefik(compose_id).await;
-            }
-        });
-
+        self.spawn_apply(&domain);
         Ok(domain)
     }
 
@@ -171,58 +237,59 @@ impl DomainService {
             strip_path != 0,
             &certificate_type,
             custom_cert_resolver.as_deref(),
-            current.compose_id,
+            if current.domain_type == "COMPOSE" {
+                current.service_id
+            } else {
+                None
+            },
             service_name.as_deref(),
         )?;
 
         let domain = self
-            .repo_domain
-            .update_and_return(
-                id,
-                host,
-                https,
-                port,
-                path,
-                internal_path,
-                custom_entrypoint,
-                service_name,
-                custom_cert_resolver,
-                strip_path,
-                middlewares,
-                certificate_type,
+            .queries
+            .domains_update_and_return(
+                &crate::flash_gen::domains::DomainsUpdateAndReturnParams {
+                    host,
+                    https,
+                    port: port.unwrap_or(3000),
+                    path: path.unwrap_or_else(|| "/".into()),
+                    internal_path: internal_path.unwrap_or_else(|| "/".into()),
+                    custom_entrypoint: custom_entrypoint.unwrap_or_default(),
+                    service_name: service_name.unwrap_or_default(),
+                    custom_cert_resolver: custom_cert_resolver.unwrap_or_default(),
+                    strip_path,
+                    middlewares,
+                    certificate_type,
+                    id,
+                },
             )
-            .await?;
+            .await
+            .map(DomainRecord::from)?;
 
         // Auto-apply traefik labels asynchronously after domain update.
-        let this = self.clone();
-        let domain_clone = domain.clone();
-        tokio::spawn(async move {
-            if let Some(app_id) = domain_clone.application_id.filter(|&id| id > 0) {
-                this.apply_application_traefik(app_id).await;
-            }
-            if let Some(compose_id) = domain_clone.compose_id.filter(|&id| id > 0) {
-                this.apply_compose_traefik(compose_id).await;
-            }
-        });
-
+        self.spawn_apply(&domain);
         Ok(domain)
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         let domain = self.get_by_id(id).await?;
-        self.repo_domain.delete(id).await?;
+        self.queries.domains_delete(id).await?;
+        self.spawn_apply(&domain);
+        Ok(())
+    }
 
+    fn spawn_apply(&self, domain: &DomainRecord) {
         let this = self.clone();
+        let domain = domain.clone();
         tokio::spawn(async move {
-            if let Some(app_id) = domain.application_id.filter(|&id| id > 0) {
-                this.apply_application_traefik(app_id).await;
-            }
-            if let Some(compose_id) = domain.compose_id.filter(|&id| id > 0) {
-                this.apply_compose_traefik(compose_id).await;
+            if let Some(service_id) = domain.service_id.filter(|&id| id > 0) {
+                if domain.domain_type == "COMPOSE" {
+                    this.apply_compose_traefik(service_id).await;
+                } else {
+                    this.apply_application_traefik(service_id).await;
+                }
             }
         });
-
-        Ok(())
     }
 
     async fn apply_application_traefik(&self, application_id: i64) {
@@ -243,11 +310,19 @@ impl DomainService {
     ) -> sqlx::Result<()> {
         let host = normalize_host(host)?;
         let path = normalize_path(path);
-        if self
-            .repo_domain
-            .route_in_use(&host, &path, exclude_id)
-            .await?
-        {
+        let in_use = match exclude_id {
+            Some(exclude_id) => {
+                self.queries
+                    .domains_route_in_use_excluding(&DomainsRouteInUseExcludingParams {
+                        host: host.clone(),
+                        path: path.clone(),
+                        id: exclude_id,
+                    })
+                    .await?
+            }
+            None => self.queries.domains_route_in_use(&host, &path).await?,
+        };
+        if in_use != 0 {
             return Err(sqlx::Error::Protocol(format!(
                 "domain route already exists for {host}{path}"
             )));
@@ -257,11 +332,10 @@ impl DomainService {
 
     async fn try_apply_application_traefik(&self, application_id: i64) -> Result<(), String> {
         let app = self
-            .repo_app
-            .get_by_id(application_id)
+            .queries
+            .get_service_by_i_d(application_id)
             .await
-            .map_err(|e| format!("app check error: {e}"))?
-            .ok_or_else(|| format!("app not found: {application_id}"))?;
+            .map_err(|e| format!("app check error: {e}"))?;
         let app_name = app.app_name;
         let server_id = app.server_id;
 
@@ -340,14 +414,18 @@ impl DomainService {
 
     async fn try_apply_compose_traefik(&self, compose_id: i64) -> Result<(), String> {
         let compose = self
-            .repo_compose
-            .get_by_id(compose_id)
+            .queries
+            .get_service_by_i_d(compose_id)
             .await
-            .map_err(|e| format!("compose check error: {e}"))?
-            .ok_or_else(|| format!("compose not found: {compose_id}"))?;
+            .map_err(|e| format!("compose check error: {e}"))?;
         let app_name = compose.app_name;
         let server_id = compose.server_id;
-        let compose_type = compose.compose_type;
+        let compose_type = self
+            .queries
+            .get_service_compose(compose_id)
+            .await
+            .map_err(|e| format!("compose type load error: {e}"))?
+            .compose_type;
 
         let executor = crate::services::compose::remote::agent_executor_for(server_id)
             .await
@@ -413,13 +491,9 @@ impl DomainService {
                 );
 
                 if let Ok(raw_yaml) = tokio::fs::read_to_string(&compose_file_path).await {
-                    let adapter =
-                        crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
-                            self.repo_compose.clone(),
-                            self.repo_domain.clone(),
-                            Arc::new(crate::repository::MountRepository::new(self.db.clone())),
-                            Arc::new(crate::repository::PatchRepository::new(self.db.clone())),
-                        );
+                    let adapter = crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
+                        self.queries.clone(),
+                    );
                     if let Ok(spec) = adapter.load(compose_id).await {
                         if let Ok(updated_yaml) =
                             crate::utils::builder::compose::labels::inject_compose_yaml_labels(

@@ -4,15 +4,6 @@
 use super::models::*;
 use super::db::Queries;
 
-pub struct MountFetchForDatabaseParams {
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
-}
-
 pub struct MountCreateForApplicationParams {
     pub mount_type: String,
     pub host_path: String,
@@ -20,7 +11,7 @@ pub struct MountCreateForApplicationParams {
     pub file_path: String,
     pub content: String,
     pub mount_path: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct MountUpdateForApplicationParams {
@@ -31,13 +22,34 @@ pub struct MountUpdateForApplicationParams {
     pub content: String,
     pub mount_path: String,
     pub id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct MountCreateComposeFileParams {
     pub file_path: String,
     pub content: String,
-    pub compose_id: i64,
+    pub service_id: i64,
+}
+
+pub struct MountCreateForDatabaseParams {
+    pub mount_type: String,
+    pub host_path: String,
+    pub volume_name: String,
+    pub file_path: String,
+    pub content: String,
+    pub mount_path: String,
+    pub service_id: i64,
+}
+
+pub struct MountUpdateForDatabaseParams {
+    pub mount_type: String,
+    pub host_path: String,
+    pub volume_name: String,
+    pub file_path: String,
+    pub content: String,
+    pub mount_path: String,
+    pub id: i64,
+    pub service_id: i64,
 }
 
 pub struct MountCreateForComposeParams {
@@ -47,7 +59,7 @@ pub struct MountCreateForComposeParams {
     pub file_path: String,
     pub content: String,
     pub mount_path: String,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct MountUpdateForComposeParams {
@@ -58,24 +70,19 @@ pub struct MountUpdateForComposeParams {
     pub content: String,
     pub mount_path: String,
     pub id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 impl Queries {
     /// MountFetchForDatabase
     pub async fn mount_fetch_for_database(
         &self,
-        params: &MountFetchForDatabaseParams,
+        service_id: i64,
     ) -> Result<Vec<Mounts>, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE postgres_id = ? OR mysql_id = ? OR mariadb_id = ? OR mongo_id = ? OR redis_id = ? OR libsql_id = ?;"
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE service_id = ?;"
         )
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -83,12 +90,12 @@ impl Queries {
     /// MountFetchForApplication
     pub async fn mount_fetch_for_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Mounts>, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE application_id = ? ORDER BY id;"
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE service_id = ? ORDER BY id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -97,13 +104,13 @@ impl Queries {
     pub async fn mount_get_for_application(
         &self,
         id: i64,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Mounts, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE id = ? AND application_id = ?;"
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(application_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -112,9 +119,9 @@ impl Queries {
     pub async fn mount_create_for_application(
         &self,
         params: &MountCreateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, application_id) VALUES (?, 'APPLICATION', ?, ?, ?, ?, ?, ?);"
+    ) -> Result<Mounts, sqlx::Error> {
+        sqlx::query_as::<_, Mounts>(
+            "INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id) VALUES (?, 'APPLICATION', ?, ?, ?, ?, ?, ?) RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;"
         )
         .bind(&params.mount_type)
         .bind(&params.host_path)
@@ -122,19 +129,18 @@ impl Queries {
         .bind(&params.file_path)
         .bind(&params.content)
         .bind(&params.mount_path)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MountUpdateForApplication
     pub async fn mount_update_for_application(
         &self,
         params: &MountUpdateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE mounts SET mount_type = ?, service_type = 'APPLICATION', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ? WHERE id = ? AND application_id = ?;"
+    ) -> Result<Mounts, sqlx::Error> {
+        sqlx::query_as::<_, Mounts>(
+            "UPDATE mounts SET mount_type = ?, service_type = 'APPLICATION', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ? WHERE id = ? AND service_id = ? RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;"
         )
         .bind(&params.mount_type)
         .bind(&params.host_path)
@@ -143,37 +149,35 @@ impl Queries {
         .bind(&params.content)
         .bind(&params.mount_path)
         .bind(&params.id)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MountDeleteForApplication
     pub async fn mount_delete_for_application(
         &self,
         id: i64,
-        application_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM mounts WHERE id = ? AND application_id = ?;"
+        service_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM mounts WHERE id = ? AND service_id = ? RETURNING id;"
         )
         .bind(id)
-        .bind(application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// MountFetchForCompose
     pub async fn mount_fetch_for_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Mounts>, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE compose_id = ? ORDER BY id;"
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE service_id = ? ORDER BY id;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -184,11 +188,11 @@ impl Queries {
         params: &MountCreateComposeFileParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO mounts (mount_type, service_type, file_path, content, mount_path, compose_id) VALUES ('FILE', 'COMPOSE', ?, ?, '', ?);"
+            "INSERT INTO mounts (mount_type, service_type, file_path, content, mount_path, service_id) VALUES ('FILE', 'COMPOSE', ?, ?, '', ?);"
         )
         .bind(&params.file_path)
         .bind(&params.content)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -198,15 +202,85 @@ impl Queries {
     pub async fn mount_get_for_compose(
         &self,
         id: i64,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Mounts, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id, created_at, updated_at FROM mounts WHERE id = ? AND compose_id = ?;"
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_one(&self.pool)
         .await
+    }
+
+    /// MountGetForDatabase
+    pub async fn mount_get_for_database(
+        &self,
+        id: i64,
+        service_id: i64,
+    ) -> Result<Mounts, sqlx::Error> {
+        sqlx::query_as::<_, Mounts>(
+            "SELECT id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at FROM mounts WHERE id = ? AND service_id = ?;"
+        )
+        .bind(id)
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// MountCreateForDatabase
+    pub async fn mount_create_for_database(
+        &self,
+        params: &MountCreateForDatabaseParams,
+    ) -> Result<Mounts, sqlx::Error> {
+        sqlx::query_as::<_, Mounts>(
+            "INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id) VALUES (?, 'DATABASE', ?, ?, ?, ?, ?, ?) RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;"
+        )
+        .bind(&params.mount_type)
+        .bind(&params.host_path)
+        .bind(&params.volume_name)
+        .bind(&params.file_path)
+        .bind(&params.content)
+        .bind(&params.mount_path)
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// MountUpdateForDatabase
+    pub async fn mount_update_for_database(
+        &self,
+        params: &MountUpdateForDatabaseParams,
+    ) -> Result<Mounts, sqlx::Error> {
+        sqlx::query_as::<_, Mounts>(
+            "UPDATE mounts SET mount_type = ?, service_type = 'DATABASE', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = unixepoch() WHERE id = ? AND service_id = ? RETURNING id, mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id, created_at, updated_at;"
+        )
+        .bind(&params.mount_type)
+        .bind(&params.host_path)
+        .bind(&params.volume_name)
+        .bind(&params.file_path)
+        .bind(&params.content)
+        .bind(&params.mount_path)
+        .bind(&params.id)
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// MountDeleteForDatabase
+    pub async fn mount_delete_for_database(
+        &self,
+        id: i64,
+        service_id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "DELETE FROM mounts WHERE id = ? AND service_id = ?;"
+        )
+        .bind(id)
+        .bind(service_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     /// MountCreateForCompose
@@ -215,7 +289,7 @@ impl Queries {
         params: &MountCreateForComposeParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, compose_id) VALUES (?, 'COMPOSE', ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO mounts (mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id) VALUES (?, 'COMPOSE', ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.mount_type)
         .bind(&params.host_path)
@@ -223,7 +297,7 @@ impl Queries {
         .bind(&params.file_path)
         .bind(&params.content)
         .bind(&params.mount_path)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -235,7 +309,7 @@ impl Queries {
         params: &MountUpdateForComposeParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE mounts SET mount_type = ?, service_type = 'COMPOSE', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND compose_id = ?;"
+            "UPDATE mounts SET mount_type = ?, service_type = 'COMPOSE', host_path = ?, volume_name = ?, file_path = ?, content = ?, mount_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND service_id = ?;"
         )
         .bind(&params.mount_type)
         .bind(&params.host_path)
@@ -244,7 +318,7 @@ impl Queries {
         .bind(&params.content)
         .bind(&params.mount_path)
         .bind(&params.id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -254,13 +328,13 @@ impl Queries {
     pub async fn mount_delete_for_compose(
         &self,
         id: i64,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM mounts WHERE id = ? AND compose_id = ?;"
+            "DELETE FROM mounts WHERE id = ? AND service_id = ?;"
         )
         .bind(id)
-        .bind(compose_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())

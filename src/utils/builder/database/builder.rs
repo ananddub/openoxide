@@ -1,4 +1,4 @@
-use crate::repository::MountRepository;
+use crate::db::queries::FlashQueries;
 use crate::services::database::DatabaseKind;
 use crate::utils::builder::shared::BuilderContext;
 use crate::utils::builder::spec::BuilderEvent;
@@ -484,6 +484,45 @@ pub struct ServiceNetworkAttachment {
     pub driver_opts: BTreeMap<String, String>,
 }
 
+/// Parsed view over `service_database.engine_config` — engine-specific fields
+/// that used to live in per-engine tables.
+#[derive(Debug, Default)]
+pub struct EngineConfig(serde_json::Value);
+
+impl EngineConfig {
+    pub fn parse(raw: &str) -> Self {
+        Self(serde_json::from_str(raw).unwrap_or_default())
+    }
+
+    pub fn string(&self, key: &str) -> String {
+        self.0
+            .get(key)
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string()
+    }
+
+    pub fn opt_string(&self, key: &str) -> Option<String> {
+        let value = self.string(key);
+        (!value.is_empty()).then_some(value)
+    }
+
+    pub fn flag(&self, key: &str) -> i64 {
+        self.0
+            .get(key)
+            .and_then(|v| {
+                v.as_bool()
+                    .map(|b| b as i64)
+                    .or_else(|| v.as_i64())
+            })
+            .unwrap_or(0)
+    }
+
+    pub fn opt_int(&self, key: &str) -> Option<i64> {
+        self.0.get(key).and_then(|v| v.as_i64())
+    }
+}
+
 pub async fn resolve_database_networks(
     network_ids: Option<&str>,
     detach_rustploy_network: i64,
@@ -495,23 +534,28 @@ pub async fn resolve_database_networks(
 
     if let Some(raw) = network_ids {
         if let Ok(parsed) = serde_json::from_str::<Vec<String>>(raw) {
-            let repo = auto_di::resolve::<crate::repository::DatabaseNetworkRepository>()
+            let q = auto_di::resolve::<FlashQueries>()
                 .await
                 .map_err(|e| ExecError::CommandFailed {
                     code: None,
-                    stderr: format!("Failed to resolve DatabaseNetworkRepository: {}", e),
+                    stderr: format!("Failed to resolve FlashQueries: {}", e),
                 })?;
-            let resolved =
-                repo.resolve_names(&parsed)
-                    .await
-                    .map_err(|e| ExecError::CommandFailed {
-                        code: None,
-                        stderr: format!("Failed to resolve database networks: {}", e),
-                    })?;
-            for name in resolved {
-                let name = name.trim();
-                if !name.is_empty() {
-                    names.insert(name.to_string());
+            for value in parsed {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                let resolved = match trimmed.parse::<i64>() {
+                    Ok(id) => q
+                        .database_networks_get_by_id(id)
+                        .await
+                        .map(|network| network.docker_network_name)
+                        .unwrap_or_else(|_| trimmed.to_string()),
+                    Err(_) => trimmed.to_string(),
+                };
+                let resolved = resolved.trim();
+                if !resolved.is_empty() {
+                    names.insert(resolved.to_string());
                 }
             }
         }
@@ -589,21 +633,19 @@ impl DatabaseBuilder {
         self.ctx.cancelled(cancel)?;
 
         // Fetch mounts for this database
-        let mount_repo =
-            auto_di::resolve::<MountRepository>()
-                .await
-                .map_err(|e| ExecError::CommandFailed {
-                    code: None,
-                    stderr: format!("Failed to resolve MountRepository: {}", e),
-                })?;
-        let mounts =
-            mount_repo
-                .fetch_for_database(db_id)
-                .await
-                .map_err(|e| ExecError::CommandFailed {
-                    code: None,
-                    stderr: format!("Failed to fetch mounts: {}", e),
-                })?;
+        let q = auto_di::resolve::<FlashQueries>()
+            .await
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: format!("Failed to resolve FlashQueries: {}", e),
+            })?;
+        let mounts = q
+            .mount_fetch_for_database(db_id)
+            .await
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: format!("Failed to fetch mounts: {}", e),
+            })?;
 
         // 1. Build stack file based on database kind
         let (app_name, docker_image, stack_file_content) = match db_kind {
@@ -696,11 +738,10 @@ impl DatabaseBuilder {
         self.wait_healthy(&service_name, cancel).await?;
 
         // Post-deploy password sync: ensure container engine uses the exact password configured in database
-        if let Ok(mgmt) =
-            auto_di::resolve::<crate::repository::DatabaseManagementRepository>().await
-        {
-            if let Ok(creds) = mgmt.credentials(db_kind, db_id).await {
-                if !creds.password.is_empty() {
+        if let Ok(q) = auto_di::resolve::<FlashQueries>().await {
+            if let Ok(creds) = q.database_management_credentials(db_id).await {
+                let password = creds.db_password.clone().unwrap_or_default();
+                if !password.is_empty() {
                     if let Ok(containers) = self.ctx.docker.containers().ps().all().list().await {
                         if let Some(matched) = containers.iter().find(|c| {
                             let name = c.names.trim_start_matches('/').to_lowercase();
@@ -709,8 +750,8 @@ impl DatabaseBuilder {
                         }) {
                             let container_id = &matched.id;
                             let user_name =
-                                creds.username.unwrap_or_else(|| "openoxide".to_string());
-                            let escaped_pwd = creds.password.replace('\'', "''");
+                                creds.db_user.clone().unwrap_or_else(|| "openoxide".to_string());
+                            let escaped_pwd = password.replace('\'', "''");
                             match db_kind {
                                 DatabaseKind::Postgres => {
                                     let sql = format!(
@@ -758,7 +799,7 @@ impl DatabaseBuilder {
                                             "CONFIG",
                                             "SET",
                                             "requirepass",
-                                            &creds.password,
+                                            &password,
                                         ])
                                         .await;
                                     let _ = self
@@ -769,7 +810,7 @@ impl DatabaseBuilder {
                                         .run([
                                             "redis-cli",
                                             "-a",
-                                            &creds.password,
+                                            &password,
                                             "CONFIG",
                                             "REWRITE",
                                         ])

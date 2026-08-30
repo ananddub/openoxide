@@ -1,12 +1,10 @@
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;
 
 use crate::{
-    api::dto::global_op::{
-        ContainerActionDto, DockerActionResponseDto, DockerPruneRequestDto, DockerPruneResponseDto,
-    },
-    repository::ServerRepository,
+    db::queries::FlashQueries,
     services::monitoring::monitoring_service::MonitoringService,
     utils::{
         docker::{ContainerSummary, DockerCli, ImageSummary, NetworkSummary, VolumeSummary},
@@ -14,8 +12,37 @@ use crate::{
     },
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ContainerActionDto {
+    Start,
+    Stop,
+    Restart,
+    Kill,
+    Pause,
+    Unpause,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct DockerPruneRequestDto {
+    pub containers: bool,
+    pub images: bool,
+    pub networks: bool,
+    pub volumes: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DockerActionResponseDto {
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DockerPruneResponseDto {
+    pub operations: Vec<DockerActionResponseDto>,
+}
+
 pub struct DockerManagementService {
-    servers: Arc<ServerRepository>,
+    queries: Arc<FlashQueries>,
     monitoring: Arc<MonitoringService>,
 }
 
@@ -28,7 +55,7 @@ impl DockerManagementService {
         destination: &str,
         filename: &str,
         local_path: &Path,
-    ) -> Result<crate::api::dto::global_op::DockerActionResponseDto, String> {
+    ) -> Result<DockerActionResponseDto, String> {
         validate_resource_name(id)?;
         validate_transfer_path(destination)?;
         validate_transfer_path(filename)?;
@@ -89,9 +116,9 @@ impl DockerManagementService {
             .await
             .map_err(error)
     }
-    fn new(servers: Arc<ServerRepository>, monitoring: Arc<MonitoringService>) -> Self {
+    fn new(queries: Arc<FlashQueries>, monitoring: Arc<MonitoringService>) -> Self {
         Self {
-            servers,
+            queries,
             monitoring,
         }
     }
@@ -291,9 +318,7 @@ impl DockerManagementService {
                 .await
                 .map(DockerCli::from_executor),
             Some(server_id) => {
-                let (host, port, username, private_key, public_key) = self
-                    .servers
-                    .get_direct_ssh_credentials(server_id)
+                let (host, port, username, private_key, public_key) = crate::services::server::direct_ssh_credentials(&self.queries, server_id)
                     .await
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "server or SSH key not found".to_owned())?;

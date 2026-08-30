@@ -19,7 +19,7 @@ pub struct DestinationsGetAllRow {
     pub updated_at: i64,
 }
 
-pub struct DestinationsCreateParams {
+pub struct DestinationsCreateAndReturnParams {
     pub name: String,
     pub provider: String,
     pub access_key: String,
@@ -32,7 +32,7 @@ pub struct DestinationsCreateParams {
     pub updated_at: i64,
 }
 
-pub struct DestinationsUpdateParams {
+pub struct DestinationsUpdateAndReturnParams {
     pub name: String,
     pub provider: String,
     pub access_key: String,
@@ -40,9 +40,6 @@ pub struct DestinationsUpdateParams {
     pub bucket: String,
     pub region: String,
     pub endpoint: String,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
     pub id: i64,
 }
 
@@ -52,7 +49,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<DestinationsGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, DestinationsGetAllRow>(
-            "SELECT CAST(id AS TEXT) AS id, name AS name, provider AS provider, access_key AS access_key, secret_access_key AS secret_access_key, bucket AS bucket, region AS region, endpoint AS endpoint, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM destinations;"
+            "SELECT * FROM destinations;"
         )
         .fetch_all(&self.pool)
         .await
@@ -64,20 +61,20 @@ impl Queries {
         id: i64,
     ) -> Result<Destinations, sqlx::Error> {
         sqlx::query_as::<_, Destinations>(
-            "SELECT CAST(id AS TEXT) AS id, name AS name, provider AS provider, access_key AS access_key, secret_access_key AS secret_access_key, bucket AS bucket, region AS region, endpoint AS endpoint, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM destinations WHERE id = ?;"
+            "SELECT * FROM destinations WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
         .await
     }
 
-    /// DestinationsCreate
-    pub async fn destinations_create(
+    /// DestinationsCreateAndReturn
+    pub async fn destinations_create_and_return(
         &self,
-        params: &DestinationsCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO destinations (name, provider, access_key, secret_access_key, bucket, region, endpoint, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+        params: &DestinationsCreateAndReturnParams,
+    ) -> Result<Destinations, sqlx::Error> {
+        sqlx::query_as::<_, Destinations>(
+            "INSERT INTO destinations (name, provider, access_key, secret_access_key, bucket, region, endpoint, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.provider)
@@ -89,18 +86,17 @@ impl Queries {
         .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
-    /// DestinationsUpdate
-    pub async fn destinations_update(
+    /// DestinationsUpdateAndReturn
+    pub async fn destinations_update_and_return(
         &self,
-        params: &DestinationsUpdateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+        params: &DestinationsUpdateAndReturnParams,
+    ) -> Result<Destinations, sqlx::Error> {
+        sqlx::query_as::<_, Destinations>(
+            "UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ? WHERE id = ? RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.provider)
@@ -109,13 +105,9 @@ impl Queries {
         .bind(&params.bucket)
         .bind(&params.region)
         .bind(&params.endpoint)
-        .bind(&params.organization_id)
-        .bind(&params.created_at)
-        .bind(&params.updated_at)
         .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// DestinationsDelete

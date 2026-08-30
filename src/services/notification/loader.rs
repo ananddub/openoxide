@@ -1,150 +1,234 @@
-use std::sync::Arc;
+use crate::flash_gen::models::Notifications as Notification;
+use serde::{Deserialize, Serialize};
 
-use crate::db::{
-    models::{
-        notif_custom::NotifCustom, notif_discord::NotifDiscord, notif_email::NotifEmail,
-        notif_gotify::NotifGotify, notif_lark::NotifLark, notif_mattermost::NotifMattermost,
-        notif_ntfy::NotifNtfy, notif_pushover::NotifPushover, notif_resend::NotifResend,
-        notif_slack::NotifSlack, notif_teams::NotifTeam, notif_telegram::NotifTelegram,
-        notifications::Notification,
-    },
-    repository::{
-        NotifCustomRepository, NotifDiscordRepository, NotifEmailRepository, NotifGotifyRepository,
-        NotifLarkRepository, NotifMattermostRepository, NotifNtfyRepository,
-        NotifPushoverRepository, NotifResendRepository, NotifSlackRepository, NotifTeamRepository,
-        NotifTelegramRepository,
-    },
-};
-
-pub struct NotificationConfigLoader {
-    pub slack: Arc<NotifSlackRepository>,
-    pub telegram: Arc<NotifTelegramRepository>,
-    pub discord: Arc<NotifDiscordRepository>,
-    pub email: Arc<NotifEmailRepository>,
-    pub resend: Arc<NotifResendRepository>,
-    pub gotify: Arc<NotifGotifyRepository>,
-    pub ntfy: Arc<NotifNtfyRepository>,
-    pub mattermost: Arc<NotifMattermostRepository>,
-    pub custom: Arc<NotifCustomRepository>,
-    pub lark: Arc<NotifLarkRepository>,
-    pub pushover: Arc<NotifPushoverRepository>,
-    pub teams: Arc<NotifTeamRepository>,
+/// Channel configuration extracted from a notification's `config_json`.
+///
+/// Key layout per channel is documented in `.flash/queries/notifications.sql`.
+#[derive(Debug, Clone)]
+pub enum ChannelConfig {
+    Slack(SlackConfig),
+    Telegram(TelegramConfig),
+    Discord(DiscordConfig),
+    Email(EmailConfig),
+    Resend(ResendConfig),
+    Gotify(GotifyConfig),
+    Ntfy(NtfyConfig),
+    Mattermost(MattermostConfig),
+    Teams(TeamsConfig),
+    Lark(LarkConfig),
+    Pushover(PushoverConfig),
+    Custom(CustomConfig),
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SlackConfig {
+    pub webhook_url: String,
+    #[serde(default)]
+    pub channel: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TelegramConfig {
+    pub bot_token: String,
+    pub chat_id: String,
+    #[serde(default)]
+    pub message_thread_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscordConfig {
+    pub webhook_url: String,
+    #[serde(default)]
+    pub decoration: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmailConfig {
+    pub smtp_server: String,
+    pub smtp_port: i64,
+    #[serde(default)]
+    pub username: String,
+    #[serde(default)]
+    pub password: String,
+    pub from_address: String,
+    #[serde(default)]
+    pub to_addresses: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResendConfig {
+    pub api_key: String,
+    pub from_address: String,
+    #[serde(default)]
+    pub to_addresses: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GotifyConfig {
+    pub server_url: String,
+    pub app_token: String,
+    #[serde(default)]
+    pub priority: i64,
+    #[serde(default)]
+    pub decoration: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NtfyConfig {
+    pub server_url: String,
+    pub topic: String,
+    #[serde(default)]
+    pub access_token: Option<String>,
+    #[serde(default)]
+    pub priority: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MattermostConfig {
+    pub webhook_url: String,
+    #[serde(default)]
+    pub channel: Option<String>,
+    #[serde(default)]
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamsConfig {
+    pub webhook_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LarkConfig {
+    pub webhook_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PushoverConfig {
+    pub api_token: String,
+    pub user_key: String,
+    #[serde(default)]
+    pub priority: i64,
+    #[serde(default)]
+    pub retry: Option<i64>,
+    #[serde(default)]
+    pub expire: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomConfig {
+    #[serde(default)]
+    pub url: String,
+    #[serde(default)]
+    pub method: Option<String>,
+    #[serde(default)]
+    pub headers: Option<String>,
+    #[serde(default)]
+    pub payload_template: Option<String>,
+}
+
+/// Parses per-channel configuration out of `notifications.config_json`.
+///
+/// Configs used to live in twelve per-channel tables; since the unified
+/// schema they are embedded in the notification row itself, so loading is
+/// a pure `serde_json` decode with no database round-trip.
+pub struct NotificationConfigLoader;
+
 impl NotificationConfigLoader {
-    pub async fn load_slack(&self, n: &Notification) -> Result<NotifSlack, String> {
-        let id = n.slack_id.ok_or("slack notification has no slack_id")?;
-        self.slack
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load slack config: {e}"))?
-            .ok_or_else(|| format!("slack config {id} not found"))
+    fn parse_config<T: serde::de::DeserializeOwned>(
+        notification: &Notification,
+    ) -> Result<T, String> {
+        serde_json::from_str(&notification.config_json)
+            .map_err(|e| format!("invalid config for {} notification: {e}", notification.notification_type))
     }
 
-    pub async fn load_telegram(&self, n: &Notification) -> Result<NotifTelegram, String> {
-        let id = n
-            .telegram_id
-            .ok_or("telegram notification has no telegram_id")?;
-        self.telegram
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load telegram config: {e}"))?
-            .ok_or_else(|| format!("telegram config {id} not found"))
+    /// Loads the channel config matching the notification's `notification_type`.
+    pub fn load(&self, notification: &Notification) -> Result<ChannelConfig, String> {
+        use super::provider::NotificationProvider;
+
+        let provider: NotificationProvider = notification
+            .notification_type
+            .parse()
+            .map_err(|e| format!("unknown notification type: {e}"))?;
+
+        Ok(match provider {
+            NotificationProvider::Slack => {
+                ChannelConfig::Slack(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Telegram => {
+                ChannelConfig::Telegram(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Discord => {
+                ChannelConfig::Discord(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Email => ChannelConfig::Email(Self::parse_config(notification)?),
+            NotificationProvider::Resend => {
+                ChannelConfig::Resend(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Gotify => {
+                ChannelConfig::Gotify(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Ntfy => ChannelConfig::Ntfy(Self::parse_config(notification)?),
+            NotificationProvider::Mattermost => {
+                ChannelConfig::Mattermost(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Teams => {
+                ChannelConfig::Teams(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Lark => ChannelConfig::Lark(Self::parse_config(notification)?),
+            NotificationProvider::Pushover => {
+                ChannelConfig::Pushover(Self::parse_config(notification)?)
+            }
+            NotificationProvider::Custom => {
+                ChannelConfig::Custom(Self::parse_config(notification)?)
+            }
+        })
     }
 
-    pub async fn load_discord(&self, n: &Notification) -> Result<NotifDiscord, String> {
-        let id = n
-            .discord_id
-            .ok_or("discord notification has no discord_id")?;
-        self.discord
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load discord config: {e}"))?
-            .ok_or_else(|| format!("discord config {id} not found"))
+    pub fn load_slack(&self, n: &Notification) -> Result<SlackConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_email(&self, n: &Notification) -> Result<NotifEmail, String> {
-        let id = n.email_id.ok_or("email notification has no email_id")?;
-        self.email
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load email config: {e}"))?
-            .ok_or_else(|| format!("email config {id} not found"))
+    pub fn load_telegram(&self, n: &Notification) -> Result<TelegramConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_resend(&self, n: &Notification) -> Result<NotifResend, String> {
-        let id = n.resend_id.ok_or("resend notification has no resend_id")?;
-        self.resend
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load resend config: {e}"))?
-            .ok_or_else(|| format!("resend config {id} not found"))
+    pub fn load_discord(&self, n: &Notification) -> Result<DiscordConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_gotify(&self, n: &Notification) -> Result<NotifGotify, String> {
-        let id = n.gotify_id.ok_or("gotify notification has no gotify_id")?;
-        self.gotify
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load gotify config: {e}"))?
-            .ok_or_else(|| format!("gotify config {id} not found"))
+    pub fn load_email(&self, n: &Notification) -> Result<EmailConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_ntfy(&self, n: &Notification) -> Result<NotifNtfy, String> {
-        let id = n.ntfy_id.ok_or("ntfy notification has no ntfy_id")?;
-        self.ntfy
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load ntfy config: {e}"))?
-            .ok_or_else(|| format!("ntfy config {id} not found"))
+    pub fn load_resend(&self, n: &Notification) -> Result<ResendConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_mattermost(&self, n: &Notification) -> Result<NotifMattermost, String> {
-        let id = n
-            .mattermost_id
-            .ok_or("mattermost notification has no mattermost_id")?;
-        self.mattermost
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load mattermost config: {e}"))?
-            .ok_or_else(|| format!("mattermost config {id} not found"))
+    pub fn load_gotify(&self, n: &Notification) -> Result<GotifyConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_teams(&self, n: &Notification) -> Result<NotifTeam, String> {
-        let id = n.teams_id.ok_or("teams notification has no teams_id")?;
-        self.teams
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load teams config: {e}"))?
-            .ok_or_else(|| format!("teams config {id} not found"))
+    pub fn load_ntfy(&self, n: &Notification) -> Result<NtfyConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_lark(&self, n: &Notification) -> Result<NotifLark, String> {
-        let id = n.lark_id.ok_or("lark notification has no lark_id")?;
-        self.lark
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load lark config: {e}"))?
-            .ok_or_else(|| format!("lark config {id} not found"))
+    pub fn load_mattermost(&self, n: &Notification) -> Result<MattermostConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_pushover(&self, n: &Notification) -> Result<NotifPushover, String> {
-        let id = n
-            .pushover_id
-            .ok_or("pushover notification has no pushover_id")?;
-        self.pushover
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load pushover config: {e}"))?
-            .ok_or_else(|| format!("pushover config {id} not found"))
+    pub fn load_teams(&self, n: &Notification) -> Result<TeamsConfig, String> {
+        Self::parse_config(n)
     }
 
-    pub async fn load_custom(&self, n: &Notification) -> Result<NotifCustom, String> {
-        let id = n.custom_id.ok_or("custom notification has no custom_id")?;
-        self.custom
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("could not load custom config: {e}"))?
-            .ok_or_else(|| format!("custom config {id} not found"))
+    pub fn load_lark(&self, n: &Notification) -> Result<LarkConfig, String> {
+        Self::parse_config(n)
+    }
+
+    pub fn load_pushover(&self, n: &Notification) -> Result<PushoverConfig, String> {
+        Self::parse_config(n)
+    }
+
+    pub fn load_custom(&self, n: &Notification) -> Result<CustomConfig, String> {
+        Self::parse_config(n)
     }
 }

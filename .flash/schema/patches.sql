@@ -1,11 +1,12 @@
 CREATE TABLE patches (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     patch_type TEXT NOT NULL,
     file_path TEXT NOT NULL,
-    enabled INTEGER NOT NULL,
+    enabled BIGINT NOT NULL,
     content TEXT NOT NULL,
-    application_id INTEGER,
-    compose_id INTEGER,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    service_id BIGINT REFERENCES services(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );
+
+CREATE INDEX idx_patches_service_id ON patches(service_id);

@@ -1,123 +1,111 @@
-use crate::core::middleware::permission::{CanWrite, Organization};
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::organization::{
-        CreateOrganizationDto, OrganizationResponseDto, PatchOrganizationDto,
-    },
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::organization::OrganizationService,
-    utils::jwt::claim::Claims,
+use crate::api::connect::generated::openoxide::api::v1::{
+    CreateOrganizationRequest, DeleteOrganizationRequest, Empty, GetOrganizationRequest,
+    ListOrganizationsRequest, ListOrganizationsResponse,
+    Organization as OrganizationProto, OrganizationService, OrganizationServiceExt,
+    UpdateOrganizationRequest,
 };
-
-type ApiError = (StatusCode, String);
+use crate::services::organization::OrganizationService as AppOrganizationService;
 
 pub struct OrganizationController {
-    service: Arc<OrganizationService>,
+    service: Arc<AppOrganizationService>,
 }
 
-#[controller("/organizations")]
+#[singleton]
 impl OrganizationController {
-    fn new(service: Arc<OrganizationService>) -> Self {
+    pub fn new(service: Arc<AppOrganizationService>) -> Self {
         Self { service }
     }
+}
 
-    #[get("/{id}")]
-    #[live(tables = ["organization","organization_members"])]
-    async fn get(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<OrganizationResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(OrganizationResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get]
-    #[live(tables = ["organization","organization_members"])]
-    async fn list_by_owner(
-        &self,
-        claims: Claims,
-    ) -> Result<Json<Vec<OrganizationResponseDto>>, ApiError> {
-        self.service
-            .list_by_owner(claims.user.user_id)
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(OrganizationResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        claims: Claims,
-        ValidatedJson(body): ValidatedJson<CreateOrganizationDto>,
-    ) -> Result<(StatusCode, Json<OrganizationResponseDto>), ApiError> {
-        self.service
-            .create(claims.user.user_id, body)
-            .await
-            .map(OrganizationResponseDto::from)
-            .map(|organization| (StatusCode::CREATED, Json(organization)))
-            .map_err(map_sqlx_error)
-    }
-
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchOrganizationDto>,
-    ) -> Result<Json<OrganizationResponseDto>, ApiError> {
-        self.service
-            .update(id, body)
-            .await
-            .map(OrganizationResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Organization, CanWrite>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+fn org_to_proto(org: crate::db::models::organization::Organization) -> OrganizationProto {
+    OrganizationProto {
+        id: org.id,
+        name: org.name,
+        logo: org.logo,
+        slug: org.slug,
+        owner_id: org.owner_id,
+        created_at: org.created_at,
+        updated_at: org.updated_at,
+        ..Default::default()
     }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "organization not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (StatusCode::NOT_FOUND, "owner not found".into())
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("organization not found"),
+        sqlx::Error::Database(e) if e.is_foreign_key_violation() => {
+            ConnectError::not_found("owner not found")
         }
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
-        sqlx::Error::Protocol(message) => (StatusCode::BAD_REQUEST, message),
         other => {
             tracing::error!(error = %other, "organization database operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
         }
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl OrganizationService for OrganizationController {
+    async fn get_organization<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, GetOrganizationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OrganizationProto> + Send + use<'a>> {
+        let org = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        Response::ok(org_to_proto(org))
+    }
+
+    async fn list_organizations<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, ListOrganizationsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListOrganizationsResponse> + Send + use<'a>> {
+        let orgs = self.service.list_by_owner(auth.user_id()).await.map_err(map_db_error)?;
+        let organizations = orgs.into_iter().map(org_to_proto).collect();
+        Response::ok(ListOrganizationsResponse {
+            organizations,
+            ..Default::default()
+        })
+    }
+
+    async fn create_organization<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, CreateOrganizationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OrganizationProto> + Send + use<'a>> {
+        let org = self
+            .service
+            .create(auth.user_id(), request.to_owned_message())
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(org_to_proto(org))
+    }
+
+    #[permission(Organization, CanWrite)]
+    async fn update_organization<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, UpdateOrganizationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OrganizationProto> + Send + use<'a>> {
+        let dto = request.to_owned_message();
+        let org = self.service.update(dto.id, dto).await.map_err(map_db_error)?;
+        Response::ok(org_to_proto(org))
+    }
+
+    #[permission(Organization, CanWrite)]
+    async fn delete_organization<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, DeleteOrganizationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
     }
 }

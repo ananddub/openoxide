@@ -15,15 +15,9 @@ pub struct BackupsGetAllRow {
     pub service_name: Option<String>,
     pub keep_latest_count: Option<i64>,
     pub backup_type: String,
-    pub database_type: String,
+    pub database_type: Option<String>,
     pub metadata: Option<String>,
-    pub compose_id: Option<i64>,
-    pub postgres_id: Option<i64>,
-    pub mysql_id: Option<i64>,
-    pub mariadb_id: Option<i64>,
-    pub mongo_id: Option<i64>,
-    pub redis_id: Option<i64>,
-    pub libsql_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub destination_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
@@ -63,13 +57,7 @@ pub struct CreateBackupParams {
     pub backup_type: String,
     pub database_type: String,
     pub metadata: String,
-    pub compose_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
+    pub service_id: i64,
     pub destination_id: i64,
     pub organization_id: i64,
 }
@@ -98,14 +86,7 @@ pub struct CreateVolumeBackupParams {
     pub enabled: i64,
     pub destination_id: i64,
     pub organization_id: i64,
-    pub application_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct UpdateVolumeBackupParams {
@@ -131,13 +112,7 @@ pub struct BackupsCreateParams {
     pub backup_type: String,
     pub database_type: String,
     pub metadata: String,
-    pub compose_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
+    pub service_id: i64,
     pub destination_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
@@ -155,13 +130,7 @@ pub struct BackupsUpdateParams {
     pub backup_type: String,
     pub database_type: String,
     pub metadata: String,
-    pub compose_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
+    pub service_id: i64,
     pub destination_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
@@ -323,7 +292,7 @@ impl Queries {
         params: &CreateBackupParams,
     ) -> Result<Backups, sqlx::Error> {
         sqlx::query_as::<_, Backups>(
-            "INSERT INTO backups ( app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, compose_id, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, destination_id, organization_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO backups ( app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, service_id, destination_id, organization_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.app_name)
         .bind(&params.schedule)
@@ -335,13 +304,7 @@ impl Queries {
         .bind(&params.backup_type)
         .bind(&params.database_type)
         .bind(&params.metadata)
-        .bind(&params.compose_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
+        .bind(&params.service_id)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
         .fetch_one(&self.pool)
@@ -440,12 +403,12 @@ impl Queries {
     /// ListVolumeBackupsByApplication
     pub async fn list_volume_backups_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<VolumeBackups>, sqlx::Error> {
         sqlx::query_as::<_, VolumeBackups>(
-            "SELECT * FROM volume_backups WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM volume_backups WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -456,7 +419,7 @@ impl Queries {
         params: &CreateVolumeBackupParams,
     ) -> Result<VolumeBackups, sqlx::Error> {
         sqlx::query_as::<_, VolumeBackups>(
-            "INSERT INTO volume_backups ( name, volume_name, prefix, service_type, app_name, service_name, turn_off, cron_expression, keep_latest_count, enabled, destination_id, organization_id, application_id, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO volume_backups ( name, volume_name, prefix, service_type, app_name, service_name, turn_off, cron_expression, keep_latest_count, enabled, destination_id, organization_id, service_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.volume_name)
@@ -470,14 +433,7 @@ impl Queries {
         .bind(&params.enabled)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
-        .bind(&params.application_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -538,7 +494,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<BackupsGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, BackupsGetAllRow>(
-            "SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, compose_id AS compose_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups;"
+            "SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, service_id AS service_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups;"
         )
         .fetch_all(&self.pool)
         .await
@@ -550,7 +506,7 @@ impl Queries {
         id: i64,
     ) -> Result<Backups, sqlx::Error> {
         sqlx::query_as::<_, Backups>(
-            "SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, compose_id AS compose_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups WHERE id = ?;"
+            "SELECT id AS id, app_name AS app_name, schedule AS schedule, enabled AS enabled, database_name AS database_name, prefix AS prefix, service_name AS service_name, keep_latest_count AS keep_latest_count, backup_type AS backup_type, database_type AS database_type, metadata AS metadata, service_id AS service_id, destination_id AS destination_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM backups WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -563,7 +519,7 @@ impl Queries {
         params: &BackupsCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO backups (app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, compose_id, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, destination_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO backups (app_name, schedule, enabled, database_name, prefix, service_name, keep_latest_count, backup_type, database_type, metadata, service_id, destination_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.app_name)
         .bind(&params.schedule)
@@ -575,13 +531,7 @@ impl Queries {
         .bind(&params.backup_type)
         .bind(&params.database_type)
         .bind(&params.metadata)
-        .bind(&params.compose_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
+        .bind(&params.service_id)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
         .bind(&params.created_at)
@@ -597,7 +547,7 @@ impl Queries {
         params: &BackupsUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE backups SET app_name = ?, schedule = ?, enabled = ?, database_name = ?, prefix = ?, service_name = ?, keep_latest_count = ?, backup_type = ?, database_type = ?, metadata = ?, compose_id = ?, postgres_id = ?, mysql_id = ?, mariadb_id = ?, mongo_id = ?, redis_id = ?, libsql_id = ?, destination_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE backups SET app_name = ?, schedule = ?, enabled = ?, database_name = ?, prefix = ?, service_name = ?, keep_latest_count = ?, backup_type = ?, database_type = ?, metadata = ?, service_id = ?, destination_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
         )
         .bind(&params.app_name)
         .bind(&params.schedule)
@@ -609,13 +559,7 @@ impl Queries {
         .bind(&params.backup_type)
         .bind(&params.database_type)
         .bind(&params.metadata)
-        .bind(&params.compose_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
+        .bind(&params.service_id)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
         .bind(&params.created_at)

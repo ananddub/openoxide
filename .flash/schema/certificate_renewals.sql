@@ -1,11 +1,11 @@
 CREATE TABLE certificate_renewals (
-    id INTEGER NOT NULL PRIMARY KEY,
-    certificate_id INTEGER NOT NULL,
-    organization_id INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    certificate_id BIGINT NOT NULL,
+    organization_id BIGINT NOT NULL,
     status TEXT NOT NULL,
-    previous_expires_at INTEGER,
-    new_expires_at INTEGER,
+    previous_expires_at BIGINT,
+    new_expires_at BIGINT,
     error TEXT,
-    started_at INTEGER NOT NULL,
-    finished_at INTEGER
+    started_at BIGINT NOT NULL,
+    finished_at BIGINT
 );

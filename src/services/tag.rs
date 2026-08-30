@@ -1,14 +1,27 @@
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
-    api::dto::tag::{CreateTagDto, UpdateTagDto},
     db::{models::tags::Tag, queries::FlashQueries},
     flash_gen::{
         models::Tags,
         tags::{TagsCreateParams, TagsGetAllRow, TagsUpdateParams},
     },
 };
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateTagDto {
+    pub name: String,
+    pub color: String,
+    pub organization_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateTagDto {
+    pub name: Option<String>,
+    pub color: Option<String>,
+}
 
 #[derive(Clone)]
 pub struct TagService {
@@ -51,7 +64,7 @@ impl TagService {
     pub async fn update(&self, id: i64, dto: UpdateTagDto) -> sqlx::Result<Tag> {
         let existing = self.get_by_id(id).await?.ok_or(sqlx::Error::RowNotFound)?;
         let updated = Tag {
-            id: Some(id),
+            id,
             name: dto.name.unwrap_or(existing.name),
             color: dto.color.unwrap_or(existing.color),
             organization_id: existing.organization_id,
@@ -81,19 +94,19 @@ impl TagService {
     }
 
     pub async fn attach_project_tag(&self, project_id: i64, tag_id: i64) -> sqlx::Result<()> {
-        self.queries.add_tag_to_project(project_id, tag_id).await
+        self.queries.tags_add_to_project(project_id, tag_id).await
     }
 
     pub async fn detach_project_tag(&self, project_id: i64, tag_id: i64) -> sqlx::Result<()> {
         self.queries
-            .remove_tag_from_project(project_id, tag_id)
+            .tags_remove_from_project(project_id, tag_id)
             .await
     }
 }
 
 fn tag_from_row(row: TagsGetAllRow) -> Tag {
     Tag {
-        id: Some(row.id),
+        id: row.id,
         name: row.name,
         color: row.color,
         organization_id: row.organization_id,
@@ -103,7 +116,7 @@ fn tag_from_row(row: TagsGetAllRow) -> Tag {
 
 fn tag_from_model(row: Tags) -> Tag {
     Tag {
-        id: Some(row.id),
+        id: row.id,
         name: row.name,
         color: row.color,
         organization_id: row.organization_id,

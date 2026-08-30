@@ -254,11 +254,7 @@ impl DeploymentService {
         application_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let app = self
-            .repo_app
-            .get_by_id(application_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let app = self.queries.get_service_by_i_d(application_id).await?;
         let app_name = app.app_name;
         let server_id = app.server_id;
 
@@ -303,11 +299,7 @@ impl DeploymentService {
         compose_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let compose = self
-            .repo_compose
-            .get_by_id(compose_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let compose = self.queries.get_service_by_i_d(compose_id).await?;
         let app_name = compose.app_name;
         let server_id = compose.server_id;
 
@@ -348,32 +340,9 @@ impl DeploymentService {
         database_id: i64,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let (app_name, server_id): (String, Option<i64>) =
-            if let Ok(db) = self.repo_postgres.get_by_id(database_id).await {
-                (db.app_name, db.server_id)
-            } else {
-                let row: Option<(String, Option<i64>)> = sqlx::query_as(
-                    "SELECT app_name, server_id FROM mysql_dbs WHERE id = ? \
-                 UNION ALL SELECT app_name, server_id FROM mariadb_dbs WHERE id = ? \
-                 UNION ALL SELECT app_name, server_id FROM mongo_dbs WHERE id = ? \
-                 UNION ALL SELECT app_name, server_id FROM redis_dbs WHERE id = ? \
-                 UNION ALL SELECT app_name, server_id FROM libsql_dbs WHERE id = ?",
-                )
-                .bind(database_id)
-                .bind(database_id)
-                .bind(database_id)
-                .bind(database_id)
-                .bind(database_id)
-                .fetch_optional(self.database())
-                .await
-                .unwrap_or(None);
-
-                if let Some(r) = row {
-                    r
-                } else {
-                    return Err(sqlx::Error::RowNotFound);
-                }
-            };
+        let database = self.queries.get_service_by_i_d(database_id).await?;
+        let app_name = database.app_name;
+        let server_id = database.server_id;
 
         let docker = self.docker_for_server(server_id).await?;
 
@@ -447,14 +416,7 @@ impl DeploymentService {
             None => {
                 let mut found_sid: Option<i64> = None;
                 let db_queries = [
-                    "SELECT server_id FROM postgres_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM mysql_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM redis_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM mariadb_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM mongo_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM libsql_dbs WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM applications WHERE app_name = ? OR name = ? LIMIT 1",
-                    "SELECT server_id FROM compose WHERE app_name = ? OR name = ? LIMIT 1",
+                    "SELECT server_id FROM services WHERE app_name = ? OR name = ? LIMIT 1",
                 ];
                 for q in db_queries {
                     if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>(q)

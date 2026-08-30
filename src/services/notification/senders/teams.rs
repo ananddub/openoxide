@@ -1,13 +1,11 @@
 use super::webhook::post_webhook;
-use crate::{
-    db::models::notif_teams::NotifTeam, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::TeamsConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_teams(
     client: &Client,
-    cfg: &NotifTeam,
+    cfg: &TeamsConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let payload = json!({

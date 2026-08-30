@@ -9,18 +9,19 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "git_providers")]
 pub struct GitProvider {
     #[sqlx_gen(primary_key, sql_type = "git_providers_id_enum")]
-    pub id: Option<String>,
+    pub id: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
-    #[sqlx_gen(
-        sql_type = "git_providers_provider_type_enum",
-        column_default = "'GITHUB'"
-    )]
+    #[sqlx_gen(sql_type = "git_providers_provider_type_enum")]
     pub provider_type: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "TEXT", column_default = "'{}'")]
+    pub config_json: String,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub shared: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "TEXT")]
+    pub webhook_secret: Option<String>,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

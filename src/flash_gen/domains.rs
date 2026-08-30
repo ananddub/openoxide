@@ -19,17 +19,15 @@ pub struct DomainsGetAllRow {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
-pub struct DomainsRouteInUseParams {
+pub struct DomainsRouteInUseExcludingParams {
     pub host: String,
     pub path: String,
     pub id: i64,
-    pub id2: i64,
 }
 
 pub struct DomainsCreateParams {
@@ -45,8 +43,7 @@ pub struct DomainsCreateParams {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -64,8 +61,7 @@ pub struct DomainsUpdateParams {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
     pub id: i64,
@@ -84,8 +80,7 @@ pub struct DomainsCreateAndReturnParams {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct DomainsUpdateAndReturnParams {
@@ -107,15 +102,29 @@ impl Queries {
     /// DomainsRouteInUse
     pub async fn domains_route_in_use(
         &self,
-        params: &DomainsRouteInUseParams,
+        host: &str,
+        path: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) AS count FROM domains WHERE lower(trim(host, '.')) = lower(trim(?, '.')) AND COALESCE(NULLIF(rtrim(path, '/'), ''), '/') = ? AND (? IS NULL OR id != ?);"
+            "SELECT COUNT(*) AS count FROM domains WHERE host = ? AND path = ?;"
+        )
+        .bind(host)
+        .bind(path)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// DomainsRouteInUseExcluding
+    pub async fn domains_route_in_use_excluding(
+        &self,
+        params: &DomainsRouteInUseExcludingParams,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT COUNT(*) AS count FROM domains WHERE host = ? AND path = ? AND id != ?;"
         )
         .bind(&params.host)
         .bind(&params.path)
         .bind(&params.id)
-        .bind(&params.id2)
         .fetch_one(&self.pool)
         .await
     }
@@ -123,12 +132,12 @@ impl Queries {
     /// DomainsHostInUse
     pub async fn domains_host_in_use(
         &self,
-        host: &str,
+        param1: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
             "SELECT COUNT(*) AS count FROM domains WHERE lower(host) = lower(?);"
         )
-        .bind(host)
+        .bind(param1)
         .fetch_one(&self.pool)
         .await
     }
@@ -138,7 +147,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<DomainsGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, DomainsGetAllRow>(
-            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM domains;"
+            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM domains;"
         )
         .fetch_all(&self.pool)
         .await
@@ -150,7 +159,7 @@ impl Queries {
         id: i64,
     ) -> Result<Domains, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE id = ?;"
+            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -163,7 +172,7 @@ impl Queries {
         params: &DomainsCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO domains (host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO domains (host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.host)
         .bind(&params.https)
@@ -177,8 +186,7 @@ impl Queries {
         .bind(&params.middlewares)
         .bind(&params.domain_type)
         .bind(&params.certificate_type)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .execute(&self.pool)
@@ -192,7 +200,7 @@ impl Queries {
         params: &DomainsUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE domains SET host = ?, https = ?, port = ?, path = ?, internal_path = ?, custom_entrypoint = ?, service_name = ?, custom_cert_resolver = ?, strip_path = ?, middlewares = ?, domain_type = ?, certificate_type = ?, application_id = ?, compose_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE domains SET host = ?, https = ?, port = ?, path = ?, internal_path = ?, custom_entrypoint = ?, service_name = ?, custom_cert_resolver = ?, strip_path = ?, middlewares = ?, domain_type = ?, certificate_type = ?, service_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
         )
         .bind(&params.host)
         .bind(&params.https)
@@ -206,8 +214,7 @@ impl Queries {
         .bind(&params.middlewares)
         .bind(&params.domain_type)
         .bind(&params.certificate_type)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .bind(&params.id)
@@ -233,12 +240,12 @@ impl Queries {
     /// DomainsListByApplication
     pub async fn domains_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at FROM domains WHERE application_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at FROM domains WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -246,12 +253,12 @@ impl Queries {
     /// DomainsListByCompose
     pub async fn domains_list_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at FROM domains WHERE compose_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at FROM domains WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -261,7 +268,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at FROM domains ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at FROM domains ORDER BY created_at DESC, id DESC;"
         )
         .fetch_all(&self.pool)
         .await
@@ -270,12 +277,12 @@ impl Queries {
     /// DomainsListByApplicationRaw
     pub async fn domains_list_by_application_raw(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE application_id = ? ORDER BY id;"
+            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE service_id = ? ORDER BY id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -283,12 +290,12 @@ impl Queries {
     /// DomainsListByComposeRaw
     pub async fn domains_list_by_compose_raw(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, application_id AS application_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE compose_id = ? ORDER BY id;"
+            "SELECT id AS id, host AS host, https AS https, port AS port, path AS path, internal_path AS internal_path, custom_entrypoint AS custom_entrypoint, service_name AS service_name, custom_cert_resolver AS custom_cert_resolver, strip_path AS strip_path, middlewares AS middlewares, domain_type AS domain_type, certificate_type AS certificate_type, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM domains WHERE service_id = ? ORDER BY id;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -299,7 +306,7 @@ impl Queries {
         params: &DomainsCreateAndReturnParams,
     ) -> Result<Domains, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "INSERT INTO domains (host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at;"
+            "INSERT INTO domains (host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at;"
         )
         .bind(&params.host)
         .bind(&params.https)
@@ -313,8 +320,7 @@ impl Queries {
         .bind(&params.middlewares)
         .bind(&params.domain_type)
         .bind(&params.certificate_type)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -325,7 +331,7 @@ impl Queries {
         params: &DomainsUpdateAndReturnParams,
     ) -> Result<Domains, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "UPDATE domains SET host = ?, https = ?, port = ?, path = ?, internal_path = ?, custom_entrypoint = ?, service_name = ?, custom_cert_resolver = ?, strip_path = ?, middlewares = ?, certificate_type = ? WHERE id = ? RETURNING id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at;"
+            "UPDATE domains SET host = ?, https = ?, port = ?, path = ?, internal_path = ?, custom_entrypoint = ?, service_name = ?, custom_cert_resolver = ?, strip_path = ?, middlewares = ?, certificate_type = ? WHERE id = ? RETURNING id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at;"
         )
         .bind(&params.host)
         .bind(&params.https)
@@ -349,7 +355,7 @@ impl Queries {
         id: i64,
     ) -> Result<Domains, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id, created_at, updated_at FROM domains WHERE id = ?;"
+            "SELECT id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at FROM domains WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)

@@ -1,6 +1,3 @@
-use crate::api::dto::dns::{
-    CreateDnsProviderDto, DnsProviderDto, DnsProviderType, UpdateDnsProviderDto,
-};
 use crate::db::models::dns_providers::DnsProvider;
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{
@@ -8,7 +5,9 @@ use crate::flash_gen::{
     models::DnsProviders,
 };
 use auto_di::singleton;
+use os::string_enum;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -18,6 +17,79 @@ mod dispatch;
 mod route53;
 mod route53_records;
 mod validation;
+
+string_enum! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub enum DnsProviderType {
+        default = Cloudflare;
+
+        Cloudflare => "CLOUDFLARE",
+        Route53 => "ROUTE53",
+        Hetzner => "HETZNER",
+        DigitalOcean => "DIGITALOCEAN",
+        Godaddy => "GODADDY",
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DnsProviderDto {
+    pub id: i64,
+    pub name: String,
+    pub provider_type: DnsProviderType,
+    pub credentials_json: String,
+    pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateDnsProviderDto {
+    pub name: String,
+    pub provider_type: DnsProviderType,
+    pub credentials_json: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateDnsProviderDto {
+    pub name: Option<String>,
+    pub provider_type: Option<DnsProviderType>,
+    pub credentials_json: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DnsTestResultDto {
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DnsZoneDto {
+    pub id: String,
+    pub name: String,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DnsRecordDto {
+    pub id: String,
+    pub zone_id: String,
+    pub record_type: String, // "A", "AAAA", "CNAME", "TXT", "MX"
+    pub name: String,
+    pub content: String,
+    pub ttl: Option<u32>,
+    pub proxied: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpsertDnsRecordDto {
+    pub zone_id: String,
+    pub record_type: String,
+    pub name: String,
+    pub content: String,
+    pub ttl: Option<u32>,
+    pub proxied: Option<bool>,
+}
 
 pub const DNS_SECRET_MASK: &str = "********";
 
@@ -86,7 +158,7 @@ impl DnsService {
         Self::validate_provider_config(body.provider_type, &body.credentials_json)?;
         let now = chrono::Utc::now().timestamp();
         let provider = DnsProvider {
-            id: None,
+            id: 0,
             name: body.name,
             provider_type: body.provider_type.as_str().to_string(),
             credentials_json: body.credentials_json,
@@ -186,7 +258,7 @@ impl DnsService {
             .unwrap_or(DnsProviderType::Cloudflare);
 
         DnsProviderDto {
-            id: p.id.unwrap_or_default(),
+            id: p.id,
             name: p.name,
             provider_type: p_type,
             credentials_json: mask_credentials(&p.credentials_json),
@@ -199,7 +271,7 @@ impl DnsService {
 
 fn dns_provider_from_model(provider: DnsProviders) -> DnsProvider {
     DnsProvider {
-        id: Some(provider.id),
+        id: provider.id,
         name: provider.name,
         provider_type: provider.provider_type,
         credentials_json: provider.credentials_json,

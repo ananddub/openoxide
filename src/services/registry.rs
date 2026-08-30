@@ -1,14 +1,35 @@
-use crate::{
-    api::dto::registry::{CreateRegistryDto, PatchRegistryDto},
-    db::models::registries::Registry,
-    db::repository::registries::RegistryRepository,
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::models::Registries;
+use crate::flash_gen::registries::{
+    RegistriesCreateParams, RegistriesGetAllRow, RegistriesUpdateParams,
+    RegistriesUsageReferencesParams,
 };
 use auto_di::singleton;
 use serde::Deserialize;
 use std::sync::Arc;
 
+#[derive(Debug, Deserialize)]
+pub struct CreateRegistryDto {
+    pub registry_name: String,
+    pub image_prefix: Option<String>,
+    pub username: String,
+    pub password: String,
+    pub registry_url: String,
+    pub registry_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchRegistryDto {
+    pub registry_name: Option<String>,
+    pub image_prefix: Option<Option<String>>,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub registry_url: Option<String>,
+    pub registry_type: Option<String>,
+}
+
 pub struct RegistryService {
-    repo_reg: Arc<RegistryRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[derive(Deserialize)]
@@ -25,42 +46,37 @@ struct RepositoryTagsResponse {
 
 #[singleton]
 impl RegistryService {
-    fn new(repo_reg: Arc<RegistryRepository>) -> Self {
-        Self { repo_reg }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Registry> {
-        self.repo_reg
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Registries> {
+        self.queries.registries_get_by_id(id).await
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Registry>> {
-        self.repo_reg.get_all().await
+    pub async fn list(&self) -> sqlx::Result<Vec<RegistriesGetAllRow>> {
+        self.queries.registries_get_all().await
     }
 
-    pub async fn create(&self, input: CreateRegistryDto) -> sqlx::Result<Registry> {
+    pub async fn create(&self, input: CreateRegistryDto) -> sqlx::Result<Registries> {
         let now = chrono::Utc::now().timestamp();
-        let item = Registry {
-            id: None,
-            registry_name: input.registry_name,
-            image_prefix: input.image_prefix,
-            username: input.username,
-            password: input.password,
-            registry_url: input.registry_url,
-            registry_type: input.registry_type,
-            created_at: now,
-            updated_at: now,
-        };
-        let new_id = self.repo_reg.create(&item).await?;
-        self.repo_reg
-            .get_by_id(new_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let new_id = self
+            .queries
+            .registries_create(&RegistriesCreateParams {
+                registry_name: input.registry_name,
+                image_prefix: input.image_prefix.unwrap_or_default(),
+                username: input.username,
+                password: input.password,
+                registry_url: input.registry_url,
+                registry_type: input.registry_type,
+                created_at: now,
+                updated_at: now,
+            })
+            .await?;
+        self.queries.registries_get_by_id(new_id).await
     }
 
-    pub async fn patch(&self, id: i64, input: PatchRegistryDto) -> sqlx::Result<Registry> {
+    pub async fn patch(&self, id: i64, input: PatchRegistryDto) -> sqlx::Result<Registries> {
         let mut current = self.get_by_id(id).await?;
         let now = chrono::Utc::now().timestamp();
 
@@ -84,23 +100,27 @@ impl RegistryService {
         }
         current.updated_at = now;
 
-        self.repo_reg.update(id, &current).await?;
-        self.repo_reg
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        self.update_row(id, &current).await?;
+        self.queries.registries_get_by_id(id).await
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        let usage = self.repo_reg.usage_references(id).await?;
+        let usage = self
+            .queries
+            .registries_usage_references(&RegistriesUsageReferencesParams {
+                registry_id: id,
+                rollback_registry_id: id,
+                build_registry_id: id,
+            })
+            .await?;
         if !usage.is_empty() {
             return Err(sqlx::Error::Protocol(format!(
                 "registry is used by {} application configuration(s)",
                 usage.len()
             )));
         }
-        self.repo_reg.delete(id).await
+        self.queries.registries_delete(id).await
     }
 
     pub async fn test_connection_raw(
@@ -200,7 +220,7 @@ impl RegistryService {
         id: i64,
         username: String,
         password: String,
-    ) -> Result<Registry, String> {
+    ) -> Result<Registries, String> {
         let current = self
             .get_by_id(id)
             .await
@@ -225,9 +245,33 @@ impl RegistryService {
     pub async fn usage(
         &self,
         id: i64,
-    ) -> sqlx::Result<Vec<crate::db::repository::registries::RegistryUsage>> {
+    ) -> sqlx::Result<Vec<crate::flash_gen::registries::RegistriesUsageReferencesRow>> {
         self.get_by_id(id).await?;
-        self.repo_reg.usage_references(id).await
+        self.queries
+            .registries_usage_references(&RegistriesUsageReferencesParams {
+                registry_id: id,
+                rollback_registry_id: id,
+                build_registry_id: id,
+            })
+            .await
+    }
+}
+
+impl RegistryService {
+    async fn update_row(&self, id: i64, r: &Registries) -> sqlx::Result<()> {
+        self.queries
+            .registries_update(&RegistriesUpdateParams {
+                registry_name: r.registry_name.clone(),
+                image_prefix: r.image_prefix.clone().unwrap_or_default(),
+                username: r.username.clone(),
+                password: r.password.clone(),
+                registry_url: r.registry_url.clone(),
+                registry_type: r.registry_type.clone(),
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+                id,
+            })
+            .await
     }
 }
 

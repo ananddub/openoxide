@@ -1,13 +1,11 @@
 use super::webhook::post_webhook;
-use crate::{
-    db::models::notif_slack::NotifSlack, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::SlackConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_slack(
     client: &Client,
-    cfg: &NotifSlack,
+    cfg: &SlackConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let mut blocks = vec![

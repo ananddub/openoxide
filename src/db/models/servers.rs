@@ -9,36 +9,36 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "servers")]
 pub struct Server {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub description: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub ip_address: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "22")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub port: i64,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'root'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub username: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub app_name: String,
-    #[sqlx_gen(sql_type = "servers_server_status_enum", column_default = "'ACTIVE'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub server_status: String,
-    #[sqlx_gen(sql_type = "servers_server_type_enum", column_default = "'DEPLOY'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub server_type: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enable_docker_cleanup: i64,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'0 0 * * *'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub log_cleanup_cron: Option<String>,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "''")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub command: String,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'{}'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub metrics_config: String,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub ssh_key_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub build_memory_limit: Option<String>,

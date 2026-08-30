@@ -5,279 +5,50 @@ use super::models::*;
 use super::db::Queries;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct NotificationsGetAllRow {
+pub struct NotificationsFindForUserRow {
     pub id: i64,
-    pub name: String,
+    pub config_json: String,
+}
+
+pub struct NotificationsFindForUserParams {
+    pub param1: String,
     pub notification_type: String,
-    pub on_app_deploy: i64,
-    pub on_app_build_error: i64,
-    pub on_database_backup: i64,
-    pub on_volume_backup: i64,
-    pub on_panel_restart: i64,
-    pub on_docker_cleanup: i64,
-    pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
-    pub on_schedule_success: i64,
-    pub on_schedule_failure: i64,
-    pub slack_id: Option<i64>,
-    pub telegram_id: Option<i64>,
-    pub discord_id: Option<i64>,
-    pub email_id: Option<i64>,
-    pub resend_id: Option<i64>,
-    pub gotify_id: Option<i64>,
-    pub ntfy_id: Option<i64>,
-    pub mattermost_id: Option<i64>,
-    pub custom_id: Option<i64>,
-    pub lark_id: Option<i64>,
-    pub pushover_id: Option<i64>,
-    pub teams_id: Option<i64>,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct NotificationsGetByOrganizationRow {
-    pub id: i64,
-    pub name: String,
-    pub notification_type: String,
-    pub on_app_deploy: i64,
-    pub on_app_build_error: i64,
-    pub on_database_backup: i64,
-    pub on_volume_backup: i64,
-    pub on_panel_restart: i64,
-    pub on_docker_cleanup: i64,
-    pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
-    pub on_schedule_success: i64,
-    pub on_schedule_failure: i64,
-    pub slack_id: Option<i64>,
-    pub telegram_id: Option<i64>,
-    pub discord_id: Option<i64>,
-    pub email_id: Option<i64>,
-    pub resend_id: Option<i64>,
-    pub gotify_id: Option<i64>,
-    pub ntfy_id: Option<i64>,
-    pub mattermost_id: Option<i64>,
-    pub custom_id: Option<i64>,
-    pub lark_id: Option<i64>,
-    pub pushover_id: Option<i64>,
-    pub teams_id: Option<i64>,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct NotificationsGetByIdRow {
-    pub id: i64,
-    pub name: String,
-    pub notification_type: String,
-    pub on_app_deploy: i64,
-    pub on_app_build_error: i64,
-    pub on_database_backup: i64,
-    pub on_volume_backup: i64,
-    pub on_panel_restart: i64,
-    pub on_docker_cleanup: i64,
-    pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
-    pub on_schedule_success: i64,
-    pub on_schedule_failure: i64,
-    pub slack_id: Option<i64>,
-    pub telegram_id: Option<i64>,
-    pub discord_id: Option<i64>,
-    pub email_id: Option<i64>,
-    pub resend_id: Option<i64>,
-    pub gotify_id: Option<i64>,
-    pub ntfy_id: Option<i64>,
-    pub mattermost_id: Option<i64>,
-    pub custom_id: Option<i64>,
-    pub lark_id: Option<i64>,
-    pub pushover_id: Option<i64>,
-    pub teams_id: Option<i64>,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
-pub struct NotificationsGetByIdForOrganizationRow {
-    pub id: i64,
-    pub name: String,
-    pub notification_type: String,
-    pub on_app_deploy: i64,
-    pub on_app_build_error: i64,
-    pub on_database_backup: i64,
-    pub on_volume_backup: i64,
-    pub on_panel_restart: i64,
-    pub on_docker_cleanup: i64,
-    pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
-    pub on_schedule_success: i64,
-    pub on_schedule_failure: i64,
-    pub slack_id: Option<i64>,
-    pub telegram_id: Option<i64>,
-    pub discord_id: Option<i64>,
-    pub email_id: Option<i64>,
-    pub resend_id: Option<i64>,
-    pub gotify_id: Option<i64>,
-    pub ntfy_id: Option<i64>,
-    pub mattermost_id: Option<i64>,
-    pub custom_id: Option<i64>,
-    pub lark_id: Option<i64>,
-    pub pushover_id: Option<i64>,
-    pub teams_id: Option<i64>,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-pub struct UpdateNotifSlackParams {
-    pub webhook_url: String,
-    pub channel: String,
-    pub id: i64,
-}
-
-pub struct CreateNotifTelegramParams {
-    pub bot_token: String,
-    pub chat_id: String,
-    pub message_thread_id: String,
-}
-
-pub struct UpdateNotifTelegramParams {
-    pub bot_token: String,
-    pub chat_id: String,
-    pub message_thread_id: String,
-    pub id: i64,
-}
-
-pub struct UpdateNotifDiscordParams {
-    pub webhook_url: String,
-    pub decoration: i64,
-    pub id: i64,
-}
-
-pub struct CreateNotifEmailParams {
-    pub smtp_server: String,
-    pub smtp_port: i64,
-    pub username: String,
-    pub password: String,
-    pub from_address: String,
-    pub to_addresses: String,
-}
-
-pub struct UpdateNotifEmailParams {
-    pub smtp_server: String,
-    pub smtp_port: i64,
-    pub username: String,
-    pub password: String,
-    pub from_address: String,
-    pub to_addresses: String,
-    pub id: i64,
-}
-
-pub struct CreateNotifResendParams {
-    pub api_key: String,
-    pub from_address: String,
-    pub to_addresses: String,
-}
-
-pub struct UpdateNotifResendParams {
-    pub api_key: String,
-    pub from_address: String,
-    pub to_addresses: String,
-    pub id: i64,
-}
-
-pub struct CreateNotifGotifyParams {
-    pub server_url: String,
-    pub app_token: String,
-    pub priority: i64,
-    pub decoration: i64,
-}
-
-pub struct UpdateNotifGotifyParams {
-    pub server_url: String,
-    pub app_token: String,
-    pub priority: i64,
-    pub decoration: i64,
-    pub id: i64,
-}
-
-pub struct CreateNotifNtfyParams {
-    pub server_url: String,
-    pub topic: String,
-    pub access_token: String,
-    pub priority: i64,
-}
-
-pub struct UpdateNotifNtfyParams {
-    pub server_url: String,
-    pub topic: String,
-    pub access_token: String,
-    pub priority: i64,
-    pub id: i64,
-}
-
-pub struct CreateNotifMattermostParams {
-    pub webhook_url: String,
-    pub channel: String,
-    pub username: String,
-}
-
-pub struct UpdateNotifMattermostParams {
-    pub webhook_url: String,
-    pub channel: String,
-    pub username: String,
-    pub id: i64,
-}
-
-pub struct CreateNotifPushoverParams {
-    pub user_key: String,
-    pub api_token: String,
-    pub priority: i64,
-    pub retry: i64,
-    pub expire: i64,
-}
-
-pub struct UpdateNotifPushoverParams {
-    pub user_key: String,
-    pub api_token: String,
-    pub priority: i64,
-    pub retry: i64,
-    pub expire: i64,
-    pub id: i64,
-}
-
-pub struct UpdateNotifCustomParams {
-    pub endpoint: String,
-    pub headers: String,
-    pub id: i64,
+    pub owner_id: i64,
 }
 
 pub struct CreateNotificationParams {
     pub name: String,
     pub notification_type: String,
+    pub config_json: String,
+    pub organization_id: i64,
+}
+
+pub struct CreateNotificationWithTriggersParams {
+    pub name: String,
+    pub notification_type: String,
+    pub config_json: String,
     pub on_app_deploy: i64,
     pub on_app_build_error: i64,
     pub on_database_backup: i64,
     pub on_volume_backup: i64,
+    pub on_panel_backup: i64,
     pub on_panel_restart: i64,
     pub on_docker_cleanup: i64,
     pub on_server_threshold: i64,
-    pub slack_id: i64,
-    pub telegram_id: i64,
-    pub discord_id: i64,
-    pub email_id: i64,
-    pub resend_id: i64,
-    pub gotify_id: i64,
-    pub ntfy_id: i64,
-    pub mattermost_id: i64,
-    pub custom_id: i64,
-    pub lark_id: i64,
-    pub pushover_id: i64,
-    pub teams_id: i64,
+    pub on_server_migration: i64,
+    pub on_security_alert: i64,
+    pub on_schedule_success: i64,
+    pub on_schedule_failure: i64,
     pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+pub struct UpdateNotificationParams {
+    pub name: String,
+    pub notification_type: String,
+    pub config_json: String,
+    pub id: i64,
 }
 
 pub struct UpdateNotificationTriggersParams {
@@ -285,67 +56,33 @@ pub struct UpdateNotificationTriggersParams {
     pub on_app_build_error: i64,
     pub on_database_backup: i64,
     pub on_volume_backup: i64,
+    pub on_panel_backup: i64,
     pub on_panel_restart: i64,
     pub on_docker_cleanup: i64,
     pub on_server_threshold: i64,
+    pub on_server_migration: i64,
+    pub on_security_alert: i64,
+    pub on_schedule_success: i64,
+    pub on_schedule_failure: i64,
     pub id: i64,
 }
 
-pub struct NotificationsCreateParams {
+pub struct UpdateNotificationFullParams {
     pub name: String,
     pub notification_type: String,
+    pub config_json: String,
     pub on_app_deploy: i64,
     pub on_app_build_error: i64,
     pub on_database_backup: i64,
     pub on_volume_backup: i64,
+    pub on_panel_backup: i64,
     pub on_panel_restart: i64,
     pub on_docker_cleanup: i64,
     pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
+    pub on_server_migration: i64,
+    pub on_security_alert: i64,
     pub on_schedule_success: i64,
     pub on_schedule_failure: i64,
-    pub slack_id: i64,
-    pub telegram_id: i64,
-    pub discord_id: i64,
-    pub email_id: i64,
-    pub resend_id: i64,
-    pub gotify_id: i64,
-    pub ntfy_id: i64,
-    pub mattermost_id: i64,
-    pub custom_id: i64,
-    pub lark_id: i64,
-    pub pushover_id: i64,
-    pub teams_id: i64,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-pub struct NotificationsUpdateParams {
-    pub name: String,
-    pub notification_type: String,
-    pub on_app_deploy: i64,
-    pub on_app_build_error: i64,
-    pub on_database_backup: i64,
-    pub on_volume_backup: i64,
-    pub on_panel_restart: i64,
-    pub on_docker_cleanup: i64,
-    pub on_server_threshold: i64,
-    pub on_panel_backup: i64,
-    pub on_schedule_success: i64,
-    pub on_schedule_failure: i64,
-    pub slack_id: i64,
-    pub telegram_id: i64,
-    pub discord_id: i64,
-    pub email_id: i64,
-    pub resend_id: i64,
-    pub gotify_id: i64,
-    pub ntfy_id: i64,
-    pub mattermost_id: i64,
-    pub custom_id: i64,
-    pub lark_id: i64,
-    pub pushover_id: i64,
-    pub teams_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
@@ -353,563 +90,6 @@ pub struct NotificationsUpdateParams {
 }
 
 impl Queries {
-    /// CreateNotifSlack
-    pub async fn create_notif_slack(
-        &self,
-        webhook_url: &str,
-        channel: &str,
-    ) -> Result<NotifSlack, sqlx::Error> {
-        sqlx::query_as::<_, NotifSlack>(
-            "INSERT INTO notif_slack (webhook_url, channel) VALUES (?, ?) RETURNING *;"
-        )
-        .bind(webhook_url)
-        .bind(channel)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifSlack
-    pub async fn update_notif_slack(
-        &self,
-        params: &UpdateNotifSlackParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_slack SET webhook_url = ?, channel = ? WHERE id = ?;"
-        )
-        .bind(&params.webhook_url)
-        .bind(&params.channel)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifSlack
-    pub async fn delete_notif_slack(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_slack WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifTelegram
-    pub async fn create_notif_telegram(
-        &self,
-        params: &CreateNotifTelegramParams,
-    ) -> Result<NotifTelegram, sqlx::Error> {
-        sqlx::query_as::<_, NotifTelegram>(
-            "INSERT INTO notif_telegram (bot_token, chat_id, message_thread_id) VALUES (?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.bot_token)
-        .bind(&params.chat_id)
-        .bind(&params.message_thread_id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifTelegram
-    pub async fn update_notif_telegram(
-        &self,
-        params: &UpdateNotifTelegramParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_telegram SET bot_token = ?, chat_id = ?, message_thread_id = ? WHERE id = ?;"
-        )
-        .bind(&params.bot_token)
-        .bind(&params.chat_id)
-        .bind(&params.message_thread_id)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifTelegram
-    pub async fn delete_notif_telegram(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_telegram WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifDiscord
-    pub async fn create_notif_discord(
-        &self,
-        webhook_url: &str,
-        decoration: i64,
-    ) -> Result<NotifDiscord, sqlx::Error> {
-        sqlx::query_as::<_, NotifDiscord>(
-            "INSERT INTO notif_discord (webhook_url, decoration) VALUES (?, ?) RETURNING *;"
-        )
-        .bind(webhook_url)
-        .bind(decoration)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifDiscord
-    pub async fn update_notif_discord(
-        &self,
-        params: &UpdateNotifDiscordParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_discord SET webhook_url = ?, decoration = ? WHERE id = ?;"
-        )
-        .bind(&params.webhook_url)
-        .bind(&params.decoration)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifDiscord
-    pub async fn delete_notif_discord(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_discord WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifEmail
-    pub async fn create_notif_email(
-        &self,
-        params: &CreateNotifEmailParams,
-    ) -> Result<NotifEmail, sqlx::Error> {
-        sqlx::query_as::<_, NotifEmail>(
-            "INSERT INTO notif_email (smtp_server, smtp_port, username, password, from_address, to_addresses) VALUES (?, ?, ?, ?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.smtp_server)
-        .bind(&params.smtp_port)
-        .bind(&params.username)
-        .bind(&params.password)
-        .bind(&params.from_address)
-        .bind(&params.to_addresses)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifEmail
-    pub async fn update_notif_email(
-        &self,
-        params: &UpdateNotifEmailParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_email SET smtp_server = ?, smtp_port = ?, username = ?, password = ?, from_address = ?, to_addresses = ? WHERE id = ?;"
-        )
-        .bind(&params.smtp_server)
-        .bind(&params.smtp_port)
-        .bind(&params.username)
-        .bind(&params.password)
-        .bind(&params.from_address)
-        .bind(&params.to_addresses)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifEmail
-    pub async fn delete_notif_email(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_email WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifResend
-    pub async fn create_notif_resend(
-        &self,
-        params: &CreateNotifResendParams,
-    ) -> Result<NotifResend, sqlx::Error> {
-        sqlx::query_as::<_, NotifResend>(
-            "INSERT INTO notif_resend (api_key, from_address, to_addresses) VALUES (?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.api_key)
-        .bind(&params.from_address)
-        .bind(&params.to_addresses)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifResend
-    pub async fn update_notif_resend(
-        &self,
-        params: &UpdateNotifResendParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_resend SET api_key = ?, from_address = ?, to_addresses = ? WHERE id = ?;"
-        )
-        .bind(&params.api_key)
-        .bind(&params.from_address)
-        .bind(&params.to_addresses)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifResend
-    pub async fn delete_notif_resend(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_resend WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifGotify
-    pub async fn create_notif_gotify(
-        &self,
-        params: &CreateNotifGotifyParams,
-    ) -> Result<NotifGotify, sqlx::Error> {
-        sqlx::query_as::<_, NotifGotify>(
-            "INSERT INTO notif_gotify (server_url, app_token, priority, decoration) VALUES (?, ?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.server_url)
-        .bind(&params.app_token)
-        .bind(&params.priority)
-        .bind(&params.decoration)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifGotify
-    pub async fn update_notif_gotify(
-        &self,
-        params: &UpdateNotifGotifyParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_gotify SET server_url = ?, app_token = ?, priority = ?, decoration = ? WHERE id = ?;"
-        )
-        .bind(&params.server_url)
-        .bind(&params.app_token)
-        .bind(&params.priority)
-        .bind(&params.decoration)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifGotify
-    pub async fn delete_notif_gotify(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_gotify WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifNtfy
-    pub async fn create_notif_ntfy(
-        &self,
-        params: &CreateNotifNtfyParams,
-    ) -> Result<NotifNtfy, sqlx::Error> {
-        sqlx::query_as::<_, NotifNtfy>(
-            "INSERT INTO notif_ntfy (server_url, topic, access_token, priority) VALUES (?, ?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.server_url)
-        .bind(&params.topic)
-        .bind(&params.access_token)
-        .bind(&params.priority)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifNtfy
-    pub async fn update_notif_ntfy(
-        &self,
-        params: &UpdateNotifNtfyParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_ntfy SET server_url = ?, topic = ?, access_token = ?, priority = ? WHERE id = ?;"
-        )
-        .bind(&params.server_url)
-        .bind(&params.topic)
-        .bind(&params.access_token)
-        .bind(&params.priority)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifNtfy
-    pub async fn delete_notif_ntfy(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_ntfy WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifMattermost
-    pub async fn create_notif_mattermost(
-        &self,
-        params: &CreateNotifMattermostParams,
-    ) -> Result<NotifMattermost, sqlx::Error> {
-        sqlx::query_as::<_, NotifMattermost>(
-            "INSERT INTO notif_mattermost (webhook_url, channel, username) VALUES (?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.webhook_url)
-        .bind(&params.channel)
-        .bind(&params.username)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifMattermost
-    pub async fn update_notif_mattermost(
-        &self,
-        params: &UpdateNotifMattermostParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_mattermost SET webhook_url = ?, channel = ?, username = ? WHERE id = ?;"
-        )
-        .bind(&params.webhook_url)
-        .bind(&params.channel)
-        .bind(&params.username)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifMattermost
-    pub async fn delete_notif_mattermost(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_mattermost WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifTeams
-    pub async fn create_notif_teams(
-        &self,
-        webhook_url: &str,
-    ) -> Result<NotifTeams, sqlx::Error> {
-        sqlx::query_as::<_, NotifTeams>(
-            "INSERT INTO notif_teams (webhook_url) VALUES (?) RETURNING *;"
-        )
-        .bind(webhook_url)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifTeams
-    pub async fn update_notif_teams(
-        &self,
-        webhook_url: &str,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_teams SET webhook_url = ? WHERE id = ?;"
-        )
-        .bind(webhook_url)
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifTeams
-    pub async fn delete_notif_teams(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_teams WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifLark
-    pub async fn create_notif_lark(
-        &self,
-        webhook_url: &str,
-    ) -> Result<NotifLark, sqlx::Error> {
-        sqlx::query_as::<_, NotifLark>(
-            "INSERT INTO notif_lark (webhook_url) VALUES (?) RETURNING *;"
-        )
-        .bind(webhook_url)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifLark
-    pub async fn update_notif_lark(
-        &self,
-        webhook_url: &str,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_lark SET webhook_url = ? WHERE id = ?;"
-        )
-        .bind(webhook_url)
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifLark
-    pub async fn delete_notif_lark(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_lark WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifPushover
-    pub async fn create_notif_pushover(
-        &self,
-        params: &CreateNotifPushoverParams,
-    ) -> Result<NotifPushover, sqlx::Error> {
-        sqlx::query_as::<_, NotifPushover>(
-            "INSERT INTO notif_pushover (user_key, api_token, priority, retry, expire) VALUES (?, ?, ?, ?, ?) RETURNING *;"
-        )
-        .bind(&params.user_key)
-        .bind(&params.api_token)
-        .bind(&params.priority)
-        .bind(&params.retry)
-        .bind(&params.expire)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifPushover
-    pub async fn update_notif_pushover(
-        &self,
-        params: &UpdateNotifPushoverParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_pushover SET user_key = ?, api_token = ?, priority = ?, retry = ?, expire = ? WHERE id = ?;"
-        )
-        .bind(&params.user_key)
-        .bind(&params.api_token)
-        .bind(&params.priority)
-        .bind(&params.retry)
-        .bind(&params.expire)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifPushover
-    pub async fn delete_notif_pushover(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_pushover WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// CreateNotifCustom
-    pub async fn create_notif_custom(
-        &self,
-        endpoint: &str,
-        headers: &str,
-    ) -> Result<NotifCustom, sqlx::Error> {
-        sqlx::query_as::<_, NotifCustom>(
-            "INSERT INTO notif_custom (endpoint, headers) VALUES (?, ?) RETURNING *;"
-        )
-        .bind(endpoint)
-        .bind(headers)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// UpdateNotifCustom
-    pub async fn update_notif_custom(
-        &self,
-        params: &UpdateNotifCustomParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notif_custom SET endpoint = ?, headers = ? WHERE id = ?;"
-        )
-        .bind(&params.endpoint)
-        .bind(&params.headers)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// DeleteNotifCustom
-    pub async fn delete_notif_custom(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notif_custom WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
     /// GetNotificationByID
     pub async fn get_notification_by_i_d(
         &self,
@@ -923,8 +103,62 @@ impl Queries {
         .await
     }
 
-    /// ListNotificationsByOrg
-    pub async fn list_notifications_by_org(
+    /// NotificationsFindForUser
+    pub async fn notifications_find_for_user(
+        &self,
+        params: &NotificationsFindForUserParams,
+    ) -> Result<NotificationsFindForUserRow, sqlx::Error> {
+        sqlx::query_as::<_, NotificationsFindForUserRow>(
+            "SELECT n.id AS id, n.config_json AS config_json FROM notifications n JOIN organization o ON o.id = n.organization_id LEFT JOIN organization_members m ON m.organization_id = o.id AND m.user_id = ? WHERE n.notification_type = ? AND (o.owner_id = ? OR m.user_id IS NOT NULL) ORDER BY n.id LIMIT 1;"
+        )
+        .bind(&params.param1)
+        .bind(&params.notification_type)
+        .bind(&params.owner_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// GetNotificationByIDForOrganization
+    pub async fn get_notification_by_i_d_for_organization(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Notifications, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE id = ? AND organization_id = ?;"
+        )
+        .bind(id)
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// ListNotifications
+    pub async fn list_notifications(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsByType
+    pub async fn list_notifications_by_type(
+        &self,
+        notification_type: &str,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE notification_type = ? ORDER BY created_at DESC;"
+        )
+        .bind(notification_type)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsByOrganization
+    pub async fn list_notifications_by_organization(
         &self,
         organization_id: i64,
     ) -> Result<Vec<Notifications>, sqlx::Error> {
@@ -936,53 +170,82 @@ impl Queries {
         .await
     }
 
-    /// ListNotificationsByType
-    pub async fn list_notifications_by_type(
-        &self,
-        notification_type: &str,
-        organization_id: i64,
-    ) -> Result<Vec<Notifications>, sqlx::Error> {
-        sqlx::query_as::<_, Notifications>(
-            "SELECT * FROM notifications WHERE notification_type = ? AND organization_id = ? ORDER BY created_at DESC;"
-        )
-        .bind(notification_type)
-        .bind(organization_id)
-        .fetch_all(&self.pool)
-        .await
-    }
-
     /// CreateNotification
     pub async fn create_notification(
         &self,
         params: &CreateNotificationParams,
     ) -> Result<Notifications, sqlx::Error> {
         sqlx::query_as::<_, Notifications>(
-            "INSERT INTO notifications ( name, notification_type, on_app_deploy, on_app_build_error, on_database_backup, on_volume_backup, on_panel_restart, on_docker_cleanup, on_server_threshold, slack_id, telegram_id, discord_id, email_id, resend_id, gotify_id, ntfy_id, mattermost_id, custom_id, lark_id, pushover_id, teams_id, organization_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO notifications (name, notification_type, config_json, organization_id) VALUES (?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.notification_type)
+        .bind(&params.config_json)
+        .bind(&params.organization_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// CreateNotificationWithTriggers
+    pub async fn create_notification_with_triggers(
+        &self,
+        params: &CreateNotificationWithTriggersParams,
+    ) -> Result<Notifications, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "INSERT INTO notifications ( name, notification_type, config_json, on_app_deploy, on_app_build_error, on_database_backup, on_volume_backup, on_panel_backup, on_panel_restart, on_docker_cleanup, on_server_threshold, on_server_migration, on_security_alert, on_schedule_success, on_schedule_failure, organization_id, created_at, updated_at ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+        )
+        .bind(&params.name)
+        .bind(&params.notification_type)
+        .bind(&params.config_json)
         .bind(&params.on_app_deploy)
         .bind(&params.on_app_build_error)
         .bind(&params.on_database_backup)
         .bind(&params.on_volume_backup)
+        .bind(&params.on_panel_backup)
         .bind(&params.on_panel_restart)
         .bind(&params.on_docker_cleanup)
         .bind(&params.on_server_threshold)
-        .bind(&params.slack_id)
-        .bind(&params.telegram_id)
-        .bind(&params.discord_id)
-        .bind(&params.email_id)
-        .bind(&params.resend_id)
-        .bind(&params.gotify_id)
-        .bind(&params.ntfy_id)
-        .bind(&params.mattermost_id)
-        .bind(&params.custom_id)
-        .bind(&params.lark_id)
-        .bind(&params.pushover_id)
-        .bind(&params.teams_id)
+        .bind(&params.on_server_migration)
+        .bind(&params.on_security_alert)
+        .bind(&params.on_schedule_success)
+        .bind(&params.on_schedule_failure)
         .bind(&params.organization_id)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
         .fetch_one(&self.pool)
         .await
+    }
+
+    /// UpdateNotification
+    pub async fn update_notification(
+        &self,
+        params: &UpdateNotificationParams,
+    ) -> Result<Notifications, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "UPDATE notifications SET name = ?, notification_type = ?, config_json = ? WHERE id = ? RETURNING *;"
+        )
+        .bind(&params.name)
+        .bind(&params.notification_type)
+        .bind(&params.config_json)
+        .bind(&params.id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// UpdateNotificationConfig
+    pub async fn update_notification_config(
+        &self,
+        config_json: &str,
+        id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE notifications SET config_json = ? WHERE id = ?;"
+        )
+        .bind(config_json)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     /// UpdateNotificationTriggers
@@ -991,19 +254,55 @@ impl Queries {
         params: &UpdateNotificationTriggersParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE notifications SET on_app_deploy = ?, on_app_build_error = ?, on_database_backup = ?, on_volume_backup = ?, on_panel_restart = ?, on_docker_cleanup = ?, on_server_threshold = ? WHERE id = ?;"
+            "UPDATE notifications SET on_app_deploy = ?, on_app_build_error = ?, on_database_backup = ?, on_volume_backup = ?, on_panel_backup = ?, on_panel_restart = ?, on_docker_cleanup = ?, on_server_threshold = ?, on_server_migration = ?, on_security_alert = ?, on_schedule_success = ?, on_schedule_failure = ? WHERE id = ?;"
         )
         .bind(&params.on_app_deploy)
         .bind(&params.on_app_build_error)
         .bind(&params.on_database_backup)
         .bind(&params.on_volume_backup)
+        .bind(&params.on_panel_backup)
         .bind(&params.on_panel_restart)
         .bind(&params.on_docker_cleanup)
         .bind(&params.on_server_threshold)
+        .bind(&params.on_server_migration)
+        .bind(&params.on_security_alert)
+        .bind(&params.on_schedule_success)
+        .bind(&params.on_schedule_failure)
         .bind(&params.id)
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    /// UpdateNotificationFull
+    pub async fn update_notification_full(
+        &self,
+        params: &UpdateNotificationFullParams,
+    ) -> Result<Notifications, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "UPDATE notifications SET name = ?, notification_type = ?, config_json = ?, on_app_deploy = ?, on_app_build_error = ?, on_database_backup = ?, on_volume_backup = ?, on_panel_backup = ?, on_panel_restart = ?, on_docker_cleanup = ?, on_server_threshold = ?, on_server_migration = ?, on_security_alert = ?, on_schedule_success = ?, on_schedule_failure = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ? RETURNING *;"
+        )
+        .bind(&params.name)
+        .bind(&params.notification_type)
+        .bind(&params.config_json)
+        .bind(&params.on_app_deploy)
+        .bind(&params.on_app_build_error)
+        .bind(&params.on_database_backup)
+        .bind(&params.on_volume_backup)
+        .bind(&params.on_panel_backup)
+        .bind(&params.on_panel_restart)
+        .bind(&params.on_docker_cleanup)
+        .bind(&params.on_server_threshold)
+        .bind(&params.on_server_migration)
+        .bind(&params.on_security_alert)
+        .bind(&params.on_schedule_success)
+        .bind(&params.on_schedule_failure)
+        .bind(&params.organization_id)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
+        .bind(&params.id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// DeleteNotification
@@ -1020,51 +319,14 @@ impl Queries {
         Ok(())
     }
 
-    /// NotificationsGetAll
-    pub async fn notifications_get_all(
-        &self,
-    ) -> Result<Vec<NotificationsGetAllRow>, sqlx::Error> {
-        sqlx::query_as::<_, NotificationsGetAllRow>(
-            "SELECT id AS id, name AS name, notification_type AS notification_type, on_app_deploy AS on_app_deploy, on_app_build_error AS on_app_build_error, on_database_backup AS on_database_backup, on_volume_backup AS on_volume_backup, on_panel_restart AS on_panel_restart, on_docker_cleanup AS on_docker_cleanup, on_server_threshold AS on_server_threshold, on_panel_backup AS on_panel_backup, on_schedule_success AS on_schedule_success, on_schedule_failure AS on_schedule_failure, slack_id AS slack_id, telegram_id AS telegram_id, discord_id AS discord_id, email_id AS email_id, resend_id AS resend_id, gotify_id AS gotify_id, ntfy_id AS ntfy_id, mattermost_id AS mattermost_id, custom_id AS custom_id, lark_id AS lark_id, pushover_id AS pushover_id, teams_id AS teams_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM notifications;"
-        )
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// NotificationsGetByOrganization
-    pub async fn notifications_get_by_organization(
-        &self,
-        organization_id: i64,
-    ) -> Result<Vec<NotificationsGetByOrganizationRow>, sqlx::Error> {
-        sqlx::query_as::<_, NotificationsGetByOrganizationRow>(
-            "SELECT id AS id, name AS name, notification_type AS notification_type, on_app_deploy AS on_app_deploy, on_app_build_error AS on_app_build_error, on_database_backup AS on_database_backup, on_volume_backup AS on_volume_backup, on_panel_restart AS on_panel_restart, on_docker_cleanup AS on_docker_cleanup, on_server_threshold AS on_server_threshold, on_panel_backup AS on_panel_backup, on_schedule_success AS on_schedule_success, on_schedule_failure AS on_schedule_failure, slack_id AS slack_id, telegram_id AS telegram_id, discord_id AS discord_id, email_id AS email_id, resend_id AS resend_id, gotify_id AS gotify_id, ntfy_id AS ntfy_id, mattermost_id AS mattermost_id, custom_id AS custom_id, lark_id AS lark_id, pushover_id AS pushover_id, teams_id AS teams_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM notifications WHERE organization_id = ?;"
-        )
-        .bind(organization_id)
-        .fetch_all(&self.pool)
-        .await
-    }
-
-    /// NotificationsGetById
-    pub async fn notifications_get_by_id(
-        &self,
-        id: i64,
-    ) -> Result<NotificationsGetByIdRow, sqlx::Error> {
-        sqlx::query_as::<_, NotificationsGetByIdRow>(
-            "SELECT id AS id, name AS name, notification_type AS notification_type, on_app_deploy AS on_app_deploy, on_app_build_error AS on_app_build_error, on_database_backup AS on_database_backup, on_volume_backup AS on_volume_backup, on_panel_restart AS on_panel_restart, on_docker_cleanup AS on_docker_cleanup, on_server_threshold AS on_server_threshold, on_panel_backup AS on_panel_backup, on_schedule_success AS on_schedule_success, on_schedule_failure AS on_schedule_failure, slack_id AS slack_id, telegram_id AS telegram_id, discord_id AS discord_id, email_id AS email_id, resend_id AS resend_id, gotify_id AS gotify_id, ntfy_id AS ntfy_id, mattermost_id AS mattermost_id, custom_id AS custom_id, lark_id AS lark_id, pushover_id AS pushover_id, teams_id AS teams_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM notifications WHERE id = ?;"
-        )
-        .bind(id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// NotificationsGetByIdForOrganization
-    pub async fn notifications_get_by_id_for_organization(
+    /// DeleteNotificationForOrganization
+    pub async fn delete_notification_for_organization(
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<NotificationsGetByIdForOrganizationRow, sqlx::Error> {
-        sqlx::query_as::<_, NotificationsGetByIdForOrganizationRow>(
-            "SELECT id AS id, name AS name, notification_type AS notification_type, on_app_deploy AS on_app_deploy, on_app_build_error AS on_app_build_error, on_database_backup AS on_database_backup, on_volume_backup AS on_volume_backup, on_panel_restart AS on_panel_restart, on_docker_cleanup AS on_docker_cleanup, on_server_threshold AS on_server_threshold, on_panel_backup AS on_panel_backup, on_schedule_success AS on_schedule_success, on_schedule_failure AS on_schedule_failure, slack_id AS slack_id, telegram_id AS telegram_id, discord_id AS discord_id, email_id AS email_id, resend_id AS resend_id, gotify_id AS gotify_id, ntfy_id AS ntfy_id, mattermost_id AS mattermost_id, custom_id AS custom_id, lark_id AS lark_id, pushover_id AS pushover_id, teams_id AS teams_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM notifications WHERE id = ? AND organization_id = ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM notifications WHERE id = ? AND organization_id = ? RETURNING id;"
         )
         .bind(id)
         .bind(organization_id)
@@ -1072,115 +334,136 @@ impl Queries {
         .await
     }
 
-    /// NotificationsCreate
-    pub async fn notifications_create(
+    /// ListNotificationsForAppDeploy
+    pub async fn list_notifications_for_app_deploy(
         &self,
-        params: &NotificationsCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO notifications (name, notification_type, on_app_deploy, on_app_build_error, on_database_backup, on_volume_backup, on_panel_restart, on_docker_cleanup, on_server_threshold, on_panel_backup, on_schedule_success, on_schedule_failure, slack_id, telegram_id, discord_id, email_id, resend_id, gotify_id, ntfy_id, mattermost_id, custom_id, lark_id, pushover_id, teams_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_app_deploy = 1 ORDER BY created_at DESC;"
         )
-        .bind(&params.name)
-        .bind(&params.notification_type)
-        .bind(&params.on_app_deploy)
-        .bind(&params.on_app_build_error)
-        .bind(&params.on_database_backup)
-        .bind(&params.on_volume_backup)
-        .bind(&params.on_panel_restart)
-        .bind(&params.on_docker_cleanup)
-        .bind(&params.on_server_threshold)
-        .bind(&params.on_panel_backup)
-        .bind(&params.on_schedule_success)
-        .bind(&params.on_schedule_failure)
-        .bind(&params.slack_id)
-        .bind(&params.telegram_id)
-        .bind(&params.discord_id)
-        .bind(&params.email_id)
-        .bind(&params.resend_id)
-        .bind(&params.gotify_id)
-        .bind(&params.ntfy_id)
-        .bind(&params.mattermost_id)
-        .bind(&params.custom_id)
-        .bind(&params.lark_id)
-        .bind(&params.pushover_id)
-        .bind(&params.teams_id)
-        .bind(&params.organization_id)
-        .bind(&params.created_at)
-        .bind(&params.updated_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_all(&self.pool)
+        .await
     }
 
-    /// NotificationsUpdate
-    pub async fn notifications_update(
+    /// ListNotificationsForAppBuildError
+    pub async fn list_notifications_for_app_build_error(
         &self,
-        params: &NotificationsUpdateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE notifications SET name = ?, notification_type = ?, on_app_deploy = ?, on_app_build_error = ?, on_database_backup = ?, on_volume_backup = ?, on_panel_restart = ?, on_docker_cleanup = ?, on_server_threshold = ?, on_panel_backup = ?, on_schedule_success = ?, on_schedule_failure = ?, slack_id = ?, telegram_id = ?, discord_id = ?, email_id = ?, resend_id = ?, gotify_id = ?, ntfy_id = ?, mattermost_id = ?, custom_id = ?, lark_id = ?, pushover_id = ?, teams_id = ?, organization_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_app_build_error = 1 ORDER BY created_at DESC;"
         )
-        .bind(&params.name)
-        .bind(&params.notification_type)
-        .bind(&params.on_app_deploy)
-        .bind(&params.on_app_build_error)
-        .bind(&params.on_database_backup)
-        .bind(&params.on_volume_backup)
-        .bind(&params.on_panel_restart)
-        .bind(&params.on_docker_cleanup)
-        .bind(&params.on_server_threshold)
-        .bind(&params.on_panel_backup)
-        .bind(&params.on_schedule_success)
-        .bind(&params.on_schedule_failure)
-        .bind(&params.slack_id)
-        .bind(&params.telegram_id)
-        .bind(&params.discord_id)
-        .bind(&params.email_id)
-        .bind(&params.resend_id)
-        .bind(&params.gotify_id)
-        .bind(&params.ntfy_id)
-        .bind(&params.mattermost_id)
-        .bind(&params.custom_id)
-        .bind(&params.lark_id)
-        .bind(&params.pushover_id)
-        .bind(&params.teams_id)
-        .bind(&params.organization_id)
-        .bind(&params.created_at)
-        .bind(&params.updated_at)
-        .bind(&params.id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_all(&self.pool)
+        .await
     }
 
-    /// NotificationsDelete
-    pub async fn notifications_delete(
+    /// ListNotificationsForDatabaseBackup
+    pub async fn list_notifications_for_database_backup(
         &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notifications WHERE id = ?;"
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_database_backup = 1 ORDER BY created_at DESC;"
         )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_all(&self.pool)
+        .await
     }
 
-    /// NotificationsDeleteForOrganization
-    pub async fn notifications_delete_for_organization(
+    /// ListNotificationsForVolumeBackup
+    pub async fn list_notifications_for_volume_backup(
         &self,
-        id: i64,
-        organization_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notifications WHERE id = ? AND organization_id = ?;"
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_volume_backup = 1 ORDER BY created_at DESC;"
         )
-        .bind(id)
-        .bind(organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForPanelBackup
+    pub async fn list_notifications_for_panel_backup(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_panel_backup = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForPanelRestart
+    pub async fn list_notifications_for_panel_restart(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_panel_restart = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForDockerCleanup
+    pub async fn list_notifications_for_docker_cleanup(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_docker_cleanup = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForServerThreshold
+    pub async fn list_notifications_for_server_threshold(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_server_threshold = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForServerMigration
+    pub async fn list_notifications_for_server_migration(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_server_migration = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForSecurityAlert
+    pub async fn list_notifications_for_security_alert(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_security_alert = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForScheduleSuccess
+    pub async fn list_notifications_for_schedule_success(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_schedule_success = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListNotificationsForScheduleFailure
+    pub async fn list_notifications_for_schedule_failure(
+        &self,
+    ) -> Result<Vec<Notifications>, sqlx::Error> {
+        sqlx::query_as::<_, Notifications>(
+            "SELECT * FROM notifications WHERE on_schedule_failure = 1 ORDER BY created_at DESC;"
+        )
+        .fetch_all(&self.pool)
+        .await
     }
 
 }

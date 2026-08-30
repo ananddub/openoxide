@@ -1,5 +1,5 @@
-use crate::db::models::mounts::Mount;
-use crate::repository::RedisRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::models::Mounts;
 use crate::utils::builder::database::builder::{
     DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
     UpdateConfig,
@@ -9,26 +9,28 @@ use std::collections::BTreeMap;
 
 pub async fn build_redis_stack(
     db_id: i64,
-    mounts: &[Mount],
+    mounts: &[Mounts],
 ) -> ExecResult<(String, String, String)> {
-    let repo =
-        auto_di::resolve::<RedisRepository>()
-            .await
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: format!("Failed to resolve RedisRepository: {}", e),
-            })?;
-    let db = repo
-        .get_details(db_id)
+    let q = auto_di::resolve::<FlashQueries>()
+        .await
+        .map_err(|e| ExecError::CommandFailed {
+            code: None,
+            stderr: format!("Failed to resolve FlashQueries: {}", e),
+        })?;
+    let db = q
+        .database_get_by_id(db_id)
         .await
         .map_err(|e| ExecError::CommandFailed {
             code: None,
             stderr: format!("Failed to fetch redis db: {}", e),
         })?;
+    let command_row = (!db.command.trim().is_empty()).then(|| db.command.clone());
+    let database_password = db.db_password.clone().unwrap_or_default();
+    let docker_image = db.docker_image.clone().unwrap_or_default();
 
     // Parse command and args
     let command: Option<Vec<String>>;
-    if let Some(c) = &db.command {
+    if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
             if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
@@ -40,42 +42,42 @@ pub async fn build_redis_stack(
         if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
             if !parsed_args.is_empty() {
                 let mut full = vec!["redis-server".to_string()];
-                if !db.database_password.trim().is_empty() {
-                    full.extend(["--requirepass".to_string(), db.database_password.clone()]);
+                if !database_password.trim().is_empty() {
+                    full.extend(["--requirepass".to_string(), database_password.clone()]);
                 }
                 full.extend(parsed_args);
                 command = Some(full);
-            } else if !db.database_password.trim().is_empty() {
+            } else if !database_password.trim().is_empty() {
                 command = Some(vec![
                     "/bin/sh".to_string(),
                     "-c".to_string(),
                     format!(
                         "redis-server --requirepass {}",
-                        shell_single_quote(&db.database_password)
+                        shell_single_quote(&database_password)
                     ),
                 ]);
             } else {
                 command = None;
             }
-        } else if !db.database_password.trim().is_empty() {
+        } else if !database_password.trim().is_empty() {
             command = Some(vec![
                 "/bin/sh".to_string(),
                 "-c".to_string(),
                 format!(
                     "redis-server --requirepass {}",
-                    shell_single_quote(&db.database_password)
+                    shell_single_quote(&database_password)
                 ),
             ]);
         } else {
             command = None;
         }
-    } else if !db.database_password.trim().is_empty() {
+    } else if !database_password.trim().is_empty() {
         command = Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
             format!(
                 "redis-server --requirepass {}",
-                shell_single_quote(&db.database_password)
+                shell_single_quote(&database_password)
             ),
         ]);
     } else {
@@ -89,7 +91,7 @@ pub async fn build_redis_stack(
     )
     .await
     .unwrap_or_default();
-    resolved_env.insert("REDIS_PASSWORD".to_string(), db.database_password.clone());
+    resolved_env.insert("REDIS_PASSWORD".to_string(), database_password.clone());
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();
@@ -131,7 +133,7 @@ pub async fn build_redis_stack(
         .await?;
 
     let mut service = StackService {
-        image: db.docker_image.clone(),
+        image: docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
@@ -219,7 +221,7 @@ pub async fn build_redis_stack(
         stderr: format!("Failed to generate redis yaml: {}", e),
     })?;
 
-    Ok((db.app_name, db.docker_image, yaml))
+    Ok((db.app_name, docker_image, yaml))
 }
 
 fn shell_single_quote(value: &str) -> String {

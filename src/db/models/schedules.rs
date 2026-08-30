@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "schedules")]
 pub struct Schedule {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub name: String,
     #[sqlx_gen(sql_type = "TEXT")]
@@ -20,12 +20,9 @@ pub struct Schedule {
     pub app_name: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub service_name: Option<String>,
-    #[sqlx_gen(sql_type = "schedules_shell_type_enum", column_default = "'BASH'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub shell_type: String,
-    #[sqlx_gen(
-        sql_type = "schedules_schedule_type_enum",
-        column_default = "'APPLICATION'"
-    )]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub schedule_type: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub command: String,
@@ -33,20 +30,18 @@ pub struct Schedule {
     pub script: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub timezone: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enabled: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub server_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub organization_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
-    #[sqlx_gen(sql_type = "schedules_schedule_action_enum", column_default = "'EXEC'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub schedule_action: String,
 }

@@ -2,9 +2,21 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 use os::string_enum;
-use sqlx::SqlitePool;
+use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::backup_executions::BackupExecutionsStartParams;
+use crate::flash_gen::models::{
+    Backups, ScheduleExecutions, ScheduleRuntimePolicies, Schedules, VolumeBackups,
+};
+use crate::flash_gen::schedule_runtime::{
+    ScheduleRuntimeAcquireParams, ScheduleRuntimeBeginParams, ScheduleRuntimeFinishParams,
+    ScheduleRuntimeUpdatePolicyParams,
+};
+use crate::flash_gen::schedules::{
+    SchedulesCreateAndReturnParams, SchedulesUpdateAndReturnParams,
+};
 use crate::services::compose::ComposeType;
 use crate::services::schedule::types::{
     ConcurrencyPolicy, MissedRunPolicy, ScheduleAction, ScheduleExecutionStatus,
@@ -12,15 +24,6 @@ use crate::services::schedule::types::{
 };
 use crate::utils::docker::query::ContainerFilter;
 use crate::{
-    api::dto::schedule::{CreateScheduleDto, PatchScheduleDto},
-    db::models::schedules::Schedule,
-    db::models::types::{BackupsDatabaseTypeEnum, VolumeBackupsServiceTypeEnum},
-    repository::{
-        ApplicationRepository, BackupExecutionRepository, BackupRepository,
-        ComposeProjectRepository, DestinationRepository, LibsqlRepository, MariadbRepository,
-        MongoRepository, MysqlRepository, PostgresRepository, RedisRepository, ScheduleRepository,
-        ScheduleRuntimeRepository, VolumeBackupRepository,
-    },
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService},
@@ -32,9 +35,72 @@ use crate::{
     utils::docker::DockerCli,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BackupsDatabaseTypeEnum {
+    Postgres,
+    Mariadb,
+    Mysql,
+    Mongo,
+    Redis,
+    Libsql,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VolumeBackupsServiceTypeEnum {
+    Application,
+    Compose,
+    Postgres,
+    Mysql,
+    Mariadb,
+    Mongo,
+    Redis,
+    Libsql,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateScheduleDto {
+    pub name: String,
+    pub description: Option<String>,
+    pub cron_expression: String,
+    pub app_name: Option<String>,
+    pub service_name: Option<String>,
+    pub shell_type: Option<String>,
+    pub schedule_type: Option<String>,
+    pub schedule_action: Option<String>,
+    pub command: String,
+    pub script: Option<String>,
+    pub timezone: Option<String>,
+    #[serde(default)]
+    pub enabled: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
+    pub organization_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchScheduleDto {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub cron_expression: Option<String>,
+    pub app_name: Option<String>,
+    pub service_name: Option<String>,
+    pub shell_type: Option<String>,
+    pub schedule_type: Option<String>,
+    pub schedule_action: Option<String>,
+    pub command: Option<String>,
+    pub script: Option<String>,
+    pub timezone: Option<String>,
+    pub enabled: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub server_id: Option<i64>,
+    pub organization_id: Option<i64>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ScheduleRunResult {
-    pub schedule: Schedule,
+    pub schedule: Schedules,
     pub action: String,
     pub deployment_id: Option<i64>,
     pub message: String,
@@ -43,100 +109,61 @@ pub struct ScheduleRunResult {
 }
 
 pub struct ScheduleService {
-    pub db: Arc<SqlitePool>,
+    queries: Arc<FlashQueries>,
     pub applications: Arc<ApplicationService>,
     pub compose: Arc<ComposeService>,
-    pub repo_schedule: Arc<ScheduleRepository>,
-    pub repo_runtime: Arc<ScheduleRuntimeRepository>,
     pub notifications: Arc<NotificationService>,
-    pub repo_app: Arc<ApplicationRepository>,
-    pub repo_compose: Arc<ComposeProjectRepository>,
-    pub repo_backup: Arc<BackupRepository>,
-    pub repo_backup_execution: Arc<BackupExecutionRepository>,
-    pub repo_volume_backup: Arc<VolumeBackupRepository>,
-    pub repo_destination: Arc<DestinationRepository>,
-    pub repo_postgres: Arc<PostgresRepository>,
-    pub repo_mysql: Arc<MysqlRepository>,
-    pub repo_mariadb: Arc<MariadbRepository>,
-    pub repo_mongo: Arc<MongoRepository>,
-    pub repo_redis: Arc<RedisRepository>,
-    pub repo_libsql: Arc<LibsqlRepository>,
 }
 
 #[singleton]
 impl ScheduleService {
     fn new(
-        db: Arc<SqlitePool>,
+        queries: Arc<FlashQueries>,
         applications: Arc<ApplicationService>,
         compose: Arc<ComposeService>,
-        repo_schedule: Arc<ScheduleRepository>,
-        repo_runtime: Arc<ScheduleRuntimeRepository>,
         notifications: Arc<NotificationService>,
-        repo_app: Arc<ApplicationRepository>,
-        repo_compose: Arc<ComposeProjectRepository>,
-        repo_backup: Arc<BackupRepository>,
-        repo_backup_execution: Arc<BackupExecutionRepository>,
-        repo_volume_backup: Arc<VolumeBackupRepository>,
-        repo_destination: Arc<DestinationRepository>,
-        repo_postgres: Arc<PostgresRepository>,
-        repo_mysql: Arc<MysqlRepository>,
-        repo_mariadb: Arc<MariadbRepository>,
-        repo_mongo: Arc<MongoRepository>,
-        repo_redis: Arc<RedisRepository>,
-        repo_libsql: Arc<LibsqlRepository>,
     ) -> Self {
         Self {
-            db,
+            queries,
             applications,
             compose,
-            repo_schedule,
-            repo_runtime,
             notifications,
-            repo_app,
-            repo_compose,
-            repo_backup,
-            repo_backup_execution,
-            repo_volume_backup,
-            repo_destination,
-            repo_postgres,
-            repo_mysql,
-            repo_mariadb,
-            repo_mongo,
-            repo_redis,
-            repo_libsql,
         }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Schedule> {
-        self.repo_schedule
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Schedules> {
+        self.queries.schedules_get_by_id(id).await
     }
 
-    pub async fn list_by_application(&self, application_id: i64) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule.list_by_application(application_id).await
+    pub async fn list_by_application(&self, application_id: i64) -> sqlx::Result<Vec<Schedules>> {
+        let rows = self.queries.schedules_list_by_application(application_id).await?;
+        Ok(rows.into_iter().map(schedule_from_parts).collect())
     }
 
-    pub async fn list_by_compose(&self, compose_id: i64) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule.list_by_compose(compose_id).await
+    pub async fn list_by_compose(&self, compose_id: i64) -> sqlx::Result<Vec<Schedules>> {
+        let rows = self.queries.schedules_list_by_compose(compose_id).await?;
+        Ok(rows.into_iter().map(schedule_from_parts).collect())
     }
 
-    pub async fn list_by_server(&self, server_id: i64) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule.list_by_server(server_id).await
+    pub async fn list_by_server(&self, server_id: i64) -> sqlx::Result<Vec<Schedules>> {
+        let rows = self.queries.schedules_list_by_server(server_id).await?;
+        Ok(rows.into_iter().map(schedule_from_parts).collect())
     }
 
-    pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule
-            .list_by_organization(organization_id)
-            .await
+    pub async fn list_by_organization(&self, organization_id: i64) -> sqlx::Result<Vec<Schedules>> {
+        let rows = self
+            .queries
+            .schedules_list_by_organization(organization_id)
+            .await?;
+        Ok(rows.into_iter().map(schedule_from_parts).collect())
     }
 
-    pub async fn list_enabled(&self) -> sqlx::Result<Vec<Schedule>> {
-        self.repo_schedule.list_enabled().await
+    pub async fn list_enabled(&self) -> sqlx::Result<Vec<Schedules>> {
+        let rows = self.queries.schedules_list_enabled().await?;
+        Ok(rows.into_iter().map(schedule_from_parts).collect())
     }
 
-    pub async fn create(&self, input: CreateScheduleDto) -> sqlx::Result<Schedule> {
+    pub async fn create(&self, input: CreateScheduleDto) -> sqlx::Result<Schedules> {
         validate_cron_expression(&input.cron_expression)?;
         let shell_type = normalize_shell_type(input.shell_type.as_deref())?;
         let schedule_type = if let Some(st) = input
@@ -158,11 +185,11 @@ impl ScheduleService {
             &input.command,
         )?;
         let enabled = normalize_enabled(input.enabled.unwrap_or(1))?;
+        let service_id = input.application_id.or(input.compose_id);
         validate_target(
             &schedule_type,
             &schedule_action,
-            input.application_id,
-            input.compose_id,
+            service_id,
             input.server_id,
             input.service_name.as_deref(),
         )?;
@@ -173,29 +200,30 @@ impl ScheduleService {
             generate_schedule_app_name(&input.name)
         };
 
-        self.repo_schedule
-            .create_and_return(
-                input.name,
-                input.description,
-                input.cron_expression,
+        let row = self
+            .queries
+            .schedules_create_and_return(&SchedulesCreateAndReturnParams {
+                name: input.name,
+                description: input.description.unwrap_or_default(),
+                cron_expression: input.cron_expression,
                 app_name,
-                input.service_name,
+                service_name: input.service_name.unwrap_or_default(),
                 shell_type,
                 schedule_type,
                 schedule_action,
-                input.command,
-                input.script,
-                input.timezone,
+                command: input.command,
+                script: input.script.unwrap_or_default(),
+                timezone: input.timezone.unwrap_or_default(),
                 enabled,
-                input.application_id,
-                input.compose_id,
-                input.server_id,
-                input.organization_id,
-            )
-            .await
+                service_id: service_id.unwrap_or(0),
+                server_id: input.server_id.unwrap_or(0),
+                organization_id: input.organization_id.unwrap_or(0),
+            })
+            .await?;
+        Ok(schedule_from_parts(row))
     }
 
-    pub async fn patch(&self, id: i64, input: PatchScheduleDto) -> sqlx::Result<Schedule> {
+    pub async fn patch(&self, id: i64, input: PatchScheduleDto) -> sqlx::Result<Schedules> {
         let current = self.get_by_id(id).await?;
         let name = input.name.unwrap_or(current.name);
         let description = input.description.or(current.description);
@@ -219,52 +247,54 @@ impl ScheduleService {
         let script = input.script.or(current.script);
         let timezone = input.timezone.or(current.timezone);
         let enabled = normalize_enabled(input.enabled.unwrap_or(current.enabled))?;
-        let application_id = input.application_id.or(current.application_id);
-        let compose_id = input.compose_id.or(current.compose_id);
+        let service_id = input
+            .application_id
+            .or(input.compose_id)
+            .or(current.service_id);
         let server_id = input.server_id.or(current.server_id);
         let organization_id = input.organization_id.or(current.organization_id);
         validate_target(
             &schedule_type,
             &schedule_action,
-            application_id,
-            compose_id,
+            service_id,
             server_id,
             service_name.as_deref(),
         )?;
 
-        self.repo_schedule
-            .update_and_return(
-                id,
+        let row = self
+            .queries
+            .schedules_update_and_return(&SchedulesUpdateAndReturnParams {
                 name,
-                description,
+                description: description.unwrap_or_default(),
                 cron_expression,
                 app_name,
-                service_name,
+                service_name: service_name.unwrap_or_default(),
                 shell_type,
                 schedule_type,
                 schedule_action,
                 command,
-                script,
-                timezone,
+                script: script.unwrap_or_default(),
+                timezone: timezone.unwrap_or_default(),
                 enabled,
-                application_id,
-                compose_id,
-                server_id,
-                organization_id,
-            )
-            .await
+                service_id: service_id.unwrap_or(0),
+                server_id: server_id.unwrap_or(0),
+                organization_id: organization_id.unwrap_or(0),
+                id,
+            })
+            .await?;
+        Ok(schedule_from_parts(row))
     }
 
-    pub async fn set_enabled(&self, id: i64, enabled: bool) -> sqlx::Result<Schedule> {
-        self.repo_schedule.set_enabled(id, enabled).await
+    pub async fn set_enabled(&self, id: i64, enabled: bool) -> sqlx::Result<Schedules> {
+        let row = self
+            .queries
+            .schedules_set_enabled(i64::from(enabled), id)
+            .await?;
+        Ok(schedule_from_parts(row))
     }
 
     pub async fn restore_database_backup(&self, id: i64, backup_file: &str) -> sqlx::Result<()> {
-        let backup = self
-            .repo_backup
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self.queries.get_backup_by_i_d(id).await?;
 
         let server_id = self.resolve_database_backup_server_id(&backup).await?;
         let executor = crate::services::compose::remote::agent_executor_for(server_id)
@@ -272,11 +302,7 @@ impl ScheduleService {
             .map_err(sqlx::Error::Protocol)?;
 
         let dumper = self.resolve_database_dumper(&backup).await?;
-        let dest_model = self
-            .repo_destination
-            .get_by_id(backup.destination_id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
+        let dest_model = self.queries.get_destination_by_i_d(backup.destination_id).await?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -292,8 +318,7 @@ impl ScheduleService {
 
         let cancel = tokio_util::sync::CancellationToken::new();
         let execution_id = self
-            .repo_backup_execution
-            .start(
+            .backup_execution_start(
                 crate::services::backup::types::BackupKind::Database,
                 crate::services::backup::types::BackupOperation::Restore,
                 Some(id),
@@ -302,14 +327,12 @@ impl ScheduleService {
             .await?;
         match runner.run_restore(backup_file, &cancel).await {
             Ok(_) => {
-                self.repo_backup_execution
-                    .succeed(execution_id, None, None)
-                    .await?
+                self.backup_execution_succeed(execution_id).await?;
             }
             Err(error) => {
                 let message = error.to_string();
-                self.repo_backup_execution
-                    .fail(execution_id, &message)
+                self.queries
+                    .backup_executions_fail(&message, execution_id)
                     .await?;
                 return Err(sqlx::Error::Protocol(message));
             }
@@ -319,11 +342,7 @@ impl ScheduleService {
     }
 
     pub async fn restore_volume_backup(&self, id: i64, backup_file: &str) -> sqlx::Result<()> {
-        let backup = self
-            .repo_volume_backup
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self.queries.get_volume_backup_by_i_d(id).await?;
 
         let server_id = self.resolve_volume_backup_server_id(&backup).await?;
         let executor = crate::services::compose::remote::agent_executor_for(server_id)
@@ -332,10 +351,9 @@ impl ScheduleService {
 
         let target = self.resolve_volume_service_target(&backup).await?;
         let dest_model = self
-            .repo_destination
-            .get_by_id(backup.destination_id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
+            .queries
+            .get_destination_by_i_d(backup.destination_id)
+            .await?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -360,8 +378,7 @@ impl ScheduleService {
 
         let cancel = tokio_util::sync::CancellationToken::new();
         let execution_id = self
-            .repo_backup_execution
-            .start(
+            .backup_execution_start(
                 crate::services::backup::types::BackupKind::Volume,
                 crate::services::backup::types::BackupOperation::Restore,
                 Some(id),
@@ -370,14 +387,12 @@ impl ScheduleService {
             .await?;
         match runner.run_restore(backup_file, &cancel).await {
             Ok(_) => {
-                self.repo_backup_execution
-                    .succeed(execution_id, None, None)
-                    .await?
+                self.backup_execution_succeed(execution_id).await?;
             }
             Err(error) => {
                 let message = error.to_string();
-                self.repo_backup_execution
-                    .fail(execution_id, &message)
+                self.queries
+                    .backup_executions_fail(&message, execution_id)
                     .await?;
                 return Err(sqlx::Error::Protocol(message));
             }
@@ -388,7 +403,7 @@ impl ScheduleService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        self.repo_schedule.delete(id).await
+        self.queries.schedules_delete(id).await
     }
 
     pub async fn run_now(&self, id: i64) -> sqlx::Result<ScheduleRunResult> {
@@ -410,12 +425,10 @@ impl ScheduleService {
     }
 
     pub async fn recover_missed(&self, id: i64, cron_expression: &str) -> sqlx::Result<bool> {
-        let policy = self.repo_runtime.policy(id).await?;
+        let policy = self.runtime_policy(id).await?;
         let now = chrono::Utc::now();
         let Some(last_timestamp) = policy.last_scheduled_at else {
-            self.repo_runtime
-                .mark_scheduled(id, now.timestamp())
-                .await?;
+            self.runtime_mark_scheduled(id, now.timestamp()).await?;
             return Ok(false);
         };
         if MissedRunPolicy::try_from(policy.missed_run_policy.as_str())
@@ -450,7 +463,7 @@ impl ScheduleService {
         if schedule.enabled == 0 {
             return Err(sqlx::Error::Protocol("schedule is disabled".into()));
         }
-        let policy = self.repo_runtime.policy(id).await?;
+        let policy = self.runtime_policy(id).await?;
         let owner = Uuid::new_v4().to_string();
         let concurrency = ConcurrencyPolicy::try_from(policy.concurrency_policy.as_str())
             .map_err(sqlx::Error::Protocol)?;
@@ -460,8 +473,7 @@ impl ScheduleService {
                 let deadline = chrono::Utc::now().timestamp() + policy.lease_seconds;
                 loop {
                     if self
-                        .repo_runtime
-                        .acquire(id, &owner, policy.lease_seconds)
+                        .runtime_acquire(id, &owner, policy.lease_seconds)
                         .await?
                     {
                         break true;
@@ -473,25 +485,22 @@ impl ScheduleService {
                 }
             }
             ConcurrencyPolicy::Skip => {
-                self.repo_runtime
-                    .acquire(id, &owner, policy.lease_seconds)
+                self.runtime_acquire(id, &owner, policy.lease_seconds)
                     .await?
             }
         };
         if !locked {
             let execution_id = self
-                .repo_runtime
-                .begin(id, schedule.organization_id, trigger_kind, 1, scheduled_at)
+                .runtime_begin(id, schedule.organization_id, trigger_kind, 1, scheduled_at)
                 .await?;
-            self.repo_runtime
-                .finish(
-                    execution_id,
-                    ScheduleExecutionStatus::Skipped,
-                    Some("previous execution is still active"),
-                    None,
-                    None,
-                )
-                .await?;
+            self.runtime_finish(
+                execution_id,
+                ScheduleExecutionStatus::Skipped,
+                Some("previous execution is still active"),
+                None,
+                None,
+            )
+            .await?;
             return Err(sqlx::Error::Protocol(
                 "schedule skipped by concurrency policy".into(),
             ));
@@ -503,7 +512,7 @@ impl ScheduleService {
             Ok(schedule) if schedule.enabled != 0 => schedule,
             Ok(_) | Err(sqlx::Error::RowNotFound) => {
                 if concurrency != ConcurrencyPolicy::Allow {
-                    let _ = self.repo_runtime.release(id, &owner).await;
+                    let _ = self.runtime_release(id, &owner).await;
                 }
                 return Err(sqlx::Error::Protocol(
                     "schedule was deleted or disabled".into(),
@@ -511,12 +520,12 @@ impl ScheduleService {
             }
             Err(error) => {
                 if concurrency != ConcurrencyPolicy::Allow {
-                    let _ = self.repo_runtime.release(id, &owner).await;
+                    let _ = self.runtime_release(id, &owner).await;
                 }
                 return Err(error);
             }
         };
-        self.repo_runtime.mark_scheduled(id, scheduled_at).await?;
+        self.runtime_mark_scheduled(id, scheduled_at).await?;
 
         let mut final_result = None;
         let mut final_error = None;
@@ -527,8 +536,7 @@ impl ScheduleService {
                 ScheduleTriggerKind::Retry
             };
             let execution_id = self
-                .repo_runtime
-                .begin(
+                .runtime_begin(
                     id,
                     schedule.organization_id,
                     attempt_trigger,
@@ -538,29 +546,27 @@ impl ScheduleService {
                 .await?;
             match self.run_once(schedule.clone()).await {
                 Ok(result) => {
-                    self.repo_runtime
-                        .finish(
-                            execution_id,
-                            ScheduleExecutionStatus::Succeeded,
-                            Some(&result.message),
-                            result.stdout.as_deref(),
-                            result.stderr.as_deref(),
-                        )
-                        .await?;
+                    self.runtime_finish(
+                        execution_id,
+                        ScheduleExecutionStatus::Succeeded,
+                        Some(&result.message),
+                        result.stdout.as_deref(),
+                        result.stderr.as_deref(),
+                    )
+                    .await?;
                     final_result = Some(result);
                     break;
                 }
                 Err(error) => {
                     let message = error.to_string();
-                    self.repo_runtime
-                        .finish(
-                            execution_id,
-                            ScheduleExecutionStatus::Failed,
-                            Some(&message),
-                            None,
-                            Some(&message),
-                        )
-                        .await?;
+                    self.runtime_finish(
+                        execution_id,
+                        ScheduleExecutionStatus::Failed,
+                        Some(&message),
+                        None,
+                        Some(&message),
+                    )
+                    .await?;
                     final_error = Some(error);
                     if attempt <= policy.retry_count {
                         tokio::time::sleep(std::time::Duration::from_secs(
@@ -572,7 +578,7 @@ impl ScheduleService {
             }
         }
         if concurrency != ConcurrencyPolicy::Allow {
-            let _ = self.repo_runtime.release(id, &owner).await;
+            let _ = self.runtime_release(id, &owner).await;
         }
         match final_result {
             Some(result) => {
@@ -606,7 +612,7 @@ impl ScheduleService {
 
     async fn notify_schedule(
         &self,
-        schedule: &Schedule,
+        schedule: &Schedules,
         trigger: NotificationTrigger,
         level: NotificationLevel,
         detail: &str,
@@ -627,7 +633,7 @@ impl ScheduleService {
             .await;
     }
 
-    async fn run_once(&self, schedule: Schedule) -> sqlx::Result<ScheduleRunResult> {
+    async fn run_once(&self, schedule: Schedules) -> sqlx::Result<ScheduleRunResult> {
         let v = ScheduleType::try_from(schedule.schedule_type.as_str()).map_err(|_| {
             sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.schedule_type))
         })?;
@@ -642,10 +648,10 @@ impl ScheduleService {
 
     async fn run_application_schedule(
         &self,
-        schedule: Schedule,
+        schedule: Schedules,
     ) -> sqlx::Result<ScheduleRunResult> {
-        let application_id = schedule.application_id.ok_or_else(|| {
-            sqlx::Error::Protocol("application schedule requires application_id".into())
+        let application_id = schedule.service_id.ok_or_else(|| {
+            sqlx::Error::Protocol("application schedule requires a linked service".into())
         })?;
         if schedule.schedule_action == ScheduleAction::Exec.as_str() {
             return self
@@ -668,10 +674,10 @@ impl ScheduleService {
         })
     }
 
-    async fn run_compose_schedule(&self, schedule: Schedule) -> sqlx::Result<ScheduleRunResult> {
-        let compose_id = schedule
-            .compose_id
-            .ok_or_else(|| sqlx::Error::Protocol("compose schedule requires compose_id".into()))?;
+    async fn run_compose_schedule(&self, schedule: Schedules) -> sqlx::Result<ScheduleRunResult> {
+        let compose_id = schedule.service_id.ok_or_else(|| {
+            sqlx::Error::Protocol("compose schedule requires a linked service".into())
+        })?;
         if schedule.schedule_action == ScheduleAction::Exec.as_str() {
             return self
                 .run_compose_container_command(schedule, compose_id)
@@ -690,7 +696,7 @@ impl ScheduleService {
         })
     }
 
-    async fn run_shell_schedule(&self, schedule: Schedule) -> sqlx::Result<ScheduleRunResult> {
+    async fn run_shell_schedule(&self, schedule: Schedules) -> sqlx::Result<ScheduleRunResult> {
         let command = schedule
             .script
             .as_deref()
@@ -724,14 +730,10 @@ impl ScheduleService {
 
     async fn run_application_container_command(
         &self,
-        schedule: Schedule,
+        schedule: Schedules,
         application_id: i64,
     ) -> sqlx::Result<ScheduleRunResult> {
-        let app = self
-            .repo_app
-            .get_by_id(application_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let app = self.queries.get_service_by_i_d(application_id).await?;
         let app_name = app.app_name;
         let server_id = app.server_id;
         // Applications are always deployed as Swarm services.
@@ -742,17 +744,17 @@ impl ScheduleService {
 
     async fn run_compose_container_command(
         &self,
-        schedule: Schedule,
+        schedule: Schedules,
         compose_id: i64,
     ) -> sqlx::Result<ScheduleRunResult> {
-        let compose = self
-            .repo_compose
-            .get_by_id(compose_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let compose = self.queries.get_service_by_i_d(compose_id).await?;
         let app_name = compose.app_name;
         let server_id = compose.server_id;
-        let compose_type = compose.compose_type;
+        let compose_type = self
+            .queries
+            .get_service_compose(compose_id)
+            .await?
+            .compose_type;
 
         let compose_service = schedule.service_name.clone().ok_or_else(|| {
             sqlx::Error::Protocol("compose EXEC schedule requires service_name".into())
@@ -785,7 +787,7 @@ impl ScheduleService {
     /// Execute command in a Swarm service container (Application or Stack).
     async fn run_swarm_container_command(
         &self,
-        schedule: Schedule,
+        schedule: Schedules,
         server_id: Option<i64>,
         service_name: &str,
     ) -> sqlx::Result<ScheduleRunResult> {
@@ -831,7 +833,7 @@ impl ScheduleService {
     /// Execute command in a docker compose container.
     async fn run_compose_project_container_command(
         &self,
-        schedule: Schedule,
+        schedule: Schedules,
         server_id: Option<i64>,
         project_name: &str,
         service_name: &str,
@@ -882,173 +884,22 @@ impl ScheduleService {
 
     async fn resolve_volume_backup_server_id(
         &self,
-        backup: &crate::db::models::volume_backups::VolumeBackup,
+        backup: &VolumeBackups,
     ) -> sqlx::Result<Option<i64>> {
-        if let Some(app_id) = backup.application_id {
-            if let Some(app) = self.repo_app.get_by_id(app_id).await? {
-                return Ok(app.server_id);
-            }
-        }
-        if let Some(compose_id) = backup.compose_id {
-            if let Some(comp) = self.repo_compose.get_by_id(compose_id).await? {
-                return Ok(comp.server_id);
-            }
-        }
-        if let Some(id) = backup.postgres_id {
-            return Ok(self.repo_postgres.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mysql_id {
-            return Ok(self.repo_mysql.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mariadb_id {
-            return Ok(self.repo_mariadb.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mongo_id {
-            return Ok(self.repo_mongo.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.redis_id {
-            return Ok(self.repo_redis.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.libsql_id {
-            return Ok(self.repo_libsql.get_server_id_and_name(id).await?.0);
+        if let Some(service_id) = backup.service_id {
+            return Ok(self.queries.get_service_by_i_d(service_id).await?.server_id);
         }
         Ok(None)
     }
 
     async fn resolve_volume_service_target(
         &self,
-        backup: &crate::db::models::volume_backups::VolumeBackup,
+        backup: &VolumeBackups,
     ) -> sqlx::Result<crate::utils::backup::volume::VolumeServiceTarget> {
         let service_type = parse_volume_service_type(&backup.service_type)
             .unwrap_or(VolumeBackupsServiceTypeEnum::Application);
 
         match service_type {
-            VolumeBackupsServiceTypeEnum::Postgres => {
-                let id = backup
-                    .postgres_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing postgres_id".into()))?;
-                let details = self.repo_postgres.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Mysql => {
-                let id = backup
-                    .mysql_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing mysql_id".into()))?;
-                let details = self.repo_mysql.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Mariadb => {
-                let id = backup
-                    .mariadb_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing mariadb_id".into()))?;
-                let details = self.repo_mariadb.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Mongo => {
-                let id = backup
-                    .mongo_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing mongo_id".into()))?;
-                let details = self.repo_mongo.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Redis => {
-                let id = backup
-                    .redis_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing redis_id".into()))?;
-                let details = self.repo_redis.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Libsql => {
-                let id = backup
-                    .libsql_id
-                    .ok_or_else(|| sqlx::Error::Protocol("missing libsql_id".into()))?;
-                let details = self.repo_libsql.get_details(id).await?;
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name: details.app_name,
-                    },
-                )
-            }
-            VolumeBackupsServiceTypeEnum::Application => {
-                if let Some(id) = backup.postgres_id {
-                    let details = self.repo_postgres.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-                if let Some(id) = backup.mysql_id {
-                    let details = self.repo_mysql.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-                if let Some(id) = backup.mariadb_id {
-                    let details = self.repo_mariadb.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-                if let Some(id) = backup.mongo_id {
-                    let details = self.repo_mongo.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-                if let Some(id) = backup.redis_id {
-                    let details = self.repo_redis.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-                if let Some(id) = backup.libsql_id {
-                    let details = self.repo_libsql.get_details(id).await?;
-                    return Ok(
-                        crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                            service_name: details.app_name,
-                        },
-                    );
-                }
-
-                let service_name = backup
-                    .service_name
-                    .clone()
-                    .unwrap_or_else(|| format!("{}_{}", backup.app_name, backup.app_name));
-                Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
-                        service_name,
-                    },
-                )
-            }
             VolumeBackupsServiceTypeEnum::Compose => {
                 let service = backup.service_name.clone().unwrap_or_default();
                 Ok(
@@ -1058,111 +909,56 @@ impl ScheduleService {
                     },
                 )
             }
+            _ => {
+                let service_name = if let Some(service_id) = backup.service_id {
+                    self.queries.get_service_by_i_d(service_id).await?.app_name
+                } else {
+                    backup
+                        .service_name
+                        .clone()
+                        .unwrap_or_else(|| format!("{}_{}", backup.app_name, backup.app_name))
+                };
+                Ok(
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService { service_name },
+                )
+            }
         }
     }
 
     async fn resolve_database_backup_server_id(
         &self,
-        backup: &crate::db::models::backups::Backup,
+        backup: &Backups,
     ) -> sqlx::Result<Option<i64>> {
-        if let Some(id) = backup.postgres_id {
-            return Ok(self.repo_postgres.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mysql_id {
-            return Ok(self.repo_mysql.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mariadb_id {
-            return Ok(self.repo_mariadb.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.mongo_id {
-            return Ok(self.repo_mongo.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.redis_id {
-            return Ok(self.repo_redis.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(id) = backup.libsql_id {
-            return Ok(self.repo_libsql.get_server_id_and_name(id).await?.0);
-        }
-        if let Some(compose_id) = backup.compose_id {
-            if let Some(comp) = self.repo_compose.get_by_id(compose_id).await? {
-                return Ok(comp.server_id);
-            }
+        if let Some(service_id) = backup.service_id {
+            return Ok(self.queries.get_service_by_i_d(service_id).await?.server_id);
         }
         Ok(None)
     }
 
     async fn resolve_database_dumper(
         &self,
-        backup: &crate::db::models::backups::Backup,
+        backup: &Backups,
     ) -> sqlx::Result<crate::utils::backup::database::DatabaseDumper> {
-        if let Some(id) = backup.postgres_id {
-            let details = self.repo_postgres.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::Postgres {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user: details.database_user,
-                    password: details.database_password,
-                    database: details.database_name,
-                },
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
-        }
-        if let Some(id) = backup.mysql_id {
-            let details = self.repo_mysql.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::Mysql {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user: details.database_user,
-                    password: details.database_password,
-                    database: details.database_name,
-                },
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
-        }
-        if let Some(id) = backup.mariadb_id {
-            let details = self.repo_mariadb.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::MariaDb {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user: details.database_user,
-                    password: details.database_password,
-                    database: details.database_name,
-                },
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
-        }
-        if let Some(id) = backup.mongo_id {
-            let details = self.repo_mongo.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::Mongo {
-                creds: crate::utils::backup::database::DbCredentials {
-                    user: details.database_user,
-                    password: details.database_password,
-                    database: backup.database_name.clone(),
-                },
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
-        }
-        if let Some(id) = backup.redis_id {
-            let details = self.repo_redis.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::Redis {
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
-        }
-        if let Some(id) = backup.libsql_id {
-            let details = self.repo_libsql.get_details(id).await?;
-            return Ok(crate::utils::backup::database::DatabaseDumper::LibSql {
-                database: backup.database_name.clone(),
-                target: crate::utils::backup::database::ContainerTarget {
-                    service_name: details.app_name,
-                },
-            });
+        if let Some(service_id) = backup.service_id {
+            let creds = self
+                .queries
+                .database_management_credentials(service_id)
+                .await?;
+            let db_type = self.queries.get_service_database(service_id).await?.db_type;
+            let kind = parse_database_type(&db_type).ok_or_else(|| {
+                sqlx::Error::Protocol(format!("unsupported database type: {db_type}"))
+            })?;
+            let user = creds.db_user.unwrap_or_default();
+            let password = creds.db_password.unwrap_or_default();
+            let service_name = creds.app_name;
+            return Ok(database_dumper_for(
+                kind,
+                user,
+                password,
+                backup.database_name.clone(),
+                creds.db_name.unwrap_or_default(),
+                service_name,
+            ));
         }
 
         let (user, password) = if let Some(meta_str) = &backup.metadata {
@@ -1190,74 +986,22 @@ impl ScheduleService {
             .clone()
             .unwrap_or_else(|| backup.app_name.clone());
 
-        let db_type = parse_database_type(&backup.database_type).ok_or_else(|| {
-            sqlx::Error::Protocol(format!(
-                "unsupported database type: {}",
-                backup.database_type
-            ))
+        let db_type = backup.database_type.clone().unwrap_or_default();
+        let kind = parse_database_type(&db_type).ok_or_else(|| {
+            sqlx::Error::Protocol(format!("unsupported database type: {db_type}"))
         })?;
-
-        match db_type {
-            BackupsDatabaseTypeEnum::Postgres => {
-                Ok(crate::utils::backup::database::DatabaseDumper::Postgres {
-                    creds: crate::utils::backup::database::DbCredentials {
-                        user,
-                        password,
-                        database: backup.database_name.clone(),
-                    },
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-            BackupsDatabaseTypeEnum::Mysql => {
-                Ok(crate::utils::backup::database::DatabaseDumper::Mysql {
-                    creds: crate::utils::backup::database::DbCredentials {
-                        user,
-                        password,
-                        database: backup.database_name.clone(),
-                    },
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-            BackupsDatabaseTypeEnum::Mariadb => {
-                Ok(crate::utils::backup::database::DatabaseDumper::MariaDb {
-                    creds: crate::utils::backup::database::DbCredentials {
-                        user,
-                        password,
-                        database: backup.database_name.clone(),
-                    },
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-            BackupsDatabaseTypeEnum::Mongo => {
-                Ok(crate::utils::backup::database::DatabaseDumper::Mongo {
-                    creds: crate::utils::backup::database::DbCredentials {
-                        user,
-                        password,
-                        database: backup.database_name.clone(),
-                    },
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-            BackupsDatabaseTypeEnum::Redis => {
-                Ok(crate::utils::backup::database::DatabaseDumper::Redis {
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-            BackupsDatabaseTypeEnum::Libsql => {
-                Ok(crate::utils::backup::database::DatabaseDumper::LibSql {
-                    database: backup.database_name.clone(),
-                    target: crate::utils::backup::database::ContainerTarget { service_name },
-                })
-            }
-        }
+        Ok(database_dumper_for(
+            kind,
+            user,
+            password,
+            backup.database_name.clone(),
+            backup.database_name.clone(),
+            service_name,
+        ))
     }
 
     pub async fn run_database_backup(&self, id: i64) -> sqlx::Result<()> {
-        let backup = self
-            .repo_backup
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self.queries.get_backup_by_i_d(id).await?;
         if backup.enabled == 0 {
             return Err(sqlx::Error::Protocol("backup is disabled".into()));
         }
@@ -1269,10 +1013,9 @@ impl ScheduleService {
 
         let dumper = self.resolve_database_dumper(&backup).await?;
         let dest_model = self
-            .repo_destination
-            .get_by_id(backup.destination_id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
+            .queries
+            .get_destination_by_i_d(backup.destination_id)
+            .await?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -1287,7 +1030,7 @@ impl ScheduleService {
             crate::utils::backup::database::BackupRunner::new(&executor, &dumper, &destination);
         // Re-read immediately before starting the external backup command. A
         // deleted/disabled job may have had a callback already queued.
-        let current = self.repo_backup.get_by_id(id).await?;
+        let current = self.queries.get_backup_by_i_d(id).await.ok();
         if current.as_ref().is_none_or(|item| item.enabled == 0) {
             return Err(sqlx::Error::Protocol(
                 "backup was deleted or disabled".into(),
@@ -1306,8 +1049,7 @@ impl ScheduleService {
 
         let cancel = tokio_util::sync::CancellationToken::new();
         let execution_id = self
-            .repo_backup_execution
-            .start(
+            .backup_execution_start(
                 crate::services::backup::types::BackupKind::Database,
                 crate::services::backup::types::BackupOperation::Backup,
                 Some(id),
@@ -1316,14 +1058,12 @@ impl ScheduleService {
             .await?;
         match runner.run(&object_key, &cancel).await {
             Ok(_) => {
-                self.repo_backup_execution
-                    .succeed(execution_id, None, None)
-                    .await?
+                self.backup_execution_succeed(execution_id).await?;
             }
             Err(error) => {
                 let message = error.to_string();
-                self.repo_backup_execution
-                    .fail(execution_id, &message)
+                self.queries
+                    .backup_executions_fail(&message, execution_id)
                     .await?;
                 return Err(sqlx::Error::Protocol(message));
             }
@@ -1333,11 +1073,7 @@ impl ScheduleService {
     }
 
     pub async fn run_volume_backup(&self, id: i64) -> sqlx::Result<()> {
-        let backup = self
-            .repo_volume_backup
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let backup = self.queries.get_volume_backup_by_i_d(id).await?;
         if backup.enabled == 0 {
             return Err(sqlx::Error::Protocol("volume backup is disabled".into()));
         }
@@ -1349,10 +1085,9 @@ impl ScheduleService {
 
         let target = self.resolve_volume_service_target(&backup).await?;
         let dest_model = self
-            .repo_destination
-            .get_by_id(backup.destination_id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol("destination not found".into()))?;
+            .queries
+            .get_destination_by_i_d(backup.destination_id)
+            .await?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -1374,7 +1109,7 @@ impl ScheduleService {
             &volume_backup,
             &destination,
         );
-        let current = self.repo_volume_backup.get_by_id(id).await?;
+        let current = self.queries.get_volume_backup_by_i_d(id).await.ok();
         if current
             .as_ref()
             .is_none_or(|item| item.enabled == 0 || !volume_backup_has_valid_resource(item))
@@ -1394,8 +1129,7 @@ impl ScheduleService {
 
         let cancel = tokio_util::sync::CancellationToken::new();
         let execution_id = self
-            .repo_backup_execution
-            .start(
+            .backup_execution_start(
                 crate::services::backup::types::BackupKind::Volume,
                 crate::services::backup::types::BackupOperation::Backup,
                 Some(id),
@@ -1404,14 +1138,12 @@ impl ScheduleService {
             .await?;
         match runner.run(&object_key, &cancel).await {
             Ok(_) => {
-                self.repo_backup_execution
-                    .succeed(execution_id, None, None)
-                    .await?
+                self.backup_execution_succeed(execution_id).await?;
             }
             Err(error) => {
                 let message = error.to_string();
-                self.repo_backup_execution
-                    .fail(execution_id, &message)
+                self.queries
+                    .backup_executions_fail(&message, execution_id)
                     .await?;
                 return Err(sqlx::Error::Protocol(message));
             }
@@ -1419,7 +1151,434 @@ impl ScheduleService {
 
         Ok(())
     }
+
+    pub async fn runtime_policy(&self, schedule_id: i64) -> sqlx::Result<ScheduleRuntimePolicies> {
+        self.queries.schedule_runtime_ensure_policy(schedule_id).await?;
+        self.queries.schedule_runtime_get_policy(schedule_id).await
+    }
+
+    pub async fn update_runtime_policy(
+        &self,
+        schedule_id: i64,
+        retry_count: i64,
+        retry_delay_seconds: i64,
+        missed_run_policy: &str,
+        concurrency_policy: &str,
+        lease_seconds: i64,
+        notify_on_success: bool,
+        notify_on_failure: bool,
+    ) -> sqlx::Result<ScheduleRuntimePolicies> {
+        self.queries
+            .schedule_runtime_update_policy(&ScheduleRuntimeUpdatePolicyParams {
+                schedule_id,
+                retry_count,
+                retry_delay_seconds,
+                missed_run_policy: missed_run_policy.to_string(),
+                concurrency_policy: concurrency_policy.to_string(),
+                lease_seconds,
+                notify_on_success: i64::from(notify_on_success),
+                notify_on_failure: i64::from(notify_on_failure),
+            })
+            .await?;
+        self.runtime_policy(schedule_id).await
+    }
+
+    pub async fn list_executions(
+        &self,
+        schedule_id: i64,
+        limit: i64,
+    ) -> sqlx::Result<Vec<ScheduleExecutions>> {
+        self.queries
+            .schedule_runtime_list(schedule_id, limit.clamp(1, 500))
+            .await
+    }
+
+    pub async fn execution_exists(
+        &self,
+        schedule_id: i64,
+        execution_id: i64,
+    ) -> sqlx::Result<bool> {
+        let count = self
+            .queries
+            .schedule_runtime_execution_exists(execution_id, schedule_id)
+            .await?;
+        Ok(count != 0)
+    }
+
+    async fn runtime_acquire(
+        &self,
+        schedule_id: i64,
+        owner_id: &str,
+        lease_seconds: i64,
+    ) -> sqlx::Result<bool> {
+        let now = chrono::Utc::now().timestamp();
+        // The upsert's WHERE clause rejects expired-lease takeovers; an empty
+        // RETURNING means another owner still holds the lock.
+        let acquired = self
+            .queries
+            .schedule_runtime_acquire(&ScheduleRuntimeAcquireParams {
+                schedule_id,
+                owner_id: owner_id.to_string(),
+                acquired_at: now,
+                expires_at: now + lease_seconds,
+                expires_at2: now,
+            })
+            .await;
+        Ok(acquired.is_ok())
+    }
+
+    async fn runtime_release(&self, schedule_id: i64, owner_id: &str) -> sqlx::Result<()> {
+        self.queries
+            .schedule_runtime_release(schedule_id, owner_id)
+            .await
+    }
+
+    async fn runtime_mark_scheduled(
+        &self,
+        schedule_id: i64,
+        timestamp: i64,
+    ) -> sqlx::Result<()> {
+        self.queries
+            .schedule_runtime_mark_scheduled(timestamp, schedule_id)
+            .await
+    }
+
+    async fn runtime_begin(
+        &self,
+        schedule_id: i64,
+        organization_id: Option<i64>,
+        trigger_kind: ScheduleTriggerKind,
+        attempt: i64,
+        scheduled_at: i64,
+    ) -> sqlx::Result<i64> {
+        self.queries
+            .schedule_runtime_begin(&ScheduleRuntimeBeginParams {
+                schedule_id,
+                organization_id: organization_id.unwrap_or(0),
+                trigger_kind: trigger_kind.as_str().to_string(),
+                attempt,
+                scheduled_at,
+            })
+            .await
+    }
+
+    async fn runtime_finish(
+        &self,
+        id: i64,
+        status: ScheduleExecutionStatus,
+        message: Option<&str>,
+        stdout: Option<&str>,
+        stderr: Option<&str>,
+    ) -> sqlx::Result<()> {
+        let schedule_id = self
+            .queries
+            .schedule_runtime_get_execution_schedule(id)
+            .await?;
+        self.queries
+            .schedule_runtime_finish(&ScheduleRuntimeFinishParams {
+                status: status.as_str().to_string(),
+                message: message.unwrap_or("").to_string(),
+                stdout: stdout.unwrap_or("").to_string(),
+                stderr: stderr.unwrap_or("").to_string(),
+                id,
+            })
+            .await?;
+        if let Err(error) = crate::services::schedule::file_log::append(
+            &format!("schedule-{schedule_id}"),
+            Some(id),
+            status.as_str(),
+            message,
+            stdout,
+            stderr,
+        )
+        .await
+        {
+            tracing::warn!(execution_id = id, %error, "could not write schedule execution log file");
+        }
+        if let Err(error) = crate::services::schedule::file_log::append(
+            &format!("schedule-{schedule_id}-execution-{id}"),
+            Some(id),
+            status.as_str(),
+            message,
+            stdout,
+            stderr,
+        )
+        .await
+        {
+            tracing::warn!(execution_id = id, %error, "could not write per-execution schedule log file");
+        }
+        Ok(())
+    }
+
+    async fn backup_execution_start(
+        &self,
+        backup_kind: crate::services::backup::types::BackupKind,
+        operation: crate::services::backup::types::BackupOperation,
+        backup_id: Option<i64>,
+        object_key: Option<&str>,
+    ) -> sqlx::Result<i64> {
+        let backup_id = backup_id.unwrap_or(0);
+        let backup_kind = backup_kind.as_str().to_string();
+        let operation = operation.as_str().to_string();
+        let attempt = self
+            .queries
+            .backup_executions_next_attempt(
+                &crate::flash_gen::backup_executions::BackupExecutionsNextAttemptParams {
+                    backup_kind: backup_kind.clone(),
+                    operation: operation.clone(),
+                    backup_id,
+                },
+            )
+            .await?
+            .unwrap_or(1);
+        self.queries
+            .backup_executions_start(&BackupExecutionsStartParams {
+                backup_kind,
+                operation,
+                backup_id,
+                object_key: object_key.unwrap_or("").to_string(),
+                attempt,
+            })
+            .await
+    }
+
+    async fn backup_execution_succeed(&self, execution_id: i64) -> sqlx::Result<()> {
+        self.queries
+            .backup_executions_succeed(
+                &crate::flash_gen::backup_executions::BackupExecutionsSucceedParams {
+                    sha256_checksum: String::new(),
+                    size_bytes: 0,
+                    id: execution_id,
+                },
+            )
+            .await
+    }
+
+    pub async fn list_backups(&self) -> sqlx::Result<Vec<Backups>> {
+        self.queries.backups_get_all().await.map(|rows| {
+            rows.into_iter()
+                .map(|row| Backups {
+                    id: row.id,
+                    app_name: row.app_name,
+                    schedule: row.schedule,
+                    enabled: row.enabled,
+                    database_name: row.database_name,
+                    prefix: row.prefix,
+                    service_name: row.service_name,
+                    keep_latest_count: row.keep_latest_count,
+                    backup_type: row.backup_type,
+                    database_type: row.database_type,
+                    metadata: row.metadata,
+                    service_id: row.service_id,
+                    destination_id: row.destination_id,
+                    organization_id: row.organization_id,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                })
+                .collect()
+        })
+    }
+
+    pub async fn get_backup(&self, id: i64) -> sqlx::Result<Option<Backups>> {
+        self.queries.get_backup_by_i_d(id).await.map(Some)
+    }
+
+    pub async fn list_volume_backups(&self) -> sqlx::Result<Vec<VolumeBackups>> {
+        let rows = self.queries.volume_backups_get_all().await?;
+        Ok(rows
+            .into_iter()
+            .map(|row| VolumeBackups {
+                id: row.id,
+                name: row.name,
+                volume_name: row.volume_name,
+                prefix: row.prefix,
+                service_type: row.service_type,
+                app_name: row.app_name,
+                service_name: row.service_name,
+                turn_off: row.turn_off,
+                cron_expression: row.cron_expression,
+                keep_latest_count: row.keep_latest_count,
+                enabled: row.enabled,
+                service_id: row.service_id,
+                destination_id: row.destination_id,
+                organization_id: row.organization_id,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            })
+            .collect())
+    }
+
+    pub async fn get_volume_backup(&self, id: i64) -> sqlx::Result<Option<VolumeBackups>> {
+        self.queries.get_volume_backup_by_i_d(id).await.map(Some)
+    }
 }
+
+fn database_dumper_for(
+    kind: BackupsDatabaseTypeEnum,
+    user: String,
+    password: String,
+    database: String,
+    managed_database: String,
+    service_name: String,
+) -> crate::utils::backup::database::DatabaseDumper {
+    use crate::utils::backup::database::{
+        ContainerTarget, DatabaseDumper, DbCredentials,
+    };
+    let target = ContainerTarget { service_name };
+    match kind {
+        BackupsDatabaseTypeEnum::Postgres => DatabaseDumper::Postgres {
+            creds: DbCredentials {
+                user,
+                password,
+                database: managed_database,
+            },
+            target,
+        },
+        BackupsDatabaseTypeEnum::Mysql => DatabaseDumper::Mysql {
+            creds: DbCredentials {
+                user,
+                password,
+                database: managed_database,
+            },
+            target,
+        },
+        BackupsDatabaseTypeEnum::Mariadb => DatabaseDumper::MariaDb {
+            creds: DbCredentials {
+                user,
+                password,
+                database: managed_database,
+            },
+            target,
+        },
+        BackupsDatabaseTypeEnum::Mongo => DatabaseDumper::Mongo {
+            creds: DbCredentials {
+                user,
+                password,
+                database,
+            },
+            target,
+        },
+        BackupsDatabaseTypeEnum::Redis => DatabaseDumper::Redis { target },
+        BackupsDatabaseTypeEnum::Libsql => DatabaseDumper::LibSql { database, target },
+    }
+}
+
+fn schedule_from_parts<R>(row: R) -> Schedules
+where
+    R: ScheduleFields,
+{
+    Schedules {
+        id: row.id(),
+        name: row.name(),
+        description: row.description(),
+        cron_expression: row.cron_expression(),
+        app_name: row.app_name(),
+        service_name: row.service_name(),
+        shell_type: row.shell_type(),
+        schedule_type: row.schedule_type(),
+        schedule_action: row.schedule_action(),
+        command: row.command(),
+        script: row.script(),
+        timezone: row.timezone(),
+        enabled: row.enabled(),
+        service_id: row.service_id(),
+        server_id: row.server_id(),
+        organization_id: row.organization_id(),
+        created_at: row.created_at(),
+        updated_at: row.updated_at(),
+    }
+}
+
+trait ScheduleFields {
+    fn id(&self) -> i64;
+    fn name(&self) -> String;
+    fn description(&self) -> Option<String>;
+    fn cron_expression(&self) -> String;
+    fn app_name(&self) -> String;
+    fn service_name(&self) -> Option<String>;
+    fn shell_type(&self) -> String;
+    fn schedule_type(&self) -> String;
+    fn schedule_action(&self) -> String;
+    fn command(&self) -> String;
+    fn script(&self) -> Option<String>;
+    fn timezone(&self) -> Option<String>;
+    fn enabled(&self) -> i64;
+    fn service_id(&self) -> Option<i64>;
+    fn server_id(&self) -> Option<i64>;
+    fn organization_id(&self) -> Option<i64>;
+    fn created_at(&self) -> i64;
+    fn updated_at(&self) -> i64;
+}
+
+macro_rules! impl_schedule_fields {
+    ($ty:ty) => {
+        impl ScheduleFields for $ty {
+            fn id(&self) -> i64 {
+                self.id
+            }
+            fn name(&self) -> String {
+                self.name.clone()
+            }
+            fn description(&self) -> Option<String> {
+                self.description.clone()
+            }
+            fn cron_expression(&self) -> String {
+                self.cron_expression.clone()
+            }
+            fn app_name(&self) -> String {
+                self.app_name.clone()
+            }
+            fn service_name(&self) -> Option<String> {
+                self.service_name.clone()
+            }
+            fn shell_type(&self) -> String {
+                self.shell_type.clone()
+            }
+            fn schedule_type(&self) -> String {
+                self.schedule_type.clone()
+            }
+            fn schedule_action(&self) -> String {
+                self.schedule_action.clone()
+            }
+            fn command(&self) -> String {
+                self.command.clone()
+            }
+            fn script(&self) -> Option<String> {
+                self.script.clone()
+            }
+            fn timezone(&self) -> Option<String> {
+                self.timezone.clone()
+            }
+            fn enabled(&self) -> i64 {
+                self.enabled
+            }
+            fn service_id(&self) -> Option<i64> {
+                self.service_id
+            }
+            fn server_id(&self) -> Option<i64> {
+                self.server_id
+            }
+            fn organization_id(&self) -> Option<i64> {
+                self.organization_id
+            }
+            fn created_at(&self) -> i64 {
+                self.created_at
+            }
+            fn updated_at(&self) -> i64 {
+                self.updated_at
+            }
+        }
+    };
+}
+
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByApplicationRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByComposeRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByServerRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListByOrganizationRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesListEnabledRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesCreateAndReturnRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesUpdateAndReturnRow);
+impl_schedule_fields!(crate::flash_gen::schedules::SchedulesSetEnabledRow);
 
 pub(crate) fn validate_backup_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();
@@ -1534,8 +1693,7 @@ fn normalize_enabled(value: i64) -> sqlx::Result<i64> {
 fn validate_target(
     schedule_type: &str,
     schedule_action: &str,
-    application_id: Option<i64>,
-    compose_id: Option<i64>,
+    service_id: Option<i64>,
     server_id: Option<i64>,
     service_name: Option<&str>,
 ) -> sqlx::Result<()> {
@@ -1543,10 +1701,10 @@ fn validate_target(
         .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type)))
         .unwrap();
     match v {
-        ScheduleType::Application if application_id.is_none() => Err(sqlx::Error::Protocol(
+        ScheduleType::Application if service_id.is_none() => Err(sqlx::Error::Protocol(
             "APPLICATION schedule requires application_id".into(),
         )),
-        ScheduleType::Compose if compose_id.is_none() => Err(sqlx::Error::Protocol(
+        ScheduleType::Compose if service_id.is_none() => Err(sqlx::Error::Protocol(
             "COMPOSE schedule requires compose_id".into(),
         )),
         ScheduleType::Compose
@@ -1602,7 +1760,7 @@ fn parse_compose_operation(value: &str) -> sqlx::Result<ComposeOperation> {
     }
 }
 
-fn schedule_command(schedule: &Schedule) -> sqlx::Result<&str> {
+fn schedule_command(schedule: &Schedules) -> sqlx::Result<&str> {
     let command = schedule
         .script
         .as_deref()
@@ -1666,50 +1824,31 @@ fn parse_volume_service_type(value: &str) -> Option<VolumeBackupsServiceTypeEnum
     }
 }
 
-pub(crate) fn volume_backup_has_valid_resource(
-    backup: &crate::db::models::volume_backups::VolumeBackup,
-) -> bool {
-    match parse_volume_service_type(&backup.service_type) {
-        Some(VolumeBackupsServiceTypeEnum::Application) => backup.application_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Compose) => backup.compose_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Postgres) => backup.postgres_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Mysql) => backup.mysql_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Mariadb) => backup.mariadb_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Mongo) => backup.mongo_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Redis) => backup.redis_id.is_some(),
-        Some(VolumeBackupsServiceTypeEnum::Libsql) => backup.libsql_id.is_some(),
-        None => false,
-    }
+pub(crate) fn volume_backup_has_valid_resource(backup: &VolumeBackups) -> bool {
+    backup.service_id.is_some()
 }
 
 #[cfg(test)]
 mod volume_backup_resource_tests {
     use super::volume_backup_has_valid_resource;
-    use crate::db::models::volume_backups::VolumeBackup;
+    use crate::flash_gen::models::VolumeBackups;
 
-    fn backup(service_type: &str) -> VolumeBackup {
-        VolumeBackup {
-            id: Some(1),
+    fn backup(service_id: Option<i64>) -> VolumeBackups {
+        VolumeBackups {
+            id: 1,
             name: "test".into(),
             volume_name: "data".into(),
             prefix: "backups".into(),
-            service_type: service_type.into(),
+            service_type: "COMPOSE".into(),
             app_name: "test-backup".into(),
             service_name: None,
             turn_off: 0,
             cron_expression: "* * * * *".into(),
             keep_latest_count: None,
             enabled: 1,
+            service_id,
             destination_id: 1,
             organization_id: 1,
-            application_id: None,
-            postgres_id: None,
-            mysql_id: None,
-            mariadb_id: None,
-            mongo_id: None,
-            redis_id: None,
-            libsql_id: None,
-            compose_id: None,
             created_at: 0,
             updated_at: 0,
         }
@@ -1717,16 +1856,12 @@ mod volume_backup_resource_tests {
 
     #[test]
     fn orphan_volume_backup_is_invalid() {
-        assert!(!volume_backup_has_valid_resource(&backup("COMPOSE")));
-        assert!(!volume_backup_has_valid_resource(&backup("POSTGRES")));
-        assert!(!volume_backup_has_valid_resource(&backup("UNKNOWN")));
+        assert!(!volume_backup_has_valid_resource(&backup(None)));
     }
 
     #[test]
     fn resource_linked_volume_backup_is_valid() {
-        let mut item = backup("COMPOSE");
-        item.compose_id = Some(7);
-        assert!(volume_backup_has_valid_resource(&item));
+        assert!(volume_backup_has_valid_resource(&backup(Some(7))));
     }
 }
 

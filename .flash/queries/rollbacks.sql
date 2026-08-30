@@ -6,8 +6,9 @@ SELECT id AS id, deployment_id AS deployment_id, version AS version, image AS im
 -- name: RollbacksGetById :one
 SELECT id AS id, deployment_id AS deployment_id, version AS version, image AS image, full_context AS full_context, created_at AS created_at FROM rollbacks WHERE id = ?;
 
--- name: RollbacksCreate :exec
-INSERT INTO rollbacks (deployment_id, version, image, full_context, created_at) VALUES (?, ?, ?, ?, ?);
+-- name: RollbacksCreate :one
+INSERT INTO rollbacks (deployment_id, version, image, full_context, created_at) VALUES (?, ?, ?, ?, ?)
+RETURNING id;
 
 -- name: RollbacksUpdate :exec
 UPDATE rollbacks SET deployment_id = ?, version = ?, image = ?, full_context = ?, created_at = ? WHERE id = ?;
@@ -22,14 +23,14 @@ SELECT id AS id, deployment_id AS deployment_id, version AS version, image AS im
 SELECT r.id AS id, r.deployment_id AS deployment_id, r.version AS version, r.image AS image, r.full_context AS full_context, r.created_at AS created_at
                FROM rollbacks r
                INNER JOIN deployments d ON d.id = r.deployment_id
-               WHERE d.application_id = ?
+               WHERE d.service_id = ?
                ORDER BY r.version DESC;
 
 -- name: RollbacksGetNextVersionForApplication :one
 SELECT COALESCE(MAX(r.version), 0) AS max_version
                FROM rollbacks r
                INNER JOIN deployments d ON d.id = r.deployment_id
-               WHERE d.application_id = ?;
+               WHERE d.service_id = ?;
 
 -- name: RollbacksGetForApplication :one
 SELECT r.id AS id, r.deployment_id AS deployment_id,
@@ -37,10 +38,10 @@ SELECT r.id AS id, r.deployment_id AS deployment_id,
                       r.full_context AS full_context, r.created_at AS created_at
                FROM rollbacks r
                INNER JOIN deployments d ON d.id = r.deployment_id
-               WHERE r.id = ? AND d.application_id = ?;
+               WHERE r.id = ? AND d.service_id = ?;
 
 -- name: RollbacksDeleteForApplication :exec
 DELETE FROM rollbacks
                WHERE id = ? AND deployment_id IN (
-                   SELECT id FROM deployments WHERE application_id = ?
+                   SELECT id FROM deployments WHERE service_id = ?
                );

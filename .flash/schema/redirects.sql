@@ -1,10 +1,12 @@
 CREATE TABLE redirects (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     regex TEXT NOT NULL,
     replacement TEXT NOT NULL,
-    permanent INTEGER NOT NULL,
-    unique_config_key INTEGER,
-    application_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    permanent BIGINT NOT NULL,
+    unique_config_key BIGINT,
+    service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );
+
+CREATE INDEX idx_redirects_service_id ON redirects(service_id);

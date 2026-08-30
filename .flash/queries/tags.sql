@@ -10,10 +10,19 @@ SELECT id AS id, name AS name, color AS color, organization_id AS organization_i
 INSERT INTO tags (name, color, organization_id, created_at) VALUES (?, ?, ?, ?);
 
 -- name: TagsGetLastInsertRowid :one
-SELECT CAST(last_insert_rowid() AS INTEGER) AS id;
+SELECT CAST(last_insert_rowid() AS BIGINT) AS id;
 
 -- name: TagsUpdate :exec
 UPDATE tags SET name = ?, color = ?, organization_id = ?, created_at = ? WHERE id = ?;
 
 -- name: TagsDelete :exec
 DELETE FROM tags WHERE id = ?;
+
+-- project_tags link table (i64 binds; project_tags has no unique
+-- constraint, so plain INSERT matches the old INSERT OR IGNORE).
+
+-- name: TagsAddToProject :exec
+INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?);
+
+-- name: TagsRemoveFromProject :exec
+DELETE FROM project_tags WHERE project_id = ? AND tag_id = ?;

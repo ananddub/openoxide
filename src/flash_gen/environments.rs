@@ -43,6 +43,8 @@ pub struct EnvironmentsCreateInTransactionParams {
     pub env_var: String,
     pub is_default: i64,
     pub project_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 pub struct EnvironmentsUpdateInTransactionParams {
@@ -192,13 +194,15 @@ impl Queries {
         params: &EnvironmentsCreateInTransactionParams,
     ) -> Result<Environments, sqlx::Error> {
         sqlx::query_as::<_, Environments>(
-            "INSERT INTO environments (name, description, env_var, is_default, project_id) VALUES (?, ?, ?, ?, ?) RETURNING id AS id, name, description, env_var, is_default, project_id, created_at, updated_at;"
+            "INSERT INTO environments (name, description, env_var, is_default, project_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, env_var, is_default, project_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.env_var)
         .bind(&params.is_default)
         .bind(&params.project_id)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
         .fetch_one(&self.pool)
         .await
     }

@@ -9,16 +9,16 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "domains")]
 pub struct Domain {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub host: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub https: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "3000")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub port: Option<i64>,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'/'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub path: Option<String>,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'/'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub internal_path: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub custom_entrypoint: Option<String>,
@@ -26,23 +26,18 @@ pub struct Domain {
     pub service_name: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub custom_cert_resolver: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub strip_path: i64,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'[]'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub middlewares: String,
-    #[sqlx_gen(
-        sql_type = "domains_domain_type_enum",
-        column_default = "'APPLICATION'"
-    )]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub domain_type: String,
-    #[sqlx_gen(sql_type = "domains_certificate_type_enum", column_default = "'NONE'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub certificate_type: String,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

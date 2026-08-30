@@ -1,44 +1,84 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use serde::Deserialize;
 
-use crate::utils::ssh;
 use crate::{
-    api::dto::ssh_key::{CreateSshKeyDto, PatchSshKeyDto},
-    db::models::ssh_keys::SshKey,
-    repository::SshKeyRepository,
+    db::{
+        models::ssh_keys::SshKey,
+        queries::FlashQueries,
+    },
+    flash_gen::{
+        models::SshKeys,
+        ssh_keys::{SshKeysCreateAndReturnParams, SshKeysUpdateAndReturnParams},
+    },
+    utils::ssh,
 };
 
+#[derive(Debug, Deserialize)]
+pub struct CreateSshKeyDto {
+    pub name: String,
+    pub description: Option<String>,
+    pub public_key: String,
+    #[serde(default)]
+    pub private_key: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchSshKeyDto {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub public_key: Option<String>,
+    pub private_key: Option<String>,
+}
+
+fn to_model(row: SshKeys) -> SshKey {
+    SshKey {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        private_key: row.private_key,
+        public_key: row.public_key,
+        last_used_at: row.last_used_at,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
 pub struct SshKeyService {
-    repo_ssh: Arc<SshKeyRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl SshKeyService {
-    fn new(repo_ssh: Arc<SshKeyRepository>) -> Self {
-        Self { repo_ssh }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<SshKey> {
-        self.repo_ssh
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+        let row = self.queries.ssh_keys_get_by_id(id).await?;
+        Ok(to_model(row))
     }
 
     pub async fn list(&self) -> sqlx::Result<Vec<SshKey>> {
-        self.repo_ssh.list_ordered().await
+        let rows = self.queries.ssh_keys_list_ordered().await?;
+        Ok(rows.into_iter().map(to_model).collect())
     }
 
     pub async fn create(&self, input: CreateSshKeyDto) -> sqlx::Result<SshKey> {
-        self.repo_ssh
-            .create_and_return(
-                input.name,
-                input.description,
-                input.private_key,
-                input.public_key,
-            )
-            .await
+        let now = chrono::Utc::now().timestamp();
+        let row = self
+            .queries
+            .ssh_keys_create_and_return(&SshKeysCreateAndReturnParams {
+                name: input.name,
+                description: input.description.unwrap_or_default(),
+                private_key: input.private_key,
+                public_key: input.public_key,
+                created_at: now,
+                updated_at: now,
+            })
+            .await?;
+        Ok(to_model(row))
     }
 
     pub async fn generate(
@@ -56,9 +96,19 @@ impl SshKeyService {
         let (private_key, public_key) =
             ssh::generate_keypair(&kt).map_err(|e| sqlx::Error::Configuration(e.into()))?;
 
-        self.repo_ssh
-            .create_and_return(name, description, private_key, public_key)
-            .await
+        let now = chrono::Utc::now().timestamp();
+        let row = self
+            .queries
+            .ssh_keys_create_and_return(&SshKeysCreateAndReturnParams {
+                name,
+                description: description.unwrap_or_default(),
+                private_key,
+                public_key,
+                created_at: now,
+                updated_at: now,
+            })
+            .await?;
+        Ok(to_model(row))
     }
 
     pub async fn patch(&self, id: i64, input: PatchSshKeyDto) -> sqlx::Result<SshKey> {
@@ -68,22 +118,33 @@ impl SshKeyService {
         let private_key = input.private_key.unwrap_or(current.private_key);
         let public_key = input.public_key.unwrap_or(current.public_key);
 
-        self.repo_ssh
-            .update_and_return(id, name, description, private_key, public_key)
-            .await
+        let row = self
+            .queries
+            .ssh_keys_update_and_return(&SshKeysUpdateAndReturnParams {
+                name,
+                description: description.unwrap_or_default(),
+                private_key,
+                public_key,
+                id,
+            })
+            .await?;
+        Ok(to_model(row))
     }
 
     pub async fn mark_used(&self, id: i64) -> sqlx::Result<SshKey> {
-        self.repo_ssh.touch_and_return(id).await
+        let row = self.queries.ssh_keys_touch_and_return(id).await?;
+        Ok(to_model(row))
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        if self.repo_ssh.is_in_use(id).await? {
+        let server_use = self.queries.ssh_keys_server_use_count(id).await?;
+        let git_use = self.queries.ssh_keys_git_use_count(id).await?;
+        if server_use > 0 || git_use > 0 {
             return Err(sqlx::Error::Protocol(
                 "Cannot delete SSH Key: It is currently in use by an active server, application, or compose stack.".into(),
             ));
         }
-        self.repo_ssh.delete(id).await
+        self.queries.ssh_keys_delete(id).await
     }
 }

@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "project_tags")]
 pub struct ProjectTag {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub project_id: i64,
     #[sqlx_gen(sql_type = "INTEGER")]

@@ -1,5 +1,5 @@
 CREATE TABLE mounts (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     mount_type TEXT NOT NULL,
     service_type TEXT NOT NULL,
     host_path TEXT,
@@ -7,14 +7,9 @@ CREATE TABLE mounts (
     file_path TEXT,
     content TEXT,
     mount_path TEXT NOT NULL,
-    postgres_id INTEGER,
-    mysql_id INTEGER,
-    mariadb_id INTEGER,
-    mongo_id INTEGER,
-    redis_id INTEGER,
-    libsql_id INTEGER,
-    compose_id INTEGER,
-    application_id INTEGER,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );
+
+CREATE INDEX idx_mounts_service_id ON mounts(service_id);

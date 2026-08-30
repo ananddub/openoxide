@@ -5,7 +5,7 @@ CREATE TABLE backup_executions (
     backup_id INTEGER,
     status TEXT NOT NULL DEFAULT 'RUNNING' CHECK (status IN ('RUNNING', 'SUCCEEDED', 'FAILED')),
     object_key TEXT,
-    checksum_sha256 TEXT,
+    sha256_checksum TEXT,
     size_bytes INTEGER,
     attempt INTEGER NOT NULL DEFAULT 1,
     error TEXT,

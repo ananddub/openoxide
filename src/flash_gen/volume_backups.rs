@@ -19,14 +19,27 @@ pub struct VolumeBackupsGetAllRow {
     pub enabled: i64,
     pub destination_id: i64,
     pub organization_id: i64,
-    pub application_id: Option<i64>,
-    pub postgres_id: Option<i64>,
-    pub mysql_id: Option<i64>,
-    pub mariadb_id: Option<i64>,
-    pub mongo_id: Option<i64>,
-    pub redis_id: Option<i64>,
-    pub libsql_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct VolumeBackupsGetByIdRow {
+    pub id: i64,
+    pub name: String,
+    pub volume_name: String,
+    pub prefix: String,
+    pub service_type: String,
+    pub app_name: String,
+    pub service_name: Option<String>,
+    pub turn_off: i64,
+    pub cron_expression: String,
+    pub keep_latest_count: Option<i64>,
+    pub enabled: i64,
+    pub destination_id: i64,
+    pub organization_id: i64,
+    pub service_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -44,14 +57,7 @@ pub struct VolumeBackupsCreateParams {
     pub enabled: i64,
     pub destination_id: i64,
     pub organization_id: i64,
-    pub application_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -69,14 +75,7 @@ pub struct VolumeBackupsUpdateParams {
     pub enabled: i64,
     pub destination_id: i64,
     pub organization_id: i64,
-    pub application_id: i64,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
     pub id: i64,
@@ -88,7 +87,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<VolumeBackupsGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, VolumeBackupsGetAllRow>(
-            "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, application_id AS application_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups;"
+            "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups;"
         )
         .fetch_all(&self.pool)
         .await
@@ -98,9 +97,9 @@ impl Queries {
     pub async fn volume_backups_get_by_id(
         &self,
         id: i64,
-    ) -> Result<VolumeBackups, sqlx::Error> {
-        sqlx::query_as::<_, VolumeBackups>(
-            "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, application_id AS application_id, postgres_id AS postgres_id, mysql_id AS mysql_id, mariadb_id AS mariadb_id, mongo_id AS mongo_id, redis_id AS redis_id, libsql_id AS libsql_id, compose_id AS compose_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups WHERE id = ?;"
+    ) -> Result<VolumeBackupsGetByIdRow, sqlx::Error> {
+        sqlx::query_as::<_, VolumeBackupsGetByIdRow>(
+            "SELECT id AS id, name AS name, volume_name AS volume_name, prefix AS prefix, service_type AS service_type, app_name AS app_name, service_name AS service_name, turn_off AS turn_off, cron_expression AS cron_expression, keep_latest_count AS keep_latest_count, enabled AS enabled, destination_id AS destination_id, organization_id AS organization_id, service_id AS service_id, created_at AS created_at, updated_at AS updated_at FROM volume_backups WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -113,7 +112,7 @@ impl Queries {
         params: &VolumeBackupsCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO volume_backups (name, volume_name, prefix, service_type, app_name, service_name, turn_off, cron_expression, keep_latest_count, enabled, destination_id, organization_id, application_id, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO volume_backups (name, volume_name, prefix, service_type, app_name, service_name, turn_off, cron_expression, keep_latest_count, enabled, destination_id, organization_id, service_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.name)
         .bind(&params.volume_name)
@@ -127,14 +126,7 @@ impl Queries {
         .bind(&params.enabled)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
-        .bind(&params.application_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .execute(&self.pool)
@@ -148,7 +140,7 @@ impl Queries {
         params: &VolumeBackupsUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE volume_backups SET name = ?, volume_name = ?, prefix = ?, service_type = ?, app_name = ?, service_name = ?, turn_off = ?, cron_expression = ?, keep_latest_count = ?, enabled = ?, destination_id = ?, organization_id = ?, application_id = ?, postgres_id = ?, mysql_id = ?, mariadb_id = ?, mongo_id = ?, redis_id = ?, libsql_id = ?, compose_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE volume_backups SET name = ?, volume_name = ?, prefix = ?, service_type = ?, app_name = ?, service_name = ?, turn_off = ?, cron_expression = ?, keep_latest_count = ?, enabled = ?, destination_id = ?, organization_id = ?, service_id = ?, created_at = ?, updated_at = ? WHERE id = ?;"
         )
         .bind(&params.name)
         .bind(&params.volume_name)
@@ -162,14 +154,7 @@ impl Queries {
         .bind(&params.enabled)
         .bind(&params.destination_id)
         .bind(&params.organization_id)
-        .bind(&params.application_id)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .bind(&params.id)

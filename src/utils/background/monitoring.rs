@@ -150,20 +150,22 @@ async fn watch_server(
 }
 
 async fn server_ssh_is_reachable(server_id: i64) -> bool {
-    let Ok(servers) = resolve::<crate::repository::ServerRepository>().await else {
+    let Ok(queries) = resolve::<crate::db::queries::FlashQueries>().await else {
         return false;
     };
-    let Ok(Some(row)) = servers.get_ssh_credentials(server_id).await else {
+    let Ok(Some((host, port, username, private_key, public_key))) =
+        crate::services::server::ssh_credentials(&queries, server_id).await
+    else {
         return false;
     };
-    let Ok(port) = u16::try_from(row.1) else {
+    let Ok(port) = u16::try_from(port) else {
         return false;
     };
     let executor = crate::utils::exec::RemoteExecutor::new(
-        row.0,
+        host,
         port,
-        row.2,
-        crate::utils::exec::SshAuth::key_pair(row.3, row.4),
+        username,
+        crate::utils::exec::SshAuth::key_pair(private_key, public_key),
         crate::utils::exec::SshHostKey::InsecureAcceptAny,
     )
     .with_multiplexing(false);

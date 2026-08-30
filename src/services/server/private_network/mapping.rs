@@ -1,15 +1,17 @@
-use crate::{
-    api::dto::server::{
+use crate::flash_gen::models::ServerPrivateNetworks;
+
+use super::{
+    enums::{
+        PrivateNetworkConnectionMode, PrivateNetworkHealthStatus, PrivateNetworkProvider,
+        PrivateNetworkRotationState, PrivateNetworkStatus,
+    },
+    service::{
         PrivateNetworkHealthStatusDto, PrivateNetworkProviderDto, PrivateNetworkRotationStateDto,
         PrivateNetworkStatusDto, ServerConnectionModeDto, ServerPrivateNetworkDto,
     },
-    db::models::server_private_networks::{
-        PrivateNetworkConnectionMode, PrivateNetworkHealthStatus, PrivateNetworkProvider,
-        PrivateNetworkRotationState, PrivateNetworkStatus, ServerPrivateNetwork,
-    },
 };
 
-pub(super) fn map_network(value: ServerPrivateNetwork) -> sqlx::Result<ServerPrivateNetworkDto> {
+pub(super) fn map_network(value: ServerPrivateNetworks) -> sqlx::Result<ServerPrivateNetworkDto> {
     Ok(ServerPrivateNetworkDto {
         server_id: value.server_id,
         connection_mode: mode_dto(PrivateNetworkConnectionMode::try_from(

@@ -1,4 +1,3 @@
-mod auth;
 mod public;
 mod server;
 

@@ -1,9 +1,11 @@
 use crate::{
+    flash_gen::models::GitProviders,
     services::git_provider::{CreateProvider, GitProviderView, ProviderCredentials},
     utils::provider::oauth::{AuthorizationInfo, OAuthConfig},
 };
 
-use super::GitProviderService;
+use super::{config_to_string, parse_config, GitProviderService, GiteaConfig, GithubConfig,
+    GitlabConfig};
 
 impl GitProviderService {
     pub async fn create_github_from_manifest(
@@ -65,10 +67,12 @@ impl GitProviderService {
         let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
         match provider_kind {
             Some(GitProviderType::Github) => {
-                let app_name = self
-                    .github_item(id)
+                let item: GithubConfig = self
+                    .github_config(id)
                     .await?
-                    .github_app_name
+                    .ok_or("GitHub configuration not found")?;
+                let app_name = item
+                    .app_name
                     .filter(|value| !value.trim().is_empty())
                     .ok_or("GitHub App name is required")?;
                 Ok(AuthorizationInfo {
@@ -106,12 +110,7 @@ impl GitProviderService {
                 let installation_id = installation_id
                     .filter(|value| !value.trim().is_empty())
                     .ok_or("GitHub installation ID is required")?;
-                if !self
-                    .github
-                    .set_installation_id(id, installation_id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                {
+                if !self.set_installation_id(id, installation_id).await? {
                     return Err("GitHub configuration not found".into());
                 }
             }
@@ -123,15 +122,13 @@ impl GitProviderService {
                         code.ok_or("OAuth authorization code is required")?,
                     )
                     .await?;
-                self.gitlab
-                    .set_oauth_tokens(
-                        id,
-                        &tokens.access_token,
-                        tokens.refresh_token.as_deref(),
-                        tokens.expires_at,
-                    )
-                    .await
-                    .map_err(|error| error.to_string())?;
+                self.set_gitlab_tokens(
+                    id,
+                    &tokens.access_token,
+                    tokens.refresh_token.as_deref(),
+                    tokens.expires_at,
+                )
+                .await?;
             }
             Some(GitProviderType::Gitea) => {
                 let tokens = self
@@ -141,16 +138,14 @@ impl GitProviderService {
                         code.ok_or("OAuth authorization code is required")?,
                     )
                     .await?;
-                self.gitea
-                    .set_oauth_tokens(
-                        id,
-                        &tokens.access_token,
-                        tokens.refresh_token.as_deref(),
-                        tokens.expires_at,
-                        tokens.scopes.as_deref(),
-                    )
-                    .await
-                    .map_err(|error| error.to_string())?;
+                self.set_gitea_tokens(
+                    id,
+                    &tokens.access_token,
+                    tokens.refresh_token.as_deref(),
+                    tokens.expires_at,
+                    tokens.scopes.as_deref(),
+                )
+                .await?;
             }
             _ => return Err("This provider does not support browser authorization".into()),
         }
@@ -159,30 +154,122 @@ impl GitProviderService {
 
     pub async fn disconnect(&self, id: i64) -> Result<(), String> {
         use crate::utils::provider::GitProviderType;
-        let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
-        let changed = match provider_kind {
-            Some(GitProviderType::Github) => self.github.disconnect(id).await,
-            Some(GitProviderType::Gitlab) => self.gitlab.disconnect(id).await,
-            Some(GitProviderType::Gitea) => self.gitea.disconnect(id).await,
-            Some(GitProviderType::Bitbucket) => self.bitbucket.disconnect(id).await,
+        let row = self.provider_row(id).await?;
+        let provider_kind: Option<GitProviderType> = row.provider_type.parse().ok();
+        let config_json = match provider_kind {
+            Some(GitProviderType::Github) => {
+                let mut item: GithubConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
+                item.installation_id = None;
+                config_to_string(&item).map_err(|error| error.to_string())?
+            }
+            Some(GitProviderType::Gitlab) => {
+                let mut item: GitlabConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
+                item.access_token = None;
+                item.refresh_token = None;
+                item.expires_at = None;
+                config_to_string(&item).map_err(|error| error.to_string())?
+            }
+            Some(GitProviderType::Gitea) => {
+                let mut item: GiteaConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
+                item.access_token = None;
+                item.refresh_token = None;
+                item.expires_at = None;
+                item.last_authenticated_at = None;
+                config_to_string(&item).map_err(|error| error.to_string())?
+            }
+            Some(GitProviderType::Bitbucket) => {
+                let mut item: super::BitbucketConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
+                item.app_password = None;
+                item.api_token = None;
+                config_to_string(&item).map_err(|error| error.to_string())?
+            }
             None => return Err("Unsupported Git provider".into()),
+        };
+        self.queries
+            .update_git_provider_config(&config_json, id)
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
+    pub(super) async fn provider_row(&self, id: i64) -> Result<GitProviders, String> {
+        self.queries
+            .get_git_provider_by_i_d(id)
+            .await
+            .map_err(|error| error.to_string())
+    }
+
+    async fn github_config(&self, id: i64) -> Result<Option<GithubConfig>, String> {
+        let row = self.provider_row(id).await?;
+        parse_config(&row.config_json)
+            .map(Some)
+            .map_err(|error| error.to_string())
+    }
+
+    async fn set_installation_id(&self, id: i64, installation_id: &str) -> Result<bool, String> {
+        let row = self.provider_row(id).await?;
+        let mut item: GithubConfig = parse_config(&row.config_json).map_err(|e| e.to_string())?;
+        item.installation_id = Some(installation_id.to_string());
+        let config_json = config_to_string(&item).map_err(|error| error.to_string())?;
+        self.queries
+            .update_git_provider_config(&config_json, id)
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(true)
+    }
+
+    async fn set_gitlab_tokens(
+        &self,
+        id: i64,
+        access_token: &str,
+        refresh_token: Option<&str>,
+        expires_at: Option<i64>,
+    ) -> Result<(), String> {
+        let row = self.provider_row(id).await?;
+        let mut item: GitlabConfig = parse_config(&row.config_json).map_err(|e| e.to_string())?;
+        item.access_token = Some(access_token.to_string());
+        item.refresh_token = refresh_token.map(str::to_string);
+        item.expires_at = expires_at;
+        let config_json = config_to_string(&item).map_err(|error| error.to_string())?;
+        self.queries
+            .update_git_provider_config(&config_json, id)
+            .await
+            .map_err(|error| error.to_string())
+    }
+
+    async fn set_gitea_tokens(
+        &self,
+        id: i64,
+        access_token: &str,
+        refresh_token: Option<&str>,
+        expires_at: Option<i64>,
+        scopes: Option<&str>,
+    ) -> Result<(), String> {
+        let row = self.provider_row(id).await?;
+        let mut item: GiteaConfig = parse_config(&row.config_json).map_err(|e| e.to_string())?;
+        item.access_token = Some(access_token.to_string());
+        item.refresh_token = refresh_token.map(str::to_string);
+        item.expires_at = expires_at;
+        if let Some(scopes) = scopes {
+            item.scopes = Some(scopes.to_string());
         }
-        .map_err(|error| error.to_string())?;
-        changed
-            .then_some(())
-            .ok_or("Provider configuration not found".into())
+        item.last_authenticated_at = Some(chrono::Utc::now().timestamp());
+        let config_json = config_to_string(&item).map_err(|error| error.to_string())?;
+        self.queries
+            .update_git_provider_config(&config_json, id)
+            .await
+            .map_err(|error| error.to_string())
     }
 
     async fn gitlab_oauth_config(&self, id: i64) -> Result<OAuthConfig, String> {
-        let item = self
-            .gitlab
-            .get_by_git_provider_id(id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or("GitLab configuration not found")?;
+        let row = self.provider_row(id).await?;
+        let item: GitlabConfig = parse_config(&row.config_json).map_err(|e| e.to_string())?;
         Ok(OAuthConfig {
-            base_url: item.gitlab_url,
+            base_url: item.url.ok_or("GitLab URL is required")?,
             client_id: item
                 .application_id
                 .ok_or("GitLab application ID is required")?,
@@ -193,14 +280,10 @@ impl GitProviderService {
     }
 
     async fn gitea_oauth_config(&self, id: i64) -> Result<OAuthConfig, String> {
-        let item = self
-            .gitea
-            .get_by_git_provider_id(id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or("Gitea configuration not found")?;
+        let row = self.provider_row(id).await?;
+        let item: GiteaConfig = parse_config(&row.config_json).map_err(|e| e.to_string())?;
         Ok(OAuthConfig {
-            base_url: item.gitea_url,
+            base_url: item.url.ok_or("Gitea URL is required")?,
             client_id: item.client_id.ok_or("Gitea client ID is required")?,
             client_secret: item
                 .client_secret

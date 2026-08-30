@@ -9,7 +9,7 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "users")]
 pub struct User {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub email: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
@@ -18,26 +18,28 @@ pub struct User {
     pub first_name: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub avatar: String,
-    #[sqlx_gen(sql_type = "users_role_enum", column_default = "'OWNER'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub role: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub about_me: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub password: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub is_email_verify: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub email_verify_at: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub two_factor_enable: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub is_registered: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "NULL")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub added_by: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub group_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
+    pub is_owner: Option<i64>,
 }

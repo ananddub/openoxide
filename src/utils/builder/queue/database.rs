@@ -32,16 +32,23 @@ impl BuilderQueue {
             BuilderError::Execution(format!("Invalid database kind: {}", database_kind))
         })?;
 
-        let dep_repo = resolve::<crate::repository::DeploymentRepository>()
+        let q = resolve::<crate::db::queries::FlashQueries>()
             .await
             .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve DeploymentRepository: {e}"))
+                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
             })?;
 
-        let (server_id, environment_id, project_id, memory_limit_db, cpu_limit_db) = dep_repo
-            .get_database_deployment_context(database_id, &database_kind)
+        let ctx = q
+            .database_get_deployment_context(database_id)
             .await
             .map_err(|e| BuilderError::Execution(format!("Database context not found: {}", e)))?;
+        let (server_id, environment_id, project_id, memory_limit_db, cpu_limit_db) = (
+            ctx.server_id,
+            ctx.environment_id,
+            ctx.project_id,
+            ctx.memory_limit,
+            ctx.cpu_limit,
+        );
 
         let db_key = IdType::DatabaseId(database_id);
         let state = resolve::<ApplicationState>().await.map_err(|e| {
@@ -61,8 +68,7 @@ impl BuilderQueue {
             .map_err(BuilderError::Execution)?;
         let executor = {
             let pid_file = deployment_pid_file(deployment_id);
-            dep_repo
-                .set_pid(deployment_id, &pid_file)
+            q.deployments_set_pid(&pid_file, deployment_id)
                 .await
                 .map_err(|e| {
                     BuilderError::Execution(format!(
@@ -79,12 +85,7 @@ impl BuilderQueue {
 
         if mem_limit_str.is_none() || cpu_limit_str.is_none() {
             if let Some(sid) = server_id {
-                let server_repo = resolve::<crate::repository::ServerRepository>()
-                    .await
-                    .map_err(|e| {
-                        BuilderError::Execution(format!("could not resolve ServerRepository: {e}"))
-                    })?;
-                if let Ok(Some(server)) = server_repo.get_by_id(sid).await {
+                if let Ok(server) = q.get_server_by_i_d(sid).await {
                     if mem_limit_str.is_none() {
                         mem_limit_str = server.build_memory_limit;
                     }
@@ -163,8 +164,8 @@ impl BuilderQueue {
                     .map(|_| ())
                     .map_err(|e| BuilderError::Execution(e.to_string())),
                 DatabaseOperation::Stop => {
-                    let app_name = dep_repo
-                        .get_database_app_name(database_id, &database_kind)
+                    let app_name = q
+                        .services_get_app_name(database_id)
                         .await
                         .map_err(|e| {
                             BuilderError::Execution(format!(

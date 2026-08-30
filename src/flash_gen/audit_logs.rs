@@ -19,22 +19,17 @@ pub struct AuditLogsGetAllRow {
     pub created_at: i64,
 }
 
-pub struct AuditLogsListFilteredParams {
+pub struct AuditLogsListByOrganizationParams {
     pub organization_id: i64,
-    pub action: String,
-    pub action2: String,
-    pub resource_type: String,
-    pub resource_type2: String,
     pub limit: i64,
     pub offset: i64,
 }
 
-pub struct AuditLogsCountFilteredParams {
+pub struct AuditLogsListByOrganizationAndActionParams {
     pub organization_id: i64,
     pub action: String,
-    pub action2: String,
-    pub resource_type: String,
-    pub resource_type2: String,
+    pub limit: i64,
+    pub offset: i64,
 }
 
 pub struct AuditLogsCreateParams {
@@ -65,38 +60,61 @@ pub struct AuditLogsUpdateParams {
 }
 
 impl Queries {
-    /// AuditLogsListFiltered
-    pub async fn audit_logs_list_filtered(
+    /// AuditLogsListByOrganization
+    pub async fn audit_logs_list_by_organization(
         &self,
-        params: &AuditLogsListFilteredParams,
+        params: &AuditLogsListByOrganizationParams,
     ) -> Result<Vec<AuditLogs>, sqlx::Error> {
         sqlx::query_as::<_, AuditLogs>(
-            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE organization_id = ? AND (? IS NULL OR action = ?) AND (? IS NULL OR resource_type = ?) ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?;"
+            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE organization_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?;"
         )
         .bind(&params.organization_id)
-        .bind(&params.action)
-        .bind(&params.action2)
-        .bind(&params.resource_type)
-        .bind(&params.resource_type2)
         .bind(&params.limit)
         .bind(&params.offset)
         .fetch_all(&self.pool)
         .await
     }
 
-    /// AuditLogsCountFiltered
-    pub async fn audit_logs_count_filtered(
+    /// AuditLogsListByOrganizationAndAction
+    pub async fn audit_logs_list_by_organization_and_action(
         &self,
-        params: &AuditLogsCountFilteredParams,
-    ) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT COUNT(*) FROM audit_logs WHERE organization_id = ? AND (? IS NULL OR action = ?) AND (? IS NULL OR resource_type = ?);"
+        params: &AuditLogsListByOrganizationAndActionParams,
+    ) -> Result<Vec<AuditLogs>, sqlx::Error> {
+        sqlx::query_as::<_, AuditLogs>(
+            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE organization_id = ? AND action = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?;"
         )
         .bind(&params.organization_id)
         .bind(&params.action)
-        .bind(&params.action2)
-        .bind(&params.resource_type)
-        .bind(&params.resource_type2)
+        .bind(&params.limit)
+        .bind(&params.offset)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// AuditLogsCountByOrganization
+    pub async fn audit_logs_count_by_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT COUNT(*) FROM audit_logs WHERE organization_id = ?;"
+        )
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// AuditLogsCountByOrganizationAndAction
+    pub async fn audit_logs_count_by_organization_and_action(
+        &self,
+        organization_id: i64,
+        action: &str,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT COUNT(*) FROM audit_logs WHERE organization_id = ? AND action = ?;"
+        )
+        .bind(organization_id)
+        .bind(action)
         .fetch_one(&self.pool)
         .await
     }
@@ -184,6 +202,50 @@ impl Queries {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    /// AuditLogsDeleteOlderThan
+    pub async fn audit_logs_delete_older_than(
+        &self,
+        created_at: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "DELETE FROM audit_logs WHERE created_at < ?;"
+        )
+        .bind(created_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// AuditLogsListByUser
+    pub async fn audit_logs_list_by_user(
+        &self,
+        user_id: i64,
+        limit: i64,
+    ) -> Result<Vec<AuditLogs>, sqlx::Error> {
+        sqlx::query_as::<_, AuditLogs>(
+            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?;"
+        )
+        .bind(user_id)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// AuditLogsListByResource
+    pub async fn audit_logs_list_by_resource(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Vec<AuditLogs>, sqlx::Error> {
+        sqlx::query_as::<_, AuditLogs>(
+            "SELECT id, user_email, user_role, action, resource_type, resource_id, resource_name, metadata, organization_id, user_id, created_at FROM audit_logs WHERE resource_type = ? AND resource_id = ? ORDER BY created_at DESC;"
+        )
+        .bind(resource_type)
+        .bind(resource_id)
+        .fetch_all(&self.pool)
+        .await
     }
 
 }

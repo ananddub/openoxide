@@ -3,9 +3,7 @@ use minijinja::{Environment, Value, context};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
 
-use crate::repository::{
-    ApplicationRepository, ComposeProjectRepository, EnvironmentRepository, ProjectRepository,
-};
+use crate::db::queries::FlashQueries;
 
 pub fn generate_env_app(
     db_env: String,
@@ -30,13 +28,11 @@ pub async fn generate_env_app_with_id(
     pr_id: i64,
     app_id: i64,
 ) -> Option<HashMap<String, String>> {
-    let repo_env = resolve::<EnvironmentRepository>().await.ok()?;
-    let repo_project = resolve::<ProjectRepository>().await.ok()?;
-    let repo_app = resolve::<ApplicationRepository>().await.ok()?;
+    let q = resolve::<FlashQueries>().await.ok()?;
 
-    let db_env = repo_env.get_by_id(env_id).await.ok()??;
-    let db_project_env = repo_project.get_by_id(pr_id).await.ok()??;
-    let db_app_env = repo_app.get_by_id(app_id).await.ok()??;
+    let db_env = q.environments_get_by_id(env_id).await.ok()?;
+    let db_project_env = q.projects_get_by_id(pr_id).await.ok()?;
+    let db_app_env = q.get_service_by_i_d(app_id).await.ok()?;
 
     let map: HashMap<String, String> = convert_env_to_map(&db_env.env_var);
 
@@ -63,13 +59,11 @@ pub async fn generate_env_compose(
     pr_id: i64,
     compose_id: i64,
 ) -> Option<HashMap<String, String>> {
-    let repo_env = resolve::<EnvironmentRepository>().await.ok()?;
-    let repo_project = resolve::<ProjectRepository>().await.ok()?;
-    let repo_compose = resolve::<ComposeProjectRepository>().await.ok()?;
+    let q = resolve::<FlashQueries>().await.ok()?;
 
-    let db_env = repo_env.get_by_id(env_id).await.ok()??;
-    let db_project_env = repo_project.get_by_id(pr_id).await.ok()??;
-    let db_compose_env = repo_compose.get_by_id(compose_id).await.ok()??;
+    let db_env = q.environments_get_by_id(env_id).await.ok()?;
+    let db_project_env = q.projects_get_by_id(pr_id).await.ok()?;
+    let db_compose_env = q.get_service_by_i_d(compose_id).await.ok()?;
     let map: HashMap<String, String> = convert_env_to_map(&db_env.env_var);
 
     let pro_env = fix_env(
@@ -91,11 +85,13 @@ pub async fn generate_env_compose(
 }
 
 pub async fn generate_env_db(env_id: i64, db_env_var: &str) -> Option<HashMap<String, String>> {
-    let repo_env = resolve::<EnvironmentRepository>().await.ok()?;
-    let repo_project = resolve::<ProjectRepository>().await.ok()?;
+    let q = resolve::<FlashQueries>().await.ok()?;
 
-    let db_env = repo_env.get_by_id(env_id).await.ok()??;
-    let db_project_env = repo_project.get_by_id(db_env.project_id).await.ok()??;
+    let db_env = q.environments_get_by_id(env_id).await.ok()?;
+    let db_project_env = q
+        .projects_get_by_id(db_env.project_id)
+        .await
+        .ok()?;
     let map: HashMap<String, String> = convert_env_to_map(&db_env.env_var);
 
     let pro_env = fix_env(

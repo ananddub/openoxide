@@ -1,5 +1,4 @@
-use super::{VaultService, VaultServiceError, providers, vault_provider_from_model};
-use crate::api::dto::vault::VaultProviderType;
+use super::{VaultProviderType, VaultService, VaultServiceError, providers, vault_provider_from_model};
 use crate::db::models::vault_providers::VaultProvider;
 use std::collections::HashMap;
 

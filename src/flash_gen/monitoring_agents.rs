@@ -19,13 +19,6 @@ pub struct MonitoringAgentsRotateParams {
     pub query_token: String,
 }
 
-pub struct MonitoringAgentsServerBelongsToOrganization1Params {
-    pub server_id: String,
-    pub organization_id: String,
-    pub server_id2: String,
-    pub organization_id2: String,
-}
-
 impl Queries {
     /// MonitoringAgentsRotate
     pub async fn monitoring_agents_rotate(
@@ -33,7 +26,7 @@ impl Queries {
         params: &MonitoringAgentsRotateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO monitoring_agents (server_id, organization_id, token_hash, query_token, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(server_id) DO UPDATE SET organization_id=excluded.organization_id, token_hash=excluded.token_hash, query_token=excluded.query_token, updated_at=excluded.updated_at;"
+            "INSERT INTO monitoring_agents (server_id, organization_id, token_hash, query_token, updated_at) VALUES (?, ?, ?, ?, unixepoch()) ON CONFLICT(server_id) DO UPDATE SET organization_id=excluded.organization_id, token_hash=excluded.token_hash, query_token=excluded.query_token, updated_at=excluded.updated_at;"
         )
         .bind(&params.server_id)
         .bind(&params.organization_id)
@@ -44,31 +37,17 @@ impl Queries {
         Ok(())
     }
 
-    /// MonitoringAgentsServerBelongsToOrganization1
-    pub async fn monitoring_agents_server_belongs_to_organization1(
-        &self,
-        params: &MonitoringAgentsServerBelongsToOrganization1Params,
-    ) -> Result<bool, sqlx::Error> {
-        sqlx::query_scalar::<sqlx::Sqlite, bool>(
-            "SELECT EXISTS( SELECT 1 FROM applications a JOIN environments e ON e.id=a.environment_id JOIN projects p ON p.id=e.project_id WHERE a.server_id=? AND p.organization_id=? UNION ALL SELECT 1 FROM compose_projects c JOIN environments e ON e.id=c.environment_id JOIN projects p ON p.id=e.project_id WHERE c.server_id=? AND p.organization_id=? );"
-        )
-        .bind(&params.server_id)
-        .bind(&params.organization_id)
-        .bind(&params.server_id2)
-        .bind(&params.organization_id2)
-        .fetch_one(&self.pool)
-        .await
-    }
-
-    /// MonitoringAgentsServerBelongsToOrganization2
-    pub async fn monitoring_agents_server_belongs_to_organization2(
+    /// MonitoringAgentsServerLinkedServiceCount
+    pub async fn monitoring_agents_server_linked_service_count(
         &self,
         server_id: i64,
+        organization_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT organization_id FROM monitoring_agents WHERE server_id=?;"
+            "SELECT COUNT(*) AS count FROM services JOIN environments ON environments.id = services.environment_id JOIN projects ON projects.id = environments.project_id WHERE services.server_id = ? AND projects.organization_id = ?;"
         )
         .bind(server_id)
+        .bind(organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -105,7 +84,7 @@ impl Queries {
         server_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE monitoring_agents SET last_seen_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE server_id=?;"
+            "UPDATE monitoring_agents SET last_seen_at=unixepoch(), updated_at=unixepoch() WHERE server_id=?;"
         )
         .bind(server_id)
         .execute(&self.pool)

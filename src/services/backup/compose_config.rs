@@ -4,25 +4,24 @@ use auto_di::singleton;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    api::dto::backup::PanelBackupResponseDto, repository::BackupExecutionRepository,
+    db::queries::FlashQueries,
+    flash_gen::backup_executions::{
+        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams, BackupExecutionsSucceedParams,
+    },
     services::compose::management::ComposeTransferService, utils::paths::openoxide_paths,
 };
 
+use super::panel::PanelBackupResponseDto;
+
 pub struct ComposeConfigBackupService {
     transfer: Arc<ComposeTransferService>,
-    executions: Arc<BackupExecutionRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl ComposeConfigBackupService {
-    fn new(
-        transfer: Arc<ComposeTransferService>,
-        executions: Arc<BackupExecutionRepository>,
-    ) -> Self {
-        Self {
-            transfer,
-            executions,
-        }
+    fn new(transfer: Arc<ComposeTransferService>, queries: Arc<FlashQueries>) -> Self {
+        Self { transfer, queries }
     }
 
     pub async fn create(
@@ -41,25 +40,41 @@ impl ComposeConfigBackupService {
             "{output_dir}/compose-{compose_id}-{}.json",
             chrono::Utc::now().format("%Y%m%d_%H%M%S")
         );
+        let backup_kind = crate::services::backup::types::BackupKind::ComposeConfig;
+        let operation = crate::services::backup::types::BackupOperation::Backup;
+        let attempt = self
+            .queries
+            .backup_executions_next_attempt(&BackupExecutionsNextAttemptParams {
+                backup_kind: backup_kind.as_str().to_string(),
+                operation: operation.as_str().to_string(),
+                backup_id: compose_id,
+            })
+            .await?
+            .unwrap_or(1);
         let execution_id = self
-            .executions
-            .start(
-                crate::services::backup::types::BackupKind::ComposeConfig,
-                crate::services::backup::types::BackupOperation::Backup,
-                Some(compose_id),
-                Some(&path),
-            )
+            .queries
+            .backup_executions_start(&BackupExecutionsStartParams {
+                backup_kind: backup_kind.as_str().to_string(),
+                operation: operation.as_str().to_string(),
+                backup_id: compose_id,
+                object_key: path.clone(),
+                attempt,
+            })
             .await?;
         if let Err(error) = tokio::fs::write(&path, &bytes).await {
-            self.executions
-                .fail(execution_id, &error.to_string())
+            self.queries
+                .backup_executions_fail(&error.to_string(), execution_id)
                 .await?;
             return Err(sqlx::Error::Io(error));
         }
         let checksum = format!("{:x}", Sha256::digest(&bytes));
         let size_bytes = bytes.len() as i64;
-        self.executions
-            .succeed(execution_id, Some(&checksum), Some(size_bytes))
+        self.queries
+            .backup_executions_succeed(&BackupExecutionsSucceedParams {
+                sha256_checksum: checksum.clone(),
+                size_bytes,
+                id: execution_id,
+            })
             .await?;
         Ok(PanelBackupResponseDto {
             path,

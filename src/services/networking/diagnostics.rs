@@ -1,9 +1,27 @@
 use std::time::Duration;
 
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 use tokio::{net::TcpStream, time::timeout};
 
-use crate::api::dto::networking::{DomainDiagnosticDto, DomainDiagnosticResponseDto};
+#[derive(Debug, Deserialize)]
+pub struct DomainDiagnosticDto {
+    pub host: String,
+    pub port: Option<u16>,
+    pub https: bool,
+    pub path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DomainDiagnosticResponseDto {
+    pub host: String,
+    pub resolved_addresses: Vec<String>,
+    pub dns_ok: bool,
+    pub tcp_ok: bool,
+    pub http_ok: bool,
+    pub http_status: Option<u16>,
+    pub error: Option<String>,
+}
 
 pub struct NetworkDiagnosticService {
     client: reqwest::Client,

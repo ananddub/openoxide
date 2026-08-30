@@ -1,6 +1,10 @@
 use auto_di::resolve;
 
 use super::{DatabaseKind, DatabaseOperation, DatabaseOperationResult, DatabaseService};
+use crate::flash_gen::database_extra::{
+    DbCreateQueuedDatabaseDeploymentForServerParams, DbCreateQueuedDatabaseDeploymentGlobalParams,
+};
+use crate::flash_gen::services::UpdateServiceStatusWithErrorParams;
 use crate::utils::builder::queue::BuilderQueue;
 
 impl DatabaseService {
@@ -18,7 +22,10 @@ impl DatabaseService {
             });
         }
 
-        let running_deployment = self.repo_deploy.has_running_database_deployment(id).await?;
+        let running_deployment = self
+            .queries
+            .deployments_has_running_database_deployment(&id.to_string())
+            .await?;
         if running_deployment {
             return Err(sqlx::Error::Protocol(
                 "database deployment already queued or running; cancel it first".into(),
@@ -33,19 +40,24 @@ impl DatabaseService {
 
         let kind_str = kind.as_str();
 
-        let (server_id, name) = match kind {
-            DatabaseKind::Postgres => self.repo_postgres.get_server_id_and_name(id).await?,
-            DatabaseKind::Mysql => self.repo_mysql.get_server_id_and_name(id).await?,
-            DatabaseKind::Mariadb => self.repo_mariadb.get_server_id_and_name(id).await?,
-            DatabaseKind::Mongo => self.repo_mongo.get_server_id_and_name(id).await?,
-            DatabaseKind::Redis => self.repo_redis.get_server_id_and_name(id).await?,
-            DatabaseKind::Libsql => self.repo_libsql.get_server_id_and_name(id).await?,
-        };
-        resolve::<crate::repository::ServerManagementRepository>()
-            .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
-            .assert_deployable(server_id)
-            .await?;
+        let server_row = self.queries.services_get_server_id_and_name(id).await?;
+        let server_id = server_row.server_id;
+        let name = server_row.app_name;
+        // Same contract as the deleted ServerManagementRepository::assert_deployable:
+        // servers in maintenance mode refuse new deployments.
+        if let Some(server_id) = server_id {
+            self.queries.server_management_get_or_create1(server_id).await?;
+            let row = self
+                .queries
+                .server_management_get_or_create2(server_id)
+                .await?;
+            if row.maintenance_mode != 0 {
+                return Err(sqlx::Error::Protocol(
+                    row.maintenance_message
+                        .unwrap_or_else(|| "server is in maintenance mode".into()),
+                ));
+            }
+        }
 
         if matches!(operation, DatabaseOperation::Stop) {
             let _ = self.cancel_operation(kind, id).await;
@@ -60,39 +72,57 @@ impl DatabaseService {
             _ => "STARTING",
         };
 
-        match kind {
-            DatabaseKind::Postgres => self.repo_postgres.update_status(id, target_status).await?,
-            DatabaseKind::Mysql => self.repo_mysql.update_status(id, target_status).await?,
-            DatabaseKind::Mariadb => self.repo_mariadb.update_status(id, target_status).await?,
-            DatabaseKind::Mongo => self.repo_mongo.update_status(id, target_status).await?,
-            DatabaseKind::Redis => self.repo_redis.update_status(id, target_status).await?,
-            DatabaseKind::Libsql => self.repo_libsql.update_status(id, target_status).await?,
-        };
+        self.queries
+            .update_service_status(target_status, id)
+            .await?;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Database(id))
             .await;
 
         let log_path = format!("pending-db-{}", id);
-        let deployment_id = self
-            .repo_deploy
-            .create_queued_database_deployment(
-                operation.title().to_string(),
-                Some(format!(
-                    "{} requested for database {}",
-                    operation.as_str(),
-                    name
-                )),
-                log_path,
-                operation.as_str().to_string(),
-                id,
-                kind_str.to_string(),
-                server_id,
-            )
-            .await?;
+        let deployment_id = match server_id {
+            None => {
+                self.queries
+                    .db_create_queued_database_deployment_global(
+                        &DbCreateQueuedDatabaseDeploymentGlobalParams {
+                            title: operation.title().to_string(),
+                            description: format!(
+                                "{} requested for database {}",
+                                operation.as_str(),
+                                name
+                            ),
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                            database_kind: kind_str.to_string(),
+                        },
+                    )
+                    .await?
+            }
+            Some(server_id) => {
+                self.queries
+                    .db_create_queued_database_deployment_for_server(
+                        &DbCreateQueuedDatabaseDeploymentForServerParams {
+                            title: operation.title().to_string(),
+                            description: format!(
+                                "{} requested for database {}",
+                                operation.as_str(),
+                                name
+                            ),
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                            database_kind: kind_str.to_string(),
+                            server_id,
+                        },
+                    )
+                    .await?
+            }
+        };
 
         let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
-        self.repo_deploy
-            .update_log_path(deployment_id, &log_path)
+        self.queries
+            .deployments_update_log_path(&log_path, deployment_id)
             .await?;
 
         if let Ok(mut log) =
@@ -143,26 +173,10 @@ impl DatabaseService {
             )
         };
 
-        match kind {
-            DatabaseKind::Postgres => {
-                let _ = self.repo_postgres.update_status(id, intermediate).await;
-            }
-            DatabaseKind::Mysql => {
-                let _ = self.repo_mysql.update_status(id, intermediate).await;
-            }
-            DatabaseKind::Mariadb => {
-                let _ = self.repo_mariadb.update_status(id, intermediate).await;
-            }
-            DatabaseKind::Mongo => {
-                let _ = self.repo_mongo.update_status(id, intermediate).await;
-            }
-            DatabaseKind::Redis => {
-                let _ = self.repo_redis.update_status(id, intermediate).await;
-            }
-            DatabaseKind::Libsql => {
-                let _ = self.repo_libsql.update_status(id, intermediate).await;
-            }
-        }
+        let _ = self
+            .queries
+            .update_service_status(intermediate, id)
+            .await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Database(id))
             .await;
@@ -175,22 +189,15 @@ impl DatabaseService {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
         }
 
-        let _ = self.repo_deploy.cancel_queued_for_database(id).await;
+        let _ = self.queries.deployments_cancel_queued_for_database(id).await;
         let _ = self
-            .repo_deploy
-            .request_cancel_database_deployment(id)
+            .queries
+            .deployments_request_cancel_database_deployment(id)
             .await;
 
         let app_name = db_record.as_ref().map(|d| d.app_name.clone());
         let server_id = db_record.as_ref().and_then(|d| d.server_id);
-        let db_ref = self.db.clone();
-        let repo_postgres = self.repo_postgres.clone();
-        let repo_mysql = self.repo_mysql.clone();
-        let repo_mariadb = self.repo_mariadb.clone();
-        let repo_mongo = self.repo_mongo.clone();
-        let repo_redis = self.repo_redis.clone();
-        let repo_libsql = self.repo_libsql.clone();
-        let repo_deploy = self.repo_deploy.clone();
+        let queries = self.queries.clone();
         let cache = self.cache.clone();
 
         // Spawn Docker container cleanup asynchronously so HTTP handler returns INSTANTLY (<5ms)
@@ -201,12 +208,13 @@ impl DatabaseService {
                         Ok(executor) => crate::utils::docker::DockerCli::from_executor(executor),
                         Err(error) => {
                             let reason = format!("could not stop database: {error}");
-                            let _ = repo_deploy
-                                .update_database_status_and_error(
-                                    id,
-                                    kind.as_str(),
-                                    "ERROR",
-                                    Some(&reason),
+                            let _ = queries
+                                .update_service_status_with_error(
+                                    &UpdateServiceStatusWithErrorParams {
+                                        app_status: "ERROR".into(),
+                                        last_error: reason,
+                                        id,
+                                    },
                                 )
                                 .await;
                             cache
@@ -263,26 +271,7 @@ impl DatabaseService {
                 }
             }
 
-            match kind {
-                DatabaseKind::Postgres => {
-                    let _ = repo_postgres.update_status(id, final_st).await;
-                }
-                DatabaseKind::Mysql => {
-                    let _ = repo_mysql.update_status(id, final_st).await;
-                }
-                DatabaseKind::Mariadb => {
-                    let _ = repo_mariadb.update_status(id, final_st).await;
-                }
-                DatabaseKind::Mongo => {
-                    let _ = repo_mongo.update_status(id, final_st).await;
-                }
-                DatabaseKind::Redis => {
-                    let _ = repo_redis.update_status(id, final_st).await;
-                }
-                DatabaseKind::Libsql => {
-                    let _ = repo_libsql.update_status(id, final_st).await;
-                }
-            }
+            let _ = queries.update_service_status(final_st, id).await;
             cache
                 .invalidate(&crate::core::cache::CacheKey::Database(id))
                 .await;
@@ -297,14 +286,9 @@ impl DatabaseService {
         kind: DatabaseKind,
         id: i64,
     ) -> sqlx::Result<(Option<i64>, String)> {
-        match kind {
-            DatabaseKind::Postgres => self.repo_postgres.get_server_id_and_name(id).await,
-            DatabaseKind::Mysql => self.repo_mysql.get_server_id_and_name(id).await,
-            DatabaseKind::Mariadb => self.repo_mariadb.get_server_id_and_name(id).await,
-            DatabaseKind::Mongo => self.repo_mongo.get_server_id_and_name(id).await,
-            DatabaseKind::Redis => self.repo_redis.get_server_id_and_name(id).await,
-            DatabaseKind::Libsql => self.repo_libsql.get_server_id_and_name(id).await,
-        }
+        let _ = kind;
+        let row = self.queries.services_get_server_id_and_name(id).await?;
+        Ok((row.server_id, row.app_name))
     }
 
     #[allow(dead_code)]

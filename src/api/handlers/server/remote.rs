@@ -1,195 +1,284 @@
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use validator::Validate;
 
-use super::error::{ApiError, map_sqlx_error};
-use crate::{
-    api::dto::server::{
-        CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
-        RemoteServerAction, RemoteServerActionResponseDto, RemoteServerResponseDto,
-        ServerDependencyMigrationDto,
-    },
-    core::middleware::validator::ValidatedJson,
-    services::server::{RemoteServerService, RemoteServerStatus},
-    utils::jwt::claim::Claims,
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+    RemoteServerService, RemoteServerServiceExt,
+};
+use crate::services::server::{
+    CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
+    RemoteServerAction, RemoteServerActionResponseDto, RemoteServerResponseDto,
+    RemoteServerService as AppRemoteServerService, RemoteServerStatus, ServerDependencyMigrationDto,
 };
 
 pub struct RemoteServerController {
-    service: Arc<RemoteServerService>,
+    service: Arc<AppRemoteServerService>,
 }
 
-#[controller("/remote-servers")]
+#[singleton]
 impl RemoteServerController {
-    fn new(service: Arc<RemoteServerService>) -> Self {
+    pub fn new(service: Arc<AppRemoteServerService>) -> Self {
         Self { service }
     }
+}
 
-    #[get]
-    #[live(tables = ["servers","server_migrations"])]
-    async fn list(&self, _claims: Claims) -> Result<Json<Vec<RemoteServerResponseDto>>, ApiError> {
-        self.service
-            .list()
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(RemoteServerResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("remote server not found"),
+        sqlx::Error::Database(e) if e.is_foreign_key_violation() => {
+            tracing::warn!(error = %e.message(), "foreign key violation");
+            ConnectError::not_found("referenced resource not found")
+        }
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            tracing::warn!(error = %e.message(), "unique constraint violation");
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
+        }
+        sqlx::Error::Database(e) if e.is_check_violation() => {
+            tracing::warn!(error = %e.message(), "check constraint violation");
+            ConnectError::invalid_argument(e.message())
+        }
+        sqlx::Error::Protocol(msg) => {
+            tracing::warn!(error = %msg, "operation protocol/validation error");
+            ConnectError::invalid_argument(msg.clone())
+        }
+        other => {
+            tracing::error!(error = %other, "remote server database operation failed");
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
+        }
     }
+}
 
-    #[get("/{id}")]
-    #[live(tables = ["servers","server_migrations"])]
-    async fn get(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
+fn server_to_resource(dto: RemoteServerResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "remote_server".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+fn migration_to_resource(dto: &ServerDependencyMigrationDto) -> ResourceResponse {
+    let payload = serde_json::to_string(dto).unwrap_or_default();
+    ResourceResponse {
+        id: 0,
+        kind: "server_migration".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl RemoteServerService for RemoteServerController {
+    #[permission(Server, CanRead)]
+    async fn list_remote_servers<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let items = self.service.list().await.map_err(map_db_error)?;
+        let items = items
+            .into_iter()
             .map(RemoteServerResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map(server_to_resource)
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[post]
-    async fn create(
-        &self,
-        _claims: Claims,
-        ValidatedJson(body): ValidatedJson<CreateRemoteServerDto>,
-    ) -> Result<(StatusCode, Json<RemoteServerResponseDto>), ApiError> {
-        self.service
-            .create(body)
+    #[permission(Server, CanRead)]
+    async fn get_remote_server<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let server = self
+            .service
+            .get_by_id(request.id)
             .await
-            .map(RemoteServerResponseDto::from)
-            .map(|server| (StatusCode::CREATED, Json(server)))
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
     }
 
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchRemoteServerDto>,
-    ) -> Result<Json<RemoteServerResponseDto>, ApiError> {
-        self.service
-            .patch(id, body)
+    #[permission(Server, CanCreate)]
+    async fn create_remote_server<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateRemoteServerDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        dto.validate()
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let server = self.service.create(dto).await.map_err(map_db_error)?;
+        Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
+    }
+
+    #[permission(Server, CanUpdate)]
+    async fn update_remote_server<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: PatchRemoteServerDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        dto.validate()
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let server = self.service.patch(request.id, dto).await.map_err(map_db_error)?;
+        Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn activate<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let server = self
+            .service
+            .set_status(request.id, RemoteServerStatus::Active)
             .await
-            .map(RemoteServerResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        let resp = RemoteServerActionResponseDto {
+            server: RemoteServerResponseDto::from(server),
+            action: RemoteServerAction::Activate,
+        };
+        let payload = serde_json::to_string(&resp).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "activate".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/activate")]
-    async fn activate(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.action(id, RemoteServerStatus::Active, RemoteServerAction::Activate)
+    #[permission(Server, CanCreate)]
+    async fn deactivate<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let server = self
+            .service
+            .set_status(request.id, RemoteServerStatus::Inactive)
             .await
+            .map_err(map_db_error)?;
+        let resp = RemoteServerActionResponseDto {
+            server: RemoteServerResponseDto::from(server),
+            action: RemoteServerAction::Deactivate,
+        };
+        let payload = serde_json::to_string(&resp).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "deactivate".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/deactivate")]
-    async fn deactivate(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.action(
-            id,
-            RemoteServerStatus::Inactive,
-            RemoteServerAction::Deactivate,
-        )
-        .await
-    }
-
-    #[post("/{id}/test-connection")]
-    async fn test_connection(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.service
-            .touch_test_connection(id)
+    #[permission(Server, CanRead)]
+    async fn test_connection<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let server = self
+            .service
+            .touch_test_connection(request.id)
             .await
-            .map(|server| RemoteServerActionResponseDto {
-                server: RemoteServerResponseDto::from(server),
-                action: RemoteServerAction::TestConnection,
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        let resp = RemoteServerActionResponseDto {
+            server: RemoteServerResponseDto::from(server),
+            action: RemoteServerAction::TestConnection,
+        };
+        let payload = serde_json::to_string(&resp).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "test_connection".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[delete("/{id}")]
-    async fn delete(&self, _claims: Claims, Path(id): Path<i64>) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
+    #[permission(Server, CanDelete)]
+    async fn delete_remote_server<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn migrate_dependencies<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: MigrateServerDependenciesDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        dto.validate()
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let migration = self
+            .service
+            .migrate_dependencies(request.id, dto.target_server_id)
             .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        let payload = serde_json::to_string(&migration).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "migrate_dependencies".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/{id}/dependencies/migrate")]
-    async fn migrate_dependencies(
-        &self,
-        _claims: Claims,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<MigrateServerDependenciesDto>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
-            .migrate_dependencies(id, body.target_server_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/migrations/{migration_id}")]
-    #[live(tables = ["servers","server_migrations"])]
-    async fn migration_status(
-        &self,
-        _claims: Claims,
-        Path(migration_id): Path<String>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
+    #[permission(Server, CanRead)]
+    async fn get_migration<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        // The migration_id is passed in request.payload as a plain string.
+        let migration_id = if request.payload.is_empty() {
+            return Err(ConnectError::invalid_argument("migration_id is required"));
+        } else {
+            request.payload
+        };
+        let migration = self
+            .service
             .migration_status(&migration_id)
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        Response::ok(migration_to_resource(&migration))
     }
 
-    #[post("/migrations/{migration_id}/rollback")]
-    async fn rollback_migration(
-        &self,
-        _claims: Claims,
-        Path(migration_id): Path<String>,
-    ) -> Result<Json<ServerDependencyMigrationDto>, ApiError> {
-        self.service
+    #[permission(Server, CanCreate)]
+    async fn rollback_migration<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        // The migration_id is passed in request.payload as a plain string.
+        let migration_id = if request.payload.is_empty() {
+            return Err(ConnectError::invalid_argument("migration_id is required"));
+        } else {
+            request.payload
+        };
+        let migration = self
+            .service
             .rollback_migration(&migration_id)
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    async fn action(
-        &self,
-        id: i64,
-        status: RemoteServerStatus,
-        action: RemoteServerAction,
-    ) -> Result<Json<RemoteServerActionResponseDto>, ApiError> {
-        self.service
-            .set_status(id, status)
-            .await
-            .map(|server| RemoteServerActionResponseDto {
-                server: RemoteServerResponseDto::from(server),
-                action,
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_db_error)?;
+        let payload = serde_json::to_string(&migration).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "rollback_migration".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 }

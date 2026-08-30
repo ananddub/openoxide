@@ -1,9 +1,11 @@
 CREATE TABLE ports (
-    id INTEGER NOT NULL PRIMARY KEY,
-    published_port INTEGER NOT NULL,
-    target_port INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    published_port BIGINT NOT NULL,
+    target_port BIGINT NOT NULL,
     protocol TEXT NOT NULL,
     publish_mode TEXT NOT NULL,
-    application_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
+    service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL
 );
+
+CREATE INDEX idx_ports_service_id ON ports(service_id);

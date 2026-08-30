@@ -1,6 +1,4 @@
-use crate::repository::{
-    ComposeProjectRepository, DomainRepository, MountRepository, PatchRepository,
-};
+use crate::db::queries::FlashQueries;
 use crate::utils::builder::compose::spec::{ComposeServiceNetworkSpec, ComposeSpec};
 use auto_di::singleton;
 use serde::Deserialize;
@@ -10,34 +8,25 @@ use super::mapper::ComposeRowWithRelations;
 
 #[derive(Clone)]
 pub struct ComposeSpecAdapter {
-    compose_repo: Arc<ComposeProjectRepository>,
-    domain_repo: Arc<DomainRepository>,
-    mount_repo: Arc<MountRepository>,
-    patch_repo: Arc<PatchRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl ComposeSpecAdapter {
-    pub fn new(
-        compose_repo: Arc<ComposeProjectRepository>,
-        domain_repo: Arc<DomainRepository>,
-        mount_repo: Arc<MountRepository>,
-        patch_repo: Arc<PatchRepository>,
-    ) -> Self {
-        Self {
-            compose_repo,
-            domain_repo,
-            mount_repo,
-            patch_repo,
-        }
+    pub fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn load(&self, compose_id: i64) -> sqlx::Result<ComposeSpec> {
-        let compose = self.compose_repo.get_spec_row(compose_id).await?;
-        let service_networks = resolve_service_networks(&compose.service_networks).await?;
-        let domains = self.domain_repo.list_by_compose_raw(compose_id).await?;
-        let mounts = self.mount_repo.fetch_for_compose(compose_id).await?;
-        let patches = self.patch_repo.list_by_compose(compose_id).await?;
+        let compose = self.queries.compose_get_spec_row(compose_id).await?;
+        let service_networks =
+            resolve_service_networks(compose.service_networks.as_deref().unwrap_or("")).await?;
+        let domains = self
+            .queries
+            .domains_list_by_compose_raw(compose_id)
+            .await?;
+        let mounts = self.queries.mount_fetch_for_compose(compose_id).await?;
+        let patches = self.queries.patches_list_by_compose(compose_id).await?;
 
         let data = ComposeRowWithRelations {
             compose,

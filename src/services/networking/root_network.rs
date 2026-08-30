@@ -1,17 +1,30 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use serde::Serialize;
 use sqlx::SqlitePool;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    api::dto::networking::RootNetworkStatusDto,
     utils::{
         builder::swarm::{OPENOXIDE_NETWORK, ensure_overlay_network, ensure_swarm_manager},
         docker::DockerCli,
         exec::CommandExecutor,
     },
 };
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RootNetworkStatusDto {
+    pub name: String,
+    pub exists: bool,
+    pub healthy: bool,
+    pub repaired: bool,
+    pub driver: Option<String>,
+    pub scope: Option<String>,
+    pub attachable: Option<bool>,
+    pub connected_resources: i64,
+    pub issue: Option<String>,
+}
 
 pub struct RootNetworkService {
     db: Arc<SqlitePool>,

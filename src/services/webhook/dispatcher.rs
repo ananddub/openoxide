@@ -3,7 +3,11 @@ use serde::Serialize;
 use std::sync::Arc;
 
 use crate::{
-    repository::WebhookRepository,
+    db::queries::FlashQueries,
+    flash_gen::service_git::{
+        FindServicesByBitbucketRepoParams, FindServicesByGiteaRepoParams,
+        FindServicesByGithubRepoParams, FindServicesByGitlabRepoParams,
+    },
     services::{
         application::{ApplicationOperation, ApplicationService},
         compose::{ComposeOperation, ComposeService},
@@ -12,9 +16,15 @@ use crate::{
     utils::watch_paths::should_deploy,
 };
 
-use super::{GitTrigger, PullRequestEvent, PushEvent};
+use super::{GitProviderKind, GitTrigger, PullRequestEvent, PushEvent};
 
-#[derive(Debug, Default, Serialize, poem_openapi::Object)]
+#[derive(Debug)]
+pub struct WebhookResource {
+    pub id: i64,
+    pub watch_paths: Option<String>,
+}
+
+#[derive(Debug, Default, Serialize)]
 pub struct DispatchOutcome {
     pub event_type: String,
     pub provider: Option<String>,
@@ -40,24 +50,22 @@ pub struct DispatchOutcome {
 }
 
 pub struct WebhookDispatcher {
-    repository: Arc<WebhookRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl WebhookDispatcher {
-    fn new(repository: Arc<WebhookRepository>) -> Self {
-        Self { repository }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn dispatch(&self, event: &PushEvent) -> Result<DispatchOutcome, String> {
         let applications = self
-            .repository
-            .matching_applications(event)
+            .matching_services(event, "APPLICATION")
             .await
             .map_err(|error| error.to_string())?;
         let compose_projects = self
-            .repository
-            .matching_compose_projects(event)
+            .matching_services(event, "COMPOSE")
             .await
             .map_err(|error| error.to_string())?;
         let app_service = resolve::<ApplicationService>()
@@ -143,5 +151,68 @@ impl WebhookDispatcher {
             already_running: lifecycle.already_running,
             ..Default::default()
         })
+    }
+
+    async fn matching_services(
+        &self,
+        event: &PushEvent,
+        service_type: &str,
+    ) -> sqlx::Result<Vec<WebhookResource>> {
+        let trigger = event.trigger.as_str();
+        let rows: Vec<WebhookResource> = match event.provider {
+            GitProviderKind::Github => self
+                .queries
+                .find_services_by_github_repo(&FindServicesByGithubRepoParams {
+                    service_type: service_type.to_string(),
+                    trigger_type: trigger.to_string(),
+                    param3: event.repository.clone(),
+                    param4: event.owner.clone(),
+                    branch: event.branch.clone(),
+                })
+                .await?
+                .into_iter()
+                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .collect(),
+            GitProviderKind::Gitlab => self
+                .queries
+                .find_services_by_gitlab_repo(&FindServicesByGitlabRepoParams {
+                    service_type: service_type.to_string(),
+                    trigger_type: trigger.to_string(),
+                    param3: event.repository.clone(),
+                    param4: event.owner.clone(),
+                    gitlab_branch: event.branch.clone(),
+                })
+                .await?
+                .into_iter()
+                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .collect(),
+            GitProviderKind::Gitea => self
+                .queries
+                .find_services_by_gitea_repo(&FindServicesByGiteaRepoParams {
+                    service_type: service_type.to_string(),
+                    trigger_type: trigger.to_string(),
+                    param3: event.repository.clone(),
+                    param4: event.owner.clone(),
+                    gitea_branch: event.branch.clone(),
+                })
+                .await?
+                .into_iter()
+                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .collect(),
+            GitProviderKind::Bitbucket => self
+                .queries
+                .find_services_by_bitbucket_repo(&FindServicesByBitbucketRepoParams {
+                    service_type: service_type.to_string(),
+                    trigger_type: trigger.to_string(),
+                    param3: event.repository.clone(),
+                    param4: event.owner.clone(),
+                    bitbucket_branch: event.branch.clone(),
+                })
+                .await?
+                .into_iter()
+                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .collect(),
+        };
+        Ok(rows)
     }
 }

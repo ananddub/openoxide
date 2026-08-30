@@ -1,135 +1,123 @@
-use crate::core::middleware::permission::{CanRead, CanWrite, Environment};
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::environment::{CreateEnvironmentDto, EnvironmentResponseDto, PatchEnvironmentDto},
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::environment::EnvironmentService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    CreateEnvironmentRequest, DeleteEnvironmentRequest, Empty,
+    Environment as EnvironmentProto, EnvironmentService, EnvironmentServiceExt,
+    GetEnvironmentRequest, ListEnvironmentsRequest, ListEnvironmentsResponse,
+    SetDefaultEnvironmentRequest, UpdateEnvironmentRequest,
 };
-
-type ApiError = (StatusCode, String);
+use crate::services::environment::EnvironmentService as AppEnvironmentService;
 
 pub struct EnvironmentController {
-    service: Arc<EnvironmentService>,
+    service: Arc<AppEnvironmentService>,
 }
 
-#[controller("/environments")]
+#[singleton]
 impl EnvironmentController {
-    fn new(service: Arc<EnvironmentService>) -> Self {
+    pub fn new(service: Arc<AppEnvironmentService>) -> Self {
         Self { service }
     }
+}
 
-    #[get("/{id}")]
-    #[live(table = "environments")]
-    async fn get(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(EnvironmentResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[get("/project/{project_id}")]
-    #[live(table = "environments")]
-    async fn list_by_project(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanRead>,
-        Path(project_id): Path<i64>,
-    ) -> Result<Json<Vec<EnvironmentResponseDto>>, ApiError> {
-        self.service
-            .list_by_project(project_id)
-            .await
-            .map(|items| {
-                items
-                    .into_iter()
-                    .map(EnvironmentResponseDto::from)
-                    .collect()
-            })
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[post]
-    async fn create(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
-        ValidatedJson(body): ValidatedJson<CreateEnvironmentDto>,
-    ) -> Result<(StatusCode, Json<EnvironmentResponseDto>), ApiError> {
-        self.service
-            .create(body)
-            .await
-            .map(EnvironmentResponseDto::from)
-            .map(|environment| (StatusCode::CREATED, Json(environment)))
-            .map_err(map_sqlx_error)
-    }
-
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchEnvironmentDto>,
-    ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
-        self.service
-            .update(id, body)
-            .await
-            .map(EnvironmentResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[put("/{id}/default")]
-    async fn set_default(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<EnvironmentResponseDto>, ApiError> {
-        self.service
-            .set_default(id)
-            .await
-            .map(EnvironmentResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
-    }
-
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Environment, CanWrite>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .delete(id)
-            .await
-            .map(|()| StatusCode::NO_CONTENT)
-            .map_err(map_sqlx_error)
+fn env_to_proto(e: crate::db::models::environments::Environment) -> EnvironmentProto {
+    EnvironmentProto {
+        id: e.id,
+        name: e.name,
+        description: e.description,
+        environment_variables: e.env_var,
+        is_default: e.is_default != 0,
+        project_id: e.project_id,
+        created_at: e.created_at,
+        updated_at: e.updated_at,
+        ..Default::default()
     }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "environment not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_foreign_key_violation() => {
-            (StatusCode::NOT_FOUND, "project not found".into())
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("environment not found"),
+        sqlx::Error::Database(e) if e.is_foreign_key_violation() => {
+            ConnectError::not_found("project not found")
         }
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
-        sqlx::Error::Protocol(message) => (StatusCode::BAD_REQUEST, message),
+        sqlx::Error::Protocol(msg) => ConnectError::invalid_argument(msg.clone()),
         other => {
             tracing::error!(error = %other, "environment database operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
         }
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl EnvironmentService for EnvironmentController {
+    #[permission(Environment, CanRead)]
+    async fn get_environment<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, GetEnvironmentRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<EnvironmentProto> + Send + use<'a>> {
+        let env = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        Response::ok(env_to_proto(env))
+    }
+
+    #[permission(Environment, CanRead)]
+    async fn list_environments<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ListEnvironmentsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListEnvironmentsResponse> + Send + use<'a>> {
+        let items = self.service.list_by_project(request.project_id).await.map_err(map_db_error)?;
+        let environments = items.into_iter().map(env_to_proto).collect();
+        Response::ok(ListEnvironmentsResponse { environments, ..Default::default() })
+    }
+
+    #[permission(Environment, CanWrite)]
+    async fn create_environment<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, CreateEnvironmentRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<EnvironmentProto> + Send + use<'a>> {
+        let env = self
+            .service
+            .create(request.to_owned_message())
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(env_to_proto(env))
+    }
+
+    #[permission(Environment, CanWrite)]
+    async fn update_environment<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, UpdateEnvironmentRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<EnvironmentProto> + Send + use<'a>> {
+        let dto = request.to_owned_message();
+        let env = self.service.update(dto.id, dto).await.map_err(map_db_error)?;
+        Response::ok(env_to_proto(env))
+    }
+
+    #[permission(Environment, CanWrite)]
+    async fn set_default_environment<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, SetDefaultEnvironmentRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<EnvironmentProto> + Send + use<'a>> {
+        let env = self.service.set_default(request.id).await.map_err(map_db_error)?;
+        Response::ok(env_to_proto(env))
+    }
+
+    #[permission(Environment, CanWrite)]
+    async fn delete_environment<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, DeleteEnvironmentRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
+        Response::ok(Empty::default())
     }
 }

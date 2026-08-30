@@ -19,10 +19,10 @@ SELECT id AS id, user_id AS user_id, name AS name,
                       revoked_at, created_at AS created_at
                FROM personal_access_tokens
                WHERE token_hash = ? AND revoked_at IS NULL
-                 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP);
+                 AND (expires_at IS NULL OR expires_at > unixepoch());
 
 -- name: PersonalAccessTokensAuthenticate2 :exec
-UPDATE personal_access_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?;
+UPDATE personal_access_tokens SET last_used_at = unixepoch() WHERE id = ?;
 
 -- name: PersonalAccessTokensRevoke :exec
-UPDATE personal_access_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND revoked_at IS NULL;
+UPDATE personal_access_tokens SET revoked_at = unixepoch() WHERE id = ? AND user_id = ? AND revoked_at IS NULL;

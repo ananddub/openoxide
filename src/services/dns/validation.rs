@@ -1,5 +1,4 @@
-use super::{DnsService, DnsServiceError};
-use crate::api::dto::dns::DnsProviderType;
+use super::{DnsProviderType, DnsService, DnsServiceError};
 
 impl DnsService {
     pub(super) fn parse_provider_type(value: &str) -> Result<DnsProviderType, DnsServiceError> {

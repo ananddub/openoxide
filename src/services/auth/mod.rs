@@ -5,17 +5,24 @@ use argon2::{
     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
 use auto_di::singleton;
-use sqlx::{Sqlite, SqlitePool, Transaction};
+use sqlx::SqlitePool;
+
+use serde::Serialize;
 
 use crate::{
-    api::dto::auth::{AuthResponseDto, LoginDto, SignupDto, UpdateUserDto},
-    db::models::users::User,
-    repository::{
-        EmailVerificationTokenRepository, GroupRepository, JwtTokenRepository,
-        NotifEmailRepository, NotifResendRepository, OrganizationMemberRepository,
-        OrganizationRepository, PasswordResetTokenRepository, PersonalAccessTokenRepository,
-        TwoFactorRepository, UserRepository,
+    api::connect::generated::openoxide::api::v1::{
+        LoginRequest, SignupRequest, UpdateUserRequest,
     },
+    db::queries::FlashQueries,
+    flash_gen::{
+        jwt_tokens::JwtTokensInsertTokenParams,
+        models::Users,
+        notifications::NotificationsFindForUserParams,
+        organization_members::OrganizationMembersAddMemberInTransactionParams,
+        organizations::CreateOrganizationParams,
+        users::{UsersCreateOwnerAndReturnRow, UsersCreateOwnerAndReturnParams, UsersUpdateParams},
+    },
+    services::notification::loader::{EmailConfig, ResendConfig},
     utils::jwt::{
         claim::{Claims, JwtSubject},
         error::TokenError,
@@ -74,81 +81,45 @@ impl From<TokenError> for AuthError {
     }
 }
 
+#[derive(Debug, Serialize)]
+pub struct AuthResponseDto {
+    pub user: JwtSubject,
+    pub tokens: TokenPair,
+}
+
 pub struct AuthService {
     db: Arc<SqlitePool>,
     jwt: Arc<JwtService>,
-    repo_user: Arc<UserRepository>,
-    repo_token: Arc<JwtTokenRepository>,
-    repo_group: Arc<GroupRepository>,
-    repo_org: Arc<OrganizationRepository>,
-    repo_member: Arc<OrganizationMemberRepository>,
-    pub(super) repo_two_factor: Arc<TwoFactorRepository>,
-    pub(super) repo_password_reset: Arc<PasswordResetTokenRepository>,
-    pub(super) repo_notif_email: Arc<NotifEmailRepository>,
-    pub(super) repo_notif_resend: Arc<NotifResendRepository>,
-    pub(super) repo_api_token: Arc<PersonalAccessTokenRepository>,
-    pub(super) repo_email_verification: Arc<EmailVerificationTokenRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl AuthService {
-    fn new(
-        db: Arc<SqlitePool>,
-        jwt: Arc<JwtService>,
-        repo_user: Arc<UserRepository>,
-        repo_token: Arc<JwtTokenRepository>,
-        repo_group: Arc<GroupRepository>,
-        repo_org: Arc<OrganizationRepository>,
-        repo_member: Arc<OrganizationMemberRepository>,
-        repo_two_factor: Arc<TwoFactorRepository>,
-        repo_password_reset: Arc<PasswordResetTokenRepository>,
-        repo_notif_email: Arc<NotifEmailRepository>,
-        repo_notif_resend: Arc<NotifResendRepository>,
-        repo_api_token: Arc<PersonalAccessTokenRepository>,
-        repo_email_verification: Arc<EmailVerificationTokenRepository>,
-    ) -> Self {
-        Self {
-            db,
-            jwt,
-            repo_user,
-            repo_token,
-            repo_group,
-            repo_org,
-            repo_member,
-            repo_two_factor,
-            repo_password_reset,
-            repo_notif_email,
-            repo_notif_resend,
-            repo_api_token,
-            repo_email_verification,
-        }
+    fn new(db: Arc<SqlitePool>, jwt: Arc<JwtService>, queries: Arc<FlashQueries>) -> Self {
+        Self { db, jwt, queries }
     }
 
-    pub async fn signup(&self, input: SignupDto) -> Result<AuthResponseDto, AuthError> {
+    pub async fn signup(&self, input: SignupRequest) -> Result<AuthResponseDto, AuthError> {
         let password = hash_password(input.password).await?;
         let email = input.email.trim().to_lowercase();
-        let mut tx = self.db.begin().await?;
 
-        let group_id = self
-            .repo_group
-            .create_owner_group_if_not_exists(&mut tx)
-            .await?;
+        self.queries.groups_create_owner_group_if_not_exists1().await?;
+        let group_id = self.queries.groups_create_owner_group_if_not_exists2().await?;
 
         let avatar = input.avatar.unwrap_or_default();
         let user = self
-            .repo_user
-            .create_owner_and_return(
-                &mut tx,
+            .queries
+            .users_create_owner_and_return(&UsersCreateOwnerAndReturnParams {
                 email,
-                input.first_name,
-                input.last_name,
+                first_name: input.first_name.unwrap_or_default(),
+                last_name: input.last_name.unwrap_or_default(),
                 avatar,
                 password,
                 group_id,
-            )
-            .await?;
+            })
+            .await
+            .map(user_from_owner_row)?;
 
-        let user_id = user.id.ok_or_else(|| AuthError::Internal)?;
         let first_name = user
             .first_name
             .clone()
@@ -157,21 +128,29 @@ impl AuthService {
         let org_slug = format!("{}-organization", first_name.to_lowercase());
 
         let org = self
-            .repo_org
-            .create_in_transaction(&mut tx, org_name, None, org_slug, user_id)
+            .queries
+            .create_organization(&CreateOrganizationParams {
+                name: org_name,
+                logo: String::new(),
+                slug: org_slug,
+                owner_id: user.id,
+            })
             .await?;
 
-        let org_id = org.id.ok_or_else(|| AuthError::Internal)?;
-
-        self.repo_member
-            .add_member_in_transaction(&mut tx, "ADMIN", user_id, org_id)
+        self.queries
+            .organization_members_add_member_in_transaction(
+                &OrganizationMembersAddMemberInTransactionParams {
+                    role: "ADMIN".into(),
+                    user_id: user.id,
+                    organization_id: org.id,
+                },
+            )
             .await?;
 
         let subject = subject_from_user(&user)?;
         let tokens = self.jwt.generate_token_pair(&subject)?;
         let session_id = uuid::Uuid::new_v4().to_string();
-        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
-        tx.commit().await?;
+        self.store_token_pair(&tokens, &session_id).await?;
 
         Ok(AuthResponseDto {
             user: subject,
@@ -179,13 +158,13 @@ impl AuthService {
         })
     }
 
-    pub async fn login(&self, input: LoginDto) -> Result<AuthResponseDto, AuthError> {
+    pub async fn login(&self, input: LoginRequest) -> Result<AuthResponseDto, AuthError> {
         let email = input.email.trim().to_lowercase();
-        let user = self
-            .repo_user
-            .get_by_email(&email)
-            .await?
-            .ok_or(AuthError::InvalidCredentials)?;
+        let user = match self.queries.get_user_by_email(&email).await {
+            Ok(user) => user,
+            Err(sqlx::Error::RowNotFound) => return Err(AuthError::InvalidCredentials),
+            Err(error) => return Err(error.into()),
+        };
 
         verify_password(input.password, user.password.clone()).await?;
         self.verify_login_second_factor(
@@ -205,22 +184,25 @@ impl AuthService {
     pub async fn refresh(&self, refresh_token: &str) -> Result<AuthResponseDto, AuthError> {
         let old_claims = self.jwt.validate_refresh_token(refresh_token)?;
         self.ensure_token_active(&old_claims.jti).await?;
-        let session_id = self
-            .repo_token
-            .session_id_for_jti(&old_claims.jti)
-            .await?
-            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        let session_id = match self
+            .queries
+            .jwt_tokens_session_id_for_jti(&old_claims.jti)
+            .await
+        {
+            Ok(session_id) => session_id,
+            Err(sqlx::Error::RowNotFound) => None,
+            Err(error) => return Err(error.into()),
+        }
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
         let user = self.get_user_by_id(old_claims.user.user_id).await?;
         let subject = subject_from_user(&user)?;
         let tokens = self.jwt.generate_token_pair(&subject)?;
-        let mut tx = self.db.begin().await?;
 
-        self.repo_token
-            .blacklist_by_jti(&mut tx, &old_claims.jti)
+        self.queries
+            .jwt_tokens_blacklist_by_jti(&old_claims.jti)
             .await?;
-        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
-        tx.commit().await?;
+        self.store_token_pair(&tokens, &session_id).await?;
 
         Ok(AuthResponseDto {
             user: subject,
@@ -238,7 +220,9 @@ impl AuthService {
     }
 
     pub async fn logout_all(&self, user_id: i64) -> Result<(), AuthError> {
-        self.repo_token.blacklist_all_by_user(user_id).await?;
+        self.queries
+            .jwt_tokens_blacklist_all_by_user(user_id)
+            .await?;
         Ok(())
     }
 
@@ -251,12 +235,14 @@ impl AuthService {
 
     pub async fn get_whoami(&self, user_id: i64) -> Result<JwtSubject, AuthError> {
         let user = self
-            .repo_user
-            .get_by_id(user_id)
-            .await?
-            .ok_or(AuthError::InvalidToken)?;
+            .get_user_by_id(user_id)
+            .await
+            .map_err(|error| match error {
+                sqlx::Error::RowNotFound => AuthError::InvalidToken,
+                error => error.into(),
+            })?;
         Ok(JwtSubject {
-            user_id: user.id.ok_or(AuthError::Internal)?,
+            user_id: user.id,
             email: user.email.clone(),
             first_name: user.first_name.clone(),
             last_name: user.last_name.clone(),
@@ -269,15 +255,12 @@ impl AuthService {
     async fn issue_token_pair(&self, subject: &JwtSubject) -> Result<TokenPair, AuthError> {
         let tokens = self.jwt.generate_token_pair(subject)?;
         let session_id = uuid::Uuid::new_v4().to_string();
-        let mut tx = self.db.begin().await?;
-        self.store_token_pair(&mut tx, &tokens, &session_id).await?;
-        tx.commit().await?;
+        self.store_token_pair(&tokens, &session_id).await?;
         Ok(tokens)
     }
 
     async fn store_token_pair(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
         tokens: &TokenPair,
         session_id: &str,
     ) -> Result<(), AuthError> {
@@ -286,46 +269,44 @@ impl AuthService {
         for (claims, token_kind) in [(access, "ACCESS"), (refresh, "REFRESH")] {
             let role = claims.user.role.as_deref().unwrap_or("MEMBER");
             let expired_at = claims.exp as i64;
-            self.repo_token
-                .insert_token(
-                    tx,
-                    claims.jti,
-                    role.to_string(),
-                    claims.user.user_id,
+            self.queries
+                .jwt_tokens_insert_token(&JwtTokensInsertTokenParams {
+                    jti: claims.jti,
+                    role: role.to_string(),
+                    user_id: claims.user.user_id,
                     expired_at,
-                    session_id,
-                    token_kind,
-                )
+                    session_id: session_id.to_string(),
+                    token_kind: token_kind.to_string(),
+                })
                 .await?;
         }
         Ok(())
     }
 
     async fn ensure_token_active(&self, jti: &str) -> Result<(), AuthError> {
-        let active = self.repo_token.is_token_active(jti).await?;
+        let active = self.queries.jwt_tokens_is_token_active(jti).await?;
         if !active {
             return Err(AuthError::InvalidToken);
         }
         Ok(())
     }
 
-    async fn get_user_by_id(&self, id: i64) -> sqlx::Result<User> {
-        self.repo_user
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)
+    async fn get_user_by_id(&self, id: i64) -> sqlx::Result<Users> {
+        self.queries.get_user_by_i_d(id).await
     }
 
     pub async fn update_user(
         &self,
         user_id: i64,
-        input: UpdateUserDto,
+        input: UpdateUserRequest,
     ) -> Result<JwtSubject, AuthError> {
         let mut user = self
-            .repo_user
-            .get_by_id(user_id)
-            .await?
-            .ok_or(AuthError::InvalidCredentials)?;
+            .get_user_by_id(user_id)
+            .await
+            .map_err(|error| match error {
+                sqlx::Error::RowNotFound => AuthError::InvalidCredentials,
+                error => error.into(),
+            })?;
 
         if let Some(email) = input.email {
             if !email.trim().is_empty() {
@@ -348,12 +329,31 @@ impl AuthService {
         }
 
         user.updated_at = chrono::Utc::now().timestamp();
-        self.repo_user.update(user_id, &user).await?;
+        self.queries
+            .users_update(&UsersUpdateParams {
+                email: user.email.clone().unwrap_or_default(),
+                last_name: user.last_name.clone().unwrap_or_default(),
+                first_name: user.first_name.clone().unwrap_or_default(),
+                avatar: user.avatar.clone(),
+                role: user.role.clone().unwrap_or_default(),
+                about_me: user.about_me.clone().unwrap_or_default(),
+                password: user.password.clone(),
+                is_email_verify: user.is_email_verify.unwrap_or_default(),
+                email_verify_at: user.email_verify_at.unwrap_or_default(),
+                two_factor_enable: user.two_factor_enable.unwrap_or_default(),
+                is_registered: user.is_registered,
+                added_by: user.added_by.unwrap_or_default(),
+                group_id: user.group_id,
+                created_at: user.created_at,
+                updated_at: user.updated_at,
+                id: user_id,
+            })
+            .await?;
         subject_from_user(&user)
     }
 }
 
-pub(super) fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
+pub(super) fn subject_from_user(user: &Users) -> Result<JwtSubject, AuthError> {
     let avatar = if user.avatar.starts_with("data:") {
         "custom".to_string()
     } else {
@@ -361,13 +361,111 @@ pub(super) fn subject_from_user(user: &User) -> Result<JwtSubject, AuthError> {
     };
 
     Ok(JwtSubject {
-        user_id: user.id.ok_or(AuthError::Internal)?,
+        user_id: user.id,
         email: user.email.clone(),
         first_name: user.first_name.clone(),
         last_name: user.last_name.clone(),
         avatar,
         role: user.role.clone(),
         group_id: user.group_id,
+    })
+}
+
+fn user_from_owner_row(row: UsersCreateOwnerAndReturnRow) -> Users {
+    Users {
+        id: row.id,
+        email: row.email,
+        last_name: row.last_name,
+        first_name: row.first_name,
+        avatar: row.avatar,
+        role: row.role,
+        about_me: row.about_me,
+        password: row.password,
+        is_email_verify: row.is_email_verify,
+        email_verify_at: row.email_verify_at,
+        two_factor_enable: row.two_factor_enable,
+        is_registered: row.is_registered,
+        added_by: row.added_by,
+        group_id: row.group_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        is_owner: None,
+    }
+}
+
+pub(crate) async fn notification_configs_for_user(
+    queries: &FlashQueries,
+    user_id: i64,
+) -> Result<(Option<EmailConfig>, Option<ResendConfig>), sqlx::Error> {
+    let email = match queries
+        .notifications_find_for_user(&NotificationsFindForUserParams {
+            param1: user_id.to_string(),
+            notification_type: "EMAIL".into(),
+            owner_id: user_id,
+        })
+        .await
+    {
+        Ok(row) => email_config_from_json(&row.config_json),
+        Err(sqlx::Error::RowNotFound) => None,
+        Err(error) => return Err(error),
+    };
+    let resend = match queries
+        .notifications_find_for_user(&NotificationsFindForUserParams {
+            param1: user_id.to_string(),
+            notification_type: "RESEND".into(),
+            owner_id: user_id,
+        })
+        .await
+    {
+        Ok(row) => resend_config_from_json(&row.config_json),
+        Err(sqlx::Error::RowNotFound) => None,
+        Err(error) => return Err(error),
+    };
+    Ok((email, resend))
+}
+
+fn json_string(value: &serde_json::Value, key: &str) -> String {
+    value
+        .get(key)
+        .and_then(|field| field.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+fn json_string_array(value: &serde_json::Value, key: &str) -> Vec<String> {
+    value
+        .get(key)
+        .and_then(|field| field.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn email_config_from_json(config_json: &str) -> Option<EmailConfig> {
+    let value: serde_json::Value = serde_json::from_str(config_json).ok()?;
+    Some(EmailConfig {
+        smtp_server: json_string(&value, "smtp_server"),
+        smtp_port: value
+            .get("smtp_port")
+            .and_then(|field| field.as_i64())
+            .unwrap_or(587),
+        username: json_string(&value, "username"),
+        password: json_string(&value, "password"),
+        from_address: json_string(&value, "from_address"),
+        to_addresses: json_string_array(&value, "to_addresses"),
+    })
+}
+
+fn resend_config_from_json(config_json: &str) -> Option<ResendConfig> {
+    let value: serde_json::Value = serde_json::from_str(config_json).ok()?;
+    Some(ResendConfig {
+        api_key: json_string(&value, "api_key"),
+        from_address: json_string(&value, "from_address"),
+        to_addresses: json_string_array(&value, "to_addresses"),
     })
 }
 

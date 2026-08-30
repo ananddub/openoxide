@@ -5,37 +5,19 @@ pub use types::{
 use std::sync::Arc;
 
 use auto_di::singleton;
-use sqlx::SqlitePool;
 
 use crate::core::cache::AppStateCache;
-use crate::repository::{
-    ComposeProjectRepository, DeploymentRepository, ResourceDependencyRepository,
-};
+use crate::db::queries::FlashQueries;
 
 pub struct ComposeService {
-    pub(super) db: Arc<SqlitePool>,
-    pub(super) repo_compose: Arc<ComposeProjectRepository>,
-    pub(super) repo_deploy: Arc<DeploymentRepository>,
-    pub(super) repo_dependencies: Arc<ResourceDependencyRepository>,
+    pub(super) queries: Arc<FlashQueries>,
     pub(super) cache: Arc<AppStateCache>,
 }
 
 #[singleton]
 impl ComposeService {
-    fn new(
-        db: Arc<SqlitePool>,
-        repo_compose: Arc<ComposeProjectRepository>,
-        repo_deploy: Arc<DeploymentRepository>,
-        repo_dependencies: Arc<ResourceDependencyRepository>,
-        cache: Arc<AppStateCache>,
-    ) -> Self {
-        Self {
-            db,
-            repo_compose,
-            repo_deploy,
-            repo_dependencies,
-            cache,
-        }
+    fn new(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {
+        Self { queries, cache }
     }
 }
 

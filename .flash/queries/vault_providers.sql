@@ -13,7 +13,7 @@ SELECT id AS id, name AS name, provider_type AS provider_type, api_url AS api_ur
 INSERT INTO vault_providers (name, provider_type, api_url, auth_token, namespace, config_json, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: VaultProvidersGetLastInsertRowid :one
-SELECT CAST(last_insert_rowid() AS INTEGER) AS id;
+SELECT CAST(last_insert_rowid() AS BIGINT) AS id;
 
 -- name: VaultProvidersUpdate :exec
 UPDATE vault_providers SET name = ?, provider_type = ?, api_url = ?, auth_token = ?, namespace = ?, config_json = ?, updated_at = ? WHERE id = ? AND organization_id = ?;

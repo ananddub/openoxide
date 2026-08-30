@@ -74,6 +74,8 @@ pub struct ProjectsCreateInTransactionParams {
     pub description: String,
     pub env_var: String,
     pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 pub struct ProjectsUpdateAndReturnParams {
@@ -342,8 +344,8 @@ impl Queries {
     /// AddTagToProject
     pub async fn add_tag_to_project(
         &self,
-        project_id: i64,
-        tag_id: i64,
+        project_id: &str,
+        tag_id: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT OR IGNORE INTO project_tags (project_id, tag_id) VALUES (?, ?);"
@@ -467,12 +469,14 @@ impl Queries {
         params: &ProjectsCreateInTransactionParams,
     ) -> Result<Projects, sqlx::Error> {
         sqlx::query_as::<_, Projects>(
-            "INSERT INTO projects (name, description, env_var, organization_id) VALUES (?, ?, ?, ?) RETURNING id AS id, name, description, env_var, organization_id, created_at, updated_at;"
+            "INSERT INTO projects (name, description, env_var, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, env_var, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.env_var)
         .bind(&params.organization_id)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
         .fetch_one(&self.pool)
         .await
     }

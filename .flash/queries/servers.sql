@@ -54,83 +54,74 @@ UPDATE servers SET metrics_config = ? WHERE id = ?;
 DELETE FROM servers WHERE id = ?;
 
 
--- name: ServersMigrateDependencies1 :exec
-UPDATE applications SET server_id = ? WHERE server_id = ?;
+-- name: ServersMigrateApplicationServers :exec
+UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'APPLICATION';
 
--- name: ServersMigrateDependencies2 :exec
-UPDATE applications SET build_server_id = ? WHERE build_server_id = ?;
+-- name: ServersMigrateBuildAssignments :exec
+UPDATE service_application SET build_server_id = ? WHERE build_server_id = ?;
 
--- name: ServersMigrateDependencies3 :exec
-UPDATE compose_projects SET server_id = ? WHERE server_id = ?;
+-- name: ServersMigrateComposeServers :exec
+UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'COMPOSE';
 
--- name: ServersMigrateDependencies4 :exec
+-- name: ServersMigrateCertificates :exec
 UPDATE certificates SET server_id = ? WHERE server_id = ?;
 
--- name: ServersMigrateDependencies5 :exec
+-- name: ServersMigrateSchedules :exec
 UPDATE schedules SET server_id = ? WHERE server_id = ?;
 
--- name: ServersMigratableResourceIds1 :many
-SELECT id AS id FROM applications WHERE server_id = ? ORDER BY id;
+-- name: ServersMigratableApplicationIds :many
+SELECT id AS id FROM services WHERE server_id = ? AND service_type = 'APPLICATION' ORDER BY id;
 
--- name: ServersMigratableResourceIds2 :many
-SELECT id AS id FROM compose_projects WHERE server_id = ? ORDER BY id;
+-- name: ServersMigratableComposeIds :many
+SELECT id AS id FROM services WHERE server_id = ? AND service_type = 'COMPOSE' ORDER BY id;
 
--- name: ServersMigratableResourceIds3 :many
-SELECT id AS id FROM applications WHERE build_server_id = ? ORDER BY id;
+-- name: ServersMigratableBuildServiceIds :many
+SELECT service_id AS id FROM service_application WHERE build_server_id = ? ORDER BY service_id;
 
--- name: ServersMigratableResourceIds4 :many
+-- name: ServersMigratableCertificateIds :many
 SELECT id AS id FROM certificates WHERE server_id = ? ORDER BY id;
 
--- name: ServersMigratableResourceIds5 :many
+-- name: ServersMigratableScheduleIds :many
 SELECT id AS id FROM schedules WHERE server_id = ? ORDER BY id;
 
--- name: ServersRollbackMigratedResources1 :exec
-UPDATE applications SET server_id = ? WHERE id = ? AND server_id = ?;
+-- name: ServersRollbackApplicationServers :exec
+UPDATE services SET server_id = ? WHERE id = ? AND server_id = ? AND service_type = 'APPLICATION';
 
--- name: ServersRollbackMigratedResources2 :exec
-UPDATE compose_projects SET server_id = ? WHERE id = ? AND server_id = ?;
+-- name: ServersRollbackComposeServers :exec
+UPDATE services SET server_id = ? WHERE id = ? AND server_id = ? AND service_type = 'COMPOSE';
 
--- name: ServersRollbackMigratedResources3 :exec
-UPDATE applications SET build_server_id = ? WHERE id = ? AND build_server_id = ?;
+-- name: ServersRollbackBuildAssignments :exec
+UPDATE service_application SET build_server_id = ? WHERE service_id = ? AND build_server_id = ?;
 
--- name: ServersRollbackMigratedResources4 :exec
+-- name: ServersRollbackCertificates :exec
 UPDATE certificates SET server_id = ? WHERE id = ? AND server_id = ?;
 
--- name: ServersRollbackMigratedResources5 :exec
+-- name: ServersRollbackSchedules :exec
 UPDATE schedules SET server_id = ? WHERE id = ? AND server_id = ?;
 
--- name: ServersDependencyCounts1 :one
-SELECT COUNT(*) FROM applications WHERE server_id = ?;
+-- name: ServersCountApplications :one
+SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'APPLICATION';
 
--- name: ServersDependencyCounts2 :one
-SELECT COUNT(*) FROM applications WHERE build_server_id = ?;
+-- name: ServersCountBuildAssignments :one
+SELECT COUNT(*) FROM service_application WHERE build_server_id = ?;
 
--- name: ServersDependencyCounts3 :one
-SELECT COUNT(*) FROM compose_projects WHERE server_id = ?;
+-- name: ServersCountComposeProjects :one
+SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'COMPOSE';
 
--- name: ServersDependencyCounts4 :one
-SELECT COUNT(*) FROM postgres_dbs WHERE server_id = ?;
+-- name: ServersCountDatabases :one
+SELECT COUNT(*) FROM services WHERE server_id = ? AND service_type = 'DATABASE';
 
--- name: ServersDependencyCounts5 :one
-SELECT COUNT(*) FROM mysql_dbs WHERE server_id = ?;
-
--- name: ServersDependencyCounts6 :one
-SELECT COUNT(*) FROM mariadb_dbs WHERE server_id = ?;
-
--- name: ServersDependencyCounts7 :one
-SELECT COUNT(*) FROM mongo_dbs WHERE server_id = ?;
-
--- name: ServersDependencyCounts8 :one
-SELECT COUNT(*) FROM redis_dbs WHERE server_id = ?;
-
--- name: ServersDependencyCounts9 :one
-SELECT COUNT(*) FROM libsql_dbs WHERE server_id = ?;
-
--- name: ServersDependencyCounts10 :one
+-- name: ServersCountCertificates :one
 SELECT COUNT(*) FROM certificates WHERE server_id = ?;
 
--- name: ServersDependencyCounts11 :one
+-- name: ServersCountSchedules :one
 SELECT COUNT(*) FROM schedules WHERE server_id = ?;
+
+-- name: ServersListMigratedApplications :many
+SELECT id AS id FROM services WHERE service_type = 'APPLICATION' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;
+
+-- name: ServersListMigratedCompose :many
+SELECT id AS id FROM services WHERE service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;
 
 -- name: ServersGetAll :many
 SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;
@@ -151,7 +142,7 @@ DELETE FROM servers WHERE id = ?;
 SELECT
                   s.ip_address AS public_ip,
                   n.private_host AS private_ip,
-                  n.status AS private_status,
+                  COALESCE(n.status, '') AS private_status,
                   n.connection_mode AS connection_mode,
                   s.port,
                   s.username,

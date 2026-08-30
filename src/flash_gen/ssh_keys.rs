@@ -37,17 +37,13 @@ pub struct SshKeysUpdateParams {
     pub id: i64,
 }
 
-pub struct SshKeysIsInUseParams {
-    pub ssh_key_id: String,
-    pub custom_git_ssh_key_id: String,
-    pub custom_git_ssh_key_id2: String,
-}
-
 pub struct SshKeysCreateAndReturnParams {
     pub name: String,
     pub description: String,
     pub private_key: String,
     pub public_key: String,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 pub struct SshKeysUpdateAndReturnParams {
@@ -124,17 +120,28 @@ impl Queries {
         Ok(())
     }
 
-    /// SshKeysIsInUse
-    pub async fn ssh_keys_is_in_use(
+    /// SshKeysServerUseCount
+    pub async fn ssh_keys_server_use_count(
         &self,
-        params: &SshKeysIsInUseParams,
+        ssh_key_id: i64,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT (SELECT COUNT(*) FROM servers WHERE ssh_key_id = ?) + (SELECT COUNT(*) FROM applications WHERE custom_git_ssh_key_id = ?) + (SELECT COUNT(*) FROM compose_projects WHERE custom_git_ssh_key_id = ?) AS total;"
+            "SELECT COUNT(*) AS count FROM servers WHERE ssh_key_id = ?;"
         )
-        .bind(&params.ssh_key_id)
-        .bind(&params.custom_git_ssh_key_id)
-        .bind(&params.custom_git_ssh_key_id2)
+        .bind(ssh_key_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// SshKeysGitUseCount
+    pub async fn ssh_keys_git_use_count(
+        &self,
+        custom_git_ssh_key_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "SELECT COUNT(*) AS count FROM service_git WHERE custom_git_ssh_key_id = ?;"
+        )
+        .bind(custom_git_ssh_key_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -159,7 +166,7 @@ impl Queries {
         id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE ssh_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE ssh_keys SET last_used_at = unixepoch() WHERE id = ?;"
         )
         .bind(id)
         .execute(&self.pool)
@@ -184,12 +191,14 @@ impl Queries {
         params: &SshKeysCreateAndReturnParams,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "INSERT INTO ssh_keys (name, description, private_key, public_key) VALUES (?, ?, ?, ?) RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
+            "INSERT INTO ssh_keys (name, description, private_key, public_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.private_key)
         .bind(&params.public_key)
+        .bind(&params.created_at)
+        .bind(&params.updated_at)
         .fetch_one(&self.pool)
         .await
     }
@@ -217,7 +226,7 @@ impl Queries {
         id: i64,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "UPDATE ssh_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
+            "UPDATE ssh_keys SET last_used_at = unixepoch() WHERE id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
         )
         .bind(id)
         .fetch_one(&self.pool)

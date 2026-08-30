@@ -4,7 +4,14 @@
 use super::models::*;
 use super::db::Queries;
 
-pub struct DatabaseNetworksCreateParams {
+pub struct DatabaseNetworksCreateGlobalParams {
+    pub name: String,
+    pub docker_network_name: String,
+    pub description: String,
+    pub external: i64,
+}
+
+pub struct DatabaseNetworksCreateForServerParams {
     pub name: String,
     pub docker_network_name: String,
     pub description: String,
@@ -12,7 +19,15 @@ pub struct DatabaseNetworksCreateParams {
     pub server_id: i64,
 }
 
-pub struct DatabaseNetworksUpdateParams {
+pub struct DatabaseNetworksUpdateGlobalParams {
+    pub name: String,
+    pub docker_network_name: String,
+    pub description: String,
+    pub external: i64,
+    pub id: i64,
+}
+
+pub struct DatabaseNetworksUpdateForServerParams {
     pub name: String,
     pub docker_network_name: String,
     pub description: String,
@@ -33,17 +48,26 @@ impl Queries {
         .await
     }
 
+    /// DatabaseNetworksListGlobal
+    pub async fn database_networks_list_global(
+        &self,
+    ) -> Result<Vec<DatabaseNetworks>, sqlx::Error> {
+        sqlx::query_as::<_, DatabaseNetworks>(
+            "SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at FROM database_networks WHERE server_id IS NULL ORDER BY name ASC, id ASC;"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
     /// DatabaseNetworksListByServer
     pub async fn database_networks_list_by_server(
         &self,
         server_id: i64,
-        server_id2: i64,
     ) -> Result<Vec<DatabaseNetworks>, sqlx::Error> {
         sqlx::query_as::<_, DatabaseNetworks>(
-            "SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at FROM database_networks WHERE (? IS NULL AND server_id IS NULL) OR server_id = ? ORDER BY name ASC, id ASC;"
+            "SELECT id, name, docker_network_name, description, external, server_id, created_at, updated_at FROM database_networks WHERE server_id = ? ORDER BY name ASC, id ASC;"
         )
         .bind(server_id)
-        .bind(server_id2)
         .fetch_all(&self.pool)
         .await
     }
@@ -61,31 +85,64 @@ impl Queries {
         .await
     }
 
-    /// DatabaseNetworksCreate
-    pub async fn database_networks_create(
+    /// DatabaseNetworksCreateGlobal
+    pub async fn database_networks_create_global(
         &self,
-        params: &DatabaseNetworksCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO database_networks (name, docker_network_name, description, external, server_id) VALUES (?, ?, ?, ?, ?);"
+        params: &DatabaseNetworksCreateGlobalParams,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO database_networks (name, docker_network_name, description, external, server_id) VALUES (?, ?, ?, ?, NULL) RETURNING id;"
+        )
+        .bind(&params.name)
+        .bind(&params.docker_network_name)
+        .bind(&params.description)
+        .bind(&params.external)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// DatabaseNetworksCreateForServer
+    pub async fn database_networks_create_for_server(
+        &self,
+        params: &DatabaseNetworksCreateForServerParams,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO database_networks (name, docker_network_name, description, external, server_id) VALUES (?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.name)
         .bind(&params.docker_network_name)
         .bind(&params.description)
         .bind(&params.external)
         .bind(&params.server_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// DatabaseNetworksUpdateGlobal
+    pub async fn database_networks_update_global(
+        &self,
+        params: &DatabaseNetworksUpdateGlobalParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE database_networks SET name = ?, docker_network_name = ?, description = ?, external = ?, server_id = NULL, updated_at = unixepoch() WHERE id = ?;"
+        )
+        .bind(&params.name)
+        .bind(&params.docker_network_name)
+        .bind(&params.description)
+        .bind(&params.external)
+        .bind(&params.id)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    /// DatabaseNetworksUpdate
-    pub async fn database_networks_update(
+    /// DatabaseNetworksUpdateForServer
+    pub async fn database_networks_update_for_server(
         &self,
-        params: &DatabaseNetworksUpdateParams,
+        params: &DatabaseNetworksUpdateForServerParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE database_networks SET name = COALESCE(?, name), docker_network_name = COALESCE(?, docker_network_name), description = COALESCE(?, description), external = COALESCE(?, external), server_id = COALESCE(?, server_id) WHERE id = ?;"
+            "UPDATE database_networks SET name = ?, docker_network_name = ?, description = ?, external = ?, server_id = ?, updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(&params.name)
         .bind(&params.docker_network_name)

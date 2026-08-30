@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
+use crate::flash_gen::service_database::{
+    DatabaseGetByIdRow, ListDatabasesByEnvironmentFullRow,
+};
+
 #[derive(
     Debug,
     Clone,
@@ -10,11 +14,9 @@ use std::str::FromStr;
     Serialize,
     Deserialize,
     sqlx::Type,
-    poem_openapi::Enum,
     ts_rs::TS,
 )]
 #[sqlx(rename_all = "lowercase")]
-#[oai(rename_all = "lowercase")]
 pub enum DatabaseKind {
     Postgres,
     Mysql,
@@ -92,6 +94,88 @@ pub struct DatabaseRecord {
     pub server_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
+}
+
+impl DatabaseRecord {
+    fn kind_from_db_type(value: Option<&str>) -> DatabaseKind {
+        value
+            .and_then(|value| DatabaseKind::from_str(value).ok())
+            .unwrap_or(DatabaseKind::Postgres)
+    }
+}
+
+impl From<DatabaseGetByIdRow> for DatabaseRecord {
+    fn from(row: DatabaseGetByIdRow) -> Self {
+        Self {
+            kind: Self::kind_from_db_type(row.db_type.as_deref()),
+            id: row.id,
+            name: row.name,
+            app_name: row.app_name,
+            description: row.description,
+            docker_image: row.docker_image.unwrap_or_default(),
+            database_name: row.db_name,
+            database_user: row.db_user,
+            database_password: row.db_password,
+            external_port: row.external_port,
+            command: if row.command.is_empty() {
+                None
+            } else {
+                Some(row.command)
+            },
+            args: row.args,
+            env_var: row.env_var,
+            memory_reservation: row.memory_reservation,
+            memory_limit: row.memory_limit,
+            cpu_reservation: row.cpu_reservation,
+            cpu_limit: row.cpu_limit,
+            replicas: row.replicas,
+            network_ids: row.network_ids,
+            detach_rustploy_network: row.detach_rustploy_network,
+            app_status: row.app_status,
+            last_error: row.last_error,
+            environment_id: row.environment_id,
+            server_id: row.server_id,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
+    }
+}
+
+impl From<ListDatabasesByEnvironmentFullRow> for DatabaseRecord {
+    fn from(row: ListDatabasesByEnvironmentFullRow) -> Self {
+        Self {
+            kind: Self::kind_from_db_type(row.db_type.as_deref()),
+            id: row.id,
+            name: row.name,
+            app_name: row.app_name,
+            description: row.description,
+            docker_image: row.docker_image.unwrap_or_default(),
+            database_name: row.db_name,
+            database_user: row.db_user,
+            database_password: row.db_password,
+            external_port: row.external_port,
+            command: if row.command.is_empty() {
+                None
+            } else {
+                Some(row.command)
+            },
+            args: row.args,
+            env_var: row.env_var,
+            memory_reservation: row.memory_reservation,
+            memory_limit: row.memory_limit,
+            cpu_reservation: row.cpu_reservation,
+            cpu_limit: row.cpu_limit,
+            replicas: row.replicas,
+            network_ids: row.network_ids,
+            detach_rustploy_network: row.detach_rustploy_network,
+            app_status: row.app_status,
+            last_error: row.last_error,
+            environment_id: row.environment_id,
+            server_id: row.server_id,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
+    }
 }
 
 use os::string_enum;

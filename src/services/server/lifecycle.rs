@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use serde::Serialize;
 
 use crate::{
-    api::dto::server::{ServerActionResultDto, ServerBackupDto},
-    repository::{ServerManagementRepository, ServerRepository},
+    db::queries::FlashQueries,
+    flash_gen::{models::ServerManagement, server_infra_extra::SrvInfManagementUpdateParams},
     utils::{
         exec::{CommandExecutor, ExecOutput},
         os::OsCli,
@@ -13,23 +14,13 @@ use crate::{
 };
 
 pub struct ServerLifecycleService {
-    db: Arc<sqlx::SqlitePool>,
-    servers: Arc<ServerRepository>,
-    management: Arc<ServerManagementRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl ServerLifecycleService {
-    fn new(
-        db: Arc<sqlx::SqlitePool>,
-        servers: Arc<ServerRepository>,
-        management: Arc<ServerManagementRepository>,
-    ) -> Self {
-        Self {
-            db,
-            servers,
-            management,
-        }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn auto_repair(&self, server_id: i64) -> sqlx::Result<ServerActionResultDto> {
@@ -84,16 +75,16 @@ impl ServerLifecycleService {
             .run()
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        let current = self.management.get_or_create(server_id).await?;
-        self.management
-            .update(
+        let current = self.get_or_create(server_id).await?;
+        self.queries
+            .srv_inf_management_update(&SrvInfManagementUpdateParams {
                 server_id,
-                current.maintenance_mode,
-                current.maintenance_message.as_deref(),
-                &current.labels,
-                &current.cleanup_policy,
-                1,
-            )
+                maintenance_mode: current.maintenance_mode,
+                maintenance_message: current.maintenance_message.unwrap_or_default(),
+                labels: current.labels,
+                cleanup_policy: current.cleanup_policy,
+                gpu_enabled: 1,
+            })
             .await?;
         result(output)
     }
@@ -154,11 +145,15 @@ impl ServerLifecycleService {
         })
     }
 
+    async fn get_or_create(&self, server_id: i64) -> sqlx::Result<ServerManagement> {
+        self.queries.server_management_get_or_create1(server_id).await?;
+        self.queries
+            .server_management_get_or_create2(server_id)
+            .await
+    }
+
     async fn executor(&self, server_id: i64) -> sqlx::Result<CommandExecutor> {
-        self.servers
-            .get_by_id(server_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        self.queries.servers_get_by_id(server_id).await?;
         crate::services::compose::remote::agent_executor(server_id)
             .await
             .map_err(sqlx::Error::Protocol)
@@ -171,6 +166,21 @@ fn result(output: ExecOutput) -> sqlx::Result<ServerActionResultDto> {
         stdout: output.stdout,
         stderr: output.stderr,
     })
+}
+
+// ── JSON payload contract (moved from the retired api::dto layer) ──────
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ServerActionResultDto {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ServerBackupDto {
+    pub remote_path: String,
+    pub created_at: i64,
 }
 
 fn remote(executor: &CommandExecutor) -> sqlx::Result<crate::utils::exec::RemoteExecutor> {

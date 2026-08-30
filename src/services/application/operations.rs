@@ -1,5 +1,9 @@
 use auto_di::resolve;
+use std::sync::Arc;
 
+use crate::flash_gen::deployments::{
+    AppCoreQueueDeploymentNoServerParams, AppCoreQueueDeploymentWithServerParams,
+};
 use crate::services::application::auto_excuter::app_new_cmd;
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
@@ -13,8 +17,12 @@ impl ApplicationService {
         id: i64,
         operation: ApplicationOperation,
     ) -> sqlx::Result<ApplicationOperationResult> {
-        let running_deployment = self.repo_deploy.has_running_deployment(id).await?;
-        if running_deployment {
+        // Param is generated as a string bind (json_each inference quirk).
+        if self
+            .queries
+            .deployments_has_running_deployment(&id.to_string())
+            .await?
+        {
             return Err(sqlx::Error::Protocol(
                 "application deployment already queued or running; cancel it first".into(),
             ));
@@ -27,33 +35,62 @@ impl ApplicationService {
             .await?;
 
         let app = self.get_by_id(id).await?;
-        resolve::<crate::repository::ServerManagementRepository>()
-            .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
-            .assert_deployable(app.server_id)
-            .await?;
+        // Old ServerManagementRepository::assert_deployable: no-op without a
+        // server, otherwise the server_management row must not be in
+        // maintenance mode.
+        if let Some(server_id) = app.server_id {
+            self.queries.server_management_get_or_create1(server_id).await?;
+            let management = self
+                .queries
+                .server_management_get_or_create2(server_id)
+                .await?;
+            if management.maintenance_mode != 0 {
+                return Err(sqlx::Error::Protocol(
+                    management
+                        .maintenance_message
+                        .unwrap_or_else(|| "server is in maintenance mode".into()),
+                ));
+            }
+        }
 
         let log_path = format!("pending-app-{}", id);
-        let deployment_id = self
-            .repo_deploy
-            .create_queued_deployment(
-                operation.title().to_string(),
-                Some(format!("{} requested for {}", operation.as_str(), app.name)),
-                log_path,
-                operation.as_str().to_string(),
-                id,
-                app.server_id,
-            )
-            .await?;
+        let description = format!("{} requested for {}", operation.as_str(), app.name);
+        let deployment_id = match app.server_id {
+            Some(server_id) => {
+                self.queries
+                    .app_core_queue_deployment_with_server(
+                        &AppCoreQueueDeploymentWithServerParams {
+                            title: operation.title().to_string(),
+                            description,
+                            log_path,
+                            operation: operation.as_str().to_string(),
+                            service_id: id,
+                            server_id,
+                        },
+                    )
+                    .await?
+            }
+            None => {
+                self.queries
+                    .app_core_queue_deployment_no_server(&AppCoreQueueDeploymentNoServerParams {
+                        title: operation.title().to_string(),
+                        description,
+                        log_path,
+                        operation: operation.as_str().to_string(),
+                        service_id: id,
+                    })
+                    .await?
+            }
+        };
 
-        self.repo_app.update_status(id, "STARTING").await?;
+        self.queries.update_service_status("STARTING", id).await?;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
 
         let log_path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
-        self.repo_deploy
-            .update_log_path(deployment_id, &log_path)
+        self.queries
+            .deployments_update_log_path(&log_path, deployment_id)
             .await?;
 
         if let Ok(mut log) =
@@ -105,7 +142,7 @@ impl ApplicationService {
             )
         };
 
-        let _ = self.repo_app.update_status(id, intermediate).await;
+        let _ = self.queries.update_service_status(intermediate, id).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Application(id))
             .await;
@@ -118,10 +155,10 @@ impl ApplicationService {
             state.cancel_by_id(IdType::AppId(id));
         }
 
-        let _ = self.repo_deploy.request_cancel_deployment(id).await;
+        let _ = self.queries.deployments_request_cancel_deployment(id).await;
 
         let db_ref = self.db.clone();
-        let repo_app = self.repo_app.clone();
+        let queries = Arc::clone(&self.queries);
         let cache = self.cache.clone();
 
         tokio::spawn(async move {
@@ -194,7 +231,7 @@ impl ApplicationService {
                 }
             }
 
-            let _ = repo_app.update_status(id, final_st).await;
+            let _ = queries.update_service_status(final_st, id).await;
             cache
                 .invalidate(&crate::core::cache::CacheKey::Application(id))
                 .await;

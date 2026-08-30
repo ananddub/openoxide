@@ -25,7 +25,7 @@ pub enum ProviderAccess {
     },
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RepositoryInfo {
     pub owner: String,
     pub name: String,
@@ -35,20 +35,20 @@ pub struct RepositoryInfo {
     pub clone_url: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GitReferenceInfo {
     pub name: String,
     pub commit: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ProviderWebhookInfo {
     pub id: String,
     pub url: String,
     pub active: bool,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CollaboratorPermission {
     pub username: String,
     pub level: String,

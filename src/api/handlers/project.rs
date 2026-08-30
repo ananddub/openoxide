@@ -1,66 +1,88 @@
-use crate::core::middleware::permission::{CanCreate, CanDelete, CanRead, Project};
 use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{Json, extract::Path, http::StatusCode};
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::project::{CreateProjectDto, PatchProjectDto, ProjectResponseDto},
-    core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::project::ProjectService,
+use crate::api::connect::generated::openoxide::api::v1::{
+    CreateProjectRequest, DeleteProjectRequest, Empty, GetProjectRequest, ListProjectsRequest,
+    ListProjectsResponse, Project as ProjectProto, ProjectService, ProjectServiceExt,
+    UpdateProjectRequest,
 };
-
-type ApiError = (StatusCode, String);
+use crate::core::cache::{AppStateCache, CacheEnum, CacheKey};
+use crate::services::project::ProjectService as AppProjectService;
 
 pub struct ProjectController {
-    service: Arc<ProjectService>,
+    service: Arc<AppProjectService>,
     cache: Arc<AppStateCache>,
 }
 
-#[controller("/projects")]
+#[singleton]
 impl ProjectController {
-    fn new(service: Arc<ProjectService>, cache: Arc<AppStateCache>) -> Self {
+    pub fn new(service: Arc<AppProjectService>, cache: Arc<AppStateCache>) -> Self {
         Self { service, cache }
     }
+}
 
-    #[get("/{id}")]
-    #[live(tables = ["projects","environments"])]
-    async fn get(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<ProjectResponseDto>, ApiError> {
-        self.service
-            .get_by_id(id)
-            .await
-            .map(ProjectResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+fn project_to_proto(p: crate::db::models::projects::Project) -> ProjectProto {
+    ProjectProto {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        environment_variables: p.env_var,
+        organization_id: p.organization_id,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        ..Default::default()
+    }
+}
+
+fn map_db_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("project not found"),
+        sqlx::Error::Database(e) if e.is_unique_violation() => {
+            ConnectError::new(ErrorCode::AlreadyExists, e.message())
+        }
+        other => {
+            tracing::error!(error = %other, "project database operation failed");
+            ConnectError::new(ErrorCode::Internal, "database operation failed")
+        }
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl ProjectService for ProjectController {
+    #[permission(Project, CanRead)]
+    async fn get_project<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, GetProjectRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
+        let project = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        Response::ok(project_to_proto(project))
     }
 
-    #[get("/organization/{organization_id}")]
-    #[live(tables = ["projects","environments"])]
-    async fn list_by_organization(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanRead>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<Vec<ProjectResponseDto>>, ApiError> {
+    #[permission(Project, CanRead)]
+    async fn list_projects<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ListProjectsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListProjectsResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id;
+
         if let Some(CacheEnum::ProjectsList(cached)) = self
             .cache
             .get(&CacheKey::ProjectsList(organization_id))
             .await
         {
-            return Ok(Json(
-                cached.into_iter().map(ProjectResponseDto::from).collect(),
-            ));
+            let projects = cached.into_iter().map(project_to_proto).collect();
+            return Response::ok(ListProjectsResponse { projects, ..Default::default() });
         }
 
         let items = self
             .service
             .list_by_organization(organization_id)
             .await
-            .map_err(map_sqlx_error)?;
+            .map_err(map_db_error)?;
 
         self.cache
             .insert(
@@ -69,59 +91,46 @@ impl ProjectController {
             )
             .await;
 
-        Ok(Json(
-            items.into_iter().map(ProjectResponseDto::from).collect(),
-        ))
+        let projects = items.into_iter().map(project_to_proto).collect();
+        Response::ok(ListProjectsResponse { projects, ..Default::default() })
     }
 
-    #[post]
-    async fn create(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanCreate>,
-        ValidatedJson(body): ValidatedJson<CreateProjectDto>,
-    ) -> Result<(StatusCode, Json<ProjectResponseDto>), ApiError> {
-        let org_id = body.organization_id;
-        let created = self
+    #[permission(Project, CanCreate)]
+    async fn create_project<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, CreateProjectRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
+        let org_id = request.organization_id;
+        let project = self
             .service
-            .create(body)
+            .create(request.to_owned_message())
             .await
-            .map(ProjectResponseDto::from)
-            .map(|project| (StatusCode::CREATED, Json(project)))
-            .map_err(map_sqlx_error)?;
-
+            .map_err(map_db_error)?;
         self.cache.invalidate(&CacheKey::ProjectsList(org_id)).await;
-        Ok(created)
+        Response::ok(project_to_proto(project))
     }
 
-    #[patch("/{id}")]
-    async fn patch(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<PatchProjectDto>,
-    ) -> Result<Json<ProjectResponseDto>, ApiError> {
-        let updated = self
-            .service
-            .update(id, body)
-            .await
-            .map(ProjectResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)?;
-
+    #[permission(Project, CanUpdate)]
+    async fn update_project<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, UpdateProjectRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
+        let dto = request.to_owned_message();
+        let project = self.service.update(dto.id, dto).await.map_err(map_db_error)?;
         self.cache.invalidate_all().await;
-        Ok(updated)
+        Response::ok(project_to_proto(project))
     }
 
-    #[delete("/{id}")]
-    async fn delete(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Project, CanDelete>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service.delete(id).await.map_err(map_sqlx_error)?;
+    #[permission(Project, CanDelete)]
+    async fn delete_project<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, DeleteProjectRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service.delete(request.id).await.map_err(map_db_error)?;
 
-        // Project deletion cascades through environments/resources and removes
-        // their schedules and backups. Remove those jobs from memory now.
         if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
             if let Err(error) = runner.refresh_jobs().await {
                 tracing::error!(%error, "could not refresh scheduler after project deletion");
@@ -129,22 +138,6 @@ impl ProjectController {
         }
 
         self.cache.invalidate_all().await;
-        Ok(StatusCode::NO_CONTENT)
-    }
-}
-
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "project not found".into()),
-        sqlx::Error::Database(ref database_error) if database_error.is_unique_violation() => {
-            (StatusCode::CONFLICT, database_error.message().into())
-        }
-        other => {
-            tracing::error!(error = %other, "project database operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "database operation failed".into(),
-            )
-        }
+        Response::ok(Empty::default())
     }
 }

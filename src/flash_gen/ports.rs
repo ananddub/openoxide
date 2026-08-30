@@ -11,7 +11,7 @@ pub struct PortsGetAllRow {
     pub target_port: i64,
     pub protocol: String,
     pub publish_mode: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
 }
 
@@ -20,7 +20,7 @@ pub struct PortsCreateForApplicationParams {
     pub target_port: i64,
     pub protocol: String,
     pub publish_mode: String,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PortsUpdateForApplicationParams {
@@ -29,7 +29,7 @@ pub struct PortsUpdateForApplicationParams {
     pub protocol: String,
     pub publish_mode: String,
     pub id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct PortsCreateParams {
@@ -37,7 +37,7 @@ pub struct PortsCreateParams {
     pub target_port: i64,
     pub protocol: String,
     pub publish_mode: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
 }
 
@@ -46,7 +46,7 @@ pub struct PortsUpdateParams {
     pub target_port: i64,
     pub protocol: String,
     pub publish_mode: String,
-    pub application_id: i64,
+    pub service_id: i64,
     pub created_at: i64,
     pub id: i64,
 }
@@ -57,7 +57,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<PortsGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, PortsGetAllRow>(
-            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, application_id AS application_id, created_at AS created_at FROM ports;"
+            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, service_id AS service_id, created_at AS created_at FROM ports;"
         )
         .fetch_all(&self.pool)
         .await
@@ -69,7 +69,7 @@ impl Queries {
         id: i64,
     ) -> Result<Ports, sqlx::Error> {
         sqlx::query_as::<_, Ports>(
-            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, application_id AS application_id, created_at AS created_at FROM ports WHERE id = ?;"
+            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, service_id AS service_id, created_at AS created_at FROM ports WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -79,12 +79,12 @@ impl Queries {
     /// PortsListByApplication
     pub async fn ports_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Ports>, sqlx::Error> {
         sqlx::query_as::<_, Ports>(
-            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, application_id AS application_id, created_at AS created_at FROM ports WHERE application_id = ? ORDER BY id;"
+            "SELECT id AS id, published_port AS published_port, target_port AS target_port, protocol AS protocol, publish_mode AS publish_mode, service_id AS service_id, created_at AS created_at FROM ports WHERE service_id = ? ORDER BY id;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -93,53 +93,50 @@ impl Queries {
     pub async fn ports_create_for_application(
         &self,
         params: &PortsCreateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id) VALUES (?, ?, ?, ?, ?);"
+    ) -> Result<Ports, sqlx::Error> {
+        sqlx::query_as::<_, Ports>(
+            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, service_id) VALUES (?, ?, ?, ?, ?) RETURNING id, published_port, target_port, protocol, publish_mode, service_id, created_at;"
         )
         .bind(&params.published_port)
         .bind(&params.target_port)
         .bind(&params.protocol)
         .bind(&params.publish_mode)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PortsUpdateForApplication
     pub async fn ports_update_for_application(
         &self,
         params: &PortsUpdateForApplicationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE ports SET published_port = ?, target_port = ?, protocol = ?, publish_mode = ? WHERE id = ? AND application_id = ?;"
+    ) -> Result<Ports, sqlx::Error> {
+        sqlx::query_as::<_, Ports>(
+            "UPDATE ports SET published_port = ?, target_port = ?, protocol = ?, publish_mode = ? WHERE id = ? AND service_id = ? RETURNING id, published_port, target_port, protocol, publish_mode, service_id, created_at;"
         )
         .bind(&params.published_port)
         .bind(&params.target_port)
         .bind(&params.protocol)
         .bind(&params.publish_mode)
         .bind(&params.id)
-        .bind(&params.application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(&params.service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PortsDeleteForApplication
     pub async fn ports_delete_for_application(
         &self,
         id: i64,
-        application_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM ports WHERE id = ? AND application_id = ?;"
+        service_id: i64,
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM ports WHERE id = ? AND service_id = ? RETURNING id;"
         )
         .bind(id)
-        .bind(application_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .bind(service_id)
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// PortsCreate
@@ -148,13 +145,13 @@ impl Queries {
         params: &PortsCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, application_id, created_at) VALUES (?, ?, ?, ?, ?, ?);"
+            "INSERT INTO ports (published_port, target_port, protocol, publish_mode, service_id, created_at) VALUES (?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.published_port)
         .bind(&params.target_port)
         .bind(&params.protocol)
         .bind(&params.publish_mode)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .execute(&self.pool)
         .await?;
@@ -167,13 +164,13 @@ impl Queries {
         params: &PortsUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE ports SET published_port = ?, target_port = ?, protocol = ?, publish_mode = ?, application_id = ?, created_at = ? WHERE id = ?;"
+            "UPDATE ports SET published_port = ?, target_port = ?, protocol = ?, publish_mode = ?, service_id = ?, created_at = ? WHERE id = ?;"
         )
         .bind(&params.published_port)
         .bind(&params.target_port)
         .bind(&params.protocol)
         .bind(&params.publish_mode)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .bind(&params.created_at)
         .bind(&params.id)
         .execute(&self.pool)

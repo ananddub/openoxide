@@ -9,15 +9,10 @@ pub struct NotificationDeliveryBeginParams {
     pub organization_id: i64,
     pub trigger_name: String,
     pub correlation_id: String,
+    pub status: String,
     pub attempt: i64,
     pub title: String,
     pub body: String,
-}
-
-pub struct NotificationDeliveryFinishParams {
-    pub status: String,
-    pub error: String,
-    pub id: i64,
 }
 
 pub struct NotificationDeliveryCreateBindingParams {
@@ -32,33 +27,47 @@ impl Queries {
     pub async fn notification_delivery_begin(
         &self,
         params: &NotificationDeliveryBeginParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO notification_delivery_attempts (notification_id, organization_id, trigger_name, correlation_id, status, attempt, title, body) VALUES (?, ?, ?, ?, 'PENDING', ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO notification_delivery_attempts (notification_id, organization_id, trigger_name, correlation_id, status, attempt, title, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.notification_id)
         .bind(&params.organization_id)
         .bind(&params.trigger_name)
         .bind(&params.correlation_id)
+        .bind(&params.status)
         .bind(&params.attempt)
         .bind(&params.title)
         .bind(&params.body)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// NotificationDeliveryFinishSuccess
+    pub async fn notification_delivery_finish_success(
+        &self,
+        id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE notification_delivery_attempts SET status='DELIVERED', error=NULL, finished_at=unixepoch() WHERE id=?;"
+        )
+        .bind(id)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    /// NotificationDeliveryFinish
-    pub async fn notification_delivery_finish(
+    /// NotificationDeliveryFinishFailure
+    pub async fn notification_delivery_finish_failure(
         &self,
-        params: &NotificationDeliveryFinishParams,
+        error: &str,
+        id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE notification_delivery_attempts SET status=?, error=?, finished_at=CURRENT_TIMESTAMP WHERE id=?;"
+            "UPDATE notification_delivery_attempts SET status='FAILED', error=?, finished_at=unixepoch() WHERE id=?;"
         )
-        .bind(&params.status)
-        .bind(&params.error)
-        .bind(&params.id)
+        .bind(error)
+        .bind(id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -83,17 +92,16 @@ impl Queries {
     pub async fn notification_delivery_create_binding(
         &self,
         params: &NotificationDeliveryCreateBindingParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO notification_resource_bindings (notification_id, organization_id, resource_type, resource_id) VALUES (?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO notification_resource_bindings (notification_id, organization_id, resource_type, resource_id) VALUES (?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.notification_id)
         .bind(&params.organization_id)
         .bind(&params.resource_type)
         .bind(&params.resource_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// NotificationDeliveryBindings
@@ -114,15 +122,14 @@ impl Queries {
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM notification_resource_bindings WHERE id=? AND organization_id=?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM notification_resource_bindings WHERE id=? AND organization_id=? RETURNING id;"
         )
         .bind(id)
         .bind(organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
 }

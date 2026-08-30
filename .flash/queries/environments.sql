@@ -31,8 +31,8 @@ SELECT COUNT(*) FROM environments WHERE project_id = ?;
 UPDATE environments SET is_default = 0 WHERE project_id = ? AND is_default = 1;
 
 -- name: EnvironmentsCreateInTransaction :one
-INSERT INTO environments (name, description, env_var, is_default, project_id)
-               VALUES (?, ?, ?, ?, ?)
+INSERT INTO environments (name, description, env_var, is_default, project_id, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
                RETURNING id AS id, name, description, env_var, is_default, project_id, created_at, updated_at;
 
 -- name: EnvironmentsUpdateInTransaction :one

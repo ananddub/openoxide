@@ -80,8 +80,8 @@ pub async fn record_builder_events(
 ) {
     let mut log = match DeploymentLog::open(deployment_id).await {
         Ok(log) => {
-            if let Ok(repo) = auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-                repo.update_log_path(deployment_id, log.path()).await.ok();
+            if let Ok(q) = auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+                q.deployments_update_log_path(log.path(), deployment_id).await.ok();
             }
             Some(log)
         }
@@ -91,10 +91,10 @@ pub async fn record_builder_events(
         }
     };
 
-    let repo = match auto_di::resolve::<crate::repository::DeploymentRepository>().await {
-        Ok(r) => Some(r),
+    let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+        Ok(q) => Some(q),
         Err(e) => {
-            tracing::error!(error = %e, "could not resolve DeploymentRepository");
+            tracing::error!(error = %e, "could not resolve FlashQueries");
             None
         }
     };
@@ -116,11 +116,24 @@ pub async fn record_builder_events(
             _ => None,
         };
 
-        if let Some(ref r) = repo {
-            if let Err(e) = r
-                .update_state_if_running(deployment_id, state, message)
-                .await
-            {
+        if let Some(ref q) = q {
+            let result = match message {
+                Some(message) => {
+                    q.deployments_update_state_if_running_with_error(
+                        &crate::flash_gen::deployments::DeploymentsUpdateStateIfRunningWithErrorParams {
+                            state: state.to_string(),
+                            error_message: message.to_string(),
+                            id: deployment_id,
+                        },
+                    )
+                    .await
+                }
+                None => {
+                    q.deployments_update_state_if_running(state, deployment_id)
+                        .await
+                }
+            };
+            if let Err(e) = result {
                 tracing::error!(deployment_id, error = %e, "could not persist {} builder event", log_context);
             }
         }

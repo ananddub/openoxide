@@ -1,12 +1,12 @@
 CREATE TABLE vault_providers (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     provider_type TEXT NOT NULL,
     api_url TEXT NOT NULL,
     auth_token TEXT NOT NULL,
     namespace TEXT,
     config_json TEXT,
-    organization_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    organization_id BIGINT NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );

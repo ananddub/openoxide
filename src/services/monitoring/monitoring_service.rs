@@ -1,11 +1,11 @@
 use crate::{
     core::config::Config,
-    db::models::{container_metrics::ContainerMetric, server_metrics::ServerMetric},
     services::{monitoring::agent_auth::MonitoringAgentAuth, server::RemoteServerService},
 };
 use auto_di::singleton;
 use dashmap::mapref::entry::Entry;
 use os::exec::{AgentCommandRequest, AgentExecutor, AgentTransport, ExecError, ExecStreamEvent};
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Arc;
 use tonic::transport::{Certificate, ClientTlsConfig};
@@ -13,6 +13,43 @@ use tonic::{Request, metadata::MetadataValue};
 
 pub mod proto {
     tonic::include_proto!("agent");
+}
+
+// ── In-memory metric snapshots (moved from the retired db::models layer) ──
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ServerMetric {
+    pub timestamp: Option<i64>,
+    pub server_id: i64,
+    pub cpu: f64,
+    pub cpu_model: String,
+    pub cpu_cores: i64,
+    pub cpu_physical_cores: i64,
+    pub cpu_speed: f64,
+    pub os: String,
+    pub distro: String,
+    pub kernel: String,
+    pub arch: String,
+    pub mem_used: f64,
+    pub mem_used_gb: f64,
+    pub mem_total: f64,
+    pub uptime: i64,
+    pub disk_used: f64,
+    pub total_disk: f64,
+    pub network_in: f64,
+    pub network_out: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContainerMetric {
+    pub id: Option<i64>,
+    pub timestamp: i64,
+    pub container_id: String,
+    pub container_name: String,
+    pub metrics_json: String,
+    pub server_id: i64,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
 }
 
 pub struct MonitoringService {
@@ -487,7 +524,7 @@ impl MonitoringService {
                                 | "openoxide-monitor"
                         )
                     })
-                    .filter_map(|server| server.id)
+                    .map(|server| server.id)
                     .collect()
             })
             .map_err(|error| error.to_string())
@@ -506,7 +543,7 @@ impl MonitoringService {
                             "" | "0.0.0.0" | "localhost" | "127.0.0.1" | "openoxide-agent"
                         )
                     })
-                    .filter_map(|server| server.id)
+                    .map(|server| server.id)
                     .collect()
             })
             .map_err(|error| error.to_string())
@@ -520,7 +557,7 @@ impl MonitoringService {
             .map_err(|error| error.to_string())?;
         let mut latest = Vec::new();
         for server in servers {
-            let Some(server_id) = server.id else { continue };
+            let server_id = server.id;
             match self.server_history(server_id, 1).await {
                 Ok(mut metrics) => latest.append(&mut metrics),
                 Err(error) => tracing::debug!(server_id, %error, "monitoring agent unavailable"),
@@ -537,7 +574,7 @@ impl MonitoringService {
             .map_err(|error| error.to_string())?;
         let mut latest = Vec::new();
         for server in servers {
-            let Some(server_id) = server.id else { continue };
+            let server_id = server.id;
             match self.container_history(server_id, "", 1000).await {
                 Ok(metrics) => {
                     let mut newest = std::collections::HashMap::new();

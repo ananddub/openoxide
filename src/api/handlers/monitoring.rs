@@ -1,30 +1,19 @@
-use crate::core::middleware::permission::{Alert, CanMonitor, CanWrite, Server};
-use crate::{
-    api::dto::monitoring::{
-        CreateMaintenanceWindowDto, MaintenanceWindowDto, MonitoringActionDto,
-        MonitoringAgentStatusDto, MonitoringPolicyDto, MonitoringStatusResponseDto,
-        MonitoringTokenResponseDto, RotateMonitoringTokenDto, UpdateMonitoringPolicyDto,
-    },
-    core::middleware::permission::RequirePermission,
-    services::monitoring::{
-        agent_auth::MonitoringAgentAuth, lifecycle::MonitoringLifecycleService,
-        monitoring_service::MonitoringService,
-    },
-};
-use auto_route::controller;
-use axum::{
-    Json,
-    extract::{Path, Query},
-    http::StatusCode,
-};
-use poem_openapi::Object;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::sync::Arc;
 
-type ApiError = (StatusCode, String);
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize, Object, ts_rs::TS)]
+use crate::api::connect::generated::openoxide::api::v1::{
+    Empty, MonitoringOperationsService, MonitoringOperationsServiceExt, OperationResult,
+    ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
+};
+use crate::services::monitoring::{
+    agent_auth::MonitoringAgentAuth, lifecycle::MonitoringLifecycleService,
+    monitoring_service::MonitoringService,
+};
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct ContainerQueryParam {
     #[serde(rename = "appName")]
     pub app_name: Option<String>,
@@ -38,9 +27,9 @@ pub struct MonitoringController {
     lifecycle: Arc<MonitoringLifecycleService>,
 }
 
-#[controller("/api/monitoring")]
+#[singleton]
 impl MonitoringController {
-    fn new(
+    pub fn new(
         service: Arc<MonitoringService>,
         agent_auth: Arc<MonitoringAgentAuth>,
         lifecycle: Arc<MonitoringLifecycleService>,
@@ -51,221 +40,245 @@ impl MonitoringController {
             lifecycle,
         }
     }
+}
 
-    #[get("")]
-    async fn status_index(&self) -> Result<Json<MonitoringStatusResponseDto>, ApiError> {
-        Ok(Json(MonitoringStatusResponseDto {
+fn internal(error: sqlx::Error) -> ConnectError {
+    tracing::error!(error = %error, "monitoring operation failed");
+    ConnectError::new(ErrorCode::Internal, error.to_string())
+}
+
+async fn verify_server_organization(
+    auth: &MonitoringAgentAuth,
+    server_id: i64,
+    organization_id: i64,
+) -> Result<(), ConnectError> {
+    let bound = auth
+        .organization_id(server_id)
+        .await
+        .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+    if bound == Some(organization_id) {
+        Ok(())
+    } else {
+        Err(ConnectError::not_found("monitoring server not found"))
+    }
+}
+
+fn verify_claim_organization(claim_organization_id: i64, organization_id: i64) -> Result<(), ConnectError> {
+    if claim_organization_id == organization_id {
+        Ok(())
+    } else {
+        Err(ConnectError::new(ErrorCode::PermissionDenied, "organization does not match authenticated scope"))
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl MonitoringOperationsService for MonitoringController {
+    async fn get_local_metrics<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _request: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let payload = serde_json::to_string(&MonitoringStatusResponseDto {
             status: "ok".into(),
             service: "openoxide monitoring service".into(),
             endpoints: vec![
                 "/monitoring/server/{id}".into(),
                 "/monitoring/containers/{id}".into(),
             ],
-        }))
+        }).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "monitoring_status".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[get("/server/{id}")]
-    #[live("server_metrics", strategy = publish)]
-    async fn get_server_metrics(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<Value>, ApiError> {
-        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
-        let val = serde_json::to_value(
-            self.service
-                .server_history(id, 50)
-                .await
-                .map_err(|e| (StatusCode::BAD_GATEWAY, e))?,
-        )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        Ok(Json(val))
-    }
-
-    #[get("/containers/{id}")]
-    #[live("container_metrics", strategy = publish)]
-    async fn get_container_metrics(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(id): Path<i64>,
-        Query(query): Query<ContainerQueryParam>,
-    ) -> Result<Json<Value>, ApiError> {
-        verify_claim_organization(permission.organization_id(), query.organization_id)?;
-        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
-        let val = serde_json::to_value(
-            self.service
-                .container_history(
-                    id,
-                    query.app_name.as_deref().unwrap_or_default(),
-                    query.limit.unwrap_or(100),
-                )
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?,
-        )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        Ok(Json(val))
-    }
-
-    #[get("/containers/{id}/states")]
-    #[live("container_states", tables = ["servers"], strategy = sqlite)]
-    async fn get_container_states(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<Value>, ApiError> {
-        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
-        serde_json::to_value(
-            self.service
-                .container_states(id)
-                .await
-                .map_err(|e| (StatusCode::BAD_GATEWAY, e))?,
-        )
-        .map(Json)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
-    }
-
-    #[post("/agents/{server_id}/token")]
-    async fn rotate_agent_token(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path(server_id): Path<i64>,
-        Json(body): Json<RotateMonitoringTokenDto>,
-    ) -> Result<Json<MonitoringTokenResponseDto>, ApiError> {
-        if body.organization_id != permission.organization_id() {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "organization does not match authenticated scope".into(),
-            ));
-        }
-        if !self
-            .agent_auth
-            .server_belongs_to_organization(server_id, body.organization_id)
+    #[permission(Monitoring, CanMonitor)]
+    async fn get_server_metrics<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let metrics = self.service
+            .server_history(request.id, 50)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
+        let payload = serde_json::to_string(&metrics)
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        Response::ok(ResourceResponse {
+            id: request.id,
+            kind: "server_metrics".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Monitoring, CanMonitor)]
+    async fn get_container_metrics<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let query: ContainerQueryParam = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        verify_claim_organization(auth.organization_id, query.organization_id)?;
+        let metrics = self.service
+            .container_history(
+                request.id,
+                query.app_name.as_deref().unwrap_or_default(),
+                query.limit.unwrap_or(100),
+            )
+            .await
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e))?;
+        let payload = serde_json::to_string(&metrics)
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        Response::ok(ResourceResponse {
+            id: request.id,
+            kind: "container_metrics".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Monitoring, CanMonitor)]
+    async fn get_container_states<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let states = self.service
+            .container_states(request.id)
+            .await
+            .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
+        let payload = serde_json::to_string(&states)
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        let item = ResourceResponse {
+            id: request.id,
+            kind: "container_states".into(),
+            payload,
+            ..Default::default()
+        };
+        Response::ok(ResourceListResponse { items: vec![item], ..Default::default() })
+    }
+
+    #[permission(Alert, CanWrite)]
+    async fn create_agent_token<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: RotateMonitoringTokenDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        if dto.organization_id != auth.organization_id {
+            return Err(ConnectError::new(ErrorCode::PermissionDenied, "organization does not match authenticated scope"));
+        }
+        if !self.agent_auth
+            .server_belongs_to_organization(request.id, dto.organization_id)
+            .await
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
         {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "server is not linked to this organization".into(),
-            ));
+            return Err(ConnectError::new(ErrorCode::PermissionDenied, "server is not linked to this organization"));
         }
-        let token = self
-            .agent_auth
-            .rotate(server_id, body.organization_id)
+        let token = self.agent_auth
+            .rotate(request.id, dto.organization_id)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Ok(Json(MonitoringTokenResponseDto {
-            server_id,
-            organization_id: body.organization_id,
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        let resp = MonitoringTokenResponseDto {
+            server_id: request.id,
+            organization_id: dto.organization_id,
             token,
-        }))
+        };
+        let payload = serde_json::to_string(&resp).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: request.id,
+            kind: "monitoring_token".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[get("/agents/{server_id}/status")]
-    #[live(table = "monitoring_agents")]
-    async fn agent_status(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<MonitoringAgentStatusDto>, ApiError> {
-        verify_server_organization(&self.agent_auth, server_id, permission.organization_id())
-            .await?;
-        let status = self
-            .agent_auth
-            .status(server_id)
+    #[permission(Monitoring, CanMonitor)]
+    async fn get_agent_status<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let status = self.agent_auth
+            .status(request.id)
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-            .ok_or((
-                StatusCode::NOT_FOUND,
-                "monitoring agent is not registered".into(),
-            ))?;
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+            .ok_or_else(|| ConnectError::not_found("monitoring agent is not registered"))?;
         let state = match status.last_seen_at {
             Some(ts) if chrono::Utc::now().timestamp() - ts <= 30 => "ONLINE",
             Some(_) => "OFFLINE",
             None => "NEVER_SEEN",
         };
-        Ok(Json(MonitoringAgentStatusDto {
+        let dto = MonitoringAgentStatusDto {
             server_id: status.server_id,
             organization_id: status.organization_id,
             last_seen_at: status.last_seen_at,
             agent_version: status.agent_version,
             state: state.into(),
-        }))
+        };
+        let payload = serde_json::to_string(&dto).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "get_agent_status".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[get("/policy/{organization_id}")]
-    #[live(table = "monitoring_policy")]
-    async fn policy(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<MonitoringPolicyDto>, ApiError> {
-        verify_claim_organization(permission.organization_id(), organization_id)?;
-        self.lifecycle
-            .policy(organization_id)
-            .await
-            .map(Json)
-            .map_err(internal)
+    #[permission(Alert, CanWrite)]
+    async fn restart_agent<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let action = self.lifecycle.restart_agent(request.id).await.map_err(internal)?;
+        let payload = serde_json::to_string(&action).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: action.success,
+            operation: "restart_agent".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[put("/policy/{organization_id}")]
-    async fn update_policy(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path(organization_id): Path<i64>,
-        Json(body): Json<UpdateMonitoringPolicyDto>,
-    ) -> Result<Json<MonitoringPolicyDto>, ApiError> {
-        verify_claim_organization(permission.organization_id(), organization_id)?;
-        self.lifecycle
-            .update_policy(organization_id, body)
-            .await
-            .map(Json)
-            .map_err(internal)
+    #[permission(Alert, CanWrite)]
+    async fn reinstall_agent<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let action = self.lifecycle.reinstall_agent(request.id).await.map_err(internal)?;
+        let payload = serde_json::to_string(&action).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: action.success,
+            operation: "reinstall_agent".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/agents/{server_id}/restart")]
-    async fn restart_agent(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<MonitoringActionDto>, ApiError> {
-        verify_server_organization(&self.agent_auth, server_id, permission.organization_id())
-            .await?;
-        self.lifecycle
-            .restart_agent(server_id)
+    #[permission(Monitoring, CanMonitor)]
+    async fn export_server_metrics<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let metrics = self.service
+            .server_history(request.id, 1000)
             .await
-            .map(Json)
-            .map_err(internal)
-    }
-
-    #[post("/agents/{server_id}/reinstall")]
-    async fn reinstall_agent(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path(server_id): Path<i64>,
-    ) -> Result<Json<MonitoringActionDto>, ApiError> {
-        verify_server_organization(&self.agent_auth, server_id, permission.organization_id())
-            .await?;
-        self.lifecycle
-            .reinstall_agent(server_id)
-            .await
-            .map(Json)
-            .map_err(internal)
-    }
-
-    #[get("/server/{id}/export")]
-    async fn export_server_metrics(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(id): Path<i64>,
-    ) -> Result<String, ApiError> {
-        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
-        let metrics = self
-            .service
-            .server_history(id, 1000)
-            .await
-            .map_err(|error| (StatusCode::BAD_GATEWAY, error))?;
+            .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
         let mut csv = String::from(
             "timestamp,server_id,cpu,mem_used,mem_total,disk_used,total_disk,network_in,network_out\n",
         );
@@ -283,120 +296,143 @@ impl MonitoringController {
                 metric.network_out
             ));
         }
-        Ok(csv)
+        Response::ok(ResourceResponse {
+            id: request.id,
+            kind: "server_metrics_csv".into(),
+            payload: csv,
+            ..Default::default()
+        })
     }
 
-    #[get("/server/{id}/prometheus")]
-    async fn prometheus(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(id): Path<i64>,
-    ) -> Result<String, ApiError> {
-        verify_server_organization(&self.agent_auth, id, permission.organization_id()).await?;
-        let metric = self
-            .service
-            .server_history(id, 1)
+    #[permission(Monitoring, CanMonitor)]
+    async fn get_prometheus_metrics<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let metric = self.service
+            .server_history(request.id, 1)
             .await
-            .map_err(|error| (StatusCode::BAD_GATEWAY, error))?
+            .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?
             .into_iter()
             .next()
-            .ok_or((StatusCode::NOT_FOUND, "no metrics available".into()))?;
-        Ok(format!(
+            .ok_or_else(|| ConnectError::not_found("no metrics available"))?;
+        let payload = format!(
             "# TYPE openoxide_server_cpu_percent gauge\nopenoxide_server_cpu_percent{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_memory_used_bytes gauge\nopenoxide_server_memory_used_bytes{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_disk_used_bytes gauge\nopenoxide_server_disk_used_bytes{{server_id=\"{}\"}} {}\n",
-            id, metric.cpu, id, metric.mem_used, id, metric.disk_used
-        ))
+            request.id, metric.cpu, request.id, metric.mem_used, request.id, metric.disk_used
+        );
+        Response::ok(ResourceResponse {
+            id: request.id,
+            kind: "prometheus_metrics".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[post("/maintenance/{organization_id}")]
-    async fn create_maintenance_window(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path(organization_id): Path<i64>,
-        Json(body): Json<CreateMaintenanceWindowDto>,
-    ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
-        verify_claim_organization(permission.organization_id(), organization_id)?;
-        if let Some(server_id) = body.server_id {
+    #[permission(Alert, CanWrite)]
+    async fn create_maintenance_window<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateMaintenanceWindowDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        verify_claim_organization(auth.organization_id, organization_id)?;
+        if let Some(server_id) = dto.server_id {
             verify_server_organization(&self.agent_auth, server_id, organization_id).await?;
         }
-        let id = self
-            .lifecycle
+        let id = self.lifecycle
             .create_window(
                 organization_id,
-                body.server_id,
-                body.starts_at,
-                body.ends_at,
-                &body.reason,
+                dto.server_id,
+                dto.starts_at,
+                dto.ends_at,
+                &dto.reason,
             )
             .await
             .map_err(internal)?;
-        Ok((StatusCode::CREATED, Json(serde_json::json!({ "id": id }))))
+        let payload = serde_json::to_string(&serde_json::json!({ "id": id })).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id,
+            kind: "maintenance_window".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[get("/maintenance/{organization_id}")]
-    #[live(table = "monitoring_maintenance_windows")]
-    async fn maintenance_windows(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Server, CanMonitor>,
-        Path(organization_id): Path<i64>,
-    ) -> Result<Json<Vec<MaintenanceWindowDto>>, ApiError> {
-        verify_claim_organization(permission.organization_id(), organization_id)?;
-        self.lifecycle
-            .windows(organization_id)
-            .await
-            .map(Json)
-            .map_err(internal)
+    #[permission(Monitoring, CanMonitor)]
+    async fn list_maintenance_windows<'a>(
+        &'a self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = query.organization_id.unwrap_or(auth.organization_id);
+        verify_claim_organization(auth.organization_id, organization_id)?;
+        let windows = self.lifecycle.windows(organization_id).await.map_err(internal)?;
+        let items = windows.into_iter().map(|w| {
+            let payload = serde_json::to_string(&w).unwrap_or_default();
+            ResourceResponse {
+                id: w.id,
+                kind: "maintenance_window".into(),
+                payload,
+                ..Default::default()
+            }
+        }).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[delete("/maintenance/{organization_id}/{id}")]
-    async fn delete_maintenance_window(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Alert, CanWrite>,
-        Path((organization_id, id)): Path<(i64, i64)>,
-    ) -> Result<StatusCode, ApiError> {
-        verify_claim_organization(permission.organization_id(), organization_id)?;
-        if self
-            .lifecycle
-            .delete_window(id, organization_id)
-            .await
-            .map_err(internal)?
-        {
-            Ok(StatusCode::NO_CONTENT)
+    #[permission(Alert, CanWrite)]
+    async fn delete_maintenance_window<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        verify_claim_organization(auth.organization_id, organization_id)?;
+        if self.lifecycle.delete_window(request.id, organization_id).await.map_err(internal)? {
+            Response::ok(Empty::default())
         } else {
-            Err((StatusCode::NOT_FOUND, "maintenance window not found".into()))
+            Err(ConnectError::not_found("maintenance window not found"))
         }
     }
 }
 
-fn verify_claim_organization(
-    claim_organization_id: i64,
+// ── Monitoring payload DTOs ───────────────────────────────────────
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct MonitoringStatusResponseDto {
+    status: String,
+    service: String,
+    endpoints: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct RotateMonitoringTokenDto {
     organization_id: i64,
-) -> Result<(), ApiError> {
-    if claim_organization_id == organization_id {
-        Ok(())
-    } else {
-        Err((
-            StatusCode::FORBIDDEN,
-            "organization does not match authenticated scope".into(),
-        ))
-    }
 }
 
-fn internal(error: sqlx::Error) -> ApiError {
-    (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
-}
-
-async fn verify_server_organization(
-    auth: &MonitoringAgentAuth,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct MonitoringTokenResponseDto {
     server_id: i64,
     organization_id: i64,
-) -> Result<(), ApiError> {
-    let bound = auth
-        .organization_id(server_id)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if bound == Some(organization_id) {
-        Ok(())
-    } else {
-        Err((StatusCode::NOT_FOUND, "monitoring server not found".into()))
-    }
+    token: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct MonitoringAgentStatusDto {
+    server_id: i64,
+    organization_id: i64,
+    last_seen_at: Option<i64>,
+    agent_version: Option<String>,
+    state: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct CreateMaintenanceWindowDto {
+    server_id: Option<i64>,
+    starts_at: i64,
+    ends_at: i64,
+    reason: String,
 }

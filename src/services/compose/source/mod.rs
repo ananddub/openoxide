@@ -1,12 +1,11 @@
+use serde::Deserialize;
+
 use super::{ComposeRecord, ComposeService};
-use crate::api::dto::compose::{
-    PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
-    PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
-};
 use crate::core::cache::CacheKey;
-use crate::utils::paths::openoxide_paths;
-use std::env::temp_dir;
-use upload::{TempFileGuard, save_multipart_to_file};
+use crate::flash_gen::service_git::{
+    SetBitbucketSourceParams, SetCustomGitSourceParams, SetGiteaSourceParams,
+    SetGithubSourceParams, SetGitlabSourceParams,
+};
 
 impl ComposeService {
     // ── Git provider sources ──────────────────────────────────────────────────
@@ -16,15 +15,21 @@ impl ComposeService {
         id: i64,
         input: PatchComposeGithubSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_github_source(
-                id,
-                Some(input.repository),
-                Some(input.owner),
-                Some(input.branch),
-                input.github_provider_id,
-                input.auto_deploy.unwrap_or(1),
-            )
+        let git = self.queries.get_service_git_by_i_d(id).await.ok();
+        // The retired repository preserved trigger/watch/submodule settings
+        // while resetting auto_deploy to the request value (default 1).
+        self.queries
+            .set_github_source(&SetGithubSourceParams {
+                service_id: id,
+                trigger_type: current_trigger(git.as_ref()),
+                repository: input.repository,
+                owner: input.owner,
+                branch: input.branch,
+                github_provider_id: input.github_provider_id.unwrap_or(0),
+                auto_deploy: input.auto_deploy.unwrap_or(1),
+                watch_paths: current_watch_paths(git.as_ref()),
+                enable_submodules: current_enable_submodules(git.as_ref()),
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
@@ -35,16 +40,25 @@ impl ComposeService {
         id: i64,
         input: PatchComposeGitlabSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_gitlab_source(
-                id,
-                input.gitlab_project_id,
-                Some(input.gitlab_repository),
-                Some(input.gitlab_owner),
-                Some(input.gitlab_branch),
-                input.gitlab_path_namespace,
-                input.gitlab_provider_id,
-            )
+        let git = self.queries.get_service_git_by_i_d(id).await.ok();
+        self.queries
+            .set_gitlab_source(&SetGitlabSourceParams {
+                service_id: id,
+                trigger_type: current_trigger(git.as_ref()),
+                gitlab_project_id: input.gitlab_project_id.unwrap_or(0),
+                gitlab_repository: input.gitlab_repository,
+                gitlab_owner: input.gitlab_owner,
+                gitlab_branch: input.gitlab_branch,
+                gitlab_build_path: git
+                    .as_ref()
+                    .and_then(|git| git.gitlab_build_path.clone())
+                    .unwrap_or_default(),
+                gitlab_path_namespace: input.gitlab_path_namespace.unwrap_or_default(),
+                gitlab_provider_id: input.gitlab_provider_id.unwrap_or(0),
+                auto_deploy: current_auto_deploy(git.as_ref()),
+                watch_paths: current_watch_paths(git.as_ref()),
+                enable_submodules: current_enable_submodules(git.as_ref()),
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
@@ -55,14 +69,23 @@ impl ComposeService {
         id: i64,
         input: PatchComposeGiteaSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_gitea_source(
-                id,
-                Some(input.gitea_repository),
-                Some(input.gitea_owner),
-                Some(input.gitea_branch),
-                input.gitea_provider_id,
-            )
+        let git = self.queries.get_service_git_by_i_d(id).await.ok();
+        self.queries
+            .set_gitea_source(&SetGiteaSourceParams {
+                service_id: id,
+                trigger_type: current_trigger(git.as_ref()),
+                gitea_repository: input.gitea_repository,
+                gitea_owner: input.gitea_owner,
+                gitea_branch: input.gitea_branch,
+                gitea_build_path: git
+                    .as_ref()
+                    .and_then(|git| git.gitea_build_path.clone())
+                    .unwrap_or_default(),
+                gitea_provider_id: input.gitea_provider_id.unwrap_or(0),
+                auto_deploy: current_auto_deploy(git.as_ref()),
+                watch_paths: current_watch_paths(git.as_ref()),
+                enable_submodules: current_enable_submodules(git.as_ref()),
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
@@ -73,15 +96,24 @@ impl ComposeService {
         id: i64,
         input: PatchComposeBitbucketSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_bitbucket_source(
-                id,
-                Some(input.bitbucket_repository),
-                input.bitbucket_repository_slug,
-                Some(input.bitbucket_owner),
-                Some(input.bitbucket_branch),
-                input.bitbucket_provider_id,
-            )
+        let git = self.queries.get_service_git_by_i_d(id).await.ok();
+        self.queries
+            .set_bitbucket_source(&SetBitbucketSourceParams {
+                service_id: id,
+                trigger_type: current_trigger(git.as_ref()),
+                bitbucket_repository: input.bitbucket_repository,
+                bitbucket_repository_slug: input.bitbucket_repository_slug.unwrap_or_default(),
+                bitbucket_owner: input.bitbucket_owner,
+                bitbucket_branch: input.bitbucket_branch,
+                bitbucket_build_path: git
+                    .as_ref()
+                    .and_then(|git| git.bitbucket_build_path.clone())
+                    .unwrap_or_default(),
+                bitbucket_provider_id: input.bitbucket_provider_id.unwrap_or(0),
+                auto_deploy: current_auto_deploy(git.as_ref()),
+                watch_paths: current_watch_paths(git.as_ref()),
+                enable_submodules: current_enable_submodules(git.as_ref()),
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
@@ -92,13 +124,22 @@ impl ComposeService {
         id: i64,
         input: PatchComposeCustomGitSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_custom_git_source(
-                id,
-                Some(input.custom_git_url),
-                Some(input.custom_git_branch),
-                input.custom_git_ssh_key_id,
-            )
+        let git = self.queries.get_service_git_by_i_d(id).await.ok();
+        self.queries
+            .set_custom_git_source(&SetCustomGitSourceParams {
+                service_id: id,
+                trigger_type: current_trigger(git.as_ref()),
+                custom_git_url: input.custom_git_url,
+                custom_git_branch: input.custom_git_branch,
+                custom_git_build_path: git
+                    .as_ref()
+                    .and_then(|git| git.custom_git_build_path.clone())
+                    .unwrap_or_default(),
+                custom_git_ssh_key_id: input.custom_git_ssh_key_id.unwrap_or(0),
+                auto_deploy: current_auto_deploy(git.as_ref()),
+                watch_paths: current_watch_paths(git.as_ref()),
+                enable_submodules: current_enable_submodules(git.as_ref()),
+            })
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
@@ -111,55 +152,87 @@ impl ComposeService {
         id: i64,
         input: PatchComposeRawSourceDto,
     ) -> sqlx::Result<ComposeRecord> {
-        self.repo_compose
-            .set_raw_source(id, input.compose_file)
+        // Old set_raw_source cleared the git columns and stored the inline
+        // file; in the unified schema that is a deleted service_git row.
+        self.queries.compose_set_raw_source(id).await?;
+        self.queries
+            .compose_set_raw_source_content(&input.compose_file, id)
             .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.get_by_id(id).await
     }
+}
 
-    // ── Drop / upload source ──────────────────────────────────────────────────
+/// Pass-through helpers keeping the retired repositories' semantics: the
+/// trigger/watch/submodule/auto-deploy settings survive source switches
+/// (bind params are non-Option, so NULLs collapse to their defaults).
+fn current_trigger(git: Option<&crate::flash_gen::models::ServiceGit>) -> String {
+    git.map(|git| git.trigger_type.clone())
+        .unwrap_or_else(|| "PUSH".into())
+}
 
-    pub async fn upload_drop_source(
-        &self,
-        id: i64,
-        multipart: axum::extract::Multipart,
-    ) -> Result<ComposeRecord, String> {
-        // 1. Fetch project
-        let project = self
-            .repo_compose
-            .get_by_id(id)
-            .await
-            .map_err(|e| format!("Database error: {e}"))?
-            .ok_or_else(|| "Compose project not found".to_string())?;
+fn current_auto_deploy(git: Option<&crate::flash_gen::models::ServiceGit>) -> i64 {
+    git.and_then(|git| git.auto_deploy).unwrap_or(0)
+}
 
-        // 2. Set up temp files with auto-cleanup on drop
-        let uuid = uuid::Uuid::new_v4().to_string();
-        let mut cleanup = TempFileGuard::new();
+fn current_watch_paths(git: Option<&crate::flash_gen::models::ServiceGit>) -> String {
+    git.and_then(|git| git.watch_paths.clone())
+        .unwrap_or_default()
+}
 
-        let upload_zip = temp_dir().join(format!("upload-{uuid}.zip"));
-        cleanup.track(&upload_zip);
-
-        // 3. Save upload + sanitize
-        save_multipart_to_file(multipart, &upload_zip).await?;
-        // 4. Upload, sanitize and deploy through the target Agent.
-        let dest_path = openoxide_paths().compose_source(&project.app_name);
-        let server_id =
-            crate::services::compose::remote::agent_server_id(project.server_id).await?;
-        remote::deploy_zip_to_remote(&upload_zip, &dest_path, server_id, &uuid).await?;
-
-        // 5. Mark source type in DB
-        self.repo_compose
-            .set_drop_source(id)
-            .await
-            .map_err(|e| format!("Database error updating source: {e}"))?;
-
-        self.cache.invalidate(&CacheKey::Compose(id)).await;
-        self.get_by_id(id)
-            .await
-            .map_err(|e| format!("Database error fetching project: {e}"))
-    }
+fn current_enable_submodules(git: Option<&crate::flash_gen::models::ServiceGit>) -> i64 {
+    git.map(|git| git.enable_submodules)
+        .unwrap_or(0)
 }
 
 pub mod remote;
-pub mod upload;
+
+// ── JSON payload contract (moved from the retired api::dto layer) ──────
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeGithubSourceDto {
+    pub repository: String,
+    pub owner: String,
+    pub branch: String,
+    pub github_provider_id: Option<i64>,
+    pub auto_deploy: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeGitlabSourceDto {
+    pub gitlab_project_id: Option<i64>,
+    pub gitlab_repository: String,
+    pub gitlab_owner: String,
+    pub gitlab_branch: String,
+    pub gitlab_path_namespace: Option<String>,
+    pub gitlab_provider_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeGiteaSourceDto {
+    pub gitea_repository: String,
+    pub gitea_owner: String,
+    pub gitea_branch: String,
+    pub gitea_provider_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeBitbucketSourceDto {
+    pub bitbucket_repository: String,
+    pub bitbucket_repository_slug: Option<String>,
+    pub bitbucket_owner: String,
+    pub bitbucket_branch: String,
+    pub bitbucket_provider_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeCustomGitSourceDto {
+    pub custom_git_url: String,
+    pub custom_git_branch: String,
+    pub custom_git_ssh_key_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchComposeRawSourceDto {
+    pub compose_file: String,
+}

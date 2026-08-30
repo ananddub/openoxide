@@ -1,43 +1,29 @@
-use crate::core::middleware::permission::{
-    Application, CanCreate, CanDelete, CanDeploy, CanRead, Database,
-};
-use std::{convert::Infallible, pin::Pin, sync::Arc, time::Duration};
+use std::sync::Arc;
 
-use auto_route::controller;
-use axum::{
-    Json,
-    body::Body,
-    extract::{Path, Query},
-    http::{HeaderValue, Response, StatusCode, header},
-    response::sse::{Event, Sse},
-};
-use futures::Stream;
-use serde::Deserialize;
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
-use crate::{
-    api::dto::backup::{
-        BackupExecutionQueryDto, BackupExecutionResponseDto, BackupFilesQueryDto,
-        BackupResponseDto, ComposeConfigBackupDto, CreateBackupDto, CreateVolumeBackupDto,
-        DownloadBackupFileDto, PanelBackupResponseDto, PatchBackupDto, PatchVolumeBackupDto,
-        RestorePanelBackupDto, RetentionPreviewDto, RetentionPreviewQueryDto, StagePanelRestoreDto,
-        VerifyBackupFileDto, VolumeBackupResponseDto,
-    },
-    core::cache::{AppStateCache, CacheEnum, CacheKey},
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    db::models::{backups::Backup, volume_backups::VolumeBackup},
-    repository::{
-        BackupExecutionRepository, backups::BackupRepository, destinations::DestinationRepository,
-        organization::OrganizationRepository, volume_backups::VolumeBackupRepository,
-    },
-    services::{
-        backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
-        schedule::ScheduleService,
-    },
+use crate::api::connect::generated::openoxide::api::v1::{
+    BackupOperationsService, BackupOperationsServiceExt, Empty, OperationResult,
+    ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse, StreamQuery,
 };
-
-type ApiError = (StatusCode, String);
-type RestoreStatusStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
-type RestoreStatusSse = Sse<RestoreStatusStream>;
+use crate::core::cache::{AppStateCache, CacheEnum, CacheKey};
+use crate::db::models::{
+    backup_executions::BackupExecution, backups::Backup, volume_backups::VolumeBackup,
+};
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::backups::{
+    BackupsGetAllRow, BackupsUpdateParams, CreateBackupParams, CreateVolumeBackupParams,
+};
+use crate::flash_gen::models::Backups as GenBackup;
+use crate::flash_gen::models::VolumeBackups as GenVolumeBackup;
+use crate::flash_gen::volume_backups::{
+    VolumeBackupsGetAllRow, VolumeBackupsGetByIdRow, VolumeBackupsUpdateParams,
+};
+use crate::services::{
+    backup::{BackupFileService, ComposeConfigBackupService, PanelBackupService},
+    schedule::ScheduleService,
+};
 
 async fn refresh_schedule_runner() {
     if let Ok(runner) = auto_di::resolve::<crate::services::schedule::ScheduleRunner>().await {
@@ -48,907 +34,1008 @@ async fn refresh_schedule_runner() {
 }
 
 pub struct BackupController {
-    db: Arc<sqlx::SqlitePool>,
     service: Arc<ScheduleService>,
-    repo_backup: Arc<BackupRepository>,
-    repo_execution: Arc<BackupExecutionRepository>,
+    queries: Arc<FlashQueries>,
     panel_backup: Arc<PanelBackupService>,
     backup_files: Arc<BackupFileService>,
     compose_config_backup: Arc<ComposeConfigBackupService>,
-    repo_volume: Arc<VolumeBackupRepository>,
-    repo_dest: Arc<DestinationRepository>,
-    repo_org: Arc<OrganizationRepository>,
     cache: Arc<AppStateCache>,
 }
 
-#[derive(Deserialize, poem_openapi::Object)]
-pub struct RestoreBackupDto {
-    pub backup_file: String,
-}
-
-#[controller("/backups")]
+#[singleton]
 impl BackupController {
     fn new(
-        db: Arc<sqlx::SqlitePool>,
         service: Arc<ScheduleService>,
-        repo_backup: Arc<BackupRepository>,
-        repo_execution: Arc<BackupExecutionRepository>,
+        queries: Arc<FlashQueries>,
         panel_backup: Arc<PanelBackupService>,
         backup_files: Arc<BackupFileService>,
         compose_config_backup: Arc<ComposeConfigBackupService>,
-        repo_volume: Arc<VolumeBackupRepository>,
-        repo_dest: Arc<DestinationRepository>,
-        repo_org: Arc<OrganizationRepository>,
         cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
-            db,
             service,
-            repo_backup,
-            repo_execution,
+            queries,
             panel_backup,
             backup_files,
             compose_config_backup,
-            repo_volume,
-            repo_dest,
-            repo_org,
             cache,
         }
     }
+}
 
-    #[post("/compose/{compose_id}/config/run")]
-    async fn run_compose_config_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(compose_id): Path<i64>,
-        Json(body): Json<ComposeConfigBackupDto>,
-    ) -> Result<(StatusCode, Json<PanelBackupResponseDto>), ApiError> {
-        self.compose_config_backup
-            .create(compose_id, body.include_secrets.unwrap_or(false))
+fn map_error(err: sqlx::Error) -> ConnectError {
+    match &err {
+        sqlx::Error::RowNotFound => ConnectError::not_found("backup not found"),
+        sqlx::Error::Protocol(msg) => ConnectError::invalid_argument(msg.clone()),
+        other => {
+            tracing::error!(error = %other, "backup operation failed");
+            ConnectError::new(ErrorCode::Internal, "backup operation failed")
+        }
+    }
+}
+
+fn db_backup_to_resource(dto: BackupResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "database_backup".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+fn volume_backup_to_resource(dto: VolumeBackupResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "volume_backup".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+fn execution_to_resource(dto: BackupExecutionResponseDto) -> ResourceResponse {
+    let payload = serde_json::to_string(&dto).unwrap_or_default();
+    ResourceResponse {
+        id: dto.id,
+        kind: "backup_execution".into(),
+        payload,
+        ..Default::default()
+    }
+}
+
+#[auto_grpc::service(connect = true, auth = true)]
+impl BackupOperationsService for BackupController {
+    #[permission(Application, CanDeploy)]
+    async fn run_compose_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: ComposeConfigBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self.compose_config_backup
+            .create(request.id, dto.include_secrets.unwrap_or(false))
             .await
-            .map(|item| (StatusCode::CREATED, Json(item)))
-            .map_err(map_sqlx_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "run_compose_backup".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/panel/run")]
-    async fn run_panel_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-    ) -> Result<(StatusCode, Json<PanelBackupResponseDto>), ApiError> {
-        self.panel_backup
-            .create()
-            .await
-            .map(|item| (StatusCode::CREATED, Json(item)))
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn run_panel_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let result = self.panel_backup.create().await.map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "run_panel_backup".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[post("/panel/restore/stage")]
-    async fn stage_panel_restore(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Json(body): Json<RestorePanelBackupDto>,
-    ) -> Result<Json<StagePanelRestoreDto>, ApiError> {
-        self.panel_backup
-            .stage_restore(&body.archive, body.checksum_sha256.as_deref())
+    #[permission(Application, CanDeploy)]
+    async fn stage_restore<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: RestorePanelBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self.panel_backup
+            .stage_restore(&dto.archive, dto.checksum_sha256.as_deref())
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "stage_restore".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[get("/panel/restore/{restore_id}/status")]
-    #[live(table = "backups")]
-    async fn panel_restore_status(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(restore_id): Path<String>,
-    ) -> Result<Json<crate::api::dto::backup::PanelRestoreStatusDto>, ApiError> {
-        self.panel_backup
-            .restore_status(&restore_id)
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn get_restore_status<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let restore_id = request.payload;
+        let status = self.panel_backup.restore_status(&restore_id).await.map_err(map_error)?;
+        let payload = serde_json::to_string(&status).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "panel_restore_status".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[get("/panel/restore/{restore_id}/events", sse = crate::api::dto::backup::PanelRestoreStatusDto)]
-    async fn panel_restore_events(
+    #[permission(Application, CanDeploy)]
+    async fn stream_restore_events(
         &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(restore_id): Path<String>,
-    ) -> Result<RestoreStatusSse, ApiError> {
-        self.panel_backup
-            .restore_status(&restore_id)
-            .await
-            .map_err(map_sqlx_error)?;
-        Ok(Sse::new(restore_status_stream(
-            self.panel_backup.clone(),
-            restore_id,
-        )))
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, StreamQuery>,
+    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<ResourceResponse> + Send + use<>>> {
+        // Emit a single status snapshot, then close the stream.
+        let restore_id = request.id.to_string();
+        let status = self.panel_backup.restore_status(&restore_id).await.map_err(map_error)?;
+        let payload = serde_json::to_string(&status).unwrap_or_default();
+        let item = ResourceResponse {
+            id: 0,
+            kind: "panel_restore_status".into(),
+            payload,
+            ..Default::default()
+        };
+        Response::stream_ok(futures::stream::once(async move { Ok(item) }))
     }
 
-    #[post("/panel/restore/rollback")]
-    async fn rollback_panel_restore(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Json(body): Json<crate::api::dto::backup::RollbackPanelRestoreDto>,
-    ) -> Result<Json<StagePanelRestoreDto>, ApiError> {
-        self.panel_backup
-            .stage_rollback(&body.recovery_database)
+    #[permission(Application, CanDeploy)]
+    async fn rollback_restore<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: RollbackPanelRestoreDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self.panel_backup
+            .stage_rollback(&dto.recovery_database)
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "rollback_restore".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[get("/files")]
-    async fn list_backup_files(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Query(query): Query<BackupFilesQueryDto>,
-    ) -> Result<Json<Vec<crate::api::dto::backup::BackupFileDto>>, ApiError> {
-        self.backup_files
-            .list(query.destination_id, query.prefix.as_deref().unwrap_or(""))
-            .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+    #[permission(Database, CanRead)]
+    async fn list_files<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let destination_id = request.organization_id.unwrap_or(0);
+        let prefix = request.query.as_deref().unwrap_or("");
+        let files = self.backup_files.list(destination_id, prefix).await.map_err(map_error)?;
+        let items = files.into_iter().map(|f| {
+            let payload = serde_json::to_string(&f).unwrap_or_default();
+            ResourceResponse { id: 0, kind: "backup_file".into(), payload, ..Default::default() }
+        }).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/files/download")]
-    async fn download_backup_file(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Query(query): Query<DownloadBackupFileDto>,
-    ) -> Result<Response<Body>, ApiError> {
-        let bytes = self
-            .backup_files
-            .download(query.destination_id, &query.object_key)
-            .await
-            .map_err(map_sqlx_error)?;
-        let filename = query
-            .object_key
-            .rsplit('/')
-            .next()
-            .unwrap_or("backup.bin")
-            .replace(['\r', '\n', '"'], "_");
-        let mut response = Response::new(Body::from(bytes));
-        response.headers_mut().insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/octet-stream"),
-        );
-        response.headers_mut().insert(
-            header::CONTENT_DISPOSITION,
-            HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
-                .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?,
-        );
-        Ok(response)
+    #[permission(Database, CanRead)]
+    async fn download_file<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: DownloadBackupFileDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let bytes = self.backup_files.download(dto.destination_id, &dto.object_key).await.map_err(map_error)?;
+        let payload = serde_json::to_string(&serde_json::json!({
+            "size": bytes.len(),
+            "object_key": dto.object_key,
+        })).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "backup_file_download".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[get("/retention/preview")]
-    async fn preview_retention(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Query(query): Query<RetentionPreviewQueryDto>,
-    ) -> Result<Json<RetentionPreviewDto>, ApiError> {
-        self.backup_files
-            .retention_preview(
-                query.destination_id,
-                query.prefix.as_deref().unwrap_or(""),
-                query.keep_latest,
-            )
+    #[permission(Database, CanRead)]
+    async fn preview_retention<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: RetentionPreviewQueryDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self.backup_files
+            .retention_preview(dto.destination_id, dto.prefix.as_deref().unwrap_or(""), dto.keep_latest)
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "retention_preview".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
-    #[post("/files/verify")]
-    async fn verify_backup_file(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Json(body): Json<VerifyBackupFileDto>,
-    ) -> Result<Json<crate::api::dto::backup::BackupIntegrityDto>, ApiError> {
-        self.backup_files
-            .verify(body.destination_id, &body.object_key, &body.checksum_sha256)
+    #[permission(Database, CanRead)]
+    async fn verify_files<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: VerifyBackupFileDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self.backup_files
+            .verify(dto.destination_id, &dto.object_key, &dto.checksum_sha256)
             .await
-            .map(Json)
-            .map_err(map_sqlx_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "verify_files".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
     }
 
-    #[get("/executions")]
-    #[live(table = "backup_executions")]
-    async fn list_executions(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Query(query): Query<BackupExecutionQueryDto>,
-    ) -> Result<Json<Vec<BackupExecutionResponseDto>>, ApiError> {
-        let limit = query.limit.unwrap_or(100).clamp(1, 500);
-        self.repo_execution
-            .list(
-                query.backup_kind.map(|kind| kind.as_str()),
-                query.backup_id,
-                limit,
-            )
-            .await
-            .map(|items| Json(items.into_iter().map(Into::into).collect()))
-            .map_err(map_sqlx_error)
-    }
-
-    #[post("/executions/{id}/retry")]
-    async fn retry_execution(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        let execution = self
-            .repo_execution
-            .get(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map_err(map_sqlx_error)?;
-        let status = crate::services::backup::types::BackupExecutionStatus::from_str(
-            execution.status.as_str(),
+    #[permission(Database, CanRead)]
+    async fn list_executions<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let limit = request.limit.unwrap_or(100).clamp(1, 500);
+        let items: Vec<BackupExecution> = sqlx::query_as(
+            "SELECT * FROM backup_executions ORDER BY started_at DESC, id DESC LIMIT ?",
         )
-        .ok_or_else(|| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("invalid backup execution status: {}", execution.status),
-            )
+        .bind(limit)
+        .fetch_all(&self.queries.pool)
+        .await
+        .map_err(map_error)?;
+        let items = items.into_iter().map(BackupExecutionResponseDto::from).map(execution_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Application, CanDeploy)]
+    async fn retry_execution<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let execution = self.queries.backup_executions_get(request.id).await.map_err(|error| match error {
+            sqlx::Error::RowNotFound => ConnectError::not_found("backup execution not found"),
+            other => map_error(other),
         })?;
+        let status = crate::services::backup::types::BackupExecutionStatus::from_str(&execution.status)
+            .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup execution status: {}", execution.status)))?;
         if status == crate::services::backup::types::BackupExecutionStatus::Running {
-            return Err((
-                StatusCode::CONFLICT,
-                "backup execution is still running".into(),
-            ));
+            return Err(ConnectError::new(ErrorCode::FailedPrecondition, "backup execution is still running"));
         }
-        let backup_id = execution.backup_id.ok_or((
-            StatusCode::BAD_REQUEST,
-            "execution is not linked to a retryable backup job".into(),
-        ))?;
-        let kind =
-            crate::services::backup::types::BackupKind::from_str(execution.backup_kind.as_str())
-                .ok_or_else(|| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("invalid backup kind: {}", execution.backup_kind),
-                    )
-                })?;
-        let operation =
-            crate::services::backup::types::BackupOperation::from_str(execution.operation.as_str())
-                .ok_or_else(|| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("invalid backup operation: {}", execution.operation),
-                    )
-                })?;
+        let backup_id = execution.backup_id
+            .ok_or_else(|| ConnectError::invalid_argument("execution is not linked to a retryable backup job"))?;
+        let kind = crate::services::backup::types::BackupKind::from_str(&execution.backup_kind)
+            .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup kind: {}", execution.backup_kind)))?;
+        let operation = crate::services::backup::types::BackupOperation::from_str(&execution.operation)
+            .ok_or_else(|| ConnectError::new(ErrorCode::Internal, format!("invalid backup operation: {}", execution.operation)))?;
         let result = match (kind, operation) {
-            (
-                crate::services::backup::types::BackupKind::Database,
-                crate::services::backup::types::BackupOperation::Backup,
-            ) => self.service.run_database_backup(backup_id).await,
-            (
-                crate::services::backup::types::BackupKind::Volume,
-                crate::services::backup::types::BackupOperation::Backup,
-            ) => self.service.run_volume_backup(backup_id).await,
-            (
-                crate::services::backup::types::BackupKind::Database,
-                crate::services::backup::types::BackupOperation::Restore,
-            ) => {
-                let object_key = execution.object_key.ok_or((
-                    StatusCode::BAD_REQUEST,
-                    "restore execution has no object key".into(),
-                ))?;
-                self.service
-                    .restore_database_backup(backup_id, &object_key)
-                    .await
+            (crate::services::backup::types::BackupKind::Database, crate::services::backup::types::BackupOperation::Backup) => {
+                self.service.run_database_backup(backup_id).await
             }
-            (
-                crate::services::backup::types::BackupKind::Volume,
-                crate::services::backup::types::BackupOperation::Restore,
-            ) => {
-                let object_key = execution.object_key.ok_or((
-                    StatusCode::BAD_REQUEST,
-                    "restore execution has no object key".into(),
-                ))?;
-                self.service
-                    .restore_volume_backup(backup_id, &object_key)
-                    .await
+            (crate::services::backup::types::BackupKind::Volume, crate::services::backup::types::BackupOperation::Backup) => {
+                self.service.run_volume_backup(backup_id).await
             }
-            _ => {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "execution kind cannot be retried from this endpoint".into(),
-                ));
+            (crate::services::backup::types::BackupKind::Database, crate::services::backup::types::BackupOperation::Restore) => {
+                let object_key = execution.object_key
+                    .ok_or_else(|| ConnectError::invalid_argument("restore execution has no object key"))?;
+                self.service.restore_database_backup(backup_id, &object_key).await
             }
+            (crate::services::backup::types::BackupKind::Volume, crate::services::backup::types::BackupOperation::Restore) => {
+                let object_key = execution.object_key
+                    .ok_or_else(|| ConnectError::invalid_argument("restore execution has no object key"))?;
+                self.service.restore_volume_backup(backup_id, &object_key).await
+            }
+            _ => return Err(ConnectError::invalid_argument("execution kind cannot be retried from this endpoint")),
         };
-        result.map(|_| StatusCode::ACCEPTED).map_err(map_sqlx_error)
+        result.map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "retry_execution".into(),
+            ..Default::default()
+        })
     }
 
-    #[get("/database")]
-    #[live(table = "backups")]
-    async fn list_database_backups(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-    ) -> Result<Json<Vec<BackupResponseDto>>, ApiError> {
-        self.repo_backup
-            .get_all()
-            .await
-            .map(|items| items.into_iter().map(BackupResponseDto::from).collect())
-            .map(Json)
-            .map_err(map_sqlx_error)
+    #[permission(Database, CanRead)]
+    async fn list_database_backups<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let rows = self.queries.backups_get_all().await.map_err(map_error)?;
+        let items = rows.into_iter().map(|row| BackupResponseDto::from(Backup::from(row))).map(db_backup_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/database/{id}")]
-    #[live(table = "backups")]
-    async fn get_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<BackupResponseDto>, ApiError> {
-        self.repo_backup
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(BackupResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+    #[permission(Database, CanRead)]
+    async fn get_database_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let item = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(item))))
     }
 
-    async fn resolve_organization_id(&self, requested_id: Option<i64>) -> i64 {
-        if let Some(id) = requested_id {
-            if id > 0 {
-                if let Ok(Some(_)) = self.repo_org.get_by_id(id).await {
-                    return id;
-                }
-            }
-        }
-
-        if let Ok(orgs) = self.repo_org.get_all().await {
-            if let Some(first) = orgs.first() {
-                if let Some(id) = first.id {
-                    return id;
-                }
-            }
-        }
-
-        1
-    }
-
-    async fn require_destination_id(&self, requested_id: Option<i64>) -> Result<i64, ApiError> {
-        let id = requested_id
-            .filter(|id| *id > 0)
-            .ok_or((StatusCode::BAD_REQUEST, "S3 destination is required".into()))?;
-        self.repo_dest
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or((
-                StatusCode::BAD_REQUEST,
-                "selected S3 destination does not exist".into(),
-            ))?;
-        Ok(id)
-    }
-
-    async fn verify_fk_exists(&self, table: &str, id: Option<i64>) -> Option<i64> {
-        let target_id = match id {
-            Some(v) if v > 0 => v,
-            _ => return None,
-        };
-
-        let res: Result<Option<i64>, _> = match table {
-            "applications" => {
-                sqlx::query_scalar!(r#"SELECT id FROM applications WHERE id = ?"#, target_id)
-                    .fetch_optional(self.db.as_ref())
-                    .await
-            }
-            "postgres" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM postgres_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "mysql" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mysql_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "mariadb" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mariadb_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "mongo" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM mongo_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "redis" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM redis_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "libsql" => {
-                sqlx::query_scalar!(
-                    r#"SELECT CAST(id AS INTEGER) AS "id!: i64" FROM libsql_dbs WHERE id = ?"#,
-                    target_id
-                )
-                .fetch_optional(self.db.as_ref())
-                .await
-            }
-            "compose" => {
-                sqlx::query_scalar!(r#"SELECT id FROM compose_projects WHERE id = ?"#, target_id)
-                    .fetch_optional(self.db.as_ref())
-                    .await
-            }
-            _ => Ok(None),
-        };
-
-        match res {
-            Ok(Some(_)) => Some(target_id),
-            _ => None,
-        }
-    }
-
-    #[post("/database")]
-    async fn create_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        ValidatedJson(dto): ValidatedJson<CreateBackupDto>,
-    ) -> Result<(StatusCode, Json<BackupResponseDto>), ApiError> {
-        let org_id = self
-            .resolve_organization_id(Some(dto.organization_id))
-            .await;
-        let dest_id = self
-            .require_destination_id(Some(dto.destination_id))
-            .await?;
-        let item = Backup {
-            id: None,
+    #[permission(Database, CanCreate)]
+    async fn create_database_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let org_id = self.resolve_organization_id(Some(dto.organization_id)).await;
+        let dest_id = self.require_destination_id(Some(dto.destination_id)).await?;
+        let service_id = self.verify_service_exists(dto.service_id).await
+            .ok_or_else(|| ConnectError::invalid_argument("valid backup resource is required"))?;
+        let created = self.queries.create_backup(&CreateBackupParams {
             app_name: dto.app_name,
             schedule: dto.schedule,
             enabled: 1,
             database_name: dto.database_name,
             prefix: dto.prefix,
-            service_name: dto.service_name,
-            keep_latest_count: dto.keep_latest_count,
+            service_name: dto.service_name.unwrap_or_default(),
+            keep_latest_count: dto.keep_latest_count.unwrap_or(0),
             backup_type: dto.backup_type,
             database_type: dto.database_type,
-            metadata: dto.metadata,
-            compose_id: self.verify_fk_exists("compose", dto.compose_id).await,
-            postgres_id: self.verify_fk_exists("postgres", dto.postgres_id).await,
-            mysql_id: self.verify_fk_exists("mysql", dto.mysql_id).await,
-            mariadb_id: self.verify_fk_exists("mariadb", dto.mariadb_id).await,
-            mongo_id: self.verify_fk_exists("mongo", dto.mongo_id).await,
-            redis_id: self.verify_fk_exists("redis", dto.redis_id).await,
-            libsql_id: self.verify_fk_exists("libsql", dto.libsql_id).await,
+            metadata: dto.metadata.unwrap_or_default(),
+            service_id,
             destination_id: dest_id,
             organization_id: org_id,
-            created_at: 0,
-            updated_at: 0,
-        };
-        let id = self
-            .repo_backup
-            .create(&item)
-            .await
-            .map_err(map_sqlx_error)?;
+        }).await.map_err(map_error)?;
         refresh_schedule_runner().await;
-        self.repo_backup
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(BackupResponseDto::from)
-            .map(|b| (StatusCode::CREATED, Json(b)))
-            .map_err(map_sqlx_error)
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(created))))
     }
 
-    #[patch("/database/{id}")]
-    async fn patch_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(dto): ValidatedJson<PatchBackupDto>,
-    ) -> Result<Json<BackupResponseDto>, ApiError> {
-        let mut item = self
-            .repo_backup
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map_err(map_sqlx_error)?;
-        if let Some(v) = dto.app_name {
-            item.app_name = v;
-        }
-        if let Some(v) = dto.schedule {
-            item.schedule = v;
-        }
-        if let Some(v) = dto.database_name {
-            item.database_name = v;
-        }
-        if let Some(v) = dto.prefix {
-            item.prefix = v;
-        }
-        if let Some(v) = dto.service_name {
-            item.service_name = Some(v);
-        }
-        if let Some(v) = dto.keep_latest_count {
-            item.keep_latest_count = Some(v);
-        }
-        if let Some(v) = dto.backup_type {
-            item.backup_type = v;
-        }
-        if let Some(v) = dto.database_type {
-            item.database_type = v;
-        }
-        if let Some(v) = dto.metadata {
-            item.metadata = Some(v);
-        }
-        if let Some(v) = dto.destination_id {
-            item.destination_id = v;
-        }
-        if let Some(v) = dto.enabled {
-            item.enabled = v;
-        }
-
-        self.repo_backup
-            .update(id, &item)
-            .await
-            .map_err(map_sqlx_error)?;
+    #[permission(Database, CanCreate)]
+    async fn update_database_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: PatchBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let mut item = Backup::from(self.queries.backups_get_by_id(request.id).await.map_err(map_error)?);
+        if let Some(v) = dto.app_name { item.app_name = v; }
+        if let Some(v) = dto.schedule { item.schedule = v; }
+        if let Some(v) = dto.database_name { item.database_name = v; }
+        if let Some(v) = dto.prefix { item.prefix = v; }
+        if let Some(v) = dto.service_name { item.service_name = Some(v); }
+        if let Some(v) = dto.keep_latest_count { item.keep_latest_count = Some(v); }
+        if let Some(v) = dto.backup_type { item.backup_type = v; }
+        if let Some(v) = dto.database_type { item.database_type = Some(v); }
+        if let Some(v) = dto.metadata { item.metadata = Some(v); }
+        if let Some(v) = dto.destination_id { item.destination_id = v; }
+        if let Some(v) = dto.enabled { item.enabled = v; }
+        self.queries.backups_update(&BackupsUpdateParams {
+            app_name: item.app_name.clone(),
+            schedule: item.schedule.clone(),
+            enabled: item.enabled,
+            database_name: item.database_name.clone(),
+            prefix: item.prefix.clone(),
+            service_name: item.service_name.clone().unwrap_or_default(),
+            keep_latest_count: item.keep_latest_count.unwrap_or(0),
+            backup_type: item.backup_type.clone(),
+            database_type: item.database_type.clone().unwrap_or_default(),
+            metadata: item.metadata.clone().unwrap_or_default(),
+            service_id: item.service_id.unwrap_or(0),
+            destination_id: item.destination_id,
+            organization_id: item.organization_id,
+            created_at: item.created_at,
+            updated_at: chrono::Utc::now().timestamp(),
+            id: request.id,
+        }).await.map_err(map_error)?;
         refresh_schedule_runner().await;
-
-        self.repo_backup
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(BackupResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+        let updated = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
+        Response::ok(db_backup_to_resource(BackupResponseDto::from(Backup::from(updated))))
     }
 
-    #[delete("/database/{id}")]
-    async fn delete_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanDelete>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.repo_backup.delete(id).await.map_err(map_sqlx_error)?;
+    #[permission(Database, CanDelete)]
+    async fn delete_database_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.queries.backups_delete(request.id).await.map_err(map_error)?;
         refresh_schedule_runner().await;
-        Ok(StatusCode::NO_CONTENT)
+        Response::ok(Empty::default())
     }
 
-    #[post("/database/{id}/run")]
-    async fn run_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .run_database_backup(id)
-            .await
-            .map(|_| StatusCode::ACCEPTED)
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn run_database_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        self.service.run_database_backup(request.id).await.map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "run_database_backup".into(),
+            ..Default::default()
+        })
     }
 
-    #[get("/volume")]
-    #[live(table = "volume_backups")]
-    async fn list_volume_backups(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-    ) -> Result<Json<Vec<VolumeBackupResponseDto>>, ApiError> {
-        if let Some(CacheEnum::VolumeBackups(cached_items)) =
-            self.cache.get(&CacheKey::VolumeBackups).await
-        {
-            return Ok(Json(
-                cached_items
-                    .into_iter()
-                    .map(VolumeBackupResponseDto::from)
-                    .collect(),
-            ));
+    #[permission(Database, CanRead)]
+    async fn list_volume_backups<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        if let Some(CacheEnum::VolumeBackups(cached_items)) = self.cache.get(&CacheKey::VolumeBackups).await {
+            let items = cached_items.into_iter().map(VolumeBackupResponseDto::from).map(volume_backup_to_resource).collect();
+            return Response::ok(ResourceListResponse { items, ..Default::default() });
         }
-
-        let items = self.repo_volume.get_all().await.map_err(map_sqlx_error)?;
-        self.cache
-            .insert(
-                CacheKey::VolumeBackups,
-                CacheEnum::VolumeBackups(items.clone()),
-            )
-            .await;
-
-        Ok(Json(
-            items
-                .into_iter()
-                .map(VolumeBackupResponseDto::from)
-                .collect(),
-        ))
+        let rows = self.queries.volume_backups_get_all().await.map_err(map_error)?;
+        let items: Vec<VolumeBackup> = rows.into_iter().map(VolumeBackup::from).collect();
+        self.cache.insert(CacheKey::VolumeBackups, CacheEnum::VolumeBackups(items.clone())).await;
+        let items = items.into_iter().map(VolumeBackupResponseDto::from).map(volume_backup_to_resource).collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/volume/{id}")]
-    #[live(table = "volume_backups")]
-    async fn get_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<VolumeBackupResponseDto>, ApiError> {
-        self.repo_volume
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(VolumeBackupResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+    #[permission(Database, CanRead)]
+    async fn get_volume_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let item = self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?;
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(item))))
     }
 
-    #[post("/volume")]
-    async fn create_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        ValidatedJson(dto): ValidatedJson<CreateVolumeBackupDto>,
-    ) -> Result<(StatusCode, Json<VolumeBackupResponseDto>), ApiError> {
+    #[permission(Database, CanCreate)]
+    async fn create_volume_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: CreateVolumeBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let org_id = self.resolve_organization_id(dto.organization_id).await;
         let dest_id = self.require_destination_id(dto.destination_id).await?;
         crate::services::schedule::schedule::validate_backup_cron_expression(&dto.cron_expression)
-            .map_err(map_sqlx_error)?;
-
-        let mut item = VolumeBackup {
-            id: None,
+            .map_err(map_error)?;
+        let service_id = self.verify_service_exists(dto.service_id).await
+            .ok_or_else(|| ConnectError::invalid_argument("valid backup resource is required"))?;
+        let created = self.queries.create_volume_backup(&CreateVolumeBackupParams {
             name: dto.name,
             volume_name: dto.volume_name,
             prefix: dto.prefix,
             service_type: dto.service_type,
             app_name: dto.app_name,
-            service_name: dto.service_name,
+            service_name: dto.service_name.unwrap_or_default(),
             turn_off: dto.turn_off,
             cron_expression: dto.cron_expression,
-            keep_latest_count: dto.keep_latest_count,
+            keep_latest_count: dto.keep_latest_count.unwrap_or(0),
             enabled: 1,
             destination_id: dest_id,
             organization_id: org_id,
-            application_id: self
-                .verify_fk_exists("applications", dto.application_id)
-                .await,
-            postgres_id: self.verify_fk_exists("postgres", dto.postgres_id).await,
-            mysql_id: self.verify_fk_exists("mysql", dto.mysql_id).await,
-            mariadb_id: self.verify_fk_exists("mariadb", dto.mariadb_id).await,
-            mongo_id: self.verify_fk_exists("mongo", dto.mongo_id).await,
-            redis_id: self.verify_fk_exists("redis", dto.redis_id).await,
-            libsql_id: self.verify_fk_exists("libsql", dto.libsql_id).await,
-            compose_id: self.verify_fk_exists("compose", dto.compose_id).await,
-            created_at: 0,
-            updated_at: 0,
-        };
-
-        if item.compose_id.is_some() {
-            item.service_type = "COMPOSE".to_string();
-        } else if item.application_id.is_some() {
-            item.service_type = "APPLICATION".to_string();
-        } else if item.postgres_id.is_some() {
-            item.service_type = "POSTGRES".to_string();
-        } else if item.mysql_id.is_some() {
-            item.service_type = "MYSQL".to_string();
-        } else if item.mariadb_id.is_some() {
-            item.service_type = "MARIADB".to_string();
-        } else if item.mongo_id.is_some() {
-            item.service_type = "MONGO".to_string();
-        } else if item.redis_id.is_some() {
-            item.service_type = "REDIS".to_string();
-        } else if item.libsql_id.is_some() {
-            item.service_type = "LIBSQL".to_string();
-        }
-        if item.application_id.is_none()
-            && item.compose_id.is_none()
-            && item.postgres_id.is_none()
-            && item.mysql_id.is_none()
-            && item.mariadb_id.is_none()
-            && item.mongo_id.is_none()
-            && item.redis_id.is_none()
-            && item.libsql_id.is_none()
-        {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "valid backup resource is required".into(),
-            ));
-        }
-        let id = self
-            .repo_volume
-            .create(&item)
-            .await
-            .map_err(map_sqlx_error)?;
-        let created = self
-            .repo_volume
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(VolumeBackupResponseDto::from)
-            .map(|b| (StatusCode::CREATED, Json(b)))
-            .map_err(map_sqlx_error)?;
-
+            service_id,
+        }).await.map_err(map_error)?;
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
         refresh_schedule_runner().await;
-        Ok(created)
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(created))))
     }
 
-    #[patch("/volume/{id}")]
-    async fn patch_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(dto): ValidatedJson<PatchVolumeBackupDto>,
-    ) -> Result<Json<VolumeBackupResponseDto>, ApiError> {
-        let mut item = self
-            .repo_volume
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map_err(map_sqlx_error)?;
-        if let Some(v) = dto.name {
-            item.name = v;
-        }
-        if let Some(v) = dto.volume_name {
-            item.volume_name = v;
-        }
-        if let Some(v) = dto.prefix {
-            item.prefix = v;
-        }
-        if let Some(v) = dto.service_type {
-            item.service_type = v;
-        }
-        if let Some(v) = dto.app_name {
-            item.app_name = v;
-        }
-        if let Some(v) = dto.service_name {
-            item.service_name = Some(v);
-        }
-        if let Some(v) = dto.turn_off {
-            item.turn_off = v;
-        }
-        if let Some(v) = dto.cron_expression {
-            item.cron_expression = v;
-        }
-        if let Some(v) = dto.keep_latest_count {
-            item.keep_latest_count = Some(v);
-        }
-        if let Some(v) = dto.destination_id {
-            item.destination_id = v;
-        }
-        if let Some(v) = dto.enabled {
-            item.enabled = v;
-        }
-
-        self.repo_volume
-            .update(id, &item)
-            .await
-            .map_err(map_sqlx_error)?;
-
+    #[permission(Database, CanCreate)]
+    async fn update_volume_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let dto: PatchVolumeBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let mut item = VolumeBackup::from(self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?);
+        if let Some(v) = dto.name { item.name = v; }
+        if let Some(v) = dto.volume_name { item.volume_name = v; }
+        if let Some(v) = dto.prefix { item.prefix = v; }
+        if let Some(v) = dto.service_type { item.service_type = v; }
+        if let Some(v) = dto.app_name { item.app_name = v; }
+        if let Some(v) = dto.service_name { item.service_name = Some(v); }
+        if let Some(v) = dto.turn_off { item.turn_off = v; }
+        if let Some(v) = dto.cron_expression { item.cron_expression = v; }
+        if let Some(v) = dto.keep_latest_count { item.keep_latest_count = Some(v); }
+        if let Some(v) = dto.destination_id { item.destination_id = v; }
+        if let Some(v) = dto.enabled { item.enabled = v; }
+        self.queries.volume_backups_update(&VolumeBackupsUpdateParams {
+            name: item.name.clone(),
+            volume_name: item.volume_name.clone(),
+            prefix: item.prefix.clone(),
+            service_type: item.service_type.clone(),
+            app_name: item.app_name.clone(),
+            service_name: item.service_name.clone().unwrap_or_default(),
+            turn_off: item.turn_off,
+            cron_expression: item.cron_expression.clone(),
+            keep_latest_count: item.keep_latest_count.unwrap_or(0),
+            enabled: item.enabled,
+            destination_id: item.destination_id,
+            organization_id: item.organization_id,
+            service_id: item.service_id.unwrap_or(0),
+            created_at: item.created_at,
+            updated_at: chrono::Utc::now().timestamp(),
+            id: request.id,
+        }).await.map_err(map_error)?;
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
         refresh_schedule_runner().await;
-
-        self.repo_volume
-            .get_by_id(id)
-            .await
-            .map_err(map_sqlx_error)?
-            .ok_or(sqlx::Error::RowNotFound)
-            .map(VolumeBackupResponseDto::from)
-            .map(Json)
-            .map_err(map_sqlx_error)
+        let updated = self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?;
+        Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackup::from(updated))))
     }
 
-    #[delete("/volume/{id}")]
-    async fn delete_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Database, CanDelete>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.repo_volume.delete(id).await.map_err(map_sqlx_error)?;
+    #[permission(Database, CanDelete)]
+    async fn delete_volume_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.queries.volume_backups_delete(request.id).await.map_err(map_error)?;
         self.cache.invalidate(&CacheKey::VolumeBackups).await;
         refresh_schedule_runner().await;
-        Ok(StatusCode::NO_CONTENT)
+        Response::ok(Empty::default())
     }
 
-    #[post("/volume/{id}/run")]
-    async fn run_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .run_volume_backup(id)
-            .await
-            .map(|_| StatusCode::ACCEPTED)
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn run_volume_backup<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        self.service.run_volume_backup(request.id).await.map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "run_volume_backup".into(),
+            ..Default::default()
+        })
     }
 
-    #[post("/database/{id}/restore")]
-    async fn restore_database_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-        Json(body): Json<RestoreBackupDto>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .restore_database_backup(id, &body.backup_file)
-            .await
-            .map(|_| StatusCode::ACCEPTED)
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn restore_database<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        #[derive(serde::Deserialize)]
+        struct RestoreBackupDto { backup_file: String }
+        let dto: RestoreBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service.restore_database_backup(request.id, &dto.backup_file).await.map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "restore_database".into(),
+            ..Default::default()
+        })
     }
 
-    #[post("/volume/{id}/restore")]
-    async fn restore_volume_backup(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-        Json(body): Json<RestoreBackupDto>,
-    ) -> Result<StatusCode, ApiError> {
-        self.service
-            .restore_volume_backup(id, &body.backup_file)
-            .await
-            .map(|_| StatusCode::ACCEPTED)
-            .map_err(map_sqlx_error)
+    #[permission(Application, CanDeploy)]
+    async fn restore_volume<'a>(
+        &'a self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        #[derive(serde::Deserialize)]
+        struct RestoreBackupDto { backup_file: String }
+        let dto: RestoreBackupDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service.restore_volume_backup(request.id, &dto.backup_file).await.map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "restore_volume".into(),
+            ..Default::default()
+        })
     }
 }
 
-fn restore_status_stream(
-    service: Arc<PanelBackupService>,
-    restore_id: String,
-) -> RestoreStatusStream {
-    Box::pin(futures::stream::unfold(
-        (
-            service,
-            restore_id,
-            tokio::time::interval(Duration::from_secs(1)),
-            false,
-        ),
-        |(service, restore_id, mut interval, finished)| async move {
-            if finished {
-                return None;
+// Helper methods kept outside the trait impl
+impl BackupController {
+    async fn resolve_organization_id(&self, requested_id: Option<i64>) -> i64 {
+        if let Some(id) = requested_id.filter(|id| *id > 0) {
+            if self.queries.organization_get_by_id(id).await.is_ok() {
+                return id;
             }
-            interval.tick().await;
-            let status = match service.restore_status(&restore_id).await {
-                Ok(status) => status,
-                Err(error) => crate::api::dto::backup::PanelRestoreStatusDto {
-                    restore_id: restore_id.clone(),
-                    status: "FAILED".into(),
-                    message: error.to_string(),
-                    updated_at: chrono::Utc::now().timestamp(),
-                },
-            };
-            let finished = matches!(
-                status.status.as_str(),
-                "PENDING_RESTART" | "SUCCEEDED" | "FAILED" | "ROLLED_BACK"
-            );
-            let data = serde_json::to_string(&status).unwrap_or_else(|_| "{}".into());
-            Some((
-                Ok(Event::default().event("restore-status").data(data)),
-                (service, restore_id, interval, finished),
-            ))
-        },
-    ))
+        }
+        if let Ok(orgs) = self.queries.organization_get_all().await {
+            if let Some(first) = orgs.first() {
+                return first.id;
+            }
+        }
+        1
+    }
+
+    async fn require_destination_id(&self, requested_id: Option<i64>) -> Result<i64, ConnectError> {
+        let id = requested_id
+            .filter(|id| *id > 0)
+            .ok_or_else(|| ConnectError::invalid_argument("S3 destination is required"))?;
+        match self.queries.get_destination_by_i_d(id).await {
+            Ok(_) => Ok(id),
+            Err(sqlx::Error::RowNotFound) => Err(ConnectError::invalid_argument(
+                "selected S3 destination does not exist",
+            )),
+            Err(other) => Err(map_error(other)),
+        }
+    }
+
+    async fn verify_service_exists(&self, id: Option<i64>) -> Option<i64> {
+        let target_id = id.filter(|id| *id > 0)?;
+        self.queries
+            .get_service_by_i_d(target_id)
+            .await
+            .ok()
+            .map(|_| target_id)
+    }
 }
 
-fn map_sqlx_error(error: sqlx::Error) -> ApiError {
-    match error {
-        sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "backup not found".into()),
-        sqlx::Error::Protocol(message) => (StatusCode::BAD_REQUEST, message),
-        other => {
-            tracing::error!(error = %other, "backup operation failed");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "backup operation failed".into(),
+// ── Helper DTOs for deserializing ResourceRequest payloads ────────────
+
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct ComposeConfigBackupDto {
+    pub include_secrets: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RestorePanelBackupDto {
+    pub archive: String,
+    pub checksum_sha256: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RollbackPanelRestoreDto {
+    pub recovery_database: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct DownloadBackupFileDto {
+    pub destination_id: i64,
+    pub object_key: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RetentionPreviewQueryDto {
+    pub destination_id: i64,
+    pub prefix: Option<String>,
+    pub keep_latest: i64,
+}
+
+#[derive(Debug, Deserialize)]
+struct VerifyBackupFileDto {
+    pub destination_id: i64,
+    pub object_key: String,
+    pub checksum_sha256: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct BackupExecutionResponseDto {
+    pub id: i64,
+    pub backup_kind: crate::services::backup::types::BackupKind,
+    pub operation: crate::services::backup::types::BackupOperation,
+    pub backup_id: Option<i64>,
+    pub status: crate::services::backup::types::BackupExecutionStatus,
+    pub object_key: Option<String>,
+    pub checksum_sha256: Option<String>,
+    pub size_bytes: Option<i64>,
+    pub attempt: i64,
+    pub error: Option<String>,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+}
+
+impl From<BackupExecution> for BackupExecutionResponseDto {
+    fn from(value: BackupExecution) -> Self {
+        Self {
+            id: value.id,
+            backup_kind: crate::services::backup::types::BackupKind::from_str(
+                value.backup_kind.as_str(),
             )
+            .expect("database enforces backup kind"),
+            operation: crate::services::backup::types::BackupOperation::from_str(
+                value.operation.as_str(),
+            )
+            .expect("database enforces backup operation"),
+            backup_id: value.backup_id,
+            status: crate::services::backup::types::BackupExecutionStatus::from_str(
+                value.status.as_str(),
+            )
+            .expect("database enforces backup status"),
+            object_key: value.object_key,
+            checksum_sha256: value.sha256_checksum,
+            size_bytes: value.size_bytes,
+            attempt: value.attempt,
+            error: value.error,
+            started_at: value.started_at,
+            finished_at: value.finished_at,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateBackupDto {
+    pub app_name: String,
+    pub schedule: String,
+    pub database_name: String,
+    pub prefix: String,
+    pub service_name: Option<String>,
+    pub keep_latest_count: Option<i64>,
+    pub backup_type: String,
+    pub database_type: String,
+    pub metadata: Option<String>,
+    pub service_id: Option<i64>,
+    pub destination_id: i64,
+    pub organization_id: i64,
+}
+
+#[derive(Debug, Deserialize)]
+struct PatchBackupDto {
+    pub app_name: Option<String>,
+    pub schedule: Option<String>,
+    pub database_name: Option<String>,
+    pub prefix: Option<String>,
+    pub service_name: Option<String>,
+    pub keep_latest_count: Option<i64>,
+    pub backup_type: Option<String>,
+    pub database_type: Option<String>,
+    pub metadata: Option<String>,
+    pub destination_id: Option<i64>,
+    pub enabled: Option<i64>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct BackupResponseDto {
+    pub id: i64,
+    pub app_name: String,
+    pub schedule: String,
+    pub enabled: i64,
+    pub database_name: String,
+    pub prefix: String,
+    pub service_name: Option<String>,
+    pub keep_latest_count: Option<i64>,
+    pub backup_type: String,
+    pub database_type: Option<String>,
+    pub metadata: Option<String>,
+    pub service_id: Option<i64>,
+    pub destination_id: i64,
+    pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl From<Backup> for BackupResponseDto {
+    fn from(value: Backup) -> Self {
+        Self {
+            id: value.id,
+            app_name: value.app_name,
+            schedule: value.schedule,
+            enabled: value.enabled,
+            database_name: value.database_name,
+            prefix: value.prefix,
+            service_name: value.service_name,
+            keep_latest_count: value.keep_latest_count,
+            backup_type: value.backup_type,
+            database_type: value.database_type,
+            metadata: value.metadata,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<GenBackup> for Backup {
+    fn from(value: GenBackup) -> Self {
+        Self {
+            id: value.id,
+            app_name: value.app_name,
+            schedule: value.schedule,
+            enabled: value.enabled,
+            database_name: value.database_name,
+            prefix: value.prefix,
+            service_name: value.service_name,
+            keep_latest_count: value.keep_latest_count,
+            backup_type: value.backup_type,
+            database_type: value.database_type,
+            metadata: value.metadata,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<BackupsGetAllRow> for Backup {
+    fn from(value: BackupsGetAllRow) -> Self {
+        Self {
+            id: value.id,
+            app_name: value.app_name,
+            schedule: value.schedule,
+            enabled: value.enabled,
+            database_name: value.database_name,
+            prefix: value.prefix,
+            service_name: value.service_name,
+            keep_latest_count: value.keep_latest_count,
+            backup_type: value.backup_type,
+            database_type: value.database_type,
+            metadata: value.metadata,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateVolumeBackupDto {
+    pub name: String,
+    pub volume_name: String,
+    pub prefix: String,
+    pub service_type: String,
+    pub app_name: String,
+    pub service_name: Option<String>,
+    pub turn_off: i64,
+    pub cron_expression: String,
+    pub keep_latest_count: Option<i64>,
+    pub destination_id: Option<i64>,
+    pub organization_id: Option<i64>,
+    pub service_id: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PatchVolumeBackupDto {
+    pub name: Option<String>,
+    pub volume_name: Option<String>,
+    pub prefix: Option<String>,
+    pub service_type: Option<String>,
+    pub app_name: Option<String>,
+    pub service_name: Option<String>,
+    pub turn_off: Option<i64>,
+    pub cron_expression: Option<String>,
+    pub keep_latest_count: Option<i64>,
+    pub destination_id: Option<i64>,
+    pub enabled: Option<i64>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct VolumeBackupResponseDto {
+    pub id: i64,
+    pub name: String,
+    pub volume_name: String,
+    pub prefix: String,
+    pub service_type: String,
+    pub app_name: String,
+    pub service_name: Option<String>,
+    pub turn_off: i64,
+    pub cron_expression: String,
+    pub keep_latest_count: Option<i64>,
+    pub enabled: i64,
+    pub destination_id: i64,
+    pub organization_id: i64,
+    pub service_id: Option<i64>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl From<VolumeBackup> for VolumeBackupResponseDto {
+    fn from(value: VolumeBackup) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            volume_name: value.volume_name,
+            prefix: value.prefix,
+            service_type: value.service_type,
+            app_name: value.app_name,
+            service_name: value.service_name,
+            turn_off: value.turn_off,
+            cron_expression: value.cron_expression,
+            keep_latest_count: value.keep_latest_count,
+            enabled: value.enabled,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            service_id: value.service_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<GenVolumeBackup> for VolumeBackup {
+    fn from(value: GenVolumeBackup) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            volume_name: value.volume_name,
+            prefix: value.prefix,
+            service_type: value.service_type,
+            app_name: value.app_name,
+            service_name: value.service_name,
+            turn_off: value.turn_off,
+            cron_expression: value.cron_expression,
+            keep_latest_count: value.keep_latest_count,
+            enabled: value.enabled,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<VolumeBackupsGetAllRow> for VolumeBackup {
+    fn from(value: VolumeBackupsGetAllRow) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            volume_name: value.volume_name,
+            prefix: value.prefix,
+            service_type: value.service_type,
+            app_name: value.app_name,
+            service_name: value.service_name,
+            turn_off: value.turn_off,
+            cron_expression: value.cron_expression,
+            keep_latest_count: value.keep_latest_count,
+            enabled: value.enabled,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
+        }
+    }
+}
+
+impl From<VolumeBackupsGetByIdRow> for VolumeBackup {
+    fn from(value: VolumeBackupsGetByIdRow) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            volume_name: value.volume_name,
+            prefix: value.prefix,
+            service_type: value.service_type,
+            app_name: value.app_name,
+            service_name: value.service_name,
+            turn_off: value.turn_off,
+            cron_expression: value.cron_expression,
+            keep_latest_count: value.keep_latest_count,
+            enabled: value.enabled,
+            service_id: value.service_id,
+            destination_id: value.destination_id,
+            organization_id: value.organization_id,
+            created_at: value.created_at,
+            updated_at: value.updated_at,
         }
     }
 }

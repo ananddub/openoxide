@@ -7,7 +7,7 @@ use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, deco
 use serde::Serialize;
 use std::sync::Arc;
 
-#[derive(Debug, Serialize, poem_openapi::Object)]
+#[derive(Debug, Serialize)]
 pub struct TokenPair {
     pub access_token: String,
     pub refresh_token: String,

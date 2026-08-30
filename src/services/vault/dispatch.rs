@@ -1,5 +1,4 @@
-use super::{VaultService, VaultServiceError, providers};
-use crate::api::dto::vault::{VaultProviderType, VaultSecretListDto, VaultTestResultDto};
+use super::{VaultProviderType, VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, providers};
 
 impl VaultService {
     pub async fn test_connection(

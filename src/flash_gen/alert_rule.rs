@@ -42,7 +42,15 @@ pub struct AlertRuleRecordEventParams {
     pub value: f32,
     pub threshold: f32,
     pub message: String,
-    pub resolved_at: i64,
+}
+
+pub struct AlertRuleRecordResolvedEventParams {
+    pub alert_rule_id: i64,
+    pub organization_id: i64,
+    pub target_key: String,
+    pub value: f32,
+    pub threshold: f32,
+    pub message: String,
 }
 
 impl Queries {
@@ -102,9 +110,9 @@ impl Queries {
     pub async fn alert_rule_create(
         &self,
         params: &AlertRuleCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO alert_rules (name, target_type, target_id, metric_name, operator, threshold, duration_seconds, notification_channel, enabled, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO alert_rules (name, target_type, target_id, metric_name, operator, threshold, duration_seconds, notification_channel, enabled, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.name)
         .bind(&params.target_type)
@@ -118,9 +126,8 @@ impl Queries {
         .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// AlertRuleUpdate
@@ -153,15 +160,14 @@ impl Queries {
         &self,
         id: i64,
         organization_id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM alert_rules WHERE id = ? AND organization_id = ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "DELETE FROM alert_rules WHERE id = ? AND organization_id = ? RETURNING id;"
         )
         .bind(id)
         .bind(organization_id)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// AlertRuleRecordEvent
@@ -170,7 +176,7 @@ impl Queries {
         params: &AlertRuleRecordEventParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'RESOLVED' THEN CURRENT_TIMESTAMP END);"
+            "INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL);"
         )
         .bind(&params.alert_rule_id)
         .bind(&params.organization_id)
@@ -179,7 +185,25 @@ impl Queries {
         .bind(&params.value)
         .bind(&params.threshold)
         .bind(&params.message)
-        .bind(&params.resolved_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// AlertRuleRecordResolvedEvent
+    pub async fn alert_rule_record_resolved_event(
+        &self,
+        params: &AlertRuleRecordResolvedEventParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO alert_events (alert_rule_id, organization_id, target_key, state, value, threshold, message, resolved_at) VALUES (?, ?, ?, 'RESOLVED', ?, ?, ?, unixepoch());"
+        )
+        .bind(&params.alert_rule_id)
+        .bind(&params.organization_id)
+        .bind(&params.target_key)
+        .bind(&params.value)
+        .bind(&params.threshold)
+        .bind(&params.message)
         .execute(&self.pool)
         .await?;
         Ok(())

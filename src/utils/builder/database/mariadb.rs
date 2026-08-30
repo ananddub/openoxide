@@ -1,34 +1,40 @@
-use crate::db::models::mounts::Mount;
-use crate::repository::MariadbRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::models::Mounts;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
-    UpdateConfig,
+    DeployResources, DeploySpec, EngineConfig, Limits, RestartPolicy, StackFile, StackMount,
+    StackService, UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
 
 pub async fn build_mariadb_stack(
     db_id: i64,
-    mounts: &[Mount],
+    mounts: &[Mounts],
 ) -> ExecResult<(String, String, String)> {
-    let repo =
-        auto_di::resolve::<MariadbRepository>()
-            .await
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: format!("Failed to resolve MariadbRepository: {}", e),
-            })?;
-    let db = repo
-        .get_details(db_id)
+    let q = auto_di::resolve::<FlashQueries>()
+        .await
+        .map_err(|e| ExecError::CommandFailed {
+            code: None,
+            stderr: format!("Failed to resolve FlashQueries: {}", e),
+        })?;
+    let db = q
+        .database_get_by_id(db_id)
         .await
         .map_err(|e| ExecError::CommandFailed {
             code: None,
             stderr: format!("Failed to fetch mariadb db: {}", e),
         })?;
+    let engine = EngineConfig::parse(db.engine_config.as_deref().unwrap_or(""));
+    let command_row = (!db.command.trim().is_empty()).then(|| db.command.clone());
+    let database_name = db.db_name.clone().unwrap_or_default();
+    let database_user = db.db_user.clone().unwrap_or_default();
+    let database_password = db.db_password.clone().unwrap_or_default();
+    let database_root_password = engine.string("database_root_password");
+    let docker_image = db.docker_image.clone().unwrap_or_default();
 
     // Parse command and args
     let mut command: Option<Vec<String>> = None;
-    if let Some(c) = &db.command {
+    if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
             if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
@@ -46,13 +52,10 @@ pub async fn build_mariadb_stack(
     .await
     .unwrap_or_default();
 
-    resolved_env.insert("MARIADB_DATABASE".to_string(), db.database_name.clone());
-    resolved_env.insert("MARIADB_USER".to_string(), db.database_user.clone());
-    resolved_env.insert("MARIADB_PASSWORD".to_string(), db.database_password.clone());
-    resolved_env.insert(
-        "MARIADB_ROOT_PASSWORD".to_string(),
-        db.database_root_password.clone(),
-    );
+    resolved_env.insert("MARIADB_DATABASE".to_string(), database_name.clone());
+    resolved_env.insert("MARIADB_USER".to_string(), database_user.clone());
+    resolved_env.insert("MARIADB_PASSWORD".to_string(), database_password.clone());
+    resolved_env.insert("MARIADB_ROOT_PASSWORD".to_string(), database_root_password.clone());
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();
@@ -94,7 +97,7 @@ pub async fn build_mariadb_stack(
         .await?;
 
     let mut service = StackService {
-        image: db.docker_image.clone(),
+        image: docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
@@ -182,5 +185,5 @@ pub async fn build_mariadb_stack(
         stderr: format!("Failed to generate mariadb yaml: {}", e),
     })?;
 
-    Ok((db.app_name, db.docker_image, yaml))
+    Ok((db.app_name, docker_image, yaml))
 }

@@ -1,300 +1,501 @@
-use crate::core::middleware::permission::{
-    Application, CanCreate, CanDeploy, CanRead, CanWrite, Organization,
-};
-use auto_route::controller;
-use axum::{
-    Json,
-    extract::{Path, Query},
-    http::StatusCode,
-};
 use std::sync::Arc;
 
-use crate::{
-    api::dto::ai::{
-        AiConnectionResponseDto, AiDeploymentResponseDto, AiGenerationListQueryDto,
-        AiGenerationResponseDto, AiLogContextDto, AiModelsResponseDto, AiSettingResponseDto,
-        AnalyzeLogsDto, AnalyzeLogsResponseDto, CreateAiSettingDto, DeployAiGenerationDto,
-        DiscoverAiModelsDto, GenerateComposeDto, ReviewAiGenerationDto, TestAiConnectionDto,
-        UpdateAiSettingDto,
-    },
-    core::middleware::{permission::RequirePermission, validator::ValidatedJson},
-    services::ai::{AiLogContext, AiService},
+use auto_di::singleton;
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use serde::Deserialize;
+
+use crate::api::connect::generated::openoxide::api::v1::{
+    AiService, AiServiceExt, Empty, OperationResult, ResourceListResponse,
+    ResourceQuery, ResourceRequest, ResourceResponse,
+};
+use crate::services::ai::{
+    AiDeployInput, AiGenerationOutput, AiLogContext, AiSettingInput, AiSettingUpdate,
+    AiService as AppAiService,
 };
 
-type ApiError = (StatusCode, String);
-
 pub struct AiController {
-    service: Arc<AiService>,
+    service: Arc<AppAiService>,
 }
 
-#[controller("/api/ai")]
+#[singleton]
 impl AiController {
-    fn new(service: Arc<AiService>) -> Self {
+    pub fn new(service: Arc<AppAiService>) -> Self {
         Self { service }
     }
+}
 
-    #[get("/settings")]
-    #[live(tables = ["ai_settings","ai_generations"])]
-    async fn list_settings(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-    ) -> Result<Json<Vec<AiSettingResponseDto>>, ApiError> {
-        self.service
-            .list_settings(permission.organization_id())
-            .await
-            .map(|items| Json(items.into_iter().map(Into::into).collect()))
-            .map_err(map_error)
+fn map_error(error: String) -> ConnectError {
+    let lower = error.to_ascii_lowercase();
+    if lower.contains("not found") {
+        ConnectError::not_found(error)
+    } else if lower.contains("already") || lower.contains("concurrently") {
+        ConnectError::new(ErrorCode::AlreadyExists, error)
+    } else if lower.contains("does not belong") || lower.contains("authenticated organization") {
+        ConnectError::new(ErrorCode::PermissionDenied, error)
+    } else if lower.contains("database") || lower.contains("sqlite") {
+        tracing::error!(error = %error, "AI backend database operation failed");
+        ConnectError::new(ErrorCode::Internal, "database operation failed")
+    } else {
+        ConnectError::invalid_argument(error)
     }
+}
 
-    #[get("/settings/{id}")]
-    #[live(tables = ["ai_settings","ai_generations"])]
-    async fn get_setting(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<AiSettingResponseDto>, ApiError> {
-        self.service
-            .get_setting(id, permission.organization_id())
-            .await
-            .map(Into::into)
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[post("/settings")]
-    async fn create_setting(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
-        ValidatedJson(body): ValidatedJson<CreateAiSettingDto>,
-    ) -> Result<(StatusCode, Json<AiSettingResponseDto>), ApiError> {
-        self.service
-            .create_setting(permission.organization_id(), body.into())
-            .await
-            .map(Into::into)
-            .map(Json)
-            .map(|body| (StatusCode::CREATED, body))
-            .map_err(map_error)
-    }
-
-    #[put("/settings/{id}")]
-    async fn update_setting(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<UpdateAiSettingDto>,
-    ) -> Result<Json<AiSettingResponseDto>, ApiError> {
-        self.service
-            .update_setting(id, permission.organization_id(), body.into())
-            .await
-            .map(Into::into)
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[delete("/settings/{id}")]
-    async fn delete_setting(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Organization, CanWrite>,
-        Path(id): Path<i64>,
-    ) -> Result<StatusCode, ApiError> {
-        match self
+#[auto_grpc::service(connect = true, auth = true)]
+impl AiService for AiController {
+    #[permission(Application, CanRead)]
+    async fn list_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let items = self
             .service
-            .delete_setting(id, permission.organization_id())
+            .list_settings(organization_id)
             .await
-            .map_err(map_error)?
-        {
-            true => Ok(StatusCode::NO_CONTENT),
-            false => Err((StatusCode::NOT_FOUND, "AI setting not found".into())),
+            .map_err(map_error)?;
+        let items = items
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: dto.id,
+                    kind: "ai_setting".into(),
+                    payload,
+                    ..Default::default()
+                }
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Application, CanRead)]
+    async fn get_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let setting = self
+            .service
+            .get_setting(request.id, organization_id)
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&setting).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: setting.id,
+            kind: "ai_setting".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Organization, CanWrite)]
+    async fn create_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let dto: CreateAiSettingDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let setting = self
+            .service
+            .create_setting(organization_id, dto.into())
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&setting).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: setting.id,
+            kind: "ai_setting".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Organization, CanWrite)]
+    async fn update_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let dto: UpdateAiSettingDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let setting = self
+            .service
+            .update_setting(request.id, organization_id, dto.into())
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&setting).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: setting.id,
+            kind: "ai_setting".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Organization, CanWrite)]
+    async fn delete_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let deleted = self
+            .service
+            .delete_setting(request.id, organization_id)
+            .await
+            .map_err(map_error)?;
+        if deleted {
+            Response::ok(Empty::default())
+        } else {
+            Err(ConnectError::not_found("AI setting not found"))
         }
     }
 
-    #[get("/settings/{id}/models")]
-
-    async fn setting_models(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<AiModelsResponseDto>, ApiError> {
-        self.service
-            .discover_setting_models(id, permission.organization_id())
+    #[permission(Application, CanRead)]
+    async fn list_models<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let models = self
+            .service
+            .discover_setting_models(request.id, organization_id)
             .await
-            .map(|models| Json(AiModelsResponseDto { models }))
-            .map_err(map_error)
-    }
-
-    #[post("/settings/{id}/test")]
-    async fn test_setting(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<AiConnectionResponseDto>, ApiError> {
-        self.service
-            .test_setting(id, permission.organization_id())
-            .await
-            .map(|()| {
-                Json(AiConnectionResponseDto {
-                    success: true,
-                    message: "connection successful".into(),
-                })
+            .map_err(map_error)?;
+        let items = models
+            .into_iter()
+            .map(|m| {
+                let payload = serde_json::to_string(&m).unwrap_or_default();
+                ResourceResponse {
+                    id: 0,
+                    kind: "ai_model".into(),
+                    payload,
+                    ..Default::default()
+                }
             })
-            .map_err(map_error)
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[post("/models/discover")]
-    async fn discover_models(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
-        ValidatedJson(body): ValidatedJson<DiscoverAiModelsDto>,
-    ) -> Result<Json<AiModelsResponseDto>, ApiError> {
+    #[permission(Application, CanRead)]
+    async fn test_settings<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
         self.service
-            .discover_models(body.api_url, body.api_key)
+            .test_setting(request.id, organization_id)
             .await
-            .map(|models| Json(AiModelsResponseDto { models }))
-            .map_err(map_error)
+            .map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "test_settings".into(),
+            message: Some("connection successful".into()),
+            ..Default::default()
+        })
     }
 
-    #[post("/connection/test")]
-    async fn test_connection(
-        &self,
-        RequirePermission(_claims, _): RequirePermission<Application, CanRead>,
-        ValidatedJson(body): ValidatedJson<TestAiConnectionDto>,
-    ) -> Result<Json<AiConnectionResponseDto>, ApiError> {
-        self.service
-            .test_connection(body.api_url, body.api_key, body.model)
+    #[permission(Application, CanRead)]
+    async fn discover_models<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let dto: DiscoverAiModelsDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let models = self
+            .service
+            .discover_models(dto.api_url, dto.api_key)
             .await
-            .map(|()| {
-                Json(AiConnectionResponseDto {
-                    success: true,
-                    message: "connection successful".into(),
-                })
+            .map_err(map_error)?;
+        let items = models
+            .into_iter()
+            .map(|m| {
+                let payload = serde_json::to_string(&m).unwrap_or_default();
+                ResourceResponse {
+                    id: 0,
+                    kind: "ai_model".into(),
+                    payload,
+                    ..Default::default()
+                }
             })
-            .map_err(map_error)
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[get("/generations")]
-    #[live(tables = ["ai_settings","ai_generations"])]
-    async fn list_generations(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        Query(query): Query<AiGenerationListQueryDto>,
-    ) -> Result<Json<Vec<AiGenerationResponseDto>>, ApiError> {
+    #[permission(Application, CanRead)]
+    async fn test_connection<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let dto: TestAiConnectionDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         self.service
-            .list_generations(permission.organization_id(), query.limit.unwrap_or(50))
+            .test_connection(dto.api_url, dto.api_key, dto.model)
             .await
-            .map(|items| Json(items.into_iter().map(Into::into).collect()))
-            .map_err(map_error)
+            .map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "test_connection".into(),
+            message: Some("connection successful".into()),
+            ..Default::default()
+        })
     }
 
-    #[post("/generations")]
-    async fn generate(
-        &self,
-        RequirePermission(claims, permission): RequirePermission<Application, CanCreate>,
-        ValidatedJson(body): ValidatedJson<GenerateComposeDto>,
-    ) -> Result<(StatusCode, Json<AiGenerationResponseDto>), ApiError> {
-        self.service
-            .generate(
-                body.ai_setting_id,
-                permission.organization_id(),
-                claims.user.user_id,
-                body.request,
-            )
+    #[permission(Application, CanRead)]
+    async fn list_generations<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let limit = request.limit.unwrap_or(50);
+        let items = self
+            .service
+            .list_generations(organization_id, limit)
             .await
-            .map(Into::into)
-            .map(Json)
-            .map(|body| (StatusCode::CREATED, body))
-            .map_err(map_error)
-    }
-
-    #[get("/generations/{id}")]
-    #[live(tables = ["ai_settings","ai_generations"])]
-    async fn get_generation(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        Path(id): Path<i64>,
-    ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
-        self.service
-            .get_generation(id, permission.organization_id())
-            .await
-            .map(Into::into)
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[put("/generations/{id}/review")]
-    async fn review_generation(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanCreate>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<ReviewAiGenerationDto>,
-    ) -> Result<Json<AiGenerationResponseDto>, ApiError> {
-        self.service
-            .review_generation(id, permission.organization_id(), body.output)
-            .await
-            .map(Into::into)
-            .map(Json)
-            .map_err(map_error)
-    }
-
-    #[post("/generations/{id}/deploy")]
-    async fn deploy_generation(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanDeploy>,
-        Path(id): Path<i64>,
-        ValidatedJson(body): ValidatedJson<DeployAiGenerationDto>,
-    ) -> Result<(StatusCode, Json<AiDeploymentResponseDto>), ApiError> {
-        self.service
-            .deploy_generation(id, permission.organization_id(), body.into())
-            .await
-            .map(|result| {
-                Json(AiDeploymentResponseDto {
-                    generation: result.generation.into(),
-                    compose_id: result.compose_id,
-                    deployment_id: result.deployment_id,
-                })
+            .map_err(map_error)?;
+        let items = items
+            .into_iter()
+            .map(|dto| {
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                ResourceResponse {
+                    id: dto.id,
+                    kind: "ai_generation".into(),
+                    payload,
+                    ..Default::default()
+                }
             })
-            .map(|body| (StatusCode::ACCEPTED, body))
-            .map_err(map_error)
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[post("/logs/analyze")]
-    async fn analyze_logs(
-        &self,
-        RequirePermission(_claims, permission): RequirePermission<Application, CanRead>,
-        ValidatedJson(body): ValidatedJson<AnalyzeLogsDto>,
-    ) -> Result<Json<AnalyzeLogsResponseDto>, ApiError> {
-        let context = match body.context {
+    #[permission(Application, CanRead)]
+    async fn get_generation<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let generation = self
+            .service
+            .get_generation(request.id, organization_id)
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&generation).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: generation.id,
+            kind: "ai_generation".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Application, CanCreate)]
+    async fn create_generation<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let auth = Self::extract_auth(&ctx).await?;
+        let organization_id = auth.organization_id;
+        let dto: GenerateComposeDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let generation = self
+            .service
+            .generate(dto.ai_setting_id, organization_id, auth.user_id(), dto.request)
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&generation).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: generation.id,
+            kind: "ai_generation".into(),
+            payload,
+            ..Default::default()
+        })
+    }
+
+    #[permission(Application, CanCreate)]
+    async fn review_generation<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let dto: ReviewAiGenerationDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        self.service
+            .review_generation(request.id, organization_id, dto.output)
+            .await
+            .map_err(map_error)?;
+        Response::ok(OperationResult {
+            success: true,
+            operation: "review_generation".into(),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Application, CanDeploy)]
+    async fn deploy_generation<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let dto: DeployAiGenerationDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let result = self
+            .service
+            .deploy_generation(request.id, organization_id, dto.into())
+            .await
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&result).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "deploy_generation".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Application, CanRead)]
+    async fn analyze_logs<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        let organization_id = request.organization_id.unwrap_or(0);
+        let dto: AnalyzeLogsDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let context = match dto.context {
             AiLogContextDto::Build => AiLogContext::Build,
             AiLogContextDto::Runtime => AiLogContext::Runtime,
         };
-        self.service
-            .analyze_logs(
-                body.ai_setting_id,
-                permission.organization_id(),
-                context,
-                body.logs,
-            )
+        let analysis = self
+            .service
+            .analyze_logs(dto.ai_setting_id, organization_id, context, dto.logs)
             .await
-            .map(|analysis| Json(AnalyzeLogsResponseDto { analysis }))
-            .map_err(map_error)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&analysis).unwrap_or_default();
+        Response::ok(ResourceResponse {
+            id: 0,
+            kind: "ai_log_analysis".into(),
+            payload,
+            ..Default::default()
+        })
     }
 }
 
-fn map_error(error: String) -> ApiError {
-    let lower = error.to_ascii_lowercase();
-    let status = if lower.contains("not found") {
-        StatusCode::NOT_FOUND
-    } else if lower.contains("already") || lower.contains("concurrently") {
-        StatusCode::CONFLICT
-    } else if lower.contains("does not belong") || lower.contains("authenticated organization") {
-        StatusCode::FORBIDDEN
-    } else if lower.contains("database") || lower.contains("sqlite") {
-        tracing::error!(error = %error, "AI backend database operation failed");
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "database operation failed".into(),
-        );
-    } else {
-        StatusCode::BAD_REQUEST
-    };
-    (status, error)
+// ── AI payload DTOs ──────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+struct CreateAiSettingDto {
+    name: String,
+    api_url: String,
+    api_key: String,
+    model: String,
+    #[serde(default = "default_true")]
+    is_enabled: bool,
+}
+
+impl From<CreateAiSettingDto> for AiSettingInput {
+    fn from(value: CreateAiSettingDto) -> Self {
+        Self {
+            name: value.name,
+            api_url: value.api_url,
+            api_key: value.api_key,
+            model: value.model,
+            is_enabled: value.is_enabled,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateAiSettingDto {
+    name: Option<String>,
+    api_url: Option<String>,
+    api_key: Option<String>,
+    model: Option<String>,
+    is_enabled: Option<bool>,
+}
+
+impl From<UpdateAiSettingDto> for AiSettingUpdate {
+    fn from(value: UpdateAiSettingDto) -> Self {
+        Self {
+            name: value.name,
+            api_url: value.api_url,
+            api_key: value.api_key,
+            model: value.model,
+            is_enabled: value.is_enabled,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct DiscoverAiModelsDto {
+    api_url: String,
+    api_key: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TestAiConnectionDto {
+    api_url: String,
+    api_key: String,
+    model: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GenerateComposeDto {
+    ai_setting_id: i64,
+    request: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReviewAiGenerationDto {
+    output: AiGenerationOutput,
+}
+
+#[derive(Debug, Deserialize)]
+struct DeployAiGenerationDto {
+    suggestion_id: String,
+    environment_id: i64,
+    server_id: Option<i64>,
+    #[serde(default)]
+    deploy_now: bool,
+}
+
+impl From<DeployAiGenerationDto> for AiDeployInput {
+    fn from(value: DeployAiGenerationDto) -> Self {
+        Self {
+            suggestion_id: value.suggestion_id,
+            environment_id: value.environment_id,
+            server_id: value.server_id,
+            deploy_now: value.deploy_now,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum AiLogContextDto {
+    Build,
+    Runtime,
+}
+
+#[derive(Debug, Deserialize)]
+struct AnalyzeLogsDto {
+    ai_setting_id: i64,
+    context: AiLogContextDto,
+    logs: String,
+}
+
+fn default_true() -> bool {
+    true
 }

@@ -2,12 +2,29 @@ use super::{
     error::AlertParseError, metric::MetricKind, operator::Operator, rule_state::RuleState,
     target::TargetKind,
 };
-use crate::db::models::alert_rule::AlertRule;
 
 const DEFAULT_WINDOW_SAMPLES: usize = 15;
 const MAX_WINDOW_SAMPLES: usize = 300;
 const MAX_COOLDOWN_SECONDS: i64 = 3600;
 const DEFAULT_COOLDOWN_SECONDS: i64 = 300;
+
+/// Wire-facing rule model preserved from the retired `db::models` layer.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct AlertRule {
+    pub id: Option<i64>,
+    pub name: String,
+    pub target_type: String,
+    pub target_id: i64,
+    pub metric_name: String,
+    pub operator: String,
+    pub threshold: f64,
+    pub duration_seconds: i32,
+    pub notification_channel: String,
+    pub enabled: i32,
+    pub organization_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 #[derive(Clone, Debug)]
 pub struct ParsedRule {

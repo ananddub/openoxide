@@ -1,12 +1,10 @@
-use crate::{
-    db::models::notif_telegram::NotifTelegram, services::notification::message::NotificationMessage,
-};
+use crate::services::notification::{loader::TelegramConfig, message::NotificationMessage};
 use reqwest::Client;
 use serde_json::json;
 
 pub async fn send_telegram(
     client: &Client,
-    cfg: &NotifTelegram,
+    cfg: &TelegramConfig,
     msg: &NotificationMessage,
 ) -> Result<(), String> {
     let url = format!("https://api.telegram.org/bot{}/sendMessage", cfg.bot_token);

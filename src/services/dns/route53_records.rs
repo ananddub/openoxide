@@ -1,5 +1,4 @@
-use super::{DnsService, DnsServiceError};
-use crate::api::dto::dns::{DnsRecordDto, UpsertDnsRecordDto};
+use super::{DnsRecordDto, DnsService, DnsServiceError, UpsertDnsRecordDto};
 use aws_sdk_route53::types::{
     Change, ChangeAction, ChangeBatch, ResourceRecord, ResourceRecordSet, RrType,
 };

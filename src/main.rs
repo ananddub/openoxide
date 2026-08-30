@@ -1,6 +1,6 @@
 use auto_di::resolve;
-use axum::Router;
 use openoxide::{
+    api::routes::socket::Socket,
     core::config::Config, core::logs::init_logs, utils::background::BackgroundManager,
 };
 use std::sync::Arc;
@@ -30,7 +30,7 @@ async fn main() {
     // 2. Orphaned agent socket cleanup on server boot
     openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
 
-    let service: Arc<Router> = resolve::<Router<()>>().await.unwrap();
+    let socket: Arc<Socket> = resolve::<Socket>().await.unwrap();
     let connect_router = auto_grpc::connect_routes().await.unwrap();
     let connect_service = connectrpc::ConnectRpcService::new(connect_router);
     BackgroundManager::start_all()
@@ -43,10 +43,9 @@ async fn main() {
     let listener = TcpListener::bind(format!("{}:{}", host, port))
         .await
         .unwrap();
-    let svc = service.as_ref().to_owned();
 
     tracing::info!("Listening on {}:{}", host, port);
-    openoxide::api::connect::serve(listener, svc, connect_service)
+    openoxide::api::connect::serve(listener, socket, connect_service)
         .await
         .unwrap();
 }

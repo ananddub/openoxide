@@ -9,13 +9,13 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "security")]
 pub struct Security {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub username: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub password: String,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    pub service_id: i64,
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub created_at: i64,
 }

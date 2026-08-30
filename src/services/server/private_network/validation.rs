@@ -1,4 +1,4 @@
-use crate::api::dto::server::{
+use super::service::{
     PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto,
 };
 
@@ -154,7 +154,7 @@ fn endpoint_port(endpoint: &str) -> sqlx::Result<u16> {
 
 #[cfg(test)]
 mod tests {
-    use crate::api::dto::server::{
+    use super::super::service::{
         PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto,
     };
 

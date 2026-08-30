@@ -10,7 +10,7 @@ pub struct OAuthConfig {
     pub scopes: String,
 }
 
-#[derive(Debug, Clone, Serialize, poem_openapi::Object)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AuthorizationInfo {
     pub url: String,
     pub state: String,

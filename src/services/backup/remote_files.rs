@@ -3,23 +3,45 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::{
-    api::dto::backup::{BackupFileDto, BackupIntegrityDto, RetentionPreviewDto},
-    repository::DestinationRepository,
+    db::queries::FlashQueries,
     utils::{
         backup::database::S3Destination,
         exec::{CommandExecutor, LocalExecutor},
         rclone::{RcloneBuilder, RcloneCommand, RcloneListFormat, RcloneSeparator},
     },
 };
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BackupFileDto {
+    pub name: String,
+    pub path: String,
+    pub size_bytes: i64,
+    pub modified_at: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RetentionPreviewDto {
+    pub keep: Vec<BackupFileDto>,
+    pub delete: Vec<BackupFileDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BackupIntegrityDto {
+    pub valid: bool,
+    pub expected_sha256: String,
+    pub actual_sha256: String,
+    pub size_bytes: i64,
+}
 
 pub struct BackupFileService {
-    destinations: Arc<DestinationRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl BackupFileService {
-    fn new(destinations: Arc<DestinationRepository>) -> Self {
-        Self { destinations }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn list(
@@ -95,11 +117,7 @@ impl BackupFileService {
     }
 
     async fn destination(&self, id: i64) -> sqlx::Result<S3Destination> {
-        let value = self
-            .destinations
-            .get_by_id(id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let value = self.queries.get_destination_by_i_d(id).await?;
         Ok(S3Destination {
             access_key: value.access_key,
             secret_key: value.secret_access_key,

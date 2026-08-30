@@ -2,7 +2,7 @@ use aws_credential_types::Credentials;
 use aws_sdk_secretsmanager::Client;
 use serde_json::Value;
 
-use crate::api::dto::vault::{VaultSecretListDto, VaultTestResultDto};
+use crate::services::vault::{VaultSecretListDto, VaultTestResultDto};
 
 pub(crate) fn client(config: Option<&str>) -> Result<Client, String> {
     let value: Value = config

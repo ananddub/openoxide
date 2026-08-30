@@ -134,25 +134,25 @@ pub async fn spawn_russh_server_terminal(
     start_token: tokio_util::sync::CancellationToken,
 ) {
     let key = socket_key(&socket);
-    let repository = match auto_di::resolve::<crate::repository::ServerRepository>().await {
-        Ok(repository) => repository,
+    let queries = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
+        Ok(queries) => queries,
         Err(error) => {
             emit_error(
                 &socket,
-                format!("could not resolve server repository: {error}"),
+                format!("could not resolve database queries: {error}"),
             );
             return;
         }
     };
-    let Some((host, port, username, private_key, public_key)) =
-        (match repository.get_ssh_credentials(server_id).await {
+    let credentials =
+        match crate::services::server::ssh_credentials(&queries, server_id).await {
             Ok(value) => value,
             Err(error) => {
                 emit_error(&socket, format!("could not load SSH credentials: {error}"));
                 return;
             }
-        })
-    else {
+        };
+    let Some((host, port, username, private_key, public_key)) = credentials else {
         emit_error(
             &socket,
             "Server not found or SSH credentials are missing".to_owned(),

@@ -1,6 +1,6 @@
 CREATE TABLE group_policy (
-    id INTEGER NOT NULL PRIMARY KEY,
-    group_id INTEGER NOT NULL,
-    policy_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    group_id BIGINT NOT NULL,
+    policy_id BIGINT NOT NULL,
+    created_at BIGINT NOT NULL
 );

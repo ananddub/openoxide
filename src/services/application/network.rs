@@ -1,44 +1,66 @@
 use std::{collections::BTreeSet, sync::Arc};
 
 use auto_di::singleton;
+use serde::Deserialize;
 
 use crate::{
-    api::dto::application::network::UpdateApplicationNetworksDto,
     core::cache::{AppStateCache, CacheKey},
     db::models::database_networks::DatabaseNetwork,
-    repository::{ApplicationRepository, DatabaseNetworkRepository},
+    db::queries::FlashQueries,
+    flash_gen::models::{DatabaseNetworks, Services},
+    flash_gen::services::UpdateServiceNetworksParams,
 };
 
+#[derive(Debug, Deserialize)]
+pub struct UpdateApplicationNetworksDto {
+    pub network_ids: Vec<i64>,
+    pub detach_rustploy_network: bool,
+}
+
+fn to_model(row: DatabaseNetworks) -> DatabaseNetwork {
+    DatabaseNetwork {
+        id: row.id,
+        name: row.name,
+        docker_network_name: row.docker_network_name,
+        description: row.description,
+        external: row.external,
+        server_id: row.server_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
+}
+
 pub struct ApplicationNetworkService {
-    applications: Arc<ApplicationRepository>,
-    networks: Arc<DatabaseNetworkRepository>,
+    queries: Arc<FlashQueries>,
     cache: Arc<AppStateCache>,
 }
 
 #[singleton]
 impl ApplicationNetworkService {
-    fn new(
-        applications: Arc<ApplicationRepository>,
-        networks: Arc<DatabaseNetworkRepository>,
-        cache: Arc<AppStateCache>,
-    ) -> Self {
-        Self {
-            applications,
-            networks,
-            cache,
+    fn new(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {
+        Self { queries, cache }
+    }
+
+    async fn get_application(&self, application_id: i64) -> sqlx::Result<Services> {
+        self.queries
+            .app_sub_get_application_by_i_d(application_id)
+            .await
+    }
+
+    async fn network_by_id(&self, id: i64) -> sqlx::Result<Option<DatabaseNetwork>> {
+        match self.queries.database_networks_get_by_id(id).await {
+            Ok(row) => Ok(Some(to_model(row))),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error),
         }
     }
 
     pub async fn get(&self, application_id: i64) -> sqlx::Result<(bool, Vec<DatabaseNetwork>)> {
-        let app = self
-            .applications
-            .get_by_id(application_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let app = self.get_application(application_id).await?;
         let ids = parse_ids(&app.network_ids)?;
         let mut resolved = Vec::with_capacity(ids.len());
         for id in ids {
-            if let Some(network) = self.networks.get_by_id(id).await? {
+            if let Some(network) = self.network_by_id(id).await? {
                 resolved.push(network);
             }
         }
@@ -50,17 +72,12 @@ impl ApplicationNetworkService {
         application_id: i64,
         input: UpdateApplicationNetworksDto,
     ) -> sqlx::Result<(bool, Vec<DatabaseNetwork>)> {
-        let app = self
-            .applications
-            .get_by_id(application_id)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?;
+        let app = self.get_application(application_id).await?;
         let unique: BTreeSet<i64> = input.network_ids.into_iter().collect();
         let mut resolved = Vec::with_capacity(unique.len());
         for id in &unique {
             let network = self
-                .networks
-                .get_by_id(*id)
+                .network_by_id(*id)
                 .await?
                 .ok_or_else(|| sqlx::Error::Protocol(format!("network {id} not found")))?;
             if network.server_id != app.server_id {
@@ -82,12 +99,12 @@ impl ApplicationNetworkService {
                 .collect::<Vec<_>>(),
         )
         .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        self.applications
-            .update_networks(
-                application_id,
-                &serialized,
-                i64::from(input.detach_rustploy_network),
-            )
+        self.queries
+            .update_service_networks(&UpdateServiceNetworksParams {
+                network_ids: serialized,
+                detach_rustploy_network: i64::from(input.detach_rustploy_network),
+                id: application_id,
+            })
             .await?;
         self.cache
             .invalidate(&CacheKey::Application(application_id))

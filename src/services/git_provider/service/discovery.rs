@@ -2,7 +2,8 @@ use crate::utils::provider::discovery::{
     CollaboratorPermission, GitReferenceInfo, ProviderAccess, RepositoryInfo,
 };
 
-use super::GitProviderService;
+use super::{parse_config, BitbucketConfig, GitProviderService, GiteaConfig, GithubConfig,
+    GitlabConfig};
 
 impl GitProviderService {
     pub async fn test_connection(&self, id: i64) -> Result<(), String> {
@@ -49,57 +50,52 @@ impl GitProviderService {
 
     pub(super) async fn access(&self, id: i64) -> Result<ProviderAccess, String> {
         use crate::utils::provider::GitProviderType;
-        let provider = self.get(id).await.map_err(|error| error.to_string())?;
-        let provider_kind: GitProviderType = provider
+        let row = self.provider_row(id).await?;
+        let provider_kind: GitProviderType = row
             .provider_type
             .parse()
-            .map_err(|_| format!("Unsupported Git provider: {}", provider.provider_type))?;
+            .map_err(|_| format!("Unsupported Git provider: {}", row.provider_type))?;
         match provider_kind {
             GitProviderType::Github => {
-                let item = self.github_item(id).await?;
+                let item: GithubConfig = parse_config(&row.config_json)
+                    .map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::GithubApp {
-                    app_id: item.github_app_id.ok_or("GitHub App ID is required")?,
+                    app_id: item.app_id.ok_or("GitHub App ID is required")?,
                     installation_id: item
-                        .github_installation_id
+                        .installation_id
                         .ok_or("GitHub installation ID is required")?,
-                    private_key: item
-                        .github_private_key
-                        .ok_or("GitHub private key is required")?,
+                    private_key: item.private_key.ok_or("GitHub private key is required")?,
                 })
             }
             GitProviderType::Gitlab => {
-                let item = self
-                    .gitlab
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .ok_or("GitLab configuration not found")?;
+                let item: GitlabConfig = parse_config(&row.config_json)
+                    .map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::Gitlab {
-                    base_url: item.gitlab_url,
-                    token: item.access_token.ok_or("GitLab access token is required")?,
+                    base_url: item
+                        .url
+                        .filter(|value| !value.trim().is_empty())
+                        .ok_or("GitLab URL is required")?,
+                    token: item
+                        .access_token
+                        .ok_or("GitLab access token is required")?,
                 })
             }
             GitProviderType::Gitea => {
-                let item = self
-                    .gitea
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .ok_or("Gitea configuration not found")?;
+                let item: GiteaConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::Gitea {
-                    base_url: item.gitea_url,
+                    base_url: item
+                        .url
+                        .filter(|value| !value.trim().is_empty())
+                        .ok_or("Gitea URL is required")?,
                     token: item.access_token.ok_or("Gitea access token is required")?,
                 })
             }
             GitProviderType::Bitbucket => {
-                let item = self
-                    .bitbucket
-                    .get_by_git_provider_id(id)
-                    .await
-                    .map_err(|error| error.to_string())?
-                    .ok_or("Bitbucket configuration not found")?;
+                let item: BitbucketConfig = parse_config(&row.config_json)
+                    .map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::Bitbucket {
-                    username: item.bitbucket_username,
+                    username: item.username,
                     app_password: item.app_password,
                     api_token: item.api_token,
                 })

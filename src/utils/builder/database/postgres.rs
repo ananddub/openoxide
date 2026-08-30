@@ -1,33 +1,48 @@
-use crate::db::models::mounts::Mount;
-use crate::repository::PostgresRepository;
+use crate::db::queries::FlashQueries;
+use crate::flash_gen::models::Mounts;
 use crate::utils::builder::database::builder::{
-    DeployResources, DeploySpec, Limits, RestartPolicy, StackFile, StackMount, StackService,
-    UpdateConfig,
+    DeployResources, DeploySpec, EngineConfig, Limits, RestartPolicy, StackFile, StackMount,
+    StackService, UpdateConfig,
 };
 use crate::utils::exec::{ExecError, ExecResult};
 use std::collections::BTreeMap;
 
 pub async fn build_postgres_stack(
     db_id: i64,
-    mounts: &[Mount],
+    mounts: &[Mounts],
 ) -> ExecResult<(String, String, String)> {
-    let repo = auto_di::resolve::<PostgresRepository>()
+    let q = auto_di::resolve::<FlashQueries>()
         .await
         .map_err(|e| ExecError::CommandFailed {
             code: None,
-            stderr: format!("Failed to resolve PostgresRepository: {}", e),
+            stderr: format!("Failed to resolve FlashQueries: {}", e),
         })?;
-    let db = repo
-        .get_details(db_id)
+    let db = q
+        .database_get_by_id(db_id)
         .await
         .map_err(|e| ExecError::CommandFailed {
             code: None,
             stderr: format!("Failed to fetch postgres db: {}", e),
         })?;
+    let engine = EngineConfig::parse(db.engine_config.as_deref().unwrap_or(""));
+    let command_row = (!db.command.trim().is_empty()).then(|| db.command.clone());
+    let database_name = db.db_name.clone().unwrap_or_default();
+    let database_user = db.db_user.clone().unwrap_or_default();
+    let database_password = db.db_password.clone().unwrap_or_default();
+    let docker_image = db.docker_image.clone().unwrap_or_default();
+    let postgres_config = engine.string("postgres_config");
+    let replication_role = {
+        let role = engine.string("replication_role");
+        if role.is_empty() {
+            "STANDALONE".to_string()
+        } else {
+            role
+        }
+    };
 
     // Parse command and args
     let mut command: Option<Vec<String>> = None;
-    if let Some(c) = &db.command {
+    if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
         if let Some(a_str) = &db.args {
             if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
@@ -45,16 +60,16 @@ pub async fn build_postgres_stack(
         }
     }
     let advanced: BTreeMap<String, String> =
-        serde_json::from_str(&db.postgres_config).map_err(|error| ExecError::CommandFailed {
+        serde_json::from_str(&postgres_config).map_err(|error| ExecError::CommandFailed {
             code: None,
             stderr: format!("Invalid PostgreSQL advanced config: {error}"),
         })?;
-    if !advanced.is_empty() || db.replication_role != "STANDALONE" {
+    if !advanced.is_empty() || replication_role != "STANDALONE" {
         let full = command.get_or_insert_with(|| vec!["postgres".into()]);
         for (key, value) in advanced {
             full.extend(["-c".into(), format!("{key}={value}")]);
         }
-        if db.replication_role == "PRIMARY" {
+        if replication_role == "PRIMARY" {
             full.extend([
                 "-c".into(),
                 "wal_level=replica".into(),
@@ -74,12 +89,9 @@ pub async fn build_postgres_stack(
     .await
     .unwrap_or_default();
 
-    resolved_env.insert("POSTGRES_DB".to_string(), db.database_name.clone());
-    resolved_env.insert("POSTGRES_USER".to_string(), db.database_user.clone());
-    resolved_env.insert(
-        "POSTGRES_PASSWORD".to_string(),
-        db.database_password.clone(),
-    );
+    resolved_env.insert("POSTGRES_DB".to_string(), database_name.clone());
+    resolved_env.insert("POSTGRES_USER".to_string(), database_user.clone());
+    resolved_env.insert("POSTGRES_PASSWORD".to_string(), database_password.clone());
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();
@@ -104,7 +116,7 @@ pub async fn build_postgres_stack(
         stack_mounts.push(StackMount {
             kind: "volume",
             source: format!("{}-data", db.app_name),
-            target: get_postgres_mount_path(&db.docker_image),
+            target: get_postgres_mount_path(&docker_image),
             read_only: false,
         });
     }
@@ -121,7 +133,7 @@ pub async fn build_postgres_stack(
         .await?;
 
     let mut service = StackService {
-        image: db.docker_image.clone(),
+        image: docker_image.clone(),
         environment: resolved_env.into_iter().collect(),
         command,
         volumes: stack_mounts.clone(),
@@ -209,7 +221,7 @@ pub async fn build_postgres_stack(
         stderr: format!("Failed to generate postgres yaml: {}", e),
     })?;
 
-    Ok((db.app_name, db.docker_image, yaml))
+    Ok((db.app_name, docker_image, yaml))
 }
 
 fn get_postgres_mount_path(image: &str) -> String {

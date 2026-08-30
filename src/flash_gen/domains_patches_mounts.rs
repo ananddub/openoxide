@@ -17,8 +17,7 @@ pub struct CreateDomainParams {
     pub middlewares: String,
     pub domain_type: String,
     pub certificate_type: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct UpdateDomainParams {
@@ -41,8 +40,7 @@ pub struct CreatePatchParams {
     pub file_path: String,
     pub enabled: i64,
     pub content: String,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
 }
 
 pub struct UpdatePatchParams {
@@ -61,14 +59,7 @@ pub struct CreateMountParams {
     pub file_path: String,
     pub content: String,
     pub mount_path: String,
-    pub postgres_id: i64,
-    pub mysql_id: i64,
-    pub mariadb_id: i64,
-    pub mongo_id: i64,
-    pub redis_id: i64,
-    pub libsql_id: i64,
-    pub compose_id: i64,
-    pub application_id: i64,
+    pub service_id: i64,
 }
 
 pub struct UpdateMountParams {
@@ -111,12 +102,12 @@ impl Queries {
     /// ListDomainsByApplication
     pub async fn list_domains_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT * FROM domains WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM domains WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -124,12 +115,12 @@ impl Queries {
     /// ListDomainsByCompose
     pub async fn list_domains_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Domains>, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "SELECT * FROM domains WHERE compose_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM domains WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -140,7 +131,7 @@ impl Queries {
         params: &CreateDomainParams,
     ) -> Result<Domains, sqlx::Error> {
         sqlx::query_as::<_, Domains>(
-            "INSERT INTO domains ( host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, application_id, compose_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO domains ( host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.host)
         .bind(&params.https)
@@ -154,8 +145,7 @@ impl Queries {
         .bind(&params.middlewares)
         .bind(&params.domain_type)
         .bind(&params.certificate_type)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -201,12 +191,12 @@ impl Queries {
     /// DeleteDomainsByApplication
     pub async fn delete_domains_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM domains WHERE application_id = ?;"
+            "DELETE FROM domains WHERE service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -228,12 +218,12 @@ impl Queries {
     /// ListPatchesByApplication
     pub async fn list_patches_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Patches>, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT * FROM patches WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM patches WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -241,12 +231,12 @@ impl Queries {
     /// ListPatchesByCompose
     pub async fn list_patches_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Patches>, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "SELECT * FROM patches WHERE compose_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM patches WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -257,14 +247,13 @@ impl Queries {
         params: &CreatePatchParams,
     ) -> Result<Patches, sqlx::Error> {
         sqlx::query_as::<_, Patches>(
-            "INSERT INTO patches (patch_type, file_path, enabled, content, application_id, compose_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO patches (patch_type, file_path, enabled, content, service_id) VALUES (?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.patch_type)
         .bind(&params.file_path)
         .bind(&params.enabled)
         .bind(&params.content)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -332,12 +321,12 @@ impl Queries {
     /// ListMountsByApplication
     pub async fn list_mounts_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Mounts>, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT * FROM mounts WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM mounts WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -345,12 +334,12 @@ impl Queries {
     /// ListMountsByCompose
     pub async fn list_mounts_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Mounts>, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "SELECT * FROM mounts WHERE compose_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM mounts WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -374,7 +363,7 @@ impl Queries {
         params: &CreateMountParams,
     ) -> Result<Mounts, sqlx::Error> {
         sqlx::query_as::<_, Mounts>(
-            "INSERT INTO mounts ( mount_type, service_type, host_path, volume_name, file_path, content, mount_path, postgres_id, mysql_id, mariadb_id, mongo_id, redis_id, libsql_id, compose_id, application_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO mounts ( mount_type, service_type, host_path, volume_name, file_path, content, mount_path, service_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.mount_type)
         .bind(&params.service_type)
@@ -383,14 +372,7 @@ impl Queries {
         .bind(&params.file_path)
         .bind(&params.content)
         .bind(&params.mount_path)
-        .bind(&params.postgres_id)
-        .bind(&params.mysql_id)
-        .bind(&params.mariadb_id)
-        .bind(&params.mongo_id)
-        .bind(&params.redis_id)
-        .bind(&params.libsql_id)
-        .bind(&params.compose_id)
-        .bind(&params.application_id)
+        .bind(&params.service_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -431,12 +413,12 @@ impl Queries {
     /// DeleteMountsByApplication
     pub async fn delete_mounts_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM mounts WHERE application_id = ?;"
+            "DELETE FROM mounts WHERE service_id = ?;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .execute(&self.pool)
         .await?;
         Ok(())

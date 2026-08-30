@@ -1,5 +1,4 @@
-use super::{VaultService, VaultServiceError, config_field};
-use crate::api::dto::vault::{VaultSecretListDto, VaultTestResultDto};
+use super::{VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, config_field};
 
 impl VaultService {
     pub(super) async fn fetch_doppler_secret(

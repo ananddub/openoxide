@@ -3,21 +3,50 @@ use std::{path::Path, sync::Arc};
 use auto_di::singleton;
 
 use crate::{
-    api::dto::database::UpsertDatabaseMountDto,
+    api::connect::generated::openoxide::api::v1::{CreateMountRequest, UpdateMountRequest},
     db::models::mounts::Mount,
-    repository::MountRepository,
+    db::queries::FlashQueries,
+    flash_gen::models::Mounts,
+    flash_gen::mount::{MountCreateForDatabaseParams, MountUpdateForDatabaseParams},
     services::database::{DatabaseKind, DatabaseService},
 };
 
+impl From<Mounts> for Mount {
+    fn from(row: Mounts) -> Self {
+        Self {
+            id: row.id,
+            mount_type: row.mount_type,
+            service_type: row.service_type,
+            host_path: row.host_path,
+            volume_name: row.volume_name,
+            file_path: row.file_path,
+            content: row.content,
+            mount_path: row.mount_path,
+            service_id: row.service_id,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }
+    }
+}
+
+struct NormalizedMount {
+    mount_type: crate::utils::builder::spec::MountType,
+    host_path: Option<String>,
+    volume_name: Option<String>,
+    file_path: Option<String>,
+    content: Option<String>,
+    mount_path: String,
+}
+
 pub struct DatabaseMountService {
     databases: Arc<DatabaseService>,
-    mounts: Arc<MountRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl DatabaseMountService {
-    fn new(databases: Arc<DatabaseService>, mounts: Arc<MountRepository>) -> Self {
-        Self { databases, mounts }
+    fn new(databases: Arc<DatabaseService>, queries: Arc<FlashQueries>) -> Self {
+        Self { databases, queries }
     }
 
     async fn ensure_database(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<()> {
@@ -26,29 +55,45 @@ impl DatabaseMountService {
 
     pub async fn list(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<Vec<Mount>> {
         self.ensure_database(kind, id).await?;
-        self.mounts.fetch_for_database_kind(kind, id).await
+        Ok(self
+            .queries
+            .mount_fetch_for_database(id)
+            .await?
+            .into_iter()
+            .map(Mount::from)
+            .collect())
     }
 
     pub async fn create(
         &self,
         kind: DatabaseKind,
         id: i64,
-        input: UpsertDatabaseMountDto,
+        input: CreateMountRequest,
     ) -> sqlx::Result<Mount> {
         self.ensure_database(kind, id).await?;
-        let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
-        self.mounts
-            .create_for_database(
-                kind,
-                id,
-                input.mount_type.as_str(),
-                input.host_path.as_deref(),
-                input.volume_name.as_deref(),
-                input.file_path.as_deref(),
-                input.content.as_deref(),
-                &input.mount_path,
-            )
-            .await
+        let input = normalize_mount(
+            &input.mount_type,
+            input.host_path,
+            input.volume_name,
+            input.file_path,
+            input.content,
+            input.mount_path,
+        )
+        .map_err(sqlx::Error::Protocol)?;
+        let params = MountCreateForDatabaseParams {
+            mount_type: input.mount_type.as_str().into(),
+            host_path: input.host_path.unwrap_or_default(),
+            volume_name: input.volume_name.unwrap_or_default(),
+            file_path: input.file_path.unwrap_or_default(),
+            content: input.content.unwrap_or_default(),
+            mount_path: input.mount_path,
+            service_id: id,
+        };
+        Ok(self
+            .queries
+            .mount_create_for_database(&params)
+            .await?
+            .into())
     }
 
     pub async fn update(
@@ -56,24 +101,33 @@ impl DatabaseMountService {
         kind: DatabaseKind,
         database_id: i64,
         id: i64,
-        input: UpsertDatabaseMountDto,
+        input: UpdateMountRequest,
     ) -> sqlx::Result<Mount> {
         self.ensure_database(kind, database_id).await?;
-        let input = normalize_mount(input).map_err(sqlx::Error::Protocol)?;
-        self.mounts
-            .update_for_database(
-                kind,
-                database_id,
-                id,
-                input.mount_type.as_str(),
-                input.host_path.as_deref(),
-                input.volume_name.as_deref(),
-                input.file_path.as_deref(),
-                input.content.as_deref(),
-                &input.mount_path,
-            )
+        let input = normalize_mount(
+            &input.mount_type,
+            input.host_path,
+            input.volume_name,
+            input.file_path,
+            input.content,
+            input.mount_path,
+        )
+        .map_err(sqlx::Error::Protocol)?;
+        let params = MountUpdateForDatabaseParams {
+            mount_type: input.mount_type.as_str().into(),
+            host_path: input.host_path.unwrap_or_default(),
+            volume_name: input.volume_name.unwrap_or_default(),
+            file_path: input.file_path.unwrap_or_default(),
+            content: input.content.unwrap_or_default(),
+            mount_path: input.mount_path,
+            id,
+            service_id: database_id,
+        };
+        Ok(self
+            .queries
+            .mount_update_for_database(&params)
             .await?
-            .ok_or(sqlx::Error::RowNotFound)
+            .into())
     }
 
     pub async fn delete(
@@ -83,11 +137,35 @@ impl DatabaseMountService {
         id: i64,
     ) -> sqlx::Result<bool> {
         self.ensure_database(kind, database_id).await?;
-        self.mounts.delete_for_database(kind, database_id, id).await
+        match self.queries.mount_get_for_database(id, database_id).await {
+            Ok(_) => {
+                self.queries.mount_delete_for_database(id, database_id).await?;
+                Ok(true)
+            }
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error),
+        }
     }
 }
 
-fn normalize_mount(mut input: UpsertDatabaseMountDto) -> Result<UpsertDatabaseMountDto, String> {
+fn normalize_mount(
+    mount_type: &str,
+    host_path: Option<String>,
+    volume_name: Option<String>,
+    file_path: Option<String>,
+    content: Option<String>,
+    mount_path: String,
+) -> Result<NormalizedMount, String> {
+    let mount_type = crate::utils::builder::spec::MountType::from_str(mount_type)
+        .ok_or_else(|| format!("invalid mount type: {mount_type}"))?;
+    let mut input = NormalizedMount {
+        mount_type,
+        host_path,
+        volume_name,
+        file_path,
+        content,
+        mount_path,
+    };
     input.mount_path = input.mount_path.trim().to_string();
     if !Path::new(&input.mount_path).is_absolute() {
         return Err("mount_path must be an absolute container path".into());

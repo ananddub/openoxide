@@ -184,7 +184,7 @@ mod tests {
 
     #[tokio::test]
     async fn old_rows_are_removed_from_the_session() {
-        let store = Store::new();
+        let store = Store::init("memory://metrics").await.unwrap();
         let old = ServerMetric {
             id: None,
             timestamp: (Utc::now() - Duration::minutes(6)).to_rfc3339(),

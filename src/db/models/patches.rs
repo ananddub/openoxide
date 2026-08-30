@@ -9,21 +9,19 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "patches")]
 pub struct Patch {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
-    #[sqlx_gen(sql_type = "patches_patch_type_enum", column_default = "'UPDATE'")]
+    pub id: i64,
+    #[sqlx_gen(sql_type = "TEXT")]
     pub patch_type: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub file_path: String,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "1")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub enabled: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub content: String,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
     pub created_at: i64,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub updated_at: i64,
 }

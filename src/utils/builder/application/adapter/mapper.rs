@@ -1,7 +1,7 @@
-use crate::db::models::{
-    application_middlewares::ApplicationMiddleware, domains::Domain, mounts::Mount, patches::Patch,
-    ports::Port, redirects::Redirect, security::Security,
+use crate::flash_gen::models::{
+    ApplicationMiddlewares, Domains, Mounts, Patches, Ports, Redirects, Security,
 };
+use crate::flash_gen::services::ApplicationGetSpecRowRow;
 use crate::utils::builder::env::generate_env_app;
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
@@ -15,14 +15,14 @@ use crate::utils::paths::openoxide_paths;
 use std::collections::BTreeMap;
 
 pub struct AppRowWithRelations {
-    pub app: AppRow,
-    pub domains: Vec<Domain>,
-    pub mounts: Vec<Mount>,
-    pub patches: Vec<Patch>,
-    pub ports: Vec<Port>,
-    pub redirects: Vec<Redirect>,
+    pub app: ApplicationGetSpecRowRow,
+    pub domains: Vec<Domains>,
+    pub mounts: Vec<Mounts>,
+    pub patches: Vec<Patches>,
+    pub ports: Vec<Ports>,
+    pub redirects: Vec<Redirects>,
     pub security: Vec<Security>,
-    pub middlewares: Vec<ApplicationMiddleware>,
+    pub middlewares: Vec<ApplicationMiddlewares>,
     pub networks: Vec<String>,
 }
 
@@ -47,7 +47,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             app.env_var.clone().as_deref().unwrap_or("").into(),
         );
         let registry = registry_auth(&app);
-        let image = if app.source_type == "DOCKER" {
+        let image = if source_type_str(&app) == "DOCKER" {
             app.docker_image
                 .clone()
                 .ok_or(AdapterError::MissingField("docker_image"))?
@@ -107,7 +107,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
         let redirect_specs = redirects
             .into_iter()
             .map(|redirect| RedirectSpec {
-                key: redirect.id.unwrap_or_default().to_string(),
+                key: redirect.id.to_string(),
                 regex: redirect.regex,
                 replacement: redirect.replacement,
                 permanent: redirect.permanent != 0,
@@ -165,7 +165,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             build,
             work_directory,
             image,
-            image_registry: if app.source_type == "DOCKER" {
+            image_registry: if source_type_str(&app) == "DOCKER" {
                 None
             } else {
                 registry
@@ -173,7 +173,7 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             environment,
             build_args: parse_env(app.build_args.as_deref().unwrap_or("")),
             build_secrets: parse_env(app.build_secrets.as_deref().unwrap_or("")),
-            command: app.command.map(|v| shell_words(&v)),
+            command: app.command.clone().filter(|v| !v.trim().is_empty()).map(|v| shell_words(&v)),
             args: app
                 .args
                 .as_deref()
@@ -212,7 +212,7 @@ struct MiddlewareConfig {
 }
 
 fn structured_middleware(
-    item: ApplicationMiddleware,
+    item: ApplicationMiddlewares,
 ) -> Result<StructuredMiddlewareSpec, AdapterError> {
     let config: MiddlewareConfig =
         serde_json::from_str(&item.config).map_err(|error| AdapterError::InvalidField {
@@ -245,72 +245,38 @@ fn structured_middleware(
     }
 }
 
-#[derive(sqlx::FromRow)]
-pub struct AppRow {
-    pub app_name: String,
-    pub source_type: String,
-    pub build_type: String,
-    pub build_args: Option<String>,
-    pub build_secrets: Option<String>,
-    pub dockerfile: Option<String>,
-    pub docker_context_path: Option<String>,
-    pub docker_build_stage: Option<String>,
-    pub publish_directory: Option<String>,
-    pub is_static_spa: Option<i64>,
-    pub build_path: Option<String>,
-    pub command: Option<String>,
-    pub args: Option<String>,
-    pub env_var: Option<String>,
-    pub clean_cache: i64,
-    pub network_ids: String,
-    pub detach_rustploy_network: i64,
-    pub memory_reservation: Option<String>,
-    pub memory_limit: Option<String>,
-    pub cpu_reservation: Option<String>,
-    pub cpu_limit: Option<String>,
-    pub replicas: i64,
-    pub health_check_swarm: Option<String>,
-    pub placement_swarm: Option<String>,
-    pub stop_grace_period_swarm: Option<i64>,
-    pub repository: Option<String>,
-    pub owner: Option<String>,
-    pub branch: Option<String>,
-    pub gitlab_repository: Option<String>,
-    pub gitlab_owner: Option<String>,
-    pub gitlab_branch: Option<String>,
-    pub gitea_repository: Option<String>,
-    pub gitea_branch: Option<String>,
-    pub bitbucket_repository: Option<String>,
-    pub bitbucket_owner: Option<String>,
-    pub bitbucket_branch: Option<String>,
-    pub docker_image: Option<String>,
-    pub docker_username: Option<String>,
-    pub docker_password: Option<String>,
-    pub registry_url: Option<String>,
-    pub custom_git_url: Option<String>,
-    pub custom_git_branch: Option<String>,
-    pub custom_git_ssh_key_id: Option<i64>,
-    pub environment_env: String,
-    pub project_env: String,
-    pub registry_image_prefix: Option<String>,
-    pub registry_username: Option<String>,
-    pub registry_password: Option<String>,
-    pub joined_registry_url: Option<String>,
-    pub github_token: Option<String>,
-    pub gitlab_token: Option<String>,
-    pub bitbucket_token: Option<String>,
-    pub gitea_token: Option<String>,
-    pub ssh_private_key: Option<String>,
+fn source_type_str(a: &ApplicationGetSpecRowRow) -> &str {
+    a.source_type.as_deref().unwrap_or("NONE")
 }
 
-fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
+fn source_type(a: &ApplicationGetSpecRowRow) -> SourceType {
+    match source_type_str(a) {
+        "CUSTOM" => SourceType::Git,
+        other => SourceType::from(other),
+    }
+}
+
+/// Extracts a token field from a provider `config_json` payload. A missing or
+/// invalid config yields no token instead of failing the spec load.
+fn config_token(config: &Option<String>, field: &str) -> Option<String> {
+    let json = config.as_deref()?;
+    let value: serde_json::Value = serde_json::from_str(json).ok()?;
+    let token = value.get(field)?.as_str()?.trim();
+    if token.is_empty() {
+        None
+    } else {
+        Some(token.to_string())
+    }
+}
+
+fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
     let branch_val = |v: &Option<String>| {
         v.as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_owned)
     };
-    let source_type = SourceType::from(a.source_type.as_str());
+    let source_type = source_type(a);
     match source_type {
         SourceType::Docker => Ok(SourceSpec::Docker {
             image: a
@@ -341,22 +307,14 @@ fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
             };
 
             let auth = match source_type {
-                SourceType::Github => a
-                    .github_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitlab => a
-                    .gitlab_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Bitbucket => a
-                    .bitbucket_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
-                SourceType::Gitea => a
-                    .gitea_token
-                    .as_ref()
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t.clone())),
+                SourceType::Github => config_token(&a.github_config, "private_key")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Gitlab => config_token(&a.gitlab_config, "access_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Bitbucket => config_token(&a.bitbucket_config, "api_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                SourceType::Gitea => config_token(&a.gitea_config, "access_token")
+                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
                 SourceType::Git => a
                     .ssh_private_key
                     .as_ref()
@@ -380,12 +338,12 @@ fn source(a: &AppRow) -> Result<SourceSpec, AdapterError> {
         }
     }
 }
-fn build(a: &AppRow) -> Result<Option<BuildStrategy>, AdapterError> {
-    let source_type = SourceType::from(a.source_type.as_str());
+fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterError> {
+    let source_type = source_type(a);
     if source_type == SourceType::Docker {
         return Ok(None);
     }
-    let build_type = BuildType::from(a.build_type.as_str());
+    let build_type = BuildType::from(a.build_type.as_deref().unwrap_or(""));
     Ok(Some(match build_type {
         BuildType::Dockerfile => BuildStrategy::Dockerfile {
             dockerfile: join_relative(
@@ -397,7 +355,7 @@ fn build(a: &AppRow) -> Result<Option<BuildStrategy>, AdapterError> {
                 a.docker_context_path.as_deref().unwrap_or("."),
             ),
             target: a.docker_build_stage.clone(),
-            no_cache: a.clean_cache != 0,
+            no_cache: a.clean_cache.unwrap_or(0) != 0,
         },
         BuildType::Nixpacks => BuildStrategy::Nixpacks,
         BuildType::Paketo => BuildStrategy::Paketo,
@@ -414,19 +372,22 @@ fn build(a: &AppRow) -> Result<Option<BuildStrategy>, AdapterError> {
         },
     }))
 }
-fn registry_auth(a: &AppRow) -> Option<RegistryAuth> {
+fn registry_auth(a: &ApplicationGetSpecRowRow) -> Option<RegistryAuth> {
     let username = a
         .docker_username
         .clone()
-        .or_else(|| a.registry_username.clone())?;
+        .filter(|v| !v.is_empty())
+        .or_else(|| a.registry_username.clone().filter(|v| !v.is_empty()))?;
     let password = a
         .docker_password
         .clone()
-        .or_else(|| a.registry_password.clone())?;
+        .filter(|v| !v.is_empty())
+        .or_else(|| a.registry_password.clone().filter(|v| !v.is_empty()))?;
     Some(RegistryAuth {
         registry: a
             .registry_url
             .clone()
+            .filter(|v| !v.is_empty())
             .or_else(|| a.joined_registry_url.clone())
             .unwrap_or_default(),
         username,

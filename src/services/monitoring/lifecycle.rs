@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::dto::monitoring::{
-        MaintenanceWindowDto, MonitoringActionDto, MonitoringPolicyDto, UpdateMonitoringPolicyDto,
+    db::queries::FlashQueries,
+    flash_gen::monitoring_lifecycle::{
+        MonitoringLifecycleAcknowledgeEventParams, MonitoringLifecycleCreateGlobalWindowParams,
+        MonitoringLifecycleCreateWindowParams, MonitoringLifecycleSilenceEventParams,
+        MonitoringLifecycleUpdatePolicyParams,
     },
-    repository::MonitoringLifecycleRepository,
     services::monitoring::agent_auth::MonitoringAgentAuth,
     utils::{
         docker::DockerCli,
@@ -15,28 +18,25 @@ use crate::{
 };
 
 pub struct MonitoringLifecycleService {
-    db: Arc<sqlx::SqlitePool>,
-    repository: Arc<MonitoringLifecycleRepository>,
+    queries: Arc<FlashQueries>,
     agent_auth: Arc<MonitoringAgentAuth>,
 }
 
 #[singleton]
 impl MonitoringLifecycleService {
-    fn new(
-        db: Arc<sqlx::SqlitePool>,
-        repository: Arc<MonitoringLifecycleRepository>,
-        agent_auth: Arc<MonitoringAgentAuth>,
-    ) -> Self {
+    fn new(queries: Arc<FlashQueries>, agent_auth: Arc<MonitoringAgentAuth>) -> Self {
         Self {
-            db,
-            repository,
+            queries,
             agent_auth,
         }
     }
 
     pub async fn policy(&self, organization_id: i64) -> sqlx::Result<MonitoringPolicyDto> {
-        self.repository
-            .policy(organization_id)
+        self.queries
+            .monitoring_lifecycle_ensure_policy(organization_id)
+            .await?;
+        self.queries
+            .monitoring_lifecycle_policy(organization_id)
             .await
             .map(Into::into)
     }
@@ -51,12 +51,12 @@ impl MonitoringLifecycleService {
                 "retention_days must be between 1 and 3650".into(),
             ));
         }
-        self.repository
-            .update_policy(
+        self.queries
+            .monitoring_lifecycle_update_policy(&MonitoringLifecycleUpdatePolicyParams {
                 organization_id,
-                input.desired_agent_version.as_deref(),
-                input.retention_days,
-            )
+                desired_agent_version: input.desired_agent_version.unwrap_or_default(),
+                retention_days: input.retention_days,
+            })
             .await
             .map(Into::into)
     }
@@ -147,9 +147,10 @@ impl MonitoringLifecycleService {
             // monitoring_agents table yet. The panel-wide metrics token is a
             // valid fallback, so repair the container without requiring a
             // pre-existing registration row.
-            let executor = crate::services::compose::remote::remote_executor(&self.db, server_id)
-                .await
-                .map_err(sqlx::Error::Protocol)?;
+            let executor =
+                crate::services::compose::remote::remote_executor(&self.queries.pool, server_id)
+                    .await
+                    .map_err(sqlx::Error::Protocol)?;
             let mut config = SetupConfig::default();
             config.agent_server_id = Some(server_id);
             config.agent_token = Some(self.agent_auth_token_fallback());
@@ -178,7 +179,7 @@ impl MonitoringLifecycleService {
              WHERE ip_address IN ('openoxide-monitor', '127.0.0.1', 'localhost')
                AND (app_name='localhost' OR name LIKE 'Localhost%')",
         )
-        .execute(self.db.as_ref())
+        .execute(&self.queries.pool)
         .await?;
         let configured_id = std::env::var("OPENOXIDE_LOCAL_SERVER_ID")
             .or_else(|_| std::env::var("MONITORING_SERVER_ID"))
@@ -188,7 +189,7 @@ impl MonitoringLifecycleService {
         let configured_server: Option<(i64,)> = if let Some(id) = configured_id {
             sqlx::query_as("SELECT id FROM servers WHERE id=?")
                 .bind(id)
-                .fetch_optional(self.db.as_ref())
+                .fetch_optional(&self.queries.pool)
                 .await?
         } else {
             None
@@ -199,7 +200,7 @@ impl MonitoringLifecycleService {
             let existing: Option<(i64,)> = sqlx::query_as(
                 "SELECT id FROM servers WHERE (ip_address IN ('127.0.0.1','localhost','openoxide-agent') OR app_name='localhost') LIMIT 1",
             )
-            .fetch_optional(self.db.as_ref())
+            .fetch_optional(&self.queries.pool)
             .await?;
             if let Some((id,)) = existing {
                 id
@@ -207,7 +208,7 @@ impl MonitoringLifecycleService {
                 let result = sqlx::query(
                     "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_status, server_type, command, metrics_config) VALUES ('Localhost (Main server)', 'Panel host monitoring agent', '127.0.0.1', 22, 'root', 'localhost', 'ACTIVE', 'DEPLOY', '', '{}')",
                 )
-                .execute(self.db.as_ref())
+                .execute(&self.queries.pool)
                 .await?;
                 result.last_insert_rowid()
             }
@@ -218,7 +219,7 @@ impl MonitoringLifecycleService {
         // resource statuses stuck at their previous database value.
         let organization_id: Option<i64> =
             sqlx::query_scalar("SELECT id FROM organization ORDER BY id LIMIT 1")
-                .fetch_optional(self.db.as_ref())
+                .fetch_optional(&self.queries.pool)
                 .await?;
         if let (Some(organization_id), Ok(token)) =
             (organization_id, std::env::var("METRICS_TOKEN"))
@@ -321,32 +322,17 @@ impl MonitoringLifecycleService {
         let organization_id = match self.agent_auth.organization_id(server_id).await? {
             Some(id) => id,
             None => sqlx::query_scalar(
-                "SELECT p.organization_id
-                 FROM projects p
-                 JOIN environments e ON e.project_id = p.id
-                 WHERE e.id IN (
-                    SELECT environment_id FROM applications WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM compose_projects WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM postgres_dbs WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM redis_dbs WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM mysql_dbs WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM mariadb_dbs WHERE server_id = ?
-                    UNION ALL SELECT environment_id FROM mongo_dbs WHERE server_id = ?
-                 )
+                "SELECT e.organization_id
+                 FROM environments e
+                 WHERE e.id IN (SELECT environment_id FROM services WHERE server_id = ?)
                  LIMIT 1",
             )
             .bind(server_id)
-            .bind(server_id)
-            .bind(server_id)
-            .bind(server_id)
-            .bind(server_id)
-            .bind(server_id)
-            .bind(server_id)
-            .fetch_optional(self.db.as_ref())
+            .fetch_optional(&self.queries.pool)
             .await?
             .ok_or(sqlx::Error::RowNotFound)?,
         };
-        let policy = self.repository.policy(organization_id).await?;
+        let policy = self.policy(organization_id).await?;
         let token = if self.agent_auth.organization_id(server_id).await?.is_some() {
             self.agent_auth.rotate(server_id, organization_id).await?
         } else {
@@ -361,9 +347,10 @@ impl MonitoringLifecycleService {
                 .await?;
             token
         };
-        let executor = crate::services::compose::remote::remote_executor(&self.db, server_id)
-            .await
-            .map_err(sqlx::Error::Protocol)?;
+        let executor =
+            crate::services::compose::remote::remote_executor(&self.queries.pool, server_id)
+                .await
+                .map_err(sqlx::Error::Protocol)?;
         let docker = DockerCli::from_remote_executor(executor.clone());
         let _ = docker
             .containers()
@@ -399,9 +386,19 @@ impl MonitoringLifecycleService {
         organization_id: i64,
         user_id: i64,
     ) -> sqlx::Result<bool> {
-        self.repository
-            .acknowledge_event(event_id, organization_id, user_id)
+        match self
+            .queries
+            .monitoring_lifecycle_acknowledge_event(&MonitoringLifecycleAcknowledgeEventParams {
+                acknowledged_by: user_id,
+                id: event_id,
+                organization_id,
+            })
             .await
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
     }
 
     pub async fn silence(
@@ -415,9 +412,19 @@ impl MonitoringLifecycleService {
                 "silence expiry must be in the future".into(),
             ));
         }
-        self.repository
-            .silence_event(event_id, organization_id, until)
+        match self
+            .queries
+            .monitoring_lifecycle_silence_event(&MonitoringLifecycleSilenceEventParams {
+                silenced_until: until,
+                id: event_id,
+                organization_id,
+            })
             .await
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
     }
 
     pub async fn create_window(
@@ -433,20 +440,50 @@ impl MonitoringLifecycleService {
                 "ends_at must follow starts_at".into(),
             ));
         }
-        self.repository
-            .create_window(organization_id, server_id, starts_at, ends_at, reason)
-            .await
+        match server_id {
+            Some(server_id) => {
+                self.queries
+                    .monitoring_lifecycle_create_window(&MonitoringLifecycleCreateWindowParams {
+                        organization_id,
+                        server_id,
+                        starts_at,
+                        ends_at,
+                        reason: reason.to_owned(),
+                    })
+                    .await
+            }
+            None => {
+                self.queries
+                    .monitoring_lifecycle_create_global_window(
+                        &MonitoringLifecycleCreateGlobalWindowParams {
+                            organization_id,
+                            starts_at,
+                            ends_at,
+                            reason: reason.to_owned(),
+                        },
+                    )
+                    .await
+            }
+        }
     }
 
     pub async fn windows(&self, organization_id: i64) -> sqlx::Result<Vec<MaintenanceWindowDto>> {
-        self.repository
-            .list_windows(organization_id)
+        self.queries
+            .monitoring_lifecycle_list_windows(organization_id)
             .await
             .map(|rows| rows.into_iter().map(Into::into).collect())
     }
 
     pub async fn delete_window(&self, id: i64, organization_id: i64) -> sqlx::Result<bool> {
-        self.repository.delete_window(id, organization_id).await
+        match self
+            .queries
+            .monitoring_lifecycle_delete_window(id, organization_id)
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -458,19 +495,52 @@ fn action(action: &str, message: &str) -> MonitoringActionDto {
     }
 }
 
-impl From<crate::db::repository::monitoring_lifecycle::MonitoringPolicy> for MonitoringPolicyDto {
-    fn from(value: crate::db::repository::monitoring_lifecycle::MonitoringPolicy) -> Self {
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct MonitoringPolicyDto {
+    pub organization_id: i64,
+    pub desired_agent_version: Option<String>,
+    pub retention_days: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct UpdateMonitoringPolicyDto {
+    pub desired_agent_version: Option<String>,
+    pub retention_days: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct MonitoringActionDto {
+    pub action: String,
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct MaintenanceWindowDto {
+    pub id: i64,
+    pub organization_id: i64,
+    pub server_id: Option<i64>,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub reason: String,
+    pub created_at: i64,
+}
+
+impl From<crate::flash_gen::models::MonitoringPolicy> for MonitoringPolicyDto {
+    fn from(value: crate::flash_gen::models::MonitoringPolicy) -> Self {
         Self {
             organization_id: value.organization_id,
-            desired_agent_version: value.desired_agent_version,
+            // Flash binds the nullable column as non-Option; "" encodes NULL.
+            desired_agent_version: value.desired_agent_version.filter(|v| !v.is_empty()),
             retention_days: value.retention_days,
             updated_at: value.updated_at,
         }
     }
 }
 
-impl From<crate::db::repository::monitoring_lifecycle::MaintenanceWindow> for MaintenanceWindowDto {
-    fn from(value: crate::db::repository::monitoring_lifecycle::MaintenanceWindow) -> Self {
+impl From<crate::flash_gen::models::MonitoringMaintenanceWindows> for MaintenanceWindowDto {
+    fn from(value: crate::flash_gen::models::MonitoringMaintenanceWindows) -> Self {
         Self {
             id: value.id,
             organization_id: value.organization_id,

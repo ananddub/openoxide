@@ -9,14 +9,14 @@ use sqlx_gen::SqlxGen;
 #[sqlx_gen(kind = "table", schema = "main", table = "deployments")]
 pub struct Deployment {
     #[sqlx_gen(primary_key, sql_type = "INTEGER")]
-    pub id: Option<i64>,
+    pub id: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub title: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub description: Option<String>,
-    #[sqlx_gen(sql_type = "deployments_status_enum", column_default = "'QUEUED'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub status: String,
-    #[sqlx_gen(sql_type = "TEXT", column_default = "'QUEUE'")]
+    #[sqlx_gen(sql_type = "TEXT")]
     pub state: String,
     #[sqlx_gen(sql_type = "TEXT")]
     pub log_path: String,
@@ -26,7 +26,7 @@ pub struct Deployment {
     pub error_message: Option<String>,
     #[sqlx_gen(sql_type = "TEXT")]
     pub operation: Option<String>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "0")]
+    #[sqlx_gen(sql_type = "INTEGER")]
     pub is_preview_deployment: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub started_at: Option<i64>,
@@ -35,15 +35,11 @@ pub struct Deployment {
     #[sqlx_gen(sql_type = "INTEGER")]
     pub finished_at: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub application_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER")]
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     #[sqlx_gen(sql_type = "INTEGER")]
     pub server_id: Option<i64>,
-    #[sqlx_gen(sql_type = "INTEGER", column_default = "strftime('%s', 'now')")]
-    pub created_at: i64,
     #[sqlx_gen(sql_type = "INTEGER")]
-    pub database_id: Option<i64>,
+    pub created_at: i64,
     #[sqlx_gen(sql_type = "TEXT")]
     pub database_kind: Option<String>,
 }

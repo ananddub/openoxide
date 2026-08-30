@@ -88,7 +88,7 @@ pub struct ServerPrivateNetworksListDnsEnabledRow {
     pub updated_at: i64,
 }
 
-pub struct ServerPrivateNetworksUpsertParams {
+pub struct ServerPrivateNetworksInsertParams {
     pub server_id: i64,
     pub connection_mode: String,
     pub provider: String,
@@ -103,7 +103,34 @@ pub struct ServerPrivateNetworksUpsertParams {
     pub status: String,
 }
 
-pub struct ServerPrivateNetworksSetRuntimeStateParams {
+pub struct ServerPrivateNetworksUpdateConfigParams {
+    pub connection_mode: String,
+    pub provider: String,
+    pub private_host: String,
+    pub tunnel_address: String,
+    pub public_key: String,
+    pub endpoint: String,
+    pub listen_port: i64,
+    pub persistent_keepalive: i64,
+    pub dns_name: String,
+    pub routes: String,
+    pub status: String,
+    pub server_id: i64,
+}
+
+pub struct ServerPrivateNetworksSetRuntimeStatusKeyParams {
+    pub status: String,
+    pub public_key: String,
+    pub server_id: i64,
+}
+
+pub struct ServerPrivateNetworksSetRuntimeStatusHandshakeParams {
+    pub status: String,
+    pub last_handshake_at: i64,
+    pub server_id: i64,
+}
+
+pub struct ServerPrivateNetworksSetRuntimeFullParams {
     pub status: String,
     pub public_key: String,
     pub last_handshake_at: i64,
@@ -126,9 +153,15 @@ pub struct ServerPrivateNetworksRenewOperationParams {
 pub struct ServerPrivateNetworksSetHealthParams {
     pub health_status: String,
     pub health_error: String,
+    pub param3: String,
+    pub server_id: i64,
+}
+
+pub struct ServerPrivateNetworksSetHealthHandshakeParams {
+    pub health_status: String,
+    pub health_error: String,
     pub last_handshake_at: i64,
-    pub consecutive_failures: i64,
-    pub consecutive_failures2: i64,
+    pub param4: String,
     pub server_id: i64,
 }
 
@@ -173,20 +206,20 @@ impl Queries {
         status: &str,
     ) -> Result<Vec<ServerPrivateNetworksListDnsEnabledRow>, sqlx::Error> {
         sqlx::query_as::<_, ServerPrivateNetworksListDnsEnabledRow>(
-            "SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE dns_name IS NOT NULL AND status = ? ORDER BY dns_name;"
+            "SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE dns_name IS NOT NULL AND dns_name != '' AND status = ? ORDER BY dns_name;"
         )
         .bind(status)
         .fetch_all(&self.pool)
         .await
     }
 
-    /// ServerPrivateNetworksUpsert
-    pub async fn server_private_networks_upsert(
+    /// ServerPrivateNetworksInsert
+    pub async fn server_private_networks_insert(
         &self,
-        params: &ServerPrivateNetworksUpsertParams,
+        params: &ServerPrivateNetworksInsertParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(server_id) DO UPDATE SET connection_mode = excluded.connection_mode, provider = excluded.provider, private_host = excluded.private_host, tunnel_address = excluded.tunnel_address, public_key = excluded.public_key, endpoint = excluded.endpoint, listen_port = excluded.listen_port, persistent_keepalive = excluded.persistent_keepalive, dns_name = excluded.dns_name, routes = excluded.routes, status = excluded.status, config_version = server_private_networks.config_version + 1, updated_at = CURRENT_TIMESTAMP;"
+            "INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.server_id)
         .bind(&params.connection_mode)
@@ -200,6 +233,31 @@ impl Queries {
         .bind(&params.dns_name)
         .bind(&params.routes)
         .bind(&params.status)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerPrivateNetworksUpdateConfig
+    pub async fn server_private_networks_update_config(
+        &self,
+        params: &ServerPrivateNetworksUpdateConfigParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_private_networks SET connection_mode = ?, provider = NULLIF(?, ''), private_host = NULLIF(?, ''), tunnel_address = NULLIF(?, ''), public_key = NULLIF(?, ''), endpoint = NULLIF(?, ''), listen_port = ?, persistent_keepalive = ?, dns_name = NULLIF(?, ''), routes = ?, status = ?, config_version = config_version + 1, updated_at = unixepoch() WHERE server_id = ?;"
+        )
+        .bind(&params.connection_mode)
+        .bind(&params.provider)
+        .bind(&params.private_host)
+        .bind(&params.tunnel_address)
+        .bind(&params.public_key)
+        .bind(&params.endpoint)
+        .bind(&params.listen_port)
+        .bind(&params.persistent_keepalive)
+        .bind(&params.dns_name)
+        .bind(&params.routes)
+        .bind(&params.status)
+        .bind(&params.server_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -219,13 +277,61 @@ impl Queries {
         Ok(())
     }
 
-    /// ServerPrivateNetworksSetRuntimeState
-    pub async fn server_private_networks_set_runtime_state(
+    /// ServerPrivateNetworksSetRuntimeStatus
+    pub async fn server_private_networks_set_runtime_status(
         &self,
-        params: &ServerPrivateNetworksSetRuntimeStateParams,
+        status: &str,
+        server_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_private_networks SET status = ?, public_key = COALESCE(?, public_key), last_handshake_at = ?, updated_at = CURRENT_TIMESTAMP WHERE server_id = ?;"
+            "UPDATE server_private_networks SET status = ?, updated_at = unixepoch() WHERE server_id = ?;"
+        )
+        .bind(status)
+        .bind(server_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerPrivateNetworksSetRuntimeStatusKey
+    pub async fn server_private_networks_set_runtime_status_key(
+        &self,
+        params: &ServerPrivateNetworksSetRuntimeStatusKeyParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_private_networks SET status = ?, public_key = ?, updated_at = unixepoch() WHERE server_id = ?;"
+        )
+        .bind(&params.status)
+        .bind(&params.public_key)
+        .bind(&params.server_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerPrivateNetworksSetRuntimeStatusHandshake
+    pub async fn server_private_networks_set_runtime_status_handshake(
+        &self,
+        params: &ServerPrivateNetworksSetRuntimeStatusHandshakeParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_private_networks SET status = ?, last_handshake_at = ?, updated_at = unixepoch() WHERE server_id = ?;"
+        )
+        .bind(&params.status)
+        .bind(&params.last_handshake_at)
+        .bind(&params.server_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerPrivateNetworksSetRuntimeFull
+    pub async fn server_private_networks_set_runtime_full(
+        &self,
+        params: &ServerPrivateNetworksSetRuntimeFullParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_private_networks SET status = ?, public_key = ?, last_handshake_at = ?, updated_at = unixepoch() WHERE server_id = ?;"
         )
         .bind(&params.status)
         .bind(&params.public_key)
@@ -240,17 +346,16 @@ impl Queries {
     pub async fn server_private_networks_acquire_operation(
         &self,
         params: &ServerPrivateNetworksAcquireOperationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE server_private_networks SET operation = ?, operation_lease_until = ?, updated_at = CURRENT_TIMESTAMP WHERE server_id = ? AND (operation IS NULL OR operation_lease_until < ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE server_private_networks SET operation = ?, operation_lease_until = ?, updated_at = unixepoch() WHERE server_id = ? AND (operation IS NULL OR operation_lease_until < ?) RETURNING server_id;"
         )
         .bind(&params.operation)
         .bind(&params.operation_lease_until)
         .bind(&params.server_id)
         .bind(&params.operation_lease_until2)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// ServerPrivateNetworksReleaseOperation
@@ -287,16 +392,15 @@ impl Queries {
     pub async fn server_private_networks_renew_operation(
         &self,
         params: &ServerPrivateNetworksRenewOperationParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE server_private_networks SET operation_lease_until = ?, updated_at = CURRENT_TIMESTAMP WHERE server_id = ? AND operation = ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE server_private_networks SET operation_lease_until = ?, updated_at = unixepoch() WHERE server_id = ? AND operation = ? RETURNING server_id;"
         )
         .bind(&params.operation_lease_until)
         .bind(&params.server_id)
         .bind(&params.operation)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// ServerPrivateNetworksSetHealth
@@ -305,13 +409,29 @@ impl Queries {
         params: &ServerPrivateNetworksSetHealthParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_private_networks SET health_status = ?, health_error = ?, last_handshake_at = COALESCE(?, last_handshake_at), last_health_check_at = CURRENT_TIMESTAMP, consecutive_failures = CASE WHEN ? = ? THEN 0 ELSE consecutive_failures + 1 END, updated_at = CURRENT_TIMESTAMP WHERE server_id = ?;"
+            "UPDATE server_private_networks SET health_status = ?, health_error = NULLIF(?, ''), last_health_check_at = unixepoch(), consecutive_failures = CASE WHEN ? = 'HEALTHY' THEN 0 ELSE consecutive_failures + 1 END, updated_at = unixepoch() WHERE server_id = ?;"
+        )
+        .bind(&params.health_status)
+        .bind(&params.health_error)
+        .bind(&params.param3)
+        .bind(&params.server_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServerPrivateNetworksSetHealthHandshake
+    pub async fn server_private_networks_set_health_handshake(
+        &self,
+        params: &ServerPrivateNetworksSetHealthHandshakeParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE server_private_networks SET health_status = ?, health_error = ?, last_handshake_at = ?, last_health_check_at = unixepoch(), consecutive_failures = CASE WHEN ? = 'HEALTHY' THEN 0 ELSE consecutive_failures + 1 END, updated_at = unixepoch() WHERE server_id = ?;"
         )
         .bind(&params.health_status)
         .bind(&params.health_error)
         .bind(&params.last_handshake_at)
-        .bind(&params.consecutive_failures)
-        .bind(&params.consecutive_failures2)
+        .bind(&params.param4)
         .bind(&params.server_id)
         .execute(&self.pool)
         .await?;
@@ -340,7 +460,7 @@ impl Queries {
         params: &ServerPrivateNetworksFinishRotationParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_private_networks SET public_key = ?, rotation_state = ?, config_version = config_version + 1, updated_at = CURRENT_TIMESTAMP WHERE server_id = ?;"
+            "UPDATE server_private_networks SET public_key = ?, rotation_state = ?, config_version = config_version + 1, updated_at = unixepoch() WHERE server_id = ?;"
         )
         .bind(&params.public_key)
         .bind(&params.rotation_state)

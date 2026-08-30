@@ -3,30 +3,29 @@ mod patch;
 mod transfer;
 
 pub use mount::ComposeMountService;
-pub use patch::ComposePatchService;
-pub use transfer::ComposeTransferService;
+pub use patch::{ComposePatchService, UpsertComposePatchDto};
+pub use transfer::{ComposeTransferService, ImportComposeDto};
 
 use std::sync::Arc;
 
 use auto_di::{resolve, singleton};
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::dto::compose::management::{
-        ComposePreviewDto, ComposePreviewResponseDto, DeleteComposeResourceDto,
-        InstallComposeTemplateDto, UpsertComposeResourceDto,
-    },
     core::cache::{AppStateCache, CacheKey},
-    repository::{ComposeProjectRepository, DeploymentRepository},
+    db::queries::FlashQueries,
+    flash_gen::compose_extra::ComposeMoveToEnvironmentParams,
     services::deployment::DeploymentService,
     utils::builder::{compose::transform, queue::BuilderQueue},
 };
 
-use super::{ComposeRecord, ComposeService};
+use super::{
+    crud::{CreateComposeDto, PatchComposeDto}, ComposeRecord, ComposeService,
+};
 
 pub struct ComposeManagementService {
     compose: Arc<ComposeService>,
-    projects: Arc<ComposeProjectRepository>,
-    deployments: Arc<DeploymentRepository>,
+    queries: Arc<FlashQueries>,
     deployment_service: Arc<DeploymentService>,
     cache: Arc<AppStateCache>,
 }
@@ -35,15 +34,13 @@ pub struct ComposeManagementService {
 impl ComposeManagementService {
     fn new(
         compose: Arc<ComposeService>,
-        projects: Arc<ComposeProjectRepository>,
-        deployments: Arc<DeploymentRepository>,
+        queries: Arc<FlashQueries>,
         deployment_service: Arc<DeploymentService>,
         cache: Arc<AppStateCache>,
     ) -> Self {
         Self {
             compose,
-            projects,
-            deployments,
+            queries,
             deployment_service,
             cache,
         }
@@ -83,7 +80,7 @@ impl ComposeManagementService {
     ) -> sqlx::Result<ComposeRecord> {
         let created = self
             .compose
-            .create(crate::api::dto::compose::CreateComposeDto {
+            .create(CreateComposeDto {
                 name: input.name,
                 description: input.description,
                 environment_id: input.environment_id,
@@ -97,7 +94,7 @@ impl ComposeManagementService {
             self.compose
                 .patch(
                     created.id,
-                    crate::api::dto::compose::PatchComposeDto {
+                    PatchComposeDto {
                         name: None,
                         description: None,
                         env_var: Some(env_var),
@@ -134,7 +131,7 @@ impl ComposeManagementService {
         }
         let compose_file = transform::remove_service(&current.compose_file, service_name)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        self.projects.update_compose_file(id, &compose_file).await?;
+        self.queries.update_compose_file(&compose_file, id).await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.compose.get_by_id(id).await
     }
@@ -162,7 +159,7 @@ impl ComposeManagementService {
             &input.services,
         )
         .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        self.projects.update_compose_file(id, &compose_file).await?;
+        self.queries.update_compose_file(&compose_file, id).await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.compose.get_by_id(id).await
     }
@@ -184,7 +181,7 @@ impl ComposeManagementService {
         let compose_file =
             transform::remove_resource(&current.compose_file, input.kind.as_str(), &input.name)
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-        self.projects.update_compose_file(id, &compose_file).await?;
+        self.queries.update_compose_file(&compose_file, id).await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         self.compose.get_by_id(id).await
     }
@@ -195,30 +192,42 @@ impl ComposeManagementService {
         target_environment_id: i64,
     ) -> sqlx::Result<ComposeRecord> {
         self.compose.get_by_id(id).await?;
-        if self.deployments.has_running_compose_deployment(id).await? {
+        if self
+            .queries
+            .deployments_has_running_compose_deployment(&id.to_string())
+            .await?
+        {
             return Err(sqlx::Error::Protocol(
                 "compose deployment is already queued or running".into(),
             ));
         }
-        let project = self
-            .projects
-            .move_to_environment_in_same_organization(id, target_environment_id)
-            .await?
-            .ok_or_else(|| {
-                sqlx::Error::Protocol(
+        // Old move_to_environment_in_same_organization returned None when no
+        // row matched; :one RETURNING id surfaces that as RowNotFound.
+        self.queries
+            .compose_move_to_environment(&ComposeMoveToEnvironmentParams {
+                environment_id: target_environment_id,
+                id,
+                id2: target_environment_id,
+            })
+            .await
+            .map_err(|error| match error {
+                sqlx::Error::RowNotFound => sqlx::Error::Protocol(
                     "target environment not found or belongs to another organization".into(),
-                )
+                ),
+                other => other,
             })?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
-        Ok(project.into())
+        self.compose.get_by_id(id).await
     }
 
     pub async fn rotate_webhook_token(&self, id: i64) -> sqlx::Result<String> {
         self.compose.get_by_id(id).await?;
         let token = generate_token()?;
-        if !self.projects.rotate_refresh_token(id, &token).await? {
-            return Err(sqlx::Error::RowNotFound);
-        }
+        // Old rotate_refresh_token returned rows_affected == 1; a miss
+        // surfaces here as RowNotFound.
+        self.queries
+            .compose_rotate_webhook_token(&token, id)
+            .await?;
         self.cache.invalidate(&CacheKey::Compose(id)).await;
         Ok(token)
     }
@@ -228,13 +237,31 @@ impl ComposeManagementService {
         if let Ok(queue) = resolve::<BuilderQueue>().await {
             let _ = queue.cancel_queued_compose(id).await;
         }
-        self.deployments.cancel_queued_for_compose_count(id).await
+        // Old cancel_queued_for_compose_count returned the UPDATE's
+        // rows_affected; the queued ids are collected first so the count
+        // matches the rows the follow-up statement cancels.
+        let queued = self
+            .queries
+            .deployments_get_queued_ids_for_compose(id)
+            .await?;
+        self.queries
+            .deployments_cancel_queued_for_compose(id)
+            .await?;
+        Ok(queued.len() as u64)
     }
 
     pub async fn clear_history(&self, id: i64) -> sqlx::Result<u64> {
         self.compose.get_by_id(id).await?;
-        let deployment_ids = self.deployments.list_finished_ids_for_compose(id).await?;
-        let affected = self.deployments.delete_finished_for_compose(id).await?;
+        let deployment_ids = self
+            .queries
+            .deployments_list_finished_ids_for_compose(id)
+            .await?;
+        // Old delete_finished_for_compose returned rows_affected, which the
+        // id list above mirrors for the follow-up DELETE.
+        let affected = deployment_ids.len() as u64;
+        self.queries
+            .deployments_delete_finished_for_compose(id)
+            .await?;
         for deployment_id in deployment_ids {
             let path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
             if let Err(error) = tokio::fs::remove_file(path).await
@@ -251,11 +278,18 @@ impl ComposeManagementService {
         id: i64,
     ) -> sqlx::Result<crate::services::deployment::CancelDeploymentResult> {
         self.compose.get_by_id(id).await?;
+        // Old running_for_compose returned Option; :one surfaces a miss as
+        // RowNotFound, mapped to the original Protocol error.
         let deployment = self
-            .deployments
-            .running_for_compose(id)
-            .await?
-            .ok_or_else(|| sqlx::Error::Protocol("compose has no running deployment".into()))?;
+            .queries
+            .deployments_running_for_compose(id)
+            .await
+            .map_err(|error| match error {
+                sqlx::Error::RowNotFound => {
+                    sqlx::Error::Protocol("compose has no running deployment".into())
+                }
+                other => other,
+            })?;
         self.deployment_service.cancel(deployment.id).await
     }
 }
@@ -270,4 +304,62 @@ fn generate_token() -> sqlx::Result<String> {
     let mut bytes = [0_u8; 32];
     getrandom::fill(&mut bytes).map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
     Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
+// ── JSON payload contract (moved from the retired api::dto layer) ──────
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ComposeResourceKind {
+    Config,
+    Secret,
+}
+impl ComposeResourceKind {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Config => "CONFIG",
+            Self::Secret => "SECRET",
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InstallComposeTemplateDto {
+    pub name: String,
+    pub description: Option<String>,
+    pub environment_id: i64,
+    pub server_id: Option<i64>,
+    pub compose_file: String,
+    pub env_var: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ComposePreviewDto {
+    pub compose_file: String,
+    pub randomize: bool,
+    pub suffix: Option<String>,
+    pub isolated_deployment: bool,
+    pub isolated_deployments_volume: bool,
+    pub app_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ComposePreviewResponseDto {
+    pub compose_file: String,
+    pub services: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpsertComposeResourceDto {
+    pub kind: ComposeResourceKind,
+    pub name: String,
+    pub file: Option<String>,
+    pub external: bool,
+    pub services: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteComposeResourceDto {
+    pub kind: ComposeResourceKind,
+    pub name: String,
 }

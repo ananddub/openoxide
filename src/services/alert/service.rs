@@ -1,14 +1,13 @@
 use crate::{
-    db::{
-        models::alert_rule::AlertRule,
-        repository::{AlertRuleRepository, MonitoringLifecycleRepository},
-    },
+    db::queries::FlashQueries,
+    flash_gen::alert_rule::{AlertRuleCreateParams, AlertRuleUpdateParams},
     services::{
         alert::{AlertEngine, MetricSample, ParsedRule, TargetKind, TargetReading},
         monitoring::monitoring_service::MonitoringService,
         notification::{NotificationScope, NotificationService, NotificationTrigger},
     },
 };
+use super::rule::AlertRule;
 use auto_di::singleton;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -16,36 +15,52 @@ use tokio::sync::{Mutex, RwLock};
 pub const EVALUATION_INTERVAL_SECS: i64 = 10;
 
 pub struct AlertService {
-    repo: Arc<AlertRuleRepository>,
+    queries: Arc<FlashQueries>,
     monitoring: Arc<MonitoringService>,
     notifications: Arc<NotificationService>,
-    lifecycle: Arc<MonitoringLifecycleRepository>,
     engine: Mutex<AlertEngine>,
     rules_cache: RwLock<Option<Vec<ParsedRule>>>,
+}
+
+fn rule_from_flash(row: crate::flash_gen::models::AlertRules) -> AlertRule {
+    AlertRule {
+        id: Some(row.id),
+        name: row.name,
+        target_type: row.target_type,
+        target_id: row.target_id,
+        metric_name: row.metric_name,
+        operator: row.operator,
+        threshold: f64::from(row.threshold),
+        duration_seconds: row.duration_seconds as i32,
+        notification_channel: row.notification_channel,
+        enabled: row.enabled as i32,
+        organization_id: row.organization_id,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    }
 }
 
 #[singleton]
 impl AlertService {
     pub fn new(
-        repo: Arc<AlertRuleRepository>,
+        queries: Arc<FlashQueries>,
         monitoring: Arc<MonitoringService>,
         notifications: Arc<NotificationService>,
-        lifecycle: Arc<MonitoringLifecycleRepository>,
     ) -> Self {
         Self {
-            repo,
+            queries,
             monitoring,
             notifications,
-            lifecycle,
             engine: Mutex::new(AlertEngine::new()),
             rules_cache: RwLock::new(None),
         }
     }
 
     pub async fn list_rules(&self, organization_id: i64) -> Result<Vec<AlertRule>, String> {
-        self.repo
-            .list_by_organization(organization_id)
+        self.queries
+            .alert_rule_list_by_organization(organization_id)
             .await
+            .map(|rows| rows.into_iter().map(rule_from_flash).collect())
             .map_err(|e| e.to_string())
     }
 
@@ -53,9 +68,9 @@ impl AlertService {
         &self,
         organization_id: i64,
         limit: i64,
-    ) -> Result<Vec<crate::db::repository::alert_rule::AlertEvent>, String> {
-        self.repo
-            .list_events(organization_id, limit)
+    ) -> Result<Vec<crate::flash_gen::models::AlertEvents>, String> {
+        self.queries
+            .alert_rule_list_events(organization_id, limit.clamp(1, 500))
             .await
             .map_err(|e| e.to_string())
     }
@@ -65,21 +80,57 @@ impl AlertService {
         id: i64,
         organization_id: i64,
     ) -> Result<Option<AlertRule>, String> {
-        self.repo
-            .get_by_id_for_organization(id, organization_id)
+        match self
+            .queries
+            .alert_rule_get_by_id_for_organization(id, organization_id)
             .await
-            .map_err(|e| e.to_string())
+        {
+            Ok(row) => Ok(Some(rule_from_flash(row))),
+            Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(e) => Err(e.to_string()),
+        }
     }
 
     pub async fn create_rule(&self, rule: AlertRule) -> Result<i64, String> {
-        let id = self.repo.create(&rule).await.map_err(|e| e.to_string())?;
+        let now = chrono::Utc::now().timestamp();
+        let id = self
+            .queries
+            .alert_rule_create(&AlertRuleCreateParams {
+                name: rule.name,
+                target_type: rule.target_type,
+                target_id: rule.target_id,
+                metric_name: rule.metric_name,
+                operator: rule.operator,
+                threshold: rule.threshold as f32,
+                duration_seconds: i64::from(rule.duration_seconds),
+                notification_channel: rule.notification_channel,
+                enabled: i64::from(rule.enabled),
+                organization_id: rule.organization_id,
+                created_at: now,
+                updated_at: now,
+            })
+            .await
+            .map_err(|e| e.to_string())?;
         self.invalidate_rules_cache().await;
         Ok(id)
     }
 
     pub async fn update_rule(&self, id: i64, rule: AlertRule) -> Result<(), String> {
-        self.repo
-            .update(id, &rule)
+        self.queries
+            .alert_rule_update(&AlertRuleUpdateParams {
+                name: rule.name,
+                target_type: rule.target_type,
+                target_id: rule.target_id,
+                metric_name: rule.metric_name,
+                operator: rule.operator,
+                threshold: rule.threshold as f32,
+                duration_seconds: i64::from(rule.duration_seconds),
+                notification_channel: rule.notification_channel,
+                enabled: i64::from(rule.enabled),
+                updated_at: chrono::Utc::now().timestamp(),
+                id,
+                organization_id: rule.organization_id,
+            })
             .await
             .map_err(|e| e.to_string())?;
         self.invalidate_rules_cache().await;
@@ -88,11 +139,15 @@ impl AlertService {
 
     /// `false` when no rule with that id belongs to the organization.
     pub async fn delete_rule(&self, id: i64, organization_id: i64) -> Result<bool, String> {
-        let removed = self
-            .repo
-            .delete(id, organization_id)
+        let removed = match self
+            .queries
+            .alert_rule_delete(id, organization_id)
             .await
-            .map_err(|e| e.to_string())?;
+        {
+            Ok(_) => true,
+            Err(sqlx::Error::RowNotFound) => false,
+            Err(e) => return Err(e.to_string()),
+        };
 
         if removed {
             self.invalidate_rules_cache().await;
@@ -113,7 +168,8 @@ impl AlertService {
             None => {
                 // Evaluation spans every tenant; each fired alert carries its
                 // own organization so dispatch stays scoped.
-                let rows = self.repo.list().await.map_err(|e| e.to_string())?;
+                let rows = self.queries.alert_rule_list().await.map_err(|e| e.to_string())?;
+                let rows: Vec<AlertRule> = rows.into_iter().map(rule_from_flash).collect();
                 let mut parsed_rules = Vec::new();
                 for row in &rows {
                     match ParsedRule::from_row(row, EVALUATION_INTERVAL_SECS) {
@@ -149,9 +205,10 @@ impl AlertService {
             if alert.target_kind == TargetKind::Server {
                 let server_id = alert.target_key.parse::<i64>().unwrap_or_default();
                 if self
-                    .lifecycle
-                    .is_in_maintenance(alert.organization_id, server_id)
+                    .queries
+                    .monitoring_lifecycle_is_in_maintenance(alert.organization_id, server_id)
                     .await
+                    .map(|hit| hit != 0)
                     .unwrap_or(false)
                 {
                     tracing::debug!(

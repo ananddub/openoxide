@@ -31,7 +31,7 @@ pub struct ScheduleRuntimeBeginParams {
     pub scheduled_at: i64,
 }
 
-pub struct ScheduleRuntimeFinish2Params {
+pub struct ScheduleRuntimeFinishParams {
     pub status: String,
     pub message: String,
     pub stdout: String,
@@ -40,8 +40,8 @@ pub struct ScheduleRuntimeFinish2Params {
 }
 
 impl Queries {
-    /// ScheduleRuntimePolicy1
-    pub async fn schedule_runtime_policy1(
+    /// ScheduleRuntimeEnsurePolicy
+    pub async fn schedule_runtime_ensure_policy(
         &self,
         schedule_id: i64,
     ) -> Result<(), sqlx::Error> {
@@ -54,8 +54,8 @@ impl Queries {
         Ok(())
     }
 
-    /// ScheduleRuntimePolicy2
-    pub async fn schedule_runtime_policy2(
+    /// ScheduleRuntimeGetPolicy
+    pub async fn schedule_runtime_get_policy(
         &self,
         schedule_id: i64,
     ) -> Result<ScheduleRuntimePolicies, sqlx::Error> {
@@ -73,7 +73,7 @@ impl Queries {
         params: &ScheduleRuntimeUpdatePolicyParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO schedule_runtime_policies (schedule_id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify_on_success, notify_on_failure, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(schedule_id) DO UPDATE SET retry_count=excluded.retry_count, retry_delay_seconds=excluded.retry_delay_seconds, missed_run_policy=excluded.missed_run_policy, concurrency_policy=excluded.concurrency_policy, lease_seconds=excluded.lease_seconds, notify_on_success=excluded.notify_on_success, notify_on_failure=excluded.notify_on_failure, updated_at=excluded.updated_at;"
+            "INSERT INTO schedule_runtime_policies (schedule_id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify_on_success, notify_on_failure, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, unixepoch()) ON CONFLICT(schedule_id) DO UPDATE SET retry_count=excluded.retry_count, retry_delay_seconds=excluded.retry_delay_seconds, missed_run_policy=excluded.missed_run_policy, concurrency_policy=excluded.concurrency_policy, lease_seconds=excluded.lease_seconds, notify_on_success=excluded.notify_on_success, notify_on_failure=excluded.notify_on_failure, updated_at=excluded.updated_at;"
         )
         .bind(&params.schedule_id)
         .bind(&params.retry_count)
@@ -92,18 +92,17 @@ impl Queries {
     pub async fn schedule_runtime_acquire(
         &self,
         params: &ScheduleRuntimeAcquireParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO schedule_execution_locks (schedule_id, owner_id, acquired_at, expires_at) VALUES (?, ?, ?, ?) ON CONFLICT(schedule_id) DO UPDATE SET owner_id=excluded.owner_id, acquired_at=excluded.acquired_at, expires_at=excluded.expires_at WHERE schedule_execution_locks.expires_at <= ?;"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO schedule_execution_locks (schedule_id, owner_id, acquired_at, expires_at) VALUES (?, ?, ?, ?) ON CONFLICT(schedule_id) DO UPDATE SET owner_id=excluded.owner_id, acquired_at=excluded.acquired_at, expires_at=excluded.expires_at WHERE schedule_execution_locks.expires_at <= ? RETURNING schedule_id;"
         )
         .bind(&params.schedule_id)
         .bind(&params.owner_id)
         .bind(&params.acquired_at)
         .bind(&params.expires_at)
         .bind(&params.expires_at2)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// ScheduleRuntimeRelease
@@ -129,7 +128,7 @@ impl Queries {
         schedule_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE schedule_runtime_policies SET last_scheduled_at=?, updated_at=CURRENT_TIMESTAMP WHERE schedule_id=?;"
+            "UPDATE schedule_runtime_policies SET last_scheduled_at=?, updated_at=unixepoch() WHERE schedule_id=?;"
         )
         .bind(last_scheduled_at)
         .bind(schedule_id)
@@ -142,22 +141,21 @@ impl Queries {
     pub async fn schedule_runtime_begin(
         &self,
         params: &ScheduleRuntimeBeginParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at) VALUES (?, ?, ?, 'RUNNING', ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at) VALUES (?, ?, ?, 'RUNNING', ?, ?) RETURNING id;"
         )
         .bind(&params.schedule_id)
         .bind(&params.organization_id)
         .bind(&params.trigger_kind)
         .bind(&params.attempt)
         .bind(&params.scheduled_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
-    /// ScheduleRuntimeFinish1
-    pub async fn schedule_runtime_finish1(
+    /// ScheduleRuntimeGetExecutionSchedule
+    pub async fn schedule_runtime_get_execution_schedule(
         &self,
         id: i64,
     ) -> Result<i64, sqlx::Error> {
@@ -169,13 +167,13 @@ impl Queries {
         .await
     }
 
-    /// ScheduleRuntimeFinish2
-    pub async fn schedule_runtime_finish2(
+    /// ScheduleRuntimeFinish
+    pub async fn schedule_runtime_finish(
         &self,
-        params: &ScheduleRuntimeFinish2Params,
+        params: &ScheduleRuntimeFinishParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE schedule_executions SET status=?, message=?, stdout=?, stderr=?, finished_at=CURRENT_TIMESTAMP WHERE id=?;"
+            "UPDATE schedule_executions SET status=?, message=?, stdout=?, stderr=?, finished_at=unixepoch() WHERE id=?;"
         )
         .bind(&params.status)
         .bind(&params.message)

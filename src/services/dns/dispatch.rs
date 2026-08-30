@@ -1,6 +1,6 @@
-use super::{DnsService, DnsServiceError};
-use crate::api::dto::dns::{
-    DnsProviderType, DnsRecordDto, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto,
+use super::{
+    DnsProviderType, DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
+    UpsertDnsRecordDto,
 };
 
 impl DnsService {

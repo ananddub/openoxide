@@ -5,34 +5,53 @@ use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 
 use crate::{
-    api::dto::backup::{PanelBackupResponseDto, PanelRestoreStatusDto, StagePanelRestoreDto},
     core::config::Config,
-    repository::BackupExecutionRepository,
+    db::queries::FlashQueries,
+    flash_gen::backup_executions::{
+        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams, BackupExecutionsSucceedParams,
+    },
     utils::{
         exec::{CommandExecutor, LocalExecutor},
         os::OsCli,
         paths::openoxide_paths,
     },
 };
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PanelBackupResponseDto {
+    pub path: String,
+    pub checksum_sha256: String,
+    pub size_bytes: i64,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StagePanelRestoreDto {
+    pub restore_id: String,
+    pub checksum_sha256: String,
+    pub restart_required: bool,
+    pub pending_marker: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PanelRestoreStatusDto {
+    pub restore_id: String,
+    pub status: String,
+    pub message: String,
+    pub updated_at: i64,
+}
 
 pub struct PanelBackupService {
     db: Arc<SqlitePool>,
     config: Arc<Config>,
-    executions: Arc<BackupExecutionRepository>,
+    queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl PanelBackupService {
-    fn new(
-        db: Arc<SqlitePool>,
-        config: Arc<Config>,
-        executions: Arc<BackupExecutionRepository>,
-    ) -> Self {
-        Self {
-            db,
-            config,
-            executions,
-        }
+    fn new(db: Arc<SqlitePool>, config: Arc<Config>, queries: Arc<FlashQueries>) -> Self {
+        Self { db, config, queries }
     }
 
     pub async fn create(&self) -> sqlx::Result<PanelBackupResponseDto> {
@@ -46,14 +65,26 @@ impl PanelBackupService {
         let staging = tempfile::tempdir().map_err(io_error)?;
         let snapshot = staging.path().join("db.sqlite3");
         let snapshot_string = snapshot.to_string_lossy().into_owned();
+        let backup_kind = crate::services::backup::types::BackupKind::Panel;
+        let operation = crate::services::backup::types::BackupOperation::Backup;
+        let attempt = self
+            .queries
+            .backup_executions_next_attempt(&BackupExecutionsNextAttemptParams {
+                backup_kind: backup_kind.as_str().to_string(),
+                operation: operation.as_str().to_string(),
+                backup_id: 0,
+            })
+            .await?
+            .unwrap_or(1);
         let execution_id = self
-            .executions
-            .start(
-                crate::services::backup::types::BackupKind::Panel,
-                crate::services::backup::types::BackupOperation::Backup,
-                None,
-                Some(&archive),
-            )
+            .queries
+            .backup_executions_start(&BackupExecutionsStartParams {
+                backup_kind: backup_kind.as_str().to_string(),
+                operation: operation.as_str().to_string(),
+                backup_id: 0,
+                object_key: archive.clone(),
+                attempt,
+            })
             .await?;
 
         let result = async {
@@ -121,8 +152,12 @@ impl PanelBackupService {
 
         match result {
             Ok((checksum, size_bytes)) => {
-                self.executions
-                    .succeed(execution_id, Some(&checksum), Some(size_bytes))
+                self.queries
+                    .backup_executions_succeed(&BackupExecutionsSucceedParams {
+                        sha256_checksum: checksum.clone(),
+                        size_bytes,
+                        id: execution_id,
+                    })
                     .await?;
                 Ok(PanelBackupResponseDto {
                     path: archive,
@@ -132,8 +167,8 @@ impl PanelBackupService {
                 })
             }
             Err(error) => {
-                self.executions
-                    .fail(execution_id, &error.to_string())
+                self.queries
+                    .backup_executions_fail(&error.to_string(), execution_id)
                     .await?;
                 Err(error)
             }

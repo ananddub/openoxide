@@ -197,9 +197,9 @@ impl Queries {
     pub async fn certificates_create(
         &self,
         params: &CertificatesCreateParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO certificates (name, certificate_data, private_key, certificate_path, auto_renew, server_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO certificates (name, certificate_data, private_key, certificate_path, auto_renew, server_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.name)
         .bind(&params.certificate_data)
@@ -210,9 +210,8 @@ impl Queries {
         .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// CertificatesUpdate

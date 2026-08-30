@@ -75,7 +75,7 @@ impl Queries {
         &self,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "SELECT CAST(last_insert_rowid() AS INTEGER) AS id;"
+            "SELECT CAST(last_insert_rowid() AS BIGINT) AS id;"
         )
         .fetch_one(&self.pool)
         .await
@@ -108,6 +108,38 @@ impl Queries {
             "DELETE FROM tags WHERE id = ?;"
         )
         .bind(id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// TagsAddToProject
+    pub async fn tags_add_to_project(
+        &self,
+        project_id: i64,
+        tag_id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?);"
+        )
+        .bind(project_id)
+        .bind(tag_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// TagsRemoveFromProject
+    pub async fn tags_remove_from_project(
+        &self,
+        project_id: i64,
+        tag_id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "DELETE FROM project_tags WHERE project_id = ? AND tag_id = ?;"
+        )
+        .bind(project_id)
+        .bind(tag_id)
         .execute(&self.pool)
         .await?;
         Ok(())

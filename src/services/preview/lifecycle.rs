@@ -1,8 +1,18 @@
 use auto_di::resolve;
 
-use crate::services::{git_provider::GitProviderService, webhook::PullRequestEvent};
+use crate::{
+    flash_gen::preview_deployments::{
+        PreviewDeploymentsFindForPullRequestParams, PreviewDeploymentsFindOpenForEventParams,
+        PreviewDeploymentsMatchingTargets1Params, PreviewDeploymentsMatchingTargets2Params,
+        PreviewDeploymentsMatchingTargets3Params, PreviewDeploymentsMatchingTargets4Params,
+    },
+    services::{git_provider::GitProviderService, webhook::PullRequestEvent},
+};
 
-use super::{PreviewDeploymentOutcome, PreviewDeploymentService, PreviewLifecycleOutcome};
+use super::{
+    types::{optional_field, PreviewTarget},
+    PreviewDeploymentOutcome, PreviewDeploymentService, PreviewLifecycleOutcome,
+};
 
 impl PreviewDeploymentService {
     pub async fn handle_pull_request(
@@ -12,13 +22,13 @@ impl PreviewDeploymentService {
         let _guard = self.lifecycle_lock.lock().await;
         if is_close_action(&event.action) {
             let rows = self
-                .previews
-                .find_open_for_event(
-                    event.provider.as_str(),
-                    &event.owner,
-                    &event.repository,
-                    &event.number,
-                )
+                .queries
+                .preview_deployments_find_open_for_event(&PreviewDeploymentsFindOpenForEventParams {
+                    provider_type: event.provider.as_str().to_string(),
+                    param2: event.owner.clone(),
+                    param3: event.repository.clone(),
+                    pull_request_number: event.number.clone(),
+                })
                 .await
                 .map_err(|error| error.to_string())?;
             let mut outcome = PreviewLifecycleOutcome::default();
@@ -30,15 +40,13 @@ impl PreviewDeploymentService {
         }
 
         let targets = self
-            .previews
             .matching_targets(
                 event.provider,
                 &event.owner,
                 &event.repository,
                 &event.target_branch,
             )
-            .await
-            .map_err(|error| error.to_string())?;
+            .await?;
         let providers = resolve::<GitProviderService>()
             .await
             .map_err(|error| error.to_string())?;
@@ -64,19 +72,23 @@ impl PreviewDeploymentService {
                 }
             }
 
-            let existing = self
-                .previews
-                .find_for_pull_request(
-                    target.base_application_id,
-                    event.provider.as_str(),
-                    &event.number,
-                )
+            let existing = match self
+                .queries
+                .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
+                    base_service_id: target.base_service_id,
+                    provider_type: event.provider.as_str().to_string(),
+                    pull_request_number: event.number.clone(),
+                })
                 .await
-                .map_err(|error| error.to_string())?;
+            {
+                Ok(row) => Some(row),
+                Err(sqlx::Error::RowNotFound) => None,
+                Err(error) => return Err(error.to_string()),
+            };
             if existing.is_none()
                 && self
-                    .previews
-                    .active_count(target.base_application_id)
+                    .queries
+                    .preview_deployments_active_count(target.base_service_id)
                     .await
                     .map_err(|error| error.to_string())?
                     >= target.preview_limit.max(1)
@@ -104,27 +116,33 @@ impl PreviewDeploymentService {
     ) -> Result<PreviewDeploymentOutcome, String> {
         let _guard = self.lifecycle_lock.lock().await;
         let target = self
-            .previews
             .matching_targets(
                 event.provider,
                 &event.owner,
                 &event.repository,
                 &event.target_branch,
             )
-            .await
-            .map_err(|error| error.to_string())?
+            .await?
             .into_iter()
-            .find(|target| target.base_application_id == base_application_id)
+            .find(|target| target.base_service_id == base_application_id)
             .ok_or("Application is not configured for this pull request preview")?;
-        let existing = self
-            .previews
-            .find_for_pull_request(base_application_id, event.provider.as_str(), &event.number)
+        let existing = match self
+            .queries
+            .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
+                base_service_id: base_application_id,
+                provider_type: event.provider.as_str().to_string(),
+                pull_request_number: event.number.clone(),
+            })
             .await
-            .map_err(|error| error.to_string())?;
+        {
+            Ok(row) => Some(row),
+            Err(sqlx::Error::RowNotFound) => None,
+            Err(error) => return Err(error.to_string()),
+        };
         if existing.as_ref().is_none_or(|row| row.status == "CLOSED")
             && self
-                .previews
-                .active_count(base_application_id)
+                .queries
+                .preview_deployments_active_count(base_application_id)
                 .await
                 .map_err(|error| error.to_string())?
                 >= target.preview_limit.max(1)
@@ -137,12 +155,11 @@ impl PreviewDeploymentService {
     }
 
     pub async fn redeploy(&self, id: i64) -> Result<PreviewDeploymentOutcome, String> {
-        let row = self
-            .previews
-            .get_by_id(id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or("Preview deployment not found")?;
+        let row = match self.queries.preview_deployments_get_by_id(id).await {
+            Ok(row) => row,
+            Err(sqlx::Error::RowNotFound) => return Err("Preview deployment not found".into()),
+            Err(error) => return Err(error.to_string()),
+        };
         if row.status == "CLOSED" {
             return Err("Closed preview deployment cannot be redeployed".into());
         }
@@ -153,16 +170,121 @@ impl PreviewDeploymentService {
             number: row.pull_request_number,
             action: "update".into(),
             source_branch: row.source_branch,
-            source_owner: row.source_owner,
-            source_repository: row.source_repository,
+            source_owner: optional_field(row.source_owner),
+            source_repository: optional_field(row.source_repository),
             target_branch: row.target_branch,
-            commit: row.commit_sha,
-            author: row.author,
+            commit: optional_field(row.commit_sha),
+            author: optional_field(row.author),
         };
-        self.deploy_application(row.base_application_id, &event)
+        self.deploy_application(row.base_service_id, &event)
             .await
     }
+
+    async fn matching_targets(
+        &self,
+        provider: crate::services::webhook::GitProviderKind,
+        owner: &str,
+        repository: &str,
+        target_branch: &str,
+    ) -> Result<Vec<PreviewTarget>, String> {
+        use crate::services::webhook::GitProviderKind;
+
+        let targets = match provider {
+            GitProviderKind::Github => {
+                let rows = self
+                    .queries
+                    .preview_deployments_matching_targets1(&PreviewDeploymentsMatchingTargets1Params {
+                        param1: repository.to_string(),
+                        param2: owner.to_string(),
+                        branch: target_branch.to_string(),
+                    })
+                    .await
+                    .map_err(|error| error.to_string())?;
+                rows.into_iter().map(preview_target).collect()
+            }
+            GitProviderKind::Gitlab => {
+                let rows = self
+                    .queries
+                    .preview_deployments_matching_targets2(&PreviewDeploymentsMatchingTargets2Params {
+                        param1: repository.to_string(),
+                        param2: owner.to_string(),
+                        gitlab_branch: target_branch.to_string(),
+                    })
+                    .await
+                    .map_err(|error| error.to_string())?;
+                rows.into_iter().map(preview_target).collect()
+            }
+            GitProviderKind::Gitea => {
+                let rows = self
+                    .queries
+                    .preview_deployments_matching_targets3(&PreviewDeploymentsMatchingTargets3Params {
+                        param1: repository.to_string(),
+                        param2: owner.to_string(),
+                        gitea_branch: target_branch.to_string(),
+                    })
+                    .await
+                    .map_err(|error| error.to_string())?;
+                rows.into_iter().map(preview_target).collect()
+            }
+            GitProviderKind::Bitbucket => {
+                let rows = self
+                    .queries
+                    .preview_deployments_matching_targets4(&PreviewDeploymentsMatchingTargets4Params {
+                        param1: repository.to_string(),
+                        param2: owner.to_string(),
+                        bitbucket_branch: target_branch.to_string(),
+                    })
+                    .await
+                    .map_err(|error| error.to_string())?;
+                rows.into_iter().map(preview_target).collect()
+            }
+        };
+        Ok(targets)
+    }
 }
+
+fn preview_target<R>(row: R) -> PreviewTarget
+where
+    R: MatchingTargetRow,
+{
+    PreviewTarget {
+        base_service_id: row.base_service_id(),
+        provider_id: row.provider_id(),
+        preview_limit: row.preview_limit().unwrap_or(3),
+        require_collaborator_permissions: row.require_collaborator_permissions().unwrap_or(0) != 0,
+    }
+}
+
+trait MatchingTargetRow {
+    fn base_service_id(&self) -> i64;
+    fn provider_id(&self) -> i64;
+    fn preview_limit(&self) -> Option<i64>;
+    fn require_collaborator_permissions(&self) -> Option<i64>;
+}
+
+macro_rules! impl_matching_target_row {
+    ($row:ty) => {
+        impl MatchingTargetRow for $row {
+            fn base_service_id(&self) -> i64 {
+                self.base_service_id
+            }
+            fn provider_id(&self) -> i64 {
+                self.provider_id
+            }
+            fn preview_limit(&self) -> Option<i64> {
+                self.preview_limit
+            }
+            fn require_collaborator_permissions(&self) -> Option<i64> {
+                self.require_collaborator_permissions
+            }
+        }
+    };
+}
+
+impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets1Row);
+impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets2Row);
+impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets3Row);
+impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets4Row);
 
 fn is_close_action(action: &str) -> bool {
     matches!(

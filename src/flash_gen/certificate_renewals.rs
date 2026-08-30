@@ -22,16 +22,15 @@ impl Queries {
     pub async fn certificate_renewals_begin(
         &self,
         params: &CertificateRenewalsBeginParams,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "INSERT INTO certificate_renewals (certificate_id, organization_id, status, previous_expires_at) VALUES (?, ?, 'RUNNING', ?);"
+    ) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "INSERT INTO certificate_renewals (certificate_id, organization_id, status, previous_expires_at) VALUES (?, ?, 'RUNNING', ?) RETURNING id;"
         )
         .bind(&params.certificate_id)
         .bind(&params.organization_id)
         .bind(&params.previous_expires_at)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+        .fetch_one(&self.pool)
+        .await
     }
 
     /// CertificateRenewalsFinish
@@ -40,7 +39,7 @@ impl Queries {
         params: &CertificateRenewalsFinishParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE certificate_renewals SET status=?, new_expires_at=?, error=?, finished_at=CURRENT_TIMESTAMP WHERE id=?;"
+            "UPDATE certificate_renewals SET status = ?, new_expires_at = ?, error = ?, finished_at = unixepoch() WHERE id = ?;"
         )
         .bind(&params.status)
         .bind(&params.new_expires_at)

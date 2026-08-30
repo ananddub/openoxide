@@ -1,12 +1,14 @@
 CREATE TABLE ai_generations (
-    id INTEGER NOT NULL PRIMARY KEY,
-    ai_setting_id INTEGER NOT NULL,
-    organization_id INTEGER NOT NULL,
-    created_by INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    ai_setting_id BIGINT NOT NULL,
+    organization_id BIGINT NOT NULL,
+    created_by BIGINT NOT NULL,
     prompt TEXT NOT NULL,
     output_json TEXT NOT NULL,
     status TEXT NOT NULL,
-    compose_id INTEGER,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    service_id BIGINT REFERENCES services(id) ON DELETE SET NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );
+
+CREATE INDEX idx_ai_generations_service_id ON ai_generations(service_id);

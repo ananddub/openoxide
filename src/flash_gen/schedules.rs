@@ -18,8 +18,7 @@ pub struct SchedulesGetAllRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -42,8 +41,7 @@ pub struct SchedulesListByApplicationRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -65,8 +63,7 @@ pub struct SchedulesListByComposeRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -88,8 +85,7 @@ pub struct SchedulesListByServerRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -111,8 +107,7 @@ pub struct SchedulesListByOrganizationRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -134,8 +129,7 @@ pub struct SchedulesListEnabledRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -157,8 +151,7 @@ pub struct SchedulesCreateAndReturnRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -180,8 +173,7 @@ pub struct SchedulesUpdateAndReturnRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -203,8 +195,7 @@ pub struct SchedulesSetEnabledRow {
     pub script: Option<String>,
     pub timezone: Option<String>,
     pub enabled: i64,
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
+    pub service_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -224,8 +215,7 @@ pub struct CreateScheduleParams {
     pub script: String,
     pub timezone: String,
     pub enabled: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub server_id: i64,
     pub organization_id: i64,
 }
@@ -255,8 +245,7 @@ pub struct SchedulesCreateParams {
     pub script: String,
     pub timezone: String,
     pub enabled: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub server_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
@@ -276,8 +265,7 @@ pub struct SchedulesUpdateParams {
     pub script: String,
     pub timezone: String,
     pub enabled: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub server_id: i64,
     pub organization_id: i64,
     pub created_at: i64,
@@ -299,8 +287,7 @@ pub struct SchedulesCreateAndReturnParams {
     pub script: String,
     pub timezone: String,
     pub enabled: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub server_id: i64,
     pub organization_id: i64,
 }
@@ -318,8 +305,7 @@ pub struct SchedulesUpdateAndReturnParams {
     pub script: String,
     pub timezone: String,
     pub enabled: i64,
-    pub application_id: i64,
-    pub compose_id: i64,
+    pub service_id: i64,
     pub server_id: i64,
     pub organization_id: i64,
     pub id: i64,
@@ -368,12 +354,12 @@ impl Queries {
     /// ListSchedulesByApplication
     pub async fn list_schedules_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Schedules>, sqlx::Error> {
         sqlx::query_as::<_, Schedules>(
-            "SELECT * FROM schedules WHERE application_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM schedules WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -381,12 +367,12 @@ impl Queries {
     /// ListSchedulesByCompose
     pub async fn list_schedules_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<Schedules>, sqlx::Error> {
         sqlx::query_as::<_, Schedules>(
-            "SELECT * FROM schedules WHERE compose_id = ? ORDER BY created_at DESC;"
+            "SELECT * FROM schedules WHERE service_id = ? ORDER BY created_at DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -421,7 +407,7 @@ impl Queries {
         params: &CreateScheduleParams,
     ) -> Result<Schedules, sqlx::Error> {
         sqlx::query_as::<_, Schedules>(
-            "INSERT INTO schedules ( name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO schedules ( name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -435,8 +421,7 @@ impl Queries {
         .bind(&params.script)
         .bind(&params.timezone)
         .bind(&params.enabled)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.server_id)
         .bind(&params.organization_id)
         .fetch_one(&self.pool)
@@ -500,7 +485,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<SchedulesGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesGetAllRow>(
-            "SELECT id AS id, name AS name, description AS description, cron_expression AS cron_expression, app_name AS app_name, service_name AS service_name, shell_type AS shell_type, schedule_type AS schedule_type, command AS command, script AS script, timezone AS timezone, enabled AS enabled, application_id AS application_id, compose_id AS compose_id, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, schedule_action AS schedule_action FROM schedules;"
+            "SELECT id AS id, name AS name, description AS description, cron_expression AS cron_expression, app_name AS app_name, service_name AS service_name, shell_type AS shell_type, schedule_type AS schedule_type, command AS command, script AS script, timezone AS timezone, enabled AS enabled, service_id AS service_id, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, schedule_action AS schedule_action FROM schedules;"
         )
         .fetch_all(&self.pool)
         .await
@@ -512,7 +497,7 @@ impl Queries {
         id: i64,
     ) -> Result<Schedules, sqlx::Error> {
         sqlx::query_as::<_, Schedules>(
-            "SELECT id AS id, name AS name, description AS description, cron_expression AS cron_expression, app_name AS app_name, service_name AS service_name, shell_type AS shell_type, schedule_type AS schedule_type, command AS command, script AS script, timezone AS timezone, enabled AS enabled, application_id AS application_id, compose_id AS compose_id, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, schedule_action AS schedule_action FROM schedules WHERE id = ?;"
+            "SELECT id AS id, name AS name, description AS description, cron_expression AS cron_expression, app_name AS app_name, service_name AS service_name, shell_type AS shell_type, schedule_type AS schedule_type, command AS command, script AS script, timezone AS timezone, enabled AS enabled, service_id AS service_id, server_id AS server_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, schedule_action AS schedule_action FROM schedules WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -525,7 +510,7 @@ impl Queries {
         params: &SchedulesCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO schedules (name, description, cron_expression, app_name, service_name, shell_type, schedule_type, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at, schedule_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO schedules (name, description, cron_expression, app_name, service_name, shell_type, schedule_type, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at, schedule_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -538,8 +523,7 @@ impl Queries {
         .bind(&params.script)
         .bind(&params.timezone)
         .bind(&params.enabled)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.server_id)
         .bind(&params.organization_id)
         .bind(&params.created_at)
@@ -556,7 +540,7 @@ impl Queries {
         params: &SchedulesUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE schedules SET name = ?, description = ?, cron_expression = ?, app_name = ?, service_name = ?, shell_type = ?, schedule_type = ?, command = ?, script = ?, timezone = ?, enabled = ?, application_id = ?, compose_id = ?, server_id = ?, organization_id = ?, created_at = ?, updated_at = ?, schedule_action = ? WHERE id = ?;"
+            "UPDATE schedules SET name = ?, description = ?, cron_expression = ?, app_name = ?, service_name = ?, shell_type = ?, schedule_type = ?, command = ?, script = ?, timezone = ?, enabled = ?, service_id = ?, server_id = ?, organization_id = ?, created_at = ?, updated_at = ?, schedule_action = ? WHERE id = ?;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -569,8 +553,7 @@ impl Queries {
         .bind(&params.script)
         .bind(&params.timezone)
         .bind(&params.enabled)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.server_id)
         .bind(&params.organization_id)
         .bind(&params.created_at)
@@ -599,12 +582,12 @@ impl Queries {
     /// SchedulesListByApplication
     pub async fn schedules_list_by_application(
         &self,
-        application_id: i64,
+        service_id: i64,
     ) -> Result<Vec<SchedulesListByApplicationRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesListByApplicationRow>(
-            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE application_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
-        .bind(application_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -612,12 +595,12 @@ impl Queries {
     /// SchedulesListByCompose
     pub async fn schedules_list_by_compose(
         &self,
-        compose_id: i64,
+        service_id: i64,
     ) -> Result<Vec<SchedulesListByComposeRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesListByComposeRow>(
-            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE compose_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE service_id = ? ORDER BY created_at DESC, id DESC;"
         )
-        .bind(compose_id)
+        .bind(service_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -628,7 +611,7 @@ impl Queries {
         server_id: i64,
     ) -> Result<Vec<SchedulesListByServerRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesListByServerRow>(
-            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE server_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE server_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(server_id)
         .fetch_all(&self.pool)
@@ -641,7 +624,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<SchedulesListByOrganizationRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesListByOrganizationRow>(
-            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
@@ -653,7 +636,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<SchedulesListEnabledRow>, sqlx::Error> {
         sqlx::query_as::<_, SchedulesListEnabledRow>(
-            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE enabled = 1 ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at FROM schedules WHERE enabled = 1 ORDER BY created_at DESC, id DESC;"
         )
         .fetch_all(&self.pool)
         .await
@@ -665,7 +648,7 @@ impl Queries {
         params: &SchedulesCreateAndReturnParams,
     ) -> Result<SchedulesCreateAndReturnRow, sqlx::Error> {
         sqlx::query_as::<_, SchedulesCreateAndReturnRow>(
-            "INSERT INTO schedules (name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at;"
+            "INSERT INTO schedules (name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -679,8 +662,7 @@ impl Queries {
         .bind(&params.script)
         .bind(&params.timezone)
         .bind(&params.enabled)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.server_id)
         .bind(&params.organization_id)
         .fetch_one(&self.pool)
@@ -693,7 +675,7 @@ impl Queries {
         params: &SchedulesUpdateAndReturnParams,
     ) -> Result<SchedulesUpdateAndReturnRow, sqlx::Error> {
         sqlx::query_as::<_, SchedulesUpdateAndReturnRow>(
-            "UPDATE schedules SET name = ?, description = ?, cron_expression = ?, app_name = ?, service_name = ?, shell_type = ?, schedule_type = ?, schedule_action = ?, command = ?, script = ?, timezone = ?, enabled = ?, application_id = ?, compose_id = ?, server_id = ?, organization_id = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at;"
+            "UPDATE schedules SET name = ?, description = ?, cron_expression = ?, app_name = ?, service_name = ?, shell_type = ?, schedule_type = ?, schedule_action = ?, command = ?, script = ?, timezone = ?, enabled = ?, service_id = ?, server_id = ?, organization_id = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -707,8 +689,7 @@ impl Queries {
         .bind(&params.script)
         .bind(&params.timezone)
         .bind(&params.enabled)
-        .bind(&params.application_id)
-        .bind(&params.compose_id)
+        .bind(&params.service_id)
         .bind(&params.server_id)
         .bind(&params.organization_id)
         .bind(&params.id)
@@ -723,7 +704,7 @@ impl Queries {
         id: i64,
     ) -> Result<SchedulesSetEnabledRow, sqlx::Error> {
         sqlx::query_as::<_, SchedulesSetEnabledRow>(
-            "UPDATE schedules SET enabled = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, application_id, compose_id, server_id, organization_id, created_at, updated_at;"
+            "UPDATE schedules SET enabled = ? WHERE id = ? RETURNING id AS id, name, description, cron_expression, app_name, service_name, shell_type, schedule_type, schedule_action, command, script, timezone, enabled, service_id, server_id, organization_id, created_at, updated_at;"
         )
         .bind(enabled)
         .bind(id)
