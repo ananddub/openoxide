@@ -1,7 +1,4 @@
-use super::{
-    error::AlertParseError, metric::MetricKind, operator::Operator, rule_state::RuleState,
-    target::TargetKind,
-};
+use super::types::{AlertParseError, MetricKind, Operator, RuleState, TargetKind};
 
 const DEFAULT_WINDOW_SAMPLES: usize = 15;
 const MAX_WINDOW_SAMPLES: usize = 300;

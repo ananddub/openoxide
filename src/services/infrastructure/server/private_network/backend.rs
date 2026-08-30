@@ -7,8 +7,32 @@ use crate::utils::{
 };
 use zeroize::Zeroize;
 
-use super::{KernelWireGuardHealth, WireGuardInstallPlan};
-use crate::services::infrastructure::server::private_network::backend::ManagedWireGuardBackend;
+pub struct WireGuardInstallPlan<'a> {
+    pub interface: &'a str,
+    pub panel_address: String,
+    pub remote_address: String,
+    pub panel_host: String,
+    pub remote_host: String,
+    pub endpoint: &'a str,
+    pub port: u16,
+    pub keepalive: u16,
+    pub routes: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct KernelWireGuardHealth {
+    pub interface_exists: bool,
+    pub peer_public_keys: Vec<String>,
+    pub latest_handshake: Option<i64>,
+    pub allowed_ips: Vec<String>,
+}
+
+pub(super) trait ManagedWireGuardBackend {
+    async fn install(&self, plan: &WireGuardInstallPlan<'_>) -> sqlx::Result<String>;
+    async fn teardown(&self, interface: &str) -> sqlx::Result<()>;
+    async fn health(&self, interface: &str) -> sqlx::Result<KernelWireGuardHealth>;
+    async fn rotate(&self, plan: &WireGuardInstallPlan<'_>) -> sqlx::Result<String>;
+}
 
 pub struct KernelWireGuardBackend<'a> {
     pub(super) local: &'a CommandExecutor,
@@ -240,5 +264,65 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                 ))
             }
         }
+    }
+}
+
+impl KernelWireGuardBackend<'_> {
+    pub(super) async fn restore_pair(
+        &self,
+        interface: &str,
+        local_backup: &mut String,
+        remote_backup: &mut String,
+    ) -> Result<(), String> {
+        let local = OsCli::new(self.local)
+            .wireguard()
+            .interface(interface)
+            .restore_config(local_backup)
+            .await;
+        let remote = OsCli::new(self.remote)
+            .wireguard()
+            .interface(interface)
+            .restore_config(remote_backup)
+            .await;
+        match (local, remote) {
+            (Ok(_), Ok(_)) => Ok(()),
+            (Err(local), Ok(_)) => Err(format!("panel restore failed: {local}")),
+            (Ok(_), Err(remote)) => Err(format!("remote restore failed: {remote}")),
+            (Err(local), Err(remote)) => Err(format!(
+                "panel restore failed: {local}; remote restore failed: {remote}"
+            )),
+        }
+    }
+
+    pub(super) fn rotation_error(
+        reason: impl std::fmt::Display,
+        rollback: Result<(), String>,
+    ) -> sqlx::Error {
+        match rollback {
+            Ok(()) => sqlx::Error::Protocol(format!(
+                "{reason}; previous WireGuard configuration was restored"
+            )),
+            Err(rollback_error) => sqlx::Error::Protocol(format!(
+                "{reason}; WireGuard rollback was incomplete: {rollback_error}"
+            )),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::KernelWireGuardBackend;
+
+    #[test]
+    fn rotation_error_reports_incomplete_rollback() {
+        let restored = KernelWireGuardBackend::rotation_error("rotation failed", Ok(()));
+        assert!(restored.to_string().contains("was restored"));
+
+        let incomplete = KernelWireGuardBackend::rotation_error(
+            "rotation failed",
+            Err("remote restore failed".into()),
+        );
+        assert!(incomplete.to_string().contains("rollback was incomplete"));
+        assert!(incomplete.to_string().contains("remote restore failed"));
     }
 }

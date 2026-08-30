@@ -1,7 +1,6 @@
 use super::{
     email::send_email, loader::{ChannelConfig, NotificationConfigLoader},
-    message::NotificationMessage, scope::NotificationScope, senders,
-    trigger::NotificationTrigger,
+    message::NotificationMessage, senders, types::{NotificationScope, NotificationTrigger},
 };
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{

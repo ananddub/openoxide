@@ -5,7 +5,6 @@ mod dispatcher;
 mod github_like;
 mod gitlab;
 mod pull_request;
-mod shared;
 mod tag;
 mod types;
 

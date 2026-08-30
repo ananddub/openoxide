@@ -1,4 +1,3 @@
-mod config;
 mod dispatch;
 mod providers;
 mod resolution;
@@ -15,7 +14,7 @@ use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
 
-use config::{encode_path, field as config_field};
+use types::{encode_path, field as config_field};
 
 pub struct VaultService {
     queries: Arc<FlashQueries>,

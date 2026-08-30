@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::{
     db::queries::FlashQueries,
-    services::observability::monitoring::monitoring_service::MonitoringService,
+    services::observability::monitoring::service::MonitoringService,
     utils::{
         docker::{ContainerSummary, DockerCli, ImageSummary, NetworkSummary, VolumeSummary},
         exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},

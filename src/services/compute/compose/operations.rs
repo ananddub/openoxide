@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::{
     ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeService, ComposeStatus,
-    ComposeType, auto_executer::compose_new_db,
+    ComposeType,
 };
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::compose_extra::{
@@ -13,6 +13,7 @@ use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
 use crate::utils::docker::DockerCli;
 use crate::utils::docker::query::ServiceFilter;
+use crate::utils::exec::CommandExecutor;
 
 impl ComposeService {
     pub async fn run_operation(
@@ -270,4 +271,19 @@ async fn scale_down_compose(
             Ok(())
         }
     }
+}
+
+/// `db` is retained for signature compatibility with the caller in
+/// `operations.rs`; the FlashQueries client is resolved from DI.
+pub async fn compose_new_db(
+    _db: sqlx::SqlitePool,
+    compose_id: i64,
+) -> Result<CommandExecutor, sqlx::Error> {
+    let queries = resolve::<FlashQueries>()
+        .await
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+    let service = queries.get_service_by_i_d(compose_id).await?;
+    crate::services::compute::compose::remote::agent_executor_for(service.server_id)
+        .await
+        .map_err(sqlx::Error::Protocol)
 }

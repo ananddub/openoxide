@@ -1,4 +1,25 @@
-use super::{PreviewDeploymentService, PreviewDeploymentView};
+use std::sync::Arc;
+
+use auto_di::singleton;
+
+use crate::db::queries::FlashQueries;
+
+use super::types::PreviewDeploymentView;
+
+pub struct PreviewDeploymentService {
+    pub(super) queries: Arc<FlashQueries>,
+    pub(super) lifecycle_lock: tokio::sync::Mutex<()>,
+}
+
+#[singleton]
+impl PreviewDeploymentService {
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self {
+            queries,
+            lifecycle_lock: tokio::sync::Mutex::new(()),
+        }
+    }
+}
 
 impl PreviewDeploymentService {
     pub async fn list(&self, active_only: bool) -> sqlx::Result<Vec<PreviewDeploymentView>> {

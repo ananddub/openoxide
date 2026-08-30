@@ -1,8 +1,7 @@
 use serde::Deserialize;
 
-use super::{
-    shared::{ChangedCommit, branch_from_ref, collect_paths},
-    types::{GitProviderKind, GitTrigger, PushEvent},
+use super::types::{
+    ChangedCommit, GitProviderKind, GitTrigger, PushEvent, branch_from_ref, collect_paths,
 };
 
 #[derive(Deserialize)]

@@ -143,7 +143,7 @@ impl NotificationConfigLoader {
 
     /// Loads the channel config matching the notification's `notification_type`.
     pub fn load(&self, notification: &Notification) -> Result<ChannelConfig, String> {
-        use super::provider::NotificationProvider;
+        use super::types::NotificationProvider;
 
         let provider: NotificationProvider = notification
             .notification_type

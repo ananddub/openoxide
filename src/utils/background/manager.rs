@@ -38,7 +38,7 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve monitoring reconciler: {error}"))?;
         let monitoring_service =
-            resolve::<crate::services::observability::monitoring::monitoring_service::MonitoringService>()
+            resolve::<crate::services::observability::monitoring::service::MonitoringService>()
                 .await
                 .map_err(|error| format!("failed to resolve monitoring service: {error}"))?;
         let monitoring_lifecycle = resolve::<MonitoringLifecycleService>()

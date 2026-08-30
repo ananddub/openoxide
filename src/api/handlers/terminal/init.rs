@@ -4,7 +4,7 @@ use auto_di::{resolve, singleton};
 use dashmap::DashMap;
 
 use crate::api::connect::generated::openoxide::api::v1::OpenTerminalRequest;
-use crate::services::observability::monitoring::monitoring_service::MonitoringService;
+use crate::services::observability::monitoring::service::MonitoringService;
 use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
 
 use super::helper::{SanitizedShell, TerminalPump, TerminalSessionEntry, TerminalSessionHandle};

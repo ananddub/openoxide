@@ -6,7 +6,7 @@ use crate::{
             NotificationScope, NotificationService, NotificationTrigger,
         },
         observability::alert::{AlertEngine, MetricSample, ParsedRule, TargetKind, TargetReading},
-        observability::monitoring::monitoring_service::MonitoringService,
+        observability::monitoring::service::MonitoringService,
     },
 };
 use super::rule::AlertRule;

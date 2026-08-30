@@ -2,8 +2,8 @@ use auto_di::resolve;
 use std::sync::Arc;
 
 use crate::services::observability::monitoring::{
-    lifecycle::MonitoringLifecycleService, monitoring_service::MonitoringService,
-    reconciler::MonitoringReconciler,
+    lifecycle::MonitoringLifecycleService, reconciler::MonitoringReconciler,
+    service::MonitoringService,
 };
 
 const AGENT_UPDATE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5 * 60);

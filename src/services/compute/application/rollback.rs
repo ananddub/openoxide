@@ -4,7 +4,7 @@ use crate::utils::builder::spec::ApplicationSpec;
 use crate::utils::docker::DockerCli;
 
 use super::ApplicationService;
-use super::auto_executer::app_new_cmd;
+use super::operations::app_new_cmd;
 
 #[derive(Debug, Clone)]
 pub struct ApplicationRollbackTriggerResult {

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auto_di::resolve;
 
 use crate::{
-    services::compute::application::{ApplicationService, auto_executer::app_new_cmd},
+    services::compute::application::{ApplicationService, operations::app_new_cmd},
     utils::docker::DockerCli,
 };
 

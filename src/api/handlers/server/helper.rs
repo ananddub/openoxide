@@ -39,7 +39,7 @@ pub fn map_exec_error(error: ExecError) -> ConnectError {
 pub fn trigger_monitoring_refresh(server_id: i64) {
     tokio::spawn(async move {
         let monitoring =
-            match resolve::<crate::services::observability::monitoring::monitoring_service::MonitoringService>()
+            match resolve::<crate::services::observability::monitoring::service::MonitoringService>()
                 .await
             {
                 Ok(service) => service,

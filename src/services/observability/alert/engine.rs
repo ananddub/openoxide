@@ -1,4 +1,7 @@
-use super::{reading::FiredAlert, reading::TargetReading, rule::ParsedRule, sample::SampleWindow};
+use super::{
+    rule::ParsedRule,
+    types::{FiredAlert, SampleWindow, TargetReading},
+};
 use std::collections::HashMap;
 
 #[derive(Debug)]

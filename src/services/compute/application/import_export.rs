@@ -11,7 +11,7 @@ use crate::{
         mount::MountCreateForApplicationParams, patches::PatchesCreateParams,
         ports::PortsCreateParams, security::SecurityCreateParams,
     },
-    services::compute::application::{queries::generate_app_name, redirect::Redirect, ApplicationRecord},
+    services::compute::application::{crud::generate_app_name, redirect::Redirect, ApplicationRecord},
 };
 
 const APPLICATION_EXPORT_SCHEMA_VERSION: u32 = 1;

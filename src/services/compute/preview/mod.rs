@@ -1,28 +1,8 @@
-mod cleanup;
-mod factory;
-mod lifecycle;
-mod queries;
-mod types;
+pub mod cleanup;
+pub mod factory;
+pub mod lifecycle;
+pub mod service;
+pub mod types;
 
-use std::sync::Arc;
-
-use auto_di::singleton;
-
-use crate::db::queries::FlashQueries;
-
+pub use service::PreviewDeploymentService;
 pub use types::{PreviewDeploymentOutcome, PreviewDeploymentView, PreviewLifecycleOutcome};
-
-pub struct PreviewDeploymentService {
-    pub(super) queries: Arc<FlashQueries>,
-    pub(super) lifecycle_lock: tokio::sync::Mutex<()>,
-}
-
-#[singleton]
-impl PreviewDeploymentService {
-    fn new(queries: Arc<FlashQueries>) -> Self {
-        Self {
-            queries,
-            lifecycle_lock: tokio::sync::Mutex::new(()),
-        }
-    }
-}

@@ -1,13 +1,15 @@
 use auto_di::resolve;
+use sqlx::SqlitePool;
 use std::sync::Arc;
 
+use crate::db::queries::FlashQueries;
 use crate::flash_gen::deployments::{
     AppCoreQueueDeploymentNoServerParams, AppCoreQueueDeploymentWithServerParams,
 };
-use crate::services::compute::application::auto_executer::app_new_cmd;
 use crate::utils::builder::queue::BuilderQueue;
 use crate::utils::builder::{custom_type::IdType, hash_state::ApplicationState};
 use crate::utils::docker::DockerCli;
+use crate::utils::exec::CommandExecutor;
 
 use super::{ApplicationOperation, ApplicationOperationResult, ApplicationService};
 
@@ -239,4 +241,17 @@ impl ApplicationService {
 
         Ok(true)
     }
+}
+
+pub async fn app_new_cmd(
+    _db: Arc<SqlitePool>,
+    app_id: i64,
+) -> Result<CommandExecutor, sqlx::Error> {
+    let queries = resolve::<FlashQueries>()
+        .await
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+    let app_user = queries.get_service_by_i_d(app_id).await?;
+    crate::services::compute::compose::remote::agent_executor_for(app_user.server_id)
+        .await
+        .map_err(sqlx::Error::Protocol)
 }

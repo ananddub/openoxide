@@ -1,5 +1,6 @@
 use os::string_enum;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 string_enum! {
@@ -83,4 +84,22 @@ pub enum VaultServiceError {
     Http(#[from] reqwest::Error),
     #[error("Vault provider failure: {0}")]
     ProviderError(String),
+}
+
+pub fn field(raw: Option<&str>, key: &str) -> Option<String> {
+    raw.and_then(|value| serde_json::from_str::<Value>(value).ok())
+        .and_then(|value| {
+            value[key]
+                .as_str()
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(str::to_string)
+        })
+}
+
+pub fn encode_path(path: &str) -> String {
+    path.split('/')
+        .map(|segment| urlencoding::encode(segment).into_owned())
+        .collect::<Vec<_>>()
+        .join("/")
 }

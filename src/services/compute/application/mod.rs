@@ -36,7 +36,6 @@ impl ApplicationService {
     }
 }
 
-pub mod auto_executer;
 pub mod config;
 pub mod crud;
 pub mod import_export;
@@ -47,9 +46,7 @@ pub mod network;
 pub mod operations;
 pub mod patch;
 pub mod port;
-pub mod queries;
 pub mod redirect;
-pub mod remote;
 pub mod rollback;
 pub mod security;
 pub mod source;

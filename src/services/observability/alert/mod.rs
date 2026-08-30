@@ -1,23 +1,12 @@
 pub mod engine;
-pub mod error;
-pub mod event_state;
-pub mod metric;
-pub mod operator;
-pub mod reading;
 pub mod rule;
-pub mod rule_state;
-pub mod sample;
 pub mod service;
-pub mod target;
+pub mod types;
 
 pub use engine::AlertEngine;
-pub use error::AlertParseError;
-pub use event_state::AlertEventState;
-pub use metric::MetricKind;
-pub use operator::Operator;
-pub use reading::{FiredAlert, TargetReading};
 pub use rule::{AlertRule, ParsedRule};
-pub use rule_state::RuleState;
-pub use sample::{MetricSample, SampleWindow};
 pub use service::AlertService;
-pub use target::TargetKind;
+pub use types::{
+    AlertEventState, AlertParseError, FiredAlert, MetricKind, MetricSample, Operator,
+    RuleState, SampleWindow, TargetKind, TargetReading,
+};

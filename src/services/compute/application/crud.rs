@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::api::connect::generated::openoxide::api::v1::{
     ApplicationBuildType, ApplicationSourceType, CreateApplicationRequest,
     UpdateApplicationRequest,
@@ -13,7 +15,7 @@ use crate::flash_gen::services::{
 use crate::flash_gen::service_git::AppCoreCreateServiceGitSourceParams;
 use crate::services::compute::database::crud::serialize_json_string_vec;
 
-use super::{ApplicationRecord, ApplicationService, queries::generate_app_name};
+use super::{ApplicationRecord, ApplicationService};
 
 fn proto_to_source_type(value: &buffa::EnumValue<ApplicationSourceType>) -> String {
     match value.as_known() {
@@ -342,4 +344,18 @@ impl ApplicationService {
             .service_dependency_counts(&dependency_counts_params(id))
             .await
     }
+}
+
+pub(super) fn generate_app_name(name: &str) -> String {
+    let raw = name
+        .to_lowercase()
+        .replace(|c: char| !c.is_alphanumeric(), "-");
+    let clean = raw.trim_matches('-');
+    let suffix = Uuid::new_v4()
+        .to_string()
+        .split('-')
+        .next()
+        .unwrap()
+        .to_string();
+    format!("{}-{}", clean, suffix)
 }

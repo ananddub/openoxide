@@ -2,6 +2,11 @@ pub use types::{
     ComposeOperation, ComposeOperationResult, ComposeRecord, ComposeStatus, ComposeType,
 };
 
+// The former `remote` file module was merged into `queries`; this alias keeps
+// the historical `compose::remote::…` import paths working for the call sites
+// across the crate.
+pub use queries as remote;
+
 use std::sync::Arc;
 
 use auto_di::singleton;
@@ -21,11 +26,9 @@ impl ComposeService {
     }
 }
 
-pub mod auto_executer;
 pub mod crud;
 pub mod management;
 pub mod operations;
 pub mod queries;
-pub mod remote;
 pub mod source;
 pub mod types;

@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use auto_di::singleton;
 use sqlx::{Row, SqlitePool};
 
-use super::monitoring_service::proto::ContainerStatePoint;
+use super::service::proto::ContainerStatePoint;
 
 pub struct MonitoringReconciler {
     pool: Arc<SqlitePool>,
