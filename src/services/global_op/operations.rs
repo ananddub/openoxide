@@ -225,12 +225,12 @@ impl GlobalOperationsService {
         }
         let rows = sqlx::query_as::<_, SearchRow>(r#"
             SELECT resource_type, id, name, COALESCE(status, '') status FROM (
-                SELECT 'APPLICATION' resource_type, CAST(id AS TEXT) id, name, app_status status FROM applications
-                UNION ALL SELECT 'COMPOSE', CAST(id AS TEXT), name, compose_status FROM compose_projects
+                SELECT 'APPLICATION' resource_type, CAST(id AS TEXT) id, name, app_status status FROM services WHERE service_type = 'APPLICATION'
+                UNION ALL SELECT 'COMPOSE', CAST(id AS TEXT), name, app_status FROM services WHERE service_type = 'COMPOSE'
                 UNION ALL SELECT 'SERVER', CAST(id AS TEXT), name, server_status FROM servers
                 UNION ALL SELECT 'PROJECT', CAST(id AS TEXT), name, NULL FROM projects
                 UNION ALL SELECT 'ENVIRONMENT', CAST(id AS TEXT), name, NULL FROM environments
-                UNION ALL SELECT engine, CAST(id AS TEXT), name, app_status FROM databases
+                UNION ALL SELECT d.db_type, CAST(s.id AS TEXT), s.name, s.app_status FROM services s JOIN service_database d ON d.service_id = s.id
                 UNION ALL SELECT 'DOMAIN', CAST(id AS TEXT), host, domain_type FROM domains
                 UNION ALL SELECT 'CERTIFICATE', CAST(id AS TEXT), name, CASE auto_renew WHEN 1 THEN 'AUTO_RENEW' ELSE 'MANUAL' END FROM certificates
                 UNION ALL SELECT 'REGISTRY', CAST(id AS TEXT), registry_name, registry_type FROM registries

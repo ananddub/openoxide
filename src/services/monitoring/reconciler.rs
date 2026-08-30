@@ -44,16 +44,13 @@ impl MonitoringReconciler {
     }
 
     async fn mark_server_resources_offline(&self, server_id: i64) -> Result<(), String> {
-        for (table, column) in resource_tables() {
-            let query = format!(
-                "UPDATE {table} SET {column}='ERROR' WHERE server_id=? AND {column} IN ('RUNNING','DONE','HEALTHY','OK','SUCCESS')"
-            );
-            sqlx::query(sqlx::AssertSqlSafe(query))
-                .bind(server_id)
-                .execute(self.pool.as_ref())
-                .await
-                .map_err(|error| error.to_string())?;
-        }
+        sqlx::query(
+            "UPDATE services SET app_status='ERROR' WHERE server_id=? AND app_status IN ('RUNNING','DONE','HEALTHY','OK','SUCCESS')",
+        )
+        .bind(server_id)
+        .execute(self.pool.as_ref())
+        .await
+        .map_err(|error| error.to_string())?;
         Ok(())
     }
 
@@ -62,38 +59,16 @@ impl MonitoringReconciler {
         server_id: i64,
         states: &[ContainerStatePoint],
     ) -> Result<(), String> {
-        self.reconcile_named_table("applications", server_id, states, ResourceKind::Application)
-            .await?;
-        self.reconcile_named_table("compose_projects", server_id, states, ResourceKind::Compose)
-            .await?;
-        for table in database_tables() {
-            self.reconcile_named_table(table, server_id, states, ResourceKind::Database)
-                .await?;
-        }
-        Ok(())
-    }
-
-    async fn reconcile_named_table(
-        &self,
-        table: &str,
-        server_id: i64,
-        states: &[ContainerStatePoint],
-        kind: ResourceKind,
-    ) -> Result<(), String> {
-        let column = status_column(kind);
-        let desired_replicas = if kind == ResourceKind::Application {
-            "MAX(replicas, 1)"
-        } else {
-            "1"
-        };
         let local = self.is_local_server(server_id).await?;
         let scope = if local {
-            "(server_id=? OR server_id IS NULL)"
+            "(s.server_id=? OR s.server_id IS NULL)"
         } else {
-            "server_id=?"
+            "s.server_id=?"
         };
         let query = format!(
-            "SELECT id, app_name, {column} AS current_status, {desired_replicas} AS desired_replicas FROM {table} WHERE {scope}"
+            "SELECT s.id, s.app_name, s.service_type, s.app_status AS current_status, \
+             CASE WHEN s.service_type='APPLICATION' THEN MAX(s.replicas, 1) ELSE 1 END AS desired_replicas \
+             FROM services s WHERE {scope}"
         );
         let rows = sqlx::query(sqlx::AssertSqlSafe(query))
             .bind(server_id)
@@ -104,6 +79,7 @@ impl MonitoringReconciler {
         for row in rows {
             let id: i64 = row.get("id");
             let app_name: String = row.get("app_name");
+            let service_type: String = row.get("service_type");
             let current_status: String = row.get("current_status");
             let desired_replicas: i64 = row.get("desired_replicas");
             if !matches!(
@@ -112,13 +88,17 @@ impl MonitoringReconciler {
             ) {
                 continue;
             }
+            let kind = match service_type.as_str() {
+                "APPLICATION" => ResourceKind::Application,
+                "COMPOSE" => ResourceKind::Compose,
+                _ => ResourceKind::Database,
+            };
             let matching: Vec<&ContainerStatePoint> = states
                 .iter()
                 .filter(|state| matches_resource(state, kind, id, &app_name))
                 .collect();
             let status = aggregate_status(&matching, kind, desired_replicas).unwrap_or("ERROR");
-            self.update_resource_status(table, column, id, status)
-                .await?;
+            self.update_resource_status(id, status).await?;
         }
         Ok(())
     }
@@ -134,20 +114,13 @@ impl MonitoringReconciler {
             .is_some_and(|ip| matches!(ip.as_str(), "127.0.0.1" | "localhost" | "openoxide-agent")))
     }
 
-    async fn update_resource_status(
-        &self,
-        table: &str,
-        column: &str,
-        id: i64,
-        status: &str,
-    ) -> Result<(), String> {
+    async fn update_resource_status(&self, id: i64, status: &str) -> Result<(), String> {
         let status = if status == "RUNNING" {
             "RUNNING"
         } else {
             "ERROR"
         };
-        let query = format!("UPDATE {table} SET {column}=? WHERE id=? AND {column}!=?");
-        sqlx::query(sqlx::AssertSqlSafe(query))
+        sqlx::query("UPDATE services SET app_status=? WHERE id=? AND app_status!=?")
             .bind(status)
             .bind(id)
             .bind(status)
@@ -222,36 +195,4 @@ fn aggregate_status(
     } else {
         "ERROR"
     })
-}
-
-fn status_column(kind: ResourceKind) -> &'static str {
-    match kind {
-        ResourceKind::Application => "app_status",
-        ResourceKind::Compose => "compose_status",
-        ResourceKind::Database => "app_status",
-    }
-}
-
-fn resource_tables() -> &'static [(&'static str, &'static str)] {
-    &[
-        ("applications", "app_status"),
-        ("compose_projects", "compose_status"),
-        ("postgres_dbs", "app_status"),
-        ("mysql_dbs", "app_status"),
-        ("mariadb_dbs", "app_status"),
-        ("mongo_dbs", "app_status"),
-        ("redis_dbs", "app_status"),
-        ("libsql_dbs", "app_status"),
-    ]
-}
-
-fn database_tables() -> &'static [&'static str] {
-    &[
-        "postgres_dbs",
-        "mysql_dbs",
-        "mariadb_dbs",
-        "mongo_dbs",
-        "redis_dbs",
-        "libsql_dbs",
-    ]
 }
