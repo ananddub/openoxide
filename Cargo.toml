@@ -69,6 +69,7 @@ minijinja = "2.21.0"
 tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"
 connectrpc = { version = "0.9.0", default-features = false, features = ["json", "server"] }
+connectrpc-reflection = { version = "0.9.0", default-features = false }
 buffa = { version = "0.9.1", default-features = false, features = ["std", "fast-utf8"] }
 bytes = "1"
 http-body-util = "0.1"

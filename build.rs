@@ -86,6 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .includes(&["proto"])
         .include_file("_connectrpc.rs")
         .file_per_package(true)
+        .emit_descriptor_set("openoxide.fds.bin")
         .compile()?;
 
     Ok(())

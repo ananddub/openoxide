@@ -32,6 +32,13 @@ async fn main() {
 
     let socket: Arc<Socket> = resolve::<Socket>().await.unwrap();
     let connect_router = auto_grpc::connect_routes().await.unwrap();
+    // gRPC server reflection (grpc.reflection.v1 + v1alpha) so grpcurl, buf curl,
+    // Postman and grpcui can discover services without local proto files.
+    let reflector = connectrpc_reflection::Reflector::from_descriptor_set_bytes(include_bytes!(
+        concat!(env!("OUT_DIR"), "/openoxide.fds.bin")
+    ))
+    .expect("embedded openoxide descriptor set should parse");
+    let connect_router = connectrpc_reflection::install(connect_router, reflector);
     let connect_service = connectrpc::ConnectRpcService::new(connect_router);
     BackgroundManager::start_all()
         .await

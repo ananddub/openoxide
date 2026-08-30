@@ -79,7 +79,8 @@ async fn dispatch(
 
     let mut response = if method == "OPTIONS" {
         preflight()
-    } else if uri.path().starts_with("/openoxide.api.") {
+    } else if uri.path().starts_with("/openoxide.api.") || uri.path().starts_with("/grpc.reflection.")
+    {
         let mut service = connect.as_ref().clone();
         let outcome = crate::db::reactive::request_scope(service.call(request)).await;
         outcome
