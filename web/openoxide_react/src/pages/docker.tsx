@@ -2,7 +2,7 @@ import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {$api} from '#/api/query';
-import {useDeploymentRunning} from 'virtual:openoxide-live';
+import {useDeploymentRunning} from '#/api/live';
 import {DockerHeader} from '#/components/docker/docker-header';
 import {DockerContainersTable} from '#/components/docker/docker-containers-table';
 import {
@@ -45,18 +45,9 @@ function DockerPage() {
 		},
 	});
 
-	// Active running deployments via live hook
-	const {data: rawRunning, loading: isRunningLoading} =
-		useDeploymentRunning({
-			status: null,
-			state: null,
-			application_id: null,
-			compose_id: null,
-			database_id: null,
-			server_id: null,
-			limit: 50n,
-			offset: null,
-		});
+	// Active running deployments via ConnectRPC query
+	const {data: rawRunning, isLoading: isRunningLoading} =
+		useDeploymentRunning();
 
 	// Transform API response into Dokploy-grade container items
 	const globalContainers: GlobalContainerItem[] = useMemo(() => {

@@ -19,7 +19,7 @@ import {
   useOverviewServices,
   useOverviewDomains,
   useOverviewBackups,
-} from "virtual:openoxide-live";
+} from "#/api/live";
 
 export function useRealtimeSync() {
   const activeOrg = useOrganizationStore((state) => state.activeOrg);
@@ -47,7 +47,7 @@ export function useRealtimeSync() {
   const setHydrated = useAppStore((state) => state.setHydrated);
   const setWsConnected = useAppStore((state) => state.setWsConnected);
 
-  // 1. Live Socket.IO Reactive Stream Hooks from virtual:openoxide-live
+  // 1. ConnectRPC Query Hooks (replaces former Socket.IO reactive streams)
   const { data: liveMembers } = usePermissionGroupMembers();
   const { data: liveInvites } = usePermissionGroupInvites();
   const { data: liveProfile } = useAuthWhoAmI();
@@ -63,7 +63,7 @@ export function useRealtimeSync() {
   const { data: liveDestinations } = useDestinationList();
   const { data: liveTags } = useTagListAll();
 
-  // 2. Organization-Wide Services, Domains & Backups LIVE Socket.IO Sync (ZERO POLLING)
+  // 2. Organization-Wide Services, Domains & Backups Sync (query-backed)
   const { data: liveServices } = useOverviewServices(BigInt(orgId));
   const { data: liveDomains } = useOverviewDomains(BigInt(orgId));
   const { data: liveBackups } = useOverviewBackups(BigInt(orgId));

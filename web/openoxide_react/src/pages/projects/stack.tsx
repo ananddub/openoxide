@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {FolderOpen, Layers} from 'lucide-react';
 import {useAppStore} from '#/stores/app-store';
-import {useEnvironmentListByProject} from 'virtual:openoxide-live';
+import {useEnvironmentListByProject} from '#/api/live';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
 import {StackCanvas} from '#/components/projects/stack/stack-canvas';
 

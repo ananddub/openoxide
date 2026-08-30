@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {$api} from '#/api/query';
-import {useRegistryList} from 'virtual:openoxide-live';
+import {useRegistryList} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {RegistryHeader} from '#/components/registry/registry-header';
@@ -30,7 +30,7 @@ function RegistryPage() {
 		useState<RegistryResponse | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
-	const {data: rawRegistries, loading: isLoading} = useRegistryList();
+	const {data: rawRegistries, isLoading} = useRegistryList();
 
 	const registries = Array.isArray(rawRegistries ?? [])
 		? ((rawRegistries ?? []) as unknown as RegistryResponse[])

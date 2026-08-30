@@ -4,7 +4,6 @@ import {tanstackRouter} from '@tanstack/router-plugin/vite';
 import viteReact, {reactCompilerPreset} from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 import {defineConfig, type Plugin} from 'vite';
-import {openoxide} from '@openoxide/vite';
 import {routes} from './src/routes';
 
 // Cookies are shared by every local app using the same hostname. Keep the
@@ -27,11 +26,6 @@ const config = defineConfig({
 	resolve: {tsconfigPaths: true},
 	plugins: [
 		devHeaderLimit(),
-		openoxide({
-			manifestPath: '../../Cargo.toml',
-			manifestBin: 'openoxide-live-manifest',
-			declarations: 'src/openoxide-live.generated.d.ts',
-		}),
 		devtools(),
 		tailwindcss(),
 		tanstackRouter({
@@ -55,12 +49,6 @@ const config = defineConfig({
 				changeOrigin: true,
 				secure: false,
 				rewrite: path => path.replace(/^\/api/, ''),
-			},
-			'/socket.io': {
-				target: 'http://127.0.0.1:4000',
-				ws: true,
-				changeOrigin: true,
-				secure: false,
 			},
 		},
 	},

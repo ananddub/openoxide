@@ -1,7 +1,11 @@
 import {useEffect, useRef, useState} from 'react';
-import type {Socket} from 'socket.io-client';
-import {socketFor} from '#/live/socket';
 import type {Terminal} from '@xterm/xterm';
+import {createServiceClient} from '#/api/connect';
+import {
+	TerminalService,
+	TerminalKind,
+	type OpenTerminalRequest,
+} from '#/gen/connect/openoxide/api/v1/terminal_pb';
 
 const CONTROL_KEY_MAP: Record<string, string> = {
 	l: '\x0c',
@@ -24,6 +28,15 @@ interface UseTerminalSocketOptions {
 	termInstance: Terminal | null;
 }
 
+/**
+ * Interactive terminal over the TerminalService ConnectRPC API.
+ *
+ * Browsers cannot stream request bodies over the Connect protocol, so the
+ * session is split in two legs (mirroring the backend proto): a
+ * server-streaming OpenTerminal RPC that carries all output for the
+ * session lifetime, and a unary ExecutionCommand RPC that feeds input,
+ * resize and stop commands addressed by session id.
+ */
 export function useTerminalSocket({
 	isOpen,
 	targetContainer,
@@ -36,32 +49,21 @@ export function useTerminalSocket({
 		'connecting' | 'connected' | 'error' | 'disconnected'
 	>('disconnected');
 	const [activeHostIp, setActiveHostIp] = useState<string | null>(null);
-	const socketRef = useRef<Socket | null>(null);
-	const isFirstMountRef = useRef<boolean>(true);
+	const sessionIdRef = useRef<string | null>(null);
+	const abortRef = useRef<AbortController | null>(null);
+	const client = createServiceClient(TerminalService);
 
 	useEffect(() => {
 		if (!isOpen || !termInstance) {
-			isFirstMountRef.current = true;
-			if (socketRef.current) {
-				if (socketRef.current.connected) {
-					socketRef.current.emit('stop');
-				}
-				socketRef.current.off('connect');
-				socketRef.current.off('started');
-				socketRef.current.off('output');
-				socketRef.current.off('error');
-				socketRef.current.off('exit');
-				socketRef.current.off('disconnect');
-				socketRef.current = null;
-			}
+			abortRef.current?.abort();
+			abortRef.current = null;
+			sessionIdRef.current = null;
 			setStatus('disconnected');
 			setActiveHostIp(null);
 			return;
 		}
 
-		isFirstMountRef.current = true;
 		setStatus('connecting');
-
 		termInstance.reset();
 		if (isRemoteServer) {
 			termInstance.writeln(
@@ -73,172 +75,163 @@ export function useTerminalSocket({
 			);
 		}
 
-		// Use global singleton live socket manager
-		const socket = socketFor('/terminal').socket;
-		socketRef.current = socket;
+		const abort = new AbortController();
+		abortRef.current = abort;
+		const signal = abort.signal;
 
-		if (!socket.connected) {
-			socket.connect();
-		}
-
-		const emitStartSession = (sock: Socket, shellMode: string) => {
-			if (!sock.connected) return;
-			const cols = termInstance?.cols || 80;
-			const rows = termInstance?.rows || 24;
-			if (isRemoteServer && serverId) {
-				sock.emit('server:start', {
-					server_id: serverId,
-					shell: shellMode,
-					command: shellMode,
-					cols,
-					rows,
-				});
-			} else {
-				sock.emit('docker:start', {
-					container: targetContainer,
-					server_id: serverId || undefined,
-					shell: shellMode,
-					cols,
-					rows,
-				});
-			}
+		const sendCommand = (
+			command:
+				| {case: 'input'; value: {data: Uint8Array}}
+				| {case: 'resize'; value: {cols: number; rows: number}}
+				| {case: 'stop'; value: Record<string, never>},
+		): void => {
+			const sessionId = sessionIdRef.current;
+			if (!sessionId) return;
+			client
+				.executionCommand({sessionId, command})
+				.catch(() => {});
 		};
 
-		const handleConnect = () => {
-			setStatus('connected');
-			if (termInstance) {
-				termInstance.reset();
-			}
-			emitStartSession(socket, shell);
+		const request: OpenTerminalRequest = {
+			kind: isRemoteServer
+				? TerminalKind.REMOTE_SERVER
+				: TerminalKind.DOCKER,
+			serverId: serverId ? BigInt(serverId) : undefined,
+			container: isRemoteServer ? undefined : targetContainer,
+			shell,
+			cols: termInstance.cols || 80,
+			rows: termInstance.rows || 24,
 		};
 
-		if (socket.connected) {
-			handleConnect();
-		} else {
-			socket.once('connect', handleConnect);
-		}
-
-		socket.on('started', (data: {kind?: string; host?: string}) => {
-			if (data?.host) setActiveHostIp(data.host);
-			if (termInstance) {
-				termInstance.reset();
-				const connectedTarget = data?.host || targetContainer;
-				const label =
-					data?.kind === 'remote-server'
-						? 'SSH Remote Server'
-						: 'Docker Container';
-				termInstance.writeln(
-					`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`,
-				);
-				termInstance.focus();
-				if (socket.connected && termInstance.cols && termInstance.rows) {
-					socket.emit('resize', {
-						cols: termInstance.cols,
-						rows: termInstance.rows,
-					});
-				}
-			}
-		});
-
-		socket.on('output', (evt: {data: string}) => {
-			if (evt?.data) {
-				termInstance?.write(evt.data);
-			}
-		});
-
-		socket.on('error', (err: unknown) => {
-			const message =
-				typeof err === 'string'
-					? err
-					: (err as {message?: string})?.message ||
-						'Terminal socket error';
-			termInstance?.writeln(`\r\n\x1b[31mError: ${message}\x1b[0m\r\n`);
-			setStatus('error');
-		});
-
-		socket.on('exit', (evt: {code: number}) => {
-			termInstance?.writeln(
-				`\r\n\x1b[33mProcess exited with code ${evt?.code ?? 0}\x1b[0m\r\n`,
-			);
-			setStatus('disconnected');
-		});
-
-		socket.on('disconnect', reason => {
-			if (socketRef.current !== socket) return;
-			setStatus('disconnected');
-			if (reason !== 'io client disconnect') {
-				termInstance?.writeln(
-					`\r\n\x1b[31mSocket disconnected (${reason}). Reconnecting...\x1b[0m\r\n`,
-				);
-			}
-		});
-
-		let dataDisposable: {dispose: () => void} | undefined;
-		let resizeDisposable: {dispose: () => void} | undefined;
-
-		if (termInstance) {
-			dataDisposable = termInstance.onData(data => {
-				if (socket.connected) socket.emit('input', {data});
-			});
-			resizeDisposable = termInstance.onResize(({cols, rows}) => {
-				if (socket.connected) socket.emit('resize', {cols, rows});
-			});
-
-			termInstance.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-				if (event.ctrlKey || event.metaKey) {
-					const k = event.key.toLowerCase();
-					if (k === 'c' && termInstance.hasSelection()) {
-						if (event.type === 'keydown')
-							navigator.clipboard.writeText(termInstance.getSelection());
-						event.preventDefault();
-						return false;
-					}
-					if (k === 'v') {
-						if (event.type === 'keydown') {
-							navigator.clipboard
-								.readText()
-								.then(text => {
-									if (text && socket.connected)
-										socket.emit('input', {data: text});
-								})
-								.catch(() => {});
-						}
-						event.preventDefault();
-						return false;
-					}
-					if (CONTROL_KEY_MAP[k]) {
-						if (event.type === 'keydown' && socket.connected) {
-							if (k === 'l') {
-								termInstance.clear();
-								socket.emit('input', {data: 'clear\r'});
-							} else {
-								socket.emit('input', {data: CONTROL_KEY_MAP[k]});
+		(async () => {
+			try {
+				for await (const event of client.openTerminal(request, {signal})) {
+					if (signal.aborted) return;
+					if (event.sessionId) sessionIdRef.current = event.sessionId;
+					switch (event.payload.case) {
+						case 'started': {
+							setStatus('connected');
+							if (event.payload.value.host) {
+								setActiveHostIp(event.payload.value.host);
 							}
+							termInstance.reset();
+							const connectedTarget =
+								event.payload.value.host || targetContainer;
+							const label = isRemoteServer
+								? 'SSH Remote Server'
+								: 'Docker Container';
+							termInstance.writeln(
+								`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`,
+							);
+							termInstance.focus();
+							break;
 						}
-						event.preventDefault();
-						return false;
+						case 'output': {
+							const text = new TextDecoder().decode(
+								event.payload.value.data,
+							);
+							if (text) termInstance.write(text);
+							break;
+						}
+						case 'error': {
+							termInstance.writeln(
+								`\r\n\x1b[31mError: ${event.payload.value.message}\x1b[0m\r\n`,
+							);
+							setStatus('error');
+							return;
+						}
+						case 'exit': {
+							termInstance.writeln(
+								`\r\n\x1b[33mProcess exited with code ${event.payload.value.code ?? 0}\x1b[0m\r\n`,
+							);
+							setStatus('disconnected');
+							return;
+						}
 					}
 				}
-				return true;
-			});
-		}
+				if (!signal.aborted) {
+					setStatus('disconnected');
+				}
+			} catch (error) {
+				if (signal.aborted) return;
+				const message =
+					error instanceof Error ? error.message : 'terminal stream failed';
+				termInstance.writeln(`\r\n\x1b[31mError: ${message}\x1b[0m\r\n`);
+				setStatus('error');
+			}
+		})();
+
+		const dataDisposable = termInstance.onData(data => {
+			if (sessionIdRef.current) {
+				sendCommand({
+					case: 'input',
+					value: {data: new TextEncoder().encode(data)},
+				});
+			}
+		});
+		const resizeDisposable = termInstance.onResize(({cols, rows}) => {
+			if (sessionIdRef.current) {
+				sendCommand({case: 'resize', value: {cols, rows}});
+			}
+		});
+
+		termInstance.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+			if (event.ctrlKey || event.metaKey) {
+				const k = event.key.toLowerCase();
+				if (k === 'c' && termInstance.hasSelection()) {
+					if (event.type === 'keydown')
+						navigator.clipboard.writeText(termInstance.getSelection());
+					event.preventDefault();
+					return false;
+				}
+				if (k === 'v') {
+					if (event.type === 'keydown') {
+						navigator.clipboard
+							.readText()
+							.then(text => {
+								if (text && sessionIdRef.current) {
+									sendCommand({
+										case: 'input',
+										value: {data: new TextEncoder().encode(text)},
+									});
+								}
+							})
+							.catch(() => {});
+					}
+					event.preventDefault();
+					return false;
+				}
+				if (CONTROL_KEY_MAP[k]) {
+					if (event.type === 'keydown' && sessionIdRef.current) {
+						if (k === 'l') {
+							termInstance.clear();
+							sendCommand({
+								case: 'input',
+								value: {data: new TextEncoder().encode('clear\r')},
+							});
+						} else {
+							sendCommand({
+								case: 'input',
+								value: {
+									data: new TextEncoder().encode(CONTROL_KEY_MAP[k]),
+								},
+							});
+						}
+					}
+					event.preventDefault();
+					return false;
+				}
+			}
+			return true;
+		});
 
 		return () => {
 			dataDisposable?.dispose();
 			resizeDisposable?.dispose();
-			isFirstMountRef.current = true;
-			if (socketRef.current) {
-				if (socketRef.current.connected) {
-					socketRef.current.emit('stop');
-				}
-				socketRef.current.off('connect', handleConnect);
-				socketRef.current.off('started');
-				socketRef.current.off('output');
-				socketRef.current.off('error');
-				socketRef.current.off('exit');
-				socketRef.current.off('disconnect');
-				socketRef.current = null;
-			}
+			sendCommand({case: 'stop', value: {}});
+			abort.abort();
+			abortRef.current = null;
+			sessionIdRef.current = null;
 		};
 	}, [
 		isOpen,
@@ -250,7 +243,7 @@ export function useTerminalSocket({
 	]);
 
 	return {
-		socket: socketRef.current,
+		sessionId: sessionIdRef.current,
 		status,
 		activeHostIp,
 	};

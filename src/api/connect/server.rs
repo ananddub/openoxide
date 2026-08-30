@@ -10,9 +10,7 @@ use hyper_util::{
     service::TowerToHyperService,
 };
 use tokio::net::TcpListener;
-use tower::{Layer, Service};
-
-use crate::api::routes::socket::Socket;
+use tower::Service;
 
 type ResponseBody = UnsyncBoxBody<Bytes, Infallible>;
 
@@ -41,15 +39,10 @@ impl Service<Request<Incoming>> for DispatchService {
     }
 }
 
-pub async fn serve(
-    listener: TcpListener,
-    socket: Arc<Socket>,
-    connect: ConnectRpcService,
-) -> std::io::Result<()> {
+pub async fn serve(listener: TcpListener, connect: ConnectRpcService) -> std::io::Result<()> {
     let app = DispatchService {
         connect: Arc::new(connect),
     };
-    let app = socket.layer.clone().layer(app);
 
     loop {
         let (stream, peer) = listener.accept().await?;

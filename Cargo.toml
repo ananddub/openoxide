@@ -6,8 +6,6 @@ license = "Apache-2.0"
 
 [workspace]
 members = [
-    "crates/auto/socket_macros",
-    "crates/auto/socket",
     "crates/auto/grpc",
     "crates/auto/grpc_macros",
     "crates/sh_macros",
@@ -24,7 +22,6 @@ async-trait = "0.1"
 auto_grpc = { path = "crates/auto/grpc", default-features = false, features = ["connect"] }
 sh_macros = { path = "crates/sh_macros" }
 os = { path = "crates/os" }
-auto_socket = { version = "0.1.0", path = "crates/auto/socket" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 urlencoding = "2.1"
@@ -38,7 +35,6 @@ argon2 = { version = "0.6.0-rc.8", features = ["getrandom"] }
 bcrypt = "0.17"
 tracing = "0.1.44"
 jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto", "use_pem"] }
-socketioxide = "0.18.4"
 zeroize = "1.9.0"
 # Pure-Rust SSH keypair generation. Replaces shelling out to ssh-keygen, which
 # wrote the private key to a temp file before we could read it back.

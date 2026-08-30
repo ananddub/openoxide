@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useOrganizationListByOwner} from 'virtual:openoxide-live';
+import {useOrganizationListByOwner} from '#/api/live';
 
 import {cn} from '#/api/utils';
 import {Logo} from '#/components/shared/logo';

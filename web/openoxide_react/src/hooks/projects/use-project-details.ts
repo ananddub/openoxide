@@ -2,7 +2,7 @@ import {useState, useEffect, useMemo} from 'react';
 import {
 	useProjectGet,
 	useEnvironmentListByProject,
-} from 'virtual:openoxide-live';
+} from '#/api/live';
 
 import {useAppStore} from '#/stores/app-store';
 

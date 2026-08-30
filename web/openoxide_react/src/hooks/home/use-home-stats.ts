@@ -3,7 +3,7 @@ import {useAuthStore} from '#/stores/auth-store';
 import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
 import {useAppStore} from '#/stores/app-store';
-import {useDeploymentRunning} from 'virtual:openoxide-live';
+import {useDeploymentRunning} from '#/api/live';
 
 export function useHomeStats() {
 	const user = useAuthStore(state => state.user);
@@ -21,17 +21,8 @@ export function useHomeStats() {
 	const isDeploymentsLoading = false;
 
 	// Fetch active running deployments (/deployments/running)
-	const {data: rawRunning, loading: isRunningLoading} =
-		useDeploymentRunning({
-			status: null,
-			state: null,
-			application_id: null,
-			compose_id: null,
-			database_id: null,
-			server_id: null,
-			limit: 50n,
-			offset: null,
-		});
+	const {data: rawRunning, isLoading: isRunningLoading} =
+		useDeploymentRunning();
 
 	// Totals & Status Calculations
 	const stats = useMemo(() => {

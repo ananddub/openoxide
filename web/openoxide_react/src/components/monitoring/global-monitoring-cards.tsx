@@ -9,7 +9,7 @@ import {
 	CardTitle,
 } from '#/components/ui/card';
 import {$api} from '#/api/query';
-import {useMonitoringContainerStates} from 'virtual:openoxide-live';
+import {useMonitoringContainerStates} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {getAccessToken, refreshAccessToken} from '#/api/client';
 import {

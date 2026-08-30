@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {$api} from '#/api/query';
-import {useProjectListByOrganization} from 'virtual:openoxide-live';
+import {useProjectListByOrganization} from '#/api/live';
 import {toast} from 'sonner';
 import {useOrganizationStore} from '#/stores/organization-store';
 import {useAppStore} from '#/stores/app-store';
@@ -34,18 +34,19 @@ export function useProjectsList() {
 	const addProjectStore = useAppStore(state => state.addProject);
 	const deleteProjectStore = useAppStore(state => state.deleteProject);
 
-	// Fetch Projects for the active organization (live — auto-updates via WebSocket)
-	const {data: liveProjects, loading: isLoadingProjects} =
+	// Fetch Projects for the active organization (ConnectRPC query with
+	// background refetch liveness)
+	const {data: liveProjects, isLoading: isLoadingProjects} =
 		useProjectListByOrganization(BigInt(orgId));
 
-	// Keep Zustand store in sync with live WebSocket updates
+	// Keep Zustand store in sync with query data
 	React.useEffect(() => {
 		if (liveProjects && Array.isArray(liveProjects)) {
 			setProjectsStore(liveProjects as any);
 		}
 	}, [liveProjects, setProjectsStore]);
 
-	// Always prefer live WebSocket data if available, fallback to Zustand RAM store
+	// Always prefer query data if available, fallback to Zustand RAM store
 	const rawProjectsList =
 		liveProjects !== undefined ? liveProjects : storeProjects;
 	const projects = Array.isArray(rawProjectsList) ? rawProjectsList : [];

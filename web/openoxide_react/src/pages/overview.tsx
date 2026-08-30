@@ -39,7 +39,7 @@ import {useDeployments} from '#/hooks/deployments/use-deployments';
 import {DeploymentItem} from '#/components/deployments/deployment-item';
 import {DeploymentLogsDialog} from '#/components/deployments/deployment-logs-dialog';
 import {OverviewServicesTab} from '#/components/overview/overview-services-tab';
-import {useDeploymentRunning} from 'virtual:openoxide-live';
+import {useDeploymentRunning} from '#/api/live';
 
 export const Route = createFileRoute('/_app/overview')({
 	component: OverviewPage,

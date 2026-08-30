@@ -12,7 +12,7 @@ import {
 	useLibsqlGet,
 	useScheduleListByDatabase,
 	useBackupListVolumeBackups,
-} from 'virtual:openoxide-live';
+} from '#/api/live';
 
 import {useAppStore} from '#/stores/app-store';
 
@@ -226,7 +226,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	].includes(statusUpper);
 
 	// Schedules
-	const {data: rawSchedules, loading: isLoadingSchedules} =
+	const {data: rawSchedules, isLoading: isLoadingSchedules} =
 		useScheduleListByDatabase(BigInt(dbId));
 	const schedules = useMemo(
 		() => (Array.isArray(rawSchedules) ? rawSchedules : []),
@@ -234,7 +234,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	);
 
 	// Volume backups store a typed resource foreign key, not a generic database_id.
-	const {data: rawBackupsAll, loading: isLoadingBackups} =
+	const {data: rawBackupsAll, isLoading: isLoadingBackups} =
 		useBackupListVolumeBackups();
 	const backups = useMemo(() => {
 		const all = Array.isArray(rawBackupsAll) ? rawBackupsAll : [];

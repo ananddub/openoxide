@@ -50,13 +50,6 @@ impl DbEventBus {
     fn publish(&self, changes: Vec<DbChangeEvent>) {
         if !changes.is_empty() {
             tracing::info!(tables = ?changes.iter().map(|c| c.table.as_str()).collect::<Vec<_>>(), "sqlite realtime change committed");
-            let mut tables = changes
-                .iter()
-                .map(|change| change.table.clone())
-                .collect::<Vec<_>>();
-            tables.sort_unstable();
-            tables.dedup();
-            auto_socket::notify_table_changes(changes.iter().map(|change| change.table.as_str()));
             let _ = self.sender.send(DbChangeSet { changes });
         }
     }

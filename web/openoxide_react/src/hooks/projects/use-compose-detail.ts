@@ -7,7 +7,7 @@ import {
 	useDomainListByCompose,
 	useScheduleListByCompose,
 	useComposeGet,
-} from 'virtual:openoxide-live';
+} from '#/api/live';
 
 import {useAppStore, selectComposeById} from '#/stores/app-store';
 

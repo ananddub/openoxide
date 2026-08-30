@@ -1,9 +1,7 @@
 use auto_di::resolve;
 use openoxide::{
-    api::routes::socket::Socket,
     core::config::Config, core::logs::init_logs, utils::background::BackgroundManager,
 };
-use std::sync::Arc;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -30,7 +28,6 @@ async fn main() {
     // 2. Orphaned agent socket cleanup on server boot
     openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
 
-    let socket: Arc<Socket> = resolve::<Socket>().await.unwrap();
     let connect_router = auto_grpc::connect_routes().await.unwrap();
     // gRPC server reflection (grpc.reflection.v1 + v1alpha) so grpcurl, buf curl,
     // Postman and grpcui can discover services without local proto files.
@@ -52,7 +49,7 @@ async fn main() {
         .unwrap();
 
     tracing::info!("Listening on {}:{}", host, port);
-    openoxide::api::connect::serve(listener, socket, connect_service)
+    openoxide::api::connect::serve(listener, connect_service)
         .await
         .unwrap();
 }

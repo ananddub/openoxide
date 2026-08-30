@@ -4,7 +4,7 @@ import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useAppStore, selectApplicationById} from '#/stores/app-store';
-import {useApplicationGet} from 'virtual:openoxide-live';
+import {useApplicationGet} from '#/api/live';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
