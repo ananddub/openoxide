@@ -74,7 +74,10 @@
       "Bash(attempt *)",
       "Bash(error *)",
       "Bash(started_at *)",
-      "Bash(finished_at *)"
+      "Bash(finished_at *)",
+      "Bash(\"\nyielded \"tags)",
+      "Bash(\"), which silently broke model matching for every query\nending in a semicolon.\neof\n)\")",
+      "Bash(buf *)"
     ]
   },
   "$version": 4

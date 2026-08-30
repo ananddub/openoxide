@@ -4,6 +4,12 @@
 /.vscode
 /.direnv
 /.idea
+/.qwen
+/.codex
+/.claude
+/.cargo
+/.agents
+
 /data
 /.runtime
 errors.txt
